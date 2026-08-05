@@ -1,0 +1,20 @@
+# ===== 凭据（绝对不能提交）=====
+zhihu_cookie.txt
+zhihu_secret.txt
+*.cookie
+*.secret
+.env
+.env.local
+
+# ===== 抓取产物 / 中间文件（体积大、非源码）=====
+out/
+collections/
+*.digest
+digest*.txt
+batch*.txt
+
+# ===== 依赖 / 系统文件 =====
+node_modules/
+.DS_Store
+Thumbs.db
+*.log

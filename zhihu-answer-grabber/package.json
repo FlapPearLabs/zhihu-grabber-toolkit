@@ -1,0 +1,12 @@
+{
+  "name": "zhihu-answer-grabber",
+  "version": "1.0.0",
+  "description": "本地知乎回答抓取工具：用你自己的 zhihu-cli 登录态抓取问题全部回答（JSON+Markdown）",
+  "type": "module",
+  "bin": { "zhigrab": "src/cli.js" },
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": { "node": ">=22" },
+  "license": "AGPL-3.0-only"
+}
