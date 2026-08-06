@@ -1,8 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSignedHeaders, buildAnswersUrl, buildQuestionInfoUrl, cookieHeader } from '../src/http.js';
-
-const config = {
+import { buildSignedHeaders, buildAnswersUrl, buildQuestionInfoUrl, cookieHeader } from '../src/http.js';const config = {
   cookies: { z_c0: 'zc', _xsrf: 'xs', d_c0: 'dc' },
   userAgent: 'UA-TEST',
   zse93: '101_3_3.0',
@@ -37,4 +35,14 @@ test('buildQuestionInfoUrl 结构正确', () => {
   const u = new URL(buildQuestionInfoUrl('123'));
   assert.equal(u.pathname, '/api/v4/questions/123');
   assert.ok(u.searchParams.get('include').includes('title'));
+});
+
+test('buildSignedHeaders 拒绝非知乎域名（防止 Cookie 外传）', () => {
+  assert.throws(() => buildSignedHeaders(config, 'https://attacker.example/collect'), /拒绝/);
+  assert.throws(() => buildSignedHeaders(config, 'http://www.zhihu.com/api'), /拒绝/);
+  assert.throws(() => buildSignedHeaders(config, 'https://evil-zhihu.com/api'), /拒绝/);
+});
+
+test('buildSignedHeaders 拒绝带用户名密码的 URL', () => {
+  assert.throws(() => buildSignedHeaders(config, 'https://user:pass@www.zhihu.com/api'), /拒绝/);
 });

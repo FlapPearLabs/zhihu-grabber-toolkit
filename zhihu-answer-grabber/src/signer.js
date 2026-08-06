@@ -1,8 +1,19 @@
 /*
  * x-zse-96 签名器。
- * Derived from zse-signer.js in iteng007/zhihu-mcp-server (https://github.com/iteng007/zhihu-mcp-server),
- * which is a port of the zse96 v2 signing algorithm from zly2006/zhihu-plus-plus (https://github.com/zly2006/zhihu-plus-plus).
- * Copyright their respective contributors.
+ *
+ * 本文件基于以下上游项目修改而来（AGPL-3.0）：
+ *   - iteng007/zhihu-mcp-server（https://github.com/iteng007/zhihu-mcp-server）
+ *     的 zse-signer.js，固定引用提交 0475902fd52472a9484a56cadd6183d01048118a；
+ *   - 其上溯自 zly2006/zhihu-plus-plus（https://github.com/zly2006/zhihu-plus-plus）
+ *     的 zse96 v2 签名算法。
+ *
+ * Upstream copyright: contributors to iteng007/zhihu-mcp-server and
+ * contributors to zly2006/zhihu-plus-plus.
+ *
+ * Modifications Copyright (C) 2026 FlapPearLabs contributors.
+ * Modified on 2026-08-06: 将 JS 移植版重构为 ESM 模块、改用 WHATWG URL 解析
+ * pathname+search、集成进 zhihu-answer-grabber 工具链。
+ *
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 

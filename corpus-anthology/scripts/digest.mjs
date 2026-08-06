@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 /**
  * digest — summary 模式：从语料中提取"精华摘要"（按评分字段倒序，每条截断），
  * 产出小体量 Markdown，供 LLM 直接读取后归纳，避免读取全部原文。
@@ -11,31 +12,34 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { stripHtml } from '../lib/text.mjs';
 
 function arg(name, fallback) {
   const i = process.argv.indexOf(name);
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
-function has(name) { return process.argv.includes(name); }
+
+function parsePositiveInt(raw, { min, max, name }) {
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < min || value > max) {
+    throw new Error(`${name} 必须是 ${min}-${max} 的整数，收到: ${raw}`);
+  }
+  return value;
+}
 
 const input = process.argv[2];
-const TOP = Number(arg('--top', '6'));
-const MAX_CHARS = Number(arg('--max-chars', '1300'));
+if (!input) { console.error('用法: node digest.mjs <input> [--top N] [--max-chars M] [--key 字段] [--out 文件]'); process.exit(2); }
+const TOP = parsePositiveInt(arg('--top', '6'), { min: 1, max: 100, name: '--top' });
+const MAX_CHARS = parsePositiveInt(arg('--max-chars', '1300'), { min: 100, max: 100000, name: '--max-chars' });
 const KEY = arg('--key', 'voteupCount');
 const OUT = arg('--out', 'digest.md');
-if (!input) { console.error('用法: node digest.mjs <input> [--top N] [--max-chars M] [--key 字段] [--out 文件]'); process.exit(2); }
-
-function stripHtml(html) {
-  if (html == null) return '';
-  let text = String(html)
-    .replace(/<br\s*\/?\s*>/gi, '\n').replace(/<\/p>/gi, '\n').replace(/<\/div>/gi, '\n')
-    .replace(/<[^>]+>/g, '');
-  for (const [e, c] of [['&amp;', '&'], ['&lt;', '<'], ['&gt;', '>'], ['&quot;', '"'], ['&#39;', "'"], ['&nbsp;', ' ']]) text = text.split(e).join(c);
-  return text.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
-}
 
 function loadQuestions(inputPath) {
   const resolved = path.resolve(inputPath);
+  if (!fs.existsSync(resolved)) {
+    console.error(`输入路径不存在: ${inputPath}`);
+    process.exit(2);
+  }
   const items = [];
   if (fs.statSync(resolved).isDirectory()) {
     const walk = (dir) => {
@@ -55,8 +59,16 @@ function loadQuestions(inputPath) {
 
 const lines = [];
 let totalAnswers = 0;
+let failedFiles = 0;
 for (const file of loadQuestions(input)) {
-  const json = JSON.parse(fs.readFileSync(file, 'utf8'));
+  let json;
+  try {
+    json = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (error) {
+    failedFiles += 1;
+    console.error(`(跳过损坏文件: ${file} — ${error.message})`);
+    continue;
+  }
   const answers = Array.isArray(json) ? json : (json.answers || []);
   const title = json.questionTitle || path.basename(path.dirname(file));
   totalAnswers += answers.length;
@@ -65,14 +77,34 @@ for (const file of loadQuestions(input)) {
   top.forEach((a, i) => {
     const text = stripHtml(a.content);
     lines.push(`\n--- Top${i + 1}  ${a.author || '(匿名)'}  [${a.voteupCount ?? 0}赞 / ${a.commentCount ?? 0}评] ---`);
-    lines.push(text.slice(0, MAX_CHARS));
+    // 在段落/句子边界截断，避免从词中间切断
+    let slice = text.slice(0, MAX_CHARS);
+    if (text.length > MAX_CHARS) {
+      const boundary = Math.max(
+        slice.lastIndexOf('\n\n'),
+        slice.lastIndexOf('。'),
+        slice.lastIndexOf('！'),
+        slice.lastIndexOf('？'),
+        slice.lastIndexOf('. '),
+      );
+      if (boundary > MAX_CHARS * 0.6) slice = text.slice(0, boundary + 1);
+    }
+    lines.push(slice);
   });
 }
+
+if (failedFiles > 0) console.error(`(共 ${failedFiles} 个文件解析失败，已跳过)`);
+
+// 输入路径改为相对输出目录，避免泄漏本机绝对路径
+let inputDisplay = input;
+try {
+  inputDisplay = path.relative(path.dirname(path.resolve(OUT)), path.resolve(input)) || input;
+} catch { /* 保持原样 */ }
 
 const head = [
   `# 语料精华摘要（digest）`,
   ``,
-  `> 输入: ${path.resolve(input)}  共 ${lines.length === 0 ? 0 : totalAnswers} 条回答，摘要取每题 Top ${TOP}`,
+  `> 输入: ${inputDisplay}  共 ${lines.length === 0 ? 0 : totalAnswers} 条回答，摘要取每题 Top ${TOP}`,
   `> 说明: 此为摘要，如需全文请用 archive 模式（脚本拼接，不耗上下文）`,
   ``,
 ].join('\n');

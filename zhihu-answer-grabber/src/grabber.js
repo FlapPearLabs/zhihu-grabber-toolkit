@@ -1,8 +1,30 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import fs from 'node:fs';
 import path from 'node:path';
 import { buildAnswersUrl, buildQuestionInfoUrl, humanDelay, requestJson } from './http.js';
 
 const DEFAULT_STATE = Object.freeze({ offset: 0, done: false });
+/** 安全阈值：单问题最多抓 300 页（约 6000 条），防止异常分页导致无限循环 */
+const MAX_PAGES = 300;
+
+/** 校验问题 ID：纯数字白名单，拒绝一切路径注入 */
+function validateQuestionId(value) {
+  const qid = String(value).trim();
+  if (!/^\d{1,20}$/.test(qid)) {
+    throw new TypeError(`非法问题 ID: ${qid}（仅接受 1-20 位数字）`);
+  }
+  return qid;
+}
+
+/** 解析输出目录并校验 containment：最终目录必须位于 outDir 之下 */
+function resolveQuestionDir(outDir, qid) {
+  const base = path.resolve(outDir);
+  const dir = path.resolve(base, qid);
+  if (dir !== base && !dir.startsWith(base + path.sep)) {
+    throw new Error(`输出目录越界: ${dir}`);
+  }
+  return dir;
+}
 
 export function normalizeQuestionInput(input) {
   const trimmed = String(input).trim();
@@ -10,6 +32,18 @@ export function normalizeQuestionInput(input) {
   const m = trimmed.match(/question\/(\d+)/);
   if (m) return m[1];
   throw new Error(`无法识别问题输入: ${trimmed}（请给问题链接或纯数字问题ID）`);
+}
+
+/** 损坏文件不静默当空处理：改名备份并抛错，防止覆盖用户已有数据 */
+function corruptError(file, action) {
+  let backup = `${file}.corrupt-${Date.now()}`;
+  try {
+    fs.renameSync(file, backup);
+  } catch {
+    backup = null;
+  }
+  const where = backup ? `，已备份到 ${backup}` : '，且备份失败';
+  throw new Error(`${file} 损坏，无法${action}${where}。请检查该文件后再重试。`);
 }
 
 export class ProgressStore {
@@ -21,9 +55,14 @@ export class ProgressStore {
   load() {
     if (!fs.existsSync(this.file)) return { ...DEFAULT_STATE };
     try {
-      return { ...DEFAULT_STATE, ...JSON.parse(fs.readFileSync(this.file, 'utf8')) };
-    } catch {
-      return { ...DEFAULT_STATE };
+      const parsed = JSON.parse(fs.readFileSync(this.file, 'utf8'));
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        return corruptError(this.file, '读取断点状态');
+      }
+      return { ...DEFAULT_STATE, ...parsed };
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('损坏')) throw error;
+      return corruptError(this.file, '读取断点状态');
     }
   }
 
@@ -39,7 +78,7 @@ export function shouldContinue(paging) {
   return !(paging && paging.is_end === true);
 }
 
-/** 兼容两种历史形态：纯数组，或 { …meta, answers: [] } */
+/** 兼容两种历史形态：纯数组，或 { …meta, answers: [] }；损坏时抛错而非静默返回空 */
 export function loadExistingAnswers(file) {
   if (!fs.existsSync(file)) return [];
   try {
@@ -48,7 +87,7 @@ export function loadExistingAnswers(file) {
     if (parsed && Array.isArray(parsed.answers)) return parsed.answers;
     return [];
   } catch {
-    return [];
+    return corruptError(file, '加载已有回答');
   }
 }
 
@@ -61,7 +100,8 @@ function writeJson(file, value) {
 
 /** 抓取指定问题的全部回答（支持断点续传）。返回 { qid, questionTitle, answerCount, answers } */
 export async function grabAll(config, qid, { outDir = 'out', onProgress } = {}) {
-  const dir = path.join(outDir, qid);
+  qid = validateQuestionId(qid);
+  const dir = resolveQuestionDir(outDir, qid);
   fs.mkdirSync(dir, { recursive: true });
   const progress = new ProgressStore(dir, qid);
   const answersFile = path.join(dir, 'answers.json');
@@ -74,11 +114,12 @@ export async function grabAll(config, qid, { outDir = 'out', onProgress } = {}) 
     meta = {
       questionId: qid,
       questionTitle: info.title || '',
-      answerCount: info.answer_count ?? 0,
+      answerCount: info.answer_count ?? null,
       url: `https://www.zhihu.com/question/${qid}`,
     };
   } catch (error) {
-    meta = { questionId: qid, questionTitle: '', answerCount: 0, url: `https://www.zhihu.com/question/${qid}` };
+    onProgress?.({ event: 'metadata_failed', qid, error: error.message });
+    meta = { questionId: qid, questionTitle: '', answerCount: null, url: `https://www.zhihu.com/question/${qid}` };
   }
 
   const answers = loadExistingAnswers(answersFile);
@@ -86,9 +127,13 @@ export async function grabAll(config, qid, { outDir = 'out', onProgress } = {}) 
   let offset = state.offset;
   let done = state.done;
   let page = 0;
+  let lastPageFingerprint = '';
   onProgress?.({ event: 'start', qid, resumeOffset: offset, existing: answers.length });
 
   while (!done) {
+    if (page >= MAX_PAGES) {
+      throw new Error(`达到安全阈值（${MAX_PAGES} 页）仍未见结尾，已停止以防无限循环。可稍后重跑续传。`);
+    }
     const url = buildAnswersUrl(qid, offset);
     let data;
     try {
@@ -97,7 +142,18 @@ export async function grabAll(config, qid, { outDir = 'out', onProgress } = {}) 
       onProgress?.({ event: 'page_failed', offset, error: error.message });
       throw error;
     }
-    const items = data?.data || [];
+    // 分页结构校验，防止服务端异常导致死循环
+    if (!Array.isArray(data?.data)) {
+      throw new Error(`分页结构异常（data.data 不是数组），已停止: ${url}`);
+    }
+    const items = data.data;
+    // 页面指纹：连续两页内容完全相同说明分页失效
+    const fingerprint = items.slice(0, 5).map((it) => it.id).join(',');
+    if (fingerprint && fingerprint === lastPageFingerprint) {
+      throw new Error(`检测到重复分页（第 ${page + 1} 页与上一页相同），已停止以防无限循环。`);
+    }
+    lastPageFingerprint = fingerprint;
+
     let added = 0;
     for (const item of items) {
       const id = String(item.id);
@@ -118,7 +174,6 @@ export async function grabAll(config, qid, { outDir = 'out', onProgress } = {}) 
     }
     page += 1;
     done = !shouldContinue(data?.paging) || items.length === 0;
-    if (!done && items.length === 0) done = true; // 空页兜底
     const snapshot = { ...meta, fetchedAt: new Date().toISOString(), answers };
     writeJson(answersFile, snapshot);
     progress.save({ offset: offset + items.length, done });

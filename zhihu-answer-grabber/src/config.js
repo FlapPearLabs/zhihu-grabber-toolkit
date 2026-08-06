@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -33,10 +34,21 @@ export function parseCookieHeader(input) {
   return cookies;
 }
 
+/** 拒绝符号链接与过宽权限的凭据文件（多用户机器上防止读取非预期文件） */
+function assertSafeCredentialFile(file) {
+  const st = fs.lstatSync(file);
+  if (st.isSymbolicLink()) {
+    throw new ConfigError(`凭据文件 ${file} 是符号链接，已拒绝读取（防止被指向非预期文件）`);
+  }
+  if (process.platform !== 'win32' && (st.mode & 0o077) !== 0) {
+    throw new ConfigError(`凭据文件 ${file} 权限过宽（应为 0600 仅当前用户可读写），请先执行 chmod 600`);
+  }
+}
+
 function buildConfigFromCookies(cookies, extra = {}) {
-  const missing = ['z_c0'].filter((name) => !cookies[name]);
+  const missing = ['z_c0', 'd_c0'].filter((name) => !cookies[name]);
   if (missing.length > 0) {
-    throw new ConfigError(`Cookie 缺少必要字段: ${missing.join(', ')}\n请复制浏览器 zhihu.com 登录后的完整 Cookie（需包含 z_c0）`);
+    throw new ConfigError(`Cookie 缺少必要字段: ${missing.join(', ')}\n请复制浏览器 zhihu.com 登录后的完整 Cookie（需包含 z_c0 与 d_c0，d_c0 用于签名）`);
   }
   return {
     cookies,
@@ -51,6 +63,11 @@ export function loadZhihuCliConfig() {
   if (!fs.existsSync(configPath)) {
     throw new ConfigError(`未找到 zhihu-cli 配置 ${configPath}\n请先在本机执行: zhihu-cli login --qrcode 完成登录，或改用 Cookie 方式（ZHIHU_COOKIE / zhihu_cookie.txt）`);
   }
+  try {
+    assertSafeCredentialFile(configPath);
+  } catch (error) {
+    if (error instanceof ConfigError) throw error;
+  }
   let parsed;
   try {
     parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -60,18 +77,24 @@ export function loadZhihuCliConfig() {
   return buildConfigFromCookies(parsed.cookies || {}, { userAgent: parsed.userAgent, zse93: parsed.zse93 });
 }
 
+/** 凭据目录：优先 ZAG_CONFIG_DIR，否则调用者当前目录 */
+function configDir() {
+  return process.env.ZAG_CONFIG_DIR ? path.resolve(process.env.ZAG_CONFIG_DIR) : process.cwd();
+}
+
 /**
  * 统一配置入口，Cookie 来源优先级：
  *   1) 环境变量 ZHIHU_COOKIE（整串 cookie）
- *   2) 当前目录 zhihu_cookie.txt（整串 cookie）
+ *   2) 凭据目录 zhihu_cookie.txt（ZAG_CONFIG_DIR 或当前目录）
  *   3) ~/.zhihu-cli/config.json（zhihu-cli 登录产物）
  */
 export function loadConfig() {
   if (process.env.ZHIHU_COOKIE && process.env.ZHIHU_COOKIE.trim()) {
     return buildConfigFromCookies(parseCookieHeader(process.env.ZHIHU_COOKIE));
   }
-  const cookieFile = path.join(process.cwd(), 'zhihu_cookie.txt');
+  const cookieFile = path.join(configDir(), 'zhihu_cookie.txt');
   if (fs.existsSync(cookieFile)) {
+    assertSafeCredentialFile(cookieFile);
     const raw = fs.readFileSync(cookieFile, 'utf8').trim();
     if (raw) return buildConfigFromCookies(parseCookieHeader(raw));
   }
@@ -83,8 +106,9 @@ export function resolveSecret() {
   if (process.env.ZHIHU_SECRET && process.env.ZHIHU_SECRET.trim()) {
     return process.env.ZHIHU_SECRET.trim();
   }
-  const file = path.join(process.cwd(), 'zhihu_secret.txt');
+  const file = path.join(configDir(), 'zhihu_secret.txt');
   if (fs.existsSync(file)) {
+    assertSafeCredentialFile(file);
     const value = fs.readFileSync(file, 'utf8').trim();
     if (value) return value;
   }

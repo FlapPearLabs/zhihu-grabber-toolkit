@@ -50,6 +50,16 @@ test('loadZhihuCliConfig 缺 z_c0 抛 ConfigError', () => {
   }
 });
 
+test('loadZhihuCliConfig 缺 d_c0 抛 ConfigError（签名必需）', () => {
+  const { file } = makeFixture({ cookies: { z_c0: 'z' } });
+  process.env.ZHIHU_CLI_CONFIG = file;
+  try {
+    assert.throws(() => loadZhihuCliConfig(), /d_c0/);
+  } finally {
+    delete process.env.ZHIHU_CLI_CONFIG;
+  }
+});
+
 test('parseCookieHeader 解析整串 Cookie 并跳过属性字段', () => {
   const cookies = parseCookieHeader('z_c0=abc; d_c0=def; path=/; HttpOnly; Secure');
   assert.equal(cookies.z_c0, 'abc');

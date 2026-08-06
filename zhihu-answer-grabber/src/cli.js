@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-only
 import fs from 'node:fs';
 import path from 'node:path';
 import { loadConfig, resolveSecret, ConfigError } from './config.js';
@@ -25,6 +26,11 @@ Access Secret:  环境变量 ZHIHU_SECRET 或当前目录 zhihu_secret.txt（sea
   out/<问题ID>/answers.md    可读 Markdown
 `;
 
+/** 移除终端控制字符（ANSI 注入防护） */
+function terminalSafe(value) {
+  return String(value).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/g, '');
+}
+
 function log(msg) {
   process.stdout.write(`${msg}\n`);
 }
@@ -45,7 +51,7 @@ async function cmdGrab(config, input, { outDir = 'out' } = {}) {
   const md = renderAnswers(result, result.answers);
   const dir = path.join(outDir, qid);
   fs.writeFileSync(path.join(dir, 'answers.md'), md, 'utf8');
-  log(`✓ 完成：问题「${result.questionTitle || qid}」共抓取 ${result.answers.length} 条回答`);
+  log(`✓ 完成：问题「${terminalSafe(result.questionTitle || qid)}」共抓取 ${result.answers.length} 条回答`);
   log(`  JSON: ${path.join(dir, 'answers.json')}`);
   log(`  MD  : ${path.join(dir, 'answers.md')}`);
 }
@@ -58,20 +64,29 @@ async function cmdBatch(config, file) {
     .filter((line) => line && !line.startsWith('#'));
   if (inputs.length === 0) throw new Error('批量文件为空');
   log(`▶ 批量抓取 ${inputs.length} 个问题`);
+  let ok = 0;
+  let failed = 0;
   for (const [i, input] of inputs.entries()) {
-    log(`\n[${i + 1}/${inputs.length}] ${input}`);
+    log(`\n[${i + 1}/${inputs.length}] ${terminalSafe(input)}`);
     try {
       await cmdGrab(config, input);
+      ok += 1;
     } catch (error) {
-      log(`  ✗ 抓取失败: ${error.message}（已跳过，可稍后重跑续传）`);
+      failed += 1;
+      log(`  ✗ 抓取失败: ${terminalSafe(error.message)}（已跳过，可稍后重跑续传）`);
     }
   }
-  log('\n✓ 批量任务结束');
+  if (failed > 0) {
+    process.exitCode = 1;
+    log(`\n✗ 批量任务结束：成功 ${ok}，失败 ${failed}`);
+  } else {
+    log(`\n✓ 批量任务结束：全部 ${ok} 个成功`);
+  }
 }
 
 async function cmdSearch(keyword, { grab } = {}) {
   const secret = resolveSecret();
-  log(`▶ 官方平台搜索「${keyword}」…`);
+  log(`▶ 官方平台搜索「${terminalSafe(keyword)}」…`);
   const items = await searchQuestions(keyword, secret);
   const questions = items
     .map((it) => ({ id: extractQuestionId(it), title: it.Title, type: it.ContentType }))
@@ -82,7 +97,7 @@ async function cmdSearch(keyword, { grab } = {}) {
   }
   const unique = [...new Map(questions.map((q) => [q.id, q])).values()];
   log(`找到 ${unique.length} 个相关话题/问题：`);
-  unique.slice(0, 10).forEach((q, i) => log(`  ${i + 1}. [${q.type}] ${q.title}\n     ID=${q.id}  https://www.zhihu.com/question/${q.id}`));
+  unique.slice(0, 10).forEach((q, i) => log(`  ${i + 1}. [${terminalSafe(q.type)}] ${terminalSafe(q.title)}\n     ID=${q.id}  https://www.zhihu.com/question/${q.id}`));
   if (grab) {
     const first = unique[0];
     log(`\n--grab 已指定，抓取第一个结果（ID=${first.id}）…`);
@@ -105,14 +120,27 @@ async function cmdStatus(outDir = 'out') {
   for (const d of dirs) {
     const jsonFile = path.join(outDir, d, 'answers.json');
     let count = 0;
+    let jsonBroken = false;
     if (fs.existsSync(jsonFile)) {
-      const parsed = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
-      count = Array.isArray(parsed) ? parsed.length : (parsed.answers?.length ?? 0);
+      try {
+        const parsed = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+        count = Array.isArray(parsed) ? parsed.length : (parsed.answers?.length ?? 0);
+      } catch {
+        jsonBroken = true;
+      }
     }
-    const progress = fs.existsSync(path.join(outDir, d, '.progress.json'))
-      ? JSON.parse(fs.readFileSync(path.join(outDir, d, '.progress.json'), 'utf8'))
-      : {};
-    log(`  ${d}  回答 ${count} 条  ${progress.done ? '已完成' : `进行中(offset=${progress.offset ?? 0})`}`);
+    let progress = {};
+    let progressBroken = false;
+    const progressFile = path.join(outDir, d, '.progress.json');
+    if (fs.existsSync(progressFile)) {
+      try {
+        progress = JSON.parse(fs.readFileSync(progressFile, 'utf8'));
+      } catch {
+        progressBroken = true;
+      }
+    }
+    const statusText = progressBroken ? '状态文件损坏' : (progress.done ? '已完成' : `进行中(offset=${progress.offset ?? 0})`);
+    log(`  ${d}  回答 ${jsonBroken ? '文件损坏' : `${count} 条`}  ${statusText}`);
   }
 }
 
@@ -140,7 +168,7 @@ async function main() {
       throw new Error(`未知命令: ${cmd}`);
     }
   } catch (error) {
-    process.stderr.write(`\n✗ ${error.message}\n`);
+    process.stderr.write(`\n✗ ${terminalSafe(error.message)}\n`);
     if (error instanceof ConfigError) {
       process.stderr.write('  提示：先在本机完成 zhihu-cli 登录（zhihu-cli login --qrcode）。\n');
     }
