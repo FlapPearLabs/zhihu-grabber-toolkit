@@ -95,12 +95,15 @@ test('loadConfig 读取本地 zhihu_cookie.txt', () => {
 });
 
 test('loadConfig 无 cookie 时回退 zhihu-cli 配置', () => {
-  const { file } = makeFixture({ cookies: { z_c0: 'z', d_c0: 'd' } });
+  const { dir, file } = makeFixture({ cookies: { z_c0: 'z', d_c0: 'd' } });
   process.env.ZHIHU_CLI_CONFIG = file;
+  const prev = process.cwd();
+  process.chdir(dir); // 隔离 cwd：确保当前目录没有 zhihu_cookie.txt 干扰
   try {
     const cfg = loadConfig();
     assert.equal(cfg.cookies.z_c0, 'z');
   } finally {
+    process.chdir(prev);
     delete process.env.ZHIHU_CLI_CONFIG;
   }
 });
