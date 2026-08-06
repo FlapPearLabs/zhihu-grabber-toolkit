@@ -4,7 +4,7 @@
 
 | 模块 | 作用 | 许可证 |
 |---|---|---|
-| [`zhihu-answer-grabber/`](./zhihu-answer-grabber) | 知乎回答抓取器（CLI + Skill）。复用开源 `zhihu-cli` 的 x-zse-96 签名算法，直连稳定，支持分页抓全量回答、断点续传、结构化 JSON/Markdown 输出。 | AGPL-3.0（衍生自 zhihu-cli） |
+| [`zhihu-answer-grabber/`](./zhihu-answer-grabber) | 知乎回答抓取器（CLI + Skill）。复用开源 zse96 v2 签名算法（衍生自 zly2006/zhihu-plus-plus → iteng007/zhihu-mcp-server），直连稳定，支持分页抓全量回答、断点续传、结构化 JSON/Markdown 输出。 | AGPL-3.0（签名算法部分衍生自 AGPL 项目） |
 | [`corpus-anthology/`](./corpus-anthology) | 大语料路由编排 Skill。十几篇长回答上下文会塞爆时，自动按意图路由：精简总结 / 全量合集 / 排版整理 / 章节化完整版，且全程保护 LLM 上下文。 | MIT |
 
 ---
@@ -77,7 +77,7 @@ node scripts/zhigrab.mjs status
 
 ## 许可证
 
-- `zhihu-answer-grabber` 衍生自 [BAIGUANGMEI/zhihu-cli](https://github.com/BAIGUANGMEI/zhihu-cli)（AGPL-3.0），依其许可证以 **AGPL-3.0-only** 发布，见 [`LICENSE`](./LICENSE)。
+- `zhihu-answer-grabber` 的 **x-zse-96 签名算法**衍生自 [iteng007/zhihu-mcp-server](https://github.com/iteng007/zhihu-mcp-server)（AGPL-3.0）→ 其上游 [zly2006/zhihu-plus-plus](https://github.com/zly2006/zhihu-plus-plus)（AGPL），故以 **AGPL-3.0-only** 发布，见 [`LICENSE`](./LICENSE)。CLI 交互形态与 Cookie 登录方案参考了 [BAIGUANGMEI/zhihu-cli](https://github.com/BAIGUANGMEI/zhihu-cli)（Apache-2.0，不含签名器）。
 - `corpus-anthology` 以 **MIT** 发布。
 
 使用本仓库进行的任何抓取行为，请遵守知乎平台服务条款与当地法律法规，仅用于个人学习与研究。

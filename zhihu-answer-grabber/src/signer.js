@@ -1,7 +1,7 @@
 /*
  * x-zse-96 签名器。
- * Derived from zhihu-cli (https://github.com/BAIGUANGMEI/zhihu-cli) -> zse-signer.js,
- * which is derived from iteng007/zhihu-mcp-server and zly2006/zhihu-plus-plus.
+ * Derived from zse-signer.js in iteng007/zhihu-mcp-server (https://github.com/iteng007/zhihu-mcp-server),
+ * which is a port of the zse96 v2 signing algorithm from zly2006/zhihu-plus-plus (https://github.com/zly2006/zhihu-plus-plus).
  * Copyright their respective contributors.
  * SPDX-License-Identifier: AGPL-3.0-only
  */
