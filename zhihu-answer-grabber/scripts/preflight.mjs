@@ -14,7 +14,9 @@
  *
  * 绝不输出任何凭据值、长度、前缀或哈希；错误只给类型，不给内容。
  *
- * 用法: node scripts/preflight.mjs
+ * 用法:
+ *   node scripts/preflight.mjs             # 人类可读（key: value）
+ *   node scripts/preflight.mjs --json      # 机器可读（单一 JSON 文档）
  */
 import fs from 'node:fs';
 import os from 'node:os';
@@ -66,6 +68,7 @@ function readFileSafe(file) {
 }
 
 function main() {
+  const jsonMode = process.argv.includes('--json');
   const dir = configDir();
   const cookieFile = path.join(dir, 'zhihu_cookie.txt');
   const secretFile = path.join(dir, 'zhihu_secret.txt');
@@ -178,6 +181,23 @@ function main() {
     }
   }
 
+  if (jsonMode) {
+    console.log(JSON.stringify({
+      schemaVersion: 1,
+      cookie: {
+        configured: cookieConfigured,
+        usable: cookieUsable,
+        source: configSource,
+        error: cookieError,
+      },
+      secret: {
+        configured: secretConfigured,
+        usable: secretUsable,
+        error: secretError,
+      },
+    }, null, 2));
+    return;
+  }
   console.log(`cookie_configured: ${cookieConfigured}`);
   console.log(`cookie_usable: ${cookieUsable}`);
   console.log(`secret_configured: ${secretConfigured}`);

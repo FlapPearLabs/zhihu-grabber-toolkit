@@ -42,47 +42,54 @@ metadata:
 ## 主工作流
 
 ```
-解析输入 → 安全预检 → 执行抓取 → 检查退出码 → 验证产物 → 统计规模 → 决定直接读取或路由 corpus-anthology → 交付结果
+解析输入 → preflight --json → search --json（如需要）→ 确定 exact questionId
+→ grab --json → verify-output → make-handoff（如需要）→ stats
+→ 决定直接读取或路由 corpus-anthology → 交付结果
 ```
+
+**机器契约总则（Agent 必须遵守）：**
+
+- Agent **优先使用 `--json`** 调用 CLI，**不解析人类 stdout**（`✓` / 进度日志 / 中文错误文本一律不解析）。
+- Agent **不调用 `search --grab`**。搜索后抓取统一走：`search --json` → 从 `candidates[]` 确定 exact `questionId` → `grab <questionId> --json`。即使用户说"搜索后抓第一条"，也取 `candidates[0].questionId` 后走统一 `grab(questionId)` 入口。
+- Agent **不手工伪造 `verified: true`**，**不手工构造事实字段 handoff**。`verified` 只能由 `verify-output.mjs` 授予；handoff 只能由 `make-handoff.mjs` 生成。
 
 ### 1. 解析输入
 
-| 用户意图 | 命令 |
+| 用户意图 | Agent 执行 |
 |---|---|
-| "抓取 https://www.zhihu.com/question/123 的回答" | `grab <链接或ID>` |
-| "抓这个问题 ID 123456 的所有回答" | `grab 123456` |
-| "批量抓这些问题"（多个链接/文件） | 逐行写入临时文件后 `batch <file>` |
-| "搜一下知乎上 xxx，列出候选" | `search <关键词>` |
-| "看看抓了哪些" | `status` |
+| "抓取 https://www.zhihu.com/question/123 的回答" | `grab 123 --json` |
+| "抓这个问题 ID 123456 的所有回答" | `grab 123456 --json` |
+| "批量抓这些问题"（多个链接/文件） | 逐行写入临时文件后 `batch <file> --json` |
+| "搜一下知乎上 xxx，列出候选" | `search <关键词> --json` → 列 `candidates[]` 让用户选择 |
+| "搜索后抓第一条" | `search --json` → 取 `candidates[0].questionId` → `grab <id> --json` |
+| "看看抓了哪些" | `status --json` |
 
 统一入口（wrapper 会自动定位工具目录）：
 
 ```bash
-node scripts/zhigrab.mjs <命令> [参数]
+node scripts/zhigrab.mjs <命令> [参数] --json
 ```
 
 ### 2. 安全预检（每次抓取前必须执行）
 
 ```bash
-node scripts/preflight.mjs
+node scripts/preflight.mjs --json
 ```
 
 输出形如：
 
-```
-cookie_configured: true|false
-cookie_usable: true|false
-secret_configured: true|false
-secret_usable: true|false
-config_source: env|local_file|user_config|none
-cookie_error: none|missing|symlink|permission|missing_z_c0|missing_d_c0|unreadable
-secret_error: none|missing|symlink|permission|unreadable
+```json
+{
+  "schemaVersion": 1,
+  "cookie": { "configured": true, "usable": true, "source": "local_file", "error": "none" },
+  "secret": { "configured": false, "usable": false, "error": "missing" }
+}
 ```
 
-- `cookie_configured: false` → 停止抓取，按 `references/security.md` 提供本地配置说明。
-- `cookie_configured: true` 但 `cookie_usable: false` → 凭据存在但无法被 loader 使用（如 symlink、权限过宽、缺 `z_c0`/`d_c0`），停止抓取，按 `cookie_error` 类型修复。
+- `cookie.configured: false` → 停止抓取，按 `references/security.md` 提供本地配置说明。
+- `cookie.configured: true` 但 `cookie.usable: false` → 凭据存在但无法被 loader 使用（如 symlink、权限过宽、缺 `z_c0`/`d_c0`），停止抓取，按 `cookie.error` 类型修复。
 - 其余情况 → 继续。
-- 该脚本只输出布尔值与错误类型，绝不输出凭据内容。
+- 该脚本只输出布尔值与错误类型，绝不输出凭据内容（值/长度/前缀/哈希均禁止）。
 
 **凭据需求矩阵（决定需要检查哪个字段）：**
 
@@ -91,32 +98,53 @@ secret_error: none|missing|symlink|permission|unreadable
 | `grab <链接/ID>` | 必须 | 不需要 |
 | `batch` | 必须 | 不需要 |
 | `search` | 不需要 | 必须 |
-| `search` → `--grab` | 必须 | 必须 |
+| `search` → `grab`（人类模式兼容） | 必须 | 必须 |
 
-- 只想 `search` 时，`secret_usable` 是门；不要因为没有 Cookie 就停止搜索。
-- 只有抓取类操作（grab/batch/search→grab）才要求 `cookie_usable`。
-- 若需要的字段 `_usable: false`，按 `_error` 类型修复后重试，**不得绕过预检继续**。
+- 只想 `search` 时，`secret.usable` 是门；不要因为没有 Cookie 就停止搜索。
+- 只有抓取类操作（grab/batch）才要求 `cookie.usable`。
+- 若需要的字段 `usable: false`，按 `error` 类型修复后重试，**不得绕过预检继续**。
 
-### 3. 执行抓取
+### 3. 执行抓取（机器契约）
 
 ```bash
-node scripts/zhigrab.mjs grab <问题链接或ID>
-node scripts/zhigrab.mjs batch <file.txt>
-node scripts/zhigrab.mjs search <关键词> [--grab]   # --grab 仅在用户明确要求"抓第一个结果"时使用
-node scripts/zhigrab.mjs status
+node scripts/zhigrab.mjs grab <问题链接或ID> --json
+node scripts/zhigrab.mjs batch <file.txt> --json
+node scripts/zhigrab.mjs search <关键词> --json
+node scripts/zhigrab.mjs status --json
 ```
+
+**`grab --json` 输出语义：**
+
+```json
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "grab",
+  "stage": "captured",
+  "questionId": "123",
+  "questionTitle": "……",
+  "capturedAnswerCount": 247,
+  "artifacts": { "json": "out/123/answers.json", "markdown": "out/123/answers.md", "progress": "out/123/.progress.json" },
+  "verified": false,
+  "warnings": []
+}
+```
+
+- `stage: "captured"` = 抓取阶段结束、产物已写入，**不代表验收通过**。
+- `verified: false` 是 grab 的合法输出；**grab 从不自行把 verified 置为 true**。只有 `verify-output.mjs` 能授予。
+- 错误时输出结构化 JSON：`{ "ok": false, "error": { "type": "configuration_error|invalid_input|network_error|http_error|unknown_error", "message": "..." } }`。
 
 **搜索工作流（禁止默认自动抓第一条）：**
 
-1. 执行 `search <关键词>`，标准化候选（提取问题 ID、去重）。
+1. 执行 `search <关键词> --json`，解析 `candidates[]`（已标准化：提取问题 ID、去重、过滤非知乎 URL、清除终端控制字符）。
 2. **列出候选标题与问题 ID，让用户选择**；不得仅因排序第一就认为它是目标问题。
-3. **`--grab` / 后续 `grab` 调用只在用户明确要求"抓第一个结果"或用户在原始请求中就包含"搜索后抓取"意图时执行**。仅"列出候选"的请求不得升级为抓取。
-4. 搜索结果标题写入终端前必须做终端安全处理（CLI 已内置 ANSI 控制字符清理）。
+3. 用户确定后，**用 exact questionId 调 `grab <id> --json`**；Agent 不调用 `search --grab`（该标志仅保留给人类终端用户）。
 
-### 4. 检查退出码
+### 4. 检查退出码与 JSON
 
+- JSON 模式 stdout 是**单一合法 JSON 文档**（可直接 `JSON.parse`），不混入人类日志。
+- `ok: true` 只表示命令执行成功（如抓取完成写入产物）；是否通过完整验收看 `verified` / `verify-output` 结果。
 - 退出码 `0` = 命令成功；非 `0` = 失败，**不得向用户声称抓取完成**。
-- 失败时按 `references/usage.md` 的错误处理表诊断（只采用已验证候选）。
 
 ### 5. 验证产物（每次抓取后必须执行）
 
@@ -124,26 +152,36 @@ node scripts/zhigrab.mjs status
 node scripts/verify-output.mjs out/<问题ID>
 ```
 
-输出结构化 JSON（`valid: true|false`），校验项见 `references/verification.md`。**只有 `valid === true` 才能报告"抓取完成"**。
+输出结构化 JSON（`valid: true|false`），校验项见 `references/verification.md`。**只有 `valid === true` 才能报告"抓取完成"**。`valid: false` 时按 warnings 逐条修复后重跑，不得绕过。
 
-### 6. 统计规模
+### 6. 生成 handoff（如需要路由 corpus-anthology）
+
+```bash
+node scripts/make-handoff.mjs out/<问题ID> --task digest
+```
+
+- **只接受 `verify-output` 返回 `valid: true` 的产物**；未通过验证时拒绝生成并列出原因。
+- `verified: true` 与 `answerCount` / `questionId` 均由代码从已验证产物构建，**不手工填写**。
+- 输出 `out/<问题ID>/handoff.json`（相对路径），直接交给 corpus-anthology（`verify.mjs --handoff` 校验）。
+
+### 7. 统计规模
 
 ```bash
 node corpus-anthology/scripts/stats.mjs out/<问题ID>/answers.md
 ```
 
-评估文件大小，决定第 7 步的读取策略。
+评估文件大小，决定第 8 步的读取策略。
 
-### 7. 决定直接读取或路由 corpus-anthology
+### 8. 决定直接读取或路由 corpus-anthology
 
 - **可安全直接读取**：文件不大，能在不明显占用当前上下文的情况下读取（估算正文不超过当前上下文预算约 20%）。
 - **无法获得上下文预算时**：使用保守阈值（如总字符 ≤ 40KB / ≈400 行）作为回退，并明确说明这只是启发式规则。
 - **超过阈值**：必须调用 `corpus-anthology`（handoff 见 `references/handoff-schema.md`），**不得**为生成 Top 3–5 总结而直接读取数十 MB 的 `answers.md`。
 
-### 8. 交付结果
+### 9. 交付结果
 
 - 用 `present_files` 呈现 `answers.md` 和 `answers.json`。
-- 输出结构化总结：问题标题、已验证回答总数、验证结果（`valid`）、规模、按赞数排序的 Top 3–5 高赞样本要点（来自轻量读取或 corpus-anthology 的 popular-sample 产物）。
+- 输出结构化总结：问题标题、已验证回答总数（来自 `verify-output` 的 `answers` 字段）、验证结果（`valid`）、规模、按赞数排序的 Top 3–5 高赞样本要点（来自轻量读取或 corpus-anthology 的 popular-sample 产物）。
 - 若抓取数与问题页显示总数不一致，按 `references/verification.md` 的数量不一致处理规则输出（不得使用"其余一定是被折叠"类无证据解释）。
 
 ## 参考

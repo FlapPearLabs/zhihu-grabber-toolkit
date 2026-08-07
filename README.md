@@ -46,21 +46,34 @@ chmod 600 zhihu_cookie.txt zhihu_secret.txt   # POSIX 必须 0600，否则 loade
 ### 用法
 
 ```bash
-# 抓取单个问题（按问题 ID）
-node scripts/zhigrab.mjs grab <QUESTION_ID>
+# 抓取单个问题（按问题 ID）；--json 输出机器契约
+node scripts/zhigrab.mjs grab <QUESTION_ID> [--json] [--out-dir <dir>]
 
 # 批量抓取（每行一个 ID）
-node scripts/zhigrab.mjs batch batch.txt
+node scripts/zhigrab.mjs batch batch.txt [--json] [--out-dir <dir>]
 
-# 用官方平台搜关键词，定位相关问题 ID（需要 Secret）；--grab 仅在明确要求"抓第一个结果"时使用
-node scripts/zhigrab.mjs search "Codex 使用技巧"
+# 用官方平台搜关键词，定位相关问题 ID（需要 Secret）；--grab 仅供人类终端使用（Agent 用 search --json → exact id → grab）
+node scripts/zhigrab.mjs search "Codex 使用技巧" [--json]
 
-# 查看状态
-node scripts/zhigrab.mjs status
+# 查看抓取与验收状态
+node scripts/zhigrab.mjs status [--json] [--out-dir <dir>]
 
-# 抓取完成后验证产物
+# 凭据预检（--json 机器契约；绝不输出凭据内容）
+node scripts/preflight.mjs [--json]
+
+# 抓取完成后验证产物（唯一事实门）
 node scripts/verify-output.mjs out/<QUESTION_ID>
+
+# 验证通过后生成 handoff（交给 corpus-anthology；只接受 valid=true）
+node scripts/make-handoff.mjs out/<QUESTION_ID> --task digest
 ```
+
+**状态语义（captured ≠ verified）：**
+
+- `grab` / `batch` 完成后产物状态为 `captured`（已写入磁盘），**不代表验收通过**——JSON 输出 `stage: "captured"`、`verified: false`。
+- 只有 `verify-output.mjs` 返回 `valid === true` 才能声称"抓取完成"（`verified`）。
+- `progress.done === true` 只表示分页循环结束，不等于 `verified`。
+- `status` 分别报告 `captureStatus`（in_progress/captured）与 `verificationStatus`（unverified/valid/invalid）。
 
 也可作为 WorkBuddy Skill 使用（见 `zhihu-answer-grabber/SKILL.md`）。
 

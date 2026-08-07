@@ -107,6 +107,24 @@ test('SKILL.md 必须包含与 corpus-anthology 的 handoff 指引', () => {
   assert.ok(/handoff|corpus-anthology/.test(text));
 });
 
+test('SKILL.md Agent 工作流必须使用 --json 机器契约', () => {
+  const text = readSkill();
+  assert.ok(/--json/.test(text), 'SKILL 必须引导 Agent 使用 --json');
+  assert.ok(/不解析人类 stdout|不解析人类/.test(text), 'SKILL 必须禁止 Agent 解析人类 stdout');
+});
+
+test('SKILL.md Agent 不得调用 search --grab（仅人类终端兼容）', () => {
+  const text = readSkill();
+  assert.ok(/不调用 `?search --grab`?|不使用 `?search --grab`?/.test(text), 'SKILL 必须明确禁止 Agent 使用 search --grab');
+  assert.ok(/candidates\[0\]\.questionId|candidates\[\]/.test(text), 'SKILL 必须引导 search --json → candidates → exact id');
+});
+
+test('SKILL.md 不得允许 Agent 手工伪造 verified / handoff', () => {
+  const text = readSkill();
+  assert.ok(/不手工伪造|手工伪造.*verified|verified.*只能由/.test(text), 'SKILL 必须禁止手工伪造 verified');
+  assert.ok(/make-handoff/.test(text), 'SKILL 必须引用 make-handoff.mjs');
+});
+
 test('references 文件齐全', () => {
   for (const f of ['usage.md', 'security.md', 'verification.md', 'handoff-schema.md']) {
     assert.ok(fs.existsSync(path.join(REF_DIR, f)), `缺少 references/${f}`);
@@ -166,7 +184,7 @@ test('npm pack 后 references 目录必须保留（P1-10）', () => {
 });
 
 test('脚本文件存在且可执行', () => {
-  for (const f of ['preflight.mjs', 'verify-output.mjs', 'zhigrab.mjs']) {
+  for (const f of ['preflight.mjs', 'verify-output.mjs', 'make-handoff.mjs', 'zhigrab.mjs']) {
     assert.ok(fs.existsSync(path.join(SKILL_DIR, 'scripts', f)), `缺少 scripts/${f}`);
   }
 });

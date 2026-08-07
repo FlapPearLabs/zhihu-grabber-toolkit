@@ -4,10 +4,15 @@
 
 | 命令 | 说明 |
 |---|---|
-| `grab <问题链接或ID>` | 抓取单题全部回答（支持断点续传，中断重跑自动续） |
-| `batch <file.txt>` | 每行一个问题链接/ID，批量顺序抓取 |
-| `search <关键词> [--grab]` | 官方开放平台搜索问题；默认只列候选，`--grab` 仅在用户明确要求"抓第一个结果"或原始请求含"搜索后抓取"意图时使用 |
-| `status` | 查看 out/ 下已抓取内容与进度 |
+| `grab <问题链接或ID> [--out-dir <dir>]` | 抓取单题全部回答（支持断点续传，中断重跑自动续） |
+| `batch <file.txt> [--out-dir <dir>]` | 每行一个问题链接/ID，批量顺序抓取 |
+| `search <关键词> [--grab]` | 官方开放平台搜索问题；默认只列候选，`--grab` 仅供人类终端使用（Agent 禁止） |
+| `status [--out-dir <dir>]` | 查看产物目录下的抓取与验收状态 |
+
+通用选项：
+
+- `--json`：机器可读输出。stdout 只输出**单一合法 JSON 文档**，不混入人类日志；错误同样结构化（`ok:false` + `error.type/message`）。
+- `--out-dir <dir>`：产物目录（默认 `./out`）。与凭据目录 `ZAG_CONFIG_DIR`、当前工作目录 cwd 三者解耦。
 
 统一入口：
 
@@ -16,6 +21,66 @@ node scripts/zhigrab.mjs <命令> [参数]
 ```
 
 （等价于直接运行 `src/cli.js`；wrapper 会自动定位工具目录，也可用 `ZAG_DIR` 覆盖。）
+
+## 状态语义（captured vs verified）
+
+**两个概念必须严格区分，不能用"完成"模糊覆盖：**
+
+| 状态 | 含义 | 由谁授予 |
+|---|---|---|
+| `captured` | 抓取阶段结束：产物（answers.json/answers.md/.progress.json）已写入磁盘 | `grab` / `batch` 写入后即为 captured |
+| `verified` | 产物通过完整验收：JSON 可解析、ID 无重复、md/json 一致、done=true、无损坏残留 | **只有 `verify-output.mjs`（valid === true）** |
+
+- `grab` 输出 `stage: "captured"`、`verified: false`——**grab 从不自行声称验收通过**。
+- `status` 分别报告 `captureStatus`（`in_progress` / `captured`）与 `verificationStatus`（`unverified` / `valid` / `invalid`）。
+- `progress.done === true` 只表示分页循环结束，**不等于** `verified`。
+
+## JSON 机器契约
+
+```bash
+# 抓取：stage=captured, verified=false
+node scripts/zhigrab.mjs grab 123 --json
+# → {"schemaVersion":1,"ok":true,"command":"grab","stage":"captured","questionId":"123",
+#    "questionTitle":"...","capturedAnswerCount":247,
+#    "artifacts":{"json":"out/123/answers.json","markdown":"out/123/answers.md","progress":"out/123/.progress.json"},
+#    "verified":false,"warnings":[]}
+
+# 搜索：候选数组（已去重、过滤非知乎 URL、清除控制字符）
+node scripts/zhigrab.mjs search "浏览器词典" --json
+# → {"schemaVersion":1,"ok":true,"command":"search","query":"...","candidates":[
+#      {"questionId":"123","title":"...","contentType":"...","url":"https://www.zhihu.com/question/123"}]}
+
+# 批量：succeeded[] / failed[]，任一失败退出码非 0
+node scripts/zhigrab.mjs batch list.txt --json
+
+# 状态：captureStatus + verificationStatus 分离
+node scripts/zhigrab.mjs status --json
+# → {"schemaVersion":1,"ok":true,"command":"status","items":[
+#      {"questionId":"123","capturedAnswerCount":247,"captureStatus":"captured","verificationStatus":"valid"}]}
+
+# 错误：结构化
+# → {"schemaVersion":1,"ok":false,"command":"grab",
+#    "error":{"type":"configuration_error","message":"..."}}
+```
+
+错误类型枚举：`configuration_error` / `invalid_input` / `not_found` / `network_error` / `http_error` / `unknown_error`（`ConfigError.errorType` 优先复用）。
+
+**规则：**
+
+- JSON 模式 stdout 必须可直接 `JSON.parse`，不混入 `✓` / `▶` / 进度日志 / ANSI。
+- 路径一律相对路径（相对当前工作目录），不泄漏绝对本机路径。
+- 不输出 Cookie / Secret / Token 内容。
+- `verified` 只能由 `verify-output.mjs` 置 true；`grab` / `batch` 永远输出 `verified: false`。
+
+## handoff 生成（机器）
+
+```bash
+node scripts/make-handoff.mjs out/123 --task digest|archive|inspect
+```
+
+- 只接受 `verify-output` `valid === true` 的产物；未通过验证则拒绝生成。
+- 输出 `out/123/handoff.json`（`verified: true`、`answerCount`、`questionId` 均由代码从已验证产物构建）。
+- 详情见 `handoff-schema.md`。
 
 ## 凭据来源（本地配置，三选一，优先级从高到低）
 

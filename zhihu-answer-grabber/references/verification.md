@@ -1,5 +1,16 @@
 # 产物验证与数量不一致处理
 
+## 0. 状态语义（captured vs verified）
+
+| 状态 | 含义 | 由谁授予 |
+|---|---|---|
+| `captured` | 抓取阶段结束：产物已写入磁盘 | `grab` / `batch` 写入后 |
+| `verified` | 产物通过本文件全部校验项 | **只有 `verify-output.mjs`（`valid === true`）** |
+
+- `progress.done === true` 只表示分页循环结束，**不等于 verified**。
+- `grab` 输出 `stage: "captured"`、`verified: false`；只有 `verify-output` 才能授予 `verified: true`。
+- `status` 分别报告 `captureStatus` 与 `verificationStatus`，两者互不替代。
+
 ## 1. 完成验证（每次抓取后必须执行）
 
 ```bash
@@ -27,6 +38,14 @@ node scripts/verify-output.mjs out/<问题ID>
 
 - `jsonQuestionId`：`answers.json.questionId` 字段；必须与 `questionId`（目录名）一致（P1-4 三方一致：目录名 = JSON = handoff）。
 - `capturedAnswerCount` / `reportedAnswerCount` / `countMismatch`：页面/接口统计值与实际抓取数的对比（P2-3）；**仅提示，不设失败门**——统计值与 API 可获取数可能天然不一致，原因未知时不得据此判失败。
+
+## 1b. 单一事实来源
+
+验证逻辑实现在 `src/verifier.js` 的 `verifyOutput(questionDir)` 函数，以下入口全部复用同一实现，**禁止各自复制验证逻辑**：
+
+- `scripts/verify-output.mjs`（CLI 薄壳）
+- `status --json`（captured 产物的验收判定）
+- `scripts/make-handoff.mjs`（handoff 生成前的必要门）
 
 ## 2. 校验项
 
