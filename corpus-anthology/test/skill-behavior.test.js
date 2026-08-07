@@ -41,14 +41,14 @@ const NEGATIVE_INTENTS = [
   '帮我编辑一个小 Markdown 文件',
 ];
 
-test('触发 eval：corpus 正例应触发', () => {
+test('description regression：corpus 正例应触发（关键词模拟，非真实 runtime）', () => {
   const description = readFrontmatterDescription();
   for (const intent of POSITIVE_INTENTS) {
     assert.equal(wouldTrigger(description, intent), true, `正例未触发: ${intent}`);
   }
 });
 
-test('触发 eval：corpus 反例不应触发', () => {
+test('description regression：corpus 反例不应触发（关键词模拟，非真实 runtime）', () => {
   const description = readFrontmatterDescription();
   for (const intent of NEGATIVE_INTENTS) {
     assert.equal(wouldTrigger(description, intent), false, `反例误触发: ${intent}`);

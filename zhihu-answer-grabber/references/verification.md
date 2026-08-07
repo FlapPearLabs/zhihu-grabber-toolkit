@@ -12,14 +12,21 @@ node scripts/verify-output.mjs out/<问题ID>
 {
   "valid": true,
   "questionId": "123",
+  "jsonQuestionId": "123",
   "done": true,
   "answers": 247,
+  "capturedAnswerCount": 247,
+  "reportedAnswerCount": 253,
+  "countMismatch": true,
   "duplicates": 0,
   "jsonValid": true,
   "markdownPresent": true,
-  "warnings": []
+  "warnings": ["页面统计 253 与实际抓取 247 不一致（原因未知，仅提示，不设失败）"]
 }
 ```
+
+- `jsonQuestionId`：`answers.json.questionId` 字段；必须与 `questionId`（目录名）一致（P1-4 三方一致：目录名 = JSON = handoff）。
+- `capturedAnswerCount` / `reportedAnswerCount` / `countMismatch`：页面/接口统计值与实际抓取数的对比（P2-3）；**仅提示，不设失败门**——统计值与 API 可获取数可能天然不一致，原因未知时不得据此判失败。
 
 ## 2. 校验项
 
@@ -33,7 +40,7 @@ node scripts/verify-output.mjs out/<问题ID>
 | 6 | 回答 ID 无重复 | 无重复 ID |
 | 7 | `.progress.json` 可解析 | 合法 JSON 对象 |
 | 8 | `done === true` | 断点状态显示抓取完成 |
-| 9 | JSON 回答数量一致 | 实际数组长度与记录一致 |
+| 9 | **questionId 三方一致** | 输出目录名 === `answers.json.questionId`（handoff 侧由 corpus verify 校验） |
 | 10 | Markdown 文件存在 | `answers.md` 存在且非空 |
 | 11 | Markdown 与 JSON 记录数一致 | Markdown 回答条目数与 JSON 一致 |
 | 12 | 输出非空 | 回答数 > 0 |
@@ -48,11 +55,11 @@ node scripts/verify-output.mjs out/<问题ID>
 
 ## 3. 数量不一致处理
 
-当 `answerCount`（页面统计值）与接口实际可获取的回答数不一致时：
+当 `reportedAnswerCount`（页面统计值）与 `capturedAnswerCount`（接口实际抓取数）不一致时，`verify-output` 输出 `countMismatch: true` 并附 warning——**这只是提示/元数据，不设失败门**（统计值与 API 可获取数可能天然不一致，原因未知）。
 
 **正确输出：**
 
-> 页面统计值与接口可获取数量不一致，原因尚未确认。
+> 页面统计值与接口可获取数量不一致（countMismatch），原因尚未确认。页面统计 253，实际抓取 247。
 
 **然后区分：**
 

@@ -84,6 +84,19 @@ secret_error: none|missing|symlink|permission|unreadable
 - 其余情况 → 继续。
 - 该脚本只输出布尔值与错误类型，绝不输出凭据内容。
 
+**凭据需求矩阵（决定需要检查哪个字段）：**
+
+| 操作 | Cookie | Secret |
+| --- | ---: | ---: |
+| `grab <链接/ID>` | 必须 | 不需要 |
+| `batch` | 必须 | 不需要 |
+| `search` | 不需要 | 必须 |
+| `search` → `--grab` | 必须 | 必须 |
+
+- 只想 `search` 时，`secret_usable` 是门；不要因为没有 Cookie 就停止搜索。
+- 只有抓取类操作（grab/batch/search→grab）才要求 `cookie_usable`。
+- 若需要的字段 `_usable: false`，按 `_error` 类型修复后重试，**不得绕过预检继续**。
+
 ### 3. 执行抓取
 
 ```bash

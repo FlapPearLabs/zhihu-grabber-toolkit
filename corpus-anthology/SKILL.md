@@ -98,7 +98,7 @@ duplicateMaps = 0        # 同一 chunk 多个 map
 missingMappedSources = 0 # map.sourceIds 未覆盖本 chunk 的全部来源（全覆盖门）
 ```
 
-   其中 `missingMappedSources` 是"全覆盖"关键门：**map.sourceIds 必须与 chunk.sourceIds 集合相等**，不允许 map 只摘要 chunk 的一部分来源；`claim.evidenceSourceIds` 才是子集。只有全部满足，digest 的输入侧才算完整；随后 coverage.json 记录 manifestHash / mapSetHash 快照，供 reduce 校验当前状态。
+   其中 `missingMappedSources` 是"全覆盖"关键门，分两层：**ID 全覆盖**（map.sourceIds 与 chunk.sourceIds 集合相等）与**语义全覆盖**（sourceCoverage 对每个来源有恰好一条结构化处理记录，证明不是只把 ID 列全）；`claim.evidenceSourceIds` 才是子集。只有全部满足，digest 的输入侧才算完整；随后 coverage.json 记录 manifestHash / mapSetHash 快照，供 reduce 校验当前状态。
 
 4. **reduce 合并**（确定性脚本）：
 
@@ -106,15 +106,21 @@ missingMappedSources = 0 # map.sourceIds 未覆盖本 chunk 的全部来源（�
 node scripts/reduce.mjs --work work/ --out work/final/digest.md
 ```
 
-   reduce 启动时**重新校验当前 map 集合**（重算 manifestHash / mapSetHash 与 coverage 快照比对），不一致则拒绝；损坏的 map 结果视为失败，不得静默跳过。reduce 只基于已验证的 map 结果、manifest、coverage 报告，**不得重新读取全部原文**。规则见 `references/verification.md`。
+   reduce 启动时**重新校验当前 map 集合**（重算 manifestHash / mapSetHash 与 coverage 快照比对），不一致则拒绝；损坏的 map 结果视为失败，不得静默跳过。reduce 只基于已验证的 map 结果、manifest、coverage 报告，**不得重新读取全部原文**。它输出 **canonical `work/final/final.json`**（结构化 claims + evidenceSourceIds + minorityViews/uncertainties 分离）与展示层 `digest.md`。规则见 `references/verification.md`。
 
-5. **验证最终引用**：
+5. **完善最终产物**（编辑 final.json，不是 Markdown）：在 `final.json` 中润色/分组 claims，**保留每条 claim 的 evidenceSourceIds，不得删减证据**；然后重新渲染展示层：
 
 ```bash
-node scripts/verify.mjs --work work/ --final work/final/digest.md
+node scripts/render-final.mjs --final work/final/final.json --out work/final/digest.md
 ```
 
-   确认最终文档中的来源 ID 全部有效，且**至少包含一个来源引用**（0 引用视为缺证据，失败）。全部通过后，才能报告 digest 完成。
+6. **验证最终产物**：
+
+```bash
+node scripts/verify.mjs --work work/ --final work/final/final.json
+```
+
+   校验：每条 claim 必须有非空文本且**至少一个合法证据引用**（任一 claim 缺证据即失败，不是"整篇有 1 个引用就过"）；引用无效 sourceId 失败。全部通过后，才能报告 digest 完成。
 
 ### 中断恢复
 
@@ -164,8 +170,9 @@ node scripts/archive.mjs <srcDir> --verify <collection.md>
 
 业务校验（schema 无法表达的部分）：
 
-- `inputJson` / `inputMarkdown` 为相对路径且文件存在；
-- JSON 可解析，`answerCount` 与 JSON 实际回答数一致。
+- `inputJson` / `inputMarkdown` 为相对路径且 `realpath` 位于可信 `--source-root` 内（默认 = handoff 文件所在目录；`../` 越界与 symlink 逃逸一律拒绝）；
+- JSON 可解析，`answerCount` 与 JSON 实际回答数一致；
+- **questionId 三方一致**：`handoff.questionId === answers.json.questionId`（目录名侧由 verify-output.mjs 校验）。
 
 **若输入未验证，必须拒绝继续**，并返回需要由 zhihu-answer-grabber 修复的具体问题（如：重新运行 `verify-output.mjs`、修复产物）。不得绕过验证直接处理。
 

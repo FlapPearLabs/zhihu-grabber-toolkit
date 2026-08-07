@@ -44,8 +44,12 @@ const progressFile = path.join(dir, '.progress.json');
 const result = {
   valid: true,
   questionId: basename,
+  jsonQuestionId: null,
   done: false,
   answers: 0,
+  capturedAnswerCount: 0,
+  reportedAnswerCount: null,
+  countMismatch: false,
   duplicates: 0,
   jsonValid: false,
   markdownPresent: false,
@@ -78,12 +82,35 @@ if (fs.existsSync(jsonFile)) {
 }
 
 if (parsed !== null) {
+  // P1-4 三方一致（目录侧）：answers.json.questionId 必须与输出目录名一致
+  //   （handoff 侧由 corpus verify.mjs --handoff 校验 handoff.questionId === inputJson.questionId）
+  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+    result.jsonQuestionId = parsed.questionId !== undefined ? String(parsed.questionId) : null;
+    if (result.jsonQuestionId === null) {
+      fail('answers.json 缺少 questionId 字段');
+    } else if (result.jsonQuestionId !== basename) {
+      fail(`输出目录 ${basename} 与 answers.json.questionId ${result.jsonQuestionId} 不一致（目录被改名或 JSON 错配）`);
+    }
+  }
   // 3. answers 是数组
   const answers = Array.isArray(parsed) ? parsed : parsed.answers;
   if (!Array.isArray(answers)) {
     fail('answers 不是数组');
   } else {
     result.answers = answers.length;
+    // P2-3：captured vs reported（warning/metadata，不设失败门——页面统计与 API 可获取数
+    //   可能天然不一致，原因未知时仅提示）
+    result.capturedAnswerCount = answers.length;
+    const reported = parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? (parsed.reportedAnswerCount ?? parsed.answerCount ?? parsed.total ?? null)
+      : null;
+    result.reportedAnswerCount = reported === null ? null : Number(reported);
+    if (result.reportedAnswerCount !== null
+      && Number.isFinite(result.reportedAnswerCount)
+      && result.reportedAnswerCount !== answers.length) {
+      result.countMismatch = true;
+      result.warnings.push(`页面统计 ${result.reportedAnswerCount} 与实际抓取 ${answers.length} 不一致（原因未知，仅提示，不设失败）`);
+    }
     // 4. 每条回答 ID 合法
     const badIds = answers.filter((a) => !/^\d{1,20}$/.test(String(a?.id ?? '')));
     if (badIds.length > 0) {
@@ -100,11 +127,6 @@ if (parsed !== null) {
     result.duplicates = duplicates;
     if (duplicates > 0) {
       fail(`${duplicates} 条重复回答 ID`);
-    }
-    // 8. JSON 中回答数量与实际数组长度一致
-    const declared = Array.isArray(parsed) ? answers.length : (parsed.answers?.length ?? answers.length);
-    if (declared !== answers.length) {
-      fail(`JSON 声明回答数 ${declared} 与实际数组长度 ${answers.length} 不一致`);
     }
   }
 }

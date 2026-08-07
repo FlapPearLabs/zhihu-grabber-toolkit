@@ -49,12 +49,13 @@
 
 ## 4. 生成约束（producer 侧）
 
-- 所有 `inputJson` / `inputMarkdown` 必须是**相对路径**（相对 handoff 文件所在目录），不写绝对路径。
+- 所有 `inputJson` / `inputMarkdown` 必须是**相对路径**（相对 handoff 文件所在目录），不写绝对路径；且文件必须位于 handoff 所在目录内（corpus 侧 `--source-root` containment 会拒绝 `../` 越界与 symlink 逃逸，生成侧不得依赖越界文件）。
 - `task` 只允许 `inspect` / `digest` / `archive`。
 - `verified` 必须严格等于 `verify-output.mjs` 的 `valid` 结果（不得手工伪造为 true）。
 - `answerCount` 必须等于 JSON 中 `answers` 数组实际长度。
+- `questionId` 必须等于 `answers.json.questionId`（三方一致：目录名 = JSON = handoff；目录侧由 verify-output.mjs 校验）。
 
-corpus-anthology 会通过 `node scripts/verify.mjs --handoff <handoff.json>` 完整校验这些约束；生成侧应使用同一 schema 自检。
+corpus-anthology 会通过 `node scripts/verify.mjs --handoff <handoff.json> [--source-root <dir>]` 完整校验这些约束；生成侧应使用同一 schema 自检。
 
 ## 5. 边界划分
 

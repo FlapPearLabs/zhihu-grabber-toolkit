@@ -254,6 +254,60 @@ function verifyCoverage(workDir, manifest) {
       report.malformedMaps += 1;
       report.issues.push(`map 缺少 uncertainties 数组: ${cid}`);
     }
+    if (map.minorityViews !== undefined && !Array.isArray(map.minorityViews)) {
+      report.malformedMaps += 1;
+      report.issues.push(`map.minorityViews 必须是数组: ${cid}`);
+    }
+    // P1-1 sourceCoverage：逐来源覆盖记录（证明"每个输入来源都有结构化处理痕迹"，
+    // 而不是只声明 ID 出现过）。强制：
+    //   set(sourceCoverage.sourceId) === set(chunk.sourceIds)（全覆盖）
+    //   每条恰好一次、无重复、summary/disposition 至少一个有效处理结果。
+    if (!Array.isArray(map.sourceCoverage) || map.sourceCoverage.length === 0) {
+      report.malformedMaps += 1;
+      report.issues.push(`map 缺少 sourceCoverage 数组（逐来源覆盖记录）: ${cid}`);
+    } else {
+      const scIds = new Set();
+      for (const [i, sc] of map.sourceCoverage.entries()) {
+        if (!sc || typeof sc !== 'object' || Array.isArray(sc)) {
+          report.malformedMaps += 1;
+          report.issues.push(`sourceCoverage[${i}] 结构非法: ${cid}`);
+          continue;
+        }
+        if (typeof sc.sourceId !== 'string' || sc.sourceId.trim() === '') {
+          report.malformedMaps += 1;
+          report.issues.push(`sourceCoverage[${i}] 缺少 sourceId: ${cid}`);
+          continue;
+        }
+        if (scIds.has(sc.sourceId)) {
+          report.malformedMaps += 1;
+          report.issues.push(`sourceCoverage 重复记录: ${cid} → ${sc.sourceId}`);
+          continue;
+        }
+        scIds.add(sc.sourceId);
+        if (!chunkSourceSet.has(sc.sourceId)) {
+          report.crossChunkEvidence += 1;
+          report.issues.push(`sourceCoverage 引用非本 chunk 来源: ${cid} → ${sc.sourceId}`);
+          continue;
+        }
+        const summary = typeof sc.summary === 'string' ? sc.summary.trim() : '';
+        const disposition = sc.disposition;
+        if (summary === '' && !['substantive', 'duplicate', 'unclear'].includes(disposition)) {
+          report.malformedMaps += 1;
+          report.issues.push(`sourceCoverage[${i}] 缺少有效处理记录（summary 或 disposition）: ${cid} → ${sc.sourceId}`);
+          continue;
+        }
+        if (disposition !== undefined && !['substantive', 'duplicate', 'unclear'].includes(disposition)) {
+          report.malformedMaps += 1;
+          report.issues.push(`sourceCoverage[${i}].disposition 非法: ${cid} → ${disposition}`);
+        }
+      }
+      // 全覆盖：sourceCoverage 的 sourceId 集合必须等于 chunk.sourceIds
+      const missingSc = chunk.sourceIds.filter((sid) => !scIds.has(sid));
+      if (missingSc.length > 0) {
+        report.missingMappedSources += missingSc.length;
+        report.issues.push(`sourceCoverage 未覆盖本 chunk 全部来源（缺 ${missingSc.length} 条）: ${cid} → 缺 ${missingSc.join(', ')}`);
+      }
+    }
   }
 
   // 8. 无未完成状态：每个 chunk 都有 map 结果
@@ -307,28 +361,56 @@ function verifyCoverage(workDir, manifest) {
   return report;
 }
 
-/** 最终引用验证：文档引用的 sourceId 必须有效且至少有一个证据引用 */
+/** 最终产物验证：final.json 的每个 claim 必须携带 ≥1 个合法证据引用（P1-2） */
 function verifyFinal(workDir, manifest, finalFile) {
-  const report = { valid: true, invalidRefs: [], validRefs: [], hasEvidence: false };
+  const report = { valid: true, invalidRefs: [], validRefs: [], claimsWithoutEvidence: 0 };
   if (!fs.existsSync(finalFile)) {
     report.valid = false;
-    report.invalidRefs.push('最终文档不存在');
+    report.invalidRefs.push('final.json 不存在');
     return report;
   }
-  const text = fs.readFileSync(finalFile, 'utf8');
-  const refs = [...text.matchAll(/\[(question-\d+-answer-[^\]]+)\]/g)].map((m) => m[1]);
-  const validSources = new Set(manifest.inputs.map((i) => i.sourceId));
-  for (const ref of [...new Set(refs)]) {
-    if (validSources.has(ref)) report.validRefs.push(ref);
-    else {
-      report.valid = false;
-      report.invalidRefs.push(ref);
-    }
-  }
-  report.hasEvidence = report.validRefs.length > 0;
-  if (!report.hasEvidence) {
+  let final;
+  try {
+    final = readJson(finalFile);
+  } catch (error) {
     report.valid = false;
-    report.invalidRefs.push('最终文档没有任何来源引用（缺少证据）');
+    report.invalidRefs.push(`final.json 无法解析: ${error.message}`);
+    return report;
+  }
+  if (!Array.isArray(final.claims) || final.claims.length === 0) {
+    report.valid = false;
+    report.invalidRefs.push('final.json 缺少 claims 数组（没有任何观点）');
+    return report;
+  }
+  const validSources = new Set(manifest.inputs.map((i) => i.sourceId));
+  for (const [i, claim] of final.claims.entries()) {
+    if (!claim || typeof claim !== 'object') {
+      report.claimsWithoutEvidence += 1;
+      report.valid = false;
+      report.invalidRefs.push(`claims[${i}] 结构非法`);
+      continue;
+    }
+    if (typeof claim.text !== 'string' || claim.text.trim().length === 0) {
+      report.claimsWithoutEvidence += 1;
+      report.valid = false;
+      report.invalidRefs.push(`claims[${i}] 缺少文本`);
+      continue;
+    }
+    const evs = Array.isArray(claim.evidenceSourceIds) ? claim.evidenceSourceIds : [];
+    if (evs.length === 0) {
+      report.claimsWithoutEvidence += 1;
+      report.valid = false;
+      report.invalidRefs.push(`claims[${i}] 没有任何来源引用（缺证据）`);
+      continue;
+    }
+    for (const ev of evs) {
+      if (validSources.has(ev)) {
+        report.validRefs.push(ev);
+      } else {
+        report.valid = false;
+        report.invalidRefs.push(`claims[${i}] 引用无效来源: ${ev}`);
+      }
+    }
   }
   return report;
 }
@@ -402,7 +484,7 @@ function validateBySchema(schema, data, p = '$') {
   return issues;
 }
 
-function verifyHandoff(handoffFile) {
+function verifyHandoff(handoffFile, sourceRootArg) {
   const report = { valid: true, issues: [] };
   const handoffBaseDir = path.dirname(path.resolve(handoffFile));
   let handoff;
@@ -431,7 +513,19 @@ function verifyHandoff(handoffFile) {
     report.valid = false;
     report.issues.push(issue);
   }
-  // —— 业务/IO 校验（schema 无法表达的部分：路径相对性、文件存在、answerCount 与内容一致）——
+  // —— 业务/IO 校验（schema 无法表达的部分：路径 containment、文件存在、answerCount 一致、questionId 三方一致）——
+  // P1-3 containment：inputJson/inputMarkdown 的 realpath 必须位于可信 sourceRoot 内，
+  //   拒绝 `../` 越界与 symlink escape；sourceRoot 默认 = handoff 文件所在目录（最保守），
+  //   可用 --source-root 显式指定，但绝不能由 handoff 内容自己定义。
+  const sourceRoot = sourceRootArg ? path.resolve(sourceRootArg) : handoffBaseDir;
+  let sourceRootReal;
+  try {
+    sourceRootReal = fs.realpathSync(sourceRoot);
+  } catch {
+    report.valid = false;
+    report.issues.push(`可信 source-root 不存在: ${displayPath(sourceRoot)}`);
+    return report;
+  }
   for (const key of ['inputJson', 'inputMarkdown']) {
     const file = handoff[key];
     if (typeof file !== 'string' || file.trim().length === 0) {
@@ -445,9 +539,19 @@ function verifyHandoff(handoffFile) {
       continue;
     }
     const abs = path.resolve(handoffBaseDir, file);
-    if (!fs.existsSync(abs)) {
+    let absReal;
+    try {
+      absReal = fs.realpathSync(abs);
+    } catch {
       report.valid = false;
       report.issues.push(`${key} 文件不存在: ${file}`);
+      continue;
+    }
+    const rel = path.relative(sourceRootReal, absReal);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
+      report.valid = false;
+      report.issues.push(`${key} 越出可信 source-root（拒绝 ../ 越界或 symlink 逃逸）: ${file}`);
+      continue;
     }
   }
   if (handoff.inputJson) {
@@ -455,6 +559,16 @@ function verifyHandoff(handoffFile) {
     if (fs.existsSync(abs)) {
       try {
         const json = readJson(abs);
+        // P1-4 三方一致：目录 qid === answers.json.questionId === handoff.questionId
+        //   （此处校验 handoff.questionId 与 inputJson.questionId；目录侧由 verify-output.mjs 校验）
+        const jsonQid = json && typeof json === 'object' && !Array.isArray(json) ? json.questionId : undefined;
+        if (jsonQid === undefined) {
+          report.valid = false;
+          report.issues.push('inputJson 缺少 questionId 字段');
+        } else if (String(jsonQid) !== String(handoff.questionId)) {
+          report.valid = false;
+          report.issues.push(`questionId 不一致: handoff=${handoff.questionId}, answers.json=${jsonQid}`);
+        }
         const answers = Array.isArray(json) ? json : json.answers;
         const actual = Array.isArray(answers) ? answers.length : -1;
         if (actual !== handoff.answerCount) {
@@ -480,10 +594,11 @@ async function main() {
   if (has('--handoff')) {
     const file = arg('--handoff', null);
     if (!file) {
-      console.error('用法: node scripts/verify.mjs --handoff <handoff.json>');
+      console.error('用法: node scripts/verify.mjs --handoff <handoff.json> [--source-root <dir>]');
       process.exit(2);
     }
-    const report = verifyHandoff(file);
+    const sourceRoot = arg('--source-root', null);
+    const report = verifyHandoff(file, sourceRoot);
     console.log(JSON.stringify(report, null, 2));
     process.exit(report.valid ? 0 : 1);
   }
@@ -498,7 +613,7 @@ async function main() {
   if (has('--final')) {
     const finalFile = arg('--final', null);
     if (!finalFile) {
-      console.error('用法: node scripts/verify.mjs --work work/ --final <file.md>');
+      console.error('用法: node scripts/verify.mjs --work work/ --final <final.json>');
       process.exit(2);
     }
     const report = verifyFinal(workDir, manifest, path.resolve(finalFile));

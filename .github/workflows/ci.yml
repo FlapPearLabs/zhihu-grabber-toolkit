@@ -21,7 +21,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: npm
+          # 项目无 package-lock.json 且两个模块均无 dependencies，按 setup-node 文档要求关闭 npm cache
 
       - name: zhihu-answer-grabber tests
         working-directory: zhihu-answer-grabber

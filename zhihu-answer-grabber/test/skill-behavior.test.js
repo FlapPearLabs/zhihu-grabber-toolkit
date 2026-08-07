@@ -48,14 +48,14 @@ const NEGATIVE_INTENTS = [
   '帮我写一篇关于知乎的文章',
 ];
 
-test('触发 eval：正例应触发', () => {
+test('description regression：正例应触发（关键词模拟，非真实 runtime）', () => {
   const description = readFrontmatterDescription();
   for (const intent of POSITIVE_INTENTS) {
     assert.equal(wouldTrigger(description, intent), true, `正例未触发: ${intent}`);
   }
 });
 
-test('触发 eval：反例不应触发', () => {
+test('description regression：反例不应触发（关键词模拟，非真实 runtime）', () => {
   const description = readFrontmatterDescription();
   for (const intent of NEGATIVE_INTENTS) {
     assert.equal(wouldTrigger(description, intent), false, `反例误触发: ${intent}`);

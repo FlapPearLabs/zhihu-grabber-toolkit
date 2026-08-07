@@ -10,8 +10,8 @@ const CHUNK = fileURLToPath(new URL('../scripts/chunk.mjs', import.meta.url));
 const VERIFY = fileURLToPath(new URL('../scripts/verify.mjs', import.meta.url));
 const REDUCE = fileURLToPath(new URL('../scripts/reduce.mjs', import.meta.url));
 
-function makeCorpus(answerCount = 6) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-verify-'));
+function makeCorpus(answerCount = 6, baseDir) {
+  const dir = baseDir || fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-verify-'));
   const qDir = path.join(dir, '123');
   fs.mkdirSync(qDir, { recursive: true });
   const answers = [];
@@ -42,6 +42,7 @@ function writeMapsForWork(work) {
       claims: chunk.sourceIds.map((sid) => ({ claim: `${sid} 的观点`, evidenceSourceIds: [sid], confidence: 'high' })),
       themes: ['主题'],
       uncertainties: [],
+      sourceCoverage: chunk.sourceIds.map((sid) => ({ sourceId: sid, summary: `${sid} 的内容概要`, disposition: 'substantive' })),
     };
     fs.writeFileSync(path.join(mapDir, `map-${chunk.chunkId}.json`), JSON.stringify(map, null, 2));
   }
@@ -232,45 +233,99 @@ test('verify: coverage.json 被写入且含快照', () => {
   assert.ok(coverage.chunkHashByChunk);
 });
 
-test('verify --final: 有效引用通过，无效引用失败，0 引用失败', () => {
-  const { work, mapDir } = setupWork();
-  const finalFile = path.join(work, 'final.md');
-  fs.writeFileSync(finalFile, '正文 [question-123-answer-1] 和 [question-123-answer-2]');
+test('verify --final: final.json 每 claim 必须有 ≥1 合法证据（P1-2）', () => {
+  const { work } = setupWork();
+  const finalDir = path.join(work, 'final');
+  fs.mkdirSync(finalDir, { recursive: true });
+  const finalFile = path.join(finalDir, 'final.json');
+  const validRef = 'question-123-answer-1';
+
+  // 1. 合法：每个 claim 都有有效 evidence → 通过
+  fs.writeFileSync(finalFile, JSON.stringify({
+    schemaVersion: 1,
+    mode: 'digest',
+    claims: [
+      { text: '观点 A', evidenceSourceIds: [validRef], confidence: 'high' },
+      { text: '观点 B', evidenceSourceIds: [validRef], confidence: 'medium' },
+    ],
+  }));
   const r1 = run(['--work', work, '--final', finalFile]);
-  assert.equal(r1.status, 0);
+  assert.equal(r1.status, 0, r1.stdout);
   assert.equal(JSON.parse(r1.stdout).valid, true);
 
-  fs.writeFileSync(finalFile, '正文 [question-999-answer-999]');
+  // 2. 无效引用 → 失败
+  fs.writeFileSync(finalFile, JSON.stringify({
+    schemaVersion: 1, mode: 'digest',
+    claims: [{ text: 'x', evidenceSourceIds: ['question-999-answer-999'], confidence: 'high' }],
+  }));
   const r2 = run(['--work', work, '--final', finalFile]);
   assert.equal(r2.status, 1);
   const parsed2 = JSON.parse(r2.stdout);
   assert.equal(parsed2.valid, false);
-  assert.ok(parsed2.invalidRefs.includes('question-999-answer-999'));
+  assert.ok(parsed2.invalidRefs.some((i) => i.includes('question-999-answer-999')));
 
-  // 0 引用（无证据）→ 必须失败
-  fs.writeFileSync(finalFile, '没有任何引用的纯文本摘要');
+  // 3. 0 引用 → 失败（claimsWithoutEvidence）
+  fs.writeFileSync(finalFile, JSON.stringify({
+    schemaVersion: 1, mode: 'digest',
+    claims: [{ text: '没有证据的观点', evidenceSourceIds: [], confidence: 'low' }],
+  }));
   const r3 = run(['--work', work, '--final', finalFile]);
   assert.equal(r3.status, 1);
-  assert.equal(JSON.parse(r3.stdout).valid, false);
-  assert.equal(JSON.parse(r3.stdout).hasEvidence, false);
+  const parsed3 = JSON.parse(r3.stdout);
+  assert.equal(parsed3.valid, false);
+  assert.ok(parsed3.claimsWithoutEvidence >= 1, `应统计缺证据的 claim，实际: ${parsed3.claimsWithoutEvidence}`);
+
+  // 4. 审查者反例：10 个观点只有 1 个有引用 → 必须失败
+  const claims10 = [];
+  for (let i = 0; i < 10; i += 1) {
+    claims10.push(i === 0
+      ? { text: `有证据的观点 ${i}`, evidenceSourceIds: [validRef], confidence: 'high' }
+      : { text: `无证据的观点 ${i}`, evidenceSourceIds: [], confidence: 'low' });
+  }
+  fs.writeFileSync(finalFile, JSON.stringify({ schemaVersion: 1, mode: 'digest', claims: claims10 }));
+  const r4 = run(['--work', work, '--final', finalFile]);
+  assert.equal(r4.status, 1, '10 观点只有 1 个引用必须失败');
+  const parsed4 = JSON.parse(r4.stdout);
+  assert.equal(parsed4.valid, false);
+  assert.ok(parsed4.claimsWithoutEvidence >= 9, `应检测到 9 个缺证据 claim，实际: ${parsed4.claimsWithoutEvidence}`);
+});
+
+test('verify --final: final.json 缺失/非 JSON/空 claims → 失败', () => {
+  const { work } = setupWork();
+  const finalDir = path.join(work, 'final');
+  fs.mkdirSync(finalDir, { recursive: true });
+  const finalFile = path.join(finalDir, 'final.json');
+  // 缺失
+  const r1 = run(['--work', work, '--final', path.join(work, 'final', 'nope.json')]);
+  assert.equal(r1.status, 1);
+  // 非法 JSON
+  fs.writeFileSync(finalFile, '{bad json');
+  const r2 = run(['--work', work, '--final', finalFile]);
+  assert.equal(r2.status, 1);
+  assert.ok(JSON.parse(r2.stdout).invalidRefs.some((i) => i.includes('解析')));
+  // 空 claims
+  fs.writeFileSync(finalFile, JSON.stringify({ schemaVersion: 1, mode: 'digest', claims: [] }));
+  const r3 = run(['--work', work, '--final', finalFile]);
+  assert.equal(r3.status, 1);
+  assert.ok(JSON.parse(r3.stdout).invalidRefs.some((i) => i.includes('claims')));
 });
 
 // ===== handoff 完整 schema 校验 =====
 
 function makeHandoffFile(dir, overrides = {}) {
-  const { jsonFile, mdFile } = makeCorpus(3);
+  // corpus 必须与 handoff 同目录（containment 校验：inputJson/inputMarkdown 不得越出 handoff 所在目录）
+  const { jsonFile, mdFile } = makeCorpus(3, dir);
   const base = {
     task: 'digest',
     sourceType: 'zhihu-answers',
     questionId: '123',
-    inputJson: path.relative(dir, jsonFile),
-    inputMarkdown: path.relative(dir, mdFile),
+    inputJson: path.relative(dir, jsonFile).split(path.sep).join('/'),
+    inputMarkdown: path.relative(dir, mdFile).split(path.sep).join('/'),
     verified: true,
     answerCount: 3,
     warnings: [],
   };
   const handoff = { ...base, ...overrides };
-  // 相对路径基于 dir 计算后需转为从 dir 解析
   const hf = path.join(dir, 'handoff.json');
   fs.writeFileSync(hf, JSON.stringify(handoff));
   return { hf, jsonFile, mdFile };
@@ -286,13 +341,13 @@ test('handoff: 完整合法通过', () => {
 
 test('handoff: 缺 inputJson → 拒绝（P1-8）', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-handoff-miss-'));
-  const { jsonFile, mdFile } = makeCorpus(3);
+  const { jsonFile, mdFile } = makeCorpus(3, dir);
   const handoff = {
     task: 'digest',
     sourceType: 'zhihu-answers',
     questionId: '123',
-    inputJson: path.relative(dir, jsonFile),
-    inputMarkdown: path.relative(dir, mdFile),
+    inputJson: path.relative(dir, jsonFile).split(path.sep).join('/'),
+    inputMarkdown: path.relative(dir, mdFile).split(path.sep).join('/'),
     verified: true,
     answerCount: 3,
     warnings: [],
@@ -411,16 +466,133 @@ test('reduce: 损坏的 map 结果 → 拒绝，不静默跳过（P1-4）', () =
   assert.match(r.stdout + r.stderr, /损坏|不能静默跳过/);
 });
 
-test('reduce: 通过后生成 reduce-input 与最终文档，保留来源 ID', () => {
+test('reduce: 通过后生成 reduce-input、final.json 与最终文档，保留来源 ID', () => {
   const { work, mapDir } = setupWork();
   const r = run(['--work', work], REDUCE);
   assert.equal(r.status, 0, r.stderr);
   assert.ok(fs.existsSync(path.join(work, 'reduce-input.json')));
+  const finalJsonFile = path.join(work, 'final', 'final.json');
+  assert.ok(fs.existsSync(finalJsonFile), 'reduce 必须输出 canonical final.json');
   const finalFile = path.join(work, 'final', 'digest.md');
   assert.ok(fs.existsSync(finalFile));
   const finalText = fs.readFileSync(finalFile, 'utf8');
   assert.match(finalText, /question-123-answer-1/);
-  // 最终文档必须通过 --final 验证
-  const v = run(['--work', work, '--final', finalFile]);
-  assert.equal(v.status, 0);
+  // 最终文档（final.json）必须通过 --final 验证
+  const v = run(['--work', work, '--final', finalJsonFile]);
+  assert.equal(v.status, 0, v.stdout);
+});
+
+// ===== P1-1 sourceCoverage 语义全覆盖 =====
+
+test('verify: map 缺 sourceCoverage → 失败（P1-1）', () => {
+  const { work, mapDir } = setupWork();
+  const first = fs.readdirSync(mapDir).sort()[0];
+  const mapFile = path.join(mapDir, first);
+  const map = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
+  delete map.sourceCoverage;
+  fs.writeFileSync(mapFile, JSON.stringify(map, null, 2));
+  const r = run(['--work', work]);
+  assert.equal(r.status, 1);
+  const parsed = JSON.parse(r.stdout);
+  assert.ok(parsed.malformedMaps >= 1, '应检测到缺少 sourceCoverage');
+});
+
+test('verify: sourceCoverage 漏掉 chunk 部分来源 → 失败（P1-1）', () => {
+  const { work, mapDir } = setupWork(40); // 多来源 chunk
+  const all = fs.readdirSync(mapDir).sort();
+  let checked = false;
+  for (const f of all) {
+    const mapFile = path.join(mapDir, f);
+    const map = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
+    if (map.sourceCoverage && map.sourceCoverage.length >= 2) {
+      map.sourceCoverage = map.sourceCoverage.slice(0, 1); // 只保留 1 条
+      fs.writeFileSync(mapFile, JSON.stringify(map, null, 2));
+      const r = run(['--work', work]);
+      assert.equal(r.status, 1);
+      const parsed = JSON.parse(r.stdout);
+      assert.ok(parsed.missingMappedSources >= 1, '应检测到 sourceCoverage 未覆盖来源');
+      checked = true;
+      break;
+    }
+  }
+  assert.ok(checked, '40 条回答应存在多来源 chunk');
+});
+
+test('verify: sourceCoverage 重复记录同一来源 → 失败（P1-1）', () => {
+  const { work, mapDir } = setupWork();
+  const first = fs.readdirSync(mapDir).sort()[0];
+  const mapFile = path.join(mapDir, first);
+  const map = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
+  map.sourceCoverage.push({ ...map.sourceCoverage[0] });
+  fs.writeFileSync(mapFile, JSON.stringify(map, null, 2));
+  const r = run(['--work', work]);
+  assert.equal(r.status, 1);
+  const parsed = JSON.parse(r.stdout);
+  assert.ok(parsed.malformedMaps >= 1, '应检测到重复 sourceCoverage');
+});
+
+// ===== P1-3 handoff containment =====
+
+test('handoff: inputJson 用 ../ 越出 source-root → 拒绝（P1-3）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-handoff-escape-'));
+  const { hf } = makeHandoffFile(dir);
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-outside-'));
+  fs.writeFileSync(path.join(outside, 'secret.json'), JSON.stringify({ questionId: '123', answers: [] }));
+  const handoff = JSON.parse(fs.readFileSync(hf, 'utf8'));
+  handoff.inputJson = path.relative(dir, path.join(outside, 'secret.json')).split(path.sep).join('/');
+  fs.writeFileSync(hf, JSON.stringify(handoff));
+  const r = run(['--handoff', hf]);
+  assert.equal(r.status, 1);
+  const parsed = JSON.parse(r.stdout);
+  assert.ok(parsed.issues.some((i) => i.includes('越出可信 source-root')), '应拒绝越界路径');
+});
+
+test('handoff: symlink 指向 source-root 之外 → 拒绝（P1-3）', { skip: process.platform === 'win32' }, () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-handoff-symlink-'));
+  const { hf } = makeHandoffFile(dir);
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-outside-'));
+  const secret = path.join(outside, 'secret.json');
+  fs.writeFileSync(secret, JSON.stringify({ questionId: '123', answers: [] }));
+  const link = path.join(dir, 'linked.json');
+  fs.symlinkSync(secret, link);
+  const handoff = JSON.parse(fs.readFileSync(hf, 'utf8'));
+  handoff.inputJson = 'linked.json';
+  fs.writeFileSync(hf, JSON.stringify(handoff));
+  const r = run(['--handoff', hf]);
+  assert.equal(r.status, 1);
+  const parsed = JSON.parse(r.stdout);
+  assert.ok(parsed.issues.some((i) => i.includes('越出可信 source-root')), '应拒绝 symlink 逃逸');
+});
+
+test('handoff: 显式 --source-root 且文件在 root 内 → 通过', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-handoff-root-'));
+  const { hf } = makeHandoffFile(dir);
+  const r = run(['--handoff', hf, '--source-root', dir]);
+  assert.equal(r.status, 0, r.stdout);
+});
+
+// ===== P1-4 questionId 三方一致（handoff 侧） =====
+
+test('handoff: handoff.questionId 与 answers.json.questionId 不一致 → 拒绝（P1-4）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-handoff-qid-'));
+  const { hf } = makeHandoffFile(dir);
+  const handoff = JSON.parse(fs.readFileSync(hf, 'utf8'));
+  handoff.questionId = '999';
+  fs.writeFileSync(hf, JSON.stringify(handoff));
+  const r = run(['--handoff', hf]);
+  assert.equal(r.status, 1);
+  const parsed = JSON.parse(r.stdout);
+  assert.ok(parsed.issues.some((i) => i.includes('questionId 不一致')), '应检测到 questionId 不一致');
+});
+
+test('handoff: inputJson 缺少 questionId 字段 → 拒绝（P1-4）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-handoff-noqid-'));
+  const { hf, jsonFile } = makeHandoffFile(dir);
+  const json = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+  delete json.questionId;
+  fs.writeFileSync(jsonFile, JSON.stringify(json));
+  const r = run(['--handoff', hf]);
+  assert.equal(r.status, 1);
+  const parsed = JSON.parse(r.stdout);
+  assert.ok(parsed.issues.some((i) => i.includes('questionId')), '应提示缺少 questionId');
 });

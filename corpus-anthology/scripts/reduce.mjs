@@ -18,6 +18,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { renderDigest } from './render-final.mjs';
 
 function arg(name, fallback) {
   const i = process.argv.indexOf(name);
@@ -140,15 +141,22 @@ function main() {
     }
   }
 
-  // 少数观点与反对意见：uncertainties 去重保留
+  // 少数观点（map.minorityViews 显式标注的少数派观点）与不确定性（map.uncertainties）
+  // 两者语义不同：minorityViews = 少数人的不同观点；uncertainties = 表达不明确/无法核实。
   const minorityViews = [];
+  for (const m of maps) {
+    for (const c of m.minorityViews ?? []) {
+      const key = String(c).trim();
+      if (!key) continue;
+      if (!minorityViews.includes(key)) minorityViews.push(key);
+    }
+  }
+  const uncertainties = [];
   for (const m of maps) {
     for (const c of m.uncertainties ?? []) {
       const key = String(c).trim();
       if (!key) continue;
-      if (!minorityViews.some((v) => v.statement === key)) {
-        minorityViews.push({ statement: key, noted: true });
-      }
+      if (!uncertainties.includes(key)) uncertainties.push(key);
     }
   }
 
@@ -166,7 +174,7 @@ function main() {
     themes,
     claims,
     minorityViews,
-    uncertainties: minorityViews.map((v) => v.statement),
+    uncertainties,
     unverifiedInferences,
     sourceIndex: Object.fromEntries(
       [...validSources].map((sid) => [sid, {
@@ -185,39 +193,34 @@ function main() {
   const reduceInputFile = path.join(workDir, 'reduce-input.json');
   fs.writeFileSync(reduceInputFile, JSON.stringify(reduceInput, null, 2), 'utf8');
 
-  // 最终文档草稿：机械合并（LLM 应基于此完善，来源 ID 必须保留）
+  // canonical 最终产物：final.json（结构化，每个 claim 携带 evidenceSourceIds）
+  // digest.md 只是展示层，由 render-final.mjs 确定性渲染（LLM 完善时改 final.json，不改 md）。
+  const finalJson = {
+    schemaVersion: 1,
+    mode: 'digest',
+    inputCount: manifest.inputs.length,
+    chunkCount: maps.length,
+    claims: claims.map((c) => ({
+      text: c.claim,
+      evidenceSourceIds: c.evidenceSourceIds,
+      confidence: c.confidence,
+    })),
+    minorityViews,
+    uncertainties,
+  };
+  const finalJsonFile = path.join(finalDir, 'final.json');
+  fs.writeFileSync(finalJsonFile, JSON.stringify(finalJson, null, 2), 'utf8');
+
   const out = arg('--out', path.join(finalDir, 'digest.md'));
-  const L = [];
-  L.push('# 语料全覆盖摘要（digest 草稿）');
-  L.push('');
-  L.push(`> 覆盖 ${reduceInput.inputCount} 条回答 / ${reduceInput.chunkCount} 个 chunk。`);
-  L.push(`> 说明：本文件由 reduce 机械合并生成；最终版本应在保留 [sourceId] 引用的前提下完善。`);
-  L.push('');
-  L.push('## 主题分布');
-  for (const t of themes) L.push(`- ${t.theme}（${t.chunkCount} 个 chunk）`);
-  L.push('');
-  L.push('## 主要观点（claims）');
-  claims.forEach((c, i) => {
-    L.push(`### ${i + 1}. ${c.claim}`);
-    L.push(`- 来源: ${c.evidenceSourceIds.map((s) => `[${s}]`).join(' ')}`);
-    L.push(`- 置信度: ${c.confidence}${c.highVoteSources > 0 ? `；高赞来源 ${c.highVoteSources} 个（仅传播度，非真实性证据）` : ''}`);
-    L.push('');
-  });
-  L.push('## 少数观点与不确定性');
-  for (const v of minorityViews) L.push(`- ${v.statement}`);
-  L.push('');
-  L.push('## 未经验证的推断');
-  for (const u of unverifiedInferences) {
-    L.push(`- ${u.claim}（来源: ${u.evidenceSourceIds.map((s) => `[${s}]`).join(' ')}，置信度 low）`);
-  }
-  L.push('');
-  fs.writeFileSync(out, L.join('\n'), 'utf8');
+  fs.writeFileSync(out, renderDigest(finalJson), 'utf8');
 
   const relOut = path.relative(process.cwd(), out) || '.';
   const relReduce = path.relative(process.cwd(), reduceInputFile) || '.';
+  const relFinal = path.relative(process.cwd(), finalJsonFile) || '.';
   console.log(`reduce-input: ${relReduce}`);
-  console.log(`最终文档草稿: ${relOut}`);
-  console.log(`主题 ${themes.length} 个 / claims ${claims.length} 条 / 少数观点 ${minorityViews.length} 条`);
+  console.log(`final.json: ${relFinal}`);
+  console.log(`digest.md: ${relOut}`);
+  console.log(`主题 ${themes.length} 个 / claims ${claims.length} 条 / 少数观点 ${minorityViews.length} 条 / 不确定性 ${uncertainties.length} 条`);
 }
 
 main();
