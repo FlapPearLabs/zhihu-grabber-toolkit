@@ -140,25 +140,22 @@ async function cmdGrab(config, input, { outDir = 'out', json = false, silent = f
   return payload;
 }
 
-async function cmdBatch(config, file, { outDir = 'out', json = false } = {}) {
-  if (!fs.existsSync(file)) throw invalidInput(`批量文件不存在: ${sanitizeDisplayPaths(file)}`);
-  const inputs = fs.readFileSync(file, 'utf8')
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith('#'));
-  if (inputs.length === 0) throw invalidInput('批量文件为空');
-  if (!json) log(`▶ 批量抓取 ${inputs.length} 个问题`);
+async function cmdBatch(config, file, { outDir = 'out', json = false, inputs = null } = {}) {
+  // main 已用 readBatchInputs 做静态校验（先于凭据检查）；此处兼容直接调用时自行读取
+  const batchInputs = inputs ?? readBatchInputs(file);
+  if (!json) log(`▶ 批量抓取 ${batchInputs.length} 个问题`);
 
   const succeeded = [];
   const failed = [];
-  for (const [i, input] of inputs.entries()) {
-    if (!json) log(`\n[${i + 1}/${inputs.length}] ${terminalSafe(input)}`);
+  for (const [i, input] of batchInputs.entries()) {
+    const displayInput = sanitizeDisplayPaths(terminalSafe(input)); // P1-1: input 也走公共清理
+    if (!json) log(`\n[${i + 1}/${batchInputs.length}] ${displayInput}`);
     try {
       const p = await cmdGrab(config, input, { outDir, json: false, silent: true });
       succeeded.push(p);
     } catch (error) {
       failed.push({
-        input,
+        input: displayInput,
         errorType: classifyError(error),
         message: publicErrorMessage(error), // P1-INT-NEW-1: 机器通道不泄漏绝对路径
       });
@@ -304,13 +301,49 @@ function invalidInput(message) {
   return error;
 }
 
-/** 从展示文本中抹掉本机绝对路径（机器输出防泄漏）；人类 stderr 保留完整诊断 */
+/** 解析并静态校验问题输入（先于凭据检查，保证 invalid_input 不依赖凭据状态） */
+function parseQuestionId(input) {
+  try {
+    return normalizeQuestionInput(input);
+  } catch (error) {
+    error.invalidInput = true;
+    throw error;
+  }
+}
+
+/** 读取并静态校验 batch 文件（存在 + 非空；先于凭据检查） */
+function readBatchInputs(file) {
+  if (!fs.existsSync(file)) {
+    throw invalidInput(`批量文件不存在: ${sanitizeDisplayPaths(terminalSafe(file))}`);
+  }
+  const inputs = fs.readFileSync(file, 'utf8')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#'));
+  if (inputs.length === 0) throw invalidInput('批量文件为空');
+  return inputs;
+}
+
+/**
+ * 从展示文本中抹掉任意本机绝对路径（机器输出防泄漏）；人类 stderr 保留完整诊断。
+ *
+ * 策略：先提取并占位所有 http(s) URL（避免误伤 https:// 后的路径段），
+ * 再对剩余文本脱敏 Windows（盘符）与 POSIX（/ 开头）绝对路径，最后还原 URL。
+ * 不再维护 POSIX 根目录白名单（/workspace、/custom、/app 等任意根均覆盖）。
+ */
 function sanitizeDisplayPaths(value) {
-  return String(value)
-    // Windows 绝对路径: C:\Users\... 或 C:/Users/...
-    .replace(/(?<![\w:/])([A-Za-z]:[\\/][^\s;,)\]}"']+)/g, '<path>')
-    // POSIX 绝对路径（以 / 开头且前面不是 : 或 /，避免误伤 https:// 等 URL 协议）
-    .replace(/(?<![:/\w])\/(?:Users|home|private|var|tmp|opt|etc|usr|srv|root|mnt|media|dev|run|data)[\\/][^\s;,)\]}"']*/gi, '/<path>');
+  const urls = [];
+  let out = String(value).replace(/https?:\/\/[^\s;,)\]}"']+/g, (m) => {
+    urls.push(m);
+    return `\u0000URL${urls.length - 1}\u0000`;
+  });
+  // Windows 绝对路径: C:\Users\... 或 C:/Users/...
+  out = out.replace(/(?<![\w:/])([A-Za-z]:[\\/][^\s;,)\]}"']+)/g, '<path>');
+  // POSIX 绝对路径: 以 / 开头（前面不是字母数字/冒号/斜杠，排除 URL 与相对路径段）
+  out = out.replace(/(?<![\w:/])\/[^\s;,)\]}"']+/g, '<path>');
+  // 还原 URL
+  out = out.replace(/\u0000URL(\d+)\u0000/g, (_, i) => urls[Number(i)]);
+  return out;
 }
 
 /** 机器输出使用的公共错误消息：ConfigError 不给内部诊断细节，只引导 preflight */
@@ -331,12 +364,14 @@ async function main() {
   try {
     if (cmd === 'grab') {
       if (!arg1) throw invalidInput('grab 需要一个参数：问题链接或 ID');
+      const qid = parseQuestionId(arg1); // 静态校验先于凭据检查（P1-2）
       const config = loadConfig();
-      await cmdGrab(config, arg1, { outDir, json });
+      await cmdGrab(config, qid, { outDir, json });
     } else if (cmd === 'batch') {
       if (!arg1) throw invalidInput('batch 需要一个参数：批量文件路径');
+      const inputs = readBatchInputs(arg1); // 静态校验先于凭据检查（P1-2）
       const config = loadConfig();
-      const r = await cmdBatch(config, arg1, { outDir, json });
+      const r = await cmdBatch(config, arg1, { outDir, json, inputs });
       if (r.failed.length > 0) process.exitCode = 1;
     } else if (cmd === 'search') {
       if (!arg1) throw invalidInput('search 需要一个参数：关键词');

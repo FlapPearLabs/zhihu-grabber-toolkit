@@ -168,6 +168,30 @@ test('P1-INT-NEW-1: Windows 绝对路径同样被抹掉', () => {
   assert.ok(!r.stdout.includes('C:\\Users\\alice'), 'stdout 不得包含 Windows 绝对路径');
 });
 
+test('P1-1: 任意 POSIX 绝对路径（/workspace、/custom 等非白名单根）也被脱敏', () => {
+  for (const p of ['/workspace/alice/private/list.txt', '/custom/internal/question.txt']) {
+    const r = runCli(['batch', p, '--json'], {
+      env: { PATH: process.env.PATH, ZHIHU_COOKIE: 'z_c0=fake123; d_c0=fake456' },
+    });
+    const parsed = JSON.parse(r.stdout);
+    assert.equal(parsed.error.type, 'invalid_input');
+    assert.ok(!r.stdout.includes(p), `stdout 不得包含 ${p}`);
+  }
+});
+
+test('P1-1: batch failed[].input 不得泄漏绝对路径', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-batch-input-'));
+  const listFile = path.join(dir, 'list.txt');
+  fs.writeFileSync(listFile, '/custom/internal/question.txt\n');
+  const r = runCli(['batch', listFile, '--json'], {
+    env: { PATH: process.env.PATH, ZHIHU_COOKIE: 'z_c0=fake123; d_c0=fake456' },
+  });
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.failed.length, 1);
+  assert.ok(!r.stdout.includes('/custom/internal/question.txt'), 'failed[].input 不得包含绝对路径');
+  assert.ok(!parsed.failed[0].input.includes('/custom/'), 'input 字段应被脱敏');
+});
+
 // ===== P1-INT-NEW-2：结构化 error.type 稳定分类 =====
 
 test('P1-INT-NEW-2: 凭据可用时 grab 非法输入 → invalid_input', () => {
@@ -190,4 +214,24 @@ test('P1-INT-NEW-2: 未知命令 → invalid_input', () => {
   const r = runCli(['totally-unknown-command', '--json'], { env: { PATH: process.env.PATH } });
   const parsed = JSON.parse(r.stdout);
   assert.equal(parsed.error.type, 'invalid_input');
+});
+
+// ===== P1-2：静态输入校验先于凭据检查（invalid_input 不依赖凭据状态） =====
+
+test('P1-2: 无凭据时 grab 非法输入仍 → invalid_input（静态校验前置）', () => {
+  const r = runCli(['grab', 'definitely-not-a-question', '--json'], { env: { PATH: process.env.PATH } }); // 无 ZHIHU_COOKIE
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.error.type, 'invalid_input', '非法输入不应因无凭据变成 configuration_error');
+});
+
+test('P1-2: 无凭据时 batch 缺失文件 → invalid_input（静态校验前置）', () => {
+  const r = runCli(['batch', path.join(os.tmpdir(), 'no-such-batch-xyz.txt'), '--json'], { env: { PATH: process.env.PATH } }); // 无凭据
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.error.type, 'invalid_input', '缺失文件不应因无凭据变成 configuration_error');
+});
+
+test('P1-2: 无凭据时 grab 合法输入 → configuration_error（语义区分仍成立）', () => {
+  const r = runCli(['grab', '123', '--json'], { env: { PATH: process.env.PATH } }); // 合法输入但无凭据
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.error.type, 'configuration_error', '合法输入 + 缺凭据 → configuration_error');
 });
