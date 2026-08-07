@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [master, fix/skill-engineering-repair]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [22]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: zhihu-answer-grabber tests
+        working-directory: zhihu-answer-grabber
+        run: node --test
+
+      - name: corpus-anthology tests
+        working-directory: corpus-anthology
+        run: node --test
