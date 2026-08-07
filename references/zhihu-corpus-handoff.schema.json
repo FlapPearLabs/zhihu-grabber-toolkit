@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/FlapPearLabs/zhihu-grabber-toolkit/blob/master/references/zhihu-corpus-handoff.schema.json",
+  "title": "zhihu-corpus-handoff",
+  "description": "zhihu-answer-grabber → corpus-anthology 的交接契约。两个 Skill 必须引用本 schema，不得各自维护不一致副本。",
+  "type": "object",
+  "required": [
+    "task",
+    "sourceType",
+    "questionId",
+    "inputJson",
+    "inputMarkdown",
+    "verified",
+    "answerCount",
+    "warnings"
+  ],
+  "properties": {
+    "task": {
+      "type": "string",
+      "enum": ["inspect", "digest", "archive"],
+      "description": "请求 corpus-anthology 执行的模式"
+    },
+    "sourceType": {
+      "type": "string",
+      "const": "zhihu-answers"
+    },
+    "questionId": {
+      "type": "string",
+      "pattern": "^\\d{1,20}$",
+      "description": "知乎问题 ID"
+    },
+    "inputJson": {
+      "type": "string",
+      "description": "answers.json 相对路径"
+    },
+    "inputMarkdown": {
+      "type": "string",
+      "description": "answers.md 相对路径"
+    },
+    "verified": {
+      "type": "boolean",
+      "const": true,
+      "description": "必须为 true：抓取侧已通过 verify-output.mjs（valid === true）"
+    },
+    "answerCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "已验证的回答数，必须与 JSON 实际回答数一致"
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

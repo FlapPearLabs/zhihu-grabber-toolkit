@@ -1,66 +1,172 @@
 ---
 name: corpus-anthology
-description: 大语料编排器。当有大量文本/回答/文档（十几篇以上、超长，一次性读取会塞爆上下文）需要处理时使用：自动按用户意图路由为 精简总结(summary) / 全量合集(archive) / 修改排版(edit) / 完整版(full)，通过脚本与 map-reduce 分块处理，避免上下文溢出。Trigger: 大合集、全部保存、每篇都要、十几篇回答、总结这些、太长了、整理排版、完整版、成书、语料太多、context too long、anthology、corpus。
+description: 处理超出直接上下文读取能力的大型本地知乎回答语料（answers.json/answers.md），执行规模统计（inspect）、全覆盖分块摘要（digest）或机械归档（archive）；不用于单个小文件、普通问答、编辑或成书。
 agent_created: true
 ---
 
 # corpus-anthology
 
-## 用途
+## 任务
 
-处理"语料多、文本长、一次性读会塞爆上下文"的场景（如一次抓了十几篇知乎回答、多份长文档）。核心是**先路由再处理**：根据用户意图选择输出模式，并用脚本/分块技术保证 LLM 上下文安全。
+对超出直接上下文读取能力的大型本地知乎回答语料（`zhihu-answer-grabber` 产出的 `answers.json` / `answers.md`）执行：规模统计、全覆盖分块摘要（digest）、或机械归档（archive）。不负责网络抓取，不做正文编辑，不生成来源中不存在的结论。
 
-## 何时使用
+## 触发边界
 
-- 语料总规模大（参考：总字符 > 40KB 或 > 400 行，或文件数 > 5 个），直接 Read 全部会占用过多上下文。
-- 用户表达了不同输出意图（见路由表）。
-- 用户要求"出一本大合集 / 把每一篇都保存下来"。
+**应当触发：**
 
-## 意图路由（第一步必须做）
+- 用户明确要求对大型知乎回答语料做**全覆盖摘要**（"全部回答都要覆盖""做完整 digest"）。
+- 用户明确要求把多份 `answers.md` **机械合并**成合集/分卷（archive）。
+- 用户明确要求先**统计**这批抓取产物的规模（inspect）。
+- 接收来自 `zhihu-answer-grabber` 的已验证 handoff（`verified: true`，见 `references/handoff-schema.md`）。
 
-从用户表述中识别模式，**先向用户确认模式（除非意图明确）**：
+**不应触发：**
 
-| 用户意图信号 | 模式 | 输出形态 | 处理方式 |
-|---|---|---|---|
-| "总结要点""太长了""提炼" | **summary** | 一篇精炼 md（≤2-3KB，含来源标注） | `digest.mjs` 出摘要 → LLM 归纳 |
-| "全部保存""大合集""每篇都要""完整原文" | **archive** | 全量原文合集 md（脚本拼接，正文零改写） | `archive.mjs` 直接合并，LLM 不读正文 |
-| "整理一下""排版""去重""加目录""改格式" | **edit** | 原文 + 排版优化后的合集 | 脚本合并 + LLM 只看索引/样本做排版决策 |
-| "深度编排""完整版""成书""章节化" | **full** | 分章节、带导读/索引的长文档 | map-reduce 分块精读 + 分层合成 |
-
-多意图叠加（如"先出精简版，再出完整大合集"）= 依次执行多个模式。
+- 单个小文件（可直接读取，无需本 Skill）。
+- 普通问答、一般文本总结（不涉及知乎语料管线）。
+- 编辑、排版、改写、去重、成书、章节化完整版（**未实现，禁止声称支持**）。
+- 网络抓取（属于 zhihu-answer-grabber）。
+- 仅凭"太长了"一个词就触发——必须同时满足：输入是知乎抓取产物 + 规模确实超出直接读取能力。
 
 ## 上下文保护（硬性规则）
 
-1. **先 stats 后动手**：任何模式前先跑 `stats.mjs` 评估总规模（字符数/估算 token），据此决定模式与分块数。
-2. **禁止一次性全读**：总规模 > 40KB 时，不得用单个 Read 读取全部语料。
-3. **summary / full 用 map-reduce**：
-   - map：把语料按文件或按 ≤30KB/≤800 行分块，每块单独 Read + 提炼要点（每块输出 ≤500 字要点）；
-   - reduce：汇总各块要点，合成最终文档。
-4. **archive / edit 用脚本，LLM 不读正文**：合并、复制、统计全部由 `archive.mjs` 完成；LLM 只读取脚本生成的目录索引（标题+字符数）用于确认结构与排版，正文在脚本层保留。
-5. **输出分块写**：长文档先写骨架（标题/目录/章节空位），再逐章填充，避免单次生成超长内容。
+1. **先 stats 后动手**：任何模式前先运行 `scripts/stats.mjs` 评估总规模（字符/行/估算 token）。
+2. **禁止一次性全读**：总规模 > 40KB（启发式阈值）时，不得用单个 Read 读取全部语料。
+3. 无法获得上下文预算时，保守回退阈值：总字符 ≤ 40KB / ≈400 行以内才允许直接读取；超出必须走本 Skill 的脚本管线。
+4. 阈值是启发式规则，不得伪装成精确 token 数。
 
-## 工作流
+## 模式（仅支持三种）
 
-1. 识别意图 → 确定模式（必要时用 AskUserQuestion 确认）。
-2. 跑 `stats.mjs <语料目录>` 评估规模。
-3. 按模式执行：
-   - summary：`node scripts/digest.mjs <目录> --top 6 --max-chars 1300 --out digest.md` → Read digest.md → 归纳为最终总结（含每篇/每题来源）。
-   - archive：`node scripts/archive.mjs <目录> --title "合集名" [--volume 30]` → 交付合集文件（用 present_files），无需读取正文。
-   - edit：`archive.mjs` 合并 → Read 目录索引 → 在脚本输出基础上做排版决策（如统一标题、调整分卷）→ 重新生成。
-   - full：分块 map-reduce 精读 → 设计章节结构 → 分章写入。
-4. 交付：present_files 输出文件 + 简要说明（模式、篇数、规模、文件路径）。
-
-## 脚本（scripts/）
-
-| 脚本 | 模式 | 作用 |
+| 模式 | 用途 | 入口脚本 |
 |---|---|---|
-| `stats.mjs` | 所有 | 统计文件/目录规模（字符/行/估算token），决定分块 |
-| `digest.mjs` | summary | 按评分字段（默认 voteupCount）取 Top N，每条截断，生成摘要 md |
-| `archive.mjs` | archive/edit | 把多篇 answers.md 合并为大合集，自动目录索引，支持 --volume 分卷 |
+| `inspect` | 规模统计、分块建议 | `scripts/stats.mjs` |
+| `digest` | 全覆盖分块摘要（map-reduce，带来源证据） | `scripts/chunk.mjs` → map → `scripts/verify.mjs` → `scripts/reduce.mjs` → `scripts/verify.mjs --final` |
+| `archive` | 机械归档（脚本拼接，正文零改写） | `scripts/archive.mjs` |
 
-脚本用法与参数详见 `references/usage.md`。
+**不支持（未实现，禁止声称）：** `edit` / `full` / 成书 / 深度编排 / 自动去重改写 / 章节化完整版。只有具备确定性工作流、状态文件、来源追踪、断点恢复、覆盖率验证、验收测试与完整成功样例后，未来才能重新加入。
+
+## 输入范围（真实支持）
+
+本 Skill 的脚本实际处理 **`answers.json` 与 `answers.md`**（zhihu-answer-grabber 产物）。**不得声称**支持所有文档、PDF、任意 Markdown 或任意文本。其他格式需先转换为上述两种格式。
+
+## digest 工作流（全覆盖，可恢复）
+
+```
+建立 manifest
+→ 对全部记录分块
+→ 每块生成带来源的 map 结果
+→ 验证覆盖率
+→ reduce 合并
+→ 验证最终引用
+```
+
+### 步骤
+
+1. **建立 manifest 并分块**（确定性脚本）：
+
+```bash
+node scripts/chunk.mjs <answers.json 或目录> --work work/ --mode digest
+```
+
+   生成 `work/manifest.json` 与 `work/chunks/chunk-*.json`。分块规则、manifest schema、断点恢复见 `references/state-and-resume.md`。
+
+2. **逐块生成 map 结果**（LLM 读取每个 chunk，按 `references/evidence-schema.md` 写出结构化结果）：
+
+```bash
+work/map-results/map-chunk-0001.json
+```
+
+   每块必须输出结构化 JSON：`chunkId / sourceIds / summary / claims（含 evidenceSourceIds 与 confidence）/ themes / uncertainties`。**禁止**输出无法追溯来源的自由文本。
+
+3. **验证覆盖率**（确定性脚本）：
+
+```bash
+node scripts/verify.mjs --work work/
+```
+
+   校验项见 `references/verification.md`。以下条件全部为 0 才允许继续：
+
+```text
+missingSources = 0
+duplicateAssignments = 0
+failedChunks = 0
+invalidEvidenceRefs = 0
+```
+
+4. **reduce 合并**（确定性脚本）：
+
+```bash
+node scripts/reduce.mjs --work work/ --out work/final/digest.md
+```
+
+   reduce 只能基于已验证的 map 结果、manifest、coverage 报告，**不得重新读取全部原文**。规则见 `references/verification.md`。
+
+5. **验证最终引用**：
+
+```bash
+node scripts/verify.mjs --work work/ --final work/final/digest.md
+```
+
+   确认最终文档中的来源 ID 全部有效。全部通过后，才能报告 digest 完成。
+
+### 中断恢复
+
+- 任意步骤中断后重跑同命令即可续跑：chunk 幂等（manifest 哈希比对），map 结果按 chunkId 增量补齐，verify/reduce 只消费已完成状态。
+- 输入文件变化时通过 sha256 发现，**不得静默复用过期中间结果**（见 `references/state-and-resume.md`）。
+
+## popular-sample（高赞样本，不是摘要）
+
+当用户只想看"最高赞的几个回答样本"时，使用：
+
+```bash
+node scripts/popular-sample.mjs <answers.json 或目录> [--top 6] [--max-chars 1300] [--out sample.md]
+```
+
+**这是 popular-sample（高赞样本），不是 digest。** 它按点赞数取 Top N 并截断开头，**不能代表整个语料**。交付时必须在输出与说明中标注"高赞样本（popular-sample）"，不得称为"完整摘要/精华摘要/语料总结"。
+
+## archive 工作流
+
+**archive 是归档，不是摘要，也不是编辑。**
+
+```bash
+node scripts/archive.mjs <srcDir> [--out collection.md] [--title "合集标题"] [--volume N|--max-volume-chars M] [--name 前缀]
+```
+
+- 机械拼接，正文零改写。
+- 流式处理，超大文件不全部驻留内存。
+- 来源使用相对路径，不泄漏绝对路径。
+- 按体积（`--max-volume-chars`）或篇数（`--volume`）分卷，二者互斥。
+- 完成后**必须核验完整性**：
+
+```bash
+node scripts/archive.mjs <srcDir> --verify <collection.md>
+```
+
+   校验：输出前后篇数一致、内容哈希/字符数量可核验。验证通过才能交付。
+
+## 与 zhihu-answer-grabber 的衔接
+
+只接受**已验证**的 handoff（共享 schema：仓库级 `references/zhihu-corpus-handoff.schema.json`，见 `references/handoff-schema.md`）。
+
+接收时必须先检查：
+
+- `verified === true`；
+- `inputJson` / `inputMarkdown` 文件存在；
+- JSON 可解析；
+- `answerCount` 与 JSON 实际回答数一致。
+
+**若输入未验证，必须拒绝继续**，并返回需要由 zhihu-answer-grabber 修复的具体问题（如：重新运行 `verify-output.mjs`、修复产物）。不得绕过验证直接处理。
+
+## 参考
+
+- `references/modes.md` — 三种模式详解
+- `references/state-and-resume.md` — manifest / 分块 / 断点恢复 / 状态目录
+- `references/evidence-schema.md` — chunk 与 map 结果 schema
+- `references/verification.md` — 覆盖率与完整性验证
+- `references/handoff-schema.md` — 与抓取 Skill 的衔接契约
 
 ## 边界
 
-- 本 skill 负责**编排与输出形态**，不负责"抓取"（抓取用 zhihu-answer-grabber skill）。
-- archive 模式不重写正文（保留原始内容与格式）；改正文属于 edit/full 模式，且必须分块。
+- 不负责网络抓取。
+- 不做正文编辑、去重改写、成书。
+- archive 不改写正文；digest 不生成来源中不存在的结论。
+- 不输出本机绝对路径；一切产物路径为相对路径。

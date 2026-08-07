@@ -1,0 +1,12 @@
+# 调用策略声明：corpus-anthology
+#
+# 允许隐式调用（纯本地文件处理，无网络、无凭据），
+# 但 description 已严格限制触发范围：
+# 仅处理超出直接上下文读取能力的大型本地知乎回答语料
+# （inspect / digest / archive），不用于单个小文件、普通问答、编辑或成书。
+#
+# 兼容性说明：若当前运行环境（Agent 运行时）不支持 policy.allow_implicit_invocation
+# 字段，本文件会被忽略，行为退化为环境默认值；SKILL.md 中的触发边界
+# （应当触发 / 不应触发）始终生效，两者不冲突。
+policy:
+  allow_implicit_invocation: true

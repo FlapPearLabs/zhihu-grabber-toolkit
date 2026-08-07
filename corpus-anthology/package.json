@@ -1,0 +1,21 @@
+{
+  "name": "corpus-anthology",
+  "version": "1.0.0",
+  "description": "大语料处理 Skill：对超出上下文读取能力的大型知乎回答语料执行 inspect / digest / archive",
+  "type": "module",
+  "files": [
+    "scripts",
+    "lib",
+    "references",
+    "agents",
+    "test",
+    "SKILL.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": { "node": ">=22" },
+  "license": "MIT"
+}

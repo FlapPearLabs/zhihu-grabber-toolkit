@@ -4,8 +4,8 @@
 
 | 模块 | 作用 | 许可证 |
 |---|---|---|
-| [`zhihu-answer-grabber/`](./zhihu-answer-grabber) | 知乎回答抓取器（CLI + Skill）。复用开源 zse96 v2 签名算法（衍生自 zly2006/zhihu-plus-plus → iteng007/zhihu-mcp-server），直连稳定，支持分页抓全量回答、断点续传、结构化 JSON/Markdown 输出。 | AGPL-3.0（签名算法部分衍生自 AGPL 项目） |
-| [`corpus-anthology/`](./corpus-anthology) | 大语料路由编排 Skill。十几篇长回答上下文会塞爆时，自动按意图路由：精简总结 / 全量合集 / 排版整理 / 章节化完整版，且全程保护 LLM 上下文。 | MIT |
+| [`zhihu-answer-grabber/`](./zhihu-answer-grabber) | 知乎回答抓取器（CLI + Skill）。复用开源 zse96 v2 签名算法（衍生自 zly2006/zhihu-plus-plus → iteng007/zhihu-mcp-server），直连稳定，支持分页抓全量回答、断点续传、结构化 JSON/Markdown 输出，并提供产物完成验证（`verify-output.mjs`）与凭据预检（`preflight.mjs`）。 | AGPL-3.0（签名算法部分衍生自 AGPL 项目） |
+| [`corpus-anthology/`](./corpus-anthology) | 大语料处理 Skill。对超出上下文读取能力的大型知乎回答语料执行：规模统计（inspect）、全覆盖分块摘要（digest，带来源证据）、机械归档（archive）。**不支持** edit/full/成书（未实现）。 | MIT |
 
 ---
 
@@ -15,7 +15,8 @@
 
 - 直接读 Cookie 文件直连，规避 zhihu-cli 二维码登录在代理环境下卡死的问题；
 - 分页抓全量回答 + 断点续传，适合自动化 / Agent 调用；
-- 结构化输出（JSON + Markdown），而非交互式终端展示。
+- 结构化输出（JSON + Markdown），而非交互式终端展示；
+- 完成验证：`scripts/verify-output.mjs` 校验产物完整性与一致性。
 
 ### 安装
 
@@ -24,7 +25,7 @@ cd zhihu-answer-grabber
 npm install      # 仅测试依赖（node:test），运行时不依赖任何第三方包
 ```
 
-### 配置凭据（二选一，均不入库）
+### 配置凭据（本地配置，均不入库，不经聊天）
 
 ```bash
 # 方式 A：环境变量
@@ -37,8 +38,9 @@ echo "你的secret" > zhihu_secret.txt
 ```
 
 > ⚠️ Cookie 是「进知乎的门卡」，Secret 是「官方数据平台的会员卡」。
-> 只抓回答 → 只要 Cookie；想用「搜关键词定位问题」→ 再加 Secret。
-> **这两个文件已在 `.gitignore` 中屏蔽，切勿提交。**
+> **凭据只在本机配置，绝不粘贴到聊天、日志或任何文档中。**
+> 这两个文件已在 `.gitignore` 中屏蔽，切勿提交。
+> Agent 可用 `node scripts/preflight.mjs` 检查凭据是否已配置（只输出布尔值）。
 
 ### 用法
 
@@ -49,11 +51,14 @@ node scripts/zhigrab.mjs grab <QUESTION_ID>
 # 批量抓取（每行一个 ID）
 node scripts/zhigrab.mjs batch batch.txt
 
-# 用官方平台搜关键词，定位相关问题 ID（需要 Secret）
+# 用官方平台搜关键词，定位相关问题 ID（需要 Secret）；--grab 仅在明确要求"抓第一个结果"时使用
 node scripts/zhigrab.mjs search "Codex 使用技巧"
 
 # 查看状态
 node scripts/zhigrab.mjs status
+
+# 抓取完成后验证产物
+node scripts/verify-output.mjs out/<QUESTION_ID>
 ```
 
 也可作为 WorkBuddy Skill 使用（见 `zhihu-answer-grabber/SKILL.md`）。
@@ -62,16 +67,40 @@ node scripts/zhigrab.mjs status
 
 ## 2. corpus-anthology
 
-大语料路由编排器。当你要处理的回答/文档总量超过约 40KB（≈25k token）时，**禁止一次性全读进上下文**，本 Skill 会先做规模评估（`stats.mjs`），再按你的意图路由：
+大语料处理 Skill。当知乎回答语料总量超过约 40KB（≈25k token，启发式阈值）时，**禁止一次性全读进上下文**，本 Skill 先做规模评估（`stats.mjs`），再按需求处理：
 
-| 意图 | 模式 | 处理 |
+| 需求 | 模式 | 处理 |
 |---|---|---|
-| 总结要点 / 太长了 | summary | `digest.mjs` 抽精华 → LLM 归纳 |
-| 全部保存 / 大合集 | archive | `archive.mjs` 纯脚本拼接，正文零改写、不占上下文 |
-| 整理 / 排版 / 加目录 | edit | 脚本合并 + LLM 只看索引做决策 |
-| 完整版 / 成书 | full | map-reduce 分块精读 + 分层合成 |
+| 先统计规模 / 决定怎么处理 | inspect | `stats.mjs` 流式统计 |
+| 全部回答都要覆盖的摘要 | digest | `chunk.mjs` → map → `verify.mjs` → `reduce.mjs` → `verify.mjs --final`，带来源证据 |
+| 只看最高赞的几个回答 | popular-sample | `popular-sample.mjs` 取 Top N（高赞样本，不代表语料） |
+| 机械合并成分卷合集 | archive | `archive.mjs` 纯脚本拼接，正文零改写、流式、相对路径，`--verify` 核验完整性 |
 
-详见 [`corpus-anthology/SKILL.md`](./corpus-anthology/SKILL.md) 与 [`references/usage.md`](./corpus-anthology/references/usage.md)。
+**不支持的**：edit（排版编辑）、full（章节化完整版）、成书、自动去重改写——这些能力未实现，本仓库不声称支持。
+
+详见 [`corpus-anthology/SKILL.md`](./corpus-anthology/SKILL.md) 与 `corpus-anthology/references/`。
+
+---
+
+## 两个模块的衔接
+
+抓取产物超过直接读取能力时，`zhihu-answer-grabber` 以结构化 JSON handoff 交给 `corpus-anthology`：
+
+```json
+{
+  "task": "digest",
+  "sourceType": "zhihu-answers",
+  "questionId": "123",
+  "inputJson": "out/123/answers.json",
+  "inputMarkdown": "out/123/answers.md",
+  "verified": true,
+  "answerCount": 247,
+  "warnings": []
+}
+```
+
+- 共享 schema：`references/zhihu-corpus-handoff.schema.json`（两个 Skill 引用同一文件）。
+- `corpus-anthology` 接收前必须验证 `verified === true`、文件存在、JSON 可解析、`answerCount` 一致；未验证则拒绝并返回需修复项。
 
 ---
 

@@ -1,0 +1,197 @@
+#!/usr/bin/env node
+// SPDX-License-Identifier: MIT
+/**
+ * reduce — digest 模式：合并已验证的 map 结果。
+ *
+ * 用法:
+ *   node scripts/reduce.mjs --work work/ [--out work/final/digest.md]
+ *
+ * 规则:
+ *   - 只基于 manifest、coverage、map-results 合并，不重新读取原文。
+ *   - 合并重复主题；保留少数观点和反对意见。
+ *   - 区分高赞与代表性：高赞（voteupCount 高）≠ 真实性，仅标注传播度。
+ *   - 保留来源 ID；明确未经验证的推断；不生成来源中不存在的结论。
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+
+function arg(name, fallback) {
+  const i = process.argv.indexOf(name);
+  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
+}
+
+function readJson(file) {
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
+}
+
+function main() {
+  const workDir = path.resolve(arg('--work', 'work'));
+  const manifestFile = path.join(workDir, 'manifest.json');
+  const coverageFile = path.join(workDir, 'coverage.json');
+  const mapDir = path.join(workDir, 'map-results');
+
+  if (!fs.existsSync(manifestFile)) {
+    console.error(`manifest 不存在: ${manifestFile}（请先运行 chunk.mjs）`);
+    process.exit(2);
+  }
+  if (!fs.existsSync(coverageFile)) {
+    console.error(`coverage 报告不存在: ${coverageFile}（请先运行 verify.mjs）`);
+    process.exit(2);
+  }
+
+  const manifest = readJson(manifestFile);
+  const coverage = readJson(coverageFile);
+  if (coverage.valid !== true) {
+    console.error('覆盖率验证未通过，禁止 reduce（请先修复并重新 verify.mjs）');
+    process.exit(1);
+  }
+
+  if (!fs.existsSync(mapDir)) {
+    console.error(`map-results 目录不存在: ${mapDir}`);
+    process.exit(1);
+  }
+
+  const validSources = new Set(manifest.inputs.map((i) => i.sourceId));
+  const sourceMeta = new Map(manifest.inputs.map((i) => [i.sourceId, i]));
+
+  const mapResults = [];
+  for (const f of fs.readdirSync(mapDir).sort()) {
+    if (!f.endsWith('.json')) continue;
+    let map;
+    try {
+      map = readJson(path.join(mapDir, f));
+    } catch {
+      continue; // verify 已报告损坏
+    }
+    if (map.status === 'failed') continue;
+    mapResults.push(map);
+  }
+
+  // 合并主题（去重、计数）
+  const themeCount = new Map();
+  for (const m of mapResults) {
+    for (const t of m.themes ?? []) {
+      const key = String(t).trim();
+      if (key) themeCount.set(key, (themeCount.get(key) ?? 0) + 1);
+    }
+  }
+  const themes = [...themeCount.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([theme, count]) => ({ theme, sourceCount: count }));
+
+  // 合并 claims：去重（同文本），保留来源与置信度
+  const claims = [];
+  const claimIndex = new Map();
+  for (const m of mapResults) {
+    for (const c of m.claims ?? []) {
+      const text = String(c.claim ?? '').trim();
+      if (!text) continue;
+      const key = text;
+      if (claimIndex.has(key)) {
+        const existing = claimIndex.get(key);
+        existing.evidenceSourceIds = [...new Set([...existing.evidenceSourceIds, ...(c.evidenceSourceIds ?? [])])];
+        // 置信度取最高
+        const order = { high: 3, medium: 2, low: 1 };
+        if (order[c.confidence] > order[existing.confidence]) existing.confidence = c.confidence;
+      } else {
+        const entry = {
+          claim: text,
+          evidenceSourceIds: [...new Set(c.evidenceSourceIds ?? [])],
+          confidence: c.confidence ?? 'low',
+          // 标注传播度（高赞来源数），不代表真实性
+          highVoteSources: (c.evidenceSourceIds ?? []).filter((sid) => {
+            const meta = sourceMeta.get(sid);
+            return meta && Number(meta.voteupCount) >= 1000;
+          }).length,
+        };
+        claimIndex.set(key, entry);
+        claims.push(entry);
+      }
+    }
+  }
+
+  // 少数观点与反对意见：仅出现一次且与多数结论方向不一致的 claims
+  const claimCount = new Map();
+  for (const m of mapResults) {
+    for (const c of m.uncertainties ?? []) {
+      const key = String(c).trim();
+      if (key) claimCount.set(key, (claimCount.get(key) ?? 0) + 1);
+    }
+  }
+  const minorityViews = [];
+  for (const m of mapResults) {
+    for (const c of m.uncertainties ?? []) {
+      const key = String(c).trim();
+      if (!key) continue;
+      if (!minorityViews.some((v) => v.statement === key)) {
+        minorityViews.push({ statement: key, noted: true });
+      }
+    }
+  }
+
+  // 未验证推断：map 中 confidence=low 的 claims
+  const unverifiedInferences = claims
+    .filter((c) => c.confidence === 'low')
+    .map((c) => ({ claim: c.claim, evidenceSourceIds: c.evidenceSourceIds }));
+
+  // reduce-input（供 LLM 撰写最终文档的结构化输入）
+  const reduceInput = {
+    schemaVersion: 1,
+    mode: 'digest',
+    inputCount: manifest.inputs.length,
+    chunkCount: mapResults.length,
+    themes,
+    claims,
+    minorityViews,
+    uncertainties: minorityViews.map((v) => v.statement),
+    unverifiedInferences,
+    sourceIndex: Object.fromEntries(
+      [...validSources].map((sid) => [sid, {
+        questionId: sourceMeta.get(sid)?.questionId,
+        answerId: sourceMeta.get(sid)?.answerId,
+        relativePath: sourceMeta.get(sid)?.relativePath,
+      }]),
+    ),
+    note: 'highVoteSources 仅表示传播度（高赞来源数量），不构成真实性证据。confidence 由 map 阶段标注。',
+  };
+
+  const finalDir = path.join(workDir, 'final');
+  fs.mkdirSync(finalDir, { recursive: true });
+
+  const reduceInputFile = path.join(workDir, 'reduce-input.json');
+  fs.writeFileSync(reduceInputFile, JSON.stringify(reduceInput, null, 2), 'utf8');
+
+  // 最终文档草稿：机械合并（LLM 应基于此完善，来源 ID 必须保留）
+  const out = arg('--out', path.join(finalDir, 'digest.md'));
+  const L = [];
+  L.push('# 语料全覆盖摘要（digest 草稿）');
+  L.push('');
+  L.push(`> 覆盖 ${reduceInput.inputCount} 条回答 / ${reduceInput.chunkCount} 个 chunk。`);
+  L.push(`> 说明：本文件由 reduce 机械合并生成；最终版本应在保留 [sourceId] 引用的前提下完善。`);
+  L.push('');
+  L.push('## 主题分布');
+  for (const t of themes) L.push(`- ${t.theme}（${t.sourceCount} 个来源）`);
+  L.push('');
+  L.push('## 主要观点（claims）');
+  claims.forEach((c, i) => {
+    L.push(`### ${i + 1}. ${c.claim}`);
+    L.push(`- 来源: ${c.evidenceSourceIds.map((s) => `[${s}]`).join(' ')}`);
+    L.push(`- 置信度: ${c.confidence}${c.highVoteSources > 0 ? `；高赞来源 ${c.highVoteSources} 个（仅传播度，非真实性证据）` : ''}`);
+    L.push('');
+  });
+  L.push('## 少数观点与不确定性');
+  for (const v of minorityViews) L.push(`- ${v.statement}`);
+  L.push('');
+  L.push('## 未经验证的推断');
+  for (const u of unverifiedInferences) {
+    L.push(`- ${u.claim}（来源: ${u.evidenceSourceIds.map((s) => `[${s}]`).join(' ')}，置信度 low）`);
+  }
+  L.push('');
+  fs.writeFileSync(out, L.join('\n'), 'utf8');
+
+  console.log(`reduce-input: ${reduceInputFile}`);
+  console.log(`最终文档草稿: ${out}`);
+  console.log(`主题 ${themes.length} 个 / claims ${claims.length} 条 / 少数观点 ${minorityViews.length} 条`);
+}
+
+main();

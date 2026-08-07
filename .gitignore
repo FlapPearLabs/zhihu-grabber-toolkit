@@ -9,6 +9,7 @@ zhihu_secret.txt
 # ===== 抓取产物 / 中间文件（体积大、非源码）=====
 out/
 collections/
+work/
 *.digest
 digest*.txt
 batch*.txt

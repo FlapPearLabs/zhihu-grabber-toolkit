@@ -1,0 +1,10 @@
+# 调用策略声明：zhihu-answer-grabber
+#
+# 理由：本 Skill 使用本地登录凭据（Cookie / Secret）并执行网络访问，
+# 默认要求用户显式选择或上层工作流显式调用，减少误触发与凭据风险。
+#
+# 兼容性说明：若当前运行环境（Agent 运行时）不支持 policy.allow_implicit_invocation
+# 字段，本文件会被忽略，行为退化为环境默认值；SKILL.md 中的触发边界
+# （应当触发 / 不应触发）始终生效，两者不冲突。
+policy:
+  allow_implicit_invocation: false

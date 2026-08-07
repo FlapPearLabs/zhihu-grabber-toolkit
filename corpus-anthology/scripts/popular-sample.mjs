@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: MIT
 /**
- * digest — summary 模式：从语料中提取"精华摘要"（按评分字段倒序，每条截断），
- * 产出小体量 Markdown，供 LLM 直接读取后归纳，避免读取全部原文。
+ * popular-sample — 高赞样本（popular-sample）：按评分字段（默认 voteupCount）
+ * 取 Top N 并截断开头，产出小体量 Markdown 供 LLM 快速浏览。
+ *
+ * 注意：这是"高赞样本"，不是 digest，也不能代表整个语料。
+ * 全覆盖摘要请使用 digest 管线（chunk.mjs → map → verify.mjs → reduce.mjs）。
  *
  * 用法:
- *   node digest.mjs <input> [--top N] [--max-chars M] [--key voteupCount] [--out digest.md]
+ *   node popular-sample.mjs <input> [--top N] [--max-chars M] [--key voteupCount] [--out sample.md]
  * input 可以是:
  *   - 单个 answers.json（结构: {questionTitle, answers:[...]} 或纯数组）
  *   - 目录（递归查找所有 answers.json，按目录名排序逐题处理）
@@ -28,11 +31,11 @@ function parsePositiveInt(raw, { min, max, name }) {
 }
 
 const input = process.argv[2];
-if (!input) { console.error('用法: node digest.mjs <input> [--top N] [--max-chars M] [--key 字段] [--out 文件]'); process.exit(2); }
+if (!input) { console.error('用法: node popular-sample.mjs <input> [--top N] [--max-chars M] [--key 字段] [--out 文件]'); process.exit(2); }
 const TOP = parsePositiveInt(arg('--top', '6'), { min: 1, max: 100, name: '--top' });
 const MAX_CHARS = parsePositiveInt(arg('--max-chars', '1300'), { min: 100, max: 100000, name: '--max-chars' });
 const KEY = arg('--key', 'voteupCount');
-const OUT = arg('--out', 'digest.md');
+const OUT = arg('--out', 'popular-sample.md');
 
 function loadQuestions(inputPath) {
   const resolved = path.resolve(inputPath);
@@ -102,11 +105,11 @@ try {
 } catch { /* 保持原样 */ }
 
 const head = [
-  `# 语料精华摘要（digest）`,
+  `# 高赞样本（popular-sample）`,
   ``,
-  `> 输入: ${inputDisplay}  共 ${lines.length === 0 ? 0 : totalAnswers} 条回答，摘要取每题 Top ${TOP}`,
-  `> 说明: 此为摘要，如需全文请用 archive 模式（脚本拼接，不耗上下文）`,
+  `> 输入: ${inputDisplay}  共 ${lines.length === 0 ? 0 : totalAnswers} 条回答，按 ${KEY} 取每题 Top ${TOP}`,
+  `> 说明: 这是按评分取样的高赞样本，不代表整个语料。全覆盖摘要请使用 digest 管线。`,
   ``,
 ].join('\n');
 fs.writeFileSync(OUT, head + lines.join('\n'), 'utf8');
-console.log(`已生成摘要: ${OUT}（${(head + lines.join('\n')).length} 字符）`);
+console.log(`已生成高赞样本: ${OUT}（${(head + lines.join('\n')).length} 字符）`);
