@@ -154,17 +154,16 @@ node scripts/archive.mjs <srcDir> --verify --manifest <manifest.json>
 node scripts/archive.mjs <srcDir> --verify <collection.md>
 ```
 
-   校验：每卷篇数一致、**逐篇正文 SHA-256 与 manifest 快照一致**（正文被改/截断/损坏都会失败）、无绝对路径泄漏、正文 framing 用机器标记（正文中的 H1/来源行不会被误判为边界）。验证通过才能交付。
+   校验：每卷篇数一致、**逐篇正文 SHA-256 与 manifest 快照一致**（正文被改/截断/损坏都会失败）、无绝对路径泄漏、正文 framing 用机器标记 + 字符数长度头（正文中的 H1/来源行/marker 文本都不会被误判为边界）。验证通过才能交付。
 
 ## 与 zhihu-answer-grabber 的衔接
 
 只接受**已验证**的 handoff（共享 schema：仓库级 `references/zhihu-corpus-handoff.schema.json`，见 `references/handoff-schema.md`）。
 
-接收时先运行 `node scripts/verify.mjs --handoff <handoff.json>`，完整执行共享 schema 约束：
+接收时先运行 `node scripts/verify.mjs --handoff <handoff.json>`。**共享 schema 是唯一事实来源**：validator 直接读取并执行 schema 的结构约束（required/task enum/sourceType const/questionId type+pattern/verified const/answerCount minimum/warnings items/additionalProperties），schema 修改后自动跟随、永不漂移；其余为业务校验：
 
-- `verified === true`；
-- 全字段存在（task/sourceType/questionId/inputJson/inputMarkdown/verified/answerCount/warnings）；
-- `task` 枚举合法、`questionId` 为 1-20 位数字、`warnings` 为数组、无额外字段；
+业务校验（schema 无法表达的部分）：
+
 - `inputJson` / `inputMarkdown` 为相对路径且文件存在；
 - JSON 可解析，`answerCount` 与 JSON 实际回答数一致。
 

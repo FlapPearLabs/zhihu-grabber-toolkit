@@ -148,20 +148,39 @@ async function writeCanonicalBody(outStream, file) {
   });
 }
 
-/** 从输出文本中按机器 framing 提取各来源的 body */
+/**
+ * 从输出文本中按「字符数长度 framing」精确提取各来源的 body。
+ *
+ * 每篇 section 结构：
+ *   <!-- ARCHIVE_SOURCE_BEGIN <rel> -->
+ *   <!-- ARCHIVE_BODY_CHARS: N -->
+ *   <恰好 N 个字符的 canonical body>
+ *   <!-- ARCHIVE_SOURCE_END -->
+ *
+ * 切分依据是 N（长度），而不是查找 END 标记或正则识别 Markdown 语法，
+ * 因此正文即使包含 BEGIN/END marker 文本或 H1/'> 来源:' 行也不会产生歧义。
+ */
 function extractFramedSections(outText) {
   const sections = new Map();
-  // 逐对 BEGIN/END 提取：framing 标记不可与正文歧义
-  const parts = outText.split(BEGIN_MARKER);
-  for (let i = 1; i < parts.length; i += 1) {
-    const part = parts[i];
-    const nl = part.indexOf('\n');
-    const header = nl === -1 ? part.trim() : part.slice(0, nl).trim();
-    const rest = nl === -1 ? '' : part.slice(nl + 1);
-    const endIdx = rest.indexOf(END_MARKER);
-    if (endIdx === -1) continue;
-    const body = rest.slice(0, endIdx);
-    sections.set(header, body.trim());
+  const LEN_RE = /^<!-- ARCHIVE_BODY_CHARS: (\d+) -->\n/;
+  let pos = 0;
+  while (true) {
+    const beginAt = outText.indexOf(BEGIN_MARKER, pos);
+    if (beginAt === -1) break;
+    const nl = outText.indexOf('\n', beginAt);
+    if (nl === -1) {
+      throw new Error(`framing 损坏: 缺少 source 行与长度头（第 ${beginAt} 字节）`);
+    }
+    const header = outText.slice(beginAt + BEGIN_MARKER.length, nl).trim();
+    const rest = outText.slice(nl + 1);
+    const m = rest.match(LEN_RE);
+    if (!m) {
+      throw new Error(`framing 损坏: section ${header} 缺少 ARCHIVE_BODY_CHARS 长度头`);
+    }
+    const n = Number(m[1]);
+    const bodyStart = nl + 1 + m[0].length;
+    sections.set(header, outText.slice(bodyStart, bodyStart + n));
+    pos = bodyStart + n;
   }
   return sections;
 }
@@ -377,8 +396,9 @@ async function main() {
           if (i > 0) stream.write('\n---\n\n');
           stream.write(`## ${e.title}\n\n`);
           stream.write(`> 来源: ${relSource(srcDir, e.file)}\n\n`);
-          // 机器 framing：BEGIN/END 标记包裹正文
+          // 机器 framing：BEGIN/END 标记 + 字符数长度头（长度 framing 使正文含任何 marker 文本均无歧义）
           stream.write(`${BEGIN_MARKER} ${relSource(srcDir, e.file)}\n`);
+          stream.write(`<!-- ARCHIVE_BODY_CHARS: ${e.chars} -->\n`);
           await writeCanonicalBody(stream, e.file);
           stream.write(`\n${END_MARKER}\n`);
         }

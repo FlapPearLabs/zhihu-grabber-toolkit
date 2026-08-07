@@ -343,7 +343,7 @@ test('handoff: warnings 含非字符串项 → 拒绝（P1-NEW-6）', () => {
   const { hf } = makeHandoffFile(dir, { warnings: [123, false, { x: 1 }] });
   const r = run(['--handoff', hf]);
   assert.equal(r.status, 1);
-  assert.ok(JSON.parse(r.stdout).issues.some((i) => i.includes('全部为字符串')));
+  assert.ok(JSON.parse(r.stdout).issues.some((i) => i.includes('warnings')), '逐项类型校验应拒绝非字符串项');
 });
 
 test('handoff: questionId 为数字 → 拒绝（P1-NEW-6，schema type: string）', () => {

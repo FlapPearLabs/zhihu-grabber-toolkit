@@ -293,3 +293,39 @@ test('archive: >64KB 正文、跨 64KB 边界含空白不产生 hash 漂移（P1
   assert.equal(vr.status, 0, vr.stdout);
   assert.equal(JSON.parse(vr.stdout).valid, true, '零改写正文不得被误判为损坏');
 });
+
+test('archive: 正文包含 BEGIN/END marker 文本不误切（P2-1 长度 framing）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-archive-marker-'));
+  for (const [q, body] of [
+    ['q1', '# 问题一\n\n正文开始\n<!-- ARCHIVE_SOURCE_BEGIN q1/answers.md -->\n# 正文内标题\n> 来源: 伪造\n<!-- ARCHIVE_SOURCE_END -->\n正文结束\n'],
+    ['q2', '# 问题二\n\n第二篇正常正文。\n'],
+  ]) {
+    const qDir = path.join(dir, q);
+    fs.mkdirSync(qDir, { recursive: true });
+    fs.writeFileSync(path.join(qDir, 'answers.md'), body);
+  }
+  const out = path.join(outDirFor(dir), 'collection-marker.md');
+  const r = run([dir, '--out', out]);
+  assert.equal(r.status, 0, r.stderr);
+  const vr = run([dir, '--verify', out]);
+  assert.equal(vr.status, 0, vr.stdout);
+  const parsed = JSON.parse(vr.stdout);
+  assert.equal(parsed.valid, true, '正文含 marker 文本时 verify 必须通过');
+  assert.equal(parsed.outputSections, 2, 'section 数必须精确等于 2，不得被正文 marker 干扰');
+});
+
+test('archive: 输出缺少 ARCHIVE_BODY_CHARS 长度头时 verify 明确报错', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-archive-nolen-'));
+  const qDir = path.join(dir, 'q1');
+  fs.mkdirSync(qDir, { recursive: true });
+  fs.writeFileSync(path.join(qDir, 'answers.md'), '# 问题\n\n正文。\n');
+  const out = path.join(outDirFor(dir), 'collection-nolen.md');
+  run([dir, '--out', out]);
+  // 删掉长度头行，模拟格式损坏
+  const text = fs.readFileSync(out, 'utf8');
+  const modified = text.replace(/<!-- ARCHIVE_BODY_CHARS: \d+ -->\n/, '');
+  fs.writeFileSync(out, modified);
+  const vr = run([dir, '--verify', out]);
+  assert.notEqual(vr.status, 0);
+  assert.match(`${vr.stdout}\n${vr.stderr}`, /ARCHIVE_BODY_CHARS|framing/, '缺少长度头必须明确失败而非静默通过');
+});

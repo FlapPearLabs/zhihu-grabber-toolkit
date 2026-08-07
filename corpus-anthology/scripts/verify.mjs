@@ -21,6 +21,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+
+/** 共享 handoff schema（仓库级，两个 Skill 的唯一事实来源） */
+const HANDOFF_SCHEMA_FILE = fileURLToPath(new URL('../../references/zhihu-corpus-handoff.schema.json', import.meta.url));
 
 function arg(name, fallback) {
   const i = process.argv.indexOf(name);
@@ -329,10 +333,74 @@ function verifyFinal(workDir, manifest, finalFile) {
   return report;
 }
 
-/** 与 references/zhihu-corpus-handoff.schema.json 同源的确定性校验 */
-const HANDOFF_TASKS = ['inspect', 'digest', 'archive'];
-const HANDOFF_REQUIRED = ['task', 'sourceType', 'questionId', 'inputJson', 'inputMarkdown', 'verified', 'answerCount', 'warnings'];
-const HANDOFF_ALLOWED = new Set([...HANDOFF_REQUIRED]);
+/**
+ * 迷你 JSON Schema 解释器：从共享 schema 读取约束并执行（仅支持本项目 schema 用到的子集：
+ * type / required / properties / additionalProperties / enum / const / pattern / minimum / items）。
+ * schema 是唯一事实来源，validator 不重复维护结构约束 → 与 schema 永不漂移。
+ */
+function typeLabel(t) {
+  return { string: '字符串', integer: '整数', number: '数字', boolean: '布尔值', array: '数组', object: '对象' }[t] || t;
+}
+
+function valueLabel(v) {
+  if (v === null) return 'null';
+  if (Array.isArray(v)) return '数组';
+  return typeof v;
+}
+
+function matchesType(t, v) {
+  switch (t) {
+    case 'string': return typeof v === 'string';
+    case 'integer': return Number.isInteger(v);
+    case 'number': return typeof v === 'number';
+    case 'boolean': return typeof v === 'boolean';
+    case 'array': return Array.isArray(v);
+    case 'object': return typeof v === 'object' && v !== null && !Array.isArray(v);
+    case 'null': return v === null;
+    default: return true;
+  }
+}
+
+function validateBySchema(schema, data, p = '$') {
+  const issues = [];
+  if (!schema || typeof schema !== 'object') return issues;
+  if (schema.type !== undefined && !matchesType(schema.type, data)) {
+    issues.push(`${p} 类型应为 ${typeLabel(schema.type)}，收到 ${valueLabel(data)}`);
+  }
+  if (schema.enum !== undefined && !schema.enum.includes(data)) {
+    issues.push(`${p} 必须是 ${schema.enum.join('/')} 之一，收到 ${JSON.stringify(data)}`);
+  }
+  if (schema.const !== undefined && data !== schema.const) {
+    issues.push(`${p} 必须为 ${JSON.stringify(schema.const)}，收到 ${JSON.stringify(data)}`);
+  }
+  if (schema.pattern !== undefined && typeof data === 'string' && !new RegExp(schema.pattern).test(data)) {
+    issues.push(`${p} 不匹配 pattern ${schema.pattern}，收到 ${JSON.stringify(data)}`);
+  }
+  if (schema.minimum !== undefined && typeof data === 'number' && data < schema.minimum) {
+    issues.push(`${p} 不能小于 ${schema.minimum}`);
+  }
+  if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
+    if (schema.required) {
+      for (const r of schema.required) {
+        if (!(r in data)) issues.push(`${p} 缺少必需字段 ${r}`);
+      }
+    }
+    if (schema.properties) {
+      for (const [k, sub] of Object.entries(schema.properties)) {
+        if (k in data) issues.push(...validateBySchema(sub, data[k], `${p}.${k}`));
+      }
+      if (schema.additionalProperties === false) {
+        for (const k of Object.keys(data)) {
+          if (!(k in schema.properties)) issues.push(`${p} 不允许额外字段 ${k}`);
+        }
+      }
+    }
+  }
+  if (Array.isArray(data) && schema.items) {
+    data.forEach((item, i) => issues.push(...validateBySchema(schema.items, item, `${p}[${i}]`)));
+  }
+  return issues;
+}
 
 function verifyHandoff(handoffFile) {
   const report = { valid: true, issues: [] };
@@ -350,64 +418,20 @@ function verifyHandoff(handoffFile) {
     report.issues.push('handoff 必须是 JSON 对象');
     return report;
   }
-  // required 全字段
-  for (const key of HANDOFF_REQUIRED) {
-    if (!(key in handoff)) {
-      report.valid = false;
-      report.issues.push(`缺少必需字段: ${key}`);
-    }
-  }
-  // additionalProperties 拒绝
-  for (const key of Object.keys(handoff)) {
-    if (!HANDOFF_ALLOWED.has(key)) {
-      report.valid = false;
-      report.issues.push(`不允许的额外字段: ${key}`);
-    }
-  }
-  // task enum
-  if (handoff.task !== undefined && !HANDOFF_TASKS.includes(handoff.task)) {
+  // —— 结构约束全部来自共享 schema（required/enum/const/pattern/type/items/additionalProperties）——
+  let schema;
+  try {
+    schema = readJson(HANDOFF_SCHEMA_FILE);
+  } catch (error) {
     report.valid = false;
-    report.issues.push(`task 必须是 ${HANDOFF_TASKS.join('/')} 之一，收到: ${handoff.task}`);
+    report.issues.push(`共享 schema 无法读取: ${displayPath(HANDOFF_SCHEMA_FILE)} — ${error.message}（请确认在仓库工作区内运行）`);
+    return report;
   }
-  // sourceType const
-  if (handoff.sourceType !== undefined && handoff.sourceType !== 'zhihu-answers') {
+  for (const issue of validateBySchema(schema, handoff)) {
     report.valid = false;
-    report.issues.push(`sourceType 必须是 zhihu-answers，收到: ${handoff.sourceType}`);
+    report.issues.push(issue);
   }
-  // questionId：必须是 string 且匹配 pattern（与 schema type: string + pattern 一致）
-  if (handoff.questionId !== undefined) {
-    if (typeof handoff.questionId !== 'string') {
-      report.valid = false;
-      report.issues.push(`questionId 必须是字符串，收到: ${JSON.stringify(handoff.questionId)}`);
-    } else if (!/^\d{1,20}$/.test(handoff.questionId)) {
-      report.valid = false;
-      report.issues.push(`questionId 必须是 1-20 位数字，收到: ${handoff.questionId}`);
-    }
-  }
-  // verified 必须为 true
-  if (handoff.verified !== undefined && handoff.verified !== true) {
-    report.valid = false;
-    report.issues.push('verified 必须为 true（请先在 zhihu-answer-grabber 中运行 verify-output.mjs 并修复产物）');
-  }
-  // answerCount 非负整数
-  if (handoff.answerCount !== undefined && (!Number.isSafeInteger(handoff.answerCount) || handoff.answerCount < 0)) {
-    report.valid = false;
-    report.issues.push(`answerCount 必须是非负整数，收到: ${handoff.answerCount}`);
-  }
-  // warnings：必须是 string 数组（与 schema type: array + items: string 一致）
-  if (handoff.warnings !== undefined) {
-    if (!Array.isArray(handoff.warnings)) {
-      report.valid = false;
-      report.issues.push('warnings 必须是数组');
-    } else {
-      const nonStrings = handoff.warnings.filter((w) => typeof w !== 'string');
-      if (nonStrings.length > 0) {
-        report.valid = false;
-        report.issues.push(`warnings 数组必须全部为字符串，发现 ${nonStrings.length} 个非字符串项`);
-      }
-    }
-  }
-  // 路径：必须是相对路径（不泄漏绝对路径），相对 handoff 文件所在目录解析，且文件存在
+  // —— 业务/IO 校验（schema 无法表达的部分：路径相对性、文件存在、answerCount 与内容一致）——
   for (const key of ['inputJson', 'inputMarkdown']) {
     const file = handoff[key];
     if (typeof file !== 'string' || file.trim().length === 0) {

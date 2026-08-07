@@ -81,7 +81,7 @@ node scripts/archive.mjs <srcDir> --verify <collection.md>
   - 输出不含绝对路径（来源均为相对路径）；
   - 所有卷 valid 才 overall valid。
 - 单卷模式（`--verify <collection.md>`）行为同上，但对整个输入集校验。
-- 正文 framing：每篇正文以 `<!-- ARCHIVE_SOURCE_BEGIN --> <source>` / `<!-- ARCHIVE_SOURCE_END -->` 机器标记包裹，正文中的 Markdown H1 或 `> 来源:` 行不会被误判为 section 边界。
+- 正文 framing：每篇正文以 `<!-- ARCHIVE_SOURCE_BEGIN --> <source>` / `<!-- ARCHIVE_SOURCE_END -->` 机器标记包裹，并在正文前写入 `<!-- ARCHIVE_BODY_CHARS: N -->` 长度头；verify 按 N 个字符**精确切分**正文，因此正文即使包含 marker 文本、Markdown H1 或 `> 来源:` 行也不会被误判为 section 边界。
 
 ## 4. handoff 输入验证
 
@@ -89,14 +89,11 @@ node scripts/archive.mjs <srcDir> --verify <collection.md>
 node scripts/verify.mjs --handoff <handoff.json>
 ```
 
-完整执行共享 schema（`references/zhihu-corpus-handoff.schema.json`）约束：
+**共享 schema 是唯一事实来源**：validator 直接读取并执行 `references/zhihu-corpus-handoff.schema.json` 的约束（mini JSON Schema 解释器，零依赖），不再手写重复约束——schema 修改后 validator 自动跟随，永不漂移。
 
-- required 全字段：`task / sourceType / questionId / inputJson / inputMarkdown / verified / answerCount / warnings`
-- `task` ∈ {inspect, digest, archive}；`sourceType === "zhihu-answers"`
-- `questionId` 匹配 `^\d{1,20}$`；`verified === true`；`answerCount` 非负整数；`warnings` 数组
-- 禁止额外字段（additionalProperties 拒绝）
-- `inputJson` / `inputMarkdown` 必须是**相对路径**且文件存在
-- `answerCount` 与 JSON 实际回答数一致
+- 结构约束由 schema 执行：required 全字段 / `task` enum / `sourceType` const / `questionId` type+pattern / `verified` const / `answerCount` type+minimum / `warnings` items type / additionalProperties 拒绝
+- 业务/IO 校验（schema 无法表达）：`inputJson` / `inputMarkdown` 必须是**相对路径**且文件存在；`answerCount` 与 JSON 实际回答数一致
+- 若共享 schema 缺失（skill 被单独拷贝出仓库），verify 明确报错并拒绝继续
 
 不满足则拒绝继续，返回需由抓取 Skill 修复的具体问题。
 
