@@ -596,3 +596,133 @@ test('handoff: inputJson 缺少 questionId 字段 → 拒绝（P1-4）', () => {
   const parsed = JSON.parse(r.stdout);
   assert.ok(parsed.issues.some((i) => i.includes('questionId')), '应提示缺少 questionId');
 });
+
+// ===== 本轮窄范围修复：P1-1 sourceCoverage summary 必填 =====
+
+function sourceCoverageOnly(work, mapDir, mutate) {
+  const first = fs.readdirSync(mapDir).sort()[0];
+  const mapFile = path.join(mapDir, first);
+  const map = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
+  mutate(map);
+  fs.writeFileSync(mapFile, JSON.stringify(map, null, 2));
+  return run(['--work', work]);
+}
+
+test('sourceCoverage: 只有 disposition 无 summary → 失败（P1-1 Case A）', () => {
+  const { work, mapDir } = setupWork();
+  const r = sourceCoverageOnly(work, mapDir, (map) => {
+    map.sourceCoverage = map.sourceCoverage.map((sc) => ({ sourceId: sc.sourceId, disposition: 'substantive' }));
+  });
+  assert.equal(r.status, 1);
+  const parsed = JSON.parse(r.stdout);
+  assert.ok(parsed.malformedMaps >= 1, 'disposition 不能替代 summary');
+  assert.ok(parsed.issues.some((i) => i.includes('非空 summary')), '应明确指出缺 summary');
+});
+
+test('sourceCoverage: summary 为空字符串 → 失败（P1-1 Case B）', () => {
+  const { work, mapDir } = setupWork();
+  const r = sourceCoverageOnly(work, mapDir, (map) => {
+    map.sourceCoverage = map.sourceCoverage.map((sc) => ({ sourceId: sc.sourceId, summary: '', disposition: 'substantive' }));
+  });
+  assert.equal(r.status, 1);
+  const parsed = JSON.parse(r.stdout);
+  assert.ok(parsed.malformedMaps >= 1, '空 summary 应失败');
+});
+
+test('sourceCoverage: summary 为纯空白 → 失败（P1-1 Case C）', () => {
+  const { work, mapDir } = setupWork();
+  const r = sourceCoverageOnly(work, mapDir, (map) => {
+    map.sourceCoverage = map.sourceCoverage.map((sc) => ({ sourceId: sc.sourceId, summary: '   ', disposition: 'substantive' }));
+  });
+  assert.equal(r.status, 1);
+  const parsed = JSON.parse(r.stdout);
+  assert.ok(parsed.malformedMaps >= 1, '纯空白 summary 应失败');
+});
+
+test('sourceCoverage: 全部来源都只有 disposition → 失败（P1-1 Case D）', () => {
+  const { work, mapDir } = setupWork(40); // 多来源 chunk
+  const first = fs.readdirSync(mapDir).sort()[0];
+  const mapFile = path.join(mapDir, first);
+  const map = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
+  map.sourceCoverage = map.sourceCoverage.map((sc) => ({ sourceId: sc.sourceId, disposition: 'substantive' }));
+  fs.writeFileSync(mapFile, JSON.stringify(map, null, 2));
+  const r = run(['--work', work]);
+  assert.equal(r.status, 1, '机械 disposition 全覆盖必须失败');
+  const parsed = JSON.parse(r.stdout);
+  assert.ok(parsed.malformedMaps >= 1);
+});
+
+// ===== 本轮窄范围修复：P1-2 containment 失败后禁止后续 IO =====
+
+test('handoff: 越界损坏 JSON → 只报 containment，不得出现"无法解析"（P1-2 Case A）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-handoff-stopio-'));
+  const { hf } = makeHandoffFile(dir);
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-outside-'));
+  const badJson = path.join(outside, 'bad.json');
+  fs.writeFileSync(badJson, '{ definitely-invalid-json'); // 损坏 JSON，若被读取必然"无法解析"
+  const handoff = JSON.parse(fs.readFileSync(hf, 'utf8'));
+  handoff.inputJson = path.relative(dir, badJson).split(path.sep).join('/');
+  fs.writeFileSync(hf, JSON.stringify(handoff));
+  const r = run(['--handoff', hf]);
+  assert.equal(r.status, 1);
+  const parsed = JSON.parse(r.stdout);
+  assert.ok(parsed.issues.some((i) => i.includes('越出可信 source-root')), '应报告 containment 失败');
+  assert.ok(!parsed.issues.some((i) => i.includes('无法解析')), '出现"无法解析"说明仍读取了越界文件');
+});
+
+test('handoff: symlink 指向越界损坏 JSON → 只报 containment（P1-2 Case B）', { skip: process.platform === 'win32' }, () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-handoff-stopio-sym-'));
+  const { hf } = makeHandoffFile(dir);
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-outside-'));
+  const badJson = path.join(outside, 'bad.json');
+  fs.writeFileSync(badJson, '{ definitely-invalid-json');
+  const link = path.join(dir, 'linked.json');
+  fs.symlinkSync(badJson, link);
+  const handoff = JSON.parse(fs.readFileSync(hf, 'utf8'));
+  handoff.inputJson = 'linked.json';
+  fs.writeFileSync(hf, JSON.stringify(handoff));
+  const r = run(['--handoff', hf]);
+  assert.equal(r.status, 1);
+  const parsed = JSON.parse(r.stdout);
+  assert.ok(parsed.issues.some((i) => i.includes('越出可信 source-root')), 'symlink 逃逸应报 containment');
+  assert.ok(!parsed.issues.some((i) => i.includes('无法解析')), '不得读取 symlink 指向的越界文件');
+});
+
+// ===== 本轮窄范围修复：P2-1 final confidence enum =====
+
+test('verify --final: confidence 非法值 → 失败（P2-1）', () => {
+  const { work } = setupWork();
+  const finalDir = path.join(work, 'final');
+  fs.mkdirSync(finalDir, { recursive: true });
+  const finalFile = path.join(finalDir, 'final.json');
+  fs.writeFileSync(finalFile, JSON.stringify({
+    schemaVersion: 1, mode: 'digest',
+    claims: [{ text: '观点', evidenceSourceIds: ['question-123-answer-1'], confidence: 'certain' }],
+  }));
+  const r = run(['--work', work, '--final', finalFile]);
+  assert.equal(r.status, 1, 'confidence=certain 必须失败');
+  const parsed = JSON.parse(r.stdout);
+  assert.ok(parsed.invalidRefs.some((i) => i.includes('confidence')), '应报告 confidence 非法');
+});
+
+test('verify --final: confidence 缺省可接受（P2-1）', () => {
+  const { work } = setupWork();
+  const finalDir = path.join(work, 'final');
+  fs.mkdirSync(finalDir, { recursive: true });
+  const finalFile = path.join(finalDir, 'final.json');
+  const claim = { text: '观点', evidenceSourceIds: ['question-123-answer-1'] };
+  fs.writeFileSync(finalFile, JSON.stringify({ schemaVersion: 1, mode: 'digest', claims: [claim] }));
+  const r = run(['--work', work, '--final', finalFile]);
+  assert.equal(r.status, 0, r.stdout);
+});
+
+// ===== 本轮窄范围修复：P2-2 reduce --out 自动建目录 =====
+
+test('reduce: --out 指向不存在的多级目录 → 自动创建并生成文件（P2-2）', () => {
+  const { work } = setupWork();
+  const deepOut = path.join(work, 'build', 'reports', 'final', 'digest.md');
+  const r = run(['--work', work, '--out', deepOut], REDUCE);
+  assert.equal(r.status, 0, r.stderr);
+  assert.ok(fs.existsSync(deepOut), '应自动创建多级父目录并生成 digest.md');
+  assert.ok(fs.readFileSync(deepOut, 'utf8').includes('语料全覆盖摘要'), '文件内容应为渲染的摘要');
+});

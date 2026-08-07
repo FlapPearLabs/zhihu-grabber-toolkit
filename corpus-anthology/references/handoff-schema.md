@@ -28,7 +28,7 @@
 3. `task` ∈ {inspect, digest, archive}；`sourceType === "zhihu-answers"`；
 4. `questionId` 匹配 `^\d{1,20}$`；`answerCount` 非负整数；`warnings` 是数组；
 5. 无额外字段（additionalProperties 拒绝）；
-6. `inputJson` / `inputMarkdown` 为**相对路径**且 `realpath` 位于可信 `--source-root` 内（默认 = handoff 文件所在目录）；`../` 越界与 symlink 逃逸一律拒绝；
+6. `inputJson` / `inputMarkdown` 为**相对路径**且 `realpath` 位于可信 `--source-root` 内（默认 = handoff 文件所在目录）；`../` 越界与 symlink 逃逸一律拒绝；**未通过 containment 的路径绝不会被后续读取/parse**；
 7. `inputJson` 可解析为 JSON，且含 `answers` 数组；
 8. `answerCount` 与 JSON 中实际回答数一致；
 9. **questionId 三方一致**：`handoff.questionId === answers.json.questionId`（目录名 `===` 由 zhihu-answer-grabber 的 verify-output.mjs 校验）。

@@ -63,7 +63,7 @@
 - `chunkId` 必须与文件名对应（`map-chunk-0001.json` → `chunk-0001`），且一个 chunk 只允许一个 map 结果。
 - `chunkHash` 必须等于对应 chunk 的 `chunkHash`（过期/错位 map 一律失败）。
 - **`sourceIds` 必须与当前 chunk 的 `sourceIds` 集合相等**（全覆盖门：map 必须覆盖本 chunk 的全部来源，不允许只摘要一部分；`missingMappedSources` 计入失败）。
-- **`sourceCoverage` 是逐来源覆盖记录（语义全覆盖门，P1）**：`set(sourceCoverage[].sourceId)` 必须等于当前 chunk 的 `sourceIds`；每条来源**恰好一条**记录、不允许重复；每条必须有 `summary`（该回答的处理结果）或 `disposition`（`substantive`/`duplicate`/`unclear` 之一）作为有效处理痕迹——**不允许只复制 ID 而无处理内容**。缺失、漏覆盖、重复、引用非本 chunk 来源都会失败。
+- **`sourceCoverage` 是逐来源覆盖记录（语义全覆盖门，P1）**：`set(sourceCoverage[].sourceId)` 必须等于当前 chunk 的 `sourceIds`；每条来源**恰好一条**记录、不允许重复；**`summary` 必填且非空（trim 后）**——必须留下该回答的真实语义处理痕迹（如"该回答认为……"）；`disposition`（`substantive`/`duplicate`/`unclear`）只是**可选**的额外分类，**不能替代 summary**——即使标记 `duplicate` 也要说明重复了什么，标记 `unclear` 也要说明为何无法提取观点。缺失、漏覆盖、重复、空 summary、仅 disposition 无 summary、引用非本 chunk 来源都会失败。
 - 每个 `claim.evidenceSourceIds` 必须 ⊆ **当前 chunk** 的 `sourceIds`（claim 证据可以是子集，但不得跨 chunk 引用）。
 - `summary` 非空字符串；`claims`/`themes`/`uncertainties` 必须是数组；`minorityViews`（可选）若存在必须是字符串数组。
 - 每个 claim 必须有非空文本、非空 `evidenceSourceIds`，且 `confidence` ∈ {`high`, `medium`, `low`}。

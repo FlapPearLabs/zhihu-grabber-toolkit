@@ -212,6 +212,8 @@ function main() {
   fs.writeFileSync(finalJsonFile, JSON.stringify(finalJson, null, 2), 'utf8');
 
   const out = arg('--out', path.join(finalDir, 'digest.md'));
+  // P2-2：自定义 --out 指向不存在的多级目录时自动创建父目录
+  fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
   fs.writeFileSync(out, renderDigest(finalJson), 'utf8');
 
   const relOut = path.relative(process.cwd(), out) || '.';

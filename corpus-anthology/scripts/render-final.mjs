@@ -15,6 +15,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { escapeRawHtml } from '../lib/text.mjs';
 
 function arg(name, fallback) {
   const i = process.argv.indexOf(name);
@@ -23,6 +24,20 @@ function arg(name, fallback) {
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
+}
+
+/**
+ * 自然语言字段安全规范化（P1-3）：
+ * - escapeRawHtml：把 & < > 转义为实体，防止 raw HTML 注入（复用 lib/text.mjs，不重复实现）
+ * - 换行折叠为空格：防止内容注入新的 Markdown 结构（如行首 `#` 变 H1、`---` 变水平线）
+ * - 双转义输入（如 `&lt;script&gt;`）经 escapeRawHtml 后 `&` 会再编码为 `&amp;`，
+ *   输出中不会恢复成 raw `<script>` 标签。
+ * sourceId 是系统生成的受控格式（question-123-answer-456），保持直接渲染。
+ */
+function safeText(value) {
+  return escapeRawHtml(String(value ?? ''))
+    .replace(/\r?\n/g, ' ')
+    .trim();
 }
 
 /** 从 final.json 渲染 Markdown（确定性；meta 可补充 inputCount/chunkCount 展示信息） */
@@ -44,24 +59,25 @@ export function renderDigest(final, meta = {}) {
   if (claims.length > 0) {
     L.push('## 主要观点');
     claims.forEach((c, i) => {
-      const text = String(c.text ?? '').trim();
+      const text = safeText(c.text);
       if (!text) return;
       const evs = Array.isArray(c.evidenceSourceIds) ? c.evidenceSourceIds : [];
       L.push(`${i + 1}. ${text}`);
-      L.push(`   - 来源: ${evs.map((s) => `[${s}]`).join(' ')}${c.confidence ? `（置信度 ${c.confidence}）` : ''}`);
+      const confidence = safeText(c.confidence);
+      L.push(`   - 来源: ${evs.map((s) => `[${s}]`).join(' ')}${confidence ? `（置信度 ${confidence}）` : ''}`);
     });
     L.push('');
   }
 
   if (minorityViews.length > 0) {
     L.push('## 少数观点');
-    for (const v of minorityViews) L.push(`- ${String(v).trim()}`);
+    for (const v of minorityViews) L.push(`- ${safeText(v)}`);
     L.push('');
   }
 
   if (uncertainties.length > 0) {
     L.push('## 不确定性');
-    for (const u of uncertainties) L.push(`- ${String(u).trim()}`);
+    for (const u of uncertainties) L.push(`- ${safeText(u)}`);
     L.push('');
   }
 

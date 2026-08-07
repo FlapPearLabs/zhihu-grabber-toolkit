@@ -261,7 +261,7 @@ function verifyCoverage(workDir, manifest) {
     // P1-1 sourceCoverage：逐来源覆盖记录（证明"每个输入来源都有结构化处理痕迹"，
     // 而不是只声明 ID 出现过）。强制：
     //   set(sourceCoverage.sourceId) === set(chunk.sourceIds)（全覆盖）
-    //   每条恰好一次、无重复、summary/disposition 至少一个有效处理结果。
+    //   每条恰好一次、无重复、summary 必填且非空（disposition 只是可选分类，不能替代 summary）。
     if (!Array.isArray(map.sourceCoverage) || map.sourceCoverage.length === 0) {
       report.malformedMaps += 1;
       report.issues.push(`map 缺少 sourceCoverage 数组（逐来源覆盖记录）: ${cid}`);
@@ -289,16 +289,17 @@ function verifyCoverage(workDir, manifest) {
           report.issues.push(`sourceCoverage 引用非本 chunk 来源: ${cid} → ${sc.sourceId}`);
           continue;
         }
+        // summary 必填且非空（trim 后）；disposition 只是可选分类，**不能替代 summary**——
+        // 每条记录必须留下真实语义处理痕迹，不允许机械输出 disposition 伪造覆盖。
         const summary = typeof sc.summary === 'string' ? sc.summary.trim() : '';
-        const disposition = sc.disposition;
-        if (summary === '' && !['substantive', 'duplicate', 'unclear'].includes(disposition)) {
+        if (summary === '') {
           report.malformedMaps += 1;
-          report.issues.push(`sourceCoverage[${i}] 缺少有效处理记录（summary 或 disposition）: ${cid} → ${sc.sourceId}`);
+          report.issues.push(`sourceCoverage[${i}] 缺少非空 summary（disposition 不能替代语义覆盖）: ${cid} → ${sc.sourceId}`);
           continue;
         }
-        if (disposition !== undefined && !['substantive', 'duplicate', 'unclear'].includes(disposition)) {
+        if (sc.disposition !== undefined && !['substantive', 'duplicate', 'unclear'].includes(sc.disposition)) {
           report.malformedMaps += 1;
-          report.issues.push(`sourceCoverage[${i}].disposition 非法: ${cid} → ${disposition}`);
+          report.issues.push(`sourceCoverage[${i}].disposition 非法: ${cid} → ${sc.disposition}`);
         }
       }
       // 全覆盖：sourceCoverage 的 sourceId 集合必须等于 chunk.sourceIds
@@ -395,6 +396,11 @@ function verifyFinal(workDir, manifest, finalFile) {
       report.valid = false;
       report.invalidRefs.push(`claims[${i}] 缺少文本`);
       continue;
+    }
+    // P2-1：confidence 若存在则必须是枚举；缺省（undefined）可接受
+    if (claim.confidence !== undefined && !['high', 'medium', 'low'].includes(claim.confidence)) {
+      report.valid = false;
+      report.invalidRefs.push(`claims[${i}].confidence 非法（仅允许 high/medium/low）: ${JSON.stringify(claim.confidence)}`);
     }
     const evs = Array.isArray(claim.evidenceSourceIds) ? claim.evidenceSourceIds : [];
     if (evs.length === 0) {
@@ -517,6 +523,9 @@ function verifyHandoff(handoffFile, sourceRootArg) {
   // P1-3 containment：inputJson/inputMarkdown 的 realpath 必须位于可信 sourceRoot 内，
   //   拒绝 `../` 越界与 symlink escape；sourceRoot 默认 = handoff 文件所在目录（最保守），
   //   可用 --source-root 显式指定，但绝不能由 handoff 内容自己定义。
+  // P1-2（本轮）：只有通过 containment 的路径才会被记录到 safeFiles，
+  //   后续 JSON parse / questionId / answerCount 校验**只能使用 safeFiles 中的可信 realpath**，
+  //   禁止再次从 handoff.inputJson 直接 path.resolve() —— containment 失败后绝不进行任何后续 IO。
   const sourceRoot = sourceRootArg ? path.resolve(sourceRootArg) : handoffBaseDir;
   let sourceRootReal;
   try {
@@ -526,6 +535,7 @@ function verifyHandoff(handoffFile, sourceRootArg) {
     report.issues.push(`可信 source-root 不存在: ${displayPath(sourceRoot)}`);
     return report;
   }
+  const safeFiles = new Map();
   for (const key of ['inputJson', 'inputMarkdown']) {
     const file = handoff[key];
     if (typeof file !== 'string' || file.trim().length === 0) {
@@ -553,32 +563,33 @@ function verifyHandoff(handoffFile, sourceRootArg) {
       report.issues.push(`${key} 越出可信 source-root（拒绝 ../ 越界或 symlink 逃逸）: ${file}`);
       continue;
     }
+    // 只有完整通过 containment 的路径才进入可信集合
+    safeFiles.set(key, absReal);
   }
-  if (handoff.inputJson) {
-    const abs = path.resolve(handoffBaseDir, handoff.inputJson);
-    if (fs.existsSync(abs)) {
-      try {
-        const json = readJson(abs);
-        // P1-4 三方一致：目录 qid === answers.json.questionId === handoff.questionId
-        //   （此处校验 handoff.questionId 与 inputJson.questionId；目录侧由 verify-output.mjs 校验）
-        const jsonQid = json && typeof json === 'object' && !Array.isArray(json) ? json.questionId : undefined;
-        if (jsonQid === undefined) {
-          report.valid = false;
-          report.issues.push('inputJson 缺少 questionId 字段');
-        } else if (String(jsonQid) !== String(handoff.questionId)) {
-          report.valid = false;
-          report.issues.push(`questionId 不一致: handoff=${handoff.questionId}, answers.json=${jsonQid}`);
-        }
-        const answers = Array.isArray(json) ? json : json.answers;
-        const actual = Array.isArray(answers) ? answers.length : -1;
-        if (actual !== handoff.answerCount) {
-          report.valid = false;
-          report.issues.push(`answerCount 不一致: handoff=${handoff.answerCount}, 实际=${actual}`);
-        }
-      } catch (error) {
+  // 后续所有读取只允许来自 safeFiles（未通过 containment 的 key 不会出现在这里）
+  const safeInputJson = safeFiles.get('inputJson');
+  if (safeInputJson !== undefined) {
+    try {
+      const json = readJson(safeInputJson);
+      // P1-4 三方一致：目录 qid === answers.json.questionId === handoff.questionId
+      //   （此处校验 handoff.questionId 与 inputJson.questionId；目录侧由 verify-output.mjs 校验）
+      const jsonQid = json && typeof json === 'object' && !Array.isArray(json) ? json.questionId : undefined;
+      if (jsonQid === undefined) {
         report.valid = false;
-        report.issues.push(`inputJson 无法解析: ${error.message}`);
+        report.issues.push('inputJson 缺少 questionId 字段');
+      } else if (String(jsonQid) !== String(handoff.questionId)) {
+        report.valid = false;
+        report.issues.push(`questionId 不一致: handoff=${handoff.questionId}, answers.json=${jsonQid}`);
       }
+      const answers = Array.isArray(json) ? json : json.answers;
+      const actual = Array.isArray(answers) ? answers.length : -1;
+      if (actual !== handoff.answerCount) {
+        report.valid = false;
+        report.issues.push(`answerCount 不一致: handoff=${handoff.answerCount}, 实际=${actual}`);
+      }
+    } catch (error) {
+      report.valid = false;
+      report.issues.push(`inputJson 无法解析: ${error.message}`);
     }
   }
   return report;
