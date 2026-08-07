@@ -235,3 +235,36 @@ test('P1-2: 无凭据时 grab 合法输入 → configuration_error（语义区�
   const parsed = JSON.parse(r.stdout);
   assert.equal(parsed.error.type, 'configuration_error', '合法输入 + 缺凭据 → configuration_error');
 });
+
+// ===== Fix 1：完整 questionId 静态校验先于凭据加载 =====
+
+const QID_21 = '123456789012345678901'; // 21 位纯数字 → 静态非法
+const QID_21_URL = `https://www.zhihu.com/question/${QID_21}`;
+
+test('Fix1: 21 位 QID + 无凭据 → invalid_input（完整静态校验先于凭据加载）', () => {
+  const r = runCli(['grab', QID_21, '--json'], { env: { PATH: process.env.PATH } });
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.error.type, 'invalid_input', '21 位非法 QID 不应变成 configuration_error');
+  assert.ok(/1-20 位数字/.test(parsed.error.message), '错误应说明仅接受 1-20 位数字');
+});
+
+test('Fix1: 21 位 QID + 假凭据 → invalid_input（与凭据状态无关）', () => {
+  const r = runCli(['grab', QID_21, '--json'], {
+    env: { PATH: process.env.PATH, ZHIHU_COOKIE: 'z_c0=fake123; d_c0=fake456' },
+  });
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.error.type, 'invalid_input');
+});
+
+test('Fix1: 21 位 QID URL + 无凭据 → invalid_input', () => {
+  const r = runCli(['grab', QID_21_URL, '--json'], { env: { PATH: process.env.PATH } });
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.error.type, 'invalid_input');
+  assert.ok(/1-20 位数字/.test(parsed.error.message));
+});
+
+test('Fix1: 合法 1-20 位 QID 原行为不回归（无凭据 → configuration_error）', () => {
+  const r = runCli(['grab', '2063557784394785882', '--json'], { env: { PATH: process.env.PATH } });
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.error.type, 'configuration_error', '合法 19 位 QID + 缺凭据 → configuration_error');
+});

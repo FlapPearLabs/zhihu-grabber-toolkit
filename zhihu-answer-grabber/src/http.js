@@ -145,11 +145,13 @@ export async function requestJson(config, url, { retries = 2, referer, timeoutMs
     const text = await response.text();
     let parsed = null;
     try { parsed = JSON.parse(text); } catch { /* 忽略 */ }
-    const hint = response.status === 401
-      ? '凭证已失效，请重新执行 zhihu-cli login --qrcode'
-      : response.status === 403
-        ? '请求被知乎风控拦截（403）：请确认本机 IP 未被风控，或稍后再试'
-        : '';
+    // 401/403 只陈述事实与候选，不把未经验证原因写成结论（与 SKILL.md 诊断合同一致）
+    let hint = '';
+    if (response.status === 401) {
+      hint = '知乎返回 HTTP 401。认证请求未被接受；可能与本地凭据或当前认证要求有关，具体原因尚未确定。';
+    } else if (response.status === 403) {
+      hint = '知乎返回 HTTP 403。请求被服务器拒绝；可能涉及凭据、签名协议、请求上下文、账号权限或风控，具体原因尚未确定。';
+    }
     throw new HttpError(`知乎请求失败: HTTP ${response.status}${parsed?.message ? ` ${parsed.message}` : ''}${hint ? `；${hint}` : ''}`, {
       status: response.status,
       url: target,

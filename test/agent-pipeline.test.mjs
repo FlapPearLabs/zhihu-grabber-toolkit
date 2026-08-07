@@ -35,7 +35,7 @@ function run(node, script, args = [], opts = {}) {
   });
 }
 
-function makeQuestionFixture(outRoot, { consistent = true, progressDone = true, corruptJson = false } = {}) {
+function makeQuestionFixture(outRoot, { consistent = true, progressDone = true, corruptJson = false, rawArray = false } = {}) {
   const outDir = path.join(outRoot, 'out', '123');
   fs.mkdirSync(outDir, { recursive: true });
   const json = {
@@ -50,6 +50,9 @@ function makeQuestionFixture(outRoot, { consistent = true, progressDone = true, 
   };
   if (corruptJson) {
     fs.writeFileSync(path.join(outDir, 'answers.json'), '{broken json!!');
+  } else if (rawArray) {
+    // 历史 raw-array 形态（legacy），无 questionId 元信息
+    fs.writeFileSync(path.join(outDir, 'answers.json'), JSON.stringify(json.answers));
   } else {
     fs.writeFileSync(path.join(outDir, 'answers.json'), JSON.stringify(json));
   }
@@ -179,6 +182,40 @@ test('负向 C：CLI --json stdout 纯净（可 JSON.parse，无人类日志/ANS
   assert.ok(!r.stdout.includes('已抓取'), 'stdout 不得含人类日志');
   assert.ok(!r.stdout.includes('\u001b'), 'stdout 不得含 ANSI 控制字符');
   assert.equal(r.stdout.trim().split('\n').length, 1, 'stdout 必须恰好一个 JSON 文档');
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test('Fix6: legacy raw-array 不能升级为 verified handoff（upstream→downstream 反例闭环）', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-pipe-rawarray-'));
+  const outDir = makeQuestionFixture(tmp, { rawArray: true, progressDone: true });
+
+  // 1. upstream verify：raw-array 缺 questionId → 必须失败
+  const v = run(NODE, path.join(ZHIHU_SCRIPTS, 'verify-output.mjs'), [outDir]);
+  assert.notEqual(v.status, 0, 'raw-array 不得通过 verify');
+  assert.equal(JSON.parse(v.stdout).valid, false);
+  assert.ok(JSON.parse(v.stdout).warnings.some((w) => w.includes('raw-array')));
+
+  // 2. upstream make-handoff：未通过 verify → 拒绝生成，不得产出 verified handoff
+  const h = run(NODE, path.join(ZHIHU_SCRIPTS, 'make-handoff.mjs'), [outDir, '--task', 'digest']);
+  assert.notEqual(h.status, 0, 'raw-array 不得生成 handoff');
+  assert.ok(!fs.existsSync(path.join(outDir, 'handoff.json')), '不得生成 verified=true handoff');
+
+  // 3. 即便手工伪造一个指向 raw-array 的 handoff，downstream corpus verify --handoff 也必须拒绝
+  //    （contract 缝隙：downstream 要求 answers.json.questionId，raw-array 没有 → 必须失败）
+  fs.writeFileSync(path.join(outDir, 'handoff.json'), JSON.stringify({
+    task: 'digest',
+    sourceType: 'zhihu-answers',
+    questionId: '123',
+    inputJson: 'answers.json',
+    inputMarkdown: 'answers.md',
+    verified: true,
+    answerCount: 3,
+    warnings: [],
+  }));
+  const cv = run(NODE, path.join(CORPUS_SCRIPTS, 'verify.mjs'), ['--handoff', path.join(outDir, 'handoff.json'), '--source-root', outDir]);
+  assert.notEqual(cv.status, 0, 'downstream 必须拒绝 raw-array handoff');
+  const cvp = JSON.parse(cv.stdout);
+  assert.ok(cvp.issues.some((i) => i.includes('questionId')), `downstream 应指出缺 questionId: ${cvp.issues.join('; ')}`);
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 

@@ -1,7 +1,16 @@
 # 调用策略声明：zhihu-answer-grabber
 #
-# 理由：本 Skill 使用本地登录凭据（Cookie / Secret）并执行网络访问，
-# 默认要求用户显式选择或上层工作流显式调用，减少误触发与凭据风险。
+# 理由：产品目标是"用户一句话触发"——自然语言明确给出知乎问题 URL/ID 并要求抓取时，
+# Agent 应按 SKILL.md description 的严格触发边界自动选择本 Skill。故允许隐式调用。
+#
+# 规范依据（Codex CLI Agent Skills）：
+#   policy.allow_implicit_invocation 缺省为 true，表示"用户提示词与 description 匹配时
+#   自动激活该 Skill"；设为 false 表示仅当用户显式输入 $skill-name 时才调用。
+#   本 Skill 设为 true 以适配"帮我抓 https://www.zhihu.com/question/123 的全部回答"这类
+#   一句话触发；触发边界（应当/不应触发）仍由 SKILL.md 的 description 与触发边界表强制。
+#
+# 允许隐式调用 ≠ 绕过凭据门：preflight 是硬性前置，凭据不可用（cookie.usable=false）时
+# 仍必须停止并提示用户在本机修复，不得因隐式调用而跳过。
 #
 # 兼容性说明：若当前运行环境（Agent 运行时）不支持 policy.allow_implicit_invocation
 # 或 interface 字段，本文件会被忽略，行为退化为环境默认值；SKILL.md 中的触发边界
@@ -11,4 +20,4 @@ interface:
   short_description: "抓取并验证知乎问题回答（需要本地 Cookie 凭据）"
   default_prompt: "Use $zhihu-answer-grabber to 抓取知乎问题 https://www.zhihu.com/question/123 的全部回答"
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

@@ -13,6 +13,9 @@ metadata:
 
 ## 触发边界
 
+本 Skill 允许隐式调用（`agents/openai.yaml` 的 `allow_implicit_invocation: true`）：
+用户自然语言一句话明确要求抓取一个知乎问题时，Agent 应自动选择本 Skill。**允许自动选择 ≠ 允许绕过 preflight 凭据门**——凭据不可用时仍必须停止并提示用户在本机修复。
+
 **应当触发：**
 
 - 用户明确提供知乎问题 URL 或纯数字问题 ID，并要求抓取、下载或获取回答。
@@ -33,7 +36,7 @@ metadata:
 
 1. **绝不要求用户把完整 Cookie、Secret、Token 或登录凭证粘贴到聊天中。**
 2. **绝不把凭据写入**：对话、日志、Markdown、JSON 产物、长期记忆、临时任务报告、Git。
-3. Agent 只能通过 `scripts/preflight.mjs` 检查凭据是否已本地配置，**不得输出凭据内容**（值、长度、前缀、哈希均禁止）。
+3. Agent 只能通过 `<SKILL_ROOT>/scripts/preflight.mjs` 检查凭据是否已本地配置，**不得输出凭据内容**（值、长度、前缀、哈希均禁止）。
 4. 缺少凭据时：停止抓取，向用户提供本地配置说明（见 `references/security.md`），不要求用户贴出凭据。
 5. 不得替用户打开、展示或复制凭据文件内容。
 6. 默认不修改代理环境变量；不写死任何端口、出口 IP 或网络环境判断。
@@ -64,16 +67,16 @@ metadata:
 | "搜索后抓第一条" | `search --json` → 取 `candidates[0].questionId` → `grab <id> --json` |
 | "看看抓了哪些" | `status --json` |
 
-统一入口（wrapper 会自动定位工具目录）：
+**脚本定位（不依赖 cwd）：** `<SKILL_ROOT>` = 本 Skill 所在目录（含 `SKILL.md` 的目录，Agent 加载 Skill 时已知其位置）。**所有脚本一律用 `"<SKILL_ROOT>/scripts/<脚本>.mjs"` 的绝对路径调用**，不得假设当前工作目录恰好是 Skill 目录。`cwd` 仍用于：默认 `out/` 输出位置、本地凭据目录（或 `ZAG_CONFIG_DIR`）、用户项目工作目录——与脚本位置互不相关。wrapper（`zhigrab.mjs`）会用 `import.meta.url` 自动定位自己的 `src/cli.js`（可用 `ZAG_DIR` 覆盖），但 Agent 必须先能调到 wrapper 本身，因此统一用绝对路径：
 
 ```bash
-node scripts/zhigrab.mjs <命令> [参数] --json
+node "<SKILL_ROOT>/scripts/zhigrab.mjs" <命令> [参数] --json
 ```
 
 ### 2. 安全预检（每次抓取前必须执行）
 
 ```bash
-node scripts/preflight.mjs --json
+node "<SKILL_ROOT>/scripts/preflight.mjs" --json
 ```
 
 输出形如：
@@ -107,10 +110,10 @@ node scripts/preflight.mjs --json
 ### 3. 执行抓取（机器契约）
 
 ```bash
-node scripts/zhigrab.mjs grab <问题链接或ID> --json
-node scripts/zhigrab.mjs batch <file.txt> --json
-node scripts/zhigrab.mjs search <关键词> --json
-node scripts/zhigrab.mjs status --json
+node "<SKILL_ROOT>/scripts/zhigrab.mjs" grab <问题链接或ID> --json
+node "<SKILL_ROOT>/scripts/zhigrab.mjs" batch <file.txt> --json
+node "<SKILL_ROOT>/scripts/zhigrab.mjs" search <关键词> --json
+node "<SKILL_ROOT>/scripts/zhigrab.mjs" status --json
 ```
 
 **`grab --json` 输出语义：**
@@ -149,7 +152,7 @@ node scripts/zhigrab.mjs status --json
 ### 5. 验证产物（每次抓取后必须执行）
 
 ```bash
-node scripts/verify-output.mjs out/<问题ID>
+node "<SKILL_ROOT>/scripts/verify-output.mjs" out/<问题ID>
 ```
 
 输出结构化 JSON（`valid: true|false`），校验项见 `references/verification.md`。**只有 `valid === true` 才能报告"抓取完成"**。`valid: false` 时按 warnings 逐条修复后重跑，不得绕过。
@@ -157,7 +160,7 @@ node scripts/verify-output.mjs out/<问题ID>
 ### 6. 生成 handoff（如需要路由 corpus-anthology）
 
 ```bash
-node scripts/make-handoff.mjs out/<问题ID> --task digest
+node "<SKILL_ROOT>/scripts/make-handoff.mjs" out/<问题ID> --task digest
 ```
 
 - **只接受 `verify-output` 返回 `valid: true` 的产物**；未通过验证时拒绝生成并列出原因。
@@ -167,8 +170,10 @@ node scripts/make-handoff.mjs out/<问题ID> --task digest
 ### 7. 统计规模
 
 ```bash
-node corpus-anthology/scripts/stats.mjs out/<问题ID>/answers.md
+node "<CORPUS_ROOT>/scripts/stats.mjs" out/<问题ID>/answers.md
 ```
+
+`<CORPUS_ROOT>` = corpus-anthology Skill 所在目录（Agent 加载该 Skill 时已知其位置），同样用绝对路径调用，不依赖 cwd。
 
 评估文件大小，决定第 8 步的读取策略。
 

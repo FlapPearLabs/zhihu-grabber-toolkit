@@ -14,8 +14,10 @@
 ## 1. 完成验证（每次抓取后必须执行）
 
 ```bash
-node scripts/verify-output.mjs out/<问题ID>
+node "<SKILL_ROOT>/scripts/verify-output.mjs" out/<问题ID>
 ```
+
+`<SKILL_ROOT>` = 含 `SKILL.md` 的目录（Agent 加载 Skill 时已知其位置），绝对路径调用，不依赖 cwd。
 
 输出结构化 JSON，例如：
 
