@@ -61,6 +61,7 @@ const questionId = verification.questionId; // 来自 verifier（= 目录名 = a
 const answerCount = Array.isArray(answers) ? answers.length : 0;
 
 // 3. 构建 handoff（相对路径，相对 handoff 所在目录）
+//    warnings 原样保留（含 countMismatch 等非失败提示，供下游知情；不设失败门）
 const handoff = {
   task,
   sourceType: 'zhihu-answers',
@@ -69,7 +70,7 @@ const handoff = {
   inputMarkdown: path.basename(mdFile),
   verified: true,
   answerCount,
-  warnings: verification.warnings.filter((w) => !w.includes('页面统计')), // countMismatch 是提示非失败
+  warnings: verification.warnings,
 };
 
 // 4. 写入 question 输出目录

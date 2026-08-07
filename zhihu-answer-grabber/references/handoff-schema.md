@@ -58,6 +58,8 @@
 
 **Agent 禁止手工构造 handoff 的事实字段**（`verified` / `answerCount` / `questionId` / 路径）。这些字段只能由 `make-handoff.mjs` 从已验证产物生成。
 
+> 准确表述：Agent 契约**禁止**手工构造 verified handoff；标准路径只能使用 `make-handoff.mjs`。这**不是密码学意义上的不可伪造**（handoff 是普通 JSON，corpus 侧不重跑 upstream 的完整 verifyOutput 规则），而是流程/契约层面的强制约束。不要为"防伪造"引入签名、哈希证明或 provenance 系统——那属于过度工程化。
+
 corpus-anthology 会通过 `node scripts/verify.mjs --handoff <handoff.json> [--source-root <dir>]` 完整校验这些约束；生成侧使用同一共享 schema 自检。
 
 ## 5. 边界划分

@@ -30,3 +30,8 @@ jobs:
       - name: corpus-anthology tests
         working-directory: corpus-anthology
         run: node --test
+
+      # 根级 CLI × Skill 契约 / pipeline 集成测试（P1-TEST-NEW-3）。
+      # 显式文件路径：避免 `node --test test/` 在 Windows 上把目录当模块解析。
+      - name: repository integration tests
+        run: node --test test/agent-pipeline.test.mjs

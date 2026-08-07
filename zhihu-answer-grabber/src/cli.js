@@ -88,20 +88,14 @@ function classifyError(error) {
   return 'unknown_error';
 }
 
-function errorPayload(cmd, error) {
-  return {
-    schemaVersion: 1,
-    ok: false,
-    command: cmd,
-    error: {
-      type: classifyError(error),
-      message: terminalSafe(error.message),
-    },
-  };
-}
-
 async function cmdGrab(config, input, { outDir = 'out', json = false, silent = false } = {}) {
-  const qid = normalizeQuestionInput(input);
+  let qid;
+  try {
+    qid = normalizeQuestionInput(input);
+  } catch (error) {
+    error.invalidInput = true; // 非法问题输入 → 稳定分类 invalid_input
+    throw error;
+  }
   if (!json && !silent) log(`▶ 开始抓取问题 ${qid} …`);
   const result = await grabAll(config, qid, {
     outDir,
@@ -147,12 +141,12 @@ async function cmdGrab(config, input, { outDir = 'out', json = false, silent = f
 }
 
 async function cmdBatch(config, file, { outDir = 'out', json = false } = {}) {
-  if (!fs.existsSync(file)) throw new Error(`批量文件不存在: ${file}`);
+  if (!fs.existsSync(file)) throw invalidInput(`批量文件不存在: ${sanitizeDisplayPaths(file)}`);
   const inputs = fs.readFileSync(file, 'utf8')
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith('#'));
-  if (inputs.length === 0) throw new Error('批量文件为空');
+  if (inputs.length === 0) throw invalidInput('批量文件为空');
   if (!json) log(`▶ 批量抓取 ${inputs.length} 个问题`);
 
   const succeeded = [];
@@ -166,7 +160,7 @@ async function cmdBatch(config, file, { outDir = 'out', json = false } = {}) {
       failed.push({
         input,
         errorType: classifyError(error),
-        message: terminalSafe(error.message),
+        message: publicErrorMessage(error), // P1-INT-NEW-1: 机器通道不泄漏绝对路径
       });
       if (!json) log(`  ✗ 抓取失败: ${terminalSafe(error.message)}（已跳过，可稍后重跑续传）`);
     }
@@ -189,7 +183,7 @@ async function cmdBatch(config, file, { outDir = 'out', json = false } = {}) {
   return payload;
 }
 
-async function cmdSearch(keyword, { grab = false, json = false } = {}) {
+async function cmdSearch(keyword, { grab = false, json = false, outDir = 'out' } = {}) {
   const secret = resolveSecret();
   if (!json) log(`▶ 官方平台搜索「${terminalSafe(keyword)}」…`);
   const items = await searchQuestions(keyword, secret);
@@ -221,7 +215,7 @@ async function cmdSearch(keyword, { grab = false, json = false } = {}) {
     const first = unique[0];
     log(`\n--grab 已指定（人类模式），抓取第一个结果（ID=${first.id}）…`);
     const config = loadConfig();
-    await cmdGrab(config, first.id);
+    await cmdGrab(config, first.id, { outDir }); // P2-1: 透传 --out-dir
   }
   return { candidates };
 }
@@ -310,6 +304,23 @@ function invalidInput(message) {
   return error;
 }
 
+/** 从展示文本中抹掉本机绝对路径（机器输出防泄漏）；人类 stderr 保留完整诊断 */
+function sanitizeDisplayPaths(value) {
+  return String(value)
+    // Windows 绝对路径: C:\Users\... 或 C:/Users/...
+    .replace(/(?<![\w:/])([A-Za-z]:[\\/][^\s;,)\]}"']+)/g, '<path>')
+    // POSIX 绝对路径（以 / 开头且前面不是 : 或 /，避免误伤 https:// 等 URL 协议）
+    .replace(/(?<![:/\w])\/(?:Users|home|private|var|tmp|opt|etc|usr|srv|root|mnt|media|dev|run|data)[\\/][^\s;,)\]}"']*/gi, '/<path>');
+}
+
+/** 机器输出使用的公共错误消息：ConfigError 不给内部诊断细节，只引导 preflight */
+function publicErrorMessage(error) {
+  if (error instanceof ConfigError) {
+    return '本地凭据配置不可用；请运行 preflight.mjs --json 查看错误类型，并按提示在本机修复。';
+  }
+  return sanitizeDisplayPaths(terminalSafe(error.message));
+}
+
 async function main() {
   const { json, outDir, positional } = parseArgs(process.argv.slice(2));
   const [cmd, arg1, ...rest] = positional;
@@ -329,7 +340,7 @@ async function main() {
       if (r.failed.length > 0) process.exitCode = 1;
     } else if (cmd === 'search') {
       if (!arg1) throw invalidInput('search 需要一个参数：关键词');
-      await cmdSearch(arg1, { grab: rest.includes('--grab'), json });
+      await cmdSearch(arg1, { grab: rest.includes('--grab'), json, outDir });
     } else if (cmd === 'status') {
       await cmdStatus({ outDir, json });
     } else {
@@ -337,8 +348,18 @@ async function main() {
     }
   } catch (error) {
     if (json) {
-      emitJson(errorPayload(cmd, error));
+      // 机器输出：公共消息规范化（不泄漏绝对路径；ConfigError 只给引导语）
+      emitJson({
+        schemaVersion: 1,
+        ok: false,
+        command: cmd,
+        error: {
+          type: classifyError(error),
+          message: publicErrorMessage(error),
+        },
+      });
     } else {
+      // 人类模式：保留合理诊断，但 ConfigError 仍引导 preflight
       process.stderr.write(`\n✗ ${terminalSafe(error.message)}\n`);
       if (error instanceof ConfigError) {
         process.stderr.write('  配置不可用。请先运行：node scripts/preflight.mjs\n');

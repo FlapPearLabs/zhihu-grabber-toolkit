@@ -144,3 +144,50 @@ test('P1-INT-3: grab 参数校验错误也走结构化 JSON', () => {
   assert.equal(parsed.command, 'grab');
   assert.equal(parsed.error.type, 'invalid_input');
 });
+
+// ===== P1-INT-NEW-1：JSON 错误通道不得泄漏本机绝对路径 =====
+
+test('P1-INT-NEW-1: ConfigError JSON 消息不泄漏绝对路径（ZHIHU_CLI_CONFIG 私有路径）', () => {
+  const r = runCli(['grab', '123', '--json'], {
+    env: { PATH: process.env.PATH, ZHIHU_CLI_CONFIG: '/very/private/user/path/config.json' },
+  });
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.error.type, 'configuration_error');
+  assert.ok(!r.stdout.includes('/very/private/user/path'), 'stdout 不得包含绝对路径');
+  assert.ok(!r.stdout.includes('config.json'), 'stdout 不得包含配置文件名');
+  assert.ok(parsed.error.message.includes('preflight'), '应引导运行 preflight');
+});
+
+test('P1-INT-NEW-1: Windows 绝对路径同样被抹掉', () => {
+  // 用人类模式验证 sanitizeDisplayPaths 效果（ConfigError 固定消息 + 其他错误 sanitize）
+  const r = runCli(['batch', 'C:\\Users\\alice\\private\\list.txt', '--json'], {
+    env: { PATH: process.env.PATH, ZHIHU_COOKIE: 'z_c0=fake123; d_c0=fake456' },
+  });
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.error.type, 'invalid_input');
+  assert.ok(!r.stdout.includes('C:\\Users\\alice'), 'stdout 不得包含 Windows 绝对路径');
+});
+
+// ===== P1-INT-NEW-2：结构化 error.type 稳定分类 =====
+
+test('P1-INT-NEW-2: 凭据可用时 grab 非法输入 → invalid_input', () => {
+  const r = runCli(['grab', 'definitely-not-a-question', '--json'], {
+    env: { PATH: process.env.PATH, ZHIHU_COOKIE: 'z_c0=fake123; d_c0=fake456' },
+  });
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.error.type, 'invalid_input');
+});
+
+test('P1-INT-NEW-2: 不存在的 batch 文件 → invalid_input（非 unknown_error）', () => {
+  const r = runCli(['batch', path.join(os.tmpdir(), 'no-such-batch-file-xyz.txt'), '--json'], {
+    env: { PATH: process.env.PATH, ZHIHU_COOKIE: 'z_c0=fake123; d_c0=fake456' },
+  });
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.error.type, 'invalid_input');
+});
+
+test('P1-INT-NEW-2: 未知命令 → invalid_input', () => {
+  const r = runCli(['totally-unknown-command', '--json'], { env: { PATH: process.env.PATH } });
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.error.type, 'invalid_input');
+});
