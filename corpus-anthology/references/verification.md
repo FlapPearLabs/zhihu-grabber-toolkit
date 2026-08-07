@@ -20,10 +20,11 @@ node scripts/verify.mjs --work work/
 | 8 | map 的 chunkHash 与当前 chunk 一致 | `staleMaps === 0`（输入变化后旧 map 失效） |
 | 9 | map 字段完整 | `malformedMaps === 0`（sourceIds/summary/claims/confidence 等） |
 | 10 | map.sourceIds ⊆ 当前 chunk | `crossChunkEvidence` 计入（禁止跨 chunk 引用） |
-| 11 | claim.evidenceSourceIds ⊆ 当前 chunk | `crossChunkEvidence` 计入 |
-| 12 | 输入哈希未变化 | 与 manifest 记录一致（过期状态即失败） |
-| 13 | 无失败 chunk | `failedChunks === 0` |
-| 14 | 无未完成状态 | 每个 chunk 都有 map 结果（`missingMapResults === 0`） |
+| 11 | **map.sourceIds 覆盖当前 chunk 全部来源** | `missingMappedSources === 0`（全覆盖门：集合相等） |
+| 12 | claim.evidenceSourceIds ⊆ 当前 chunk | `crossChunkEvidence` 计入 |
+| 13 | 输入哈希未变化 | 与 manifest 记录一致（过期状态即失败） |
+| 14 | 无失败 chunk | `failedChunks === 0` |
+| 15 | 无未完成状态 | 每个 chunk 都有 map 结果（`missingMapResults === 0`） |
 
 **只有以下条件全部成立，才能报告 digest 完成：**
 
@@ -36,7 +37,10 @@ staleMaps = 0
 crossChunkEvidence = 0
 malformedMaps = 0
 duplicateMaps = 0
+missingMappedSources = 0
 ```
+
+其中 `missingMappedSources` 是"全覆盖"关键门：**`map.sourceIds` 必须与 `chunk.sourceIds` 集合相等**（每个 chunk 的所有来源都必须被该 chunk 的 map 覆盖），不允许 map 只摘要 chunk 的一部分来源。`claim.evidenceSourceIds` 才是子集（某条 claim 由哪些来源支持）。
 
 输出 `work/coverage.json` 报告，含各项计数、失败明细，以及**不可变快照**：
 
@@ -63,15 +67,21 @@ node scripts/verify.mjs --work work/ --final work/final/digest.md
 ## 3. archive 完整性验证
 
 ```bash
-node scripts/archive.mjs <srcDir> --verify <collection.md> [--manifest <manifest.json>]
+# 推荐：manifest 驱动逐卷核验（支持分卷）
+node scripts/archive.mjs <srcDir> --verify --manifest <manifest.json>
+
+# 兼容：单卷直接核验（不传 manifest 时对单个 collection 校验全部输入）
+node scripts/archive.mjs <srcDir> --verify <collection.md>
 ```
 
-- 生成时自动写出 sidecar manifest（`<out>.manifest.json` 或 `<prefix>.manifest.json`），记录每篇的 `bodySha256` / `bodyChars` 与分卷结构。
-- `--verify` 逐篇重算输出 section 的正文 SHA-256，与输入文件计算值比对：
-  - 输出前后篇数一致（输入 N 篇 → 输出 N 篇）；
-  - **每篇正文 SHA-256 一致**（正文被改、截断、损坏都会失败）；
+- 生成时自动写出 sidecar manifest（`<out>.manifest.json` 或 `<prefix>.manifest.json`），**实际记录**每篇的 `bodySha256` / `bodyChars` 与分卷结构（`volumes[].entries[]`）。
+- `--verify --manifest`：读取 manifest → 遍历 volumes → 仅验证每卷自己的 `sources` 与 `entries`，用记录的 `bodySha256` 与输出 section 逐篇比对：
+  - 每卷篇数一致（卷内来源齐全）；
+  - **每篇正文 SHA-256 与 manifest 快照一致**（正文被改、截断、损坏都会失败）；
   - 输出不含绝对路径（来源均为相对路径）；
-  - 分卷时按 manifest 的 volumes 结构逐卷核验。
+  - 所有卷 valid 才 overall valid。
+- 单卷模式（`--verify <collection.md>`）行为同上，但对整个输入集校验。
+- 正文 framing：每篇正文以 `<!-- ARCHIVE_SOURCE_BEGIN --> <source>` / `<!-- ARCHIVE_SOURCE_END -->` 机器标记包裹，正文中的 Markdown H1 或 `> 来源:` 行不会被误判为 section 边界。
 
 ## 4. handoff 输入验证
 

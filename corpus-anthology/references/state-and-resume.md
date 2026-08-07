@@ -49,7 +49,7 @@ work/
 - 每个 chunk 可追溯到原始回答（chunk 内 `sources` 数组记录 questionId/answerId/author/relativePath/voteupCount）。
 - 每条记录必须恰好被分配一次（`chunkIds` 非空且不重叠；大回答可拆多个 chunk，但每条文本只出现一次）。
 - `chunkConfig` 记录分块参数，并参与幂等比对（改变 `--max-chars`/`--max-answers` 也会触发重建）。
-- `status`：`pending`（待 map）/ `mapped`（已有 map 结果）。
+- `status`：固定为 `pending`（chunk 生成时写入，之后不更新）。实际处理状态由 `map-results/` 中是否存在对应 `map-<chunkId>.json` 决定，并由 `verify.mjs` 校验——不维护独立的 mapped 状态机。
 
 ## 3. 分块规则（chunk.mjs）
 

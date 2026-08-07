@@ -54,8 +54,8 @@
 
 - `chunkId` 必须与文件名对应（`map-chunk-0001.json` → `chunk-0001`），且一个 chunk 只允许一个 map 结果。
 - `chunkHash` 必须等于对应 chunk 的 `chunkHash`（过期/错位 map 一律失败）。
-- `sourceIds` 必须 ⊆ **当前 chunk** 的 `sourceIds`（不允许引用 manifest 中其他 chunk 的来源）。
-- 每个 `claim.evidenceSourceIds` 必须 ⊆ **当前 chunk** 的 `sourceIds`（禁止跨 chunk 引用）。
+- **`sourceIds` 必须与当前 chunk 的 `sourceIds` 集合相等**（全覆盖门：map 必须覆盖本 chunk 的全部来源，不允许只摘要一部分；`missingMappedSources` 计入失败）。
+- 每个 `claim.evidenceSourceIds` 必须 ⊆ **当前 chunk** 的 `sourceIds`（claim 证据可以是子集，但不得跨 chunk 引用）。
 - `summary` 非空字符串；`claims`/`themes`/`uncertainties` 必须是数组。
 - 每个 claim 必须有非空文本、非空 `evidenceSourceIds`，且 `confidence` ∈ {`high`, `medium`, `low`}。
 - `uncertainties`：记录 chunk 中表达不明确、无法核实的内容；**不得**在 summary/claims 中把未验证推断写成事实。

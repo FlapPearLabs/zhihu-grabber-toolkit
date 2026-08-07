@@ -139,10 +139,13 @@ function readAnswers(file) {
 /** 按段落/句子边界切分超长文本，避免从词中间切断 */
 function splitLongText(text, maxChars) {
   if (text.length <= maxChars) return [text];
+  // 用代码点数组切分，保证 emoji 等 surrogate pair 不被拆开
+  const codepoints = Array.from(text);
+  if (codepoints.length <= maxChars) return [text];
   const parts = [];
-  let rest = text;
-  while (rest.length > maxChars) {
-    const slice = rest.slice(0, maxChars);
+  let start = 0;
+  while (codepoints.length - start > maxChars) {
+    const slice = codepoints.slice(start, start + maxChars).join('');
     const boundary = Math.max(
       slice.lastIndexOf('\n\n'),
       slice.lastIndexOf('。'),
@@ -151,14 +154,15 @@ function splitLongText(text, maxChars) {
       slice.lastIndexOf('. '),
     );
     if (boundary > maxChars * 0.6) {
-      parts.push(rest.slice(0, boundary + 1));
-      rest = rest.slice(boundary + 1);
+      parts.push(slice.slice(0, boundary + 1));
+      start += boundary + 1;
     } else {
-      // 无合适边界：按代码点边界切，保证不切断 UTF-8 字符
-      parts.push(rest.slice(0, maxChars));
-      rest = rest.slice(maxChars);
+      // 无合适边界：按代码点边界切（Array.from 保证 surrogate pair 完整）
+      parts.push(slice);
+      start += maxChars;
     }
   }
+  const rest = codepoints.slice(start).join('');
   if (rest.length > 0) parts.push(rest);
   return parts;
 }

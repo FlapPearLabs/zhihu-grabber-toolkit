@@ -83,7 +83,7 @@ test('loadConfig 优先取 ZHIHU_COOKIE 环境变量', () => {
 
 test('loadConfig 读取本地 zhihu_cookie.txt', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-cookie-file-'));
-  fs.writeFileSync(path.join(dir, 'zhihu_cookie.txt'), 'z_c0=filez; d_c0=filed');
+  fs.writeFileSync(path.join(dir, 'zhihu_cookie.txt'), 'z_c0=filez; d_c0=filed', { mode: 0o600 });
   const prev = process.cwd();
   process.chdir(dir);
   try {
@@ -130,7 +130,7 @@ test('resolveSecret 优先取环境变量', () => {
 
 test('resolveSecret 读本地 zhihu_secret.txt', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-secret-test-'));
-  fs.writeFileSync(path.join(dir, 'zhihu_secret.txt'), 'filesecret');
+  fs.writeFileSync(path.join(dir, 'zhihu_secret.txt'), 'filesecret', { mode: 0o600 });
   const prev = process.cwd();
   process.chdir(dir);
   try {

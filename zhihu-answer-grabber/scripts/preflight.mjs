@@ -86,27 +86,56 @@ function main() {
   let secretUsable = false;
   let secretError = 'missing';
 
-  // —— Cookie 可用性（与 loadConfig 的优先级一致：env → 本地文件 → cli 配置） ——
+  // —— Cookie 可用性（与 loadConfig 的优先级/fallback 完全一致） ——
+  //   loadConfig 逻辑：env 有值 → 用之（缺字段 throw）；
+  //   否则本地文件存在 → 安全检查（symlink/权限 throw），内容非空 → 用之（缺字段 throw），
+  //   内容为空 → fallback 到 CLI config；CLI config 缺失 → throw。
   if (cookieEnv) {
     configSource = 'env';
     const { ok, error } = cookieFieldsUsable(process.env.ZHIHU_COOKIE);
     cookieUsable = ok;
     cookieError = error;
   } else if (cookieFileExists) {
-    configSource = 'local_file';
     const usable = credentialFileUsable(cookieFile);
     if (!usable.ok) {
+      // symlink/权限问题 → loader 会 throw，不 fallback
       cookieUsable = false;
       cookieError = usable.error;
     } else {
       const raw = readFileSafe(cookieFile);
-      if (raw === null || raw === '') {
-        cookieUsable = false;
-        cookieError = 'missing';
-      } else {
+      if (raw !== null && raw !== '') {
+        // 内容非空 → 用之；缺字段即 unusable（loader 会 throw，不 fallback）
+        configSource = 'local_file';
         const { ok, error } = cookieFieldsUsable(raw);
         cookieUsable = ok;
         cookieError = error;
+      } else if (cliConfigExists) {
+        // 内容为空 → loader fallback 到 CLI config
+        configSource = 'user_config';
+        const cliUsable = credentialFileUsable(cliConfig);
+        if (!cliUsable.ok) {
+          cookieUsable = false;
+          cookieError = cliUsable.error;
+        } else {
+          let parsed = null;
+          try {
+            parsed = JSON.parse(readFileSafe(cliConfig) || '{}');
+          } catch {
+            parsed = null;
+          }
+          const cookies = parsed?.cookies || {};
+          if (!cookies.z_c0 || !cookies.d_c0) {
+            cookieUsable = false;
+            cookieError = cookies.z_c0 ? 'missing_d_c0' : 'missing_z_c0';
+          } else {
+            cookieUsable = true;
+            cookieError = 'none';
+          }
+        }
+      } else {
+        // 空文件且无 CLI config → 不可用
+        cookieUsable = false;
+        cookieError = 'missing';
       }
     }
   } else if (cliConfigExists) {

@@ -102,6 +102,30 @@ test('verify: 跨 chunk evidence 引用 → 验证失败（P1-2）', () => {
   assert.ok(parsed.crossChunkEvidence >= 1, `应检测到跨 chunk 引用，实际: ${parsed.crossChunkEvidence}`);
 });
 
+test('verify: map 只覆盖 chunk 部分来源 → 失败（P1-NEW-1）', () => {
+  const { work, mapDir } = setupWork(40); // 40 条回答确保 chunk 含多个来源
+  const first = fs.readdirSync(mapDir).sort()[0];
+  const mapFile = path.join(mapDir, first);
+  const map = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
+  // 只保留一个 sourceId：声称只 map 了 chunk 的一小部分
+  map.sourceIds = [map.sourceIds[0]];
+  fs.writeFileSync(mapFile, JSON.stringify(map, null, 2));
+  const r = run(['--work', work]);
+  assert.equal(r.status, 1);
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.valid, false);
+  assert.ok(parsed.missingMappedSources >= 1, `应检测到未覆盖来源，实际: ${parsed.missingMappedSources}`);
+});
+
+test('verify: map.sourceIds 与 chunk 集合相等时通过（全覆盖）', () => {
+  const { work } = setupWork(40);
+  const r = run(['--work', work]);
+  assert.equal(r.status, 0, r.stdout);
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.missingMappedSources, 0);
+  assert.equal(parsed.valid, true);
+});
+
 test('verify: map 缺 chunkHash（过期 map）→ 验证失败（P1-1）', () => {
   const { work, mapDir } = setupWork();
   const first = fs.readdirSync(mapDir).sort()[0];
@@ -312,6 +336,22 @@ test('handoff: warnings 非数组 → 拒绝', () => {
   const r = run(['--handoff', hf]);
   assert.equal(r.status, 1);
   assert.ok(JSON.parse(r.stdout).issues.some((i) => i.includes('warnings')));
+});
+
+test('handoff: warnings 含非字符串项 → 拒绝（P1-NEW-6）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-handoff-warn-items-'));
+  const { hf } = makeHandoffFile(dir, { warnings: [123, false, { x: 1 }] });
+  const r = run(['--handoff', hf]);
+  assert.equal(r.status, 1);
+  assert.ok(JSON.parse(r.stdout).issues.some((i) => i.includes('全部为字符串')));
+});
+
+test('handoff: questionId 为数字 → 拒绝（P1-NEW-6，schema type: string）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-handoff-qid-num-'));
+  const { hf } = makeHandoffFile(dir, { questionId: 123 });
+  const r = run(['--handoff', hf]);
+  assert.equal(r.status, 1);
+  assert.ok(JSON.parse(r.stdout).issues.some((i) => i.includes('字符串')), '数字 questionId 应被拒绝');
 });
 
 test('handoff: 额外字段 → 拒绝（additionalProperties）', () => {

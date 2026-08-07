@@ -75,7 +75,7 @@ node scripts/verify-output.mjs out/<QUESTION_ID>
 | 先统计规模 / 决定怎么处理 | inspect | `stats.mjs` 流式统计 |
 | 全部回答都要覆盖的摘要 | digest | `chunk.mjs` → map → `verify.mjs` → `reduce.mjs` → `verify.mjs --final`，带来源证据 |
 | 只看最高赞的几个回答 | popular-sample | `popular-sample.mjs` 取 Top N（高赞样本，不代表语料） |
-| 机械合并成分卷合集 | archive | `archive.mjs` 纯脚本拼接，正文零改写、流式（StringDecoder 防多字节损坏）、相对路径、按字符分卷；生成 sidecar manifest，`--verify` 逐篇核验正文 SHA-256 |
+| 机械合并成分卷合集 | archive | `archive.mjs` 纯脚本拼接，正文零改写、canonical body、相对路径、按正文字符分卷；sidecar manifest 记录每篇 bodySha256，`--verify --manifest` 逐卷核验正文 SHA-256 |
 
 **不支持的**：edit（排版编辑）、full（章节化完整版）、成书、自动去重改写——这些能力未实现，本仓库不声称支持。
 

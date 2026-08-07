@@ -40,7 +40,7 @@ function readJson(file) {
 function loadManifest(workDir) {
   const manifestFile = path.join(workDir, 'manifest.json');
   if (!fs.existsSync(manifestFile)) {
-    throw new Error(`manifest 不存在: ${manifestFile}（请先运行 chunk.mjs）`);
+    throw new Error(`manifest 不存在: ${displayPath(manifestFile)}（请先运行 chunk.mjs）`);
   }
   return readJson(manifestFile);
 }
@@ -95,6 +95,7 @@ function verifyCoverage(workDir, manifest) {
     crossChunkEvidence: 0,
     malformedMaps: 0,
     duplicateMaps: 0,
+    missingMappedSources: 0,
     issues: [],
   };
 
@@ -144,7 +145,7 @@ function verifyCoverage(workDir, manifest) {
     }
   }
 
-  // 5+6. map 结果校验：chunkHash 绑定 + evidence ⊆ 当前 chunk
+  // 5+6. map 结果校验：chunkHash 绑定 + map 全覆盖 + evidence ⊆ 当前 chunk
   const mappedChunks = new Map();
   const expectedMapFile = (cid) => `map-${cid}.json`;
   for (const { file, map, error } of maps) {
@@ -196,15 +197,22 @@ function verifyCoverage(workDir, manifest) {
       report.issues.push(`map 缺少 claims 数组: ${cid}`);
       continue;
     }
-    // evidence 绑定当前 chunk：map.sourceIds ⊆ chunk.sourceIds
     const chunkSourceSet = new Set(chunk.sourceIds);
+    // P1-NEW-1: map.sourceIds 必须与 chunk.sourceIds 集合**相等**
+    //   （map 声明了本 chunk 实际覆盖哪些来源 → 必须全部覆盖，不能只摘要一部分）
+    const mapSourceSet = new Set(map.sourceIds);
     for (const sid of map.sourceIds) {
       if (!chunkSourceSet.has(sid)) {
         report.crossChunkEvidence += 1;
         report.issues.push(`map.sourceIds 引用非本 chunk 来源: ${cid} → ${sid}`);
       }
     }
-    // claim.evidenceSourceIds ⊆ 当前 chunk.sourceIds
+    const unmapped = chunk.sourceIds.filter((sid) => !mapSourceSet.has(sid));
+    if (unmapped.length > 0) {
+      report.missingMappedSources += unmapped.length;
+      report.issues.push(`map 未覆盖本 chunk 的全部来源: ${cid} → 缺 ${unmapped.join(', ')}`);
+    }
+    // claim.evidenceSourceIds ⊆ 当前 chunk.sourceIds（claim 证据可以是子集）
     for (const [i, claim] of map.claims.entries()) {
       if (!claim || typeof claim !== 'object') {
         report.malformedMaps += 1;
@@ -289,7 +297,8 @@ function verifyCoverage(workDir, manifest) {
     && report.staleMaps === 0
     && report.crossChunkEvidence === 0
     && report.malformedMaps === 0
-    && report.duplicateMaps === 0;
+    && report.duplicateMaps === 0
+    && report.missingMappedSources === 0;
 
   return report;
 }
@@ -365,10 +374,15 @@ function verifyHandoff(handoffFile) {
     report.valid = false;
     report.issues.push(`sourceType 必须是 zhihu-answers，收到: ${handoff.sourceType}`);
   }
-  // questionId pattern
-  if (handoff.questionId !== undefined && !/^\d{1,20}$/.test(String(handoff.questionId))) {
-    report.valid = false;
-    report.issues.push(`questionId 必须是 1-20 位数字，收到: ${handoff.questionId}`);
+  // questionId：必须是 string 且匹配 pattern（与 schema type: string + pattern 一致）
+  if (handoff.questionId !== undefined) {
+    if (typeof handoff.questionId !== 'string') {
+      report.valid = false;
+      report.issues.push(`questionId 必须是字符串，收到: ${JSON.stringify(handoff.questionId)}`);
+    } else if (!/^\d{1,20}$/.test(handoff.questionId)) {
+      report.valid = false;
+      report.issues.push(`questionId 必须是 1-20 位数字，收到: ${handoff.questionId}`);
+    }
   }
   // verified 必须为 true
   if (handoff.verified !== undefined && handoff.verified !== true) {
@@ -380,10 +394,18 @@ function verifyHandoff(handoffFile) {
     report.valid = false;
     report.issues.push(`answerCount 必须是非负整数，收到: ${handoff.answerCount}`);
   }
-  // warnings 数组
-  if (handoff.warnings !== undefined && !Array.isArray(handoff.warnings)) {
-    report.valid = false;
-    report.issues.push('warnings 必须是数组');
+  // warnings：必须是 string 数组（与 schema type: array + items: string 一致）
+  if (handoff.warnings !== undefined) {
+    if (!Array.isArray(handoff.warnings)) {
+      report.valid = false;
+      report.issues.push('warnings 必须是数组');
+    } else {
+      const nonStrings = handoff.warnings.filter((w) => typeof w !== 'string');
+      if (nonStrings.length > 0) {
+        report.valid = false;
+        report.issues.push(`warnings 数组必须全部为字符串，发现 ${nonStrings.length} 个非字符串项`);
+      }
+    }
   }
   // 路径：必须是相对路径（不泄漏绝对路径），相对 handoff 文件所在目录解析，且文件存在
   for (const key of ['inputJson', 'inputMarkdown']) {
@@ -424,6 +446,12 @@ function verifyHandoff(handoffFile) {
   return report;
 }
 
+/** stdout/stderr 展示路径：相对当前工作目录，避免泄漏本机绝对路径 */
+function displayPath(p) {
+  const rel = path.relative(process.cwd(), p);
+  return rel || '.';
+}
+
 async function main() {
   if (has('--handoff')) {
     const file = arg('--handoff', null);
@@ -438,7 +466,7 @@ async function main() {
 
   const workDir = path.resolve(arg('--work', 'work'));
   if (!fs.existsSync(workDir)) {
-    console.error(`work 目录不存在: ${workDir}`);
+    console.error(`work 目录不存在: ${displayPath(workDir)}`);
     process.exit(2);
   }
   const manifest = loadManifest(workDir);
@@ -460,7 +488,7 @@ async function main() {
   fs.writeFileSync(tmp, JSON.stringify(report, null, 2), 'utf8');
   fs.renameSync(tmp, coverageFile);
   console.log(JSON.stringify(report, null, 2));
-  process.stderr.write(`覆盖率报告: ${coverageFile}\n`);
+  process.stderr.write(`覆盖率报告: ${displayPath(coverageFile)}\n`);
   process.exit(report.valid ? 0 : 1);
 }
 

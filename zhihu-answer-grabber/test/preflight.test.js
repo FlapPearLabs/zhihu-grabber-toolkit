@@ -12,6 +12,12 @@ function runWithEnv(env) {
   return spawnSync(process.execPath, [SCRIPT], { encoding: 'utf8', env: { ...process.env, ...env } });
 }
 
+/** 写凭据文件：POSIX 下用 0600（与 loader 的权限校验一致，避免 umask 导致 0644） */
+function writeCredentialFile(file, content) {
+  fs.writeFileSync(file, content);
+  if (process.platform !== 'win32') fs.chmodSync(file, 0o600);
+}
+
 function parseOutput(stdout) {
   const map = {};
   for (const line of stdout.trim().split('\n')) {
@@ -34,7 +40,7 @@ test('preflight 无任何凭据时全部为 false', () => {
 
 test('preflight 本地合法 cookie 文件：configured=true, usable=true', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-preflight-file-'));
-  fs.writeFileSync(path.join(dir, 'zhihu_cookie.txt'), 'z_c0=SUPERSECRET; d_c0=xxx');
+  writeCredentialFile(path.join(dir, 'zhihu_cookie.txt'), 'z_c0=SUPERSECRET; d_c0=xxx');
   const r = runWithEnv({ ZAG_CONFIG_DIR: dir, ZHIHU_COOKIE: '', ZHIHU_SECRET: '' });
   assert.equal(r.status, 0);
   const out = parseOutput(r.stdout);
@@ -48,7 +54,7 @@ test('preflight 本地合法 cookie 文件：configured=true, usable=true', () =
 
 test('preflight 本地缺 d_c0 的 cookie：usable=false, error=missing_d_c0', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-preflight-missing-'));
-  fs.writeFileSync(path.join(dir, 'zhihu_cookie.txt'), 'z_c0=onlyz');
+  writeCredentialFile(path.join(dir, 'zhihu_cookie.txt'), 'z_c0=onlyz');
   const r = runWithEnv({ ZAG_CONFIG_DIR: dir, ZHIHU_COOKIE: '', ZHIHU_SECRET: '' });
   const out = parseOutput(r.stdout);
   assert.equal(out.cookie_configured, 'true');
@@ -81,7 +87,7 @@ test('preflight symlink 凭据文件：usable=false, error=symlink（POSIX）', 
   }
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-preflight-symlink-'));
   const real = path.join(dir, 'real.txt');
-  fs.writeFileSync(real, 'z_c0=secret; d_c0=secret2');
+  writeCredentialFile(real, 'z_c0=secret; d_c0=secret2');
   try {
     fs.symlinkSync(real, path.join(dir, 'zhihu_cookie.txt'));
   } catch {
@@ -102,7 +108,7 @@ test('preflight 过宽权限（0644）：usable=false, error=permission（POSIX�
   }
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-preflight-perm-'));
   const file = path.join(dir, 'zhihu_cookie.txt');
-  fs.writeFileSync(file, 'z_c0=secret; d_c0=secret2');
+  writeCredentialFile(file, 'z_c0=secret; d_c0=secret2');
   fs.chmodSync(file, 0o644);
   const r = runWithEnv({ ZAG_CONFIG_DIR: dir, ZHIHU_COOKIE: '', ZHIHU_SECRET: '' });
   const out = parseOutput(r.stdout);
@@ -118,7 +124,7 @@ test('preflight 0600 权限：usable=true（POSIX）', (t) => {
   }
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-preflight-600-'));
   const file = path.join(dir, 'zhihu_cookie.txt');
-  fs.writeFileSync(file, 'z_c0=secret; d_c0=secret2');
+  writeCredentialFile(file, 'z_c0=secret; d_c0=secret2');
   fs.chmodSync(file, 0o600);
   const r = runWithEnv({ ZAG_CONFIG_DIR: dir, ZHIHU_COOKIE: '', ZHIHU_SECRET: '' });
   const out = parseOutput(r.stdout);
@@ -135,17 +141,41 @@ test('preflight 输出格式固定：7 行且无额外内容', () => {
 
 test('preflight 不打印凭据文件路径', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-preflight-path-'));
-  fs.writeFileSync(path.join(dir, 'zhihu_cookie.txt'), 'z_c0=secret; d_c0=secret2');
+  writeCredentialFile(path.join(dir, 'zhihu_cookie.txt'), 'z_c0=secret; d_c0=secret2');
   const r = runWithEnv({ ZAG_CONFIG_DIR: dir });
   assert.ok(!r.stdout.includes(dir), '不得泄漏本机路径');
 });
 
 test('preflight secret 可用性：env 与文件', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-preflight-secret-'));
-  fs.writeFileSync(path.join(dir, 'zhihu_secret.txt'), 'SECRETVALUE');
+  writeCredentialFile(path.join(dir, 'zhihu_secret.txt'), 'SECRETVALUE');
   const r = runWithEnv({ ZAG_CONFIG_DIR: dir, ZHIHU_SECRET: '' });
   const out = parseOutput(r.stdout);
   assert.equal(out.secret_configured, 'true');
   assert.equal(out.secret_usable, 'true');
   assert.ok(!r.stdout.includes('SECRETVALUE'));
+});
+
+test('preflight: 空 cookie 文件 + 有效 CLI config → fallback 到 user_config（P2-1）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-preflight-fallback-'));
+  // 空本地 cookie 文件
+  fs.writeFileSync(path.join(dir, 'zhihu_cookie.txt'), '', { mode: 0o600 });
+  // 有效 CLI config（含 z_c0/d_c0）
+  const cliFile = path.join(dir, 'cli-config.json');
+  writeCredentialFile(cliFile, JSON.stringify({ cookies: { z_c0: 'z', d_c0: 'd' } }));
+  const r = runWithEnv({ ZAG_CONFIG_DIR: dir, ZHIHU_COOKIE: '', ZHIHU_SECRET: '', ZHIHU_CLI_CONFIG: cliFile });
+  const out = parseOutput(r.stdout);
+  assert.equal(out.cookie_configured, 'true');
+  assert.equal(out.cookie_usable, 'true', '空本地文件应 fallback 到 CLI config');
+  assert.equal(out.config_source, 'user_config');
+});
+
+test('preflight: 空 cookie 文件且无 CLI config → unusable missing', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-preflight-empty-'));
+  fs.writeFileSync(path.join(dir, 'zhihu_cookie.txt'), '', { mode: 0o600 });
+  const r = runWithEnv({ ZAG_CONFIG_DIR: dir, ZHIHU_COOKIE: '', ZHIHU_SECRET: '' });
+  const out = parseOutput(r.stdout);
+  assert.equal(out.cookie_configured, 'true');
+  assert.equal(out.cookie_usable, 'false');
+  assert.equal(out.cookie_error, 'missing');
 });

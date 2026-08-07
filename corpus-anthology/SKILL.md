@@ -92,12 +92,13 @@ duplicateAssignments = 0
 failedChunks = 0
 invalidEvidenceRefs = 0
 staleMaps = 0            # map 的 chunkHash 与当前 chunk 不一致（过期 map）
-crossChunkEvidence = 0   # claim 引用本 chunk 之外的来源
+crossChunkEvidence = 0   # map/claim 引用本 chunk 之外的来源
 malformedMaps = 0        # map 字段缺失/非法
 duplicateMaps = 0        # 同一 chunk 多个 map
+missingMappedSources = 0 # map.sourceIds 未覆盖本 chunk 的全部来源（全覆盖门）
 ```
 
-   只有全部满足，digest 的输入侧才算完整；随后 coverage.json 记录 manifestHash / mapSetHash 快照，供 reduce 校验当前状态。
+   其中 `missingMappedSources` 是"全覆盖"关键门：**map.sourceIds 必须与 chunk.sourceIds 集合相等**，不允许 map 只摘要 chunk 的一部分来源；`claim.evidenceSourceIds` 才是子集。只有全部满足，digest 的输入侧才算完整；随后 coverage.json 记录 manifestHash / mapSetHash 快照，供 reduce 校验当前状态。
 
 4. **reduce 合并**（确定性脚本）：
 
@@ -139,17 +140,21 @@ node scripts/archive.mjs <srcDir> [--out collection.md] [--title "合集标题"]
 ```
 
 - 机械拼接，正文零改写。
-- 流式处理（StringDecoder 保证多字节 UTF-8 不被切坏），超大文件不全部驻留内存。
-- 来源使用相对路径，不泄漏绝对路径。
+- 单篇读入计算 canonical body，输出流按块写入（不把全部语料同时驻留内存）。
+- 来源使用相对路径，不泄漏绝对路径；stdout/stderr 路径相对当前工作目录。
 - 按体积（`--max-volume-chars`，按正文字符数）或篇数（`--volume`）分卷，二者互斥。
-- 生成时自动写出 sidecar manifest（记录每篇 `bodySha256` 与分卷结构）。
+- 生成时自动写出 sidecar manifest（**实际记录**每篇 `bodySha256` / `bodyChars` 与分卷结构）。
 - 完成后**必须核验完整性**：
 
 ```bash
-node scripts/archive.mjs <srcDir> --verify <collection.md> [--manifest <manifest.json>]
+# 推荐：manifest 驱动逐卷核验（支持分卷）
+node scripts/archive.mjs <srcDir> --verify --manifest <manifest.json>
+
+# 兼容：单卷直接核验
+node scripts/archive.mjs <srcDir> --verify <collection.md>
 ```
 
-   校验：输出前后篇数一致、**逐篇正文 SHA-256 一致**（正文被改/截断/损坏都会失败）、无绝对路径泄漏、分卷按 manifest 逐卷核验。验证通过才能交付。
+   校验：每卷篇数一致、**逐篇正文 SHA-256 与 manifest 快照一致**（正文被改/截断/损坏都会失败）、无绝对路径泄漏、正文 framing 用机器标记（正文中的 H1/来源行不会被误判为边界）。验证通过才能交付。
 
 ## 与 zhihu-answer-grabber 的衔接
 

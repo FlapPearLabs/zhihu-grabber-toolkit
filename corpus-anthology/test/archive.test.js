@@ -96,12 +96,20 @@ test('archive --verify: 篇数不一致时失败', () => {
   const out = path.join(outDirFor(dir), 'collection4.md');
   run([dir, '--out', out]);
   const text = fs.readFileSync(out, 'utf8');
-  const modified = text.replace(/^> 来源: q3\/answers\.md$/m, '');
+  // 删除 q3 的整个 framed section（BEGIN/END 标记对）
+  const BEGIN = '<!-- ARCHIVE_SOURCE_BEGIN -->';
+  const END = '<!-- ARCHIVE_SOURCE_END -->';
+  const startIdx = text.indexOf(`${BEGIN} q3/answers.md`);
+  assert.ok(startIdx !== -1, '输出中应存在 q3 的 framing 标记');
+  const endIdx = text.indexOf(END, startIdx);
+  const sectionEnd = endIdx + END.length;
+  const modified = text.slice(0, startIdx) + text.slice(sectionEnd);
   fs.writeFileSync(out, modified);
   const r = run([dir, '--verify', out]);
   assert.notEqual(r.status, 0);
   const parsed = JSON.parse(r.stdout);
   assert.equal(parsed.valid, false);
+  assert.ok(parsed.warnings.some((w) => w.includes('缺少来源')), '应报告缺少来源');
 });
 
 test('archive --verify: 输出含绝对路径时失败（跨平台）', () => {
@@ -189,8 +197,99 @@ test('archive: 分卷 manifest 记录 volumes（P1-6）', () => {
   assert.ok(Array.isArray(manifest.volumes) && manifest.volumes.length >= 2, 'manifest 应记录多卷');
   const totalSources = manifest.volumes.reduce((s, v) => s + v.sources.length, 0);
   assert.equal(totalSources, 5, '分卷 manifest 来源总数应等于输入篇数');
-  // 每卷文件存在
+  // 每卷文件存在（volume.file 相对 manifest 所在目录解析）
+  const manifestBase = path.dirname(manifestFile);
   for (const v of manifest.volumes) {
-    assert.ok(fs.existsSync(v.file), `卷文件应存在: ${v.file}`);
+    assert.ok(fs.existsSync(path.resolve(manifestBase, v.file)), `卷文件应存在: ${v.file}`);
   }
+});
+
+test('archive: sidecar manifest 记录每篇 bodySha256/bodyChars（P1-NEW-3）', () => {
+  const dir = makeCorpus(3);
+  const out = path.join(outDirFor(dir), 'collection-snap.md');
+  const r = run([dir, '--out', out]);
+  assert.equal(r.status, 0, r.stderr);
+  const manifest = JSON.parse(fs.readFileSync(`${out}.manifest.json`, 'utf8'));
+  assert.ok(manifest.volumes.length >= 1);
+  const entries = manifest.volumes.flatMap((v) => v.entries || []);
+  assert.equal(entries.length, 3, 'manifest entries 应覆盖全部 3 篇');
+  for (const e of entries) {
+    assert.ok(typeof e.bodySha256 === 'string' && e.bodySha256.length === 64, `bodySha256 应为 sha256 hex: ${e.source}`);
+    assert.ok(typeof e.bodyChars === 'number' && e.bodyChars > 0, `bodyChars 应为正数: ${e.source}`);
+  }
+});
+
+test('archive: 逐卷 verify 通过（P1-NEW-2：--verify --manifest）', () => {
+  const dir = makeCorpus(5);
+  const prefix = path.join(outDirFor(dir), 'volverify');
+  const r = run([dir, '--max-volume-chars', '20', '--name', 'volverify', '--out', `${prefix}.md`]);
+  assert.equal(r.status, 0, r.stderr);
+  const manifestFile = path.join(outDirFor(dir), 'volverify.manifest.json');
+  const vr = run([dir, '--verify', '--manifest', manifestFile]);
+  assert.equal(vr.status, 0, vr.stdout);
+  const parsed = JSON.parse(vr.stdout);
+  assert.equal(parsed.valid, true);
+  assert.ok(parsed.volumes.length >= 2, '应逐卷验证');
+  assert.ok(parsed.volumes.every((v) => v.valid === true), '所有卷应 valid');
+});
+
+test('archive: 逐卷 verify 检测单卷篡改（P1-NEW-2）', () => {
+  const dir = makeCorpus(5);
+  const prefix = path.join(outDirFor(dir), 'voltamper');
+  run([dir, '--max-volume-chars', '20', '--name', 'voltamper', '--out', `${prefix}.md`]);
+  const manifestFile = path.join(outDirFor(dir), 'voltamper.manifest.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+  // 篡改最后一卷的某篇正文（volume.file 相对 manifest 目录解析）
+  const manifestBase = path.dirname(manifestFile);
+  const lastVol = manifest.volumes[manifest.volumes.length - 1];
+  const volPath = path.resolve(manifestBase, lastVol.file);
+  let text = fs.readFileSync(volPath, 'utf8');
+  text = text.replace('问题5的正文内容', '被篡改!!!');
+  fs.writeFileSync(volPath, text);
+  const vr = run([dir, '--verify', '--manifest', manifestFile]);
+  assert.notEqual(vr.status, 0);
+  const parsed = JSON.parse(vr.stdout);
+  assert.equal(parsed.valid, false);
+  assert.ok(parsed.volumes.some((v) => !v.valid), '应检测到被篡改的卷');
+});
+
+test('archive: 正文含 H1 与 来源行 不被误切分（P1-NEW-5 framing）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-archive-framing-'));
+  const qDir = path.join(dir, 'q1');
+  fs.mkdirSync(qDir, { recursive: true });
+  fs.writeFileSync(path.join(qDir, 'answers.md'), [
+    '# 顶部标题',
+    '',
+    '正文第一段。',
+    '',
+    '# 正文中的 H1 标题',  // 正文含 Markdown H1，不应被当作下篇边界
+    '',
+    '> 来源: 伪造的引用行',  // 正文含 来源行，不应被误计为 section
+    '',
+    '结尾。',
+    '',
+  ].join('\n'));
+  const out = path.join(outDirFor(dir), 'collection-frame.md');
+  const r = run([dir, '--out', out]);
+  assert.equal(r.status, 0, r.stderr);
+  const vr = run([dir, '--verify', out]);
+  assert.equal(vr.status, 0, vr.stdout);
+  const parsed = JSON.parse(vr.stdout);
+  assert.equal(parsed.valid, true);
+  assert.equal(parsed.outputSections, 1, '正文中的 H1/来源行不应增加 section 数');
+});
+
+test('archive: >64KB 正文、跨 64KB 边界含空白不产生 hash 漂移（P1-NEW-4）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-archive-boundary-'));
+  const qDir = path.join(dir, 'q1');
+  fs.mkdirSync(qDir, { recursive: true });
+  // 66000 个 a + 以两个空格开头的结尾段（保证第二块从空白开始）
+  const pad = 'a'.repeat(66000);
+  fs.writeFileSync(path.join(qDir, 'answers.md'), `# 问题\n\n${pad}  空格开头的第二段。\n`);
+  const out = path.join(outDirFor(dir), 'collection-boundary.md');
+  const r = run([dir, '--out', out]);
+  assert.equal(r.status, 0, r.stderr);
+  const vr = run([dir, '--verify', out]);
+  assert.equal(vr.status, 0, vr.stdout);
+  assert.equal(JSON.parse(vr.stdout).valid, true, '零改写正文不得被误判为损坏');
 });
