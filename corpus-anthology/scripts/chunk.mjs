@@ -10,9 +10,11 @@
  * 行为:
  *   - 收集所有 answers.json（单个文件或递归目录），解析每条回答。
  *   - 生成 work/manifest.json 与 work/chunks/chunk-XXXX.json。
- *   - 幂等：重跑时比对输入 sha256，未变化则复用现有 chunks。
- *   - 输入变化时失效相关 chunk，不静默复用过期中间结果。
- *   - 所有路径为相对路径（相对 --work 的 sourceRoot）。
+ *   - 幂等：重跑时比对输入 sha256 与 chunkConfig，未变化则复用现有 chunks。
+ *   - 输入变化时**整个 digest cache 全失效**（chunks/map-results/coverage/reduce-input/final
+ *     一并清除），不静默复用任何过期中间结果。
+ *   - 每个 chunk 带 chunkHash；map 结果必须回传相同 chunkHash 才能通过 verify。
+ *   - 所有路径为相对路径（相对 --work 的 sourceRoot）；stdout 路径相对 cwd。
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -79,6 +81,12 @@ function tokenRange(chars) {
   return { min: Math.round(chars / 2.2), max: Math.round(chars / 1.4) };
 }
 
+/** stdout 展示路径：相对当前工作目录，避免泄漏本机绝对路径 */
+function displayPath(p) {
+  const rel = path.relative(process.cwd(), p);
+  return rel || '.';
+}
+
 function collectJsonFiles(inputs) {
   const files = new Set();
   for (const raw of inputs) {
@@ -108,10 +116,7 @@ function sha256Of(text) {
   return crypto.createHash('sha256').update(text).digest('hex');
 }
 
-/**
- * 解析 answers.json 为回答记录列表。
- * 兼容: { answers: [...] } 或纯数组。
- */
+/** 解析 answers.json 为回答记录列表。兼容: { answers: [...] } 或纯数组。 */
 function parseAnswers(json) {
   if (Array.isArray(json)) return json;
   if (json && Array.isArray(json.answers)) return json.answers;
@@ -198,19 +203,35 @@ function buildChunks(records, { maxChars, maxAnswers }) {
       }
       current.sourceIds.push(source.sourceId);
       current.sources.push(source);
-      current.parts.push(segment);
+      current.parts.push({ sourceId: source.sourceId, text: segment });
       current.chars += segment.length;
     }
   }
   closeChunk();
-  return chunks.map((c) => ({
-    chunkId: c.chunkId,
-    sourceIds: [...new Set(c.sourceIds)],
-    sources: c.sources,
-    text: c.parts.map((p, i) => `${i > 0 ? '\n\n---\n\n' : ''}${p}`).join(''),
-    chars: c.chars,
-    estimatedTokens: tokenRange(c.chars),
-  }));
+
+  // 组装 chunk 对象：正文带 [SOURCE sourceId] 显式局部标记
+  return chunks.map((c) => {
+    const body = c.parts
+      .map((p, i) => `${i > 0 ? '\n\n---\n\n' : ''}[SOURCE ${p.sourceId}]\n${p.text}`)
+      .join('');
+    const chunk = {
+      chunkId: c.chunkId,
+      sourceIds: [...new Set(c.sourceIds)],
+      sources: c.sources,
+      text: body,
+      chars: c.chars,
+      estimatedTokens: tokenRange(c.chars),
+    };
+    // chunkHash：对内容序列化计算，map 结果必须回传相同值
+    chunk.chunkHash = sha256Of(JSON.stringify({
+      chunkId: chunk.chunkId,
+      sourceIds: chunk.sourceIds,
+      sources: chunk.sources,
+      text: chunk.text,
+      chars: chunk.chars,
+    }));
+    return chunk;
+  });
 }
 
 async function main() {
@@ -234,6 +255,8 @@ async function main() {
   const chunksDir = path.join(workDir, 'chunks');
   fs.mkdirSync(chunksDir, { recursive: true });
 
+  const chunkConfig = { maxChars: opts.maxChars, maxAnswers: opts.maxAnswers };
+
   // 读取输入并计算哈希
   const parsedInputs = [];
   for (const file of files) {
@@ -255,15 +278,16 @@ async function main() {
     }
   }
 
-  // 幂等检查：现有 manifest 且输入哈希全部一致 → 复用
+  // 幂等检查：现有 manifest 且输入哈希 + chunkConfig 全部一致 → 复用
   const manifestFile = path.join(workDir, 'manifest.json');
   let reuse = false;
   if (fs.existsSync(manifestFile)) {
     try {
       const existing = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
       if (existing.schemaVersion === 1 && existing.mode === opts.mode) {
+        const configMatch = JSON.stringify(existing.chunkConfig) === JSON.stringify(chunkConfig);
         const existingHashes = new Map(existing.inputs.map((i) => [i.sourceId, i.sha256]));
-        const allMatch = parsedInputs.every((i) => existingHashes.get(i.sourceId) === i.fileHash);
+        const allMatch = configMatch && parsedInputs.every((i) => existingHashes.get(i.sourceId) === i.fileHash);
         const countMatch = existing.inputs.length === parsedInputs.length;
         if (allMatch && countMatch) reuse = true;
       }
@@ -277,13 +301,21 @@ async function main() {
     return;
   }
 
-  // 清理旧 chunks（输入已变，不得复用过期中间结果）
-  for (const f of fs.readdirSync(chunksDir)) {
-    fs.rmSync(path.join(chunksDir, f), { force: true });
+  // 输入已变：**整个 digest cache 全失效**（不得静默复用任何过期中间结果）
+  for (const sub of ['chunks', 'map-results', 'final']) {
+    const subDir = path.join(workDir, sub);
+    if (fs.existsSync(subDir)) {
+      fs.rmSync(subDir, { recursive: true, force: true });
+    }
   }
+  for (const staleFile of ['coverage.json', 'reduce-input.json']) {
+    const p = path.join(workDir, staleFile);
+    if (fs.existsSync(p)) fs.rmSync(p, { force: true });
+  }
+  fs.mkdirSync(chunksDir, { recursive: true });
 
   // 分块
-  const chunks = buildChunks(parsedInputs, { maxChars: opts.maxChars, maxAnswers: opts.maxAnswers });
+  const chunks = buildChunks(parsedInputs, chunkConfig);
 
   // 写 chunk 文件（先写临时文件再改名，避免半截文件）
   const chunkIdsBySource = new Map();
@@ -304,12 +336,14 @@ async function main() {
     createdAt: new Date().toISOString(),
     sourceRoot: path.relative(process.cwd(), workDir).split(path.sep).join('/') || '.',
     mode: opts.mode,
+    chunkConfig,
     inputs: parsedInputs.map((i) => ({
       sourceId: i.sourceId,
       relativePath: i.relativePath,
       questionId: i.questionId,
       answerId: i.answerId,
       chars: String(i.content ?? '').length,
+      voteupCount: i.voteupCount,
       sha256: i.fileHash,
       chunkIds: chunkIdsBySource.get(i.sourceId) ?? [],
       status: 'pending',
@@ -319,9 +353,9 @@ async function main() {
   fs.writeFileSync(manifestTmp, JSON.stringify(manifest, null, 2), 'utf8');
   fs.renameSync(manifestTmp, manifestFile);
 
-  console.log(`已生成 manifest: ${manifestFile}`);
+  console.log(`已生成 manifest: ${displayPath(manifestFile)}`);
   console.log(`输入: ${parsedInputs.length} 条回答 → ${chunks.length} 个 chunk`);
-  console.log(`chunk 目录: ${chunksDir}`);
+  console.log(`chunk 目录: ${displayPath(chunksDir)}`);
 }
 
 main().catch((error) => {

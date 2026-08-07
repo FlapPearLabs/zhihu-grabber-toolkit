@@ -131,3 +131,83 @@ test('chunk: manifest 路径为相对路径，无绝对路径泄漏', () => {
   assert.ok(!manifestText.includes(os.homedir()), '不得包含用户主目录');
   assert.ok(!/^[A-Za-z]:[\\/]/.test(manifestText.split('\n').find((l) => l.includes('relativePath')) || ''), 'relativePath 应为相对路径');
 });
+
+test('chunk: 每个 chunk 带 chunkHash（P1-1）', () => {
+  const { file } = makeAnswers(4);
+  const work = path.join(path.dirname(file), '..', 'work-hash');
+  const r = runChunk(file, work);
+  assert.equal(r.status, 0);
+  const chunksDir = path.join(work, 'chunks');
+  for (const f of fs.readdirSync(chunksDir)) {
+    const chunk = readJson(path.join(chunksDir, f));
+    assert.ok(chunk.chunkHash && chunk.chunkHash.startsWith('sha256:') === false, `chunk 应含 chunkHash: ${chunk.chunkId}`);
+    assert.ok(typeof chunk.chunkHash === 'string' && chunk.chunkHash.length === 64, 'chunkHash 应为 sha256 hex');
+  }
+});
+
+test('chunk: 正文带 [SOURCE sourceId] 显式标记（P1-3）', () => {
+  const { file } = makeAnswers(6);
+  const work = path.join(path.dirname(file), '..', 'work-source-mark');
+  const r = runChunk(file, work);
+  assert.equal(r.status, 0);
+  const chunksDir = path.join(work, 'chunks');
+  let foundMarker = false;
+  for (const f of fs.readdirSync(chunksDir)) {
+    const chunk = readJson(path.join(chunksDir, f));
+    for (const sid of chunk.sourceIds) {
+      assert.ok(chunk.text.includes(`[SOURCE ${sid}]`), `chunk ${chunk.chunkId} 正文应含 [SOURCE ${sid}] 标记`);
+      foundMarker = true;
+    }
+  }
+  assert.ok(foundMarker, '应至少有一个 source 标记');
+});
+
+test('chunk: chunkConfig 变化触发重建（P2-2）', () => {
+  const { file } = makeAnswers(5);
+  const work = path.join(path.dirname(file), '..', 'work-config');
+  const r1 = runChunk(file, work);
+  assert.equal(r1.status, 0);
+  const manifest1 = readJson(path.join(work, 'manifest.json'));
+  assert.ok(manifest1.chunkConfig, 'manifest 应记录 chunkConfig');
+
+  // 用不同 --max-chars 重跑 → 应重建而非复用
+  const r2 = spawnSync(process.execPath, [SCRIPT, file, '--work', work, '--max-chars', '5000'], { encoding: 'utf8' });
+  assert.equal(r2.status, 0);
+  assert.ok(!/复用/.test(r2.stdout), 'chunkConfig 变化不应复用');
+  const manifest2 = readJson(path.join(work, 'manifest.json'));
+  assert.equal(manifest2.chunkConfig.maxChars, 5000);
+});
+
+test('chunk: 输入变化后整个 digest cache 全失效（P1-1）', () => {
+  const { file } = makeAnswers(5);
+  const work = path.join(path.dirname(file), '..', 'work-full-invalidate');
+  runChunk(file, work);
+  // 模拟已有 map 结果与 coverage
+  fs.mkdirSync(path.join(work, 'map-results'), { recursive: true });
+  fs.writeFileSync(path.join(work, 'map-results', 'map-chunk-0001.json'), '{"chunkId":"chunk-0001"}');
+  fs.writeFileSync(path.join(work, 'coverage.json'), '{"valid":true}');
+  fs.writeFileSync(path.join(work, 'reduce-input.json'), '{}');
+  fs.mkdirSync(path.join(work, 'final'), { recursive: true });
+  fs.writeFileSync(path.join(work, 'final', 'digest.md'), '# x');
+
+  // 修改输入（同 sourceId，仅改正文）
+  const json = readJson(file);
+  json.answers[0].content = '<p>改变正文但 ID 不变</p>';
+  fs.writeFileSync(file, JSON.stringify(json));
+
+  const r = runChunk(file, work);
+  assert.equal(r.status, 0);
+  assert.ok(!fs.existsSync(path.join(work, 'map-results')), 'map-results 应被清除');
+  assert.ok(!fs.existsSync(path.join(work, 'coverage.json')), 'coverage 应被清除');
+  assert.ok(!fs.existsSync(path.join(work, 'reduce-input.json')), 'reduce-input 应被清除');
+  assert.ok(!fs.existsSync(path.join(work, 'final')), 'final 应被清除');
+});
+
+test('chunk: manifest 保存 voteupCount（P2-4）', () => {
+  const { file } = makeAnswers(3);
+  const work = path.join(path.dirname(file), '..', 'work-votes');
+  const r = runChunk(file, work);
+  assert.equal(r.status, 0);
+  const manifest = readJson(path.join(work, 'manifest.json'));
+  assert.ok(manifest.inputs.every((i) => typeof i.voteupCount === 'number'), 'manifest inputs 应含 voteupCount');
+});

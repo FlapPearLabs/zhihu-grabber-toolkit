@@ -11,6 +11,66 @@ const POPULAR = fileURLToPath(new URL('../scripts/popular-sample.mjs', import.me
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SKILL_MD = path.join(ROOT, 'SKILL.md');
 
+function readFrontmatterDescription() {
+  const text = fs.readFileSync(SKILL_MD, 'utf8');
+  const m = text.match(/^description:\s*(.+)$/m);
+  assert.ok(m, 'SKILL.md 必须包含 description frontmatter');
+  return m[1];
+}
+
+/** 模拟触发判定（关键词级近似，用于回归测试） */
+function wouldTrigger(description, userIntent) {
+  const negativeSignals = ['总结这一段', '改', '文风', '重写', '编辑', '书', '500 字'];
+  const hasNegative = negativeSignals.some((s) => userIntent.includes(s));
+  if (hasNegative) return false;
+  const hasCorpusIntent = /MB|全覆盖|摘要|合并|分卷|统计|规模|语料/.test(userIntent);
+  const isLarge = /MB|20MB/.test(userIntent);
+  return hasCorpusIntent && (isLarge || description.includes('语料'));
+}
+
+const POSITIVE_INTENTS = [
+  '这些知乎回答有 20MB，给我做全覆盖摘要',
+  '把这批 answers.md 机械合并成分卷合集',
+  '先统计这批抓取产物规模',
+];
+
+const NEGATIVE_INTENTS = [
+  '总结这一段 500 字文本',
+  '修改这篇文章的文风',
+  '把这本书重写成小说',
+  '帮我编辑一个小 Markdown 文件',
+];
+
+test('触发 eval：corpus 正例应触发', () => {
+  const description = readFrontmatterDescription();
+  for (const intent of POSITIVE_INTENTS) {
+    assert.equal(wouldTrigger(description, intent), true, `正例未触发: ${intent}`);
+  }
+});
+
+test('触发 eval：corpus 反例不应触发', () => {
+  const description = readFrontmatterDescription();
+  for (const intent of NEGATIVE_INTENTS) {
+    assert.equal(wouldTrigger(description, intent), false, `反例误触发: ${intent}`);
+  }
+});
+
+test('frontmatter 兼容 OpenAI allowlist：agent_created 在 metadata 内', () => {
+  const text = fs.readFileSync(SKILL_MD, 'utf8');
+  const fm = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  assert.ok(fm, 'frontmatter 存在');
+  const yaml = fm[1];
+  assert.ok(!/^agent_created:/m.test(yaml), 'agent_created 不得在顶层');
+  assert.ok(/^\s*agent_created:\s*true/m.test(yaml), 'agent_created 应位于 metadata 下');
+  const topKeys = yaml.split('\n')
+    .filter((l) => /^[A-Za-z0-9_-]+:/.test(l) && !l.startsWith(' '))
+    .map((l) => l.split(':')[0].trim());
+  const allowed = new Set(['name', 'description', 'license', 'allowed-tools', 'metadata']);
+  for (const k of topKeys) {
+    assert.ok(allowed.has(k), `frontmatter 顶层不允许的键: ${k}`);
+  }
+});
+
 function makeAnswers(count = 6) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-stats-'));
   const qDir = path.join(dir, '123');

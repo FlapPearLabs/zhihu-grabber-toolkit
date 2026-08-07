@@ -32,11 +32,25 @@ node scripts/preflight.mjs
 
 ```
 cookie_configured: true
+cookie_usable: true
 secret_configured: false
+secret_usable: false
 config_source: local_file
+cookie_error: none
+secret_error: missing
 ```
 
-只输出布尔值与来源类型，不含凭据内容。
+只输出布尔值与错误类型，不含凭据内容。
+
+**凭据文件权限：** POSIX 系统上 `zhihu_cookie.txt` / `zhihu_secret.txt` 必须为 `0600`（仅当前用户可读写），否则 loader 会拒绝读取。创建方式：
+
+```bash
+touch zhihu_cookie.txt zhihu_secret.txt
+chmod 600 zhihu_cookie.txt zhihu_secret.txt
+# 再在本机编辑这两个文件写入凭据
+```
+
+Windows 无此权限检查，但同样不要把凭据文件提交到 Git。
 
 ## 3. 401/403 诊断（只输出已验证候选）
 
@@ -48,7 +62,7 @@ config_source: local_file
    - Cookie 缺少必需字段（`z_c0` / `d_c0`）。
    - 请求频率过高触发风控（403 常见）。
    - 网络出口变化（仅作为候选，不做 IP 类型判断）。
-3. **已排除项**（仅当有证据时）：如 `preflight` 显示凭据存在，则可排除"未配置"。
+3. **已排除项**（仅当有证据时）：如 `preflight` 显示 `cookie_usable: true`，则可排除"未配置/不可用"。
 
 **禁止的表述：**
 

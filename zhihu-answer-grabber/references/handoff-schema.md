@@ -47,7 +47,16 @@
 
 不得为生成 Top 3–5 总结而直接读取数十 MB 的 `answers.md`。
 
-## 4. 边界划分
+## 4. 生成约束（producer 侧）
+
+- 所有 `inputJson` / `inputMarkdown` 必须是**相对路径**（相对 handoff 文件所在目录），不写绝对路径。
+- `task` 只允许 `inspect` / `digest` / `archive`。
+- `verified` 必须严格等于 `verify-output.mjs` 的 `valid` 结果（不得手工伪造为 true）。
+- `answerCount` 必须等于 JSON 中 `answers` 数组实际长度。
+
+corpus-anthology 会通过 `node scripts/verify.mjs --handoff <handoff.json>` 完整校验这些约束；生成侧应使用同一 schema 自检。
+
+## 5. 边界划分
 
 - 本 Skill 不负责大型语料摘要/归档（不复制 corpus-anthology 逻辑）。
 - corpus-anthology 不负责网络抓取（不复制本 Skill 逻辑）。

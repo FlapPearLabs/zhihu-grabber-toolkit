@@ -1,7 +1,8 @@
 ---
 name: corpus-anthology
 description: 处理超出直接上下文读取能力的大型本地知乎回答语料（answers.json/answers.md），执行规模统计（inspect）、全覆盖分块摘要（digest）或机械归档（archive）；不用于单个小文件、普通问答、编辑或成书。
-agent_created: true
+metadata:
+  agent_created: true
 ---
 
 # corpus-anthology
@@ -75,7 +76,7 @@ node scripts/chunk.mjs <answers.json 或目录> --work work/ --mode digest
 work/map-results/map-chunk-0001.json
 ```
 
-   每块必须输出结构化 JSON：`chunkId / sourceIds / summary / claims（含 evidenceSourceIds 与 confidence）/ themes / uncertainties`。**禁止**输出无法追溯来源的自由文本。
+   每块必须输出结构化 JSON：`chunkId / chunkHash / sourceIds / summary / claims（含 evidenceSourceIds 与 confidence）/ themes / uncertainties`。**禁止**输出无法追溯来源的自由文本。
 
 3. **验证覆盖率**（确定性脚本）：
 
@@ -90,7 +91,13 @@ missingSources = 0
 duplicateAssignments = 0
 failedChunks = 0
 invalidEvidenceRefs = 0
+staleMaps = 0            # map 的 chunkHash 与当前 chunk 不一致（过期 map）
+crossChunkEvidence = 0   # claim 引用本 chunk 之外的来源
+malformedMaps = 0        # map 字段缺失/非法
+duplicateMaps = 0        # 同一 chunk 多个 map
 ```
+
+   只有全部满足，digest 的输入侧才算完整；随后 coverage.json 记录 manifestHash / mapSetHash 快照，供 reduce 校验当前状态。
 
 4. **reduce 合并**（确定性脚本）：
 
@@ -98,7 +105,7 @@ invalidEvidenceRefs = 0
 node scripts/reduce.mjs --work work/ --out work/final/digest.md
 ```
 
-   reduce 只能基于已验证的 map 结果、manifest、coverage 报告，**不得重新读取全部原文**。规则见 `references/verification.md`。
+   reduce 启动时**重新校验当前 map 集合**（重算 manifestHash / mapSetHash 与 coverage 快照比对），不一致则拒绝；损坏的 map 结果视为失败，不得静默跳过。reduce 只基于已验证的 map 结果、manifest、coverage 报告，**不得重新读取全部原文**。规则见 `references/verification.md`。
 
 5. **验证最终引用**：
 
@@ -106,7 +113,7 @@ node scripts/reduce.mjs --work work/ --out work/final/digest.md
 node scripts/verify.mjs --work work/ --final work/final/digest.md
 ```
 
-   确认最终文档中的来源 ID 全部有效。全部通过后，才能报告 digest 完成。
+   确认最终文档中的来源 ID 全部有效，且**至少包含一个来源引用**（0 引用视为缺证据，失败）。全部通过后，才能报告 digest 完成。
 
 ### 中断恢复
 
@@ -128,31 +135,33 @@ node scripts/popular-sample.mjs <answers.json 或目录> [--top 6] [--max-chars 
 **archive 是归档，不是摘要，也不是编辑。**
 
 ```bash
-node scripts/archive.mjs <srcDir> [--out collection.md] [--title "合集标题"] [--volume N|--max-volume-chars M] [--name 前缀]
+node scripts/archive.mjs <srcDir> [--out collection.md] [--title "合集标题"] [--volume N|--max-volume-chars M] [--name 前缀] [--manifest <file>]
 ```
 
 - 机械拼接，正文零改写。
-- 流式处理，超大文件不全部驻留内存。
+- 流式处理（StringDecoder 保证多字节 UTF-8 不被切坏），超大文件不全部驻留内存。
 - 来源使用相对路径，不泄漏绝对路径。
-- 按体积（`--max-volume-chars`）或篇数（`--volume`）分卷，二者互斥。
+- 按体积（`--max-volume-chars`，按正文字符数）或篇数（`--volume`）分卷，二者互斥。
+- 生成时自动写出 sidecar manifest（记录每篇 `bodySha256` 与分卷结构）。
 - 完成后**必须核验完整性**：
 
 ```bash
-node scripts/archive.mjs <srcDir> --verify <collection.md>
+node scripts/archive.mjs <srcDir> --verify <collection.md> [--manifest <manifest.json>]
 ```
 
-   校验：输出前后篇数一致、内容哈希/字符数量可核验。验证通过才能交付。
+   校验：输出前后篇数一致、**逐篇正文 SHA-256 一致**（正文被改/截断/损坏都会失败）、无绝对路径泄漏、分卷按 manifest 逐卷核验。验证通过才能交付。
 
 ## 与 zhihu-answer-grabber 的衔接
 
 只接受**已验证**的 handoff（共享 schema：仓库级 `references/zhihu-corpus-handoff.schema.json`，见 `references/handoff-schema.md`）。
 
-接收时必须先检查：
+接收时先运行 `node scripts/verify.mjs --handoff <handoff.json>`，完整执行共享 schema 约束：
 
 - `verified === true`；
-- `inputJson` / `inputMarkdown` 文件存在；
-- JSON 可解析；
-- `answerCount` 与 JSON 实际回答数一致。
+- 全字段存在（task/sourceType/questionId/inputJson/inputMarkdown/verified/answerCount/warnings）；
+- `task` 枚举合法、`questionId` 为 1-20 位数字、`warnings` 为数组、无额外字段；
+- `inputJson` / `inputMarkdown` 为相对路径且文件存在；
+- JSON 可解析，`answerCount` 与 JSON 实际回答数一致。
 
 **若输入未验证，必须拒绝继续**，并返回需要由 zhihu-answer-grabber 修复的具体问题（如：重新运行 `verify-output.mjs`、修复产物）。不得绕过验证直接处理。
 

@@ -29,13 +29,13 @@ node scripts/zhigrab.mjs <命令> [参数]
 
 **配置方法（不经过聊天）：**
 
-- Cookie：浏览器登录 zhihu.com → F12 → Application → Cookies → 复制含 `z_c0` 与 `d_c0` 的完整 cookie 到 `zhihu_cookie.txt`（本地操作，不粘贴到对话）。
+- Cookie：浏览器登录 zhihu.com → F12 → Application → Cookies → 复制含 `z_c0` 与 `d_c0` 的完整 cookie 到 `zhihu_cookie.txt`（本地操作，不粘贴到对话）。POSIX 下记得 `chmod 600 zhihu_cookie.txt`。
 - Secret：复制开发者平台获取的 Access Secret 到 `zhihu_secret.txt`。
 
 **安全规则（硬性）：**
 
 - 绝不把凭据粘贴到聊天、日志、Markdown、JSON 产物、长期记忆或 Git。
-- Agent 只能运行 `scripts/preflight.mjs` 检查凭据是否已配置，不得读取或展示凭据内容。
+- Agent 只能运行 `scripts/preflight.mjs` 检查凭据是否已配置且可用（`cookie_usable` / `secret_usable`），不得读取或展示凭据内容。
 - 凭据文件已由 `.gitignore` 屏蔽，切勿提交。
 
 ## 输出文件
@@ -56,7 +56,7 @@ out/<问题ID>/.progress.json    # 断点续传状态
 
 | 现象 | 已验证的处理（非归因） |
 |---|---|
-| 退出码非 0 且提示缺少 Cookie | 凭据未配置或配置无效。先运行 `scripts/preflight.mjs` 确认；若 `cookie_configured: false`，按上方"配置方法"本地配置后重试。 |
+| 退出码非 0 且提示缺少 Cookie | 凭据未配置或配置无效。先运行 `scripts/preflight.mjs` 确认：`cookie_configured: false` → 未配置，按"配置方法"本地配置；`cookie_configured: true` 但 `cookie_usable: false` → 存在但不可用（按 `cookie_error` 类型处理：symlink/permission/缺 `z_c0`/缺 `d_c0`）。 |
 | HTTP 401（凭证失效） | 候选原因：Cookie 过期或无效。让用户**本地**重新复制 cookie 更新 `zhihu_cookie.txt`（不粘贴到聊天）。也可能是配置来源错误（如误用 Secret 文件）。 |
 | HTTP 403 | 候选原因：请求被风控拦截。候选：Cookie 无效、请求频率过高、网络出口变化。**不武断归因于代理或 IP 类型**。可稍后重试，或确认请求频率未超过限速。 |
 | HTTP 429 | 触发限速退避，等待后重试（CLI 已实现指数退避 + 抖动）。 |

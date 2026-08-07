@@ -44,6 +44,12 @@ function tokenRange(chars) {
   return `${Math.round(chars / 2.2)}–${Math.round(chars / 1.4)}`;
 }
 
+/** stdout 展示路径：相对当前工作目录，避免泄漏本机绝对路径 */
+function displayPath(p) {
+  const rel = path.relative(process.cwd(), p);
+  return rel || '.';
+}
+
 /** 流式统计文件：字符数 / 行数 / 字节数（不整篇载入内存） */
 function statFile(file) {
   return new Promise((resolve, reject) => {
@@ -95,7 +101,7 @@ for (const { f, s } of results) {
   totalChars += s.chars;
   totalLines += s.lines;
   totalBytes += s.bytes;
-  console.log(String(s.chars).padStart(4) + String(s.chars).padStart(10) + String(s.bytes).padStart(10) + String(s.lines).padStart(8) + tokenRange(s.chars).padStart(16) + `  ${f}`);
+  console.log(String(s.chars).padStart(4) + String(s.chars).padStart(10) + String(s.bytes).padStart(10) + String(s.lines).padStart(8) + tokenRange(s.chars).padStart(16) + `  ${displayPath(f)}`);
 }
 console.log('-'.repeat(96));
 console.log(`合计: ${files.length} 个文件, ${totalChars} 字符, ${totalBytes} 字节, ${totalLines} 行, 约 ${tokenRange(totalChars)} token`);

@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -115,6 +116,53 @@ test('references 文件齐全', () => {
 test('agents/openai.yaml 存在且 allow_implicit_invocation: false', () => {
   const yaml = fs.readFileSync(path.join(SKILL_DIR, 'agents', 'openai.yaml'), 'utf8');
   assert.match(yaml, /allow_implicit_invocation:\s*false/);
+  assert.match(yaml, /interface:/);
+});
+
+test('frontmatter 兼容 OpenAI allowlist：agent_created 在 metadata 内而非顶层', () => {
+  const text = readSkill();
+  // 顶层不得有 agent_created（OpenAI 官方 allowlist 只允许 name/description/license/allowed-tools/metadata）
+  const fm = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  assert.ok(fm, 'frontmatter 存在');
+  const yaml = fm[1];
+  assert.ok(!/^agent_created:/m.test(yaml), 'agent_created 不得在顶层');
+  assert.ok(/^\s*agent_created:\s*true/m.test(yaml), 'agent_created 应位于 metadata 下');
+  // 顶层允许键集合
+  const topKeys = yaml.split('\n')
+    .filter((l) => /^[A-Za-z0-9_-]+:/.test(l) && !l.startsWith(' '))
+    .map((l) => l.split(':')[0].trim());
+  const allowed = new Set(['name', 'description', 'license', 'allowed-tools', 'metadata']);
+  for (const k of topKeys) {
+    assert.ok(allowed.has(k), `frontmatter 顶层不允许的键: ${k}`);
+  }
+});
+
+test('npm pack 后 references 目录必须保留（P1-10）', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(SKILL_DIR, 'package.json'), 'utf8'));
+  assert.ok(pkg.files.includes('references'), 'files 白名单必须包含 references');
+  assert.ok(pkg.files.includes('agents'), 'files 白名单必须包含 agents');
+  // 用 npm pack --dry-run 验证实际 packlist（忽略 prepack 测试脚本）
+  const r = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
+    cwd: SKILL_DIR,
+    encoding: 'utf8',
+    shell: process.platform === 'win32',
+    env: { ...process.env, npm_config_yes: 'true' },
+  });
+  assert.equal(r.status, 0, r.stderr);
+  let parsed;
+  try {
+    parsed = JSON.parse(r.stdout);
+  } catch (error) {
+    assert.fail(`npm pack 输出无法解析: ${r.stdout.slice(0, 200)}`);
+  }
+  const files = (parsed[0]?.files || []).map((f) => f.path);
+  for (const ref of ['usage.md', 'security.md', 'verification.md', 'handoff-schema.md']) {
+    assert.ok(files.includes(`references/${ref}`), `pack 中应包含 references/${ref}`);
+  }
+  for (const f of ['preflight.mjs', 'verify-output.mjs']) {
+    assert.ok(files.includes(`scripts/${f}`), `pack 中应包含 scripts/${f}`);
+  }
+  assert.ok(files.includes('agents/openai.yaml'), 'pack 中应包含 agents/openai.yaml');
 });
 
 test('脚本文件存在且可执行', () => {

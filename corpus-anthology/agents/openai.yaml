@@ -6,7 +6,11 @@
 # （inspect / digest / archive），不用于单个小文件、普通问答、编辑或成书。
 #
 # 兼容性说明：若当前运行环境（Agent 运行时）不支持 policy.allow_implicit_invocation
-# 字段，本文件会被忽略，行为退化为环境默认值；SKILL.md 中的触发边界
+# 或 interface 字段，本文件会被忽略，行为退化为环境默认值；SKILL.md 中的触发边界
 # （应当触发 / 不应触发）始终生效，两者不冲突。
+interface:
+  display_name: 大语料处理
+  short_description: 大型知乎回答语料的统计、全覆盖摘要或机械归档
+  default_prompt: 这批知乎回答太大读不完，做全覆盖摘要
 policy:
   allow_implicit_invocation: true

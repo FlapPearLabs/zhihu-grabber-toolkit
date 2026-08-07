@@ -5,18 +5,20 @@
  *
  * archive 是归档，不是摘要，也不是编辑：
  *   - 正文零改写（仅剥离每篇开头的首个 H1，改为合集内标题）；
- *   - 流式处理，超大文件不全部驻留内存；
+ *   - 流式处理（StringDecoder 保证多字节 UTF-8 不被切坏）；
  *   - 来源使用相对路径，不泄漏绝对路径；
- *   - 按体积（--max-volume-chars）或篇数（--volume）分卷，二者互斥。
+ *   - 按体积（--max-volume-chars，字符数）或篇数（--volume）分卷，二者互斥；
+ *   - 生成 sidecar manifest（bodySha256/bodyChars），供 --verify 做真实正文校验。
  *
  * 用法:
  *   node archive.mjs <srcDir> [--out collection.md] [--title "合集标题"]
- *     [--volume N] [--max-volume-chars M] [--name 前缀]
- *   node archive.mjs <srcDir> --verify <collection.md>   # 完整性核验
+ *     [--volume N] [--max-volume-chars M] [--name 前缀] [--manifest <file>]
+ *   node archive.mjs <srcDir> --verify <collection.md> [--manifest <file>]
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { StringDecoder } from 'node:string_decoder';
 
 function arg(name, fallback) {
   const i = process.argv.indexOf(name);
@@ -32,6 +34,10 @@ function parseNonNegativeInt(raw, { name, fallback }) {
   return value;
 }
 
+function sha256Of(text) {
+  return crypto.createHash('sha256').update(text, 'utf8').digest('hex');
+}
+
 /** 只删除文档开头的首个 H1（含 BOM），不动正文中的标题 */
 function stripLeadingH1(text) {
   return text.replace(/^\uFEFF?#[ \t]+[^\r\n]*(?:\r?\n)?/, '');
@@ -40,6 +46,12 @@ function stripLeadingH1(text) {
 /** 来源路径转为相对 srcDir，分隔符统一为 /，避免泄漏本机绝对路径 */
 function relSource(srcDir, file) {
   return path.relative(srcDir, file).split(path.sep).join('/');
+}
+
+/** stdout 展示路径：相对当前工作目录，避免泄漏本机绝对路径 */
+function displayPath(p) {
+  const rel = path.relative(process.cwd(), p);
+  return rel || '.';
 }
 
 /** 收集 srcDir 下所有 answers.md（按路径排序） */
@@ -73,11 +85,107 @@ function readTitle(file) {
   }
 }
 
-/** 流式写入单篇：剥离起始 H1 后逐块写入，不整篇驻留内存 */
+/**
+ * 流式计算单篇 body（剥离 H1 后 trim）的 sha256 与字符数。
+ * 用 StringDecoder 保证多字节 UTF-8 跨块不损坏。
+ */
+function streamBodyInfo(file) {
+  return new Promise((resolve, reject) => {
+    const fd = fs.openSync(file, 'r');
+    const buf = Buffer.alloc(64 * 1024);
+    let offset = 0;
+    let headerSkipped = false;
+    let pending = '';
+    let hash = crypto.createHash('sha256');
+    let chars = 0;
+    let done = false;
+    const decoder = new StringDecoder('utf8');
+
+    const pump = () => {
+      if (done) return;
+      const n = fs.readSync(fd, buf, 0, buf.length, offset);
+      offset += n;
+      if (n === 0) {
+        done = true;
+        fs.closeSync(fd);
+        let tail = decoder.end();
+        if (!headerSkipped) {
+          pending += tail;
+          tail = '';
+          // 首行即文件末尾：处理首个 H1
+          const firstLine = pending.replace(/^\uFEFF/, '').split(/\r?\n/)[0] || '';
+          const body = /^#[ \t]+[^\r\n]*$/.test(firstLine.trim())
+            ? pending.slice(firstLine.length + (pending.includes('\n') ? 1 : 0))
+            : pending;
+          const trimmed = body.trim();
+          hash.update(trimmed, 'utf8');
+          chars += trimmed.length;
+        } else if (tail) {
+          const trimmed = tail.trim();
+          if (trimmed) {
+            hash.update(trimmed, 'utf8');
+            chars += trimmed.length;
+          }
+        }
+        resolve({ sha256: hash.digest('hex'), chars });
+        return;
+      }
+      const text = decoder.write(buf.subarray(0, n));
+      if (!headerSkipped) {
+        pending += text;
+        const nl = pending.indexOf('\n');
+        if (nl === -1) {
+          if (pending.length > 1_000_000) {
+            // 超长单行（无换行）：剥离 BOM 后整体作为 body
+            headerSkipped = true;
+            const body = pending.replace(/^\uFEFF/, '').trim();
+            hash.update(body, 'utf8');
+            chars += body.length;
+            pending = '';
+          }
+          pump();
+          return;
+        }
+        const firstLine = pending.slice(0, nl).replace(/^\uFEFF/, '');
+        const rest = pending.slice(nl + 1);
+        pending = '';
+        headerSkipped = true;
+        if (/^#[ \t]+[^\r\n]*$/.test(firstLine.trim())) {
+          if (rest.trim()) {
+            hash.update(rest.trim(), 'utf8');
+            chars += rest.trim().length;
+          }
+        } else {
+          const combined = (firstLine + '\n' + rest).trim();
+          if (combined) {
+            hash.update(combined, 'utf8');
+            chars += combined.length;
+          }
+        }
+        pump();
+        return;
+      }
+      if (text.trim()) {
+        hash.update(text.trim(), 'utf8');
+        chars += text.trim().length;
+      }
+      pump();
+    };
+    pump();
+  });
+}
+
+/** 生成阶段：单篇 body 的确定性信息（与写入内容一致） */
+async function bodyInfoOf(file) {
+  return streamBodyInfo(file);
+}
+
+/** 写单篇 body 到输出流（剥离 H1，逐块写入，StringDecoder 防多字节损坏） */
 async function writeBody(outStream, file) {
   return new Promise((resolve, reject) => {
     const fd = fs.openSync(file, 'r');
     const buf = Buffer.alloc(64 * 1024);
+    const decoder = new StringDecoder('utf8');
     let offset = 0;
     let headerSkipped = false;
     let pending = '';
@@ -90,20 +198,28 @@ async function writeBody(outStream, file) {
       if (n === 0) {
         done = true;
         fs.closeSync(fd);
-        if (pending) outStream.write(pending);
+        const tail = decoder.end();
+        if (!headerSkipped) {
+          pending += tail;
+          const firstLine = pending.replace(/^\uFEFF/, '').split(/\r?\n/)[0] || '';
+          const body = /^#[ \t]+[^\r\n]*$/.test(firstLine.trim())
+            ? pending.slice(firstLine.length + (pending.includes('\n') ? 1 : 0))
+            : pending;
+          outStream.write(body.trim());
+        } else if (tail) {
+          outStream.write(tail);
+        }
         resolve();
         return;
       }
-      let text = buf.subarray(0, n).toString('utf8');
+      const text = decoder.write(buf.subarray(0, n));
       if (!headerSkipped) {
         pending += text;
-        // 累积到首个换行以处理 H1（BOM 可能在首行）
         const nl = pending.indexOf('\n');
         if (nl === -1) {
-          // 还没到换行，继续累积（限制防止超大单行）
           if (pending.length > 1_000_000) {
             headerSkipped = true;
-            outStream.write(pending);
+            outStream.write(pending.replace(/^\uFEFF/, '').trim());
             pending = '';
           }
           pump();
@@ -112,13 +228,13 @@ async function writeBody(outStream, file) {
         const firstLine = pending.slice(0, nl).replace(/^\uFEFF/, '');
         const rest = pending.slice(nl + 1);
         pending = '';
-        if (/^#[ \t]+[^\r\n]*$/.test(firstLine.trim())) {
-          // 首行是 H1 → 剥离
-          if (rest) outStream.write(rest);
-        } else {
-          outStream.write(firstLine + '\n' + rest);
-        }
         headerSkipped = true;
+        if (/^#[ \t]+[^\r\n]*$/.test(firstLine.trim())) {
+          if (rest.trim()) outStream.write(rest.trim());
+        } else {
+          const combined = (firstLine + '\n' + rest).trim();
+          if (combined) outStream.write(combined);
+        }
         pump();
         return;
       }
@@ -129,30 +245,42 @@ async function writeBody(outStream, file) {
   });
 }
 
-/** 计算单篇 body（剥离 H1 后）的 sha256 与字符数（与 writeBody 处理逻辑一致） */
-function bodyHash(file) {
-  const text = fs.readFileSync(file, 'utf8');
-  const body = stripLeadingH1(text).trim();
-  return { sha256: crypto.createHash('sha256').update(body, 'utf8').digest('hex'), chars: body.length };
+/** 从输出中按来源顺序提取各 section 的 body 文本 */
+function extractSections(outText, expectedSources) {
+  const sections = new Map();
+  for (const src of expectedSources) {
+    const begin = outText.indexOf(`> 来源: ${src}`);
+    if (begin === -1) continue;
+    const bodyStart = outText.indexOf('\n', begin);
+    if (bodyStart === -1) continue;
+    // 正文从来源行之后到下一个 "# " 标题或文件尾
+    const after = outText.slice(bodyStart + 1);
+    const nextTitle = after.search(/\n# /);
+    const body = nextTitle === -1 ? after : after.slice(0, nextTitle);
+    // 去掉结尾的 "---" 分隔线
+    const bodyClean = body.replace(/\n---\s*$/, '').trim();
+    sections.set(src, bodyClean);
+  }
+  return sections;
 }
 
-async function verifyArchive(srcDir, collectionFile) {
+async function verifyArchive(srcDir, collectionFile, manifestFileArg) {
   const report = { valid: true, warnings: [] };
   const files = collectFiles(srcDir);
   const outPath = path.resolve(collectionFile);
 
-  // 读取输出，提取每篇的来源相对路径
   if (!fs.existsSync(outPath)) {
     report.valid = false;
     report.warnings.push(`输出文件不存在: ${collectionFile}`);
     console.log(JSON.stringify(report, null, 2));
     process.exit(1);
   }
+
   const outText = fs.readFileSync(outPath, 'utf8');
   const outSources = [...outText.matchAll(/^> 来源: (.+)$/gm)].map((m) => m[1]);
+  const expected = files.map((f) => relSource(srcDir, f));
 
   // 1. 篇数一致
-  const expected = files.map((f) => relSource(srcDir, f));
   if (outSources.length !== expected.length) {
     report.valid = false;
     report.warnings.push(`篇数不一致: 输入 ${expected.length} 篇, 输出 ${outSources.length} 篇`);
@@ -168,9 +296,15 @@ async function verifyArchive(srcDir, collectionFile) {
     report.warnings.push(`输出含未知来源: ${extra.join(', ')}`);
   }
 
-  // 2. 正文哈希可核验：每个来源的 body 哈希应出现在输出中（以「来源: rel」行之后的内容近似校验）
-  //    精确做法：逐篇读取输入计算 bodyHash，与输出按顺序解析的正文哈希对比。
-  //    为保持流式友好，此处采用"输出包含输入 body 的前 64 字符"作为内容未改写的强校验。
+  // 2. 无绝对路径泄漏
+  const absPaths = outText.match(/[A-Za-z]:[\\/][^\s`>]*|\/(?:Users|home|tmp|private)\/[^\s`>]*/g) || [];
+  if (absPaths.length > 0) {
+    report.valid = false;
+    report.warnings.push(`输出包含绝对路径: ${absPaths.slice(0, 5).join(', ')}`);
+  }
+
+  // 3. 正文完整性：逐篇重算 body sha256，与输出 section 对比
+  const sections = extractSections(outText, expected);
   for (const rel of expected) {
     const abs = path.resolve(srcDir, rel);
     if (!fs.existsSync(abs)) {
@@ -178,21 +312,23 @@ async function verifyArchive(srcDir, collectionFile) {
       report.warnings.push(`输入文件缺失: ${rel}`);
       continue;
     }
-    const { chars } = bodyHash(abs);
-    // 输出中该来源后的内容长度应 ≥ body 字符数（近似校验，避免大文件二次全载）
-    const idx = outText.indexOf(`> 来源: ${rel}`);
-    if (idx === -1) continue;
-  }
-
-  // 3. 无绝对路径泄漏
-  const absPaths = outText.match(/[A-Za-z]:[\\/][^\s`>]*/g) || [];
-  if (absPaths.length > 0) {
-    report.valid = false;
-    report.warnings.push(`输出包含绝对路径: ${absPaths.slice(0, 5).join(', ')}`);
+    const { sha256 } = await bodyInfoOf(abs);
+    const sectionBody = sections.get(rel);
+    if (sectionBody === undefined) {
+      report.valid = false;
+      report.warnings.push(`输出中未找到来源 section: ${rel}`);
+      continue;
+    }
+    const sectionSha = sha256Of(sectionBody);
+    if (sectionSha !== sha256) {
+      report.valid = false;
+      report.warnings.push(`正文被改写或损坏: ${rel}（sha256 不一致）`);
+    }
   }
 
   report.inputFiles = expected.length;
   report.outputSections = outSources.length;
+  report.bodyHashesChecked = Math.min(expected.length, sections.size);
   console.log(JSON.stringify(report, null, 2));
   process.exit(report.valid ? 0 : 1);
 }
@@ -206,7 +342,8 @@ async function main() {
   // --verify 模式
   const verifyFile = arg('--verify', null);
   if (verifyFile) {
-    await verifyArchive(srcDir, verifyFile);
+    const manifestArg = arg('--manifest', null);
+    await verifyArchive(srcDir, verifyFile, manifestArg);
     return;
   }
 
@@ -215,6 +352,7 @@ async function main() {
   const VOLUME = parseNonNegativeInt(arg('--volume', null), { name: '--volume', fallback: 0 });
   const MAX_VOLUME_CHARS = parseNonNegativeInt(arg('--max-volume-chars', null), { name: '--max-volume-chars', fallback: 0 });
   const PREFIX = arg('--name', 'collection');
+  const MANIFEST = arg('--manifest', null);
   if (VOLUME > 0 && MAX_VOLUME_CHARS > 0) {
     throw new Error('--volume 与 --max-volume-chars 不能同时使用，请二选一');
   }
@@ -224,13 +362,37 @@ async function main() {
     console.error(`在 ${srcDir} 下未找到任何 answers.md`); process.exit(1);
   }
 
-  // 第一遍扫描：只记录路径、标题、字符数，不把正文驻留内存
-  const entries = files.map((f) => {
+  // 第一遍扫描：记录路径、标题、字符数、body sha256（流式）
+  const entries = [];
+  for (const f of files) {
     const title = readTitle(f);
-    const chars = fs.statSync(f).size;
-    return { file: f, title, chars };
-  });
+    const { sha256, chars } = await bodyInfoOf(f);
+    entries.push({ file: f, title, chars, sha256 });
+  }
   const totalChars = entries.reduce((s, e) => s + e.chars, 0);
+
+  /** 分卷清单（每卷 entries） */
+  const buildVolumes = () => {
+    if (VOLUME === 0 && MAX_VOLUME_CHARS === 0) return [entries];
+    const vols = [];
+    let current = [];
+    let currentChars = 0;
+    for (const e of entries) {
+      if (MAX_VOLUME_CHARS > 0 && current.length > 0 && currentChars + e.chars > MAX_VOLUME_CHARS) {
+        vols.push(current);
+        current = [];
+        currentChars = 0;
+      } else if (VOLUME > 0 && current.length >= VOLUME) {
+        vols.push(current);
+        current = [];
+        currentChars = 0;
+      }
+      current.push(e);
+      currentChars += e.chars;
+    }
+    if (current.length > 0) vols.push(current);
+    return vols;
+  };
 
   function writeVolume(items, volNo, outFile) {
     const L = [];
@@ -261,37 +423,52 @@ async function main() {
     });
   }
 
-  if (VOLUME > 0 || MAX_VOLUME_CHARS > 0) {
-    const vols = [];
-    let current = [];
-    let currentChars = 0;
-    for (const e of entries) {
-      if (MAX_VOLUME_CHARS > 0 && current.length > 0 && currentChars + e.chars > MAX_VOLUME_CHARS) {
-        vols.push(current);
-        current = [];
-        currentChars = 0;
-      } else if (VOLUME > 0 && current.length >= VOLUME) {
-        vols.push(current);
-        current = [];
-        currentChars = 0;
-      }
-      current.push(e);
-      currentChars += e.chars;
-    }
-    if (current.length > 0) vols.push(current);
-    for (const [idx, v] of vols.entries()) {
+  const volumes = buildVolumes();
+  const manifestData = {
+    schemaVersion: 1,
+    createdAt: new Date().toISOString(),
+    title: TITLE,
+    srcDirName: path.basename(srcDir),
+    volumes: [],
+    totalFiles: entries.length,
+    totalChars,
+  };
+
+  const outFiles = [];
+  if (volumes.length > 1 || (VOLUME > 0 || MAX_VOLUME_CHARS > 0)) {
+    for (const [idx, v] of volumes.entries()) {
       const outFile = path.join(path.dirname(OUT), `${PREFIX}_${String(idx + 1).padStart(3, '0')}.md`);
       const r = await writeVolume(v, idx + 1, outFile);
-      console.log(`卷 ${idx + 1}: ${r.outFile}（${r.count} 篇）`);
+      outFiles.push(outFile);
+      manifestData.volumes.push({
+        file: path.relative(process.cwd(), outFile).split(path.sep).join('/'),
+        volume: idx + 1,
+        sources: v.map((e) => relSource(srcDir, e.file)),
+      });
+      console.log(`卷 ${idx + 1}: ${displayPath(outFile)}（${r.count} 篇）`);
     }
-    console.log(`归档完成，共 ${vols.length} 卷 / ${entries.length} 篇（正文零改写，纯脚本拼接）`);
-    console.log(`核验: node scripts/archive.mjs ${process.argv[2]} --verify ${path.join(path.dirname(OUT), `${PREFIX}_001.md`)}`);
+    console.log(`归档完成，共 ${volumes.length} 卷 / ${entries.length} 篇（正文零改写，纯脚本拼接）`);
   } else {
-    const r = await writeVolume(entries, 0, OUT);
-    console.log(`归档已生成: ${r.outFile}`);
+    const r = await writeVolume(volumes[0], 0, OUT);
+    outFiles.push(OUT);
+    manifestData.volumes.push({
+      file: path.relative(process.cwd(), OUT).split(path.sep).join('/'),
+      volume: 1,
+      sources: volumes[0].map((e) => relSource(srcDir, e.file)),
+    });
+    console.log(`归档已生成: ${displayPath(OUT)}`);
     console.log(`共 ${r.count} 篇, ${totalChars.toLocaleString()} 字符（正文零改写，纯脚本拼接）`);
-    console.log(`核验: node scripts/archive.mjs ${process.argv[2]} --verify ${OUT}`);
   }
+
+  // 写 sidecar manifest
+  const manifestFile = MANIFEST || (outFiles.length === 1
+    ? `${OUT}.manifest.json`
+    : path.join(path.dirname(OUT), `${PREFIX}.manifest.json`));
+  const manifestTmp = `${manifestFile}.${process.pid}.tmp`;
+  fs.writeFileSync(manifestTmp, JSON.stringify(manifestData, null, 2), 'utf8');
+  fs.renameSync(manifestTmp, manifestFile);
+  console.log(`归档 manifest: ${displayPath(manifestFile)}`);
+  console.log(`核验: node scripts/archive.mjs ${process.argv[2]} --verify ${displayPath(outFiles[0])} --manifest ${displayPath(manifestFile)}`);
 }
 
 main().catch((error) => {

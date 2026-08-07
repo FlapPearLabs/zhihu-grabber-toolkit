@@ -1,7 +1,8 @@
 ---
 name: zhihu-answer-grabber
 description: 抓取知乎问题回答（Agent 原生 CLI）。当用户明确提供知乎问题 URL 或纯数字问题 ID 并要求抓取/下载/获取全部回答、明确要求批量抓取多个知乎问题、明确要求通过知乎官方搜索定位问题，或另一工作流需要生成知乎原始回答语料时使用。不用于：仅讨论知乎平台、总结用户已粘贴的正文、回答一般知识、执行点赞/评论/关注等写操作。
-agent_created: true
+metadata:
+  agent_created: true
 ---
 
 # zhihu-answer-grabber
@@ -70,13 +71,18 @@ node scripts/preflight.mjs
 
 ```
 cookie_configured: true|false
+cookie_usable: true|false
 secret_configured: true|false
+secret_usable: true|false
 config_source: env|local_file|user_config|none
+cookie_error: none|missing|symlink|permission|missing_z_c0|missing_d_c0|unreadable
+secret_error: none|missing|symlink|permission|unreadable
 ```
 
 - `cookie_configured: false` → 停止抓取，按 `references/security.md` 提供本地配置说明。
-- `cookie_configured: true` → 继续。
-- 该脚本只输出布尔值，绝不输出凭据内容。
+- `cookie_configured: true` 但 `cookie_usable: false` → 凭据存在但无法被 loader 使用（如 symlink、权限过宽、缺 `z_c0`/`d_c0`），停止抓取，按 `cookie_error` 类型修复。
+- 其余情况 → 继续。
+- 该脚本只输出布尔值与错误类型，绝不输出凭据内容。
 
 ### 3. 执行抓取
 

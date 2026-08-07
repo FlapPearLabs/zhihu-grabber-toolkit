@@ -4,7 +4,11 @@
 # 默认要求用户显式选择或上层工作流显式调用，减少误触发与凭据风险。
 #
 # 兼容性说明：若当前运行环境（Agent 运行时）不支持 policy.allow_implicit_invocation
-# 字段，本文件会被忽略，行为退化为环境默认值；SKILL.md 中的触发边界
+# 或 interface 字段，本文件会被忽略，行为退化为环境默认值；SKILL.md 中的触发边界
 # （应当触发 / 不应触发）始终生效，两者不冲突。
+interface:
+  display_name: 知乎回答抓取
+  short_description: 抓取并验证知乎问题回答（需要本地 Cookie 凭据）
+  default_prompt: 抓取知乎问题 https://www.zhihu.com/question/123 的全部回答
 policy:
   allow_implicit_invocation: false

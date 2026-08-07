@@ -33,14 +33,15 @@ export ZHIHU_COOKIE="z_c0=xxx; d_c0=yyy; ..."   # 抓回答必需
 export ZHIHU_SECRET="xxxx"                        # 仅 search 功能需要（官方开放平台）
 
 # 方式 B：在当前目录放文件（已被 .gitignore 忽略）
-echo "z_c0=xxx; d_c0=yyy" > zhihu_cookie.txt
-echo "你的secret" > zhihu_secret.txt
+touch zhihu_cookie.txt zhihu_secret.txt
+chmod 600 zhihu_cookie.txt zhihu_secret.txt   # POSIX 必须 0600，否则 loader 拒绝
+# 然后在本机编辑这两个文件写入凭据
 ```
 
 > ⚠️ Cookie 是「进知乎的门卡」，Secret 是「官方数据平台的会员卡」。
 > **凭据只在本机配置，绝不粘贴到聊天、日志或任何文档中。**
 > 这两个文件已在 `.gitignore` 中屏蔽，切勿提交。
-> Agent 可用 `node scripts/preflight.mjs` 检查凭据是否已配置（只输出布尔值）。
+> Agent 可用 `node scripts/preflight.mjs` 检查凭据是否已配置且**可用**（`cookie_usable` / `secret_usable`，只输出布尔值与错误类型，不输出凭据内容）。
 
 ### 用法
 
@@ -74,7 +75,7 @@ node scripts/verify-output.mjs out/<QUESTION_ID>
 | 先统计规模 / 决定怎么处理 | inspect | `stats.mjs` 流式统计 |
 | 全部回答都要覆盖的摘要 | digest | `chunk.mjs` → map → `verify.mjs` → `reduce.mjs` → `verify.mjs --final`，带来源证据 |
 | 只看最高赞的几个回答 | popular-sample | `popular-sample.mjs` 取 Top N（高赞样本，不代表语料） |
-| 机械合并成分卷合集 | archive | `archive.mjs` 纯脚本拼接，正文零改写、流式、相对路径，`--verify` 核验完整性 |
+| 机械合并成分卷合集 | archive | `archive.mjs` 纯脚本拼接，正文零改写、流式（StringDecoder 防多字节损坏）、相对路径、按字符分卷；生成 sidecar manifest，`--verify` 逐篇核验正文 SHA-256 |
 
 **不支持的**：edit（排版编辑）、full（章节化完整版）、成书、自动去重改写——这些能力未实现，本仓库不声称支持。
 
