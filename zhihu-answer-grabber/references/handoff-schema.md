@@ -49,7 +49,7 @@
 
 ## 4. 生成约束（producer 侧）
 
-- **handoff 由确定性代码生成**：`node scripts/make-handoff.mjs out/<问题ID> --task digest|archive|inspect`。
+- **handoff 由确定性代码生成**：`node "<SKILL_ROOT>/scripts/make-handoff.mjs" out/<问题ID> --task digest|archive|inspect`（`<SKILL_ROOT>` 为含 `SKILL.md` 的目录，绝对路径调用，不依赖 cwd）。
 - 所有 `inputJson` / `inputMarkdown` 必须是**相对路径**（相对 handoff 文件所在目录 = question 输出目录），不写绝对路径；且文件必须位于 handoff 所在目录内（corpus 侧 `--source-root` containment 会拒绝 `../` 越界与 symlink 逃逸，生成侧不得依赖越界文件）。
 - `task` 只允许 `inspect` / `digest` / `archive`。
 - `verified` 必须严格等于 `verify-output.mjs` 的 `valid` 结果（**不得手工伪造为 true**；`make-handoff` 只在 `valid === true` 时生成）。
@@ -60,7 +60,7 @@
 
 > 准确表述：Agent 契约**禁止**手工构造 verified handoff；标准路径只能使用 `make-handoff.mjs`。这**不是密码学意义上的不可伪造**（handoff 是普通 JSON，corpus 侧不重跑 upstream 的完整 verifyOutput 规则），而是流程/契约层面的强制约束。不要为"防伪造"引入签名、哈希证明或 provenance 系统——那属于过度工程化。
 
-corpus-anthology 会通过 `node scripts/verify.mjs --handoff <handoff.json> [--source-root <dir>]` 完整校验这些约束；生成侧使用同一共享 schema 自检。
+corpus-anthology 会通过 `node "<CORPUS_ROOT>/scripts/verify.mjs" --handoff <handoff.json> [--source-root <dir>]` 完整校验这些约束（`<CORPUS_ROOT>` 为该 Skill 所在目录）；生成侧使用同一共享 schema 自检。
 
 ## 5. 边界划分
 

@@ -77,6 +77,9 @@ node scripts/make-handoff.mjs out/<QUESTION_ID> --task digest
 
 也可作为 WorkBuddy Skill 使用（见 `zhihu-answer-grabber/SKILL.md`）。
 
+**Agent 调用注意（脚本定位不依赖 cwd）：** Agent 调用本 Skill 的脚本时，一律用绝对路径：
+`node "<SKILL_ROOT>/scripts/zhigrab.mjs" <命令> [参数] --json`，其中 `<SKILL_ROOT>` 是含 `SKILL.md` 的目录（Agent 加载 Skill 时已知其位置）。不要假设当前工作目录恰好是 Skill 目录；`cwd` 仍用于默认 `out/` 输出位置与本地凭据目录（或 `ZAG_CONFIG_DIR` / `--out-dir` 显式指定），与脚本位置互不相关。
+
 ---
 
 ## 2. corpus-anthology

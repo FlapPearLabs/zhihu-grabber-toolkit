@@ -153,3 +153,19 @@ test('verify-output reportedAnswerCount 不一致 → warning 但不设失败门
   assert.equal(parsed.reportedAnswerCount, 253);
   assert.ok(parsed.warnings.some((w) => w.includes('不一致')));
 });
+
+// ===== Fix 6：legacy raw-array 不能升级为 canonical verified handoff =====
+
+test('Fix6: answers.json 为 raw-array（缺 questionId）→ valid=false，拒绝验证', () => {
+  const { outDir, files } = makeFixture();
+  // 历史 raw-array 形态：纯数组，无 questionId 元信息
+  fs.writeFileSync(files.answersJson, JSON.stringify([
+    { id: '1', author: 'A', content: '<p>x</p>' },
+    { id: '2', author: 'B', content: '<p>y</p>' },
+  ]));
+  const r = runVerify(outDir);
+  assert.equal(r.status, 1, 'raw-array 不能通过验证（缺 questionId）');
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.valid, false);
+  assert.ok(parsed.warnings.some((w) => w.includes('raw-array')), '应明确指出 raw-array 形态问题');
+});

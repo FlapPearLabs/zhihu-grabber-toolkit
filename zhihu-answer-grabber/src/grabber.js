@@ -7,8 +7,8 @@ const DEFAULT_STATE = Object.freeze({ offset: 0, done: false });
 /** 安全阈值：单问题最多抓 300 页（约 6000 条），防止异常分页导致无限循环 */
 const MAX_PAGES = 300;
 
-/** 校验问题 ID：纯数字白名单，拒绝一切路径注入 */
-function validateQuestionId(value) {
+/** 校验问题 ID：纯数字白名单，拒绝一切路径注入（questionId 唯一合法性规则的事实来源） */
+export function validateQuestionId(value) {
   const qid = String(value).trim();
   if (!/^\d{1,20}$/.test(qid)) {
     throw new TypeError(`非法问题 ID: ${qid}（仅接受 1-20 位数字）`);
@@ -26,12 +26,23 @@ function resolveQuestionDir(outDir, qid) {
   return dir;
 }
 
+/**
+ * 规范化问题输入：提取 candidate（纯数字或 URL 中的 question/<digits>），
+ * 然后统一走 validateQuestionId（1-20 位数字）。
+ * 完整合法性校验在此完成 → CLI 在 loadConfig 之前即可判定 invalid_input，
+ * 不再依赖凭据状态。
+ */
 export function normalizeQuestionInput(input) {
   const trimmed = String(input).trim();
-  if (/^\d+$/.test(trimmed)) return trimmed;
-  const m = trimmed.match(/question\/(\d+)/);
-  if (m) return m[1];
-  throw new Error(`无法识别问题输入: ${trimmed}（请给问题链接或纯数字问题ID）`);
+  let candidate;
+  if (/^\d+$/.test(trimmed)) {
+    candidate = trimmed;
+  } else {
+    const m = trimmed.match(/question\/(\d+)/);
+    if (!m) throw new Error(`无法识别问题输入: ${trimmed}（请给问题链接或纯数字问题ID）`);
+    candidate = m[1];
+  }
+  return validateQuestionId(candidate);
 }
 
 /** 损坏文件不静默当空处理：改名备份并抛错，防止覆盖用户已有数据 */
@@ -173,7 +184,13 @@ export async function grabAll(config, qid, { outDir = 'out', onProgress } = {}) 
       added += 1;
     }
     page += 1;
-    done = !shouldContinue(data?.paging) || items.length === 0;
+    // 完成合同：只有服务端明确 paging.is_end === true 才允许 done=true。
+    // 空数据但 is_end !== true 是 fail-closed —— 拒绝标记抓取完成，避免"假抓全"。
+    const serverSaysEnd = data?.paging?.is_end === true;
+    if (items.length === 0 && !serverSaysEnd) {
+      throw new Error('分页返回空数据，但服务端未声明 is_end=true，拒绝标记抓取完成。');
+    }
+    done = serverSaysEnd;
     const snapshot = { ...meta, fetchedAt: new Date().toISOString(), answers };
     writeJson(answersFile, snapshot);
     progress.save({ offset: offset + items.length, done });

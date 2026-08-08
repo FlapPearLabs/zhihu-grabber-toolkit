@@ -75,6 +75,11 @@ export function verifyOutput(questionDir) {
   }
 
   if (parsed !== null) {
+    // 14b. canonical 形态：raw-array 只能作为历史读取格式（loadExistingAnswers 兼容），
+    //      不能升级为 verified / handoff —— verified 产物必须携带 questionId（三方一致前提）。
+    if (Array.isArray(parsed)) {
+      fail('answers.json 为历史 raw-array 格式（缺少 questionId 元信息），不能作为 canonical 产物验证；请重新抓取生成 { questionId, answers } 形态');
+    }
     // 14. 三方一致（目录侧）：answers.json.questionId 必须与输出目录名一致
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
       result.jsonQuestionId = parsed.questionId !== undefined ? String(parsed.questionId) : null;

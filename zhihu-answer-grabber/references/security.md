@@ -4,7 +4,7 @@
 
 1. **绝不要求用户把完整 Cookie、Secret、Token 或登录凭证粘贴到聊天中。**
 2. **绝不把凭据写入**：对话、日志、Markdown、JSON 产物、长期记忆、临时任务报告、Git。
-3. Agent 只能检查凭据是否已本地配置（运行 `scripts/preflight.mjs`），**不得输出凭据内容**——包括值、长度、前缀、哈希、部分截断。
+3. Agent 只能检查凭据是否已本地配置（运行 `"<SKILL_ROOT>/scripts/preflight.mjs"`，`<SKILL_ROOT>` 为含 `SKILL.md` 的目录，绝对路径调用，不依赖 cwd），**不得输出凭据内容**——包括值、长度、前缀、哈希、部分截断。
 4. 缺少凭据时：停止抓取，提供本地配置说明（见下），不要求用户贴出凭据。
 5. 不得替用户打开、展示或复制凭据文件内容。
 6. 凭据文件（`zhihu_cookie.txt` / `zhihu_secret.txt`）已由 `.gitignore` 屏蔽；Agent 不得手动 `git add` 这些文件。
@@ -25,7 +25,7 @@
 **验证配置是否就绪：**
 
 ```bash
-node scripts/preflight.mjs
+node "<SKILL_ROOT>/scripts/preflight.mjs"
 ```
 
 预期输出：

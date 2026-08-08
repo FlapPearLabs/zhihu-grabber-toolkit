@@ -19,5 +19,8 @@
     "prepack": "npm test"
   },
   "engines": { "node": ">=22" },
-  "license": "AGPL-3.0-only"
+  "license": "AGPL-3.0-only",
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
 }

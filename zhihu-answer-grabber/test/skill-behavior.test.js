@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -131,9 +132,9 @@ test('references 文件齐全', () => {
   }
 });
 
-test('agents/openai.yaml 存在且 allow_implicit_invocation: false', () => {
+test('agents/openai.yaml 存在且 allow_implicit_invocation: true（一句话触发）', () => {
   const yaml = fs.readFileSync(path.join(SKILL_DIR, 'agents', 'openai.yaml'), 'utf8');
-  assert.match(yaml, /allow_implicit_invocation:\s*false/);
+  assert.match(yaml, /allow_implicit_invocation:\s*true/);
   assert.match(yaml, /interface:/);
 });
 
@@ -198,4 +199,41 @@ test('SKILL.md 引用的脚本都存在（含跨模块 corpus-anthology）', () 
     const inCorpus = fs.existsSync(path.join(repoRoot, 'corpus-anthology', 'scripts', r));
     assert.ok(inLocal || inCorpus, `SKILL 引用不存在的脚本: ${r}`);
   }
+});
+
+// ===== Fix 4：脚本定位不依赖偶然 cwd =====
+
+test('Fix4: SKILL.md 引导 Agent 用 SKILL_ROOT 绝对路径调用脚本（不依赖 cwd）', () => {
+  const text = readSkill();
+  assert.ok(/SKILL_ROOT/.test(text), 'SKILL.md 必须定义 SKILL_ROOT 定位约定');
+  assert.match(text, /node "<SKILL_ROOT>\/scripts\/zhigrab\.mjs"/, 'wrapper 示例必须用绝对路径');
+  assert.match(text, /node "<SKILL_ROOT>\/scripts\/preflight\.mjs"/, 'preflight 示例必须用绝对路径');
+  assert.match(text, /node "<SKILL_ROOT>\/scripts\/verify-output\.mjs"/, 'verify-output 示例必须用绝对路径');
+  assert.match(text, /node "<SKILL_ROOT>\/scripts\/make-handoff\.mjs"/, 'make-handoff 示例必须用绝对路径');
+  assert.match(text, /node "<CORPUS_ROOT>\/scripts\/stats\.mjs"/, 'corpus stats 示例必须用 CORPUS_ROOT 绝对路径');
+  assert.match(text, /不得假设当前工作目录恰好是 Skill 目录/, 'SKILL.md 必须禁止 cwd 假设');
+});
+
+test('Fix4: 脚本可从任意 cwd 以绝对路径执行（preflight / zhigrab wrapper）', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-skill-cwd-'));
+  // 从任意 cwd 用绝对路径调用 preflight --json
+  const p = spawnSync(process.execPath, [path.join(SKILL_DIR, 'scripts', 'preflight.mjs'), '--json'], {
+    cwd: tmp,
+    encoding: 'utf8',
+    env: { ...process.env, PATH: process.env.PATH, ZAG_CONFIG_DIR: tmp },
+  });
+  assert.equal(p.status, 0, p.stderr);
+  const parsed = JSON.parse(p.stdout); // 合法 JSON，且不泄漏凭据
+  assert.equal(typeof parsed.cookie.configured, 'boolean');
+  // 从任意 cwd 用绝对路径调用 wrapper（自动定位 src/cli.js）
+  const w = spawnSync(process.execPath, [path.join(SKILL_DIR, 'scripts', 'zhigrab.mjs'), 'status', '--json', '--out-dir', path.join(tmp, 'out')], {
+    cwd: tmp,
+    encoding: 'utf8',
+    env: { ...process.env, PATH: process.env.PATH, ZAG_CONFIG_DIR: tmp },
+  });
+  assert.equal(w.status, 0, w.stderr);
+  const wp = JSON.parse(w.stdout);
+  assert.equal(wp.command, 'status');
+  assert.equal(wp.ok, true);
+  fs.rmSync(tmp, { recursive: true, force: true });
 });

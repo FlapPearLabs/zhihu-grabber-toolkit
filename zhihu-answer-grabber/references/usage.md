@@ -17,10 +17,12 @@
 统一入口：
 
 ```bash
-node scripts/zhigrab.mjs <命令> [参数]
+node "<SKILL_ROOT>/scripts/zhigrab.mjs" <命令> [参数]
 ```
 
-（等价于直接运行 `src/cli.js`；wrapper 会自动定位工具目录，也可用 `ZAG_DIR` 覆盖。）
+其中 `<SKILL_ROOT>` = 本 Skill 所在目录（含 `SKILL.md` 的目录，Agent 加载 Skill 时已知其位置）。**Agent 必须用绝对路径调用所有脚本，不得假设当前工作目录恰好是 Skill 目录**；`cwd` 仍用于默认 `out/` 输出位置与本地凭据目录（或 `ZAG_CONFIG_DIR` / `--out-dir` 显式指定），与脚本位置互不相关。
+
+（等价于直接运行 `src/cli.js`；wrapper 会用 `import.meta.url` 自动定位 `src/cli.js`，也可用 `ZAG_DIR` 覆盖工具目录。）
 
 ## 状态语义（captured vs verified）
 
@@ -39,22 +41,22 @@ node scripts/zhigrab.mjs <命令> [参数]
 
 ```bash
 # 抓取：stage=captured, verified=false
-node scripts/zhigrab.mjs grab 123 --json
+node "<SKILL_ROOT>/scripts/zhigrab.mjs" grab 123 --json
 # → {"schemaVersion":1,"ok":true,"command":"grab","stage":"captured","questionId":"123",
 #    "questionTitle":"...","capturedAnswerCount":247,
 #    "artifacts":{"json":"out/123/answers.json","markdown":"out/123/answers.md","progress":"out/123/.progress.json"},
 #    "verified":false,"warnings":[]}
 
 # 搜索：候选数组（已去重、过滤非知乎 URL、清除控制字符）
-node scripts/zhigrab.mjs search "浏览器词典" --json
+node "<SKILL_ROOT>/scripts/zhigrab.mjs" search "浏览器词典" --json
 # → {"schemaVersion":1,"ok":true,"command":"search","query":"...","candidates":[
 #      {"questionId":"123","title":"...","contentType":"...","url":"https://www.zhihu.com/question/123"}]}
 
 # 批量：succeeded[] / failed[]，任一失败退出码非 0
-node scripts/zhigrab.mjs batch list.txt --json
+node "<SKILL_ROOT>/scripts/zhigrab.mjs" batch list.txt --json
 
 # 状态：captureStatus + verificationStatus 分离
-node scripts/zhigrab.mjs status --json
+node "<SKILL_ROOT>/scripts/zhigrab.mjs" status --json
 # → {"schemaVersion":1,"ok":true,"command":"status","items":[
 #      {"questionId":"123","capturedAnswerCount":247,"captureStatus":"captured","verificationStatus":"valid"}]}
 
@@ -75,7 +77,7 @@ node scripts/zhigrab.mjs status --json
 ## handoff 生成（机器）
 
 ```bash
-node scripts/make-handoff.mjs out/123 --task digest|archive|inspect
+node "<SKILL_ROOT>/scripts/make-handoff.mjs" out/123 --task digest|archive|inspect
 ```
 
 - 只接受 `verify-output` `valid === true` 的产物；未通过验证则拒绝生成。
@@ -100,7 +102,7 @@ node scripts/make-handoff.mjs out/123 --task digest|archive|inspect
 **安全规则（硬性）：**
 
 - 绝不把凭据粘贴到聊天、日志、Markdown、JSON 产物、长期记忆或 Git。
-- Agent 只能运行 `scripts/preflight.mjs` 检查凭据是否已配置且可用（`cookie_usable` / `secret_usable`），不得读取或展示凭据内容。
+- Agent 只能运行 `"<SKILL_ROOT>/scripts/preflight.mjs"` 检查凭据是否已配置且可用（`cookie_usable` / `secret_usable`），不得读取或展示凭据内容。
 - 凭据文件已由 `.gitignore` 屏蔽，切勿提交。
 
 ## 输出文件
@@ -121,9 +123,9 @@ out/<问题ID>/.progress.json    # 断点续传状态
 
 | 现象 | 已验证的处理（非归因） |
 |---|---|
-| 退出码非 0 且提示缺少 Cookie | 凭据未配置或配置无效。先运行 `scripts/preflight.mjs` 确认：`cookie_configured: false` → 未配置，按"配置方法"本地配置；`cookie_configured: true` 但 `cookie_usable: false` → 存在但不可用（按 `cookie_error` 类型处理：symlink/permission/缺 `z_c0`/缺 `d_c0`）。 |
-| HTTP 401（凭证失效） | 候选原因：Cookie 过期或无效。让用户**本地**重新复制 cookie 更新 `zhihu_cookie.txt`（不粘贴到聊天）。也可能是配置来源错误（如误用 Secret 文件）。 |
-| HTTP 403 | 候选原因：请求被风控拦截。候选：Cookie 无效、请求频率过高、网络出口变化。**不武断归因于代理或 IP 类型**。可稍后重试，或确认请求频率未超过限速。 |
+| 退出码非 0 且提示缺少 Cookie | 凭据未配置或配置无效。先运行 `"<SKILL_ROOT>/scripts/preflight.mjs"` 确认：`cookie_configured: false` → 未配置，按"配置方法"本地配置；`cookie_configured: true` 但 `cookie_usable: false` → 存在但不可用（按 `cookie_error` 类型处理：symlink/permission/缺 `z_c0`/缺 `d_c0`）。 |
+| HTTP 401 | 事实：知乎返回 401，认证请求未被接受。候选原因：Cookie 过期或无效、配置来源错误等，**具体原因尚未确定**。让用户**本地**重新复制 cookie 更新 `zhihu_cookie.txt`（不粘贴到聊天），或检查配置来源。 |
+| HTTP 403 | 事实：知乎返回 403，请求被服务器拒绝。候选原因：凭据、签名协议、请求上下文、账号权限或风控，**具体原因尚未确定**。可稍后重试，或确认请求频率未超过限速；不武断归因于代理或 IP 类型。 |
 | HTTP 429 | 触发限速退避，等待后重试（CLI 已实现指数退避 + 抖动）。 |
 | 抓取数 < 问题页显示总数 | 见 `verification.md` 的"数量不一致处理"：页面统计值与接口可获取数量不一致，原因尚未确认。 |
 | 未找到 zhihu-cli 配置 | 用 cookie 方式（前两种来源）即可，无需安装 zhihu-cli。 |
