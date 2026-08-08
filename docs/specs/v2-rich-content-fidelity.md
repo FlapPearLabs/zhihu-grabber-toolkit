@@ -159,6 +159,82 @@ V1 已具备的良好基线（V2 必须延续）：**canonical 原始 HTML 保�
 - 引用/脚注/代码/图片/外链按 §10–§13 合同渲染。
 - **禁止**在 Markdown 中输出任何未经处理的原始 HTML 标签（§14.3）。
 
+### 8.0 不可信文本的 Markdown escaping（BLOCKER-1 合同）
+
+**仅过滤 `<a href>` 不够——普通 text node 本身就能注入 Markdown。**
+
+知乎正文中可能只是普通文字（没有 `<a>`、没有 `<img>`）：
+
+```text
+![点我](https://evil.example/tracker)
+[OpenAI 官网](https://evil.example)
+https://evil.example
+# 伪标题
+> 伪引用
+- 伪列表
+```
+
+如果 renderer 直接把 textContent 拼进 Markdown，某些 Markdown renderer 会：
+- 把 `![...](...)` 渲染成**自动加载远程图片**；
+- 把 `[...](...)` 渲染成可点击链接（绕过整个 `<a>` sanitizer）；
+- 对裸 URL 做 GFM autolink。
+
+因此必须规定：
+
+> **所有来自知乎或 LLM 的不可信字符串，在进入 Markdown 之前必须先经过 `escapeUntrustedMarkdownText()`。**
+
+适用对象（全部）：
+```text
+text node
+author
+question title
+description
+caption
+anchor text
+footnote text
+comments
+topics
+blockquote text
+LLM map / final claim text（§21.5 的 BLOCKER-3）
+```
+
+核心原则：
+> **只有 renderer 自己生成的 Markdown control syntax 可以具有结构意义。用户内容绝不能自己「长成」link / image / heading / list / blockquote / HTML。**
+
+`escapeUntrustedMarkdownText()` 至少必须使以下输入无法产生结构语义：
+
+```text
+[click](https://evil.example)
+![img](https://evil.example/x.png)
+<https://evil.example>
+# heading
+> quote
+- fake list
+```
+
+实现建议（合同以行为为准）：对反引号、方括号、圆括号、尖括号、`#`、`>`、`-`、`!`、`*`、`_`、`|`、`~` 等 Markdown control 字符做确定性转义（如 `\` 前缀或等价机制），且转义必须可被测试覆盖（§23）。
+
+### 8.0.1 裸 URL 也必须走 link sanitizer（BLOCKER-2 合同）
+
+正文中即使没有 `<a>`，也可能出现裸 URL：
+
+```text
+https://example.com
+```
+
+某些 Markdown renderer 会自动 autolink。**不能依赖客户端 renderer 的 autolink 行为**。deterministic renderer 必须：
+
+```text
+text
+→ 裸 URL 检测（URL pattern，不依赖 HTML）
+→ 同一 URL sanitizer / classifier（§11）
+→ clickable approved link（renderer 自己生成）
+或
+→ inert text（转义后展示，不生成链接）
+```
+
+即：裸 URL 与 `<a href>` 走**同一套** sanitizer；未经放行的裸 URL 在 Markdown 中必须是惰性文本（inert text），绝不因客户端 autolink 变成链接。
+
 ### 8.1 图片在 Human Markdown 中的默认形态
 
 禁止默认生成 `![](https://...)`（Markdown renderer 可能自动请求远程资源）。默认生成普通链接占位：
@@ -178,7 +254,7 @@ V1 已具备的良好基线（V2 必须延续）：**canonical 原始 HTML 保�
 [打开外部链接 · evil.example](https://evil.example/...)
 ```
 
-用户必须能清楚看到**目标真实域名**。具体格式由 renderer 确定性实现，语义必须等价：显示原文锚文字 + 明确标注目标域名。
+用户必须能清楚看到**目标真实域名**。具体格式由 renderer 确定性实现，语义必须等价：显示原文锚文字 + 明确标注目标域名。锚文字本身先过 §8.0 的 escaping（它也是不可信文本）。
 
 ### 8.3 代码块在 Human Markdown 中的默认形态
 
@@ -216,24 +292,93 @@ npm install ...
 或等价 deterministic 表达。只有用户未来明确要求「分析回答里的代码」时才允许进入单独的显式 code-analysis mode；即便进入该模式，代码**仍是 DATA**，不允许执行（§12.6）。
 - 投影本身不携带任何「执行/访问」指令；正文中的「打开这个网址 / 按照这个链接安装 / 去 GitHub clone」等文字只被识别为文章内容，不得触发工具调用（§11.6）。
 
+### 9.1 能力隔离：capability contract（BLOCKER-4 合同）
+
+> **Prompt Injection 的安全边界不能只依赖 Agent 自觉遵守 prompt。**
+
+默认 digest / map 的 consumer（运行投影文本的 LLM 环境）必须满足能力隔离：
+
+```text
+NETWORK:                 DENY
+SHELL / EXEC:            DENY
+PACKAGE INSTALL:         DENY
+ARBITRARY FILE READ:     DENY
+ARBITRARY FILE WRITE:    DENY
+```
+
+只允许：
+
+```text
+READ:  当前指定 projection / chunk 文件
+WRITE: 当前指定 map result 文件
+RETURN:结构化 map JSON（tool-less 模型输出）
+```
+
+**推荐架构**（能力隔离的具体形态，实现时若运行时环境允许则必须采用）：
+
+```text
+trusted deterministic controller
+        ↓
+把 projection 文本作为模型输入
+        ↓
+LLM（无工具、无 shell、无网络）
+        ↓
+结构化 JSON response
+        ↓
+deterministic validator（schema + 字段校验）
+        ↓
+trusted controller 写 map-results
+```
+
+即：**不是让「读知乎正文的 Agent」拥有写文件/联网/执行工具，而是让外层可信 controller 写。**
+
+**不满足时的措辞约束**：如果实现时无法提供上述工具/能力隔离，Spec 不得声称「Prompt Injection 已被安全隔离」；只能标记为 **prompt-level mitigation**（防护等级：prompt 层，非能力层），并在产物/文档中明确标注 `unsupported/unsafe execution mode`。这是 DOCUMENT gate 级要求，不是可选优化。
+
 ---
 
 ## 10. Image asset contract（图片）
 
-### 10.1 必须做：提取图片 metadata
+### 10.1 必须做：提取图片 metadata（detected + clickable 分离，BLOCKER-8 合同）
 
-从回答 HTML 中已有的图片元素提取 metadata，写入 `assets.images[]`。至少覆盖真实知乎 HTML 现有字段：
+**图片「存在」与「可点击」是两个独立维度，不得混为一谈。**
+
+- 记录图片存在：**所有**检测到的图片都应记录 inert metadata（无论 host 是否 zhimg.com）。
+- 可点击（生成 href）：**仅**通过 §10.2 白名单校验的 zhimg.com 图片才允许生成可点击链接占位。
+
+对每张检测到的图片写入 `assets.images[]`（从回答 HTML 中已有字段提取）：
 
 ```json
 {
+  "detected": true,
+  "host": "picx.zhimg.com",
   "originalUrl": "https://picx.zhimg.com/...",
   "displayUrl": "https://picx.zhimg.com/...",
   "width": 2002,
   "height": 1364,
   "caption": "",
-  "token": "..."
+  "token": "...",
+  "clickable": true,
+  "securityClass": "zhimg_cdn"
 }
 ```
+
+非 zhimg.com 图片（例如 `https://example.com/x.png`）：
+
+```json
+{
+  "detected": true,
+  "host": "example.com",
+  "width": 100,
+  "height": 200,
+  "clickable": false,
+  "securityClass": "external_image_untrusted"
+}
+```
+
+要求：
+- 非白名单图片**记录存在**（`detected: true` + host + 尺寸等可得 metadata），但**绝不生成可点击 href**；
+- Agent projection 对非白名单图片**只暴露分类与 host**（如 `EXTERNAL_IMAGE detected host=example.com clickable=false`），**不暴露完整外部图片 URL**；
+- `securityClass` 表示分类，不表示信任；`clickable` 才是渲染决策。
 
 解析候选字段（按优先级）：
 
@@ -243,16 +388,16 @@ data-original
 → 合法 https src
 ```
 
-必须**忽略 lazy-loading placeholder**（例如 `data:image/svg+xml;...` 占位图、1px 占位、`data:image/gif;base64` 等），不得作为图片 URL 收录或渲染。
+必须**忽略 lazy-loading placeholder**（例如 `data:image/svg+xml;...` 占位图、1px 占位、`data:image/gif;base64` 等），不得作为图片 URL 收录或渲染（placeholder 不计入 `detected`，除非存在非 placeholder 的真实 URL）。
 
 ### 10.2 图片 URL 校验（hostname 白名单）
 
-- 第一版只允许知乎图片 CDN：
+- 第一版**可点击**只允许知乎图片 CDN：
   - 协议必须是 `https:`；
   - host 必须是**有效的 zhimg.com host**（含子域，如 `picx.zhimg.com`、`pica.zhimg.com`）。
 - 必须使用 **deterministic hostname / eTLD+1 校验**，禁止 `endsWith("zhimg.com")` 这类字符串判断。例如 `evilzhimg.com`、`zhimg.com.evil.com` 均不得通过。
 - 判定逻辑（实现建议，合同以行为为准）：取 URL 的 host → 按 DNS 标签拆分 → 校验注册域（eTLD+1）等于 `zhimg.com` 且 host 等于 `zhimg.com` 或其子域。实现必须附带测试（§23）。
-- 不满足白名单的图片 URL：不渲染、不收录为可点击图片；如原始 HTML 中有可见 caption 文本则保留文本。
+- 不满足白名单的图片 URL：`clickable: false`、不生成 href；如原始 HTML 中有可见 caption 文本则保留文本。
 
 ### 10.3 暂不做
 
@@ -343,6 +488,29 @@ link-local 地址（169.254/16、fe80::/10）
 
 见 §8.2。禁止保留可能具有欺骗性的锚文本。
 
+### 11.5.1 Markdown URL destination serializer（BLOCKER-9 合同）
+
+即使 URL 已通过 WHATWG parser 与 sanitizer，输出 `[label](URL)` 时**也不能简单字符串拼接**。必须定义并强制使用：
+
+```text
+safeMarkdownDestination(canonicalUrl) → string
+```
+
+处理至少：
+
+```text
+) (         圆括号（URL 或 label 中的）
+< >         尖括号
+\           反斜杠
+空白字符
+控制字符
+```
+
+要求：
+- destination 输出后不会破坏 Markdown link/image 语法结构；
+- 展示域名统一使用 URL parser 得到的 **canonical ASCII hostname**（punycode 化），不使用用户原始字符串；
+- 该函数与 URL sanitizer 分开测试（§23），作为独立纯函数。
+
 ### 11.6 Agent 行为
 
 - Agent **默认不得访问正文中的外链**。
@@ -419,15 +587,31 @@ Agent 默认**不读取 code block 正文**。Agent projection 中折叠为（§
 
 ### 13.1 恢复
 
-V2 在 Human Markdown 中恢复脚注：
+V2 在 Human Markdown 中恢复脚注。**脚注 identifier 必须由程序内部生成，文档内全局唯一（BLOCKER-5 合同）**。
 
-```md
-正文……[^1]
+一个 `answers.md` 含 187 个回答；若每个回答都直接使用 `[^1]`，脚注 identifier 会在**整个文档级**冲突。且 `data-numero` 是外部不可信字段，不得直接进入 Markdown identifier。
 
-[^1]: 脚注内容
+要求：
+
+```text
+internalFootnoteId = a<answerId>-r<localReferenceIndex>
 ```
 
-- 脚注正文来自 `data-text`（确定性提取，不含 HTML 渲染）。
+示例：answerId=206123、该回答内第 1 个脚注 →
+
+```md
+正文……[^a206123-r1]
+
+[^a206123-r1]: 脚注内容
+```
+
+- ID 由 renderer 程序生成；
+- 不直接采用 `data-numero`；
+- 文档内全局唯一（answerId + 回答内自增 index 保证）；
+- 只允许安全字符（小写字母/数字/`-`，如 `a\d+-r\d+`）；
+- 原始 `data-numero` 只作为 source metadata 保留（如 `assets.references[].sourceNumero`），不进入 Markdown identifier；
+- 重复/非法/缺失的 `data-numero` 不影响 Markdown 完整性（按出现顺序生成内部 ID）；
+- 脚注正文来自 `data-text`（确定性提取，不含 HTML 渲染），且必须经过 §8.0 的 Markdown escaping；
 - 脚注内出现的 URL 必须继续走 §11 同一外链 sanitizer——**不能因位于脚注中就绕过链接策略**。
 
 ### 13.2 安全模型
@@ -448,11 +632,15 @@ V2 在 Human Markdown 中恢复脚注：
 
 V2 核心功能：将现有「全部 stripHtml 成纯文字」升级为**严格白名单 HTML → Markdown**。
 
+### 14.0 文本节点统一 escaping（BLOCKER-1 落地）
+
+§8.0 的 `escapeUntrustedMarkdownText()` 是所有白名单元素**文本输出**的统一入口。渲染器递归输出 textContent 时，一律先 escaping 再拼接；只有 renderer 自己生成的 Markdown control syntax（如 `**`、`-`、`>`、`#` 等）具有结构语义。**禁止**把 HTML 文本节点原样拼入 Markdown。
+
 ### 14.1 白名单映射
 
 | HTML | Markdown |
 |---|---|
-| h1-h6 | `#` 标题（级别对应） |
+| h1-h6 | heading（**必须降级**，见 §14.1.1） |
 | p | 段落 |
 | br | 换行 |
 | ul/li | 无序列表 |
@@ -467,9 +655,34 @@ V2 核心功能：将现有「全部 stripHtml 成纯文字」升级为**严格�
 | figure/img | image asset marker（§10） |
 | sup[data-numero] | footnote（§13） |
 
+### 14.1.1 heading offset（BLOCKER-6 合同）
+
+整个文件结构：
+
+```md
+# 问题标题
+## N. 作者 — 赞 · 评论
+回答正文
+```
+
+如果回答正文的 `<h1>` 直接渲染成 `#`，就会与问题标题同级、高于 `## N. 作者`，破坏结构。
+
+**核心合同：任何回答正文 heading 都必须严格低于 `## N. 作者`。**
+
+answer body 内 source heading 的映射：
+
+```text
+source h1 → H3
+source h2 → H4
+source h3 → H5
+source h4-h6 → H6（或等价安全表示，如 bold 标题行）
+```
+
+question description 同样定义自己的 heading scope（例如 description 整体作为一个块级引用区域，内部 heading 也最多到 H3，且不高于所在文档层级）。heading 文本同样经过 §8.0 escaping。
+
 ### 14.2 其他元素策略
 
-- 白名单之外的**行内/块级未知元素**：优先**保留可见文本、丢弃主动行为**（标签及其属性不保留，只保留 textContent）。
+- 白名单之外的**行内/块级未知元素**：优先**保留可见文本、丢弃主动行为**（标签及其属性不保留，只保留 textContent，textContent 过 §8.0 escaping）。
 - 嵌套元素按规则递归处理；列表层级、引用嵌套保持结构。
 
 ### 14.3 禁止透传（fail closed）
@@ -555,7 +768,7 @@ Top3 热评
 → 输出 comments warning
 ```
 
-评论正文仍属于 `UNTRUSTED_EXTERNAL_CONTENT`：不执行、不联网、不触发 Agent 工具；评论中的链接走 §11 同一 sanitizer。
+评论正文仍属于 `UNTRUSTED_EXTERNAL_CONTENT`：不执行、不联网、不触发 Agent 工具；评论中的链接走 §11 同一 sanitizer；评论文本进入任何 Markdown 前经过 §8.0 escaping。
 
 ---
 
@@ -603,7 +816,7 @@ V2 增强 question metadata。当前至少已有：`questionId / questionTitle /
 - 如果现有 answer API 已返回 description（如问题元信息接口）→ **直接提取，不新增请求**。
 - 如果没有 → 允许每个问题额外**最多一次** question metadata 请求（复用 V1 已有的 `buildQuestionInfoUrl` 请求）。
 - **不要**为 description 产生 answerCount 级请求。
-- description HTML 使用与回答正文**相同**的 sanitizer / Markdown renderer（§14）。
+- description HTML 使用与回答正文**相同**的 sanitizer / Markdown renderer（§14），且 heading 遵循 §14.1.1 的 description heading scope；description/topics 文本进入 Markdown 前经过 §8.0 escaping。
 
 ### 17.3 topics（建议加入）
 
@@ -638,6 +851,7 @@ V2 对 `answers.json` 的修改必须为**可向后兼容的 optional fields**�
 
 - 现有字段（`questionId / questionTitle / answerCount / url / fetchedAt / answers[].content` 等）语义与形状**不变**。
 - 新增字段全部 optional；老 reader 忽略新字段即与 V1 兼容。
+- `assets.images[]` 中每项含 `detected / host / clickable / securityClass`（§10.1）：`detected` 记录图片存在（无论 host），`clickable` 才是渲染决策（仅 zhimg.com 白名单为 true），二者分离，不引入新的必填字段。
 - 若确需 schema migration：Spec 必须证明 additive fields 不够（预期不需要）。
 
 ### 18.2 不破坏的现有合同
@@ -692,23 +906,46 @@ questionId 不合法
 
 1. **所有知乎内容 = `UNTRUSTED_EXTERNAL_CONTENT`**，只能作为 DATA 进入系统。
 2. **三条不可逾越的线**（§7）：用户可见 ≠ Agent 指令 ≠ 程序执行/访问。
-3. **LLM 不制造 URL**：所有 href/src 由确定性 parser + sanitizer + 分类器产出（§10、§11）。
+3. **LLM 不制造 URL**：所有 href/src 由确定性 parser + sanitizer + 分类器产出（§10、§11）；该约束**同样适用于所有 LLM-derived Markdown display surface**（BLOCKER-3 合同，见 §21.1）。
 4. **默认不自动加载/访问**：图片默认链接占位（§8.1），Agent 默认不访问外链（§11.6）、不读代码正文（§12.5）。
 5. **clickable ≠ safe**：禁止 `safe:true`，统一 `external_unverified`（§11.4）。
 6. **fail closed**：未知 HTML 保留可见文本、丢弃主动行为（§14）；renderer 不安全输出 → 失败而非透传。
 7. **凭据与正文隔离**：延续 V1 `security.md` 规则；富内容 pipeline 不接触凭据。
 8. **请求面不扩大**：V2 默认不新增请求（description 复用已有元信息请求，最多 1 次；comments 默认 off，开启时按 §15.3 预算）。
+9. **所有不可信文本过 escaping**：任何来自知乎或 LLM 的字符串进入任何 Markdown 前必须先过 §8.0 的 `escapeUntrustedMarkdownText()`（含 text node/author/title/description/caption/anchor/footnote/comments/topics/blockquote/LLM claim）。
+
+### 21.1 LLM-derived digest 同样必须安全（BLOCKER-3 合同）
+
+V2 的「LLM 不制造 href」**必须覆盖**：
+
+```text
+answers.md
+digest.md
+其他所有 LLM-derived Markdown display surfaces
+```
+
+下游（如 corpus-anthology 的 `render-final` 等）在把 LLM 生成的 `claim.text` / minorityView / uncertainty 等文本写入最终 Markdown 时，**同样必须先过 `escapeUntrustedMarkdownText()`**。不能假设「LLM 输出是可信的」——LLM 输出的文本可能包含：
+
+```text
+[link](https://evil.example)
+![img](https://evil.example/x)
+<https://evil.example>
+https://evil.example
+```
+
+这些**不得**绕过 deterministic link policy 变成主动链接/图片。最终 digest 中出现的任何主动链接/图片，都必须经 §11 的 deterministic pipeline 放行（或根本不存在）。
 
 ---
 
 ## 22. Verification plan
 
 - **渲染单元测试**：对 §14 白名单每个元素、嵌套组合、§10–§13 每条合同，用 fixture 输入断言输出 Markdown。
-- **资产提取测试**：图片 URL 优先级、placeholder 忽略、外链 redirect 解包、脚注提取、代码块统计。
+- **资产提取测试**：图片 URL 优先级、placeholder 忽略、外链 redirect 解包、脚注提取与内部 ID 唯一性、代码块统计。
+- **escaping 测试**：§8.0/§21.1 的 escaping 函数对 link/image/heading/quote/list/autolink 注入均输出惰性文本。
 - **安全测试**：§23 全部 adversarial fixtures 必须通过，且断言「保存/展示为数据、无工具行为」。
 - **集成回归**：V1 全部现有测试继续通过；`verify-output` 对 V2 产物仍返回 valid。
 - **真实数据回归**：用真实抓取样本（如 smoke 样本）验证 `answers.md` 结构恢复（标题/列表/代码/图片占位/脚注）且无危险输出。
-- **投影测试**：Agent projection 生成逻辑（chunk/map 阶段）的确定性测试：同一输入 → 同一投影；代码块折叠生效。
+- **投影测试**：Agent projection 生成逻辑（chunk/map 阶段）的确定性测试：同一输入 → 同一投影；代码块折叠生效；能力隔离合同（§9.1）可验证（如无工具环境断言）。
 - **评论 enrichment（如开启）**：按 §15.3 预算断言请求数上限；失败时 core 仍 valid + warning。
 
 ---
@@ -762,6 +999,49 @@ Markdown link injection（锚文本伪造链接）
 
 验收：fence 长度自适应；language sanitize 或省略；危险元素被剥离（只留可见文本）；无 raw HTML 透传；锚文本不伪造。
 
+### 23.3.1 不可信文本 escaping（BLOCKER-1/2 验收）
+
+```text
+普通 text node 中的 Markdown link：[click](https://evil.example)
+普通 text node 中的 Markdown image：![img](https://evil.example/x.png)
+裸 https URL：https://evil.example
+autolink 形态：<https://evil.example>
+author / questionTitle 中的 Markdown control syntax
+caption / footnote text 中的 Markdown injection
+blockquote text 中的注入
+topic 文本中的注入
+description 中的注入
+```
+
+验收：全部输出为**惰性文本（inert text）**——不生成链接、不加载图片、不产生 heading/quote/list 结构；裸 URL 若被放行则必须由 renderer 经 §11 生成显式链接（而非客户端 autolink）。
+
+### 23.3.2 heading offset（BLOCKER-6 验收）
+
+```text
+正文 h1/h2 层级破坏（source h1 不得输出为 #）
+question description 内部 heading 层级越界
+```
+
+验收：answer body 的 source h1 → H3，h2 → H4，h3 → H5，h4-h6 → H6/等价；任何正文 heading 严格低于 `## N. 作者`。
+
+### 23.3.3 脚注 identifier（BLOCKER-5 验收）
+
+```text
+重复 footnote numero（同一回答内 data-numero 重复）
+恶意 footnote numero（data-numero 为负数/超长/非数字/含 Markdown 字符）
+跨 answer 的 [^1] collision
+```
+
+验收：内部 ID（`a<answerId>-r<index>`）文档内全局唯一；`data-numero` 不进入 identifier；重复/非法 numero 不破坏 Markdown 完整性。
+
+### 23.3.4 Markdown destination serializer（BLOCKER-9 验收）
+
+```text
+sanitized URL 中含 ) ( < > \ 空白/控制字符
+```
+
+验收：`safeMarkdownDestination()` 输出不会破坏 Markdown 语法结构；展示域名使用 canonical ASCII hostname。
+
 ### 23.4 Prompt Injection（正文 / 脚注 / 评论 / 代码中注入）
 
 ```text
@@ -780,6 +1060,17 @@ Ignore previous instructions
 ```
 
 （即：内容进入产物、投影正常折叠/渲染，但全流程无工具调用、无联网、无执行。）
+
+### 23.4.1 能力隔离（BLOCKER-4 验收）
+
+```text
+LLM map/final claim 文本含：[link](https://evil.example)、![img](https://evil.example/x)、<https://evil.example>、https://evil.example
+```
+
+验收：
+- claim 文本进入最终 Markdown 前经过 escaping，不产生主动链接/图片；
+- digest/map consumer 运行环境满足 §9.1 capability contract（或明确标注 prompt-level mitigation，不得声称能力级隔离）；
+- 无工具调用、无文件写越界（只写当前指定 map result）。
 
 ---
 
@@ -837,13 +1128,14 @@ Ignore previous instructions
 
 按任务要求逐项反驳，修订后确认：
 
-1. **「可点击」误写「可信」？** 否。全文统一 `clickable` + `securityClass: external_unverified`；§11.4 显式禁止 `safe:true`。
-2. **任何知乎正文 → Agent 工具调用的路径？** 否。§7、§9、§11.6 明确：正文永远只是 DATA；无任何允许「正文指令触发工具」的条款；Agent 默认不访问外链、不读代码正文。
+1. **「可点击」误写「可信」？** 否。全文统一 `clickable` + `securityClass: external_unverified`；§11.4 显式禁止 `safe:true`；图片维度同样分离 `clickable` / `securityClass`（§10.1）。
+2. **任何知乎正文 → Agent 工具调用的路径？** 否。§7、§9.1、§11.6 明确：正文永远只是 DATA；§9.1 进一步把防护从「行为规则」提升为「能力隔离」（NETWORK/SHELL/PACKAGE/FILE 全 DENY + trusted controller 写 map result）；不满足隔离时不得声称安全隔离，只能标注 prompt-level mitigation。
 3. **任何代码块可能被执行？** 否。§12.2 绝对禁止清单覆盖脚本落盘/chmod/exec/复制到终端/包安装/PowerShell/SQL；fence 安全（§12.3）保证不可逃逸。
-4. **远程图片默认自动加载？** 否。§8.1 默认链接占位，禁止默认 `![](url)`；§10.2 白名单 + 忽略 placeholder。
-5. **LLM 自己制造 href？** 否。§11 强制 deterministic pipeline，LLM 不产生 URL；§8.2 锚文本/域名由 renderer 确定性生成。
+4. **远程图片默认自动加载？** 否。§8.1 默认链接占位，禁止默认 `![](url)`；§8.0/§8.0.1 覆盖 text node 注入的 `![...](...)` 与裸 URL autolink，防止绕过图片策略；§10.2 白名单 + 忽略 placeholder。
+5. **LLM 自己制造 href？** 否。§11 强制 deterministic pipeline，LLM 不产生 URL；§21.1 将该约束扩展到所有 LLM-derived Markdown display surface（digest 等）；§11.5.1 增加 destination serializer 防结构破坏。
 6. **评论导致 answerCount × request 无上限放大？** 否。§15 默认 off；开启时 Top10×3=30 条预算；实现前必须先实测 API。
 7. **enrichment 失败破坏 core grab？** 否。§20 区分 Core/Enrichment；enrichment 仅 warning；renderer 不安全输出才 fail closed。
 8. **引入不必要状态机/schema/framework？** 否。§18 仅 additive；§19 兼容性；无新框架、无新状态机、无签名/证明系统。
+9. **reviewer B1-B9 复查**：B1（text node escaping）→ §8.0/§14.0；B2（裸 URL 走 sanitizer）→ §8.0.1；B3（destination serializer）→ §11.5.1；B4（能力隔离）→ §9.1；B5（LLM-derived digest 安全）→ §21.1；B6（脚注内部 ID 全局唯一）→ §13.1；B7（heading offset）→ §14.1.1；B8（图片 metadata 与 clickable 分离）→ §10.1；B9（对抗矩阵扩充）→ §23.3.1–§23.4.1。全部已合同化，无遗漏。
 
-自审结论：**通过**（上述 8 项均无违反；若 reviewer 发现遗漏以 reviewer 意见为准）。
+自审结论：**通过**（上述 9 项均无违反；若 reviewer 发现遗漏以 reviewer 意见为准）。
