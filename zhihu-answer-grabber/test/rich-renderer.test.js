@@ -371,3 +371,87 @@ test('framing: 正文列表/引用/粗体结构正常渲染且不伪造 heading'
   const headings = md.match(/^## \d+\./gm) || [];
   assert.equal(headings.length, 1);
 });
+
+// ===== P1-1: 多行 payload 经 renderer 不产生行级结构 =====
+
+test('P1-1: richHtmlToMarkdown 多行 text 不产生 Setext heading / indented code', () => {
+  const md = richHtmlToMarkdown('<p>foo\n===\n\nfoo\n\n    indented-code\n\nfoo\n\tindented-code</p>');
+  assert.ok(!/^=+\s*$/m.test(md), 'Setext underline 行不得出现');
+  assert.ok(!/^ {4}\S/m.test(md), '4 空格缩进代码行不得出现');
+  assert.ok(!/^\t\S/m.test(md), 'Tab 缩进代码行不得出现');
+  assert.ok(md.includes('foo'), '正文文本保留');
+});
+
+test('P1-1: richHtmlToMarkdown 段落内 Setext 注入被中和', () => {
+  const md = richHtmlToMarkdown('<p>标题文字\n===</p>');
+  assert.ok(!/^=+\s*$/m.test(md), '不得产生 Setext H1 underline');
+  assert.ok(!md.includes('\n==='), '不得残留未转义 === 行');
+});
+
+test('P1-1: questionTitle 多行 Setext payload 不产生额外 heading', () => {
+  const meta = { questionId: '123', questionTitle: 'foo\n===', answerCount: 1, url: 'https://www.zhihu.com/question/123' };
+  const answers = [{ id: '1', author: 'A', content: '<p>x</p>', voteupCount: 1, commentCount: 0 }];
+  const md = renderAnswers(meta, answers);
+  const headings = md.match(/^#{1,6} /gm) || [];
+  // 只有 renderer 生成的 `# foo`（标题行）与 `## 1.`（answer heading）
+  assert.equal(headings.length, 2, `不得产生 Setext 伪 heading: ${md}`);
+  assert.ok(!/^=+\s*$/m.test(md), '=== 行不得成为 underline');
+});
+
+test('P1-1: author 多行 payload 不产生额外 heading', () => {
+  const meta = { questionId: '123', questionTitle: 'T', answerCount: 1, url: 'https://www.zhihu.com/question/123' };
+  const answers = [{ id: '1', author: 'bar\n---', content: '<p>x</p>', voteupCount: 1, commentCount: 0 }];
+  const md = renderAnswers(meta, answers);
+  const headings = md.match(/^## \d+\./gm) || [];
+  assert.equal(headings.length, 1, `author 不得产生额外 answer heading: ${md}`);
+  // author 中的 --- 必须被转义（\-\-\-）且与计数文本同处一行，不得成为独立 Setext underline
+  assert.ok(md.includes('bar\n\\-\\-\\- —'), `author 中的 --- 必须转义: ${md}`);
+  assert.ok(!/^\\-\\-\\-\s*$/m.test(md), '转义后的 --- 行不得以独立行形态出现');
+});
+
+// ===== P1-2: framing link / scalar metadata 收口 =====
+
+test('P1-2: meta.url 恶意值不进入 Markdown（链接由 questionId 确定性构造）', () => {
+  const meta = { questionId: '123', questionTitle: 'T', answerCount: 1, url: 'https://evil.example' };
+  const answers = [{ id: '1', author: 'A', content: '<p>x</p>', voteupCount: 1, commentCount: 0 }];
+  const md = renderAnswers(meta, answers);
+  assert.ok(!md.includes('evil.example'), 'meta.url 不得进入产物');
+  assert.ok(md.includes('[知乎问题](https://www.zhihu.com/question/123)'), '链接由 questionId 确定性构造');
+});
+
+test('P1-2: answer.url 恶意值不进入 Markdown（链接由 questionId+answerId 构造）', () => {
+  const meta = { questionId: '123', questionTitle: 'T', answerCount: 1, url: 'https://www.zhihu.com/question/123' };
+  const answers = [{ id: '1', author: 'A', url: 'https://evil.example/phishing', content: '<p>x</p>', voteupCount: 1, commentCount: 0 }];
+  const md = renderAnswers(meta, answers);
+  assert.ok(!md.includes('evil.example'), 'answer.url 不得进入产物');
+  assert.ok(md.includes('[知乎回答](https://www.zhihu.com/question/123/answer/1)'), '链接由 ID 确定性构造');
+});
+
+test('P1-2: scalar metadata 异常字符串不制造 Markdown 结构', () => {
+  const meta = { questionId: '123', questionTitle: 'T', answerCount: '999. fake', url: 'https://x' };
+  const answers = [
+    { id: '1', author: 'A', content: '<p>x</p>', voteupCount: '1. fake', commentCount: '- fake' },
+  ];
+  const md = renderAnswers(meta, answers);
+  assert.ok(!md.includes('999. fake'), 'answerCount 异常值不得进入');
+  assert.ok(!md.includes('1. fake'), 'voteupCount 异常值不得进入');
+  assert.ok(!md.includes('- fake'), 'commentCount 异常值不得进入');
+  assert.ok(md.includes('(未知)'), 'answerCount 异常 → 安全 placeholder');
+  const headings = md.match(/^## \d+\./gm) || [];
+  assert.equal(headings.length, 1, '不得产生额外 heading');
+  assert.ok(!/^## 1\. .*1\. fake/.test(md), 'voteupCount 不得形成序号结构');
+});
+
+test('P1-2: scalar metadata 正常数字显示语义不变', () => {
+  const meta = { questionId: '123', questionTitle: 'T', answerCount: 2, url: 'https://www.zhihu.com/question/123' };
+  const answers = [
+    { id: '1', author: 'A', content: '<p>x</p>', voteupCount: 99, commentCount: 3 },
+    { id: '2', author: 'B', content: '<p>y</p>', voteupCount: 5, commentCount: 1 },
+  ];
+  const md = renderAnswers(meta, answers);
+  assert.ok(md.includes('共 2 条回答'));
+  assert.ok(md.includes('99 赞 · 3 评论'));
+  const highIdx = md.indexOf('x');
+  const lowIdx = md.indexOf('y');
+  assert.ok(highIdx !== -1 && lowIdx !== -1 && highIdx < lowIdx, '高赞在前');
+});

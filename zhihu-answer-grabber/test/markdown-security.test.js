@@ -75,6 +75,56 @@ test('escape: code fence 反引号被转义，不能产生 fenced block', () => 
   assert.ok(out.includes('\\`\\`\\`'));
 });
 
+// ===== P1-1: 行级结构中和（Setext heading / indented code block） =====
+
+test('escape-P1-1: Setext H1（= 行）不能由不可信文本产生', () => {
+  const out = escapeUntrustedMarkdownText('foo\n===');
+  assert.ok(out.includes('\\==='), '等号行首必须被转义');
+  assert.ok(!out.includes('\n==='), '不得残留未转义 Setext underline');
+});
+
+test('escape-P1-1: 缩进 Setext（0-3 空格 + = 行）被中和', () => {
+  const out = escapeUntrustedMarkdownText('foo\n   ===');
+  assert.ok(!out.includes('\n   ==='), '带缩进的 Setext underline 必须被中和');
+  assert.ok(out.includes('   \\==='), '转义后保持缩进与显示');
+});
+
+test('escape-P1-1: 4 空格 indented code 行被中和', () => {
+  const out = escapeUntrustedMarkdownText('foo\n\n    indented');
+  assert.ok(!out.includes('\n    indented'), '4 空格缩进行不得原样保留');
+  assert.ok(out.includes('\u00A0\u00A0\u00A0\u00A0indented'), '缩进替换为 NBSP');
+});
+
+test('escape-P1-1: Tab indented code 行被中和', () => {
+  const out = escapeUntrustedMarkdownText('foo\n\tindented');
+  assert.ok(!out.includes('\n\tindented'), 'Tab 缩进行不得原样保留');
+  assert.ok(out.includes('\u00A0indented'), 'Tab 替换为 NBSP');
+});
+
+test('escape-P1-1: 普通 `a = b` 保持可读（不全局转义 =）', () => {
+  assert.equal(escapeUntrustedMarkdownText('a = b'), 'a = b');
+  assert.equal(escapeUntrustedMarkdownText('x = y = z'), 'x = y = z');
+});
+
+test('escape-P1-1: Setext H2（--- 行）经字符级转义已被中和', () => {
+  const out = escapeUntrustedMarkdownText('foo\n---');
+  assert.ok(!out.includes('\n---'), '--- 行必须被转义（Setext H2 / thematic break）');
+  assert.ok(out.includes('\\-\\-\\-'));
+});
+
+test('escape-P1-1: 单行纯等号不受影响（非 underline 上下文）', () => {
+  // 单行文本没有前一行，`===` 只是段落文本；行级中和只处理第二行起
+  assert.equal(escapeUntrustedMarkdownText('==='), '===');
+});
+
+test('escape-P1-1: 多行组合 payload 全部惰性化', () => {
+  const payload = 'foo\n===\n\nfoo\n\n    indented-code\n\nfoo\n\tindented-code';
+  const out = escapeUntrustedMarkdownText(payload);
+  assert.ok(!out.includes('\n==='), 'Setext H1 不得出现');
+  assert.ok(!out.includes('\n    indented'), '4 空格缩进不得出现');
+  assert.ok(!out.includes('\n\tindented'), 'Tab 缩进不得出现');
+});
+
 // ===== bare URL tokenizer（§8.0.1 / §8.0.2） =====
 
 test('tokenize: 识别裸 https/http URL span', () => {
@@ -154,6 +204,16 @@ test('url: localhost 拒绝', () => {
   assert.equal(classifyUrl('https://localhost/'), null);
   assert.equal(classifyUrl('https://localhost:8080/'), null);
   assert.equal(classifyUrl('https://LOCALHOST/'), null);
+});
+
+test('url-P2: localhost namespace（*.localhost）拒绝', () => {
+  assert.equal(classifyUrl('https://foo.localhost/'), null);
+  assert.equal(classifyUrl('https://a.b.localhost/'), null);
+  assert.equal(classifyUrl('https://foo.localhost./'), null); // 尾点规范化
+  assert.equal(classifyUrl('https://api.localhost:8080/'), null);
+  // 公网域名不受影响（.localhost 结尾才是本机解析域）
+  assert.notEqual(classifyUrl('https://localhost.com/'), null);
+  assert.notEqual(classifyUrl('https://evil.localhost.com/'), null);
 });
 
 test('url: 回环 IP 拒绝（IPv4 + IPv6）', () => {

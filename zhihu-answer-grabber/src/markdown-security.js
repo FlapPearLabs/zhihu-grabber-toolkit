@@ -25,6 +25,42 @@ const MD_CONTROL_RE = /([\\`*_[\]{}()#+.!|>~<\-])/g;
 const CONTROL_RE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u0080-\u009F]/g;
 
 /**
+ * 行级结构中和（P1-1）：
+ *
+ * 字符级转义无法覆盖跨行结构。不可信文本中保留的换行/Tab 可能让用户内容
+ * 自己“长成” Markdown 块级结构：
+ *   - Setext H1/H2：段落行后紧跟纯 `===`（或 `---`）行；
+ *   - indented code block：空行后 4 空格或 Tab 缩进行的行首。
+ *
+ * 处理（仅针对第二行起的每一行，避免破坏 renderer 自己生成的块语法）：
+ *   - 0-3 空格缩进的纯 `=` 行 → 转义第一个 `=`（`\=` 渲染显示 `=`）；
+ *     `-` 已在字符级被转义（`---` → `\-\-\-`），Setext H2 / thematic break 均被中和；
+ *   - 4 空格或 Tab 行首 → 替换为等量 NBSP（U+00A0）。NBSP 不是空格/Tab，
+ *     不计入 Markdown 缩进，不触发 indented code block，且视觉上近似原缩进。
+ *
+ * 普通正文中的 `a = b` 不受影响（`=` 不参与字符级全局转义）。
+ */
+function neutralizeLineStructures(s) {
+  const lines = s.split('\n');
+  if (lines.length <= 1) return s;
+  for (let i = 1; i < lines.length; i += 1) {
+    let line = lines[i];
+    // indented code block 前缀（4 空格或 Tab）→ 等量 NBSP
+    const indentMatch = line.match(/^(?: {4,}|\t+)/);
+    if (indentMatch) {
+      line = '\u00A0'.repeat(indentMatch[0].length) + line.slice(indentMatch[0].length);
+    }
+    // Setext H1：0-3 空格缩进的纯等号行
+    const setext = line.match(/^( {0,3})=+\s*$/);
+    if (setext) {
+      line = `${setext[1]}\\${line.slice(setext[1].length)}`;
+    }
+    lines[i] = line;
+  }
+  return lines.join('\n');
+}
+
+/**
  * §8.0 不可信文本 Markdown escaping。
  *
  * 行为合同：任何来自知乎/LLM 的字符串经过本函数后，不能自己产生
@@ -40,7 +76,8 @@ const CONTROL_RE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u0080-\u009F]/
 export function escapeUntrustedMarkdownText(value) {
   if (value == null) return '';
   const s = String(value);
-  return s.replace(MD_CONTROL_RE, '\\$1').replace(CONTROL_RE, '\uFFFD');
+  const escaped = s.replace(MD_CONTROL_RE, '\\$1').replace(CONTROL_RE, '\uFFFD');
+  return neutralizeLineStructures(escaped);
 }
 
 // ---------------------------------------------------------------------------
@@ -215,9 +252,10 @@ function isRestrictedHost(hostname) {
   if (host.startsWith('[') && host.endsWith(']')) host = host.slice(1, -1);
   // 去除 IPv6 的尾部 zone（理论上 URL parser 会拒绝 zone，防御处理）
   const cleanHost = host.includes('%') ? host.split('%')[0] : host;
-  // localhost 系列名（含带尾点的形态，尾点不影响）
+  // localhost 系列名（含尾点规范化后的形式；`*.localhost` 亦属本机解析域）
   const hostNoDot = cleanHost.endsWith('.') ? cleanHost.slice(0, -1) : cleanHost;
   if (hostNoDot === 'localhost') return true;
+  if (hostNoDot.endsWith('.localhost')) return true;
   // 含非 [a-z0-9.-] 字符则不是正常域名/IP（如 IPv6 的 ':'）
   if (/^[0-9a-f.:]+$/.test(hostNoDot)) {
     if (hostNoDot.includes(':')) {

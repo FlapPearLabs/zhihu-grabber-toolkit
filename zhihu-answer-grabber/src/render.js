@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { escapeUntrustedMarkdownText } from './markdown-security.js';
+import { escapeUntrustedMarkdownText, safeMarkdownDestination } from './markdown-security.js';
 import { richHtmlToMarkdown } from './rich-renderer.js';
 
 const NAMED_ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
@@ -57,6 +57,29 @@ function fmtTime(unix) {
 }
 
 /**
+ * scalar metadata 数值收口（P1-2）：
+ * 只接受有限 numeric 值（数字或可安全转成数字的字符串），否则用 fallback。
+ * 防止异常字符串（如 `1. fake` / `- fake`）直接插进 Markdown 制造结构。
+ */
+function numericOr(value, fallback) {
+  if (value === null || value === undefined || value === '') return fallback;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+/**
+ * P1-2：framing 中的问题/回答链接由已验证 ID 确定性构造，
+ * 不信任 meta.url / answer.url（断点续传可能加载被篡改的磁盘产物）。
+ */
+function buildQuestionUrl(questionId) {
+  return `https://www.zhihu.com/question/${String(questionId)}`;
+}
+
+function buildAnswerUrl(questionId, answerId) {
+  return `https://www.zhihu.com/question/${String(questionId)}/answer/${String(answerId)}`;
+}
+
+/**
  * 生成可读 Markdown：题目信息 + 按赞数倒序的回答全文。
  *
  * V2 Phase 1：回答正文改用严格白名单 HTML → Markdown renderer（richHtmlToMarkdown），
@@ -66,27 +89,33 @@ function fmtTime(unix) {
  *   ---
  * 每条回答恰好一个 renderer 生成的 `## N.` heading（verifier 记录数校验依赖）。
  *
- * questionTitle / author 等不可信 metadata 一律先过 escapeUntrustedMarkdownText，
+ * questionTitle / author / 一切不可信 metadata 一律先过 escapeUntrustedMarkdownText；
+ * 链接目标由 questionId/answerId 确定性构造并经 safeMarkdownDestination，
  * 不得自行产生 heading / link / list 结构。
  */
 export function renderAnswers(meta, answers) {
   const lines = [];
   const title = escapeUntrustedMarkdownText(meta.questionTitle || `问题 ${meta.questionId}`);
+  const questionLink = `[知乎问题](${safeMarkdownDestination(buildQuestionUrl(meta.questionId))})`;
+  const answerCount = numericOr(meta.answerCount, null);
   lines.push(`# ${title}`);
   lines.push('');
-  lines.push(`> 问题链接: ${meta.url}`);
+  lines.push(`> 问题链接: ${questionLink}`);
   lines.push(`> 抓取时间: ${meta.fetchedAt || new Date().toISOString()}`);
-  lines.push(`> 问题回答总数: ${meta.answerCount ?? '(未知)'}，本次抓取到: 共 ${answers.length} 条回答`);
+  lines.push(`> 问题回答总数: ${answerCount === null ? '(未知)' : answerCount}，本次抓取到: 共 ${answers.length} 条回答`);
   lines.push('');
   lines.push('---');
   lines.push('');
 
-  const sorted = [...answers].sort((a, b) => (b.voteupCount ?? 0) - (a.voteupCount ?? 0));
+  const sorted = [...answers].sort((a, b) => numericOr(b.voteupCount, 0) - numericOr(a.voteupCount, 0));
   sorted.forEach((a, i) => {
     const author = escapeUntrustedMarkdownText(a.author || '(匿名)');
-    lines.push(`## ${i + 1}. ${author} — ${a.voteupCount ?? 0} 赞 · ${a.commentCount ?? 0} 评论`);
+    const voteup = numericOr(a.voteupCount, 0);
+    const comment = numericOr(a.commentCount, 0);
+    const answerLink = `[知乎回答](${safeMarkdownDestination(buildAnswerUrl(meta.questionId, a.id))})`;
+    lines.push(`## ${i + 1}. ${author} — ${voteup} 赞 · ${comment} 评论`);
     lines.push('');
-    lines.push(`- 链接: ${a.url}`);
+    lines.push(`- 链接: ${answerLink}`);
     lines.push(`- 创建时间: ${fmtTime(a.createdTime)}`);
     lines.push('');
     lines.push(richHtmlToMarkdown(a.content));
