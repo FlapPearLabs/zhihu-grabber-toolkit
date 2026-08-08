@@ -388,6 +388,51 @@ test('P1-1: richHtmlToMarkdown 段落内 Setext 注入被中和', () => {
   assert.ok(!md.includes('\n==='), '不得残留未转义 === 行');
 });
 
+// ===== P1-1 cross-node：结构被 inline tag / <br> 分段（跨 DOM text node） =====
+
+test('P1-1-crossnode: foo<br>=== 不产生 Setext H1', () => {
+  const md = richHtmlToMarkdown('<p>foo<br>===</p>');
+  assert.ok(!/^=+\s*$/m.test(md), '不得产生 Setext underline 行');
+  assert.ok(!md.includes('\n==='), '不得拼回未转义 === 行');
+  assert.ok(md.includes('\\==='), '=== 必须被转义');
+  assert.ok(md.includes('foo'), '正文保留');
+});
+
+test('P1-1-crossnode: foo<br>4空格缩进 不产生 indented code block', () => {
+  const md = richHtmlToMarkdown('<p>foo<br>    injected</p>');
+  assert.ok(!/^ {4}\S/m.test(md), '4 空格缩进代码行不得出现');
+  assert.ok(md.includes('\u00A0\u00A0\u00A0\u00A0injected'), '缩进被中和为 NBSP');
+  assert.ok(md.includes('injected'), '文本保留');
+});
+
+test('P1-1-crossnode: foo<br>Tab缩进 不产生 indented code block', () => {
+  const md = richHtmlToMarkdown('<p>foo<br>\tinjected</p>');
+  assert.ok(!/^\t\S/m.test(md), 'Tab 缩进代码行不得出现');
+  assert.ok(md.includes('\u00A0injected'), 'Tab 被中和为 NBSP');
+});
+
+test('P1-1-crossnode: span 分段 <span>foo</span><br><span>===</span>', () => {
+  const md = richHtmlToMarkdown('<p><span>foo</span><br><span>===</span></p>');
+  assert.ok(!/^=+\s*$/m.test(md), '不得产生 Setext underline');
+  assert.ok(!md.includes('\n==='), '不得拼回未转义 ===');
+  assert.ok(md.includes('foo'), '正文保留');
+});
+
+test('P1-1-crossnode: strong 包裹的 === 不泄漏结构边界（**===** 内不得成 underline）', () => {
+  const md = richHtmlToMarkdown('<p>foo<br><strong>===</strong></p>');
+  assert.ok(!/^=+\s*$/m.test(md), '不得产生 Setext underline');
+  assert.ok(md.includes('**\\===**'), '=== 在 renderer 生成的 bold 结构内被转义');
+  assert.ok(!md.includes('\n==='), '不得拼回未转义 ===');
+});
+
+test('P1-1-crossnode: 组合注入全部惰性化且正文可读', () => {
+  const md = richHtmlToMarkdown('<p>foo<br>===<br>    a<br>\tb</p>');
+  assert.ok(!/^=+\s*$/m.test(md), '无 Setext underline');
+  assert.ok(!/^ {4}\S/m.test(md), '无 4 空格缩进代码行');
+  assert.ok(!/^\t\S/m.test(md), '无 Tab 缩进代码行');
+  assert.ok(md.includes('foo') && md.includes('a') && md.includes('b'), '正文保留');
+});
+
 test('P1-1: questionTitle 多行 Setext payload 不产生额外 heading', () => {
   const meta = { questionId: '123', questionTitle: 'foo\n===', answerCount: 1, url: 'https://www.zhihu.com/question/123' };
   const answers = [{ id: '1', author: 'A', content: '<p>x</p>', voteupCount: 1, commentCount: 0 }];

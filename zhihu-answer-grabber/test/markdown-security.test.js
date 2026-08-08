@@ -112,9 +112,12 @@ test('escape-P1-1: Setext H2（--- 行）经字符级转义已被中和', () => 
   assert.ok(out.includes('\\-\\-\\-'));
 });
 
-test('escape-P1-1: 单行纯等号不受影响（非 underline 上下文）', () => {
-  // 单行文本没有前一行，`===` 只是段落文本；行级中和只处理第二行起
-  assert.equal(escapeUntrustedMarkdownText('==='), '===');
+test('escape-P1-1: 单行纯等号也要中和（独立 text node 可能被拼接到行首）', () => {
+  // cross-node 场景：<p>foo<br>===</p> 中 "===" 是独立 text node，只有一行；
+  // 中和必须对每一行（含第一行）生效
+  assert.equal(escapeUntrustedMarkdownText('==='), '\\===');
+  assert.equal(escapeUntrustedMarkdownText('    indented'), '\u00A0\u00A0\u00A0\u00A0indented');
+  assert.equal(escapeUntrustedMarkdownText('\tindented'), '\u00A0indented');
 });
 
 test('escape-P1-1: 多行组合 payload 全部惰性化', () => {
