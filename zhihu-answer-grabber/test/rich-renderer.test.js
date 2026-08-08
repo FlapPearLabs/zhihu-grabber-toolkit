@@ -1,0 +1,373 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+/**
+ * V2 Phase 1 — rich-renderer 白名单 HTML → Markdown 测试（全部 deterministic / offline）。
+ *
+ * 覆盖：§14 白名单元素、heading offset（§14.1.1）、inline/fenced code 安全（§12.3）、
+ * 危险/未知 HTML（§14.3/§18）、图片/脚注 Phase 1 fallback（§19/§20）、
+ * answer framing（§23.3 J）、不可信 metadata（§23.3.1）。
+ */
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { richHtmlToMarkdown, longestBacktickRun } from '../src/rich-renderer.js';
+import { renderAnswers } from '../src/render.js';
+
+// ===== 白名单纯排版结构（§14.1） =====
+
+test('render: 段落', () => {
+  assert.equal(richHtmlToMarkdown('<p>第一段</p><p>第二段</p>'), '第一段\n\n第二段');
+});
+
+test('render: br 换行', () => {
+  assert.equal(richHtmlToMarkdown('<p>第一行<br/>第二行</p>'), '第一行\n第二行');
+});
+
+test('render: 实体解码（< 等结构字符经 escaping 后为字面显示）', () => {
+  // &amp; → &（原样）；&lt; → <（转义为 \<，Markdown 渲染显示为 <）
+  assert.equal(richHtmlToMarkdown('<p>a &amp; b &lt; c &#20013;</p>'), 'a & b \\< c 中');
+});
+
+test('render: 粗体/斜体', () => {
+  assert.equal(richHtmlToMarkdown('<p><strong>粗</strong>和<em>斜</em></p>'), '**粗**和*斜*');
+  assert.equal(richHtmlToMarkdown('<p><b>b</b><i>i</i></p>'), '**b***i*');
+});
+
+test('render: 无序列表', () => {
+  const md = richHtmlToMarkdown('<ul><li>甲</li><li>乙</li></ul>');
+  assert.equal(md, '- 甲\n- 乙');
+});
+
+test('render: 有序列表', () => {
+  const md = richHtmlToMarkdown('<ol><li>一</li><li>二</li></ol>');
+  assert.equal(md, '1. 一\n2. 二');
+});
+
+test('render: 嵌套列表保留层级', () => {
+  const md = richHtmlToMarkdown('<ul><li>外层<ul><li>内层</li></ul></li></ul>');
+  assert.ok(md.includes('- 外层'));
+  assert.ok(md.includes('  - 内层'), `嵌套列表应缩进: ${md}`);
+});
+
+test('render: blockquote', () => {
+  assert.equal(richHtmlToMarkdown('<blockquote>引用文字</blockquote>'), '> 引用文字');
+});
+
+test('render: 嵌套 blockquote', () => {
+  const md = richHtmlToMarkdown('<blockquote>外层<blockquote>内层</blockquote></blockquote>');
+  assert.ok(md.includes('> 外层'));
+  assert.ok(md.includes('> > 内层'), `嵌套引用应保留: ${md}`);
+});
+
+test('render: hr', () => {
+  assert.equal(richHtmlToMarkdown('<hr/>'), '---');
+});
+
+test('render: 未知标签保留可见文本、丢弃 tag', () => {
+  // <foo> 内文本与两侧文本直接拼接（HTML 无空格语义）
+  assert.equal(richHtmlToMarkdown('<p>a<foo bar="x">b</foo>c</p>'), 'abc');
+});
+
+test('render: div 内结构', () => {
+  assert.equal(richHtmlToMarkdown('<div>一<p>二</p></div>'), '一\n\n二');
+});
+
+// ===== heading offset（§14.1.1 BLOCKER-6） =====
+
+test('heading: answer body source h1 → H3，不破坏文档层级', () => {
+  const md = richHtmlToMarkdown('<h1>大标题</h1>');
+  assert.ok(md.startsWith('### 大标题'), 'h1 必须降级为 H3');
+  assert.ok(!md.startsWith('# '), '不得出现 H1');
+});
+
+test('heading: 完整映射 h1→H3 h2→H4 h3→H5 h4-h6→H6', () => {
+  const md = richHtmlToMarkdown('<h1>a</h1><h2>b</h2><h3>c</h3><h4>d</h4><h5>e</h5><h6>f</h6>');
+  const headings = md.match(/^#{2,6} .*$/gm) || [];
+  assert.deepEqual(headings, ['### a', '#### b', '##### c', '###### d', '###### e', '###### f']);
+});
+
+test('heading: heading 文本中的 Markdown 注入被转义', () => {
+  const md = richHtmlToMarkdown('<h1>[click](https://evil.example)</h1>');
+  assert.ok(md.startsWith('### '));
+  // 原始锚文本不得成为 link label（[click] 被转义）；
+  // 其中的裸 URL 走 §8.0.2 pipeline 生成 renderer 显式链接（允许）
+  assert.ok(md.includes('\\[click\\]'), '锚文本必须被转义');
+  assert.ok(!md.includes('[click](https://'), '不得保留原样注入链接');
+  assert.ok(md.includes('[打开外部链接 · evil.example]'), '裸 URL 走显式链接');
+});
+
+// ===== inline code 安全（§12/§16） =====
+
+test('inline-code: 普通代码', () => {
+  assert.equal(richHtmlToMarkdown('<p>执行 <code>npm install</code></p>'), '执行 `npm install`');
+});
+
+test('inline-code: 内容含 backtick 时选择更长 delimiter（不 escape）', () => {
+  const md = richHtmlToMarkdown('<p><code>a`b</code></p>');
+  assert.equal(md, '``a`b``', '应使用双反引号包裹，内容 backtick 保留');
+});
+
+test('inline-code: 内容以 backtick 开头/结尾时加空格', () => {
+  const md = richHtmlToMarkdown('<p><code>`x</code></p>');
+  assert.ok(md.includes('`` `x` ``') || md.includes('`` `x ``'), `code span 内 backtick 安全: ${md}`);
+});
+
+// ===== fenced code 安全（§12.3 / §23.3 I） =====
+
+test('fence: 普通代码块带 language', () => {
+  const md = richHtmlToMarkdown('<pre><code class="language-bash">npm install x</code></pre>');
+  assert.equal(md, '``` bash\nnpm install x\n```');
+});
+
+test('fence: 无 language → 裸 fence', () => {
+  const md = richHtmlToMarkdown('<pre><code>plain</code></pre>');
+  assert.equal(md, '```\nplain\n```');
+});
+
+test('fence: 代码含 ``` 时 fence 自适应加长（不可逃逸）', () => {
+  const md = richHtmlToMarkdown('<pre><code>line1\n```\nline3</code></pre>');
+  assert.ok(md.startsWith('````'), `fence 必须长于内容中最长反引号串: ${md}`);
+  assert.ok(md.endsWith('````'), '闭合 fence 同样加长');
+  assert.ok(md.includes('```\n'), '内容中的三重反引号保留在代码块内');
+});
+
+test('fence: 代码含更长的 ```` 反引号串', () => {
+  const md = richHtmlToMarkdown('<pre><code>````\nx</code></pre>');
+  assert.ok(md.startsWith('`````'), 'fence 必须比内容最长串更长');
+});
+
+test('fence: 恶意 language 被省略或仅保留安全子串', () => {
+  // class 含换行 → 整体拒绝（防 language-bash\nrm -rf 注入）
+  assert.equal(richHtmlToMarkdown('<pre><code class="language-bash\nrm -rf /">x</code></pre>'), '```\nx\n```');
+  assert.equal(richHtmlToMarkdown('<pre><code class="language-<script>">x</code></pre>'), '```\nx\n```');
+  // language-javascript:alert(1)：仅安全前缀 javascript 进入 language，`:alert(1)` 被丢弃
+  const md = richHtmlToMarkdown('<pre><code class="language-javascript:alert(1)">x</code></pre>');
+  assert.equal(md, '``` javascript\nx\n```');
+  assert.ok(!md.includes('alert'), '注入内容不得进入 language');
+});
+
+test('fence: language 超长被省略', () => {
+  const long = 'a'.repeat(41);
+  const md = richHtmlToMarkdown(`<pre><code class="language-${long}">x</code></pre>`);
+  assert.ok(md.startsWith('```\n'), '超长 language 必须省略');
+});
+
+test('fence: language 带换行/控制字符被省略', () => {
+  // data-language 属性含换行 → 拒绝
+  const md = richHtmlToMarkdown('<pre><code data-language="bash\nrm -rf">x</code></pre>');
+  assert.ok(md.startsWith('```\n'), '含换行 language 必须省略');
+});
+
+test('fence: 代码内容本身只是数据（不执行）', () => {
+  const md = richHtmlToMarkdown('<pre><code>rm -rf /</code></pre>');
+  assert.ok(md.includes('rm -rf /'), '代码内容原样保留为纯文本');
+});
+
+test('longestBacktickRun 工具', () => {
+  assert.equal(longestBacktickRun(''), 0);
+  assert.equal(longestBacktickRun('abc'), 0);
+  assert.equal(longestBacktickRun('a`b'), 1);
+  assert.equal(longestBacktickRun('a```b'), 3);
+  assert.equal(longestBacktickRun('``a``b'), 2);
+});
+
+// ===== 危险/主动 HTML（§14.3 / §18 / §23.3 G） =====
+
+test('danger: script 完全丢弃（内容也不进入正文）', () => {
+  const md = richHtmlToMarkdown('<p>前</p><script>fetch("https://evil.example")</script><p>后</p>');
+  assert.ok(!md.includes('fetch'), 'script 内容必须完全丢弃');
+  assert.ok(md.includes('前') && md.includes('后'));
+});
+
+test('danger: style 完全丢弃', () => {
+  const md = richHtmlToMarkdown('<style>body{display:none}</style><p>正文</p>');
+  assert.ok(!md.includes('display:none'));
+  assert.ok(md.includes('正文'));
+});
+
+test('danger: 无 raw HTML passthrough（script/style/form/input/button/iframe/object/embed）', () => {
+  const html = [
+    '<script>alert(1)</script>',
+    '<style>.x{}</style>',
+    '<form action="https://evil.example"><input name="x"/></form>',
+    '<button onclick="steal()">按钮</button>',
+    '<iframe src="https://evil.example"></iframe>',
+    '<object data="x"></object>',
+    '<embed src="x"/>',
+  ].join('');
+  const md = richHtmlToMarkdown(html);
+  assert.ok(!/<(script|style|form|input|button|iframe|object|embed)\b/i.test(md), '不得残留主动 HTML tag');
+  assert.ok(!/on\w+\s*=/i.test(md), '不得残留 event handler');
+  assert.ok(!/style\s*=/i.test(md), '不得残留 style 属性');
+});
+
+test('danger: 表单可见文本可保留（button 文字）', () => {
+  const md = richHtmlToMarkdown('<p>点击 <button>提交</button> 完成</p>');
+  assert.ok(md.includes('提交'), '按钮可见文本应保留');
+  assert.ok(!md.includes('<button'), '不得残留 button tag');
+});
+
+test('danger: img onerror / a onclick 不产生任何事件行为', () => {
+  const md = richHtmlToMarkdown('<img src="x" onerror="alert(1)"/><a href="https://evil.example" onclick="x()">文字</a>');
+  assert.ok(!/onerror|onclick/i.test(md));
+  assert.ok(!md.includes('<img'), 'img 不得 raw 输出');
+});
+
+test('danger: 最终 Markdown 无任何 <tag 形态', () => {
+  const html = '<p>a</p><div style="color:red">b</div><span onclick="x">c</span>';
+  const md = richHtmlToMarkdown(html);
+  assert.ok(!/<[a-z]+\b/i.test(md), '无 raw HTML passthrough');
+});
+
+// ===== malformed HTML（§23.3 H） =====
+
+test('malformed: 未闭合 tag 不 crash 不透传', () => {
+  const md = richHtmlToMarkdown('<p>未闭合<div>内容');
+  assert.ok(md.length > 0);
+  assert.ok(!/<[a-z]+\b/i.test(md));
+});
+
+test('malformed: 错误嵌套由 parser 容错，不 crash', () => {
+  const md = richHtmlToMarkdown('<b><i>x</b>y');
+  assert.ok(!/<[a-z]+\b/i.test(md));
+  assert.ok(md.includes('x') && md.includes('y'));
+});
+
+test('malformed: code 中类似 HTML 的文字是纯文本', () => {
+  const md = richHtmlToMarkdown('<pre><code>&lt;div&gt;hello&lt;/div&gt;</code></pre>');
+  assert.ok(md.includes('<div>hello</div>'), '代码内 HTML 文字应作为代码文本保留');
+  assert.ok(md.startsWith('```'), '应为 fenced block');
+});
+
+test('malformed: 空输入/纯文本输入', () => {
+  assert.equal(richHtmlToMarkdown(''), '');
+  assert.equal(richHtmlToMarkdown(null), '');
+  assert.equal(richHtmlToMarkdown('纯文本'), '纯文本');
+});
+
+// ===== 链接 pipeline（§8.2 / §11） =====
+
+test('link: 合法 https 外链 → 明示域名，anchor 文本保留', () => {
+  const md = richHtmlToMarkdown('<p><a href="https://github.com/foo">GitHub 仓库</a></p>');
+  assert.ok(md.includes('原文链接文字：GitHub 仓库'), '锚文本应保留');
+  assert.ok(md.includes('[打开外部链接 · github.com](https://github.com/foo)'), '应生成明确链接');
+});
+
+test('link: 危险 href → 仅保留锚文本，不生成链接', () => {
+  const md = richHtmlToMarkdown('<p><a href="javascript:alert(1)">点击</a></p>');
+  assert.ok(md.includes('原文链接文字：点击'), '锚文本保留');
+  assert.ok(!md.includes('](javascript:'), '不得生成危险链接');
+  assert.ok(!md.includes('[打开外部链接'), '不得生成打开链接');
+});
+
+test('link: link.zhihu.com redirect → 链接指向解包后的 target', () => {
+  const md = richHtmlToMarkdown('<p><a href="https://link.zhihu.com/?target=https%3A%2F%2Fgithub.com%2Ffoo">原文</a></p>');
+  assert.ok(md.includes('[打开外部链接 · github.com](https://github.com/foo)'), `应解包 redirect: ${md}`);
+});
+
+test('link: 裸 URL 走 sanitizer 生成显式链接（不依赖 autolink）', () => {
+  const md = richHtmlToMarkdown('<p>访问 https://example.com 了解</p>');
+  assert.ok(md.includes('[打开外部链接 · example.com](https://example.com/)'), `裸 URL 应生成显式链接: ${md}`);
+});
+
+test('link: 危险裸 URL → 惰性文本不成为链接', () => {
+  const md = richHtmlToMarkdown('<p>javascript:alert(1) 和 https://localhost/x</p>');
+  assert.ok(!md.includes('](javascript:'), '危险 scheme 不得成链');
+  assert.ok(!md.includes('](https://localhost'), 'localhost 不得成链');
+});
+
+// ===== 图片 Phase 1 fallback（§19） =====
+
+test('image: inert 占位，不自动加载、不产生 href', () => {
+  const md = richHtmlToMarkdown('<p><img src="https://picx.zhimg.com/abc.jpg"/></p>');
+  assert.ok(md.includes('[图片]'), '应输出 inert 占位');
+  assert.ok(!md.includes('!['), '不得生成 Markdown image');
+  assert.ok(!md.includes('](https://picx.zhimg.com'), '不得生成远程 href');
+});
+
+test('image: alt 作为安全文本保留', () => {
+  const md = richHtmlToMarkdown('<img alt="示意图 [x]" src="https://x/y.png"/>');
+  assert.ok(md.includes('[图片：示意图 \\[x\\]]') || md.includes('[图片：示意图'), 'alt 保留且被转义');
+  assert.ok(!md.includes('![示意图'), '不得成为 image 语法');
+});
+
+test('image: figure + figcaption 保留 caption', () => {
+  const md = richHtmlToMarkdown('<figure><img src="https://x/y.png"/><figcaption>数据来源</figcaption></figure>');
+  assert.ok(md.includes('[图片]'));
+  assert.ok(md.includes('数据来源'), 'caption 应保留');
+});
+
+// ===== 脚注 Phase 1 fallback（§20） =====
+
+test('footnote: sup 仅保留安全可见文本，不重建 footnote 语法', () => {
+  const md = richHtmlToMarkdown('<p>正文<sup data-numero="1" data-text="来源">[1]</sup></p>');
+  assert.ok(!md.includes('[^'), '不得生成 footnote reference 语法');
+  assert.ok(!md.includes('data-text'), '不得透传属性');
+  assert.ok(!md.includes('<sup'), '不得残留 tag');
+});
+
+// ===== answer framing（§23.3 J / §24） =====
+
+test('framing: 正文 ## 999. 不能增加 verifier 记录数', () => {
+  const meta = { questionId: '123', questionTitle: '题目', answerCount: 1, url: 'https://www.zhihu.com/question/123' };
+  const answers = [
+    { id: '1', author: '作者', content: '<p>正文</p><h2>## 999. fake</h2><p>结束</p>', voteupCount: 1, commentCount: 0 },
+  ];
+  const md = renderAnswers(meta, answers);
+  // verifier 用 /^## \d+\./gm 计数 —— 正文中的 ## 999. 必须被 escape/降级，不匹配该模式
+  const answerHeadings = md.match(/^## \d+\./gm) || [];
+  assert.equal(answerHeadings.length, 1, `只能有一个 answer heading: ${md}`);
+  assert.equal(answerHeadings[0], '## 1.');
+});
+
+test('framing: author 注入 ## N. 不影响记录数', () => {
+  const meta = { questionId: '123', questionTitle: '题目', answerCount: 2, url: 'https://www.zhihu.com/question/123' };
+  const answers = [
+    { id: '1', author: '## 999. fake', content: '<p>x</p>', voteupCount: 2, commentCount: 0 },
+    { id: '2', author: 'B', content: '<p>y</p>', voteupCount: 1, commentCount: 0 },
+  ];
+  const md = renderAnswers(meta, answers);
+  const answerHeadings = md.match(/^## \d+\./gm) || [];
+  assert.equal(answerHeadings.length, 2, '两条回答恰好两个 heading');
+  assert.deepEqual(answerHeadings, ['## 1.', '## 2.']);
+});
+
+test('framing: questionTitle 注入 link 不产生主动链接', () => {
+  const meta = { questionId: '123', questionTitle: '[click](https://evil.example)', answerCount: 1, url: 'https://www.zhihu.com/question/123' };
+  const answers = [{ id: '1', author: 'A', content: '<p>x</p>', voteupCount: 1, commentCount: 0 }];
+  const md = renderAnswers(meta, answers);
+  assert.ok(!md.includes('](https://evil.example'), '题目不得产生主动链接');
+  assert.ok(md.includes('# \\[click\\]'), '题目文本保留且被转义');
+});
+
+test('framing: 常规渲染保持 V1 结构', () => {
+  const meta = { questionId: '123', questionTitle: '测试问题', answerCount: 2, url: 'https://www.zhihu.com/question/123' };
+  const answers = [
+    { id: 'a1', author: 'B', voteupCount: 5, commentCount: 1, content: '<p>low</p>' },
+    { id: 'a2', author: 'A', voteupCount: 99, commentCount: 3, content: '<p>high</p>' },
+  ];
+  const md = renderAnswers(meta, answers);
+  assert.ok(md.includes('# 测试问题'));
+  assert.ok(md.includes('共 2 条回答'));
+  const highIdx = md.indexOf('high');
+  const lowIdx = md.indexOf('low');
+  assert.ok(highIdx !== -1 && lowIdx !== -1 && highIdx < lowIdx, '高赞在前');
+  assert.ok(!md.includes('<p>'), '无 HTML 标签');
+});
+
+test('framing: 正文 h2 不能等于 answer heading（### 以下）', () => {
+  const md = renderAnswers(
+    { questionId: '1', questionTitle: 'T', answerCount: 1, url: 'https://www.zhihu.com/question/1' },
+    [{ id: '9', author: 'A', content: '<h2>子标题</h2>', voteupCount: 1, commentCount: 0 }],
+  );
+  assert.ok(md.includes('#### 子标题'), '正文 h2 必须降级为 H4，不得为 ## N. 形态');
+});
+
+test('framing: 正文列表/引用/粗体结构正常渲染且不伪造 heading', () => {
+  const md = renderAnswers(
+    { questionId: '1', questionTitle: 'T', answerCount: 1, url: 'https://www.zhihu.com/question/1' },
+    [{ id: '9', author: 'A', content: '<ul><li>项</li></ul><blockquote>引</blockquote>', voteupCount: 1, commentCount: 0 }],
+  );
+  assert.ok(md.includes('- 项'));
+  assert.ok(md.includes('> 引'));
+  const headings = md.match(/^## \d+\./gm) || [];
+  assert.equal(headings.length, 1);
+});

@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "本地知乎回答抓取工具：用你自己的 zhihu-cli 登录态抓取问题全部回答（JSON+Markdown）",
   "type": "module",
-  "bin": { "zhigrab": "src/cli.js" },
+  "bin": {
+    "zhigrab": "src/cli.js"
+  },
   "files": [
     "src",
     "scripts",
@@ -18,9 +20,14 @@
     "test": "node --test",
     "prepack": "npm test"
   },
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "license": "AGPL-3.0-only",
   "devDependencies": {
     "@playwright/test": "^1.62.1"
+  },
+  "dependencies": {
+    "parse5": "^8.0.1"
   }
 }

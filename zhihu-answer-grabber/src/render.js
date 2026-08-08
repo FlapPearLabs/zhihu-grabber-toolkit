@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { escapeUntrustedMarkdownText } from './markdown-security.js';
+import { richHtmlToMarkdown } from './rich-renderer.js';
+
 const NAMED_ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 
 /** 解码数字（十进制/十六进制）与常见命名实体 */
@@ -22,12 +25,17 @@ function escapeRawHtml(value) {
   return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
-/** 行内 Markdown 转义：防止标题/作者等短文本破坏文档结构 */
+/** 行内 Markdown 转义：防止标题/作者等短文本破坏文档结构（V1 遗留，保持导出语义） */
 function escapeInlineMd(value) {
   return String(value).replace(/([\\`*_[\]{}()#+.!|>~-])/g, '\\$1');
 }
 
-/** 剥离 HTML 标签、解码实体、重新转义，输出安全纯文本 */
+/**
+ * 剥离 HTML 标签、解码实体、重新转义，输出安全纯文本。
+ *
+ * V1 遗留 API：保留其语义供兼容（test/browser-smoke-core.mjs 等引用其行为）。
+ * V2 renderAnswers 已改用 richHtmlToMarkdown（白名单结构渲染），不再调用本函数。
+ */
 export function stripHtml(html) {
   if (html == null) return '';
   let text = String(html)
@@ -48,10 +56,22 @@ function fmtTime(unix) {
   return Number.isNaN(d.getTime()) ? '(未知)' : d.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
 }
 
-/** 生成可读 Markdown：题目信息 + 按赞数倒序的回答全文 */
+/**
+ * 生成可读 Markdown：题目信息 + 按赞数倒序的回答全文。
+ *
+ * V2 Phase 1：回答正文改用严格白名单 HTML → Markdown renderer（richHtmlToMarkdown），
+ * 保持 V1 文件级 framing 合同：
+ *   # 问题标题
+ *   ## N. 作者 — 赞 · 评论
+ *   ---
+ * 每条回答恰好一个 renderer 生成的 `## N.` heading（verifier 记录数校验依赖）。
+ *
+ * questionTitle / author 等不可信 metadata 一律先过 escapeUntrustedMarkdownText，
+ * 不得自行产生 heading / link / list 结构。
+ */
 export function renderAnswers(meta, answers) {
   const lines = [];
-  const title = escapeInlineMd(meta.questionTitle || `问题 ${meta.questionId}`);
+  const title = escapeUntrustedMarkdownText(meta.questionTitle || `问题 ${meta.questionId}`);
   lines.push(`# ${title}`);
   lines.push('');
   lines.push(`> 问题链接: ${meta.url}`);
@@ -63,13 +83,13 @@ export function renderAnswers(meta, answers) {
 
   const sorted = [...answers].sort((a, b) => (b.voteupCount ?? 0) - (a.voteupCount ?? 0));
   sorted.forEach((a, i) => {
-    const author = escapeInlineMd(a.author || '(匿名)');
+    const author = escapeUntrustedMarkdownText(a.author || '(匿名)');
     lines.push(`## ${i + 1}. ${author} — ${a.voteupCount ?? 0} 赞 · ${a.commentCount ?? 0} 评论`);
     lines.push('');
     lines.push(`- 链接: ${a.url}`);
     lines.push(`- 创建时间: ${fmtTime(a.createdTime)}`);
     lines.push('');
-    lines.push(stripHtml(a.content));
+    lines.push(richHtmlToMarkdown(a.content));
     lines.push('');
     lines.push('---');
     lines.push('');
