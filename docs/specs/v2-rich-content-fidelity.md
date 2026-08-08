@@ -1,6 +1,7 @@
 # V2 Spec：富内容保真与安全处理（Rich Content Fidelity & Safe Handling）
 
-- **Status**: DRAFT（待独立 reviewer 审查：PASS / CHANGES_REQUESTED）
+- **Status**: APPROVED（Document review: PASS，2026-08-09；实现前禁止静态扩建需求）
+- **Approved against**: `master` @ `305db1c2ef125834dceb157897354308c2ac2608`
 - **Branch**: `spec/v2-rich-content-fidelity`
 - **Base**: `master` @ `305db1c2ef125834dceb157897354308c2ac2608`（本分支已 merge 同步最新 master；早期 Draft 曾基于 0357496，现基线已更新，Spec 全文以本 Base 为准）
 - **Scope**: Spec only。本分支**禁止**包含任何 V2 实现代码。
@@ -1131,10 +1132,10 @@ LLM map/final claim 文本含：[link](https://evil.example)、![img](https://ev
 
 **Spec 本身（本分支）验收：**
 
-- [ ] 文档覆盖 §1–§25 全部章节；
-- [ ] 通过 §27 自审清单（无「可点击=可信」混淆、无正文→工具调用路径、无代码执行路径、无默认远程加载、无 LLM 生成 href、无请求面无限放大、无 enrichment 破坏 core、无过度 schema/framework）；
-- [ ] 分支仅含 Spec / 必要文档导航改动，无 V2 实现代码；
-- [ ] 通过独立 DOCUMENT reviewer 审查（PASS）后，方可进入实现阶段。
+- [x] 文档覆盖 §1–§25 全部章节；
+- [x] 通过 §27 自审清单（无「可点击=可信」混淆、无正文→工具调用路径、无代码执行路径、无默认远程加载、无 LLM 生成 href、无请求面无限放大、无 enrichment 破坏 core、无过度 schema/framework）；
+- [x] 分支仅含 Spec / 必要文档导航改动，无 V2 实现代码；
+- [x] 通过独立 DOCUMENT reviewer 审查（PASS，2026-08-09）→ 已获准进入实现阶段。
 
 **后续实现（在实现分支）验收：**
 
