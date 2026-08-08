@@ -13,6 +13,11 @@ import {
   contentMatched,
   sampleIndexes,
   normalizeAuthor,
+  classifyAnswerUrl,
+  classifyAnswerCheck,
+  classifyFinalUrl,
+  exitCodeForResult,
+  parseSampleSize,
 } from '../scripts/browser-smoke-core.mjs';
 
 // ===== Cookie parser（虚构 cookie，禁止真实凭据） =====
@@ -162,4 +167,151 @@ test('secrecy: toPlaywrightCookies 不接受凭据名（防御：拒绝 z_c0/d_c
   for (const c of pwc) {
     assert.deepEqual(Object.keys(c).sort(), ['domain', 'name', 'path', 'value']);
   }
+});
+
+// ===== URL trust boundary（P1-A：page.goto 前的确定性校验） =====
+
+const QID = '1234567890123456789';
+const AID = '9876543210987654321';
+const GOOD = `https://www.zhihu.com/question/${QID}/answer/${AID}`;
+
+test('url-trust: 合法 zhihu answer URL → ok', () => {
+  const r = classifyAnswerUrl(GOOD, QID, AID);
+  assert.equal(r.ok, true);
+});
+
+test('url-trust: evil.example 同构路径被拒（绝不能导航）', () => {
+  const r = classifyAnswerUrl(`https://evil.example/question/${QID}/answer/${AID}`, QID, AID);
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'host_not_zhihu');
+});
+
+test('url-trust: www.zhihu.com.evil.com 被拒（域名边界）', () => {
+  const r = classifyAnswerUrl(`https://www.zhihu.com.evil.com/question/${QID}/answer/${AID}`, QID, AID);
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'host_not_zhihu');
+});
+
+test('url-trust: evilwww.zhihu.com 被拒（前缀伪装）', () => {
+  const r = classifyAnswerUrl(`https://evilwww.zhihu.com/question/${QID}/answer/${AID}`, QID, AID);
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'host_not_zhihu');
+});
+
+test('url-trust: http（非 https）被拒', () => {
+  const r = classifyAnswerUrl(`http://www.zhihu.com/question/${QID}/answer/${AID}`, QID, AID);
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'protocol_not_https');
+});
+
+test('url-trust: questionId mismatch 被拒', () => {
+  const r = classifyAnswerUrl(`https://www.zhihu.com/question/1/answer/${AID}`, QID, AID);
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'path_mismatch');
+});
+
+test('url-trust: answerId mismatch 被拒', () => {
+  const r = classifyAnswerUrl(`https://www.zhihu.com/question/${QID}/answer/1`, QID, AID);
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'path_mismatch');
+});
+
+test('url-trust: userinfo 被拒', () => {
+  const r = classifyAnswerUrl(`https://user:pass@www.zhihu.com/question/${QID}/answer/${AID}`, QID, AID);
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'url_has_userinfo');
+});
+
+test('url-trust: 非 answer 路径被拒', () => {
+  // /topics 完全不是 /question/ 形态 → path_not_answer
+  const r = classifyAnswerUrl(`https://www.zhihu.com/topics/${QID}`, QID, AID);
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'path_not_answer');
+  // /question/<qid>（缺 /answer/ 段）→ path_mismatch
+  const r2 = classifyAnswerUrl(`https://www.zhihu.com/question/${QID}`, QID, AID);
+  assert.equal(r2.ok, false);
+  assert.equal(r2.reason, 'path_mismatch');
+});
+
+test('url-trust: 非法 URL 字符串被拒', () => {
+  const r = classifyAnswerUrl('javascript:alert(1)', QID, AID);
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'protocol_not_https');
+  assert.equal(classifyAnswerUrl(null, QID, AID).reason, 'url_missing');
+  assert.equal(classifyAnswerUrl('not a url at all', QID, AID).ok, false);
+});
+
+test('url-trust: redirect 后的 finalUrl 使用同一校验（重定向到外部 → 拒）', () => {
+  // finalUrl 重定向到非预期 host → 与请求 URL 同规则拒绝
+  const fin = classifyFinalUrl(`https://evil.example/question/${QID}/answer/${AID}`, QID, AID);
+  assert.equal(fin.ok, false);
+  assert.equal(fin.reason, 'host_not_zhihu');
+  // finalUrl 重定向到同 host 但不同 question → 拒绝
+  const fin2 = classifyFinalUrl(`https://www.zhihu.com/question/other/answer/${AID}`, QID, AID);
+  assert.equal(fin2.ok, false);
+  assert.equal(fin2.reason, 'path_mismatch');
+});
+
+test('url-trust: classifyAnswerCheck 对恶意 answers.json 条目返回 ok=false（导航不会发生）', () => {
+  const evil = classifyAnswerCheck({ id: AID, url: `https://evil.example/question/${QID}/answer/${AID}` }, QID);
+  assert.equal(evil.ok, false);
+  assert.equal(evil.reason, 'host_not_zhihu');
+  const missing = classifyAnswerCheck({ id: AID }, QID);
+  assert.equal(missing.ok, false);
+  assert.equal(missing.reason, 'url_missing');
+  const good = classifyAnswerCheck({ id: AID, url: GOOD }, QID);
+  assert.equal(good.ok, true);
+  assert.equal(good.url, GOOD);
+});
+
+test('url-trust: 尾斜杠 / 查询串不改变信任判定', () => {
+  assert.equal(classifyAnswerUrl(`${GOOD}/`, QID, AID).ok, true);
+  assert.equal(classifyAnswerUrl(`${GOOD}?source=search`, QID, AID).ok, true);
+});
+
+// ===== CLI exit semantics（P1-B：inconclusive 不得 exit 0） =====
+
+test('exit: pass → 0 / fail → 1 / inconclusive → 2', () => {
+  assert.equal(exitCodeForResult('pass'), 0);
+  assert.equal(exitCodeForResult('fail'), 1);
+  assert.equal(exitCodeForResult('inconclusive'), 2);
+  assert.equal(exitCodeForResult('unknown'), 2);
+});
+
+test('exit: 全 inconclusive（0 pass / 0 fail / 5 inconclusive）→ 非 0', () => {
+  // 5 个全部风控/加载失败时 result=inconclusive，exit 必须非 0，不得假阳性 pass
+  assert.equal(exitCodeForResult('inconclusive'), 2);
+  assert.notEqual(exitCodeForResult('inconclusive'), 0);
+});
+
+test('exit: mixed pass + inconclusive → 非 0（inconclusive 优先于 pass）', () => {
+  // 只要有 inconclusive 且无 fail，result=inconclusive → exit 2
+  assert.equal(exitCodeForResult('inconclusive'), 2);
+});
+
+test('exit: 5/5 pass → exit 0', () => {
+  assert.equal(exitCodeForResult('pass'), 0);
+});
+
+// ===== --sample 静态校验（P2：硬上限 1-20，默认 5） =====
+
+test('sample-arg: 默认 5', () => {
+  assert.deepEqual(parseSampleSize(undefined), { ok: true, value: 5 });
+  assert.deepEqual(parseSampleSize(''), { ok: true, value: 5 });
+});
+
+test('sample-arg: 合法范围 1-20', () => {
+  assert.deepEqual(parseSampleSize('1'), { ok: true, value: 1 });
+  assert.deepEqual(parseSampleSize('5'), { ok: true, value: 5 });
+  assert.deepEqual(parseSampleSize('20'), { ok: true, value: 20 });
+});
+
+test('sample-arg: 越界/非法 → invalid（不开始浏览器访问）', () => {
+  assert.equal(parseSampleSize('0').ok, false);
+  assert.equal(parseSampleSize('-1').ok, false);
+  assert.equal(parseSampleSize('21').ok, false);
+  assert.equal(parseSampleSize('100000').ok, false);
+  assert.equal(parseSampleSize('abc').ok, false);
+  assert.equal(parseSampleSize('3.5').ok, false);
+  assert.equal(parseSampleSize('NaN').ok, false);
 });

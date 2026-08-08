@@ -140,4 +140,90 @@ export function normalizeAuthor(value) {
   return collapseWhitespace(String(value ?? '')).toLowerCase();
 }
 
+// ===== URL trust boundary（P1-A：page.goto 前的确定性校验） =====
+
+const ZHI_HTTPS_HOST = 'www.zhihu.com';
+
+/**
+ * 校验「应打开的 answer 页面 URL」是否落在信任边界内。
+ *
+ * 信任边界（全部必须满足，否则拒绝，绝不发出浏览器请求）：
+ *   - 可被 WHATWG URL parser 正常解析
+ *   - protocol === 'https:'
+ *   - hostname === 'www.zhihu.com'（精确匹配；evilwww.zhihu.com、www.zhihu.com.evil.com 均拒绝）
+ *   - port 为空或 443
+ *   - 无 username / password（禁止 userinfo）
+ *   - pathname（去尾部斜杠）精确等于 /question/<expectedQuestionId>/answer/<expectedAnswerId>
+ *
+ * 返回 { ok: true, url } 或 { ok: false, reason }。reason 为确定性的短标识。
+ */
+export function classifyAnswerUrl(rawUrl, expectedQuestionId, expectedAnswerId) {
+  if (rawUrl == null) return { ok: false, reason: 'url_missing' };
+  let parsed;
+  try {
+    parsed = new URL(String(rawUrl));
+  } catch {
+    return { ok: false, reason: 'url_unparsable' };
+  }
+  if (parsed.protocol !== 'https:') return { ok: false, reason: 'protocol_not_https' };
+  if (parsed.hostname !== ZHI_HTTPS_HOST) return { ok: false, reason: 'host_not_zhihu' };
+  if (parsed.port !== '' && parsed.port !== '443') return { ok: false, reason: 'port_not_https' };
+  if (parsed.username !== '' || parsed.password !== '') return { ok: false, reason: 'url_has_userinfo' };
+  const expectedPath = `/question/${String(expectedQuestionId)}/answer/${String(expectedAnswerId)}`;
+  const path = parsed.pathname.replace(/\/+$/, '');
+  if (path !== expectedPath) {
+    if (!path.startsWith('/question/')) return { ok: false, reason: 'path_not_answer' };
+    return { ok: false, reason: 'path_mismatch' };
+  }
+  return { ok: true, url: parsed.href };
+}
+
+/**
+ * 单条 answer 的「是否可导航」决策：封装 classifyAnswerUrl + id 归一。
+ * 供 browser-smoke.mjs 在 page.goto() 前调用；ok=false 时绝不允许导航。
+ * 纯函数，可离线测试「恶意 answers.json URL 被拒」。
+ */
+export function classifyAnswerCheck(answer, questionId) {
+  const answerId = String(answer?.id ?? '');
+  const rawUrl = answer?.url ?? null;
+  const classified = classifyAnswerUrl(rawUrl, questionId, answerId);
+  return {
+    answerId,
+    ok: classified.ok,
+    url: classified.ok ? classified.url : null,
+    reason: classified.ok ? null : classified.reason,
+  };
+}
+
+/** redirect 后 finalUrl 的同一信任边界校验（独立别名，语义相同） */
+export const classifyFinalUrl = classifyAnswerUrl;
+
+// ===== CLI exit semantics（P1-B：inconclusive 不得 exit 0） =====
+
+/**
+ * shell exit code 合同：
+ *   0 = pass
+ *   1 = fail / mismatch
+ *   2 = inconclusive / environment unavailable / 配置与运行错误
+ */
+export function exitCodeForResult(result) {
+  if (result === 'pass') return 0;
+  if (result === 'fail') return 1;
+  return 2; // inconclusive / unknown
+}
+
+// ===== --sample 静态校验（P2：硬上限，避免无限放大请求面） =====
+
+/** --sample 合法范围：整数 1-20，默认 5；其余一律 invalid */
+export function parseSampleSize(rawValue) {
+  if (rawValue === undefined || rawValue === null || rawValue === '') {
+    return { ok: true, value: 5 };
+  }
+  const n = Number(rawValue);
+  if (!Number.isInteger(n) || n < 1 || n > 20) {
+    return { ok: false, reason: 'invalid_sample' };
+  }
+  return { ok: true, value: n };
+}
+
 export { sleep, loadConfig, ConfigError };

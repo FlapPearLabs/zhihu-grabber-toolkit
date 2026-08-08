@@ -31,9 +31,30 @@ import {
   sleep,
   loadConfig,
   ConfigError,
+  classifyAnswerCheck,
+  classifyFinalUrl,
+  exitCodeForResult,
+  parseSampleSize,
 } from './browser-smoke-core.mjs';
 
 const ZHI_URL_RE = /\/question\/(\d+)\/answer\/(\d+)/;
+
+/** 打开页面，并对请求 URL 与 redirect 后 finalUrl 做同一信任边界校验 */
+async function navigateWithTrust(page, requestedUrl, questionId, answerId) {
+  // 请求 URL 必须通过确定性校验，否则拒绝访问（绝不发出浏览器网络请求）
+  const reqCheck = classifyAnswerCheck({ url: requestedUrl, id: answerId }, questionId);
+  if (!reqCheck.ok) {
+    return { ok: false, navigated: false, reason: `untrusted_request_url: ${reqCheck.reason}` };
+  }
+  await page.goto(reqCheck.url, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+  const finalUrl = page.url();
+  // redirect 后的 finalUrl 必须通过同一信任边界校验
+  const finCheck = classifyFinalUrl(finalUrl, questionId, answerId);
+  if (!finCheck.ok) {
+    return { ok: false, navigated: true, finalUrl, reason: `final_url_out_of_trust: ${finCheck.reason}` };
+  }
+  return { ok: true, navigated: true, url: finCheck.url, finalUrl };
+}
 
 /** 从当前回答页面提取正文区域文本；无法定位时退化为整页文本（scope=whole_page_fallback） */
 async function extractAnswerText(page) {
@@ -153,9 +174,14 @@ async function runSmoke(answersJsonPath, { sampleSize = 5, json = false } = {}) 
       };
       checks.push(check);
 
-      const requestedUrl = ans?.url;
-      if (!requestedUrl || !String(requestedUrl).includes(`/answer/${ans.id}`)) {
-        check.reason = 'answers.json.url 缺失或与 id 不符';
+      const reqCheck = classifyAnswerCheck(ans, questionId);
+      if (!reqCheck.ok) {
+        // P1-A：请求 URL 不在信任边界内 → 拒绝访问，绝不发出浏览器网络请求。
+        // answers.json 提供不可信 URL 是产物数据本身的明确反证 → 记 fail。
+        check.result = 'fail';
+        check.reason = `untrusted_request_url: ${reqCheck.reason}`;
+        if (!json) process.stdout.write(`    ✗ 拒绝访问（URL 不在信任边界）: ${reqCheck.reason}\n`);
+        await sleep(2000 + Math.floor(Math.random() * 2000));
         continue;
       }
       if (!json) process.stdout.write(`  #${checks.length} 打开回答 ${ans.id} …\n`);
@@ -163,8 +189,15 @@ async function runSmoke(answersJsonPath, { sampleSize = 5, json = false } = {}) 
       let title = '';
       let bodyText = '';
       try {
-        await page.goto(requestedUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 });
-        finalUrl = page.url();
+        const nav = await navigateWithTrust(page, reqCheck.url, questionId, String(ans.id));
+        finalUrl = nav.finalUrl || '';
+        if (!nav.ok) {
+          // redirect 后的 finalUrl 不在信任边界 → 绝不视为匹配
+          check.reason = nav.reason;
+          if (!json) process.stdout.write(`    ✗ ${nav.reason}\n`);
+          await sleep(2000 + Math.floor(Math.random() * 2000));
+          continue;
+        }
         title = await page.title().catch(() => '');
         await page.waitForTimeout(1500); // 等正文渲染
         const extracted = await extractAnswerText(page);
@@ -201,17 +234,11 @@ async function runSmoke(answersJsonPath, { sampleSize = 5, json = false } = {}) 
         continue;
       }
 
-      // Check B：answer ID 身份
+      // Check B：answer ID 身份（finalUrl 已在信任边界内，此处确认 answerId 匹配）
       const m = String(finalUrl).match(ZHI_URL_RE);
-      if (!m) {
-        check.reason = 'final_url_not_answer（' + String(finalUrl).slice(0, 120) + '）';
-        if (!json) process.stdout.write(`    ✗ 未停留在 answer 页面\n`);
-        await sleep(2000 + Math.floor(Math.random() * 2000));
-        continue;
-      }
-      if (m[2] !== String(ans.id)) {
-        check.reason = 'answer_id_mismatch';
-        if (!json) process.stdout.write(`    ✗ answer ID 不一致\n`);
+      if (!m || m[2] !== String(ans.id)) {
+        check.reason = m ? 'answer_id_mismatch' : 'final_url_not_answer';
+        if (!json) process.stdout.write(`    ✗ ${check.reason}\n`);
         await sleep(2000 + Math.floor(Math.random() * 2000));
         continue;
       }
@@ -279,9 +306,16 @@ async function main() {
   const args = process.argv.slice(2);
   const jsonMode = args.includes('--json');
   const sampleArgIdx = args.indexOf('--sample');
-  const sampleSize = sampleArgIdx >= 0 && args[sampleArgIdx + 1]
-    ? Number(args[sampleArgIdx + 1])
-    : 5;
+  const rawSample = sampleArgIdx >= 0 ? args[sampleArgIdx + 1] : undefined;
+  const sampleParsed = parseSampleSize(rawSample);
+  if (!sampleParsed.ok) {
+    // P2：--sample 必须是整数 1-20；超范围 → invalid_input，不开始浏览器访问
+    const msg = 'invalid --sample: 必须是 1-20 的整数（默认 5），收到: ' + String(rawSample);
+    if (jsonMode) process.stdout.write(JSON.stringify({ ok: false, result: 'inconclusive', invalidInput: true, warnings: [msg] }) + '\n');
+    else console.error(`✗ ${msg}`);
+    process.exit(2);
+  }
+  const sampleSize = sampleParsed.value;
   const target = args.find((a) => a && !a.startsWith('--'));
   if (!target) {
     const msg = '用法: node scripts/browser-smoke.mjs <answers.json> [--sample 5] [--json]';
@@ -290,8 +324,9 @@ async function main() {
     process.exit(2);
   }
   try {
-    const payload = await runSmoke(target, { sampleSize: Number.isFinite(sampleSize) ? sampleSize : 5, json: jsonMode });
-    process.exit(payload.failed > 0 ? 1 : 0);
+    const payload = await runSmoke(target, { sampleSize, json: jsonMode });
+    // P1-B：只有 pass 才 exit 0；fail → 1；inconclusive / 运行错误 → 2
+    process.exit(exitCodeForResult(payload.result));
   } catch (error) {
     if (jsonMode) {
       process.stdout.write(JSON.stringify({
@@ -300,7 +335,7 @@ async function main() {
     } else {
       console.error(`✗ ${error.message}`);
     }
-    process.exit(1);
+    process.exit(2);
   }
 }
 

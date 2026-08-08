@@ -20,7 +20,9 @@ node_modules/
 Thumbs.db
 *.log
 
-# ===== 敏感本地资产：独立浏览器 profile（仅本机 browser smoke 使用，含完整登录态）=====
+# ===== 敏感本地资产：浏览器认证状态（防御性忽略；当前 browser-smoke 使用
+#      isolated BrowserContext + addCookies，不产生这些文件；如未来使用
+#      persistent profile / storageState 则必须保留忽略）=====
 .browser-profile/
 playwright/.auth/
 *.storageState.json
