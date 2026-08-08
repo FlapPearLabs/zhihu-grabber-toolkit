@@ -19,3 +19,8 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.log
+
+# ===== 敏感本地资产：独立浏览器 profile（仅本机 browser smoke 使用，含完整登录态）=====
+.browser-profile/
+playwright/.auth/
+*.storageState.json
