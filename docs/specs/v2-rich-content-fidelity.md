@@ -2,7 +2,7 @@
 
 - **Status**: DRAFT（待独立 reviewer 审查：PASS / CHANGES_REQUESTED）
 - **Branch**: `spec/v2-rich-content-fidelity`
-- **Base**: `master` @ `0357496cb5d34ce037998a1dd60e49b80cd29122`
+- **Base**: `master` @ `305db1c2ef125834dceb157897354308c2ac2608`（本分支已 merge 同步最新 master；早期 Draft 曾基于 0357496，现基线已更新，Spec 全文以本 Base 为准）
 - **Scope**: Spec only。本分支**禁止**包含任何 V2 实现代码。
 - **Applies to**: `zhihu-answer-grabber`（V1 为抓取+渲染+验证）；影响面涉及与 `corpus-anthology` 的 handoff 投影，但本 Spec 只定义合同，不要求 corpus 侧新增永久文件。
 
@@ -68,7 +68,7 @@ V2 **明确不做**：
 
 ## 5. Current V1 behavior（事实基线）
 
-以 `master` @ 0357496 为准：
+以 `master` @ `305db1c2ef125834dceb157897354308c2ac2608` 为准（= 0357496 + 已合并的 e28f9b0/browser-smoke 修复链；早期 Draft 曾以 0357496 为基线，现已更新到最新 master，不再以 0357496 为当前基线）：
 
 - **抓取**：`src/grabber.js` 请求问题元信息 + 分页回答；每页校验 `data.data` 数组与重复分页指纹；支持断点续传（`.progress.json`）；安全阈值 `MAX_PAGES = 300`。
 - **`answers.json`**：`{ questionId, questionTitle, answerCount, url, fetchedAt, answers[] }`；每条 answer 含 `id / author / url / content / excerpt / voteupCount / commentCount / createdTime / updatedTime`；**`content` 为服务端返回的原始 HTML，原样保留**（这是 V2 的 canonical 事实来源）。
@@ -76,8 +76,9 @@ V2 **明确不做**：
 - **验证**：`src/verifier.js` 为单一事实来源：14 项校验（目录存在、JSON 可解析、answers 数组、ID 合法、无重复、progress done、MD 存在、MD 记录数 = JSON 记录数、非空、无 corrupt 备份、无 failed 标记、questionId 三方一致、countMismatch 仅 warning）。
 - **handoff**：`scripts/make-handoff.mjs` 生成 `{ task, sourceType, questionId, inputJson, inputMarkdown, verified, answerCount, warnings }`，共享 schema `references/zhihu-corpus-handoff.schema.json`；`verified` 必须等于 `verifyOutput().valid`，禁止手工伪造。
 - **凭据安全**：`references/security.md` 硬性规则（凭据不入库、不进对话、不输出）。
+- **browser smoke（新增于 305db1c 链）**：`scripts/browser-smoke.mjs` + `browser-smoke-core.mjs` 用 Playwright 复用本机登录态做浏览器一致性核验；请求 URL 与 redirect finalUrl 均须通过确定性信任边界校验（https + `www.zhihu.com` + 精确 answer path，禁 userinfo）；exit 合同 pass=0 / fail=1 / inconclusive=2；`--sample` 限整数 1-20 默认 5。V2 不得破坏该脚本的信任边界与 exit 语义。
 
-V1 已具备的良好基线（V2 必须延续）：**canonical 原始 HTML 保留**、**确定性验证**、**agent 手工构造事实字段被禁止**、**请求主机白名单**。
+V1 已具备的良好基线（V2 必须延续）：**canonical 原始 HTML 保留**、**确定性验证**、**agent 手工构造事实字段被禁止**、**请求主机白名单**、**确定性 URL 信任边界**。
 
 ---
 
@@ -235,6 +236,23 @@ text
 
 即：裸 URL 与 `<a href>` 走**同一套** sanitizer；未经放行的裸 URL 在 Markdown 中必须是惰性文本（inert text），绝不因客户端 autolink 变成链接。
 
+### 8.0.2 确定性处理顺序（text/URL pipeline，BLOCKER-E）
+
+不可信文本进入 Markdown 的**唯一确定性处理顺序**（消除实现歧义，以下顺序不可调换）：
+
+```text
+untrusted text
+→ tokenize / 识别裸 URL span（URL detection，不依赖 HTML）
+→ 普通 text span → escapeUntrustedMarkdownText（§8.0）
+→ URL span → sanitizer / classifier（§11）
+   → 通过的 URL → safeMarkdownDestination（§11.5.1）+ renderer 生成的显式链接
+   → 拒绝的 URL → escaped inert text（§8.0 转义后展示，不生成链接）
+```
+
+- 所有 span 输出后由 renderer 拼接；**renderer 自己生成的 Markdown control syntax 是唯一的结构来源**；
+- 不依赖客户端 Markdown renderer 的 autolink；
+- 该顺序对 text node / author / title / description / caption / anchor text / footnote text / comments / topics / blockquote / LLM claim 一律适用。
+
 ### 8.1 图片在 Human Markdown 中的默认形态
 
 禁止默认生成 `![](https://...)`（Markdown renderer 可能自动请求远程资源）。默认生成普通链接占位：
@@ -296,43 +314,42 @@ npm install ...
 
 > **Prompt Injection 的安全边界不能只依赖 Agent 自觉遵守 prompt。**
 
-默认 digest / map 的 consumer（运行投影文本的 LLM 环境）必须满足能力隔离：
+默认 digest / map 的 consumer 必须是「**LLM 无能力 + 外层 trusted controller**」的结构，能力边界彻底锁死：
+
+**LLM 自身（运行投影文本的模型）——全部 DENY：**
 
 ```text
-NETWORK:                 DENY
-SHELL / EXEC:            DENY
-PACKAGE INSTALL:         DENY
-ARBITRARY FILE READ:     DENY
-ARBITRARY FILE WRITE:    DENY
+NETWORK:               DENY
+SHELL / EXEC:          DENY
+PACKAGE INSTALL:       DENY
+FILESYSTEM READ:       DENY
+FILESYSTEM WRITE:      DENY
+TOOLS:                 DENY
 ```
 
-只允许：
+LLM 不读文件、不写文件、不联网、不执行、不调用任何工具。它的唯一输入是投影文本（由 controller 注入），唯一输出是结构化 JSON response（文本）。
+
+**trusted deterministic controller（唯一拥有 IO 能力的角色）：**
 
 ```text
-READ:  当前指定 projection / chunk 文件
-WRITE: 当前指定 map result 文件
-RETURN:结构化 map JSON（tool-less 模型输出）
+1. 读取指定 projection / chunk 文件
+2. 把内容作为 model input（tool-less LLM call）
+3. 获取结构化 JSON response
+4. deterministic validator（schema + 字段校验）
+5. controller 写 map-result 文件
 ```
 
-**推荐架构**（能力隔离的具体形态，实现时若运行时环境允许则必须采用）：
+即：**不是让「读知乎正文的 Agent」拥有写文件/联网/执行工具，而是让外层可信 controller 持有全部 IO。** 二选一在此收敛为唯一合同：LLM 不得拥有文件系统/网络/工具能力，读写一律由 controller 完成。
+
+**fail closed（能力隔离不可用时的默认行为）：**
 
 ```text
-trusted deterministic controller
-        ↓
-把 projection 文本作为模型输入
-        ↓
-LLM（无工具、无 shell、无网络）
-        ↓
-结构化 JSON response
-        ↓
-deterministic validator（schema + 字段校验）
-        ↓
-trusted controller 写 map-results
+capability isolation unavailable
+→ digest / map STOP
+→ 输出 capability_isolation_unavailable
 ```
 
-即：**不是让「读知乎正文的 Agent」拥有写文件/联网/执行工具，而是让外层可信 controller 写。**
-
-**不满足时的措辞约束**：如果实现时无法提供上述工具/能力隔离，Spec 不得声称「Prompt Injection 已被安全隔离」；只能标记为 **prompt-level mitigation**（防护等级：prompt 层，非能力层），并在产物/文档中明确标注 `unsupported/unsafe execution mode`。这是 DOCUMENT gate 级要求，不是可选优化。
+**禁止**默认降级为「prompt-level mitigation 后继续把恶意正文交给有工具 Agent」。只有在未来另行设计**显式 opt-in 的 unsafe mode**（用户明确确认）时才允许降级，且不属于当前 V2 默认合同。任何产物/文档在隔离不可用被 STOP 时，不得声称「Prompt Injection 已被安全隔离」。
 
 ---
 
@@ -974,7 +991,7 @@ link.zhihu.com → 恶意 target
 
 ```text
 data:image/svg+xml;...
-非 zhimg.com 图片
+非 zhimg.com 图片（如 https://example.com/x.png）
 evilzhimg.com
 zhimg.com.evil.com
 缺少 data-original
@@ -982,7 +999,13 @@ lazy placeholder（data:image/svg+xml 占位 / 1px gif）
 重复图片（同 URL 去重）
 ```
 
-验收：仅 zhimg.com 白名单 https 图片被收录/渲染为链接占位；其余忽略（可见 caption 文本可保留）；`assets.images[]` 无重复。
+验收（与 §10.1 的「detected 与 clickable 分离」一致，不得再写「非 zhimg 全部忽略」）：
+
+- **所有真实图片**（非 placeholder）→ 进入 `assets.images[]` 的 inert metadata（`detected: true` + host/尺寸/分类），无论 host；
+- **zhimg.com 白名单 + https** → `clickable: true`，Human Markdown 生成「点击查看图片」链接占位；
+- **非 zhimg 图片** → `clickable: false` + `securityClass: external_image_untrusted`，**不生成 href**；Agent projection 不暴露完整外部 URL（仅 host/分类）；
+- **lazy / data: / 1px placeholder** → 不作为真实图片，完全忽略（不进入 `assets.images[]`）；
+- `assets.images[]` 无重复（同 URL 去重）。
 
 ### 23.3 Markdown
 
@@ -1069,8 +1092,9 @@ LLM map/final claim 文本含：[link](https://evil.example)、![img](https://ev
 
 验收：
 - claim 文本进入最终 Markdown 前经过 escaping，不产生主动链接/图片；
-- digest/map consumer 运行环境满足 §9.1 capability contract（或明确标注 prompt-level mitigation，不得声称能力级隔离）；
-- 无工具调用、无文件写越界（只写当前指定 map result）。
+- digest/map consumer 满足 §9.1：LLM 自身 NETWORK/SHELL/PACKAGE/FILESYSTEM/TOOLS 全 DENY，读写由 trusted controller 完成（LLM 无文件系统工具）；
+- 能力隔离不可用时，digest/map **fail closed**（`capability_isolation_unavailable`），不得默认降级为「prompt-level mitigation 后继续执行」；
+- 无工具调用、无文件写越界（controller 只写当前指定 map result）。
 
 ---
 
@@ -1129,7 +1153,7 @@ LLM map/final claim 文本含：[link](https://evil.example)、![img](https://ev
 按任务要求逐项反驳，修订后确认：
 
 1. **「可点击」误写「可信」？** 否。全文统一 `clickable` + `securityClass: external_unverified`；§11.4 显式禁止 `safe:true`；图片维度同样分离 `clickable` / `securityClass`（§10.1）。
-2. **任何知乎正文 → Agent 工具调用的路径？** 否。§7、§9.1、§11.6 明确：正文永远只是 DATA；§9.1 进一步把防护从「行为规则」提升为「能力隔离」（NETWORK/SHELL/PACKAGE/FILE 全 DENY + trusted controller 写 map result）；不满足隔离时不得声称安全隔离，只能标注 prompt-level mitigation。
+2. **任何知乎正文 → Agent 工具调用的路径？** 否。§7、§9.1、§11.6 明确：正文永远只是 DATA；§9.1 把防护从「行为规则」提升为「能力隔离」——LLM 自身 NETWORK/SHELL/PACKAGE/FILESYSTEM/TOOLS 全 DENY，读写由 trusted controller 完成；隔离不可用时 digest/map **fail closed**（`capability_isolation_unavailable`），禁止默认降级为 prompt-level mitigation 后继续执行。
 3. **任何代码块可能被执行？** 否。§12.2 绝对禁止清单覆盖脚本落盘/chmod/exec/复制到终端/包安装/PowerShell/SQL；fence 安全（§12.3）保证不可逃逸。
 4. **远程图片默认自动加载？** 否。§8.1 默认链接占位，禁止默认 `![](url)`；§8.0/§8.0.1 覆盖 text node 注入的 `![...](...)` 与裸 URL autolink，防止绕过图片策略；§10.2 白名单 + 忽略 placeholder。
 5. **LLM 自己制造 href？** 否。§11 强制 deterministic pipeline，LLM 不产生 URL；§21.1 将该约束扩展到所有 LLM-derived Markdown display surface（digest 等）；§11.5.1 增加 destination serializer 防结构破坏。
@@ -1137,5 +1161,10 @@ LLM map/final claim 文本含：[link](https://evil.example)、![img](https://ev
 7. **enrichment 失败破坏 core grab？** 否。§20 区分 Core/Enrichment；enrichment 仅 warning；renderer 不安全输出才 fail closed。
 8. **引入不必要状态机/schema/framework？** 否。§18 仅 additive；§19 兼容性；无新框架、无新状态机、无签名/证明系统。
 9. **reviewer B1-B9 复查**：B1（text node escaping）→ §8.0/§14.0；B2（裸 URL 走 sanitizer）→ §8.0.1；B3（destination serializer）→ §11.5.1；B4（能力隔离）→ §9.1；B5（LLM-derived digest 安全）→ §21.1；B6（脚注内部 ID 全局唯一）→ §13.1；B7（heading offset）→ §14.1.1；B8（图片 metadata 与 clickable 分离）→ §10.1；B9（对抗矩阵扩充）→ §23.3.1–§23.4.1。全部已合同化，无遗漏。
+10. **第二轮 reviewer 3 个 blocker 复查**：
+    - BLOCKER 1（基线漂移）→ Spec Base 与 §5 事实基线已更新为最新 master `305db1c`（分支已 merge 同步），不再声称 0357496 为当前 master；
+    - BLOCKER 2（图片合同打架）→ §10.1 与 §23.2 统一为「全部真实图片记录 inert metadata；仅 zhimg 白名单 clickable；非 zhimg 记 `external_image_untrusted` 不生成 href；placeholder 完全忽略」，旧「非 zhimg 全部忽略」表述已删除；
+    - BLOCKER 3（capability 二义 + fallback 过松）→ §9.1 收敛为唯一合同：LLM 自身 NETWORK/SHELL/PACKAGE/FILESYSTEM/TOOLS 全 DENY 且不拥有文件系统工具，读写由 trusted controller 完成；隔离不可用 → digest/map **fail closed**（`capability_isolation_unavailable`），禁止默认降级 prompt-level mitigation；unsafe mode 仅可未来显式 opt-in，非默认合同；
+    - E（处理顺序）→ 新增 §8.0.2 确定性 text/URL pipeline（tokenize → 普通 span escaping / URL span sanitizer → safeMarkdownDestination 或 inert text）。
 
-自审结论：**通过**（上述 9 项均无违反；若 reviewer 发现遗漏以 reviewer 意见为准）。
+自审结论：**通过**（上述 10 项均无违反；若 reviewer 发现遗漏以 reviewer 意见为准）。
