@@ -401,7 +401,7 @@ test('P1-1-crossnode: foo<br>=== 不产生 Setext H1', () => {
 test('P1-1-crossnode: foo<br>4空格缩进 不产生 indented code block', () => {
   const md = richHtmlToMarkdown('<p>foo<br>    injected</p>');
   assert.ok(!/^ {4}\S/m.test(md), '4 空格缩进代码行不得出现');
-  assert.ok(md.includes('\u00A0\u00A0\u00A0\u00A0injected'), '缩进被中和为 NBSP');
+  assert.ok(md.includes('\u00A0   injected'), '前导空格被中和为 NBSP');
   assert.ok(md.includes('injected'), '文本保留');
 });
 
@@ -431,6 +431,43 @@ test('P1-1-crossnode: 组合注入全部惰性化且正文可读', () => {
   assert.ok(!/^ {4}\S/m.test(md), '无 4 空格缩进代码行');
   assert.ok(!/^\t\S/m.test(md), '无 Tab 缩进代码行');
   assert.ok(md.includes('foo') && md.includes('a') && md.includes('b'), '正文保留');
+});
+
+// ===== P1-1 split-whitespace：缩进空白跨多个 DOM text node 累计 =====
+
+test('P1-1-split: 2+2 空格跨节点不累计成 4 空格缩进', () => {
+  const md = richHtmlToMarkdown('<p>foo<br><span>  </span><span>  injected</span></p>');
+  assert.ok(!/^ {4}\S/m.test(md), '不得形成 4 空格缩进代码行');
+  assert.ok(!/^\t\S/m.test(md), '不得形成 Tab 缩进代码行');
+  assert.ok(md.includes('injected'), '正文保留');
+});
+
+test('P1-1-split: 3+1 空格跨节点不累计成 4 空格缩进', () => {
+  const md = richHtmlToMarkdown('<p>foo<br>   <span> injected</span></p>');
+  assert.ok(!/^ {4}\S/m.test(md), '不得形成 4 空格缩进代码行');
+  assert.ok(!/^\t\S/m.test(md), '不得形成 Tab 缩进代码行');
+  assert.ok(md.includes('injected'), '正文保留');
+});
+
+test('P1-1-split: 1+1+1+1 空格跨节点不累计成 4 空格缩进', () => {
+  const md = richHtmlToMarkdown('<p>foo<br><span> </span><span> </span><span> </span><span> injected</span></p>');
+  assert.ok(!/^ {4}\S/m.test(md), '不得形成 4 空格缩进代码行');
+  assert.ok(!/^\t\S/m.test(md), '不得形成 Tab 缩进代码行');
+  assert.ok(md.includes('injected'), '正文保留');
+});
+
+test('P1-1-split: 多空格纯空白节点（4 个 1 空格 span 拼接）不形成缩进行', () => {
+  const md = richHtmlToMarkdown('<p>foo<br><span> </span><span> </span><span> </span><span> </span>injected</p>');
+  assert.ok(!/^ {4}\S/m.test(md), '纯空白节点累计也不得形成缩进行');
+  assert.ok(md.includes('injected'), '正文保留');
+});
+
+test('P1-1-split: 正常 inline spacing 保持可读（不丢失词间隔）', () => {
+  const md = richHtmlToMarkdown('<p>Hello <strong>world</strong> again</p>');
+  // "Hello "（尾空格保留）+ **world** + " again"（leading 空格 → NBSP，视觉等同空格）
+  assert.equal(md, 'Hello **world**\u00A0again');
+  assert.ok(md.includes('Hello **world**'), 'strong 结构保留');
+  assert.ok(md.includes('\u00A0again'), '词间分隔保留（NBSP 视觉等同空格）');
 });
 
 test('P1-1: questionTitle 多行 Setext payload 不产生额外 heading', () => {

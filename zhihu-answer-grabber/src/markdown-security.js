@@ -25,7 +25,7 @@ const MD_CONTROL_RE = /([\\`*_[\]{}()#+.!|>~<\-])/g;
 const CONTROL_RE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u0080-\u009F]/g;
 
 /**
- * 行级结构中和（P1-1，含 cross-node 修复）：
+ * 行级结构中和（P1-1，含 cross-node 与 split-whitespace 修复）：
  *
  * 字符级转义无法覆盖跨行结构。不可信文本中保留的换行/Tab 可能让用户内容
  * 自己“长成” Markdown 块级结构：
@@ -37,8 +37,14 @@ const CONTROL_RE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u0080-\u009F]/
  * 因此**每一行（包括第一行）都做中和**：
  *   - 0-3 空格缩进的纯 `=` 行 → 转义第一个 `=`（`\=` 渲染显示 `=`）；
  *     `-` 已在字符级被转义（`---` → `\-\-\-`），Setext H2 / thematic break 均被中和；
- *   - 4 空格或 Tab 行首 → 替换为等量 NBSP（U+00A0）。NBSP 不是空格/Tab，
- *     不计入 Markdown 缩进，不触发 indented code block，且视觉上近似原缩进。
+ *   - **任何以 ASCII 空格或 Tab 开头的行 → 首个 whitespace 替换为 NBSP（U+00A0）**。
+ *     NBSP 不是空格/Tab，不计入 Markdown 缩进。
+ *     该规则覆盖两种场景：
+ *       (a) 单片段行首 ≥4 空格 / Tab（indented code block）；
+ *       (b) 空白跨多个 DOM text node 分摊（`"  " + "  injected"` 各自 <4 空格，
+ *           拼接后却成 4 空格行首）——任意 fragment 的首个 leading whitespace
+ *           必被中和，跨节点拼接永远无法累计出 4 个 ASCII 空格。
+ *     视觉上 NBSP 与空格几乎一致，普通 inline spacing 仍可读。
  *
  * 普通正文中的 `a = b` / `x === y` 不受影响（只匹配“纯 = underline 行”，
  * `=` 不参与字符级全局转义）。renderer 自己生成的 heading / list marker /
@@ -48,15 +54,14 @@ function neutralizeLineStructures(s) {
   return s
     .split('\n')
     .map((line) => {
-      // indented code block 前缀（4 空格或 Tab）→ 等量 NBSP
-      const indentMatch = line.match(/^(?: {4,}|\t+)/);
-      if (indentMatch) {
-        line = '\u00A0'.repeat(indentMatch[0].length) + line.slice(indentMatch[0].length);
-      }
-      // Setext H1：0-3 空格缩进的纯等号行（含独立 text node 的整行形态）
+      // Setext H1：0-3 空格缩进的纯等号行（先于 leading 中和，保留缩进并转义首字符）
       const setext = line.match(/^( {0,3})=+\s*$/);
       if (setext) {
         line = `${setext[1]}\\${line.slice(setext[1].length)}`;
+      }
+      // 任意 leading ASCII 空格/Tab → 首个替换为 NBSP（防跨节点缩进累计）
+      if (/^[ \t]/.test(line)) {
+        line = `\u00A0${line.slice(1)}`;
       }
       return line;
     })

@@ -86,13 +86,13 @@ test('escape-P1-1: Setext H1（= 行）不能由不可信文本产生', () => {
 test('escape-P1-1: 缩进 Setext（0-3 空格 + = 行）被中和', () => {
   const out = escapeUntrustedMarkdownText('foo\n   ===');
   assert.ok(!out.includes('\n   ==='), '带缩进的 Setext underline 必须被中和');
-  assert.ok(out.includes('   \\==='), '转义后保持缩进与显示');
+  assert.ok(out.includes('\\==='), '等号首字符必须被转义');
 });
 
 test('escape-P1-1: 4 空格 indented code 行被中和', () => {
   const out = escapeUntrustedMarkdownText('foo\n\n    indented');
   assert.ok(!out.includes('\n    indented'), '4 空格缩进行不得原样保留');
-  assert.ok(out.includes('\u00A0\u00A0\u00A0\u00A0indented'), '缩进替换为 NBSP');
+  assert.ok(out.includes('\u00A0   indented'), '首个前导空格替换为 NBSP，行首不再是指标空格');
 });
 
 test('escape-P1-1: Tab indented code 行被中和', () => {
@@ -116,8 +116,25 @@ test('escape-P1-1: 单行纯等号也要中和（独立 text node 可能被拼�
   // cross-node 场景：<p>foo<br>===</p> 中 "===" 是独立 text node，只有一行；
   // 中和必须对每一行（含第一行）生效
   assert.equal(escapeUntrustedMarkdownText('==='), '\\===');
-  assert.equal(escapeUntrustedMarkdownText('    indented'), '\u00A0\u00A0\u00A0\u00A0indented');
+  assert.equal(escapeUntrustedMarkdownText('    indented'), '\u00A0   indented');
   assert.equal(escapeUntrustedMarkdownText('\tindented'), '\u00A0indented');
+});
+
+test('escape-P1-1-split: 任意 leading 空白的首字符必变 NBSP（防跨节点累计）', () => {
+  // 每个 fragment 自己不足 4 空格，拼接后也不能累计出 4 个 ASCII 空格行首
+  assert.equal(escapeUntrustedMarkdownText('  hello'), '\u00A0 hello');
+  assert.equal(escapeUntrustedMarkdownText('   '), '\u00A0  ');
+  assert.equal(escapeUntrustedMarkdownText(' '), '\u00A0');
+  // 拼接模拟：NBSP 断点使 ASCII 空格无法连续累计
+  const joined = escapeUntrustedMarkdownText('  ') + escapeUntrustedMarkdownText('  injected');
+  assert.equal(joined, '\u00A0 \u00A0 injected');
+  assert.ok(!/^ {4}\S/.test(joined), '拼接后不得形成 4 空格缩进行首');
+});
+
+test('escape-P1-1-split: 行中/非行首空白不受影响（普通 spacing 可读）', () => {
+  assert.equal(escapeUntrustedMarkdownText('Hello world'), 'Hello world');
+  assert.equal(escapeUntrustedMarkdownText('a  b'), 'a  b');
+  assert.equal(escapeUntrustedMarkdownText('x === y'), 'x === y');
 });
 
 test('escape-P1-1: 多行组合 payload 全部惰性化', () => {
