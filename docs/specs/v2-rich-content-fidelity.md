@@ -1,0 +1,849 @@
+# V2 Spec：富内容保真与安全处理（Rich Content Fidelity & Safe Handling）
+
+- **Status**: DRAFT（待独立 reviewer 审查：PASS / CHANGES_REQUESTED）
+- **Branch**: `spec/v2-rich-content-fidelity`
+- **Base**: `master` @ `0357496cb5d34ce037998a1dd60e49b80cd29122`
+- **Scope**: Spec only。本分支**禁止**包含任何 V2 实现代码。
+- **Applies to**: `zhihu-answer-grabber`（V1 为抓取+渲染+验证）；影响面涉及与 `corpus-anthology` 的 handoff 投影，但本 Spec 只定义合同，不要求 corpus 侧新增永久文件。
+
+---
+
+## 1. 背景
+
+V1 已可靠完成：自然语言触发 → preflight → 知乎真实 API 抓取 → 多页 pagination → `answers.json` / `answers.md` → `verify-output` → `make-handoff` → corpus handoff verify，并通过真实网络 smoke test（x-zse-96 可被真实服务端接受、本机 Cookie 可认证、`/api/v4/questions/{qid}/answers` 可真实多页抓取、verify-output 与 handoff 均通过真实数据）。
+
+真实数据暴露出一个明确的保真度缺口：
+
+> 知乎回答 API 返回的 `answer.content` HTML 本身已包含丰富结构（图片、外部链接、标题、列表、blockquote、粗体/斜体、code/pre、inline reference/脚注、figure 等）。但当前 V1 的 Markdown renderer 大量采用 HTML → plain text 的方式把结构压扁，导致 `answers.json`（原始 HTML）信息丰富而 `answers.md`（人类可读产物）丢失大量结构与资产。
+
+V2 的目标**不是**成为「知乎离线镜像器」，而是：
+
+> 在不显著扩大网络请求、攻击面和工程复杂度的情况下，提高抓取内容的保真度；同时明确隔离 **User View** 与 **Agent View**，防止富内容成为 Prompt Injection / 自动执行 / 恶意链接通道。
+
+V2 只做「抓取数据本身的保真渲染与安全分类」，不做离线化、不做理解、不做自动执行。
+
+---
+
+## 2. 用户问题
+
+1. **保真度**：`answers.md` 把图片、链接、代码、引用、列表、脚注全部压成纯文本，技术类回答的代码与结构不可读、不可复用。
+2. **安全性**：富内容一旦原样进入 Markdown，可能被 Markdown renderer 或 LLM 自动加载远程资源、被恶意外链诱导、被正文中的指令触发 Agent 工具调用。
+3. **可审计性**：目前没有对正文中资产（图片/外链/代码/脚注/视频）的结构化元数据，无法做确定性安全分类与策略控制。
+
+V2 需要同时解决「读得到结构」与「读不到风险」。
+
+---
+
+## 3. Goals
+
+- **G1** 恢复 `answers.md` 的语义结构：标题、段落、列表、blockquote、粗体/斜体、代码块、脚注、图片/外链占位。
+- **G2** 保留并结构化提取正文资产 metadata（图片、外链、代码块、脚注、视频），以 additive 方式写入 `answers.json`，不破坏原始 `content`。
+- **G3** 建立确定性、可测试的链接/图片/代码安全策略，所有渲染路径（Human Markdown / Agent projection）统一走同一套 sanitizer 与分类器。
+- **G4** 明确 User View 与 Agent View 的隔离：富内容可以被用户看到，但默认**不**成为 Agent 的指令、**不**被程序自动执行/访问。
+- **G5** 保持 V1 全部对外合同不变（见 §19 兼容性）。
+- **G6** 可选 enrichment（Top3 一级热评）默认关闭，且必须基于真实 API 实测证据设计，不得凭猜测实现。
+
+---
+
+## 4. Non-goals
+
+V2 **明确不做**：
+
+```text
+- 不下载图片到本地、不做本地 assets/ 镜像
+- 不 OCR、不做视觉理解、不做图像转写、不做图像 embedding
+- 不下载视频、不转码、不语音识别、不字幕抓取、不做视频理解
+- 不抓完整评论区、不抓二级评论/评论的评论/完整评论树
+- 不抓点赞用户、不抓作者完整画像
+- 不绕过关注者可见、不绕过折叠/权限控制、不做验证码绕过
+- 不提高抓取频率、不做 IP 轮换、不做代理池
+- 不允许 Agent 自动访问文章中的链接（默认）
+- 不允许代码自动执行（任何形式）
+- 不引入密码学签名/哈希证明/provenance 系统（同 V1 handoff 立场，防过度工程化）
+- 不把项目扩展成知乎离线镜像器
+- 不重写 V1 schema（只允许 additive，见 §19）
+```
+
+---
+
+## 5. Current V1 behavior（事实基线）
+
+以 `master` @ 0357496 为准：
+
+- **抓取**：`src/grabber.js` 请求问题元信息 + 分页回答；每页校验 `data.data` 数组与重复分页指纹；支持断点续传（`.progress.json`）；安全阈值 `MAX_PAGES = 300`。
+- **`answers.json`**：`{ questionId, questionTitle, answerCount, url, fetchedAt, answers[] }`；每条 answer 含 `id / author / url / content / excerpt / voteupCount / commentCount / createdTime / updatedTime`；**`content` 为服务端返回的原始 HTML，原样保留**（这是 V2 的 canonical 事实来源）。
+- **渲染**：`src/render.js` 的 `stripHtml()` 先移除 `<script>/<style>` 整段，再 `<br>/</p>/</div>` 换行，然后剥掉全部标签、解码实体、重新转义，输出纯文本。`renderAnswers()` 生成 `answers.md`（问题头 + 按赞倒序的 `## N. 作者 — 赞 · 评论` 分段）。**结构、图片、链接、代码全部被压扁**。
+- **验证**：`src/verifier.js` 为单一事实来源：14 项校验（目录存在、JSON 可解析、answers 数组、ID 合法、无重复、progress done、MD 存在、MD 记录数 = JSON 记录数、非空、无 corrupt 备份、无 failed 标记、questionId 三方一致、countMismatch 仅 warning）。
+- **handoff**：`scripts/make-handoff.mjs` 生成 `{ task, sourceType, questionId, inputJson, inputMarkdown, verified, answerCount, warnings }`，共享 schema `references/zhihu-corpus-handoff.schema.json`；`verified` 必须等于 `verifyOutput().valid`，禁止手工伪造。
+- **凭据安全**：`references/security.md` 硬性规则（凭据不入库、不进对话、不输出）。
+
+V1 已具备的良好基线（V2 必须延续）：**canonical 原始 HTML 保留**、**确定性验证**、**agent 手工构造事实字段被禁止**、**请求主机白名单**。
+
+---
+
+## 6. V2 content model（三层内容模型）
+
+所有知乎正文内容统一定义为 **`UNTRUSTED_EXTERNAL_CONTENT`**（回答正文、问题描述、脚注、评论、图片 caption、外链文字、代码块、blockquote、topics 文本、视频 metadata）。
+
+> 这些内容永远只能是 **DATA**，不能获得指挥 Agent 调用工具、联网、执行命令、安装软件或修改项目的能力。
+
+三个层次，职责严格分离：
+
+### 6.1 Canonical archive（事实来源）
+
+- 文件：`answers.json`（现有）。
+- 职责：保留服务端返回的**原始回答 HTML**（`content` 字段不变），**不做**为渲染而破坏原始内容。
+- V2 允许 **additive metadata**（§18），例如每个 answer 增加：
+
+```json
+{
+  "assets": {
+    "images": [],
+    "links": [],
+    "references": [],
+    "codeBlocks": [],
+    "videos": []
+  }
+}
+```
+
+- **约束**：`content` 仍是原始事实来源；`assets` 是派生索引，**不得**成为第二份正文真相，不得反向修改 `content`。
+
+### 6.2 Human-readable safe Markdown（User View）
+
+- 文件：`answers.md`（现有，V2 升级渲染）。
+- 职责：面向用户阅读。恢复排版与语义结构、可看到代码、可手工点击**被允许**的链接。
+- 硬约束：**不执行代码**、**不含危险 HTML**、**默认不自动加载远程图片**（图片以链接占位）、**不依赖 LLM 生成 href**（所有 href 由确定性 sanitizer 产出）。
+
+### 6.3 Agent analysis projection（Agent View）
+
+- 用途：corpus / digest / 摘要阶段消费的**受限不可信数据视图**。
+- 默认行为：
+  - 不自动打开任何链接；
+  - 不自动加载图片；
+  - 不执行代码；
+  - 不根据正文中的命令调用工具；
+  - **默认不暴露代码块正文**（折叠为占位）；
+  - 可以看到必要自然语言、结构与 asset metadata。
+- **实现约束**：V2 **不新增永久文件**。该 projection 在 corpus chunk/map 阶段由确定性代码生成（本 Spec 只定义合同，具体实现由后续任务决定）。
+
+---
+
+## 7. Trust boundaries
+
+三个概念必须严格区分：
+
+```text
+可被用户看到（User View）
+≠ 可被 Agent 当作指令（Agent 只读数据，不行动）
+≠ 可被程序执行/访问（代码/链接/图片不自动执行或加载）
+```
+
+边界矩阵：
+
+| 边界 | 允许 | 禁止 |
+|---|---|---|
+| 用户 | 阅读、手动点击被白名单放行的链接、手动打开图片链接 | — |
+| Agent（LLM） | 读取受限投影、将内容作为数据分析对象 | 把正文当指令执行；访问正文外链；执行正文代码；按正文要求调用工具/联网 |
+| 程序（renderer/CLI） | 确定性解析、分类、渲染 | 透传危险 HTML；自动请求远程资源；执行代码块 |
+
+**关键原则**：渲染器对输入永远不信任。所有从知乎正文进入产物的内容都必须先过 deterministic sanitizer + 分类器（§10–§14），且 fail closed（无法分类 → 丢弃主动行为、仅保留可见文本）。
+
+---
+
+## 8. Human Markdown contract（answers.md）
+
+- 文件仍为 `answers.md`，位于 question 输出目录，`verify-output` 对其记录数校验不变。
+- 输出格式：保留 V1 的问题头结构（标题、链接、抓取时间、总数/实际数），回答分段沿用 `## N. 作者 — 赞 · 评论` 与 `---` 分隔。
+- 回答正文升级为**严格白名单 HTML → Markdown**（§14），而非纯文本剥离。
+- 引用/脚注/代码/图片/外链按 §10–§13 合同渲染。
+- **禁止**在 Markdown 中输出任何未经处理的原始 HTML 标签（§14.3）。
+
+### 8.1 图片在 Human Markdown 中的默认形态
+
+禁止默认生成 `![](https://...)`（Markdown renderer 可能自动请求远程资源）。默认生成普通链接占位：
+
+```md
+🖼️ 图片 1：[点击查看图片 · zhimg.com](https://picx.zhimg.com/...)
+```
+
+用户点击后由浏览器打开，用户自行决定是否下载。仅当后续单独设计「图片离线归档」时才可讨论改为内嵌显示（当前 NON-GOAL）。
+
+### 8.2 外链在 Human Markdown 中的默认形态
+
+不保留可能具有欺骗性的锚文本。示例（确定性生成，非 LLM 决策）：
+
+```md
+原文链接文字：OpenAI 官方网站
+[打开外部链接 · evil.example](https://evil.example/...)
+```
+
+用户必须能清楚看到**目标真实域名**。具体格式由 renderer 确定性实现，语义必须等价：显示原文锚文字 + 明确标注目标域名。
+
+### 8.3 代码块在 Human Markdown 中的默认形态
+
+恢复 fenced code（语言标签须经 sanitize，§12.3）：
+
+````md
+```bash
+npm install ...
+```
+````
+
+代码块永远只是 Markdown 纯文本。
+
+---
+
+## 9. Agent projection contract（Agent View）
+
+- **不做永久新文件**：投影在 corpus chunk/map 阶段由确定性代码生成。
+- 合同要求（对投影的输入/输出定义）：
+
+```text
+输入：answers.json（canonical，含 assets 元数据）
+输出：受限视图，包含：
+  - 回答自然语言正文（保留语义结构，如标题/段落/列表/blockquote 文本）
+  - asset metadata（图片数量、外链域名与分类、脚注文本、代码块统计）
+  - 代码块正文【默认省略】
+```
+
+- 默认的代码块投影形态：
+
+```text
+[CODE_BLOCK language=bash lines=12 omitted_by_policy]
+```
+
+或等价 deterministic 表达。只有用户未来明确要求「分析回答里的代码」时才允许进入单独的显式 code-analysis mode；即便进入该模式，代码**仍是 DATA**，不允许执行（§12.6）。
+- 投影本身不携带任何「执行/访问」指令；正文中的「打开这个网址 / 按照这个链接安装 / 去 GitHub clone」等文字只被识别为文章内容，不得触发工具调用（§11.6）。
+
+---
+
+## 10. Image asset contract（图片）
+
+### 10.1 必须做：提取图片 metadata
+
+从回答 HTML 中已有的图片元素提取 metadata，写入 `assets.images[]`。至少覆盖真实知乎 HTML 现有字段：
+
+```json
+{
+  "originalUrl": "https://picx.zhimg.com/...",
+  "displayUrl": "https://picx.zhimg.com/...",
+  "width": 2002,
+  "height": 1364,
+  "caption": "",
+  "token": "..."
+}
+```
+
+解析候选字段（按优先级）：
+
+```text
+data-original
+→ data-actualsrc
+→ 合法 https src
+```
+
+必须**忽略 lazy-loading placeholder**（例如 `data:image/svg+xml;...` 占位图、1px 占位、`data:image/gif;base64` 等），不得作为图片 URL 收录或渲染。
+
+### 10.2 图片 URL 校验（hostname 白名单）
+
+- 第一版只允许知乎图片 CDN：
+  - 协议必须是 `https:`；
+  - host 必须是**有效的 zhimg.com host**（含子域，如 `picx.zhimg.com`、`pica.zhimg.com`）。
+- 必须使用 **deterministic hostname / eTLD+1 校验**，禁止 `endsWith("zhimg.com")` 这类字符串判断。例如 `evilzhimg.com`、`zhimg.com.evil.com` 均不得通过。
+- 判定逻辑（实现建议，合同以行为为准）：取 URL 的 host → 按 DNS 标签拆分 → 校验注册域（eTLD+1）等于 `zhimg.com` 且 host 等于 `zhimg.com` 或其子域。实现必须附带测试（§23）。
+- 不满足白名单的图片 URL：不渲染、不收录为可点击图片；如原始 HTML 中有可见 caption 文本则保留文本。
+
+### 10.3 暂不做
+
+```text
+图片自动下载、本地 assets/ 镜像、OCR、图片理解、图片转写、图像 embedding
+```
+
+以后若有离线归档需求再单独设计。
+
+---
+
+## 11. Link sanitization contract（外链）
+
+外链有价值，必须保留，但属于**高风险主动资产**。渲染路径必须为：
+
+```text
+raw href
+→ deterministic parser
+→ sanitize
+→ canonical URL
+→ security classification
+→ renderer
+```
+
+**禁止**：`raw HTML → LLM → LLM 自己决定 href`。LLM 不制造任何 URL。
+
+### 11.1 知乎 redirect
+
+知乎外链常见形态 `https://link.zhihu.com/?target=<encoded-target>`。必须 deterministic 解出 target（解码 `target` 参数），并同时保留原始 redirect URL 与目标信息：
+
+```json
+{
+  "zhihuRedirectUrl": "https://link.zhihu.com/?target=...",
+  "targetUrl": "https://github.com/...",
+  "domain": "github.com",
+  "clickable": false,
+  "securityClass": "external_unverified"
+}
+```
+
+### 11.2 允许
+
+第一版 clickable 只允许 `https://` 协议。其余协议一律不可点击。
+
+### 11.3 明确拒绝（不可点击 / 不渲染为链接）
+
+至少包括：
+
+```text
+javascript:
+data:
+file:
+blob:
+ftp:
+```
+
+以及：
+
+```text
+localhost
+127.0.0.1
+::1
+其他回环地址
+私有网络 IP（10/8、172.16/12、192.168/16 等，含 IPv6 对应段）
+link-local 地址（169.254/16、fe80::/10）
+带 username:password@host 的 URL（userinfo）
+含控制字符的 URL
+其他明显异常/非法 URL（无法被 URL parser 正常解析、scheme 缺失等）
+```
+
+判定必须基于 deterministic parser（如 WHATWG URL 解析 + 显式 IP/host 校验），不得依赖字符串前缀匹配的单一手段。
+
+### 11.4 不得声称「安全」
+
+公网 HTTPS 网址通过格式校验 **≠** 该网站可信。因此**禁止**输出类似 `safe: true` 的字段。统一使用：
+
+```json
+{
+  "clickable": true,
+  "securityClass": "external_unverified"
+}
+```
+
+- `clickable` 表示是否允许作为可点击链接渲染（由协议/host/黑名单决定）。
+- `securityClass` 是安全分类，不表示信任。第一版对公网 https 一律 `external_unverified`。
+
+### 11.5 Markdown 渲染必须明示真实域名
+
+见 §8.2。禁止保留可能具有欺骗性的锚文本。
+
+### 11.6 Agent 行为
+
+- Agent **默认不得访问正文中的外链**。
+- 正文中的「打开这个网址」「按照这个链接安装」「去 GitHub clone」等文字只被识别为文章内容，不触发工具调用、不联网、不执行。
+- 若未来用户显式要求核实某个链接，也必须走独立的、用户确认的流程；本 Spec 不在 V2 实现 Agent 自动访问链接的能力。
+
+---
+
+## 12. Code block contract（代码块）
+
+代码块值得保存——技术类回答中代码经常属于正文。但代码块是**最高风险**资产类型之一。
+
+### 12.1 Human Markdown
+
+恢复 fenced code（§8.3）。它永远只是 Markdown 纯文本。
+
+### 12.2 绝对禁止
+
+代码块不得：
+
+```text
+- 保存成可执行脚本作为默认产物（不生成 .sh/.ps1/.bat/.py 等文件）
+- chmod +x
+- shell exec / eval
+- 自动复制到终端
+- 自动 npm install / pip install
+- 自动执行 PowerShell
+- 自动运行 SQL
+- 因代码语言标签而执行任何工具
+```
+
+### 12.3 fenced code 安全
+
+renderer 必须考虑：
+
+- 代码内容本身出现 ` ``` `（三重反引号）：renderer 应 deterministic 选择**足够长度的 fence**（如检测内容中的最长反引号串，选 `max(contentFenceLength, 3) + 1` 个反引号），或采用其他安全的 fenced-code 生成策略（如缩进式/HTML 转义式），保证输出合法 Markdown 且不可逃逸出代码块。
+- **恶意 language identifier**：language 必须 sanitize；只允许 `[A-Za-z0-9_+-]*` 白名单字符集，且去除换行/控制字符；非法则**省略 language**（输出裸 ```）。
+- Markdown fence escape：处理 `~~~`、backtick 长度、`<` 转义，确保不破坏外层文档结构。
+
+### 12.4 Asset metadata
+
+每个代码块写入 `assets.codeBlocks[]`：
+
+```json
+{
+  "language": "bash",
+  "lines": 3
+}
+```
+
+（不收录代码正文到 assets；正文仍在 `content` 中。）
+
+### 12.5 Agent digest 默认
+
+Agent 默认**不读取 code block 正文**。Agent projection 中折叠为（§9）：
+
+```text
+[CODE_BLOCK language=bash lines=12 omitted_by_policy]
+```
+
+### 12.6 code-analysis mode（未来显式入口）
+
+仅当用户明确要求「分析回答里的代码」时，才允许进入单独显式 code-analysis mode。即便读取，代码**仍是 DATA**，不允许执行。
+
+---
+
+## 13. Footnote / reference contract（知乎 inline reference / 脚注）
+
+真实回答 HTML 存在类似结构：
+
+```html
+<sup data-text="脚注内容" data-url="..." data-numero="1">[1]</sup>
+```
+
+### 13.1 恢复
+
+V2 在 Human Markdown 中恢复脚注：
+
+```md
+正文……[^1]
+
+[^1]: 脚注内容
+```
+
+- 脚注正文来自 `data-text`（确定性提取，不含 HTML 渲染）。
+- 脚注内出现的 URL 必须继续走 §11 同一外链 sanitizer——**不能因位于脚注中就绕过链接策略**。
+
+### 13.2 安全模型
+
+脚注不是 trusted content，与普通正文一样属于 `UNTRUSTED_EXTERNAL_CONTENT`。脚注本身：
+
+```text
+- 不执行
+- 不联网
+- 不触发 Agent 工具
+```
+
+脚注中出现的链接若被放行为 clickable，也一律 `external_unverified`，且渲染时明示域名。
+
+---
+
+## 14. Rich-text rendering contract（正文排版结构）
+
+V2 核心功能：将现有「全部 stripHtml 成纯文字」升级为**严格白名单 HTML → Markdown**。
+
+### 14.1 白名单映射
+
+| HTML | Markdown |
+|---|---|
+| h1-h6 | `#` 标题（级别对应） |
+| p | 段落 |
+| br | 换行 |
+| ul/li | 无序列表 |
+| ol/li | 有序列表 |
+| blockquote | `>` 引用 |
+| strong/b | `**bold**` |
+| em/i | `*italic*` |
+| code | inline code（`code`） |
+| pre/code | fenced code（§12） |
+| hr | `---` |
+| a | sanitized link pipeline（§11） |
+| figure/img | image asset marker（§10） |
+| sup[data-numero] | footnote（§13） |
+
+### 14.2 其他元素策略
+
+- 白名单之外的**行内/块级未知元素**：优先**保留可见文本、丢弃主动行为**（标签及其属性不保留，只保留 textContent）。
+- 嵌套元素按规则递归处理；列表层级、引用嵌套保持结构。
+
+### 14.3 禁止透传（fail closed）
+
+最终 Markdown **不允许**保留未经处理的：
+
+```text
+<script>
+<style>
+<form>
+<input>
+<button>
+<iframe>
+<object>
+<embed>
+*[on*]（任何 event handler 属性）
+style= 属性
+任意未知 raw HTML
+```
+
+出现以上元素：丢弃元素本身与属性，仅保留（或丢弃）可见文本，按 §14.2 处理。renderer 自身若产生不安全输出，必须 fail closed（宁可丢结构，不可 raw passthrough）。
+
+---
+
+## 15. Comment enrichment contract（Top3 一级热评，可选）
+
+### 15.1 默认关闭
+
+```text
+comments = off（默认）
+```
+
+不能因为一次普通 `grab question` 就把网络请求规模放大为 `answerCount × comments API`。
+
+### 15.2 实现前必须研究并明确（本 Spec 强制前置条件）
+
+实现前必须对**真实知乎评论 API** 做验证并记录证据：
+
+- 是否支持热度排序；
+- 是否能直接取得 Top3；
+- 是否必须每个 answer 单独请求；
+- 是否存在 batch 接口；
+- 返回 schema；
+- 权限/风控表现。
+
+**不能先根据猜测写实现。**
+
+### 15.3 第一版推荐边界
+
+如果实测确认是「每个 answer 一次请求」，第一版推荐：
+
+```text
+只对高价值回答做评论 enrichment：
+  Top N 高赞回答 × 每条最多 3 条一级热评
+推荐初始 N = 10
+即最多 10 × 3 = 30 条评论
+```
+
+**不要**默认对 187/500/1000 个回答分别打评论请求。如果 API 实测证明可以低成本批量取得，Spec 允许提出不同方案，但必须给出实测证据与请求预算。
+
+### 15.4 评论范围
+
+只抓：
+
+```text
+一级评论（top-level）
+Top3 热评
+```
+
+不抓：
+
+```text
+二级回复、评论的评论、完整评论树
+```
+
+### 15.5 评论失败策略
+
+评论属于 enrichment：
+
+```text
+评论抓取失败
+→ core capture 仍然 valid
+→ 输出 comments warning
+```
+
+评论正文仍属于 `UNTRUSTED_EXTERNAL_CONTENT`：不执行、不联网、不触发 Agent 工具；评论中的链接走 §11 同一 sanitizer。
+
+---
+
+## 16. Video metadata contract（视频）
+
+视频**不是**当前核心需求，只做 detect + metadata：
+
+```json
+{
+  "detected": true,
+  "type": "zhihu-video",
+  "sourceUrl": "...",
+  "posterUrl": "..."
+}
+```
+
+- 写入 `assets.videos[]`。
+- **不做**：视频加载、下载、转码、语音识别、字幕抓取、视频理解。
+- **重要约束**：当前真实样本尚未确认知乎视频 HTML schema。**禁止提前猜测结构并实现一堆 speculative parser**；等真实样本出现再补（见 §25 Open questions）。
+
+---
+
+## 17. Question metadata contract（问题上下文）
+
+V2 增强 question metadata。当前至少已有：`questionId / questionTitle / answerCount / url / fetchedAt`。
+
+### 17.1 目标结构（additive）
+
+```json
+{
+  "question": {
+    "id": "...",
+    "title": "...",
+    "descriptionHtml": "...",
+    "descriptionMarkdown": "...",
+    "topics": []
+  }
+}
+```
+
+### 17.2 description（**必须**作为 V2 需求）
+
+很多知乎问题标题很短，真正背景在 description；缺少 description 直接影响阅读、摘要、舆情归纳、事件分析。
+
+- 如果现有 answer API 已返回 description（如问题元信息接口）→ **直接提取，不新增请求**。
+- 如果没有 → 允许每个问题额外**最多一次** question metadata 请求（复用 V1 已有的 `buildQuestionInfoUrl` 请求）。
+- **不要**为 description 产生 answerCount 级请求。
+- description HTML 使用与回答正文**相同**的 sanitizer / Markdown renderer（§14）。
+
+### 17.3 topics（建议加入）
+
+优先级低于 description，获取成本低时保存 `topics`。不要为 topics 单独设计复杂抓取链。
+
+---
+
+## 18. Data / schema changes
+
+### 18.1 原则：additive only
+
+V2 对 `answers.json` 的修改必须为**可向后兼容的 optional fields**：
+
+```json
+{
+  "questionId": "...",
+  "questionTitle": "...",
+  "answerCount": 187,
+  "url": "...",
+  "fetchedAt": "...",
+  "question": { ... },
+  "answers": [
+    {
+      "id": "...",
+      "content": "<p>原始 HTML 不变</p>",
+      "assets": { "images": [], "links": [], "references": [], "codeBlocks": [], "videos": [] },
+      "comments": []        // 仅当 comments 开启时出现
+    }
+  ]
+}
+```
+
+- 现有字段（`questionId / questionTitle / answerCount / url / fetchedAt / answers[].content` 等）语义与形状**不变**。
+- 新增字段全部 optional；老 reader 忽略新字段即与 V1 兼容。
+- 若确需 schema migration：Spec 必须证明 additive fields 不够（预期不需要）。
+
+### 18.2 不破坏的现有合同
+
+`grab / batch / search / status / --json / captured != verified / verify-output / make-handoff / corpus handoff / 断点续传 / 现有 answers.json content / 现有 answerCount / 现有 warnings` 全部保持不变。
+
+### 18.3 `answers.md` 的变化
+
+渲染内容升级（§8、§14），但文件位置、命名、`verify-output` 对其记录数校验方式不变。注意：`verify-output` 对 Markdown 的记录数校验基于 `## N.` 计数，V2 渲染必须继续保证每条回答恰好一个 `## N.` 标题（或同步更新校验——但优先保持现有校验不变）。
+
+---
+
+## 19. Backward compatibility
+
+- 旧 `answers.json`（无 `assets` / `question` / `comments`）仍可被 V1 与 V2 工具读取：V2 渲染器对缺失字段走默认（无资产、无评论），输出与 V1 语义一致或更丰富但不报错。
+- `verify-output.mjs` 现有 14 项校验全部保持；新增字段不影响校验结果。
+- `make-handoff.mjs` 输出 schema 不变；若需透传 assets 摘要，用 optional 字段。
+- corpus-anthology 的 digest 默认消费**Agent projection**（§9），不直接吃 `answers.md` 的全部主动资产；该切换为下游行为调整，不改变 handoff JSON 字段契约。
+- 若确实必须 schema migration：需证明 additive 不够（见 §18.1）。
+
+---
+
+## 20. Failure semantics（失败等级）
+
+### 20.1 Core（允许使抓取失败）
+
+```text
+回答 API 失败
+分页合同失败（data.data 非数组 / 重复分页 / 超 MAX_PAGES）
+canonical answers.json 无法生成
+questionId 不合法
+核心验证失败（verifyOutput 现有失败项）
+```
+
+### 20.2 Enrichment（原则上只 warning，不使抓取失败）
+
+```text
+问题 topics 获取失败
+评论 enrichment 获取失败
+某张图片 metadata 无法解析
+某个外链被安全策略拒绝（拒绝本身是预期行为，不算失败）
+某个视频 metadata 无法识别
+```
+
+- 核心原则：**富内容增强不能破坏已经成功的核心文本抓取**。
+- 例外（fail closed）：renderer 自身如果产生不安全输出，必须 fail closed，不能偷偷 raw passthrough（§14.3）。
+- 输出语义：`core capture valid + enrichment warnings`。
+
+---
+
+## 21. Security model（汇总）
+
+1. **所有知乎内容 = `UNTRUSTED_EXTERNAL_CONTENT`**，只能作为 DATA 进入系统。
+2. **三条不可逾越的线**（§7）：用户可见 ≠ Agent 指令 ≠ 程序执行/访问。
+3. **LLM 不制造 URL**：所有 href/src 由确定性 parser + sanitizer + 分类器产出（§10、§11）。
+4. **默认不自动加载/访问**：图片默认链接占位（§8.1），Agent 默认不访问外链（§11.6）、不读代码正文（§12.5）。
+5. **clickable ≠ safe**：禁止 `safe:true`，统一 `external_unverified`（§11.4）。
+6. **fail closed**：未知 HTML 保留可见文本、丢弃主动行为（§14）；renderer 不安全输出 → 失败而非透传。
+7. **凭据与正文隔离**：延续 V1 `security.md` 规则；富内容 pipeline 不接触凭据。
+8. **请求面不扩大**：V2 默认不新增请求（description 复用已有元信息请求，最多 1 次；comments 默认 off，开启时按 §15.3 预算）。
+
+---
+
+## 22. Verification plan
+
+- **渲染单元测试**：对 §14 白名单每个元素、嵌套组合、§10–§13 每条合同，用 fixture 输入断言输出 Markdown。
+- **资产提取测试**：图片 URL 优先级、placeholder 忽略、外链 redirect 解包、脚注提取、代码块统计。
+- **安全测试**：§23 全部 adversarial fixtures 必须通过，且断言「保存/展示为数据、无工具行为」。
+- **集成回归**：V1 全部现有测试继续通过；`verify-output` 对 V2 产物仍返回 valid。
+- **真实数据回归**：用真实抓取样本（如 smoke 样本）验证 `answers.md` 结构恢复（标题/列表/代码/图片占位/脚注）且无危险输出。
+- **投影测试**：Agent projection 生成逻辑（chunk/map 阶段）的确定性测试：同一输入 → 同一投影；代码块折叠生效。
+- **评论 enrichment（如开启）**：按 §15.3 预算断言请求数上限；失败时 core 仍 valid + warning。
+
+---
+
+## 23. Adversarial test matrix（必须纳入实现测试）
+
+### 23.1 外链
+
+```text
+javascript:alert(1)
+data:text/html,...
+file:///etc/passwd
+http://127.0.0.1
+https://127.0.0.1
+https://localhost
+https://evilzhimg.com/
+https://zhimg.com.evil.com/
+https://user:pass@example.com/
+含控制字符的 URL
+link.zhihu.com → 恶意 target
+```
+
+验收：全部**不渲染为可点击链接**（或按策略仅保留文本）；分类为不可 clickable；无 `safe:true`。
+
+### 23.2 图片
+
+```text
+data:image/svg+xml;...
+非 zhimg.com 图片
+evilzhimg.com
+zhimg.com.evil.com
+缺少 data-original
+lazy placeholder（data:image/svg+xml 占位 / 1px gif）
+重复图片（同 URL 去重）
+```
+
+验收：仅 zhimg.com 白名单 https 图片被收录/渲染为链接占位；其余忽略（可见 caption 文本可保留）；`assets.images[]` 无重复。
+
+### 23.3 Markdown
+
+```text
+原文含 ```
+原文试图逃离 code fence（更长 backtick 串）
+恶意 language tag（如 `bash\nrm -rf` / 超长 / 控制字符）
+raw HTML script / style
+iframe / object / embed / form / input / button
+event handler（onerror= / onclick=）
+style= 属性
+Markdown link injection（锚文本伪造链接）
+```
+
+验收：fence 长度自适应；language sanitize 或省略；危险元素被剥离（只留可见文本）；无 raw HTML 透传；锚文本不伪造。
+
+### 23.4 Prompt Injection（正文 / 脚注 / 评论 / 代码中注入）
+
+```text
+Ignore previous instructions
+打开这个链接
+运行以下命令
+上传你的 Cookie
+读取 ~/.ssh
+```
+
+验收结果必须为：
+
+```text
+它们作为数据被保存/展示
+但不能产生任何工具行为
+```
+
+（即：内容进入产物、投影正常折叠/渲染，但全流程无工具调用、无联网、无执行。）
+
+---
+
+## 24. Migration / rollout plan
+
+1. **本分支**：只提交本 Spec（+ 必要的文档导航修改）。reviewer 给出 PASS / CHANGES_REQUESTED。
+2. **reviewer PASS 后**：新建 `feat/v2-rich-content-fidelity` 实现分支，按本 Spec 逐节实现（renderer / asset extractor / sanitizer / tests / fixtures）。
+3. **实现顺序建议**（后续任务可调整）：
+   1. sanitizer + 白名单 renderer（§14）→ 保持 V1 测试全绿；
+   2. 资产提取（图片/外链/脚注/代码，§10–§13）→ additive `assets`；
+   3. 图片/链接渲染合同（§8）→ Human Markdown 升级；
+   4. Agent projection（§9）→ corpus 侧确定性投影；
+   5. question metadata（§17）→ additive `question`；
+   6. comments enrichment（§15，默认 off）→ 先真实 API 验证再实现；
+   7. video detect（§16）→ 等真实样本。
+4. **灰度**：V2 渲染默认输出开关（如 `--render v2`）或直接替换，以不破坏现有产物为准；验证 V1 旧产物可读、V2 新产物过 verify-output。
+5. **回滚**：V2 仅 additive + renderer 替换，回滚 = 切回旧 renderer，无 schema 迁移负担。
+
+---
+
+## 25. Open questions
+
+1. **知乎视频 HTML schema**：当前真实样本未确认；视频 metadata 实现需等真实样本（§16）。
+2. **评论 API 形态**：热度排序支持？batch 存在？每条回答单独请求？→ 实现前必须实测并回填证据（§15.2）。
+3. **description 来源**：现有 answer API 是否直接返回 description？若无，question metadata 接口的响应 schema 需实测确认（§17.2）。
+4. **topics 字段来源与 schema**：需要实测问题元信息接口确认（§17.3）。
+5. **code-analysis mode 的触发与 UI**：未来单独设计，V2 只定义投影折叠（§12.6）。
+6. **Agent projection 的生成位置**：corpus chunk/map 阶段确定性生成的挂载点由后续任务决定，本 Spec 只定义输入/输出合同（§9）。
+7. **链接 anchor 文字的提取**：`data-text` / 元素文本内容的确切字段需在真实样本上确认（§11、§13）。
+
+---
+
+## 26. Acceptance criteria
+
+**Spec 本身（本分支）验收：**
+
+- [ ] 文档覆盖 §1–§25 全部章节；
+- [ ] 通过 §27 自审清单（无「可点击=可信」混淆、无正文→工具调用路径、无代码执行路径、无默认远程加载、无 LLM 生成 href、无请求面无限放大、无 enrichment 破坏 core、无过度 schema/framework）；
+- [ ] 分支仅含 Spec / 必要文档导航改动，无 V2 实现代码；
+- [ ] 通过独立 DOCUMENT reviewer 审查（PASS）后，方可进入实现阶段。
+
+**后续实现（在实现分支）验收：**
+
+- [ ] V1 全部现有测试通过；
+- [ ] §23 对抗性测试矩阵全部通过；
+- [ ] 真实样本上 `answers.md` 结构恢复可见（标题/列表/代码/图片占位/脚注）且无危险输出；
+- [ ] `answers.json` 仅 additive 变更，`content` 不变；
+- [ ] `verify-output` 对 V2 产物返回 valid；
+- [ ] comments 默认 off；开启时请求数 ≤ §15.3 预算；
+- [ ] Agent projection 折叠代码块、不暴露可执行内容、不触发工具行为。
+
+---
+
+## 27. Spec self-review（自审记录）
+
+按任务要求逐项反驳，修订后确认：
+
+1. **「可点击」误写「可信」？** 否。全文统一 `clickable` + `securityClass: external_unverified`；§11.4 显式禁止 `safe:true`。
+2. **任何知乎正文 → Agent 工具调用的路径？** 否。§7、§9、§11.6 明确：正文永远只是 DATA；无任何允许「正文指令触发工具」的条款；Agent 默认不访问外链、不读代码正文。
+3. **任何代码块可能被执行？** 否。§12.2 绝对禁止清单覆盖脚本落盘/chmod/exec/复制到终端/包安装/PowerShell/SQL；fence 安全（§12.3）保证不可逃逸。
+4. **远程图片默认自动加载？** 否。§8.1 默认链接占位，禁止默认 `![](url)`；§10.2 白名单 + 忽略 placeholder。
+5. **LLM 自己制造 href？** 否。§11 强制 deterministic pipeline，LLM 不产生 URL；§8.2 锚文本/域名由 renderer 确定性生成。
+6. **评论导致 answerCount × request 无上限放大？** 否。§15 默认 off；开启时 Top10×3=30 条预算；实现前必须先实测 API。
+7. **enrichment 失败破坏 core grab？** 否。§20 区分 Core/Enrichment；enrichment 仅 warning；renderer 不安全输出才 fail closed。
+8. **引入不必要状态机/schema/framework？** 否。§18 仅 additive；§19 兼容性；无新框架、无新状态机、无签名/证明系统。
+
+自审结论：**通过**（上述 8 项均无违反；若 reviewer 发现遗漏以 reviewer 意见为准）。
