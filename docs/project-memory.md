@@ -61,6 +61,8 @@
 - `.workbuddy/memory/` 是 **non-authoritative runtime memory**（自动产生、ignored、可含临时上下文），只作参考输入，不覆盖本文件及任何 repo-tracked authority。
 - **任务开始必须读取本文件**；缺失时 STOP 并报告 `PROJECT_MEMORY_MISSING`。
 - **任务结束必须判断 `PROJECT_MEMORY_UPDATE_REQUIRED: YES | NO`**；YES 时在同一个 task branch 内更新本文件并与任务一起 review；NO 时不得修改本文件（工作树保持 clean）。
+- **pre-gate durable knowledge 随产生它的 task branch 一起 review**；**gate-generated durable knowledge**（如 final gate conclusion、accepted checkpoint）如需沉淀，走独立 post-gate memory follow-up（reviewer 只报告 `POST_GATE_MEMORY_UPDATE_REQUIRED`，不修改被审 branch）。
+- **Git history 足以保存的纯 SHA / merge 状态无需机械复制进本文件**；不要为了把 gate PASS 写进来而制造 review loop。
 - 只有 **durable + verified + project-level + non-sensitive** 的信息才进入本文件。
 - 禁止写入：current HEAD / current master SHA（除非作为 historical approved checkpoint）/ 临时 branch 存在性 / workspace path / 本机用户名 / backup path / credentials / private runtime state / 临时 task progress / scratch reasoning / 未经确认的猜测。
 - 本文件不是 changelog：不记录 commit history / daily log / task log / review transcript；信息失效时更新为新的长期事实或标注 historical checkpoint，不向尾部无限堆日志。

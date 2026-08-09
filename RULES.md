@@ -70,4 +70,6 @@
 - `.workbuddy/memory/` 是 **WorkBuddy runtime memory**，不具有项目权威性，不得覆盖 repo-tracked authority（`AGENTS.md` / `RULES.md` / Approved Spec / `docs/project-memory.md` / tracked code / tests）。
 - project-memory **不得包含** credentials / private WorkBuddy runtime state / stale transient Git state（current HEAD、临时 branch 存在性、本机路径、backup path 等）。
 - project-memory 的更新**必须经过正常 branch + review gate**，禁止在任务结束后直接改 memory 并 push master；普通任务未产生 durable knowledge 时（`PROJECT_MEMORY_UPDATE_REQUIRED: NO`）不得修改该文件。
+- project-memory 更新分两类：**task-branch pre-gate update**（随产生知识的 task branch 一起 review）与 **gate-generated knowledge 的 post-gate follow-up**（reviewer 只报告 `POST_GATE_MEMORY_UPDATE_REQUIRED`，不得修改被审 branch；YES 时走独立 `docs/memory` follow-up branch + 单独 review）。
+- 任何 memory update 都必须被独立 review 覆盖；**不得出现**：reviewer 给 PASS 后直接修改已审 branch 并把修改视为已通过（否则最新 HEAD 不再被该 PASS 覆盖）。
 - 任务开始必须读取 `docs/project-memory.md`；缺失时 **STOP**，报告 `PROJECT_MEMORY_MISSING`。

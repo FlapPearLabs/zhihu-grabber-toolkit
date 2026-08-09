@@ -43,9 +43,13 @@
 - GitHub master = repository sole authoritative source。
 - 若 `.workbuddy` memory 与 `AGENTS.md` / `RULES.md` / Approved Spec / `docs/project-memory.md` / tracked code / tests 冲突：以 Git tracked authority 为准，不得用 runtime memory 覆盖 repo 内容；若 repo 内部自身冲突，**STOP 并报告 `GOVERNANCE_CONFLICT`**。
 
-### 3.2 Task Completion Memory Decision
+### 3.2 Memory Decision（按任务阶段）
 
-每个实现 / 文档 / 修复任务结束前，Agent 必须执行一次：
+每个会产生项目知识的 task 结束时，都必须执行**适用于其阶段**的 memory decision。task 类型包括：implementation / document / spec / fix / research / smoke / independent review。
+
+**A. Pre-gate（普通实现 / 文档 / 修复 / research / smoke 任务）**
+
+在 independent review 之前执行一次：
 
 ```text
 PROJECT_MEMORY_UPDATE_REQUIRED: YES | NO
@@ -53,7 +57,7 @@ PROJECT_MEMORY_UPDATE_REQUIRED: YES | NO
 
 不能省略。
 
-- **YES**：必须在**同一个 task branch** 中更新 `docs/project-memory.md`，并与本次任务代码/文档一起进入 review。
+- **YES**：必须在**同一个 task branch** 中更新 `docs/project-memory.md`，并与本次任务内容一起进入 review。
 - **NO**：不得为了"保持新鲜"而修改 project-memory；最终报告必须写明：
 
 ```text
@@ -61,23 +65,39 @@ PROJECT_MEMORY_UPDATE_REQUIRED: NO
 reason: <为什么本任务没有产生长期项目知识>
 ```
 
+**B. Post-gate（仅独立 reviewer 执行）**
+
+gate-generated durable knowledge（如 final DOCUMENT / CODE gate conclusion、accepted historical checkpoint、reviewer 才确认的长期工程结论）只有 reviewer 才能产生。reviewer 必须报告：
+
+```text
+POST_GATE_MEMORY_UPDATE_REQUIRED: YES | NO
+```
+
+reviewer **不得**为写 memory 而修改正在审查的 branch（否则最新 HEAD 不再被刚给出的 PASS 覆盖，形成 review loop）。若 YES，走 §3.5 的 post-gate memory follow-up 流程；若 NO，说明依赖 Git history 保存纯版本控制事实，无需额外沉淀。
+
 ### 3.3 何时判 YES（durable knowledge 触发）
 
-以下结果属于 durable project knowledge，应判断是否需要沉淀：
+以下结果属于 durable project knowledge，由**对应阶段的判断方**（实现 Agent 或 reviewer）确认是否需要沉淀：
+
+**Pre-gate 可确认（实现 / 文档 / 修复 / research / smoke 阶段）：**
 
 - 用户明确批准的新架构决策
 - Approved Spec / 合同产生的长期决策
-- 一个 Phase 最终通过 review 的稳定结果
 - 新的长期 security invariant
 - 新确认的 API / schema / compatibility contract
 - 真实 smoke test 得出的可重复稳定事实
 - 新的重要 failure mode
-- 多轮 review 发现并确认的工程陷阱
 - 新的长期 non-goal
 - 测试体系发生有意义的稳定变化
 - 后续 Agent 不知道就容易重复踩坑的信息
 
-不要机械地每次都写；由 Agent 判断是否满足 durable 原则。
+**Gate-generated（仅 reviewer 产生，走 post-gate follow-up）：**
+
+- 一个 Phase 最终通过 review 的稳定结果（DOCUMENT / CODE gate conclusion）
+- accepted historical checkpoint
+- reviewer 才确认的新通用 failure pattern / 工程陷阱
+
+不要机械地每次都写；由对应判断方确认满足 durable 原则。纯 gate PASS / SHA / merge 状态由 Git history 保存，不必机械复制进 memory。
 
 ### 3.4 什么不能写入 project-memory
 
@@ -85,15 +105,29 @@ reason: <为什么本任务没有产生长期项目知识>
 
 原则：**durable + verified + project-level + long-lived + non-sensitive** 同时成立才适合沉淀。
 
-### 3.5 更新必须随 task branch 走 review
+### 3.5 更新必须被独立 review 覆盖
 
-Agent 不允许在任务结束后偷偷更新 project-memory 并直接 push master。正确流程：
+Agent 不允许在任务结束后偷偷更新 project-memory 并直接 push master。
+
+**Pre-gate update**：随 task branch 一起 review：
 
 ```text
-task branch → implementation → memory decision → 如需要，更新 project-memory → independent review → PASS → merge
+task branch → implementation/docs → memory decision → 如 YES 更新 project-memory → independent review → PASS → merge
 ```
 
-Reviewer 必须同时检查 `PROJECT_MEMORY_UPDATE_REQUIRED` 判断是否合理：
+**Gate-generated update（post-gate memory follow-up）**：reviewer 不得修改正在审的 branch，不得在给出 PASS 后直接改已审 branch 并把修改视为已通过（否则最新 HEAD 不再被该 PASS 覆盖）。若 `POST_GATE_MEMORY_UPDATE_REQUIRED: YES`：
+
+1. reviewed task branch 保持不变；
+2. 按 PASS 的 reviewed HEAD 正常 merge；
+3. 从最新 master 新建最小 `docs/memory` follow-up branch；
+4. 只更新 `docs/project-memory.md`（及确有必要的治理引用）；
+5. 单独 independent review；
+6. PASS 后 ff-only merge；
+7. 删除 follow-up branch。
+
+核心原则：不要为了把 gate PASS / SHA 写进 memory 而制造无限 review loop；纯版本控制事实（PASS、SHA、merge 状态）由 Git history 保存，project-memory 只沉淀真正影响后续决策的知识。
+
+Reviewer 必须同时检查被审任务的 `PROJECT_MEMORY_UPDATE_REQUIRED` 判断是否合理：
 
 - 若 YES：project-memory 是否准确、稳定、非敏感、没有 stale runtime state
 - 若 NO：是否漏掉了明显应该长期沉淀的重要决策
