@@ -54,3 +54,14 @@
 - DOCUMENT gate（V2 Spec）：PASS（2026-08-09，Spec APPROVED）。
 - CODE gate（Phase 1）：PASS @ `27e68c1`（P0/P1/P2 全 0，四轮 review：escape 完整性、framing 收口、lockfile registry、localhost namespace、cross-node 与 split-whitespace 绕过修复）。
 - 建议：停止无限制地静态加 gate，进入真实使用验证与按 Phase 推进。
+
+## Maintenance Contract
+
+- 本文件是 **Git tracked durable project memory**；GitHub master 是最终权威版本。
+- `.workbuddy/memory/` 是 **non-authoritative runtime memory**（自动产生、ignored、可含临时上下文），只作参考输入，不覆盖本文件及任何 repo-tracked authority。
+- **任务开始必须读取本文件**；缺失时 STOP 并报告 `PROJECT_MEMORY_MISSING`。
+- **任务结束必须判断 `PROJECT_MEMORY_UPDATE_REQUIRED: YES | NO`**；YES 时在同一个 task branch 内更新本文件并与任务一起 review；NO 时不得修改本文件（工作树保持 clean）。
+- 只有 **durable + verified + project-level + non-sensitive** 的信息才进入本文件。
+- 禁止写入：current HEAD / current master SHA（除非作为 historical approved checkpoint）/ 临时 branch 存在性 / workspace path / 本机用户名 / backup path / credentials / private runtime state / 临时 task progress / scratch reasoning / 未经确认的猜测。
+- 本文件不是 changelog：不记录 commit history / daily log / task log / review transcript；信息失效时更新为新的长期事实或标注 historical checkpoint，不向尾部无限堆日志。
+- 所有更新随产生该知识的 task branch 一起独立 review，通过后才进入 GitHub master。

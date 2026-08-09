@@ -42,7 +42,7 @@
 
 - `docs/specs/v2-rich-content-fidelity.md`（Status: APPROVED）是产品需求唯一事实来源；**禁止未经批准修改**。
 - Spec 的 Non-goals 是长期约束，不是临时建议（不下载图片、不 OCR、不抓完整评论、不引入密码学证明系统、不重写 V1 schema 等）。
-- 实现与 Spec 冲突 → 停止并上报（见 `AGENTS.md` §9 SPEC_CONFLICT），不得擅自修订 Spec 迁就实现。
+- 实现与 Spec 冲突 → 停止并上报（见 `AGENTS.md` §10 SPEC_CONFLICT），不得擅自修订 Spec 迁就实现。
 
 ## 7. Backward Compatibility
 
@@ -55,7 +55,7 @@
 - **禁止擅自扩大 Phase scope**；未授权不新增依赖、不"顺手修"无关文件。
 - **禁止 force push**（除非用户明确批准的特殊情况）。
 - **禁止 reset --hard / clean -fd** 等破坏性 git 操作；git 异常（refs 丢失等）走无损恢复流程（`git fsck` → `git fetch origin` → `git update-ref` 重建）。
-- 未通过对应 gate（DOCUMENT / CODE）前禁止 merge master、删除分支、宣称 Phase accepted / merge approved / released / final PASS（实现任务完成可报告 `COMPLETED` + `REVIEW_STATUS: PENDING`，见 `AGENTS.md` §4；完成 ≠ 审查接受）。
+- 未通过对应 gate（DOCUMENT / CODE）前禁止 merge master、删除分支、宣称 Phase accepted / merge approved / released / final PASS（实现任务完成可报告 `COMPLETED` + `REVIEW_STATUS: PENDING`，见 `AGENTS.md` §5；完成 ≠ 审查接受）。
 - 治理文件缺失（`AGENTS.md` / `RULES.md`）时 **STOP**，报告 `GOVERNANCE_FILES_MISSING`，不得继续实现。
 
 ## 9. 输出与报告
@@ -63,3 +63,11 @@
 - CLI 机器契约：Agent 优先 `--json`，不解析人类 stdout；退出码 0 才算成功。
 - 不伪造证据：任何"完成/成功"声明必须有可复现的测试/命令输出支撑。
 - 路径脱敏：错误信息、日志、产物中不泄漏本机绝对路径（任意 POSIX 路径脱敏）。
+
+## 10. Project Memory Authority
+
+- `docs/project-memory.md` 是 **Git tracked durable project memory**；GitHub master 是它的最终权威版本。
+- `.workbuddy/memory/` 是 **WorkBuddy runtime memory**，不具有项目权威性，不得覆盖 repo-tracked authority（`AGENTS.md` / `RULES.md` / Approved Spec / `docs/project-memory.md` / tracked code / tests）。
+- project-memory **不得包含** credentials / private WorkBuddy runtime state / stale transient Git state（current HEAD、临时 branch 存在性、本机路径、backup path 等）。
+- project-memory 的更新**必须经过正常 branch + review gate**，禁止在任务结束后直接改 memory 并 push master；普通任务未产生 durable knowledge 时（`PROJECT_MEMORY_UPDATE_REQUIRED: NO`）不得修改该文件。
+- 任务开始必须读取 `docs/project-memory.md`；缺失时 **STOP**，报告 `PROJECT_MEMORY_MISSING`。
