@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { buildAnswersUrl, buildQuestionInfoUrl, humanDelay, requestJson } from './http.js';
+import { extractAssets } from './asset-extractor.js';
 
 const DEFAULT_STATE = Object.freeze({ offset: 0, done: false });
 /** 安全阈值：单问题最多抓 300 页（约 6000 条），防止异常分页导致无限循环 */
@@ -180,6 +181,9 @@ export async function grabAll(config, qid, { outDir = 'out', onProgress } = {}) 
         commentCount: item.comment_count ?? 0,
         createdTime: item.created_time ?? null,
         updatedTime: item.updated_time ?? null,
+        // V2 Phase 2 additive：assets 是 content 的派生索引（Spec §6.1/§18），
+        // 不反向修改 content；旧回答（断点续传加载、无 assets）不被改写。
+        assets: extractAssets(item.content ?? ''),
       });
       added += 1;
     }

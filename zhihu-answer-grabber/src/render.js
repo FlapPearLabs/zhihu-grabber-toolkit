@@ -118,7 +118,7 @@ export function renderAnswers(meta, answers) {
     lines.push(`- 链接: ${answerLink}`);
     lines.push(`- 创建时间: ${fmtTime(a.createdTime)}`);
     lines.push('');
-    lines.push(richHtmlToMarkdown(a.content));
+    lines.push(richHtmlToMarkdown(a.content, { answerId: a.id }));
     lines.push('');
     lines.push('---');
     lines.push('');

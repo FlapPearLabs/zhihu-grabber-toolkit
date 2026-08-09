@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { normalizeQuestionInput, ProgressStore, shouldContinue, loadExistingAnswers, grabAll } from '../src/grabber.js';
+import { extractAssets } from '../src/asset-extractor.js';
 
 test('normalizeQuestionInput 从链接提取 QID', () => {
   assert.equal(normalizeQuestionInput('https://www.zhihu.com/question/2063557784394785882/answer/123'), '2063557784394785882');
@@ -134,4 +135,110 @@ test('Fix2: data=[] + paging.is_end=true → 可以正常结束（done=true）',
   } finally {
     restore();
   }
+});
+
+// ===== S3: additive answers[].assets 集成（Spec §6.1 / §18） =====
+
+test('S3: grabAll 为每条新回答写入 assets，content 原样不变（canonical immutability）', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-grab-assets-'));
+  const outDir = path.join(dir, 'out');
+  const content = '<p>正文 <img src="https://picx.zhimg.com/a.png"> <a href="https://github.com/foo">链接</a></p>';
+  const body = {
+    data: [{ id: '1', content, author: 'A', voteup_count: 1, comment_count: 0 }],
+    paging: { is_end: true },
+  };
+  const restore = stubFetch(body);
+  try {
+    const result = await grabAll(TEST_CONFIG, '123', { outDir });
+    assert.equal(result.answers.length, 1);
+    const a = result.answers[0];
+    assert.equal(a.content, content, 'content 必须原样保留（canonical 不变）');
+    assert.ok(a.assets, 'assets 字段存在');
+    assert.equal(a.assets.images.length, 1);
+    assert.equal(a.assets.links.length, 1);
+    assert.ok(Array.isArray(a.assets.references));
+    assert.ok(Array.isArray(a.assets.codeBlocks));
+    assert.ok(Array.isArray(a.assets.videos));
+    assert.equal(a.assets.images[0].clickable, true);
+    assert.equal(a.assets.images[0].securityClass, 'zhimg_cdn');
+    // 磁盘 snapshot 同样包含 assets 且 content 不变
+    const disk = JSON.parse(fs.readFileSync(path.join(outDir, '123', 'answers.json'), 'utf8'));
+    assert.equal(disk.answers[0].content, content);
+    assert.deepEqual(disk.answers[0].assets, a.assets);
+  } finally {
+    restore();
+  }
+});
+
+test('S3: assets additive —— 既有 V1 字段类型/语义完全不变', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-grab-additive-'));
+  const outDir = path.join(dir, 'out');
+  const body = {
+    data: [{
+      id: '42', content: '<p>x</p>', author: { name: '甲' },
+      voteup_count: 7, comment_count: 2, created_time: 1000, updated_time: 2000, excerpt: '摘',
+    }],
+    paging: { is_end: true },
+  };
+  const restore = stubFetch(body);
+  try {
+    const result = await grabAll(TEST_CONFIG, '123', { outDir });
+    const a = result.answers[0];
+    assert.equal(a.id, '42');
+    assert.equal(a.author, '甲');
+    assert.equal(a.content, '<p>x</p>');
+    assert.equal(a.excerpt, '摘');
+    assert.equal(a.voteupCount, 7);
+    assert.equal(a.commentCount, 2);
+    assert.equal(a.createdTime, 1000);
+    assert.equal(a.updatedTime, 2000);
+    assert.deepEqual(
+      Object.keys(a).sort(),
+      ['assets', 'author', 'commentCount', 'content', 'createdTime', 'excerpt', 'id', 'updatedTime', 'url', 'voteupCount'].sort(),
+      '仅新增 assets 一个字段',
+    );
+  } finally {
+    restore();
+  }
+});
+
+test('S3: 断点续传 —— 旧回答（无 assets）不被改写，新回答带 assets', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-grab-resume-assets-'));
+  const outDir = path.join(dir, 'out');
+  const qdir = path.join(outDir, '123');
+  fs.mkdirSync(qdir, { recursive: true });
+  // 模拟 V1 旧产物：已有 1 条无 assets 回答 + progress offset=1
+  fs.writeFileSync(path.join(qdir, 'answers.json'), JSON.stringify({
+    questionId: '123',
+    questionTitle: 'T',
+    answerCount: 2,
+    answers: [{ id: '1', author: '旧', content: '<p>old</p>' }],
+  }));
+  fs.writeFileSync(path.join(qdir, '.progress.json'), JSON.stringify({ offset: 1, done: false }));
+  const body = {
+    data: [{ id: '2', content: '<img src="https://picx.zhimg.com/b.png">' }],
+    paging: { is_end: true },
+  };
+  const restore = stubFetch(body);
+  try {
+    const result = await grabAll(TEST_CONFIG, '123', { outDir });
+    assert.equal(result.answers.length, 2);
+    const old = result.answers.find((x) => x.id === '1');
+    const fresh = result.answers.find((x) => x.id === '2');
+    assert.equal(old.assets, undefined, '旧回答字段不被改写');
+    assert.equal(old.content, '<p>old</p>');
+    assert.ok(fresh.assets, '新回答带 assets');
+    assert.equal(fresh.content, '<img src="https://picx.zhimg.com/b.png">');
+    assert.equal(fresh.assets.images.length, 1);
+  } finally {
+    restore();
+  }
+});
+
+test('S3: determinism —— 相同 content 两次抓取 → 相同 assets（G9）', async () => {
+  const html = '<p>x</p><img src="https://picx.zhimg.com/1.png"><a href="https://github.com/a">l</a>';
+  const first = extractAssets(html);
+  const second = extractAssets(html);
+  assert.deepEqual(first, second);
+  assert.equal(JSON.stringify(first), JSON.stringify(second));
 });

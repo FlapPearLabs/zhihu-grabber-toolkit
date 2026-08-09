@@ -147,8 +147,10 @@ function renderInlineNode(node, ctx) {
     case 'img':
       return renderImage(node, ctx);
     case 'sup':
+      return renderSup(node, ctx);
     case 'sub':
-      // Phase 1：保留安全可见文本（不重建 footnote contract，Phase 2 再做）
+      // Phase 1 行为保留：sub 不是脚注元素（§14.1 白名单只有 sup[data-numero]，
+      // 与 asset-extractor collectReference 的判定一致），仅渲染安全可见文本。
       return renderInlineChildren(node, ctx);
     case 'script':
     case 'style':
@@ -308,6 +310,50 @@ function renderInlineCode(node, ctx) {
   return needSpace ? `${delim} ${text} ${delim}` : `${delim}${text}${delim}`;
 }
 
+// ---------------------------------------------------------------------------
+// §13.1 脚注重建（BLOCKER-5）
+// ---------------------------------------------------------------------------
+
+/**
+ * 脚注正文：data-text 过 §8.0.2 text/URL pipeline（escaping + 裸 URL 走 §11 sanitizer）。
+ * 定义是 renderer 生成的单行结构，正文内换行折叠为空格，防止破坏 `[^id]: text` 形态
+ * （canonical data-text 完整保留在 assets.references[].text，Markdown 只是视图）。
+ */
+function footnoteBody(text, ctx) {
+  return textPipeline(text, ctx).replace(/[\r\n]+/g, ' ');
+}
+
+/**
+ * <sup> 渲染。Phase 2 重建脚注（Spec §13.1）：
+ *
+ *   - 只有同时带 data-numero / data-text 之一的上标才视为脚注（与 asset-extractor
+ *     collectReference 的判定一致：普通上标不是脚注）；
+ *   - internalFootnoteId = a<answerId>-r<localReferenceIndex>（1-based，文档内全局唯一）；
+ *   - data-numero 是外部不可信字段，绝不进入 Markdown identifier（只作 source metadata）；
+ *   - 重复/非法/缺失 numero 不影响完整性（按出现顺序 index 递增）；
+ *   - 脚注正文来自 data-text，必须过 §8.0 escaping；其中 URL 继续走 §11 同一 sanitizer；
+ *   - answerId 缺失或非法（非 1-20 位数字）时无法保证文档级唯一 → fail closed
+ *     为可见文本（Phase 1 行为），不生成可能冲突的内部 ID。
+ */
+function renderSup(node, ctx) {
+  const numero = getAttr(node, 'data-numero');
+  const text = getAttr(node, 'data-text');
+  if (numero === null && text === null) {
+    // 普通上标：仅保留可见文本（Phase 1 行为）
+    return renderInlineChildren(node, ctx);
+  }
+  const answerId = /^\d{1,20}$/.test(String(ctx.answerId ?? '')) ? String(ctx.answerId) : null;
+  if (answerId === null) {
+    // 无合法 answerId → 无法生成文档级唯一 ID，fail closed 为可见文本
+    return renderInlineChildren(node, ctx);
+  }
+  ctx.footnoteIndex += 1;
+  const id = `a${answerId}-r${ctx.footnoteIndex}`;
+  const body = footnoteBody(text ?? '', ctx);
+  ctx.footnotes.push({ id, body });
+  return `[^${id}]`;
+}
+
 /** §8.2 / §11.5：外链必须 renderer 生成；明示 canonical 域名；拒绝的 href → 仅保留锚文本 */
 function renderAnchor(node, ctx) {
   const href = getAttr(node, 'href');
@@ -417,14 +463,29 @@ function renderLiContent(li, ctx) {
 /**
  * HTML（知乎 answer.content / description 等）→ 安全 Markdown。
  *
+ * 纯函数、无状态：每次调用创建全新的脚注计数器与定义表，多次调用不产生
+ * 跨调用状态泄漏（G9 determinism）。同一 HTML + 同一 ctx → 同一输出。
+ *
  * @param {unknown} html
- * @param {{ headingOffset?: number }} [ctx]
+ * @param {{ headingOffset?: number, answerId?: string|number }} [ctx]
  *   headingOffset：正文 heading 相对文档顶层的偏移（answer body 默认 2 → h1 变 H3）
+ *   answerId：回答 ID（数字字符串），用于生成文档内全局唯一的脚注内部 ID
+ *     （§13.1：a<answerId>-r<index>）；缺失/非法时脚注 fail closed 为可见文本。
  * @returns {string}
  */
 export function richHtmlToMarkdown(html, ctx = {}) {
   const source = html == null ? '' : String(html);
   const doc = parseFragment(source);
-  const merged = { headingOffset: 2, ...ctx };
-  return renderBlockChildren(doc.childNodes ?? [], merged).trim();
+  const merged = {
+    headingOffset: Number.isInteger(ctx.headingOffset) ? ctx.headingOffset : 2,
+    answerId: ctx.answerId ?? null,
+    footnoteIndex: 0, // 每次调用独立，保证无跨调用状态泄漏
+    footnotes: [], // 本回答内脚注定义表（按出现顺序）
+  };
+  const body = renderBlockChildren(doc.childNodes ?? [], merged).trim();
+  if (merged.footnotes.length === 0) return body;
+  const defs = merged.footnotes
+    .map((f) => `[^${f.id}]: ${f.body}`.trimEnd())
+    .join('\n\n');
+  return `${body}\n\n${defs}`;
 }

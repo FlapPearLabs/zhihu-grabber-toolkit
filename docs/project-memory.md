@@ -22,7 +22,7 @@
 
 ## 测试基线（稳定，离线）
 
-- `cd zhihu-answer-grabber && npm test` → 274 pass / 0 fail / 3 skip
+- `cd zhihu-answer-grabber && npm test` → 331 pass / 0 fail / 3 skip
 - `cd corpus-anthology && node --test` → 93 pass / 0 fail / 2 skip
 - `node --test test/agent-pipeline.test.mjs`（仓库根，CLI×Skill 集成）→ 6 pass / 0 fail
 - skip 均为既有 Windows 平台限制（symlink 相关），与实现改动无关。
@@ -34,7 +34,8 @@
   - split-whitespace 累计
   - code fence / language 处理
   - 已实现的 text-node / title / author 转义面
-- **尚未完成、不得标记为 covered**（按已批准 Spec 相应 Phase 再补测试）：image / assets、references / footnotes 完整重建、description / topics、comments、Agent projection / capability isolation、video。
+- **V2 Phase 2（S1-S6）已实现并覆盖**：image metadata / external link assets / code block metadata / reference-footnote assets（`test/asset-extractor.test.js`）；脚注重建与对抗（重复/非法/缺失 numero、跨 answer collision、Markdown 注入、恶意脚注 URL，`test/rich-renderer.test.js`）；additive `answers[].assets` 集成、断点续传兼容、determinism（`test/grabber.test.js`）；V1 兼容回归 render/verify/handoff/CLI status（`test/v1-compat.test.js`）。
+- **尚未完成、不得标记为 covered**（按已批准 Spec 相应 Phase 再补测试）：description / topics（question metadata）、comments、Agent projection / capability isolation、video（Spec §16 待真实样本）。
 
 ## 已批准产品决策 / 长期约束
 
@@ -42,6 +43,7 @@
 - Agent 优先 `--json` 机器契约，不解析人类 stdout；禁止 `search --grab`（仅人类终端兼容）。
 - 凭据只在本机配置，绝不进 repo / log / chat（详见 `references/security.md` 与 `RULES.md`）。
 - V1 全部对外合同保持向后兼容；schema 变更只允许 additive。
+- **V2 Phase 2 additive `answers[].assets` 已落地**：`{ images, links, references, codeBlocks, videos }` 由 `src/asset-extractor.js` 从 `content` 确定性派生（Spec §18），`content` 原样保留；脚注 Markdown identifier 一律 renderer 生成 `a<answerId>-r<index>`（1-based 出现顺序，文档内全局唯一），`data-numero` 只作 `sourceNumero` metadata、绝不进 identifier；answerId 缺失/非法时脚注 fail closed 为可见文本（防跨 answer ID 冲突）；仅 `sup`（非 `sub`）视为脚注元素，与 asset-extractor 判定一致（Spec §14.1 白名单）。
 
 ## 路线图（下一阶段，未经批准不得开始）
 

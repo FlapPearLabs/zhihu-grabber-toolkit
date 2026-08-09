@@ -295,13 +295,126 @@ test('image: figure + figcaption 保留 caption', () => {
   assert.ok(md.includes('数据来源'), 'caption 应保留');
 });
 
-// ===== 脚注 Phase 1 fallback（§20） =====
+// ===== 脚注重建（§13.1 BLOCKER-5 / §23.3.3，Phase 2） =====
 
-test('footnote: sup 仅保留安全可见文本，不重建 footnote 语法', () => {
+test('footnote: 无 answerId → fail closed 为可见文本（Phase 1 fallback 保留）', () => {
   const md = richHtmlToMarkdown('<p>正文<sup data-numero="1" data-text="来源">[1]</sup></p>');
-  assert.ok(!md.includes('[^'), '不得生成 footnote reference 语法');
+  assert.ok(!md.includes('[^'), '无 answerId 不得重建 footnote reference 语法');
   assert.ok(!md.includes('data-text'), '不得透传属性');
   assert.ok(!md.includes('<sup'), '不得残留 tag');
+});
+
+test('footnote: 合法 answerId → 内部 ID + 定义；data-numero 不进 identifier', () => {
+  const md = richHtmlToMarkdown('<p>正文<sup data-numero="7" data-text="来源 A">[7]</sup>继续</p>', { answerId: '206123' });
+  assert.ok(md.includes('正文[^a206123-r1]继续'), `marker 应为内部 ID: ${md}`);
+  assert.ok(md.includes('[^a206123-r1]: 来源 A'), '定义应输出');
+  assert.ok(!md.includes('-r7'), 'data-numero 不得进入 identifier');
+  assert.ok(!md.includes('<sup'), '不得残留 tag');
+});
+
+test('footnote: 重复 numero → 按出现顺序 r1/r2，不影响完整性', () => {
+  const md = richHtmlToMarkdown(
+    '<p><sup data-numero="1" data-text="A">[1]</sup> <sup data-numero="1" data-text="B">[1]</sup></p>',
+    { answerId: '1' },
+  );
+  assert.ok(md.includes('[^a1-r1]'));
+  assert.ok(md.includes('[^a1-r2]'));
+  assert.ok(md.includes('[^a1-r1]: A'));
+  assert.ok(md.includes('[^a1-r2]: B'));
+  // 只数正文 marker（定义行 [^id]: 不算），避免定义文本重复计数
+  assert.equal((md.match(/\[\^a1-r\d+\](?!:)/g) || []).length, 2, '恰好两个 marker');
+});
+
+test('footnote: 非法 numero（负数/超长/Markdown 字符）不影响完整性', () => {
+  const md = richHtmlToMarkdown(
+    '<p><sup data-numero="-3" data-text="负">[-3]</sup><sup data-numero="99999999999999999999" data-text="长">[x]</sup><sup data-numero="a]b" data-text="文">[y]</sup></p>',
+    { answerId: '42' },
+  );
+  assert.ok(md.includes('[^a42-r1]: 负'));
+  assert.ok(md.includes('[^a42-r2]: 长'));
+  assert.ok(md.includes('[^a42-r3]: 文'));
+  assert.ok(!md.includes('[-3]'), '原 sup 文本不进入产物');
+});
+
+test('footnote: 缺失 numero（仅 data-text）仍按脚注处理', () => {
+  const md = richHtmlToMarkdown('<p><sup data-text="只有文本">[1]</sup></p>', { answerId: '5' });
+  assert.ok(md.includes('[^a5-r1]: 只有文本'));
+});
+
+test('footnote: 缺失 data-text → 空定义不 crash', () => {
+  const md = richHtmlToMarkdown('<p><sup data-numero="3">[3]</sup></p>', { answerId: '5' });
+  assert.ok(md.includes('[^a5-r1]:'), '空脚注定义仍输出');
+  assert.ok(!md.includes('a5-r3'), 'data-numero=3 不进 identifier');
+});
+
+test('footnote: 普通 sup（无 data-numero/data-text）只渲染可见文本', () => {
+  const md = richHtmlToMarkdown('<p>E=mc<sup>2</sup></p>', { answerId: '1' });
+  assert.equal(md, 'E=mc2');
+});
+
+test('footnote: sub 不是脚注元素（§14.1 白名单只有 sup[data-numero]），保持 Phase 1 可见文本', () => {
+  const md = richHtmlToMarkdown('<p>H<sub data-numero="1" data-text="x">2</sub>O</p>', { answerId: '1' });
+  assert.ok(!md.includes('[^'), 'sub 不得生成 footnote 语法');
+  assert.ok(!md.includes('<sub'), '不得残留 tag');
+  assert.ok(md.includes('H2O'), '可见文本保留');
+});
+
+test('footnote: 非法 answerId → fail closed 为可见文本', () => {
+  const md = richHtmlToMarkdown('<p>a<sup data-numero="1" data-text="x">[1]</sup></p>', { answerId: 'a1' });
+  assert.ok(!md.includes('[^'), '非数字 answerId 不得重建（无法保证文档级唯一）');
+});
+
+test('footnote: data-text Markdown 注入被转义，不产生假链接/标题', () => {
+  const md = richHtmlToMarkdown(
+    '<p><sup data-numero="1" data-text="[click](https://evil.example) 和 # 标题">[1]</sup></p>',
+    { answerId: '9' },
+  );
+  assert.ok(md.includes('[^a9-r1]:'), '定义存在');
+  assert.ok(!md.includes('[click](https://'), '不得保留假链接');
+  assert.ok(!/^#\s/m.test(md), '不得产生 heading');
+});
+
+test('footnote: 恶意脚注 URL（localhost/javascript）→ 惰性文本', () => {
+  const md = richHtmlToMarkdown(
+    '<p><sup data-numero="1" data-text="https://localhost/x 和 javascript:alert(1)">[1]</sup></p>',
+    { answerId: '9' },
+  );
+  assert.ok(!md.includes('](https://localhost'), 'localhost 不得成链');
+  assert.ok(!md.includes('](javascript:'), 'javascript 不得成链');
+});
+
+test('footnote: 脚注内合法公网 URL → clickable + 明示域名（external_unverified）', () => {
+  const md = richHtmlToMarkdown(
+    '<p><sup data-numero="1" data-text="来源 https://github.com/foo">[1]</sup></p>',
+    { answerId: '9' },
+  );
+  assert.ok(md.includes('[打开外部链接 · github.com]'), '脚注内链接明示域名');
+  assert.ok(md.includes('(https://github.com/foo)'), '链接指向公网 target');
+});
+
+test('footnote: 跨 answer 无 collision；V1 framing 恰好一个 ## N. 每条', () => {
+  const meta = { questionId: '123', questionTitle: 'T', answerCount: 2, url: 'https://www.zhihu.com/question/123' };
+  const answers = [
+    { id: '1', author: 'A', content: '<p>a<sup data-text="脚注一" data-numero="1">[1]</sup></p>', voteupCount: 1, commentCount: 0 },
+    { id: '2', author: 'B', content: '<p>b<sup data-text="脚注二" data-numero="1">[1]</sup></p>', voteupCount: 1, commentCount: 0 },
+  ];
+  const md = renderAnswers(meta, answers);
+  assert.ok(md.includes('[^a1-r1]'));
+  assert.ok(md.includes('[^a2-r1]'));
+  assert.ok(md.includes('[^a1-r1]: 脚注一'));
+  assert.ok(md.includes('[^a2-r1]: 脚注二'));
+  const ids = md.match(/\[\^a\d+-r\d+\](?!:)/g) || [];
+  assert.equal(new Set(ids).size, ids.length, `所有内部 ID 全局唯一: ${md}`);
+  const headings = md.match(/^## \d+\./gm) || [];
+  assert.equal(headings.length, 2, 'V1 framing 不破坏');
+});
+
+test('footnote: 同一 HTML 两次渲染结果一致（G9 determinism，无跨调用状态泄漏）', () => {
+  const html = '<p>a<sup data-text="x" data-numero="1">[1]</sup>b<sup data-text="y" data-numero="2">[2]</sup></p>';
+  const first = richHtmlToMarkdown(html, { answerId: '1' });
+  const second = richHtmlToMarkdown(html, { answerId: '1' });
+  assert.equal(first, second, '两次调用输出必须一致');
+  assert.equal((first.match(/\[\^a1-r\d+\](?!:)/g) || []).length, 2, '每次调用独立从 r1 开始');
 });
 
 // ===== answer framing（§23.3 J / §24） =====
