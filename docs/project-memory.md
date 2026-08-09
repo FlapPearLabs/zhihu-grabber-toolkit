@@ -48,14 +48,16 @@
 
 ## 路线图（下一阶段，未经批准不得开始）
 
-- **V2 Phase 3 — Question Metadata**（description / topics，Approved Spec §17）是下一个计划实现的阶段。
-- Phase 2（Rich Content Assets）实现已完成并待 CODE review；**未经 Phase 2 CODE gate PASS 并 ff-only merge master 前，不得开始 Phase 3**。
+- **V2 Phase 2 — Rich Content Assets 已纳入 accepted project baseline**：additive `answers[].assets`（images / links / references / codeBlocks / videos）、canonical `content` 不可变、脚注重建（renderer 生成 `a<answerId>-r<index>`）、1px placeholder 确定性合同（Spec §10.1）均为长期合同，保持不变（见上文已批准决策与 Spec）。
+- **V2 Phase 3 — Question Metadata**（description / topics，Approved Spec §17）是下一个计划实现的阶段；**未经新的 authorized phase task / gate 批准，不得开始**。
 - 开始前：从**届时最新的 remote master** 创建（或重建）其 feature 分支；不依赖任何历史临时分支 ref 作为长期事实。
+- **browser-smoke caveat（长期）**：`browser-smoke` 存在已知的 pre-existing false-negative baseline（部分渲染形态的内容匹配）；其绝对结果 FAIL 不得改标为 PASS；Phase 2 是在已明确批准的 no-regression baseline exception 下被接受的；browser-smoke 工具本身的改进是独立 follow-up defect，不属于任何已接受 Phase 的交付范围。
 
 ## 历史 review 结论（沉淀）
 
 - DOCUMENT gate（V2 Spec）：PASS（2026-08-09，Spec APPROVED）。
 - CODE gate（Phase 1）：PASS @ `27e68c1`（P0/P1/P2 全 0，四轮 review：escape 完整性、framing 收口、lockfile registry、localhost namespace、cross-node 与 split-whitespace 绕过修复）。
+- **CODE gate（Phase 2 — Rich Content Assets）**：PASS（2026-08-09，独立 review 四轮收口：figure 遍历、脚注 data-url、anchorText/index 公共字段、1px placeholder 合同与 candidate ordering；DOCUMENT gate 对 §10.1 clarification 亦 PASS），已 ff-only merge master；POST_GATE_MEMORY_UPDATE 随本 follow-up 完成。
 - 建议：停止无限制地静态加 gate，进入真实使用验证与按 Phase 推进。
 
 ## Maintenance Contract
