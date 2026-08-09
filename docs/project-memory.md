@@ -57,7 +57,7 @@
 
 - DOCUMENT gate（V2 Spec）：PASS（2026-08-09，Spec APPROVED）。
 - CODE gate（Phase 1）：PASS @ `27e68c1`（P0/P1/P2 全 0，四轮 review：escape 完整性、framing 收口、lockfile registry、localhost namespace、cross-node 与 split-whitespace 绕过修复）。
-- **CODE gate（Phase 2 — Rich Content Assets）**：PASS（2026-08-09，独立 review 四轮收口：figure 遍历、脚注 data-url、anchorText/index 公共字段、1px placeholder 合同与 candidate ordering；DOCUMENT gate 对 §10.1 clarification 亦 PASS），已 ff-only merge master；POST_GATE_MEMORY_UPDATE 随本 follow-up 完成。
+- **CODE gate（Phase 2 — Rich Content Assets）**：PASS（2026-08-09），已纳入 accepted project baseline。
 - 建议：停止无限制地静态加 gate，进入真实使用验证与按 Phase 推进。
 
 ## Maintenance Contract
