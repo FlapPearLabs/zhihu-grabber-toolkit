@@ -245,6 +245,84 @@ test('P1-NEW-1-C: 高优先级与低优先级全部 javascript:（无真实候�
   assert.equal(images.length, 0, '全部无效 scheme → 无可用候选，整张图忽略');
 });
 
+// ===== P1-2: 精确 1×1 判定（不做小数截断） =====
+// PHASE2_1PX_PLACEHOLDER_CONTRACT 合同 2 的精确化：width/height 必须精确解析为整数
+// 且均 === 1。intAttr 的 Math.trunc 截断只用于 metadata 持久化，不得用于 1px 判定；
+// width="1.9"/height="1.2" 截断后为 1/1 会误判 placeholder，精确判定下为真实图片。
+
+test('EXACT1PX-A: width="1.9" height="1.2" → NOT 1×1 placeholder（data-original 被选中）', () => {
+  const html = '<img width="1.9" height="1.2" data-original="https://example.com/pixel.gif" data-actualsrc="https://picx.zhimg.com/real.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 1, '1.9/1.2 不得截断成 1×1 误判 placeholder');
+  assert.equal(images[0].originalUrl, 'https://example.com/pixel.gif');
+  assert.equal(images[0].clickable, false);
+  assert.equal(images[0].securityClass, 'external_image_untrusted');
+});
+
+test('EXACT1PX-B: width="0.9" height="0.9" → NOT 1×1 placeholder（data-original 被选中）', () => {
+  const html = '<img width="0.9" height="0.9" data-original="https://example.com/pixel2.gif" src="https://picx.zhimg.com/real2.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 1, '0.9 非 1 → 不得判为 1×1 placeholder');
+  assert.equal(images[0].originalUrl, 'https://example.com/pixel2.gif');
+});
+
+test('EXACT1PX-C: width="1" height="1" → 1×1 placeholder（保持）', () => {
+  const html = '<img width="1" height="1" data-original="https://example.com/pixel.gif" data-actualsrc="https://picx.zhimg.com/real.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 1, '显式整数 1×1 → 判 placeholder → fallback');
+  assert.equal(images[0].originalUrl, 'https://picx.zhimg.com/real.png');
+  assert.equal(images[0].clickable, true);
+});
+
+test('EXACT1PX-D: width/height 缺失、空串或非法 → NOT 1×1 placeholder（保持既有行为）', () => {
+  const html = [
+    '<img data-original="https://example.com/p1.gif" src="https://picx.zhimg.com/r1.png">',
+    '<img width="" height="1" data-original="https://example.com/p2.gif" src="https://picx.zhimg.com/r2.png">',
+    '<img width="foo" height="1" data-original="https://example.com/p3.gif" src="https://picx.zhimg.com/r3.png">',
+  ].join('');
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 3, '缺失/空串/非法尺寸均不得判为 1×1 placeholder');
+  assert.equal(images[0].originalUrl, 'https://example.com/p1.gif');
+  assert.equal(images[1].originalUrl, 'https://example.com/p2.gif');
+  assert.equal(images[2].originalUrl, 'https://example.com/p3.gif');
+});
+
+// ===== P1-3: malformed http(s)（如 https://）不得抑制 lower candidate =====
+// classifyImageUrl 对 malformed http(s) 故意返回 { detected:true, reason:'unparsable' }
+// 而非 null；extractor 必须在 candidate acceptance 层要求 URL parseable
+// （isParseableHttpUrl），否则 data-original="https://" 会被当作已选中候选、
+// 真实 data-actualsrc 永远不被检查。
+
+test('P1-3-A: data-original="https://"（无 host）+ data-actualsrc 真实 https → 取 data-actualsrc', () => {
+  const html = '<img data-original="https://" data-actualsrc="https://picx.zhimg.com/real.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 1, 'malformed https 不得抑制 lower 真实候选');
+  assert.equal(images[0].originalUrl, 'https://picx.zhimg.com/real.png');
+  assert.equal(images[0].clickable, true);
+});
+
+test('P1-3-B: src="https://"（无 host）→ ignored（images.length === 0）', () => {
+  const html = '<img src="https://">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 0, 'malformed src 不得作为真实图片');
+});
+
+test('P1-3-C: data-original="https://" + data-actualsrc="javascript:..."（无真实候选）→ ignored', () => {
+  const html = '<img data-original="https://" data-actualsrc="javascript:alert(1)" src="http://example.com/x.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 0, 'malformed https + 非 http(s) 候选 → 整张图忽略');
+});
+
+test('P1-3-D: data-original="http://example.com/x.png"（可 parse 的 http）→ 仍被接受为 candidate（detected true, clickable false，不误伤）', () => {
+  const html = '<img data-original="http://example.com/x.png" src="https://picx.zhimg.com/real.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 1);
+  assert.equal(images[0].originalUrl, 'http://example.com/x.png');
+  assert.equal(images[0].detected, true);
+  assert.equal(images[0].clickable, false);
+  assert.equal(images[0].securityClass, 'external_image_untrusted');
+});
+
 // ===== P1-2: figure 遍历不吞其它 asset（caption 关联 + 通用收集，img 不重复） =====
 
 test('P1-2: figure 内 <a><img></a> → image 带 caption + link 均收录且 img 只计一次', () => {

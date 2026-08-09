@@ -8,9 +8,11 @@
  * 从 answer.content（原始 HTML）中确定性提取：
  *   - images[]：data-original → data-actualsrc → 合法 https src 的 candidate-by-candidate
  *     选择：placeholder（PHASE2_1PX_PLACEHOLDER_CONTRACT：data:/blob: 一律视为 placeholder；
- *     HTTP(S) 仅当原始 <img> 显式提供 width==1 && height==1 才确定性视为 1×1 placeholder）
- *     被忽略并继续 fallback 到 lower-priority 真实候选（§10.1）；每个候选在 selection
- *     阶段即经 classifyImageUrl 确认可接受（null 跳过）；
+ *     HTTP(S) 仅当原始 <img> 显式提供 width==1 && height==1 才确定性视为 1×1 placeholder，
+ *     精确整数判定不做小数截断）被忽略并继续 fallback 到 lower-priority 真实候选（§10.1）；
+ *     每个候选在 selection 阶段先要求可 parse 的 http(s) URL（isParseableHttpUrl，
+ *     malformed 如 `https://` 不得抑制 lower 真实候选），再经 classifyImageUrl 确认
+ *     可接受（null 跳过）；
  *     src 仅合法 https 可作 fallback（http: 不是合法候选）；detected 与 clickable
  *     分离；同 URL 去重（§23.2）。
  *   - links[]：<a href> 全部记录（含被安全策略拒绝的，clickable=false），
@@ -53,6 +55,28 @@ function intAttr(node, name) {
 }
 
 /**
+ * 显式 1×1 尺寸证据（PHASE2_1PX_PLACEHOLDER_CONTRACT 合同 2；P1-2 精确判定）。
+ *
+ * 不做小数截断：width/height 属性必须能精确解析为整数且均 === 1。
+ *   - width="1" height="1" → Number 均为整数 1 → true；
+ *   - width="1.9" height="1.2" → Number 1.9 / 1.2 非整数 → false（不因 Math.trunc 误判）；
+ *   - width="0.9" height="0.9" → 0.9 非整数且非 1 → false；
+ *   - width="foo" → NaN → false；
+ *   - 缺失（getAttr 返回 null）→ 直接 false（不 Number(null)=0 得 0）。
+ *
+ * @param {object} node parse5 元素节点
+ * @returns {boolean} 是否显式 1×1 尺寸证据
+ */
+function hasExplicitOnePxDimensions(node) {
+  const w = getAttr(node, 'width');
+  const h = getAttr(node, 'height');
+  if (w === null || h === null) return false;
+  const wn = Number(w);
+  const hn = Number(h);
+  return Number.isInteger(wn) && Number.isInteger(hn) && wn === 1 && hn === 1;
+}
+
+/**
  * 图片 URL 候选（§10.1 优先级）：data-original → data-actualsrc → 合法 https src。
  *
  * candidate-by-candidate selection，返回首个可接受的 image candidate：
@@ -66,19 +90,21 @@ function intAttr(node, name) {
  *        lower-priority candidate 不再因同一证据被判 1px，它们是真实 swap-in 图片；
  *      —— data:/blob: 形态不消费该证据：src=data: 占位 + data-actualsrc=1×1 跟踪像素时，
  *        data-actualsrc 仍需用尺寸证据判定（真实知乎 lazy-loading 跟踪像素形态）。
- *   3. classifyImageUrl(url) === null → next candidate（空/控制字符/非 http(s) scheme
- *      如 javascript: / file: 不是可接受的 image candidate，不得抑制 lower-priority
- *      真实候选）；data-original / data-actualsrc 无协议限制，http 形态返回非 null
+ *   3. URL 不可 parse / 协议非 http(s) → next candidate（isParseableHttpUrl；如
+ *      `https://` / `http://` 无 host 形态 new URL 抛错、javascript:/file:/data:/blob:
+ *      非 http(s) scheme；malformed http(s) 不得被当作已选中 candidate 而抑制
+ *      lower-priority 真实候选）；
+ *   4. classifyImageUrl(url) === null → next candidate（空/控制字符等非可接受 image
+ *      candidate）；data-original / data-actualsrc 的 http 形态可 parse、返回非 null
  *      分类对象、按 §10.1 记录 detected 但 clickable=false；
- *   4. src 仅合法 https 可作 §10.1 fallback（http: 不是「合法 https src」候选 → 跳过）；
- *   5. 否则 → 采用，返回 { url, cls }（cls = classifyImageUrl(url) 且非 null，避免
+ *   5. src 仅合法 https 可作 §10.1 fallback（http: 不是「合法 https src」候选 → 跳过）；
+ *   6. 否则 → 采用，返回 { url, cls }（cls = classifyImageUrl(url) 且非 null，避免
  *      collectImage 重复 parse 一次）。
- *   6. 全部无可用候选 → null（整张图忽略，不进 assets）。
+ *   7. 全部无可用候选 → null（整张图忽略，不进 assets）。
  *
  * 注意：classifyImageUrl 对「无法解析的 https 形态」返回 { detected:true, clickable:false,
- * reason:'unparsable' } 而非 null —— 该形态是合法 candidate，应选用；只有
- * classifyImageUrl 返回 null 的（空/控制字符/data:/blob:/javascript: 等非 http(s) scheme）
- * 才跳过。
+ * reason:'unparsable' } 而非 null —— 因此 extractor 必须在 candidate acceptance 层单独
+ * 增加 URL parseable 判定（isParseableHttpUrl）；classifyImageUrl 自身公共语义保持不变。
  */
 function pickImageUrl(node) {
   let consumed1pxEvidence = false; // 显式 width==1&&height==1 证据是否已用于判 1px placeholder
@@ -98,9 +124,10 @@ function pickImageUrl(node) {
       if (!consumed1pxEvidence && !isDataOrBlobPlaceholder(url)) consumed1pxEvidence = true;
       continue; // placeholder → next candidate
     }
+    if (!isParseableHttpUrl(url)) continue; // URL 不可 parse / 协议非 http(s) → next
     if (attr === 'src' && !/^https:\/\//i.test(url)) continue; // http: 不得作 src fallback
     const cls = classifyImageUrl(url);
-    if (cls === null) continue; // 非可接受 image candidate（javascript:/file: 等）→ next
+    if (cls === null) continue; // 非可接受 image candidate（空/控制字符等）→ next
     return { url, cls };
   }
   return null;
@@ -121,13 +148,38 @@ function isDataOrBlobPlaceholder(url) {
 }
 
 /**
+ * candidate URL 可接受性判定：可 parse 且协议为 http(s)（P1-3）。
+ *
+ * classifyImageUrl 对 malformed http(s)（如 `https://` / `http://`，WHATWG URL parser
+ * 因缺少 host 抛错）故意返回 { detected:true, ..., reason:'unparsable' } 而非 null；
+ * 若 extractor 仅凭 `cls !== null` 判定可接受，会把这类无 host 的 malformed URL 当作
+ * 已选中 candidate，从而抑制 lower-priority 真实候选（如 data-actualsrc）。本函数在
+ * candidate acceptance 层单独要求「URL parseable 且协议 http(s)」；classifyImageUrl
+ * 的公共语义保持不变。
+ *
+ * @param {string} url 已 trim 的 candidate URL
+ * @returns {boolean} 可 parse 的 http(s) URL
+ */
+function isParseableHttpUrl(url) {
+  if (typeof url !== 'string' || url.length === 0) return false;
+  if (!/^https?:\/\//i.test(url)) return false;
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * image candidate placeholder 判定（PHASE2_1PX_PLACEHOLDER_CONTRACT，合同 1-5）。
  *
  * - 合同 1：`data:` / `blob:` candidate 一律视为 placeholder；
  * - 合同 2：HTTP(S) image candidate 仅当原始 <img> 同时显式提供 width==1 且
- *   height==1 才确定性视为 1×1 placeholder；
+ *   height==1 才确定性视为 1×1 placeholder（hasExplicitOnePxDimensions 精确整数
+ *   判定，不做小数截断：width="1.9" 不得因 Math.trunc 误判为 1）；
  * - 合同 3：width/height 缺失、非法、或不同时为 1 → 不得猜测为 1px placeholder
- *   （intAttr 对缺失/非法返回 null，`w === 1 && h === 1` 不成立）；
+ *   （hasExplicitOnePxDimensions 对缺失/非法/非 1 返回 false）；
  * - 合同 4：禁止启发式 —— URL filename / path / token / query / host / CSS class /
  *   alt text 一律不用于判断 1px；
  * - 合同 5：禁止网络请求获取 intrinsic dimensions（本模块纯函数、无网络）；
@@ -141,11 +193,8 @@ function isImageCandidatePlaceholder(node, url) {
   if (!url) return true;
   if (/^data:/i.test(url)) return true; // 合同 1
   if (/^blob:/i.test(url)) return true; // 合同 1
-  if (/^https?:\/\//i.test(url)) { // 合同 2：HTTP(S) 仅 width==1 AND height==1 视为 1px
-    const w = intAttr(node, 'width');
-    const h = intAttr(node, 'height');
-    if (w === 1 && h === 1) return true;
-    return false; // 合同 3/4：无证据不猜
+  if (/^https?:\/\//i.test(url)) { // 合同 2：HTTP(S) 仅显式 width==1 AND height==1 视为 1px
+    return hasExplicitOnePxDimensions(node);
   }
   return false; // 其它 scheme 交给 pickImageUrl 的 classifyImageUrl 过滤
 }

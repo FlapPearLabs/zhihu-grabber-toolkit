@@ -412,6 +412,7 @@ data-original
 > HTTP(S) 图片仅当原始 `<img>` 显式提供 `width == 1` 且 `height == 1` 时视为 1×1 placeholder；
 > 无显式尺寸证据（缺失/非法/非 1×1）不得猜测；不得基于 URL/文件名/alt 等启发式判断；
 > 不发起网络请求读取图片实际尺寸。
+> 显式 1×1 尺寸证据在同一 `<img>` 的 candidate fallback 链中只消费一次：首个因此被判定为 1×1 placeholder 的 HTTP(S) candidate 被跳过后，同一 `<img>` 的 lower-priority candidate 不再重复使用该尺寸证据，以允许确定性的 lazy-load swap-in fallback。
 
 ### 10.2 图片 URL 校验（hostname 白名单）
 
