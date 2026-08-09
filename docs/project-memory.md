@@ -60,10 +60,12 @@
 - 本文件是 **Git tracked durable project memory**；GitHub master 是最终权威版本。
 - `.workbuddy/memory/` 是 **non-authoritative runtime memory**（自动产生、ignored、可含临时上下文），只作参考输入，不覆盖本文件及任何 repo-tracked authority。
 - **任务开始必须读取本文件**；缺失时 STOP 并报告 `PROJECT_MEMORY_MISSING`。
-- **任务结束必须判断 `PROJECT_MEMORY_UPDATE_REQUIRED: YES | NO`**；YES 时在同一个 task branch 内更新本文件并与任务一起 review；NO 时不得修改本文件（工作树保持 clean）。
+- **memory decision 分两类，按任务角色执行**：
+  - **PRE-GATE TASK**（实现 / 文档 / 修复 / research / smoke）：结束前必须判断 `PROJECT_MEMORY_UPDATE_REQUIRED: YES | NO`。YES 时随**当前 task branch** 更新本文件并进入同一次 independent review；NO 时不得修改本文件（工作树保持 clean）。
+  - **INDEPENDENT REVIEWER**：必须判断 `POST_GATE_MEMORY_UPDATE_REQUIRED: YES | NO`。YES 时 reviewer **不修改被审 branch**；被审 branch 按 reviewed HEAD 正常 merge 后，依 `AGENTS.md` §3.5 创建独立 `docs/memory` follow-up branch 更新本文件，单独通过 independent review 后才能 merge；NO 时不产生 post-gate memory follow-up。
 - **pre-gate durable knowledge 随产生它的 task branch 一起 review**；**gate-generated durable knowledge**（如 final gate conclusion、accepted checkpoint）如需沉淀，走独立 post-gate memory follow-up（reviewer 只报告 `POST_GATE_MEMORY_UPDATE_REQUIRED`，不修改被审 branch）。
 - **Git history 足以保存的纯 SHA / merge 状态无需机械复制进本文件**；不要为了把 gate PASS 写进来而制造 review loop。
 - 只有 **durable + verified + project-level + non-sensitive** 的信息才进入本文件。
 - 禁止写入：current HEAD / current master SHA（除非作为 historical approved checkpoint）/ 临时 branch 存在性 / workspace path / 本机用户名 / backup path / credentials / private runtime state / 临时 task progress / scratch reasoning / 未经确认的猜测。
 - 本文件不是 changelog：不记录 commit history / daily log / task log / review transcript；信息失效时更新为新的长期事实或标注 historical checkpoint，不向尾部无限堆日志。
-- 所有更新随产生该知识的 task branch 一起独立 review，通过后才进入 GitHub master。
+- 所有 project-memory 更新都必须被 **independent review** 覆盖：pre-gate update 随原 task branch review；post-gate update 随独立 `docs/memory` follow-up branch review。不得声称 post-gate update 必须留在产生 gate 结论的原 task branch。通过 review 后才进入 GitHub master。
