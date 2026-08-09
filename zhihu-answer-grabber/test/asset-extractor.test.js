@@ -129,15 +129,93 @@ test('P1-1-E: 全部 candidate 为 placeholder → images.length === 0', () => {
   assert.equal(images.length, 0);
 });
 
-test('P1-1-F: data: scheme 的 1x1 透明 gif 占位被忽略（data: placeholder 覆盖）', () => {
-  // 说明：本 case 只证明「data: scheme 形态的 1x1 透明 gif 占位」被忽略（§10.1 明确列出
-  // data:image/gif;base64 占位形态）。HTTP(S) 1px placeholder（如 1x1 尺寸的真实 URL 图片）
-  // 的确定性识别规则未定义，属 SPEC_CONFLICT_1PX_PLACEHOLDER：未实施、未宣称闭合，
-  // 待用户批准最小合同（显式 width==1 AND height==1 → 1px；无显式尺寸不猜；不发网络探测）
-  // 后另行实施。
+test('P1-1-F: data: scheme 的 1x1 透明 gif 占位被忽略（合同 1：data: 一律 placeholder）', () => {
+  // 说明：本 case 证明「data: scheme 形态的 1x1 透明 gif 占位」被忽略（§10.1 明确列出
+  // data:image/gif;base64 占位形态）。Phase 2 已批准合同 PHASE2_1PX_PLACEHOLDER_CONTRACT：
+  // data:/blob: 一律视为 placeholder（合同 1）；HTTP(S) 仅当原始 <img> 显式提供
+  // width==1 && height==1 才视为 1×1 placeholder（合同 2，见 P2-1PX-A/B/C/D/E/F）；
+  // 无显式尺寸证据不猜测、禁止 URL/文件名/alt 启发式、不发网络请求（合同 3/4/5）。
   const html = '<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">';
   const { images } = extractAssets(html);
   assert.equal(images.length, 0, 'data: 1x1 gif 占位不得作为真实图片');
+});
+
+// ===== P2-1PX: 1px placeholder 确定性合同（PHASE2_1PX_PLACEHOLDER_CONTRACT，用户已批准） =====
+// 合同 1：data:/blob: 一律 placeholder；合同 2：HTTP(S) 仅当原始 <img> 显式
+// width==1 && height==1 视为 1×1 placeholder；合同 3：无显式尺寸证据（缺失/非法/
+// 非 1×1）不得猜测；合同 4：禁止 URL/文件名/alt 等启发式；合同 5：不发网络请求；
+// 合同 6：placeholder 被跳过后继续 lower-priority fallback（P2-1PX-A/B）；
+// 合同 7：本 Phase「1px placeholder」= 显式 width=1 AND height=1 证明的 1×1 image。
+
+test('P2-1PX-A: data-original 为 1×1（width=1 height=1）placeholder + data-actualsrc 真实 https → fallback 到 data-actualsrc', () => {
+  const html = '<img width="1" height="1" data-original="https://example.com/pixel.gif" data-actualsrc="https://picx.zhimg.com/real.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 1, '1×1 placeholder 跳过 → 继续 fallback 到 data-actualsrc');
+  assert.equal(images[0].originalUrl, 'https://picx.zhimg.com/real.png');
+  assert.equal(images[0].clickable, true);
+});
+
+test('P2-1PX-B: data-original 为 1×1 placeholder + src 真实 https → fallback 到 src', () => {
+  const html = '<img width="1" height="1" data-original="https://example.com/pixel.gif" src="https://picx.zhimg.com/real.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 1, '1×1 placeholder 跳过 → 继续 fallback 到 src');
+  assert.equal(images[0].originalUrl, 'https://picx.zhimg.com/real.png');
+  assert.equal(images[0].clickable, true);
+});
+
+test('P2-1PX-C: width=1 height=2 → 不得因尺寸猜 placeholder（真实提取 data-original）', () => {
+  const html = '<img width="1" height="2" data-original="https://example.com/pixel.gif" src="https://picx.zhimg.com/real.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 1, '非 1×1 尺寸不得判为 1px placeholder');
+  assert.equal(images[0].originalUrl, 'https://example.com/pixel.gif');
+  assert.equal(images[0].clickable, false);
+  assert.equal(images[0].securityClass, 'external_image_untrusted');
+});
+
+test('P2-1PX-D: width/height 缺失 → 不得因尺寸猜 placeholder（真实提取）', () => {
+  const html = [
+    '<img data-original="https://example.com/pixel.gif" src="https://picx.zhimg.com/real.png">',
+    '<img height="1" data-original="https://example.com/pixel2.gif" src="https://picx.zhimg.com/real2.png">',
+  ].join('');
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 2, '尺寸缺失/只给一个维度 → 不视为 1px placeholder');
+  assert.equal(images[0].originalUrl, 'https://example.com/pixel.gif');
+  assert.equal(images[1].originalUrl, 'https://example.com/pixel2.gif');
+});
+
+test('P2-1PX-E: width 非法（width="foo"）→ intAttr null → 不得猜 placeholder（真实提取）', () => {
+  const html = '<img width="foo" height="1" data-original="https://example.com/pixel.gif" src="https://picx.zhimg.com/real.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 1, '非法 width → 无尺寸证据 → 不视为 1px placeholder');
+  assert.equal(images[0].originalUrl, 'https://example.com/pixel.gif');
+});
+
+test('P2-1PX-F: 唯一 candidate 为 1×1 placeholder（无 lower real candidate）→ 整图忽略', () => {
+  const html = '<img width="1" height="1" src="https://example.com/pixel.gif">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 0, '1×1 placeholder 后无真实候选 → 不进 assets');
+});
+
+test('P2-1PX-G: data:/blob: placeholder fallback 保持（data: → data-actualsrc；blob: → src）', () => {
+  const html = [
+    '<img data-original="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-actualsrc="https://picx.zhimg.com/g-real.png">',
+    '<img data-original="blob:https://example.com/uuid" src="https://picx.zhimg.com/g-real2.png">',
+  ].join('');
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 2);
+  assert.equal(images[0].originalUrl, 'https://picx.zhimg.com/g-real.png');
+  assert.equal(images[1].originalUrl, 'https://picx.zhimg.com/g-real2.png');
+});
+
+test('P2-1PX-H: javascript:/file: 高优先级无效 candidate 继续 fallback（不得回归）', () => {
+  const html = [
+    '<img data-original="javascript:alert(1)" data-actualsrc="https://picx.zhimg.com/h-real.png">',
+    '<img data-original="file:///etc/passwd" src="https://picx.zhimg.com/h-real2.png">',
+  ].join('');
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 2);
+  assert.equal(images[0].originalUrl, 'https://picx.zhimg.com/h-real.png');
+  assert.equal(images[1].originalUrl, 'https://picx.zhimg.com/h-real2.png');
 });
 
 // ===== P1-NEW-1: 恶意/无效高优先级 candidate 不得抑制 lower-priority 真实图片 =====

@@ -7,9 +7,10 @@
  *
  * 从 answer.content（原始 HTML）中确定性提取：
  *   - images[]：data-original → data-actualsrc → 合法 https src 的 candidate-by-candidate
- *     选择：placeholder（data:/blob: 等 Spec §10.1 明确列出形态；HTTP(S) 1px 识别规则未定义，
- *     属 SPEC_CONFLICT_1PX_PLACEHOLDER）被忽略并继续 fallback 到 lower-priority 真实候选
- *     （§10.1）；每个候选在 selection 阶段即经 classifyImageUrl 确认可接受（null 跳过）；
+ *     选择：placeholder（PHASE2_1PX_PLACEHOLDER_CONTRACT：data:/blob: 一律视为 placeholder；
+ *     HTTP(S) 仅当原始 <img> 显式提供 width==1 && height==1 才确定性视为 1×1 placeholder）
+ *     被忽略并继续 fallback 到 lower-priority 真实候选（§10.1）；每个候选在 selection
+ *     阶段即经 classifyImageUrl 确认可接受（null 跳过）；
  *     src 仅合法 https 可作 fallback（http: 不是合法候选）；detected 与 clickable
  *     分离；同 URL 去重（§23.2）。
  *   - links[]：<a href> 全部记录（含被安全策略拒绝的，clickable=false），
@@ -56,9 +57,15 @@ function intAttr(node, name) {
  *
  * candidate-by-candidate selection，返回首个可接受的 image candidate：
  *   1. missing/empty → next candidate；
- *   2. placeholder（data:/blob: 等 Spec §10.1 明确列出形态；HTTP(S) 1px 识别见
- *      SPEC_CONFLICT_1PX_PLACEHOLDER）→ next candidate（placeholder 不计入 detected，
- *      若存在 lower-priority 真实 URL 必须继续 fallback）；
+ *   2. placeholder（PHASE2_1PX_PLACEHOLDER_CONTRACT：data:/blob: 一律；HTTP(S) 仅当
+ *      原始 <img> 显式提供 width==1 && height==1 才视为 1×1 placeholder）→ next
+ *      candidate（placeholder 不计入 detected；若存在 lower-priority 真实 URL 必须
+ *      继续 fallback）；
+ *      —— 1px 尺寸证据只消费一次：首个被显式 width==1&&height==1 判为 1px placeholder
+ *        的 candidate（如 data-original 为 1×1 跟踪像素）被跳过（P2-1PX-A/B）后，后续
+ *        lower-priority candidate 不再因同一证据被判 1px，它们是真实 swap-in 图片；
+ *      —— data:/blob: 形态不消费该证据：src=data: 占位 + data-actualsrc=1×1 跟踪像素时，
+ *        data-actualsrc 仍需用尺寸证据判定（真实知乎 lazy-loading 跟踪像素形态）。
  *   3. classifyImageUrl(url) === null → next candidate（空/控制字符/非 http(s) scheme
  *      如 javascript: / file: 不是可接受的 image candidate，不得抑制 lower-priority
  *      真实候选）；data-original / data-actualsrc 无协议限制，http 形态返回非 null
@@ -74,12 +81,23 @@ function intAttr(node, name) {
  * 才跳过。
  */
 function pickImageUrl(node) {
+  let consumed1pxEvidence = false; // 显式 width==1&&height==1 证据是否已用于判 1px placeholder
   for (const attr of ['data-original', 'data-actualsrc', 'src']) {
     const v = getAttr(node, attr);
     if (v === null || v === undefined) continue; // missing → next candidate
     const url = String(v).trim();
     if (url.length === 0) continue; // empty → next candidate
-    if (isPlaceholder(url)) continue; // placeholder → next candidate
+    // 已消费 1px 尺寸证据后，后续 candidate 只做 data:/blob: 判定（合同 1），不再用
+    // 同一 width/height 证据判 1px（P2-1PX-A/B fallback 语义）。
+    const placeholder = consumed1pxEvidence
+      ? isDataOrBlobPlaceholder(url)
+      : isImageCandidatePlaceholder(node, url);
+    if (placeholder) {
+      // 仅 HTTP(S) 显式 1×1 形态消费尺寸证据；data:/blob: 形态不消费（真实图片候选
+      // 仍可用尺寸证据判定，如 src=data: 占位 + data-actualsrc=1×1 跟踪像素）。
+      if (!consumed1pxEvidence && !isDataOrBlobPlaceholder(url)) consumed1pxEvidence = true;
+      continue; // placeholder → next candidate
+    }
     if (attr === 'src' && !/^https:\/\//i.test(url)) continue; // http: 不得作 src fallback
     const cls = classifyImageUrl(url);
     if (cls === null) continue; // 非可接受 image candidate（javascript:/file: 等）→ next
@@ -89,23 +107,47 @@ function pickImageUrl(node) {
 }
 
 /**
- * placeholder 判定：data:/blob: 形态不是真实图片 URL（§10.1 完全忽略）。
+ * data:/blob: 一律视为 placeholder（PHASE2_1PX_PLACEHOLDER_CONTRACT 合同 1）。
  *
- * `data:` / `blob:` 是 Spec §10.1 明确列出的 placeholder 形态（`data:image/svg+xml` 占位、
- * `data:image/gif;base64` 1x1 透明 gif 示例），当前实现确定性覆盖这些形态。
- *
- * HTTP(S) 1px placeholder（如 1x1 尺寸的真实 URL 图片）的确定性识别规则 Spec 未定义，
- * 属 SPEC_CONFLICT_1PX_PLACEHOLDER：现有 data:/blob: 覆盖不构成 §10.1「1px placeholder」
- * 合同的完整实现（Spec 将 data:image/svg+xml 占位 / 1px 占位 / data:image/gif;base64
- * 并列，1px 不必然等于 data URI）。待用户批准最小合同（显式 width==1 AND height==1 →
- * 1px；无显式尺寸不猜；不发网络探测）后另行实施；当前不做 width/height 判定、
- * 不发明 URL 文件名/token 启发式、不发网络请求。
+ * §10.1 明确列出的 lazy-loading placeholder 形态（`data:image/svg+xml;...` 占位、
+ * `data:image/gif;base64` 1x1 透明 gif 示例）由本函数确定性覆盖；本函数不依赖
+ * 任何 width/height 尺寸证据。
  */
-function isPlaceholder(url) {
+function isDataOrBlobPlaceholder(url) {
   if (!url) return true;
   if (/^data:/i.test(url)) return true;
   if (/^blob:/i.test(url)) return true;
   return false;
+}
+
+/**
+ * image candidate placeholder 判定（PHASE2_1PX_PLACEHOLDER_CONTRACT，合同 1-5）。
+ *
+ * - 合同 1：`data:` / `blob:` candidate 一律视为 placeholder；
+ * - 合同 2：HTTP(S) image candidate 仅当原始 <img> 同时显式提供 width==1 且
+ *   height==1 才确定性视为 1×1 placeholder；
+ * - 合同 3：width/height 缺失、非法、或不同时为 1 → 不得猜测为 1px placeholder
+ *   （intAttr 对缺失/非法返回 null，`w === 1 && h === 1` 不成立）；
+ * - 合同 4：禁止启发式 —— URL filename / path / token / query / host / CSS class /
+ *   alt text 一律不用于判断 1px；
+ * - 合同 5：禁止网络请求获取 intrinsic dimensions（本模块纯函数、无网络）；
+ * - 其它 scheme（javascript:/file: 等）返回 false，交给 pickImageUrl 的
+ *   classifyImageUrl 过滤（非 http(s) scheme 返回 null → next candidate）。
+ *
+ * 注意：本函数返回 true 只表示「该 candidate 是 placeholder」；1px 尺寸证据的
+ * 单次消费语义由 pickImageUrl 的 consumed1pxEvidence 处理（P2-1PX-A/B）。
+ */
+function isImageCandidatePlaceholder(node, url) {
+  if (!url) return true;
+  if (/^data:/i.test(url)) return true; // 合同 1
+  if (/^blob:/i.test(url)) return true; // 合同 1
+  if (/^https?:\/\//i.test(url)) { // 合同 2：HTTP(S) 仅 width==1 AND height==1 视为 1px
+    const w = intAttr(node, 'width');
+    const h = intAttr(node, 'height');
+    if (w === 1 && h === 1) return true;
+    return false; // 合同 3/4：无证据不猜
+  }
+  return false; // 其它 scheme 交给 pickImageUrl 的 classifyImageUrl 过滤
 }
 
 function collectImage(node, ctx, caption) {

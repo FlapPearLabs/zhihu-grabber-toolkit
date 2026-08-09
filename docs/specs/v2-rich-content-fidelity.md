@@ -408,6 +408,11 @@ data-original
 
 必须**忽略 lazy-loading placeholder**（例如 `data:image/svg+xml;...` 占位图、1px 占位、`data:image/gif;base64` 等），不得作为图片 URL 收录或渲染（placeholder 不计入 `detected`，除非存在非 placeholder 的真实 URL）。
 
+> **1px placeholder 确定性识别（Phase 2 已批准合同）**：`data:` / `blob:` 一律为 placeholder；
+> HTTP(S) 图片仅当原始 `<img>` 显式提供 `width == 1` 且 `height == 1` 时视为 1×1 placeholder；
+> 无显式尺寸证据（缺失/非法/非 1×1）不得猜测；不得基于 URL/文件名/alt 等启发式判断；
+> 不发起网络请求读取图片实际尺寸。
+
 ### 10.2 图片 URL 校验（hostname 白名单）
 
 - 第一版**可点击**只允许知乎图片 CDN：

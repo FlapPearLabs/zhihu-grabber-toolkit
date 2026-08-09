@@ -22,7 +22,7 @@
 
 ## 测试基线（稳定，离线）
 
-- `cd zhihu-answer-grabber && npm test` → 349 pass / 0 fail / 3 skip
+- `cd zhihu-answer-grabber && npm test` → 357 pass / 0 fail / 3 skip
 - `cd corpus-anthology && node --test` → 93 pass / 0 fail / 2 skip
 - `node --test test/agent-pipeline.test.mjs`（仓库根，CLI×Skill 集成）→ 6 pass / 0 fail
 - skip 均为既有 Windows 平台限制（symlink 相关），与实现改动无关。
@@ -44,7 +44,7 @@
 - 凭据只在本机配置，绝不进 repo / log / chat（详见 `references/security.md` 与 `RULES.md`）。
 - V1 全部对外合同保持向后兼容；schema 变更只允许 additive。
 - **V2 Phase 2 additive `answers[].assets` 已落地**：`{ images, links, references, codeBlocks, videos }` 由 `src/asset-extractor.js` 从 `content` 确定性派生（Spec §18），`content` 原样保留；脚注 Markdown identifier 一律 renderer 生成 `a<answerId>-r<index>`（1-based 出现顺序，文档内全局唯一），`data-numero` 只作 `sourceNumero` metadata、绝不进 identifier；answerId 缺失/非法时脚注 fail closed 为可见文本（防跨 answer ID 冲突）；仅 `sup`（非 `sub`）视为脚注元素，与 asset-extractor 判定一致（Spec §14.1 白名单）。
-- **SPEC_CONFLICT_1PX_PLACEHOLDER（待用户裁决，未实施、未宣称闭合）**：Spec §10.1/§23.2 将 `data:image/svg+xml` 占位、1px 占位、`data:image/gif;base64` 并列列出须忽略；当前实现只确定性覆盖 `data:`/`blob:` placeholder 形态（§10.1 明确列出的那部分），**HTTP(S) 1px placeholder 的确定性识别规则 Spec 未定义**（1px 不必然等于 data URI）。在用户批准最小合同（显式 `width==1 && height==1` → 1px；无显式尺寸不猜；不发网络探测）前：不实施 width/height=1 判定、不发明 URL 文件名/token 启发式、不发网络请求探测尺寸。
+- **PHASE2_1PX_PLACEHOLDER_CONTRACT（已批准；SPEC_CONFLICT_1PX_PLACEHOLDER 已关闭）**：`data:` / `blob:` 一律为 placeholder；HTTP(S) 图片仅当原始 `<img>` 显式提供 `width == 1` 且 `height == 1` 时确定性视为 1×1 placeholder；无显式尺寸证据（缺失/非法/非 1×1）不得猜测；禁止 URL 文件名/token/query/host/CSS class/alt 等启发式；禁止网络请求探测 intrinsic dimensions；placeholder candidate 被跳过后继续 `data-original → data-actualsrc → 合法 https src` 的 lower-priority fallback（1px 尺寸证据只消费一次：首个被判 1px placeholder 的 candidate 跳过后，后续 lower-priority candidate 不再因同一证据被判 1px，它们是真实 swap-in 图片）。Spec §10.1 已补充该最小 clarification（用户批准的 SPEC_CONFLICT 关闭手段，DOCUMENT review 覆盖）。
 
 ## 路线图（下一阶段，未经批准不得开始）
 
