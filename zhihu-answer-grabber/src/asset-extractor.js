@@ -7,8 +7,10 @@
  *
  * 从 answer.content（原始 HTML）中确定性提取：
  *   - images[]：data-original → data-actualsrc → 合法 https src 的 candidate-by-candidate
- *     选择：placeholder（data:/blob:/1px）被忽略并继续 fallback 到 lower-priority 真实候选
- *     （§10.1）；src 仅合法 https 可作 fallback（http: 不是合法候选）；detected 与 clickable
+ *     选择：placeholder（data:/blob: 等 Spec §10.1 明确列出形态；HTTP(S) 1px 识别规则未定义，
+ *     属 SPEC_CONFLICT_1PX_PLACEHOLDER）被忽略并继续 fallback 到 lower-priority 真实候选
+ *     （§10.1）；每个候选在 selection 阶段即经 classifyImageUrl 确认可接受（null 跳过）；
+ *     src 仅合法 https 可作 fallback（http: 不是合法候选）；detected 与 clickable
  *     分离；同 URL 去重（§23.2）。
  *   - links[]：<a href> 全部记录（含被安全策略拒绝的，clickable=false），
  *     zhihu redirect 解包由 classifyUrl 完成（§11.1）。
@@ -52,14 +54,24 @@ function intAttr(node, name) {
 /**
  * 图片 URL 候选（§10.1 优先级）：data-original → data-actualsrc → 合法 https src。
  *
- * candidate-by-candidate selection：
+ * candidate-by-candidate selection，返回首个可接受的 image candidate：
  *   1. missing/empty → next candidate；
- *   2. placeholder（data:/blob:/1px）→ next candidate（placeholder 不计入 detected，
+ *   2. placeholder（data:/blob: 等 Spec §10.1 明确列出形态；HTTP(S) 1px 识别见
+ *      SPEC_CONFLICT_1PX_PLACEHOLDER）→ next candidate（placeholder 不计入 detected，
  *      若存在 lower-priority 真实 URL 必须继续 fallback）；
- *   3. 首个非 placeholder 真实候选 → 采用（data-original / data-actualsrc 无协议限制，
- *      http 形态由 classifyImageUrl 按 §10.1 记录 detected 但 clickable=false）；
+ *   3. classifyImageUrl(url) === null → next candidate（空/控制字符/非 http(s) scheme
+ *      如 javascript: / file: 不是可接受的 image candidate，不得抑制 lower-priority
+ *      真实候选）；data-original / data-actualsrc 无协议限制，http 形态返回非 null
+ *      分类对象、按 §10.1 记录 detected 但 clickable=false；
  *   4. src 仅合法 https 可作 §10.1 fallback（http: 不是「合法 https src」候选 → 跳过）；
- *   5. 全部无真实候选 → null（整张图忽略，不进 assets）。
+ *   5. 否则 → 采用，返回 { url, cls }（cls = classifyImageUrl(url) 且非 null，避免
+ *      collectImage 重复 parse 一次）。
+ *   6. 全部无可用候选 → null（整张图忽略，不进 assets）。
+ *
+ * 注意：classifyImageUrl 对「无法解析的 https 形态」返回 { detected:true, clickable:false,
+ * reason:'unparsable' } 而非 null —— 该形态是合法 candidate，应选用；只有
+ * classifyImageUrl 返回 null 的（空/控制字符/data:/blob:/javascript: 等非 http(s) scheme）
+ * 才跳过。
  */
 function pickImageUrl(node) {
   for (const attr of ['data-original', 'data-actualsrc', 'src']) {
@@ -69,7 +81,9 @@ function pickImageUrl(node) {
     if (url.length === 0) continue; // empty → next candidate
     if (isPlaceholder(url)) continue; // placeholder → next candidate
     if (attr === 'src' && !/^https:\/\//i.test(url)) continue; // http: 不得作 src fallback
-    return url;
+    const cls = classifyImageUrl(url);
+    if (cls === null) continue; // 非可接受 image candidate（javascript:/file: 等）→ next
+    return { url, cls };
   }
   return null;
 }
@@ -77,11 +91,15 @@ function pickImageUrl(node) {
 /**
  * placeholder 判定：data:/blob: 形态不是真实图片 URL（§10.1 完全忽略）。
  *
- * 1px placeholder 识别采用保守且确定性的方案：Spec §10.1 给出的全部 1px / lazy
- * placeholder 示例（`data:image/svg+xml;...` 占位图、1px 占位、`data:image/gif;base64`
- * 已知 1x1 透明 gif）都是 data: scheme URL，因此 `data:`/`blob:` scheme 判定即确定性地
- * 覆盖 1px placeholder（含 1x1 透明 gif base64）。不引入 width/height=1 等 Spec 未唯一
- * 确定的启发式，避免误伤真实图片。
+ * `data:` / `blob:` 是 Spec §10.1 明确列出的 placeholder 形态（`data:image/svg+xml` 占位、
+ * `data:image/gif;base64` 1x1 透明 gif 示例），当前实现确定性覆盖这些形态。
+ *
+ * HTTP(S) 1px placeholder（如 1x1 尺寸的真实 URL 图片）的确定性识别规则 Spec 未定义，
+ * 属 SPEC_CONFLICT_1PX_PLACEHOLDER：现有 data:/blob: 覆盖不构成 §10.1「1px placeholder」
+ * 合同的完整实现（Spec 将 data:image/svg+xml 占位 / 1px 占位 / data:image/gif;base64
+ * 并列，1px 不必然等于 data URI）。待用户批准最小合同（显式 width==1 AND height==1 →
+ * 1px；无显式尺寸不猜；不发网络探测）后另行实施；当前不做 width/height 判定、
+ * 不发明 URL 文件名/token 启发式、不发网络请求。
  */
 function isPlaceholder(url) {
   if (!url) return true;
@@ -91,10 +109,9 @@ function isPlaceholder(url) {
 }
 
 function collectImage(node, ctx, caption) {
-  const url = pickImageUrl(node);
-  if (url === null) return; // §10.1：无真实候选 → 整张图忽略（不进 assets）
-  const cls = classifyImageUrl(url);
-  if (cls === null) return; // 分类器对非 placeholder 一律返回对象；null 仅防御
+  const pick = pickImageUrl(node);
+  if (pick === null) return; // §10.1：无可用候选 → 整张图忽略（不进 assets）
+  const cls = pick.cls; // pickImageUrl 已确认 cls 非 null，无需重复 parse
   if (ctx.seenImages.has(cls.originalUrl)) return; // §23.2 同 URL 去重
   ctx.seenImages.add(cls.originalUrl);
   const width = intAttr(node, 'width');

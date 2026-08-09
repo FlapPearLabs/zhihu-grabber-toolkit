@@ -28,7 +28,7 @@ test('image: 无 data-original 时取 data-actualsrc', () => {
   assert.equal(images[0].originalUrl, 'https://picx.zhimg.com/actual.png');
 });
 
-test('image: lazy placeholder（data: / 1px）完全忽略，不进 assets', () => {
+test('image: lazy placeholder（data: / blob:）完全忽略，不进 assets', () => {
   const html = [
     '<img src="data:image/svg+xml;base64,PHN2Zz4=">',
     '<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">',
@@ -129,10 +129,42 @@ test('P1-1-E: 全部 candidate 为 placeholder → images.length === 0', () => {
   assert.equal(images.length, 0);
 });
 
-test('P1-1-F: 真实 1px case（1x1 透明 gif data URI）不作为真实图片', () => {
+test('P1-1-F: data: scheme 的 1x1 透明 gif 占位被忽略（data: placeholder 覆盖）', () => {
+  // 说明：本 case 只证明「data: scheme 形态的 1x1 透明 gif 占位」被忽略（§10.1 明确列出
+  // data:image/gif;base64 占位形态）。HTTP(S) 1px placeholder（如 1x1 尺寸的真实 URL 图片）
+  // 的确定性识别规则未定义，属 SPEC_CONFLICT_1PX_PLACEHOLDER：未实施、未宣称闭合，
+  // 待用户批准最小合同（显式 width==1 AND height==1 → 1px；无显式尺寸不猜；不发网络探测）
+  // 后另行实施。
   const html = '<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">';
   const { images } = extractAssets(html);
-  assert.equal(images.length, 0, '1px placeholder 不得作为真实图片');
+  assert.equal(images.length, 0, 'data: 1x1 gif 占位不得作为真实图片');
+});
+
+// ===== P1-NEW-1: 恶意/无效高优先级 candidate 不得抑制 lower-priority 真实图片 =====
+// selection 阶段即确认 candidate 可接受（classifyImageUrl(url) !== null）；javascript: / file:
+// 等非 http(s) scheme 直接 next，继续 fallback 到 data-actualsrc / src 真实 https 候选。
+// （data: / blob: 高优先级抑制低优先级真实图片的 case 由 P1-1-A / P1-1-B 保留覆盖。）
+
+test('P1-NEW-1-A: data-original=javascript:alert(1) + data-actualsrc 真实 https → 取 data-actualsrc', () => {
+  const html = '<img data-original="javascript:alert(1)" data-actualsrc="https://picx.zhimg.com/real.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 1);
+  assert.equal(images[0].originalUrl, 'https://picx.zhimg.com/real.png');
+  assert.equal(images[0].clickable, true);
+});
+
+test('P1-NEW-1-B: data-original=file:///etc/passwd + data-actualsrc 真实 https → 取 data-actualsrc', () => {
+  const html = '<img data-original="file:///etc/passwd" data-actualsrc="https://picx.zhimg.com/real2.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 1);
+  assert.equal(images[0].originalUrl, 'https://picx.zhimg.com/real2.png');
+  assert.equal(images[0].clickable, true);
+});
+
+test('P1-NEW-1-C: 高优先级与低优先级全部 javascript:（无真实候选）→ images.length === 0', () => {
+  const html = '<img data-original="javascript:alert(1)" data-actualsrc="javascript:alert(2)" src="javascript:alert(3)">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 0, '全部无效 scheme → 无可用候选，整张图忽略');
 });
 
 // ===== P1-2: figure 遍历不吞其它 asset（caption 关联 + 通用收集，img 不重复） =====
