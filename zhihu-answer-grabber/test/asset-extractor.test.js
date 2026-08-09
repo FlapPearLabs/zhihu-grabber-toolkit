@@ -323,6 +323,29 @@ test('P1-3-D: data-original="http://example.com/x.png"（可 parse 的 http）�
   assert.equal(images[0].securityClass, 'external_image_untrusted');
 });
 
+// ===== P1-MALFORMED-1PX: malformed/invalid candidate 不得错误消费 1px evidence =====
+// candidate pipeline ordering：parseability / protocol admission 必须先于 1px-evidence
+// 消费判定。malformed http(s)（如 `https://`）虽以 http(s) 开头，但 new URL 抛错不可
+// parse → 直接 next，且**不得**消费 width==1&&height==1 的 1px 尺寸证据；首个合法
+// HTTP(S) candidate（data-actualsrc 1×1 跟踪像素）才消费 evidence 并被跳过，最终
+// fallback 到 src 真实图片（正确结果 = real.png，而非 tracker.gif）。
+
+test('P1-MALFORMED-1PX-A: width=1 height=1 + data-original="https://"（malformed）+ data-actualsrc 1×1 tracker + src 真实 → 取 src', () => {
+  const html = '<img width="1" height="1" data-original="https://" data-actualsrc="https://example.com/tracker.gif" src="https://picx.zhimg.com/real.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 1, 'malformed data-original 不得消费 1px evidence');
+  assert.equal(images[0].originalUrl, 'https://picx.zhimg.com/real.png');
+  assert.equal(images[0].clickable, true);
+});
+
+test('P1-MALFORMED-1PX-B: width=1 height=1 + data-original="javascript:alert(1)" + data-actualsrc 1×1 tracker + src 真实 → 取 src', () => {
+  const html = '<img width="1" height="1" data-original="javascript:alert(1)" data-actualsrc="https://example.com/tracker.gif" src="https://picx.zhimg.com/real.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 1, 'invalid candidate 不得消费 1px evidence');
+  assert.equal(images[0].originalUrl, 'https://picx.zhimg.com/real.png');
+  assert.equal(images[0].clickable, true);
+});
+
 // ===== P1-2: figure 遍历不吞其它 asset（caption 关联 + 通用收集，img 不重复） =====
 
 test('P1-2: figure 内 <a><img></a> → image 带 caption + link 均收录且 img 只计一次', () => {

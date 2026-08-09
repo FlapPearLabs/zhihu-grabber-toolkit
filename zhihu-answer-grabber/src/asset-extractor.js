@@ -10,6 +10,8 @@
  *     选择：placeholder（PHASE2_1PX_PLACEHOLDER_CONTRACT：data:/blob: 一律视为 placeholder；
  *     HTTP(S) 仅当原始 <img> 显式提供 width==1 && height==1 才确定性视为 1×1 placeholder，
  *     精确整数判定不做小数截断）被忽略并继续 fallback 到 lower-priority 真实候选（§10.1）；
+ *     1px 尺寸证据只由已通过 parseability / protocol admission 的合法 HTTP(S) candidate
+ *     消费（malformed 如 `https://` 不得错误消费 evidence，P1-MALFORMED-1PX-A/B）；
  *     每个候选在 selection 阶段先要求可 parse 的 http(s) URL（isParseableHttpUrl，
  *     malformed 如 `https://` 不得抑制 lower 真实候选），再经 classifyImageUrl 确认
  *     可接受（null 跳过）；
@@ -79,28 +81,30 @@ function hasExplicitOnePxDimensions(node) {
 /**
  * 图片 URL 候选（§10.1 优先级）：data-original → data-actualsrc → 合法 https src。
  *
- * candidate-by-candidate selection，返回首个可接受的 image candidate：
- *   1. missing/empty → next candidate；
- *   2. placeholder（PHASE2_1PX_PLACEHOLDER_CONTRACT：data:/blob: 一律；HTTP(S) 仅当
- *      原始 <img> 显式提供 width==1 && height==1 才视为 1×1 placeholder）→ next
- *      candidate（placeholder 不计入 detected；若存在 lower-priority 真实 URL 必须
- *      继续 fallback）；
- *      —— 1px 尺寸证据只消费一次：首个被显式 width==1&&height==1 判为 1px placeholder
- *        的 candidate（如 data-original 为 1×1 跟踪像素）被跳过（P2-1PX-A/B）后，后续
- *        lower-priority candidate 不再因同一证据被判 1px，它们是真实 swap-in 图片；
- *      —— data:/blob: 形态不消费该证据：src=data: 占位 + data-actualsrc=1×1 跟踪像素时，
- *        data-actualsrc 仍需用尺寸证据判定（真实知乎 lazy-loading 跟踪像素形态）。
+ * candidate-by-candidate selection，返回首个可接受的 image candidate。每个 candidate
+ * 按固定顺序分步判定（parseability / protocol admission 必须先于 1px-evidence 消费，
+ * 否则 malformed http(s) 如 `https://` 会被误判为 1px placeholder 并错误消费证据，
+ * 见 P1-MALFORMED-1PX-A/B）：
+ *   1. missing / empty → next candidate；
+ *   2. data:/blob: 一律 placeholder（PHASE2_1PX_PLACEHOLDER_CONTRACT 合同 1）→ next
+ *      candidate；不消费 1px 尺寸证据（src=data: 占位 + data-actualsrc=1×1 跟踪像素时，
+ *      data-actualsrc 仍需用尺寸证据判定，真实知乎 lazy-loading 跟踪像素形态）；
  *   3. URL 不可 parse / 协议非 http(s) → next candidate（isParseableHttpUrl；如
- *      `https://` / `http://` 无 host 形态 new URL 抛错、javascript:/file:/data:/blob:
- *      非 http(s) scheme；malformed http(s) 不得被当作已选中 candidate 而抑制
- *      lower-priority 真实候选）；
- *   4. classifyImageUrl(url) === null → next candidate（空/控制字符等非可接受 image
+ *      `https://` / `http://` 无 host 形态 new URL 抛错、javascript:/file: 非 http(s)
+ *      scheme）；不消费 1px 尺寸证据 —— malformed http(s) 不得被当作已选中 candidate
+ *      而抑制 lower-priority 真实候选，也不得先消费 1px evidence；
+ *   4. src 仅合法 https 可作 §10.1 fallback（http: 不是「合法 https src」候选 → next）；
+ *   5. 仅当 1px 尺寸证据尚未消费 且 原始 <img> 显式 width==1 && height==1：该已通过
+ *      parseability / protocol admission 的合法 HTTP(S) candidate 是 1px placeholder
+ *      → 消费证据一次 → next candidate（placeholder 不计入 detected；P2-1PX-A/B：首个
+ *      被显式 1×1 判为 placeholder 的 candidate 跳过后，后续 lower-priority candidate
+ *      不再因同一证据被判 1px，它们是真实 swap-in 图片）；
+ *   6. classifyImageUrl(url) === null → next candidate（空/控制字符等非可接受 image
  *      candidate）；data-original / data-actualsrc 的 http 形态可 parse、返回非 null
  *      分类对象、按 §10.1 记录 detected 但 clickable=false；
- *   5. src 仅合法 https 可作 §10.1 fallback（http: 不是「合法 https src」候选 → 跳过）；
- *   6. 否则 → 采用，返回 { url, cls }（cls = classifyImageUrl(url) 且非 null，避免
+ *   7. 否则 → 采用，返回 { url, cls }（cls = classifyImageUrl(url) 且非 null，避免
  *      collectImage 重复 parse 一次）。
- *   7. 全部无可用候选 → null（整张图忽略，不进 assets）。
+ *   8. 全部无可用候选 → null（整张图忽略，不进 assets）。
  *
  * 注意：classifyImageUrl 对「无法解析的 https 形态」返回 { detected:true, clickable:false,
  * reason:'unparsable' } 而非 null —— 因此 extractor 必须在 candidate acceptance 层单独
@@ -110,22 +114,27 @@ function pickImageUrl(node) {
   let consumed1pxEvidence = false; // 显式 width==1&&height==1 证据是否已用于判 1px placeholder
   for (const attr of ['data-original', 'data-actualsrc', 'src']) {
     const v = getAttr(node, attr);
-    if (v === null || v === undefined) continue; // missing → next candidate
+    if (v === null || v === undefined) continue; // 1. missing → next candidate
     const url = String(v).trim();
-    if (url.length === 0) continue; // empty → next candidate
-    // 已消费 1px 尺寸证据后，后续 candidate 只做 data:/blob: 判定（合同 1），不再用
-    // 同一 width/height 证据判 1px（P2-1PX-A/B fallback 语义）。
-    const placeholder = consumed1pxEvidence
-      ? isDataOrBlobPlaceholder(url)
-      : isImageCandidatePlaceholder(node, url);
-    if (placeholder) {
-      // 仅 HTTP(S) 显式 1×1 形态消费尺寸证据；data:/blob: 形态不消费（真实图片候选
-      // 仍可用尺寸证据判定，如 src=data: 占位 + data-actualsrc=1×1 跟踪像素）。
-      if (!consumed1pxEvidence && !isDataOrBlobPlaceholder(url)) consumed1pxEvidence = true;
-      continue; // placeholder → next candidate
+    if (url.length === 0) continue; // 1. empty → next candidate
+    // 2. data:/blob: 一律 placeholder（合同 1）→ next；不消费 1px 尺寸证据。
+    if (isDataOrBlobPlaceholder(url)) continue;
+    // 3. URL 不可 parse / 协议非 http(s) → next；不消费 1px 尺寸证据。
+    //    （pipeline ordering：parseability 必须先于 1px 判定 —— malformed http(s)
+    //    如 `https://` 不得先被判 1px placeholder 而错误消费 evidence。）
+    if (!isParseableHttpUrl(url)) continue;
+    // 4. src 仅合法 https 可作 §10.1 fallback（http: 不是「合法 https src」候选）。
+    if (attr === 'src' && !/^https:\/\//i.test(url)) continue;
+    // 5. 已通过 parseability / protocol admission 的合法 HTTP(S) candidate 才有资格
+    //    消费 1px 尺寸证据：显式 width==1 && height==1 → 1px placeholder → 消费一次 →
+    //    next（isImageCandidatePlaceholder 对已 admit 的 http(s) candidate 即等价于
+    //    hasExplicitOnePxDimensions，合同 2；P2-1PX-A/B fallback 语义：证据只消费一次，
+    //    后续 lower-priority candidate 不再因同一证据被判 1px，它们是真实 swap-in 图片）。
+    if (!consumed1pxEvidence && isImageCandidatePlaceholder(node, url)) {
+      consumed1pxEvidence = true;
+      continue;
     }
-    if (!isParseableHttpUrl(url)) continue; // URL 不可 parse / 协议非 http(s) → next
-    if (attr === 'src' && !/^https:\/\//i.test(url)) continue; // http: 不得作 src fallback
+    // 6. classifyImageUrl 确认可接受（null → next）。
     const cls = classifyImageUrl(url);
     if (cls === null) continue; // 非可接受 image candidate（空/控制字符等）→ next
     return { url, cls };
@@ -183,8 +192,9 @@ function isParseableHttpUrl(url) {
  * - 合同 4：禁止启发式 —— URL filename / path / token / query / host / CSS class /
  *   alt text 一律不用于判断 1px；
  * - 合同 5：禁止网络请求获取 intrinsic dimensions（本模块纯函数、无网络）；
- * - 其它 scheme（javascript:/file: 等）返回 false，交给 pickImageUrl 的
- *   classifyImageUrl 过滤（非 http(s) scheme 返回 null → next candidate）。
+ * - 其它 scheme（javascript:/file: 等）返回 false；在 pickImageUrl 的 candidate pipeline
+ *   中这类 candidate 已在步骤 3 被 isParseableHttpUrl 过滤（next，不消费 1px evidence），
+ *   本函数只对已 admit 的 http(s) candidate 判 1px placeholder。
  *
  * 注意：本函数返回 true 只表示「该 candidate 是 placeholder」；1px 尺寸证据的
  * 单次消费语义由 pickImageUrl 的 consumed1pxEvidence 处理（P2-1PX-A/B）。

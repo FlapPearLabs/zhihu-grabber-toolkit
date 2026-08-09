@@ -22,7 +22,7 @@
 
 ## 测试基线（稳定，离线）
 
-- `cd zhihu-answer-grabber && npm test` → 365 pass / 0 fail / 3 skip
+- `cd zhihu-answer-grabber && npm test` → 367 pass / 0 fail / 3 skip
 - `cd corpus-anthology && node --test` → 93 pass / 0 fail / 2 skip
 - `node --test test/agent-pipeline.test.mjs`（仓库根，CLI×Skill 集成）→ 6 pass / 0 fail
 - skip 均为既有 Windows 平台限制（symlink 相关），与实现改动无关。
