@@ -26,3 +26,6 @@ Thumbs.db
 .browser-profile/
 playwright/.auth/
 *.storageState.json
+
+# ===== WorkBuddy 本地运行状态（非项目权威资产）=====
+.workbuddy/
