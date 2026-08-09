@@ -47,9 +47,9 @@
 
 ## 路线图（下一阶段，未经批准不得开始）
 
-- **V2 Phase 2 — Rich Content Assets** 是下一个计划实现的阶段。内容：image metadata / external link assets / code block assets / footnote reconstruction / additive `answers.json` assets（Spec §10-13/§18）。
+- **V2 Phase 3 — Question Metadata**（description / topics，Approved Spec §17）是下一个计划实现的阶段。
+- Phase 2（Rich Content Assets）实现已完成并待 CODE review；**未经 Phase 2 CODE gate PASS 并 ff-only merge master 前，不得开始 Phase 3**。
 - 开始前：从**届时最新的 remote master** 创建（或重建）其 feature 分支；不依赖任何历史临时分支 ref 作为长期事实。
-- **不得在 master 或已合并分支上直接写 Phase 2**；Phase 2 实现前必须先过对应 gate。
 
 ## 历史 review 结论（沉淀）
 

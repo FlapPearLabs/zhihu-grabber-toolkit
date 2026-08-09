@@ -85,16 +85,94 @@ test('image: figure + figcaption 文本作为 caption', () => {
   assert.equal(images[0].caption, '图 1：架构示意');
 });
 
+// ===== P1-1: §10.1 candidate-by-candidate selection（placeholder 忽略后继续 fallback） =====
+
+test('P1-1-A: data-original 为 data: placeholder + data-actualsrc 真实 → 取 data-actualsrc', () => {
+  const html = '<img data-original="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-actualsrc="https://picx.zhimg.com/real.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 1);
+  assert.equal(images[0].originalUrl, 'https://picx.zhimg.com/real.png');
+  assert.equal(images[0].clickable, true);
+});
+
+test('P1-1-B: data-original 为 blob: placeholder + src 真实 https → 取 src', () => {
+  const html = '<img data-original="blob:https://example.com/uuid" src="https://picx.zhimg.com/real.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 1);
+  assert.equal(images[0].originalUrl, 'https://picx.zhimg.com/real.png');
+});
+
+test('P1-1-C: 全部高优先级 candidate 为 placeholder → src 真实 https fallback', () => {
+  const html = [
+    '<img data-original="data:image/svg+xml;base64,PHN2Zz4="',
+    ' data-actualsrc="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"',
+    ' src="https://picx.zhimg.com/real.png">',
+  ].join('');
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 1);
+  assert.equal(images[0].originalUrl, 'https://picx.zhimg.com/real.png');
+});
+
+test('P1-1-D: src=http 不是「合法 https src」候选 → 无真实候选 → 忽略（不进 assets）', () => {
+  const html = '<img src="http://example.com/x.png">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 0, 'http src 不得作为 §10.1 src fallback');
+});
+
+test('P1-1-E: 全部 candidate 为 placeholder → images.length === 0', () => {
+  const html = [
+    '<img data-original="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">',
+    '<img data-original="blob:https://example.com/uuid">',
+    '<img src="data:image/svg+xml;base64,PHN2Zz4=">',
+  ].join('');
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 0);
+});
+
+test('P1-1-F: 真实 1px case（1x1 透明 gif data URI）不作为真实图片', () => {
+  const html = '<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">';
+  const { images } = extractAssets(html);
+  assert.equal(images.length, 0, '1px placeholder 不得作为真实图片');
+});
+
+// ===== P1-2: figure 遍历不吞其它 asset（caption 关联 + 通用收集，img 不重复） =====
+
+test('P1-2: figure 内 <a><img></a> → image 带 caption + link 均收录且 img 只计一次', () => {
+  const html = '<figure><a href="https://example.com/article"><img src="https://picx.zhimg.com/a.png"></a><figcaption>caption</figcaption></figure>';
+  const { images, links } = extractAssets(html);
+  assert.equal(images.length, 1, 'figure 内 img 只计一次');
+  assert.equal(images[0].caption, 'caption');
+  assert.equal(links.length, 1, 'figure 内 <a> 不得被吞');
+  assert.equal(links[0].originalUrl, 'https://example.com/article');
+});
+
+test('P1-2: figure 内含 reference（sup data-numero/data-text）→ references 不漏', () => {
+  const html = '<figure><sup data-text="注" data-numero="1">[1]</sup><figcaption>c</figcaption></figure>';
+  const { references } = extractAssets(html);
+  assert.equal(references.length, 1);
+  assert.equal(references[0].sourceNumero, '1');
+  assert.equal(references[0].text, '注');
+});
+
+test('P1-2: figure 内 pre/code → codeBlocks 不漏', () => {
+  const html = '<figure><pre><code class="language-js">const x = 1;</code></pre><figcaption>c</figcaption></figure>';
+  const { codeBlocks } = extractAssets(html);
+  assert.equal(codeBlocks.length, 1);
+  assert.equal(codeBlocks[0].language, 'js');
+  assert.equal(codeBlocks[0].lines, 1);
+});
+
 // ===== 外链（§11） =====
 
-test('link: 正常 https 外链 → clickable + external_unverified + 锚文本', () => {
+test('link: 正常 https 外链 → clickable + external_unverified + 明示域名；anchorText 不进 persisted schema', () => {
   const html = '<a href="https://github.com/user/repo">GitHub 仓库</a>';
   const { links } = extractAssets(html);
   assert.equal(links.length, 1);
   assert.equal(links[0].clickable, true);
   assert.equal(links[0].securityClass, 'external_unverified');
   assert.equal(links[0].domain, 'github.com');
-  assert.equal(links[0].anchorText, 'GitHub 仓库');
+  // Spec §25 Open question 7：anchor 文字来源未批准 → 不得固化为 persisted public schema
+  assert.ok(!('anchorText' in links[0]), 'anchorText 不得进入 assets.links[]');
 });
 
 test('link: zhihu redirect 解包 → zhihuRedirect 记录', () => {
@@ -149,7 +227,7 @@ test('code: 恶意 language → 空串；无 code 子元素 → 裸 pre 文本�
 
 // ===== 脚注（§13.1） =====
 
-test('ref: data-numero + data-text → sourceNumero/text/index（出现顺序）', () => {
+test('ref: data-numero + data-text → sourceNumero/text（出现顺序保留）；index 不进 persisted schema', () => {
   const html = [
     '<sup data-text="第一个脚注" data-numero="1">[1]</sup>',
     '<sup data-text="第二个脚注" data-numero="2">[2]</sup>',
@@ -158,8 +236,11 @@ test('ref: data-numero + data-text → sourceNumero/text/index（出现顺序）
   assert.equal(references.length, 2);
   assert.equal(references[0].sourceNumero, '1');
   assert.equal(references[0].text, '第一个脚注');
-  assert.equal(references[0].index, 0);
-  assert.equal(references[1].index, 1);
+  assert.equal(references[1].sourceNumero, '2');
+  assert.equal(references[1].text, '第二个脚注');
+  // renderer 自维护 1-based 内部 ID（a<answerId>-r<index>）；extractor 不持久化 index
+  assert.ok(!('index' in references[0]), 'index 不得进入 assets.references[]');
+  assert.ok(!('index' in references[1]), 'index 不得进入 assets.references[]');
 });
 
 test('ref: 重复/非法 data-numero 不影响顺序收录（source metadata 保留原值）', () => {
@@ -171,7 +252,7 @@ test('ref: 重复/非法 data-numero 不影响顺序收录（source metadata 保
   const { references } = extractAssets(html);
   assert.equal(references.length, 3);
   assert.equal(references[2].sourceNumero, '-3');
-  assert.equal(references[2].index, 2);
+  assert.equal(references[2].text, 'C');
 });
 
 test('ref: 普通 sup（无 data-numero/data-text）不误判为脚注', () => {

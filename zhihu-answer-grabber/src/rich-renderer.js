@@ -324,7 +324,24 @@ function footnoteBody(text, ctx) {
 }
 
 /**
- * <sup> 渲染。Phase 2 重建脚注（Spec §13.1）：
+ * 脚注定义中的 data-url（§13 真实形态 `<sup data-text data-url data-numero>`）：
+ * 必须走 §11 同一 sanitizer（classifyUrl + safeMarkdownDestination），不得因位于脚注
+ * 而绕过链接策略。被放行的公网 https → renderer 生成的显式链接并明示域名
+ * （external_unverified，与 renderAnchor 同款确定性形态）；localhost/private/
+ * javascript:/data:/file:/blob:/invalid → inert（不生成 href，脚注定义中只保留转义
+ * 后的 data-text）。
+ */
+function renderFootnoteUrl(rawUrl) {
+  if (rawUrl === null || rawUrl === undefined) return '';
+  const raw = String(rawUrl).trim();
+  if (raw.length === 0) return '';
+  const cls = classifyUrl(raw);
+  if (cls === null || !cls.clickable) return '';
+  return `[打开外部链接 · ${cls.displayHost}](${safeMarkdownDestination(cls.canonicalUrl)})`;
+}
+
+/**
+ * <sup> 渲染。Phase 2 重建脚注（Spec §13.1 / §13）：
  *
  *   - 只有同时带 data-numero / data-text 之一的上标才视为脚注（与 asset-extractor
  *     collectReference 的判定一致：普通上标不是脚注）；
@@ -332,6 +349,8 @@ function footnoteBody(text, ctx) {
  *   - data-numero 是外部不可信字段，绝不进入 Markdown identifier（只作 source metadata）；
  *   - 重复/非法/缺失 numero 不影响完整性（按出现顺序 index 递增）；
  *   - 脚注正文来自 data-text，必须过 §8.0 escaping；其中 URL 继续走 §11 同一 sanitizer；
+ *   - data-url（真实脚注形态）同样必须走 §11 sanitizer：被放行 → 定义中追加显式链接
+ *     并明示域名；被拒绝 → inert（不生成 href）；
  *   - answerId 缺失或非法（非 1-20 位数字）时无法保证文档级唯一 → fail closed
  *     为可见文本（Phase 1 行为），不生成可能冲突的内部 ID。
  */
@@ -350,7 +369,11 @@ function renderSup(node, ctx) {
   ctx.footnoteIndex += 1;
   const id = `a${answerId}-r${ctx.footnoteIndex}`;
   const body = footnoteBody(text ?? '', ctx);
-  ctx.footnotes.push({ id, body });
+  const urlPart = renderFootnoteUrl(getAttr(node, 'data-url'));
+  const parts = [];
+  if (body.length > 0) parts.push(body);
+  if (urlPart.length > 0) parts.push(urlPart);
+  ctx.footnotes.push({ id, body: parts.join(' ') });
   return `[^${id}]`;
 }
 

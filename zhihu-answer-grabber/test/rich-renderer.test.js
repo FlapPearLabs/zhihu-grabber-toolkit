@@ -392,6 +392,69 @@ test('footnote: 脚注内合法公网 URL → clickable + 明示域名（externa
   assert.ok(md.includes('(https://github.com/foo)'), '链接指向公网 target');
 });
 
+// ===== P1-3: 脚注 data-url 合同（§13 真实形态 data-text + data-url + data-numero） =====
+
+test('footnote-dataurl: 公网 https data-url → sanitized clickable link + 明示域名', () => {
+  const md = richHtmlToMarkdown(
+    '<p><sup data-numero="1" data-text="来源" data-url="https://github.com/example">[1]</sup></p>',
+    { answerId: '9' },
+  );
+  assert.ok(md.includes('[^a9-r1]: 来源 [打开外部链接 · github.com](https://github.com/example)'), `定义含 text+URL: ${md}`);
+  assert.ok(!md.includes('data-url'), '不得透传属性');
+});
+
+test('footnote-dataurl: localhost data-url → 无 href（inert）', () => {
+  const md = richHtmlToMarkdown(
+    '<p><sup data-numero="1" data-text="来源" data-url="https://localhost/x">[1]</sup></p>',
+    { answerId: '9' },
+  );
+  assert.ok(md.includes('[^a9-r1]: 来源'), '脚注定义仍输出');
+  assert.ok(!md.includes('](https://localhost'), 'localhost 不得成链');
+  assert.ok(!md.includes('[打开外部链接'), '被拒 URL 不生成打开链接');
+});
+
+test('footnote-dataurl: javascript: data-url → 无 href（inert）', () => {
+  const md = richHtmlToMarkdown(
+    '<p><sup data-numero="1" data-text="来源" data-url="javascript:alert(1)">[1]</sup></p>',
+    { answerId: '9' },
+  );
+  assert.ok(md.includes('[^a9-r1]: 来源'), '脚注定义仍输出');
+  assert.ok(!md.includes('](javascript:'), 'javascript 不得成链');
+  assert.ok(!md.includes('[打开外部链接'), '被拒 URL 不生成打开链接');
+});
+
+test('footnote-dataurl: file: data-url → 无 href（inert）', () => {
+  const md = richHtmlToMarkdown(
+    '<p><sup data-numero="1" data-text="来源" data-url="file:///etc/passwd">[1]</sup></p>',
+    { answerId: '9' },
+  );
+  assert.ok(md.includes('[^a9-r1]: 来源'), '脚注定义仍输出');
+  assert.ok(!md.includes('](file:'), 'file: 不得成链');
+  assert.ok(!md.includes('[打开外部链接'), '被拒 URL 不生成打开链接');
+});
+
+test('footnote-dataurl: 恶意 data-text + 合法 data-url → text escaped + URL sanitized', () => {
+  const md = richHtmlToMarkdown(
+    '<p><sup data-numero="1" data-text="[click](https://evil.example) 和 # 标题" data-url="https://github.com/foo">[1]</sup></p>',
+    { answerId: '9' },
+  );
+  assert.ok(md.includes('[^a9-r1]:'), '定义存在');
+  assert.ok(!md.includes('[click](https://evil.example'), 'data-text 注入不得成链');
+  assert.ok(!/^#\s/m.test(md), '不得产生 heading');
+  assert.ok(md.includes('[打开外部链接 · github.com](https://github.com/foo)'), 'data-url 经 sanitizer 放行并明示域名');
+});
+
+test('footnote-dataurl: invalid/empty data-url → 脚注仍安全、不中断', () => {
+  for (const bad of ['', 'not a url', 'https://']) {
+    const md = richHtmlToMarkdown(
+      `<p><sup data-numero="1" data-text="注" data-url="${bad}">[1]</sup></p>`,
+      { answerId: '9' },
+    );
+    assert.ok(md.includes('[^a9-r1]: 注'), `data-url=${JSON.stringify(bad)} 脚注仍渲染`);
+    assert.ok(!md.includes('[打开外部链接'), '非法 URL 不放行');
+  }
+});
+
 test('footnote: 跨 answer 无 collision；V1 framing 恰好一个 ## N. 每条', () => {
   const meta = { questionId: '123', questionTitle: 'T', answerCount: 2, url: 'https://www.zhihu.com/question/123' };
   const answers = [

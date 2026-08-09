@@ -6,8 +6,10 @@
  *           §12（代码块）/ §13（脚注）/ §18（additive assets schema）
  *
  * 从 answer.content（原始 HTML）中确定性提取：
- *   - images[]：data-original → data-actualsrc → 合法 https src；忽略 placeholder
- *     （data:/blob:/1px 等）；detected 与 clickable 分离（§10.1）；同 URL 去重（§23.2）。
+ *   - images[]：data-original → data-actualsrc → 合法 https src 的 candidate-by-candidate
+ *     选择：placeholder（data:/blob:/1px）被忽略并继续 fallback 到 lower-priority 真实候选
+ *     （§10.1）；src 仅合法 https 可作 fallback（http: 不是合法候选）；detected 与 clickable
+ *     分离；同 URL 去重（§23.2）。
  *   - links[]：<a href> 全部记录（含被安全策略拒绝的，clickable=false），
  *     zhihu redirect 解包由 classifyUrl 完成（§11.1）。
  *   - references[]：<sup data-numero data-text> 脚注；sourceNumero 只作 source metadata，
@@ -47,16 +49,40 @@ function intAttr(node, name) {
   return Number.isFinite(n) && n >= 0 ? Math.trunc(n) : null;
 }
 
-/** 图片 URL 候选（按优先级）：data-original → data-actualsrc → 合法 https src */
+/**
+ * 图片 URL 候选（§10.1 优先级）：data-original → data-actualsrc → 合法 https src。
+ *
+ * candidate-by-candidate selection：
+ *   1. missing/empty → next candidate；
+ *   2. placeholder（data:/blob:/1px）→ next candidate（placeholder 不计入 detected，
+ *      若存在 lower-priority 真实 URL 必须继续 fallback）；
+ *   3. 首个非 placeholder 真实候选 → 采用（data-original / data-actualsrc 无协议限制，
+ *      http 形态由 classifyImageUrl 按 §10.1 记录 detected 但 clickable=false）；
+ *   4. src 仅合法 https 可作 §10.1 fallback（http: 不是「合法 https src」候选 → 跳过）；
+ *   5. 全部无真实候选 → null（整张图忽略，不进 assets）。
+ */
 function pickImageUrl(node) {
   for (const attr of ['data-original', 'data-actualsrc', 'src']) {
     const v = getAttr(node, attr);
-    if (v && typeof v === 'string' && v.trim().length > 0) return v.trim();
+    if (v === null || v === undefined) continue; // missing → next candidate
+    const url = String(v).trim();
+    if (url.length === 0) continue; // empty → next candidate
+    if (isPlaceholder(url)) continue; // placeholder → next candidate
+    if (attr === 'src' && !/^https:\/\//i.test(url)) continue; // http: 不得作 src fallback
+    return url;
   }
   return null;
 }
 
-/** placeholder 判定：data:/blob: 形态不是真实图片 URL（§10.1 完全忽略） */
+/**
+ * placeholder 判定：data:/blob: 形态不是真实图片 URL（§10.1 完全忽略）。
+ *
+ * 1px placeholder 识别采用保守且确定性的方案：Spec §10.1 给出的全部 1px / lazy
+ * placeholder 示例（`data:image/svg+xml;...` 占位图、1px 占位、`data:image/gif;base64`
+ * 已知 1x1 透明 gif）都是 data: scheme URL，因此 `data:`/`blob:` scheme 判定即确定性地
+ * 覆盖 1px placeholder（含 1x1 透明 gif base64）。不引入 width/height=1 等 Spec 未唯一
+ * 确定的启发式，避免误伤真实图片。
+ */
 function isPlaceholder(url) {
   if (!url) return true;
   if (/^data:/i.test(url)) return true;
@@ -65,8 +91,8 @@ function isPlaceholder(url) {
 }
 
 function collectImage(node, ctx, caption) {
-  const url = pickImageNodeUrl(node);
-  if (url === null || isPlaceholder(url)) return;
+  const url = pickImageUrl(node);
+  if (url === null) return; // §10.1：无真实候选 → 整张图忽略（不进 assets）
   const cls = classifyImageUrl(url);
   if (cls === null) return; // 分类器对非 placeholder 一律返回对象；null 仅防御
   if (ctx.seenImages.has(cls.originalUrl)) return; // §23.2 同 URL 去重
@@ -90,17 +116,9 @@ function collectImage(node, ctx, caption) {
   ctx.images.push(entry);
 }
 
-/** pickImageUrl 的包装（区分「无候选」与「候选为空」语义） */
-function pickImageNodeUrl(node) {
-  const url = pickImageUrl(node);
-  if (url === null) return null;
-  return url;
-}
-
 function collectLink(node, ctx) {
   const href = getAttr(node, 'href');
   if (href === null || href.trim().length === 0) return;
-  const anchorText = nodeText(node).trim();
   const cls = classifyUrl(href.trim());
   const entry = {
     originalUrl: href.trim(),
@@ -112,7 +130,6 @@ function collectLink(node, ctx) {
   if (cls !== null && cls.zhihuRedirect !== undefined) {
     entry.zhihuRedirect = cls.zhihuRedirect;
   }
-  if (anchorText.length > 0) entry.anchorText = anchorText;
   ctx.links.push(entry);
 }
 
@@ -123,7 +140,6 @@ function collectReference(node, ctx) {
   ctx.references.push({
     sourceNumero: numero, // 外部不可信字段，仅作 source metadata，不进 Markdown identifier
     text: text !== null ? text : '', // data-text 确定性提取（缺失置空，不 fallback nodeText）
-    index: ctx.references.length, // 出现顺序 → renderer 生成 a<answerId>-r<index>
   });
 }
 
@@ -149,7 +165,12 @@ function collectCodeBlock(node, ctx) {
   });
 }
 
-/** figure：先收集 figcaption 文本作为其内图片的 caption（§10.2 保留可见 caption 文本） */
+/**
+ * figure：负责建立 figcaption → 图片 caption 关联 + 收集 figure 内 img（带 caption），
+ * 但**不得阻断**其它 asset 类型（a/sup/pre/非 img 容器）的通用遍历（P1-2）。
+ * img 重复计数由 collectImage 的 seenImages（§23.2 同 URL 去重）保证只计一次：
+ * 先在此处以 caption 收集，随后 walk() 再次遍历到同一 img 时被去重跳过。
+ */
 function walkFigure(node, ctx) {
   let caption = null;
   const imgs = [];
@@ -162,11 +183,13 @@ function walkFigure(node, ctx) {
     } else if (tag === 'img') {
       imgs.push(child);
     } else {
-      // figure 内其它容器：收集其下 img（capture 深度一层，足够覆盖常见形态）
+      // figure 内其它容器：收集其下 img（§10.2 常见形态：<a><img></a> 等）
       collectNestedImages(child, imgs);
     }
   }
   for (const img of imgs) collectImage(img, ctx, caption);
+  // 不阻断其它 asset 类型：figure 内 a/sup/pre/非 img 容器继续走通用遍历
+  walk(node, ctx);
 }
 
 function collectNestedImages(node, out) {
@@ -177,7 +200,10 @@ function collectNestedImages(node, out) {
   }
 }
 
-/** 深度优先遍历（figure 特殊处理避免重复计数） */
+/**
+ * 深度优先遍历。figure 特殊处理（caption 关联 + 不阻断其它 asset；img 由
+ * seenImages 去重防 double-count）；其余 tag 走通用 asset 收集后继续递归。
+ */
 function walk(node, ctx) {
   for (const child of node.childNodes ?? []) {
     if (!child.tagName) continue;
