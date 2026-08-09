@@ -55,7 +55,7 @@
 - **禁止擅自扩大 Phase scope**；未授权不新增依赖、不"顺手修"无关文件。
 - **禁止 force push**（除非用户明确批准的特殊情况）。
 - **禁止 reset --hard / clean -fd** 等破坏性 git 操作；git 异常（refs 丢失等）走无损恢复流程（`git fsck` → `git fetch origin` → `git update-ref` 重建）。
-- 未通过对应 gate（DOCUMENT / CODE）前禁止 merge master、删除分支、声明"完成"。
+- 未通过对应 gate（DOCUMENT / CODE）前禁止 merge master、删除分支、宣称 Phase accepted / merge approved / released / final PASS（实现任务完成可报告 `COMPLETED` + `REVIEW_STATUS: PENDING`，见 `AGENTS.md` §4；完成 ≠ 审查接受）。
 - 治理文件缺失（`AGENTS.md` / `RULES.md`）时 **STOP**，报告 `GOVERNANCE_FILES_MISSING`，不得继续实现。
 
 ## 9. 输出与报告

@@ -7,7 +7,9 @@
 
 - 仓库：https://github.com/FlapPearLabs/zhihu-grabber-toolkit
 - 权威 Spec：`docs/specs/v2-rich-content-fidelity.md`（Status: APPROVED，禁止未经批准修改）
-- 当前 master：`27e68c1`（V2 Phase 1 收口，CODE gate PASS，四轮 review 全过）
+- **Phase 1 approved checkpoint**（historical，非 current master）：`27e68c1b344ed5af1e1b05887462f2792ffa4fde` —— V2 Phase 1（安全 Markdown renderer 信任根）在此提交收口合并 master，CODE gate PASS，四轮 review 全过。
+
+> 本文件不记录 `current master SHA` / `HEAD` / 临时分支存在性等运行时 Git 状态；需要时现场获取（`git fetch` → `git rev-parse` / `git compare`）。
 
 ## 架构决策（已批准）
 
@@ -24,7 +26,15 @@
 - `cd corpus-anthology && node --test` → 93 pass / 0 fail / 2 skip
 - `node --test test/agent-pipeline.test.mjs`（仓库根，CLI×Skill 集成）→ 6 pass / 0 fail
 - skip 均为既有 Windows 平台限制（symlink 相关），与实现改动无关。
-- 对抗性测试资产：`test/markdown-security.test.js` + `test/rich-renderer.test.js`（Spec §23 全部对抗类别 + review 四轮反例，含 cross-node `<br>`/inline-tag 分段与空白跨节点累计）。
+- Phase 1 对抗性测试覆盖（`test/markdown-security.test.js` + `test/rich-renderer.test.js`，含 review 四轮反例）**仅覆盖 Phase 1 相关子集**：
+  - URL / 外链安全（分类器、redirect 解包、destination serializer、localhost 拒绝）
+  - Markdown / raw HTML 注入（escape 完整性、control 字符）
+  - Setext heading / indented code block 中和（每行含首行）
+  - cross-DOM-node 注入（`<br>` / inline-tag 分段）
+  - split-whitespace 累计
+  - code fence / language 处理
+  - 已实现的 text-node / title / author 转义面
+- **尚未完成、不得标记为 covered**（按已批准 Spec 相应 Phase 再补测试）：image / assets、references / footnotes 完整重建、description / topics、comments、Agent projection / capability isolation、video。
 
 ## 已批准产品决策 / 长期约束
 
@@ -35,7 +45,8 @@
 
 ## 路线图（下一阶段，未经批准不得开始）
 
-- **V2 Phase 2**：`feat/v2-rich-content-assets`（已从最新 master 创建，空分支，未实现）。内容：image metadata / external link assets / code block assets / footnote reconstruction / additive `answers.json` assets（Spec §10-13/§18）。
+- **V2 Phase 2 — Rich Content Assets** 是下一个计划实现的阶段。内容：image metadata / external link assets / code block assets / footnote reconstruction / additive `answers.json` assets（Spec §10-13/§18）。
+- 开始前：从**届时最新的 remote master** 创建（或重建）其 feature 分支；不依赖任何历史临时分支 ref 作为长期事实。
 - **不得在 master 或已合并分支上直接写 Phase 2**；Phase 2 实现前必须先过对应 gate。
 
 ## 历史 review 结论（沉淀）
