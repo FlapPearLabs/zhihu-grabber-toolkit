@@ -390,6 +390,90 @@ export function classifyUrl(rawUrl) {
 }
 
 // ---------------------------------------------------------------------------
+// §10.2 classifyImageUrl — 图片 URL 分类（detected 与 clickable 分离）
+// ---------------------------------------------------------------------------
+
+/** 是否 zhimg.com 或其子域（eTLD+1 标签级校验，防 evilzhimg.com / zhimg.com.evil.com） */
+function isZhimgHost(hostname) {
+  const h = String(hostname).toLowerCase().replace(/\.$/, '');
+  if (h.length === 0 || /[\u0000-\u001F\u007F]/.test(h)) return false;
+  const labels = h.split('.');
+  if (labels.length < 2) return false;
+  // 注册域（最后两个标签）必须精确等于 zhimg.com；host 是 zhimg.com 或其子域
+  return labels[labels.length - 2] === 'zhimg' && labels[labels.length - 1] === 'com';
+}
+
+/**
+ * §10.1 / §10.2 图片 URL 分类。
+ *
+ * 与 classifyUrl（§11 通用链接）独立：图片走专门的 zhimg.com 白名单 + https 判定。
+ * "detected"（图片存在）与 "clickable"（是否生成可点击 href）是两个独立维度：
+ *   - 任何真实图片 URL（https，可解析）都会得到 { detected: true }；
+ *   - 仅 https + zhimg.com 注册域（含子域）→ clickable: true + securityClass 'zhimg_cdn'；
+ *   - 其余（非 zhimg / 非 https / 解析失败）→ clickable: false + 'external_image_untrusted'。
+ * 返回 null 仅表示输入为空或明显不是真实图片 URL（data:/blob: 等，调用方应忽略，
+ * 不收录为 detected —— §10.1 placeholder 不计入）。
+ *
+ * @param {unknown} rawUrl 图片 URL（data-original / data-actualsrc / src 候选）
+ * @returns {null | {
+ *   detected: boolean,
+ *   host: string,
+ *   originalUrl: string,
+ *   displayUrl: string,
+ *   clickable: boolean,
+ *   securityClass: string,
+ *   reason: string
+ * }}
+ */
+export function classifyImageUrl(rawUrl) {
+  const raw = rawUrl == null ? '' : String(rawUrl).trim();
+  if (raw.length === 0) return null;
+  if (hasControlChars(raw)) return null;
+  // data:/blob: 等非 http(s) 形态：placeholder 或不可收录，忽略
+  if (!/^https?:\/\//i.test(raw)) return null;
+
+  let parsed;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    // 无法解析 → 尽力保留 detected 记录（真实存在的图片，但不可点击）
+    return {
+      detected: true,
+      host: 'unknown',
+      originalUrl: raw,
+      displayUrl: raw,
+      clickable: false,
+      securityClass: 'external_image_untrusted',
+      reason: 'unparsable',
+    };
+  }
+
+  // 协议：可点击图片只允许 https
+  const isHttps = parsed.protocol === 'https:';
+  const host = parsed.hostname.toLowerCase();
+  if (isHttps && isZhimgHost(host)) {
+    return {
+      detected: true,
+      host,
+      originalUrl: parsed.href,
+      displayUrl: parsed.href,
+      clickable: true,
+      securityClass: 'zhimg_cdn',
+      reason: 'zhimg_cdn_https',
+    };
+  }
+  return {
+    detected: true,
+    host,
+    originalUrl: isHttps ? parsed.href : raw,
+    displayUrl: isHttps ? parsed.href : raw,
+    clickable: false,
+    securityClass: 'external_image_untrusted',
+    reason: isHttps ? 'non_zhimg_host' : 'non_https',
+  };
+}
+
+// ---------------------------------------------------------------------------
 // §11.5.1 safeMarkdownDestination
 // ---------------------------------------------------------------------------
 

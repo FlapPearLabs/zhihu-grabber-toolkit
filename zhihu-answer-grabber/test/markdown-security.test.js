@@ -13,6 +13,7 @@ import {
   classifyUrl,
   extractZhihuRedirectTarget,
   safeMarkdownDestination,
+  classifyImageUrl,
 } from '../src/markdown-security.js';
 
 // ===== A. 普通 Markdown injection（§8.0 BLOCKER-1） =====
@@ -366,4 +367,80 @@ test('destination: 与 sanitizer 是两个独立边界（分别测试）', () =>
   const cls = classifyUrl('https://example.com/a_(b)?x=1');
   const dest = safeMarkdownDestination(cls.canonicalUrl);
   assert.ok(!dest.includes('(') && !dest.includes(')'));
+});
+
+// ===== K. §10.2 classifyImageUrl（图片 URL 分类：detected 与 clickable 分离） =====
+
+test('image: zhimg.com 主域 https → clickable zhimg_cdn', () => {
+  const r = classifyImageUrl('https://zhimg.com/foo.png');
+  assert.equal(r.detected, true);
+  assert.equal(r.clickable, true);
+  assert.equal(r.securityClass, 'zhimg_cdn');
+  assert.equal(r.host, 'zhimg.com');
+});
+
+test('image: zhimg 子域（picx/pica）→ clickable zhimg_cdn', () => {
+  for (const host of ['picx.zhimg.com', 'pica.zhimg.com', 'pic1.zhimg.com']) {
+    const r = classifyImageUrl(`https://${host}/x.png`);
+    assert.equal(r.clickable, true, `${host} 应可点击`);
+    assert.equal(r.securityClass, 'zhimg_cdn');
+  }
+});
+
+test('image: evilzhimg.com / zhimg.com.evil.com 拒绝（eTLD+1 标签级校验）', () => {
+  const evil = ['https://evilzhimg.com/x.png', 'https://zhimg.com.evil.com/x.png', 'https://notzhimg.com/x.png', 'https://zhimg.com.cn/x.png'];
+  for (const url of evil) {
+    const r = classifyImageUrl(url);
+    assert.equal(r.detected, true, `${url} 应记录存在`);
+    assert.equal(r.clickable, false, `${url} 不得可点击`);
+    assert.equal(r.securityClass, 'external_image_untrusted');
+  }
+});
+
+test('image: 非 https 协议（http）不可点击', () => {
+  const r = classifyImageUrl('http://picx.zhimg.com/x.png');
+  assert.equal(r.detected, true);
+  assert.equal(r.clickable, false);
+  assert.equal(r.securityClass, 'external_image_untrusted');
+});
+
+test('image: data:/blob: placeholder 返回 null（调用方完全忽略，不进 assets）', () => {
+  assert.equal(classifyImageUrl('data:image/svg+xml;base64,PHN2Zz4='), null);
+  assert.equal(classifyImageUrl('data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'), null);
+  assert.equal(classifyImageUrl('blob:https://example.com/uuid'), null);
+});
+
+test('image: 空/null/控制字符 → null', () => {
+  assert.equal(classifyImageUrl(''), null);
+  assert.equal(classifyImageUrl(null), null);
+  assert.equal(classifyImageUrl('https://picx.zhimg.com/\u0000x.png'), null);
+});
+
+test('image: 无法解析的 https 形态 → detected 但不可点击', () => {
+  // 无法被 WHATWG parser 解析的异常 URL：保守记录存在、不生成 href
+  const r = classifyImageUrl('https://');
+  assert.equal(r.detected, true);
+  assert.equal(r.clickable, false);
+  assert.equal(r.securityClass, 'external_image_untrusted');
+});
+
+test('image: 无效 percent-encoding 由 WHATWG 宽容保留（host 仍 zhimg → 可点击，不视为 unparsable）', () => {
+  const r = classifyImageUrl('https://picx.zhimg.com/%zz');
+  assert.equal(r.detected, true);
+  assert.equal(r.clickable, true);
+  assert.equal(r.securityClass, 'zhimg_cdn');
+});
+
+test('image: 非图片主机真实 URL → detected + clickable=false（§10.1 记录存在）', () => {
+  const r = classifyImageUrl('https://example.com/x.png');
+  assert.equal(r.detected, true);
+  assert.equal(r.clickable, false);
+  assert.equal(r.securityClass, 'external_image_untrusted');
+  assert.equal(r.host, 'example.com');
+});
+
+test('image: zhimg URL 规范化后 displayUrl 为 canonical href', () => {
+  const r = classifyImageUrl('https://picx.zhimg.com/x.png');
+  assert.equal(r.clickable, true);
+  assert.equal(r.displayUrl, 'https://picx.zhimg.com/x.png');
 });

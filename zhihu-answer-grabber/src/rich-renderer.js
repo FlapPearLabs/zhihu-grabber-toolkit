@@ -282,8 +282,8 @@ function renderPre(node, ctx) {
   return `${fence}${langPart}\n${text}\n${fence}`;
 }
 
-/** language 属于不可信 metadata：只允许 [A-Za-z0-9_+-]* 且长度受限；非法 → 省略 */
-function extractLanguage(codeEl) {
+/** language 属于不可信 metadata：只允许 [A-Za-z0-9_+-]* 且长度受限；非法 → 省略（导出供 asset-extractor 复用，单一事实来源） */
+export function extractLanguage(codeEl) {
   const cls = getAttr(codeEl, 'class') || '';
   // class 含换行/控制字符 → 整体拒绝（防止 language-bash\nrm -rf 等注入）
   if (/[\u0000-\u001F\u007F]/.test(cls)) return null;
