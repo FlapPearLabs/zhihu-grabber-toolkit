@@ -35,7 +35,10 @@ function retryAfterMs(response) {
 
 const ANSWERS_INCLUDE = 'data[*].is_normal,admin_closed_comment,reward_info,is_collapsed,annotation_action,annotation_detail,collapse_reason,is_sticky,collapsed_by,suggest_edit,comment_count,can_comment,content,editable_content,attachment,voteup_count,reshipment_settings,comment_permission,created_time,updated_time,review_info,relevant_info,question,excerpt,is_labeled,paid_info,paid_info_content,relationship.is_authorized,is_author,voting,is_thanked,is_nothelp,is_favorited,is_orgmember,author.badge_info[*].topics;author.vip_info';
 
-const QUESTION_INCLUDE = 'title,answer_count,comment_count,follower_count,excerpt,author.name';
+// V2 Phase 3：detail（问题描述 HTML）与 topics（话题数组）加入问题元信息 include。
+// 实测（schema discovery, 2026-08-10）：该端点的 include 是严格字段白名单，
+// detail/topics 必须位于 include 字符串前部才会被返回（放在 author.name 之后会被丢弃）。
+const QUESTION_INCLUDE = 'detail,topics,title,answer_count,comment_count,follower_count,excerpt,author.name';
 
 export function cookieHeader(cookies) {
   return Object.entries(cookies)

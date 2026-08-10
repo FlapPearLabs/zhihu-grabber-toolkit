@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { buildAnswersUrl, buildQuestionInfoUrl, humanDelay, requestJson } from './http.js';
 import { extractAssets } from './asset-extractor.js';
+import { richHtmlToMarkdown } from './rich-renderer.js';
 
 const DEFAULT_STATE = Object.freeze({ offset: 0, done: false });
 /** 安全阈值：单问题最多抓 300 页（约 6000 条），防止异常分页导致无限循环 */
@@ -15,6 +16,57 @@ export function validateQuestionId(value) {
     throw new TypeError(`非法问题 ID: ${qid}（仅接受 1-20 位数字）`);
   }
   return qid;
+}
+
+/**
+ * V2 Phase 3（Spec §17.1/§17.3）：从 question info response 提取 topics。
+ *
+ * 真实 schema evidence（2026-08-10 schema discovery，/api/v4/questions/{qid}）：
+ *   topics: array of { id: string, type: string, url: string, name: string,
+ *                       avatar_url: string, topic_type: string }
+ * 只持久化 Spec + 真实 schema 明确支持的最小字段 { id, name }：
+ *   - id：稳定标识（topic object 内唯一）
+ *   - name：展示文本（UNTRUSTED_EXTERNAL_CONTENT，进入 Markdown 前必须 escape）
+ * 不保存 url / avatar_url / type / topic_type（无 Spec 支持、无必要、避免引入额外字段）。
+ * 服务器未返回 topics（非数组）→ 返回 []。
+ */
+export function extractTopics(rawTopics) {
+  if (!Array.isArray(rawTopics)) return [];
+  const out = [];
+  for (const t of rawTopics) {
+    if (!t || typeof t !== 'object') continue;
+    if (t.id === undefined || t.id === null) continue;
+    if (typeof t.name !== 'string') continue;
+    out.push({ id: String(t.id), name: t.name });
+  }
+  return out;
+}
+
+/**
+ * V2 Phase 3（Spec §17.1/§17.2）：从 question info response 构建 additive question 对象。
+ *
+ * 真实 schema evidence（2026-08-10 schema discovery）：
+ *   detail: string —— 问题描述原始 HTML（canonical 来源，原样保留；无描述时为空字符串）
+ *   title:  string —— 问题标题
+ *   topics: array  —— 话题数组（见 extractTopics）
+ *
+ * descriptionMarkdown 由 descriptionHtml 经与回答正文**同一**安全 renderer 确定性派生
+ * （richHtmlToMarkdown，headingOffset=2 → description 内部 heading 最多 H3，
+ *  严格低于 answers.md 的 `## N.` framing，Spec §14.1.1）。
+ * 不回写 descriptionHtml（canonical 原样保留，Spec §6.1/RULES §3）。
+ *
+ * question.id / question.title 与 canonical 顶层 questionId / questionTitle 保持一致
+ * （Spec §17.1，避免第二套冲突事实；真实 server metadata 冲突时由上层 STOP 上报）。
+ */
+export function buildQuestionMetadata(qid, info) {
+  const detail = typeof info?.detail === 'string' ? info.detail : '';
+  return {
+    id: String(qid),
+    title: typeof info?.title === 'string' ? info.title : '',
+    descriptionHtml: detail,
+    descriptionMarkdown: detail ? richHtmlToMarkdown(detail, { headingOffset: 2 }) : '',
+    topics: extractTopics(info?.topics),
+  };
 }
 
 /** 解析输出目录并校验 containment：最终目录必须位于 outDir 之下 */
@@ -128,9 +180,17 @@ export async function grabAll(config, qid, { outDir = 'out', onProgress } = {}) 
       questionTitle: info.title || '',
       answerCount: info.answer_count ?? null,
       url: `https://www.zhihu.com/question/${qid}`,
+      // V2 Phase 3 additive（Spec §17.1）：question 对象。
+      // id/title 与 canonical 顶层字段一致；descriptionHtml 为原始 detail HTML 原样保留；
+      // descriptionMarkdown 确定性派生；topics 仅当服务器真实返回时写入。
+      // 服务器未返回 description（detail 缺失/空）→ descriptionHtml/descriptionMarkdown 为明确空值 ''。
+      question: buildQuestionMetadata(qid, info),
     };
   } catch (error) {
     onProgress?.({ event: 'metadata_failed', qid, error: error.message });
+    // V1 语义保持：question info 失败 → 顶层元信息降级（questionTitle 为空等），core 抓取继续。
+    // description 复用同一请求；该请求失败时 question 对象整体缺失（additive optional，
+    // 老 reader 忽略新字段即可，Spec §18/§19）。不把 metadata 失败升级为 core fatal（Spec §20.2）。
     meta = { questionId: qid, questionTitle: '', answerCount: null, url: `https://www.zhihu.com/question/${qid}` };
   }
 

@@ -1,0 +1,429 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+/**
+ * V2 Phase 3 — Question Metadata（Spec §17）对抗与合同测试。
+ *
+ * 覆盖（§17 Test Matrix）：
+ *   A. QUESTION ADDITIVE SCHEMA：question 对象 additive，V1 top-level 字段不变
+ *   B. DESCRIPTION SOURCE：detail 来自现有 question info 请求（零新增请求）
+ *   C. DESCRIPTION CANONICALITY：descriptionHtml 严格等于 source raw HTML；descriptionMarkdown 确定性
+ *   D. DESCRIPTION SECURITY：Markdown 注入惰性、raw HTML 活性移除、heading scope 安全
+ *   E. TOPICS：真实 topics 最小字段确定性提取；恶意 topic 文本惰性
+ *   F. V1/PHASE2 兼容：answers[].content / assets 不变；旧产物（无 question）可读
+ *   G. REQUEST BUDGET：QUESTION_INCLUDE 含 detail,topics（复用现有请求，无新增网络面）
+ *   H. DETERMINISM：同一输入 → 同一 question 对象 / descriptionMarkdown
+ */
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { grabAll, buildQuestionMetadata, extractTopics } from '../src/grabber.js';
+import { buildQuestionInfoUrl } from '../src/http.js';
+import { richHtmlToMarkdown } from '../src/rich-renderer.js';
+
+const TEST_CONFIG = {
+  cookies: { z_c0: 'zc-test', d_c0: 'dc-test' },
+  userAgent: 'UA-TEST',
+  zse93: '101_3_3.0',
+};
+
+// 真实 schema discovery 得到的样例（field path/type 已实测，正文为最小必要样例）
+const REAL_QUESTION_INFO = {
+  id: '477427067',
+  title: '宜搭和简道云、氚云比起来有什么优劣之处？',
+  detail: '<p>这是问题描述正文，包含<b>加粗</b>与<a href="https://example.com/foo">链接</a>。</p>',
+  answer_count: 17,
+  topics: [
+    { id: '19550163', type: 'topic', url: 'https://www.zhihu.com/topic/19550163', name: 'ERP', avatar_url: 'https://pic1.zhimg.com/v2-x.png', topic_type: 'topic' },
+    { id: '19550458', type: 'topic', url: 'https://www.zhihu.com/topic/19550458', name: '信息化', avatar_url: 'https://pic1.zhimg.com/v2-y.png', topic_type: 'topic' },
+    { id: '19734444', type: 'topic', url: 'https://www.zhihu.com/topic/19734444', name: 'aPaaS', avatar_url: '', topic_type: 'topic' },
+  ],
+};
+
+/** 模拟 requestJson 的 fetch：区分问题信息 URL 与回答分页 URL */
+function stubFetch(answersBody, questionInfoBody = { title: '测试问题', answer_count: 0 }) {
+  const original = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const u = String(url);
+    const body = u.includes('/answers?') ? answersBody : questionInfoBody;
+    return new Response(JSON.stringify(body), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+  return () => { globalThis.fetch = original; };
+}
+
+// ===== A. QUESTION ADDITIVE SCHEMA =====
+
+test('P3-A1: grabAll 成功时写入 additive question 对象，top-level V1 字段不变', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-p3-additive-'));
+  const outDir = path.join(dir, 'out');
+  const body = {
+    data: [{ id: '1', content: '<p>回答</p>', author: 'A', voteup_count: 1, comment_count: 0 }],
+    paging: { is_end: true },
+  };
+  const restore = stubFetch(body, REAL_QUESTION_INFO);
+  try {
+    const result = await grabAll(TEST_CONFIG, '477427067', { outDir });
+    // V1 top-level 字段语义不变
+    assert.equal(result.questionId, '477427067');
+    assert.equal(result.questionTitle, REAL_QUESTION_INFO.title);
+    assert.equal(result.answerCount, 17);
+    assert.equal(result.url, 'https://www.zhihu.com/question/477427067');
+    // additive question 对象
+    assert.ok(result.question, 'question 对象存在');
+    assert.equal(result.question.id, '477427067', 'question.id 与 canonical questionId 一致');
+    assert.equal(result.question.title, REAL_QUESTION_INFO.title, 'question.title 与 canonical questionTitle 一致');
+    assert.equal(result.question.descriptionHtml, REAL_QUESTION_INFO.detail, 'descriptionHtml 严格保留 server raw HTML');
+    assert.ok(typeof result.question.descriptionMarkdown === 'string');
+    assert.deepEqual(result.question.topics, [
+      { id: '19550163', name: 'ERP' },
+      { id: '19550458', name: '信息化' },
+      { id: '19734444', name: 'aPaaS' },
+    ], 'topics 只保留 {id, name} 最小字段（真实 schema evidence）');
+    // 磁盘 snapshot 同样包含 question 且 content 不变
+    const disk = JSON.parse(fs.readFileSync(path.join(outDir, '477427067', 'answers.json'), 'utf8'));
+    assert.deepEqual(disk.question, result.question);
+    assert.equal(disk.answers[0].content, '<p>回答</p>');
+  } finally {
+    restore();
+  }
+});
+
+test('P3-A2: 旧 V1 产物（无 question 字段）仍可被读取并续传，不报错', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-p3-oldv1-'));
+  const outDir = path.join(dir, 'out');
+  const qdir = path.join(outDir, '123');
+  fs.mkdirSync(qdir, { recursive: true });
+  fs.writeFileSync(path.join(qdir, 'answers.json'), JSON.stringify({
+    questionId: '123',
+    questionTitle: 'T',
+    answerCount: 2,
+    answers: [{ id: '1', author: '旧', content: '<p>old</p>' }],
+  }));
+  fs.writeFileSync(path.join(qdir, '.progress.json'), JSON.stringify({ offset: 1, done: false }));
+  const body = {
+    data: [{ id: '2', content: '<img src="https://picx.zhimg.com/b.png">' }],
+    paging: { is_end: true },
+  };
+  const restore = stubFetch(body, { title: '新', answer_count: 2 });
+  try {
+    const result = await grabAll(TEST_CONFIG, '123', { outDir });
+    assert.equal(result.answers.length, 2);
+    assert.equal(result.answers[0].content, '<p>old</p>', '旧回答 content 不被改写');
+    assert.ok(result.question, '续传成功后 question 对象被补全');
+    assert.equal(result.question.id, '123');
+  } finally {
+    restore();
+  }
+});
+
+test('P3-A3: question info 请求失败 → question 对象缺省，core 抓取继续（Spec §20.2）', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-p3-metafail-'));
+  const outDir = path.join(dir, 'out');
+  const body = {
+    data: [{ id: '1', content: '<p>x</p>' }],
+    paging: { is_end: true },
+  };
+  // 问题信息 URL 返回 500（模拟 metadata 临时失败）
+  const original = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const u = String(url);
+    if (u.includes('/answers?')) {
+      return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+    }
+    return new Response('{}', { status: 500, headers: { 'content-type': 'application/json' } });
+  };
+  try {
+    const events = [];
+    const result = await grabAll(TEST_CONFIG, '123', { outDir, onProgress: (p) => events.push(p) });
+    assert.ok(events.some((e) => e.event === 'metadata_failed'), 'metadata 失败事件触发');
+    assert.equal(result.answers.length, 1, 'core 抓取不因 metadata 失败而中断');
+    assert.equal(result.questionId, '123');
+    assert.equal(result.question, undefined, 'question 对象缺省（additive optional）');
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+// ===== B. DESCRIPTION SOURCE =====
+
+test('P3-B1: description 复用现有 question info 请求（include 含 detail/topics，零新增请求）', () => {
+  const u = new URL(buildQuestionInfoUrl('123'));
+  const include = u.searchParams.get('include');
+  assert.ok(include.includes('detail'), 'include 包含 detail');
+  assert.ok(include.includes('topics'), 'include 包含 topics');
+  assert.ok(include.includes('title'), 'include 保留 title');
+  assert.ok(include.includes('answer_count'), 'include 保留 answer_count');
+  // detail/topics 必须位于 include 前部（真实 discovery：放末尾会被服务端丢弃）
+  const detailIdx = include.indexOf('detail');
+  const answerCountIdx = include.indexOf('answer_count');
+  assert.ok(detailIdx >= 0 && detailIdx < answerCountIdx, 'detail 位于 answer_count 之前');
+});
+
+test('P3-B2: server 未返回 detail（description 缺失）→ descriptionHtml/descriptionMarkdown 为明确空字符串', () => {
+  const q = buildQuestionMetadata('123', { title: 'T', answer_count: 0, topics: [] });
+  assert.equal(q.descriptionHtml, '');
+  assert.equal(q.descriptionMarkdown, '');
+});
+
+// ===== C. DESCRIPTION CANONICALITY =====
+
+test('P3-C1: descriptionHtml 严格等于 source raw HTML（不 trim / 不重排 / 不 sanitize 回写）', () => {
+  const raw = '  <p>  <b>带空格</b>  原始  </p>  ';
+  const q = buildQuestionMetadata('1', { detail: raw });
+  assert.equal(q.descriptionHtml, raw, 'descriptionHtml 必须原样保留 server raw value');
+});
+
+test('P3-C2: descriptionMarkdown 确定性（同一 HTML → 同一输出；两次调用 deepEqual）', () => {
+  const q1 = buildQuestionMetadata('1', REAL_QUESTION_INFO);
+  const q2 = buildQuestionMetadata('1', REAL_QUESTION_INFO);
+  assert.equal(q1.descriptionMarkdown, q2.descriptionMarkdown);
+  assert.ok(q1.descriptionMarkdown.length > 0);
+  // 与 richHtmlToMarkdown 直接调用一致（同一 renderer，无第二套实现）
+  assert.equal(q1.descriptionMarkdown, richHtmlToMarkdown(REAL_QUESTION_INFO.detail, { headingOffset: 2 }));
+});
+
+test('P3-C3: 渲染不改变 descriptionHtml（canonical 不可变）', () => {
+  const q = buildQuestionMetadata('1', REAL_QUESTION_INFO);
+  const before = q.descriptionHtml;
+  void q.descriptionMarkdown; // 渲染已发生
+  assert.equal(q.descriptionHtml, before);
+  assert.equal(q.descriptionHtml, REAL_QUESTION_INFO.detail);
+});
+
+// ===== D. DESCRIPTION SECURITY =====
+
+test('P3-D1: description 中 Markdown 注入（link/image/heading/quote/list/autolink/裸URL）全部惰性', () => {
+  const injection = [
+    '<p>[click](https://evil.example)</p>',
+    '<p>![img](https://evil.example/x.png)</p>',
+    '<p>https://evil.example</p>',
+    '<p>&lt;https://evil.example&gt;</p>',
+    '<p># 伪标题</p>',
+    '<p>&gt; 伪引用</p>',
+    '<p>- 伪列表</p>',
+  ].join('');
+  const md = richHtmlToMarkdown(injection, { headingOffset: 2 });
+  // 不可信 text 自身不得产生 Markdown 结构语义：转义后不会成为真实 heading/link/image/quote/list
+  assert.ok(!/^#\s/m.test(md), '不得产生顶层 heading');
+  assert.ok(!/\n#\s/m.test(md), '不得在行首产生 heading');
+  assert.ok(!md.includes('![img]'), '不得产生 image markdown');
+  assert.ok(!/\[click\]\(/.test(md), '不得产生可点击伪造链接');
+  // 惰性文本仍在（内容作为数据保留，control 字符被转义 → \[click\]）
+  assert.ok(md.includes('[click]') || md.includes('\\[click\\]'), '内容保留（转义后的惰性文本）');
+});
+
+test('P3-D2: description 中 raw HTML 活性行为移除（script/style/form/input/iframe/event handler）', () => {
+  const hostile = '<script>alert(1)</script><p onclick="evil()">正文 <iframe src="https://evil.example"></iframe></p><style>.x{}</style><form><input value="x"></form>';
+  const md = richHtmlToMarkdown(hostile, { headingOffset: 2 });
+  assert.ok(!md.includes('<script>'), 'script 剥离');
+  assert.ok(!md.includes('<iframe'), 'iframe 剥离');
+  assert.ok(!md.includes('<form>'), 'form 剥离');
+  assert.ok(!md.includes('<input'), 'input 剥离');
+  assert.ok(!md.includes('<style>'), 'style 剥离');
+  assert.ok(!md.includes('onclick'), 'event handler 剥离');
+  assert.ok(md.includes('正文'), '可见文本保留');
+});
+
+test('P3-D3: description 内 heading 不越界（headingOffset=2 → h1 降级 H3，低于 ## N. framing）', () => {
+  const html = '<h1>大标题</h1><h2>中标题</h2><p>正文</p>';
+  const md = richHtmlToMarkdown(html, { headingOffset: 2 });
+  assert.ok(md.includes('### 大标题'), 'source h1 → H3');
+  assert.ok(md.includes('#### 中标题'), 'source h2 → H4');
+  assert.ok(!/^# [^#]/.test(md), '不得产生 # 顶层标题（与问题标题同级）');
+  assert.ok(!/^## [^#]/.test(md), '不得产生 ## N. 回答 framing 同级标题');
+});
+
+test('P3-D4: description 中 javascript:/data: 链接不可点击（URL sanitizer 复用）', () => {
+  const html = '<p>链接 <a href="javascript:alert(1)">x</a> 与 <a href="data:text/html,evil">y</a></p>';
+  const md = richHtmlToMarkdown(html, { headingOffset: 2 });
+  assert.ok(!md.includes('javascript:alert'), 'javascript: 不出现在 href');
+  assert.ok(!md.includes('data:text/html'), 'data: 不出现在 href');
+  assert.ok(md.includes('x') && md.includes('y'), '锚文本保留');
+});
+
+// ===== E. TOPICS =====
+
+test('P3-E1: extractTopics 确定性提取最小字段；过滤非法 item', () => {
+  const raw = [
+    { id: '1', type: 'topic', url: 'https://x', name: 'A', avatar_url: 'https://img', topic_type: 'topic' },
+    { id: '2', name: 'B' },
+    { id: null, name: 'C' },
+    { name: 'D' },
+    { id: '5', name: 123 },
+    'not-an-object',
+    null,
+  ];
+  const topics = extractTopics(raw);
+  assert.deepEqual(topics, [
+    { id: '1', name: 'A' },
+    { id: '2', name: 'B' },
+  ], '只保留 id+name 均为合法的 item，丢弃多余字段');
+});
+
+test('P3-E2: topics 非数组（服务器未返回）→ []（明确空值语义）', () => {
+  assert.deepEqual(extractTopics(undefined), []);
+  assert.deepEqual(extractTopics(null), []);
+  assert.deepEqual(extractTopics('nope'), []);
+  assert.deepEqual(extractTopics({}), []);
+});
+
+test('P3-E3: 恶意 topic 文本只作为数据保存，不产生 Markdown 结构', () => {
+  const q = buildQuestionMetadata('1', {
+    detail: '',
+    topics: [
+      { id: '1', name: '# 伪标题 [x](https://evil.example) ![img](https://evil.example/i.png) > quote - list' },
+      { id: '2', name: '<script>alert(1)</script>' },
+    ],
+  });
+  // topics 作为 canonical 数据原样保存（name 是 untrusted data，不是渲染产物）
+  assert.equal(q.topics[0].name, '# 伪标题 [x](https://evil.example) ![img](https://evil.example/i.png) > quote - list');
+  assert.equal(q.topics[1].name, '<script>alert(1)</script>');
+  // 若未来进入 Markdown 展示面，必须经过 escapeUntrustedMarkdownText —— 由调用方负责；
+  // 本测试断言 canonical 层只保存数据、不自行生成结构（§11 topics contract）
+});
+
+// ===== F. V1 / PHASE2 COMPATIBILITY =====
+
+test('P3-F1: grabAll 输出 answers[].content 与 assets 语义不变（canonical immutability）', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-p3-compat-'));
+  const outDir = path.join(dir, 'out');
+  const content = '<p>正文 <img src="https://picx.zhimg.com/a.png"></p>';
+  const body = {
+    data: [{ id: '1', content, author: 'A', voteup_count: 1, comment_count: 0 }],
+    paging: { is_end: true },
+  };
+  const restore = stubFetch(body, REAL_QUESTION_INFO);
+  try {
+    const result = await grabAll(TEST_CONFIG, '477427067', { outDir });
+    const a = result.answers[0];
+    assert.equal(a.content, content, 'content 原样保留');
+    assert.ok(a.assets, 'assets 存在');
+    assert.equal(a.assets.images.length, 1);
+    assert.deepEqual(Object.keys(a).sort(), ['assets', 'author', 'commentCount', 'content', 'createdTime', 'excerpt', 'id', 'updatedTime', 'url', 'voteupCount'].sort());
+  } finally {
+    restore();
+  }
+});
+
+// ===== G. REQUEST BUDGET =====
+
+test('P3-G1: 每次抓取只发 1 次 question info 请求（零新增 metadata 请求）', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-p3-budget-'));
+  const outDir = path.join(dir, 'out');
+  const body = {
+    data: [{ id: '1', content: '<p>x</p>' }],
+    paging: { is_end: true },
+  };
+  let questionInfoRequests = 0;
+  const original = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const u = String(url);
+    if (!u.includes('/answers?')) questionInfoRequests += 1;
+    const b = u.includes('/answers?') ? body : REAL_QUESTION_INFO;
+    return new Response(JSON.stringify(b), { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+  try {
+    await grabAll(TEST_CONFIG, '477427067', { outDir });
+    assert.equal(questionInfoRequests, 1, 'question info 请求恰 1 次（与 V1 相同，description 复用）');
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+// ===== H. DETERMINISM =====
+
+test('P3-H1: 同一 source input → 同一 question 对象（deepEqual）', () => {
+  const a = buildQuestionMetadata('477427067', REAL_QUESTION_INFO);
+  const b = buildQuestionMetadata('477427067', REAL_QUESTION_INFO);
+  assert.deepEqual(a, b);
+});
+
+// ===== F2. 端到端兼容：新产物过 verify-output + make-handoff；旧产物无 question 仍 valid =====
+
+import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
+
+const VERIFY_SCRIPT = fileURLToPath(new URL('../scripts/verify-output.mjs', import.meta.url));
+const HANDOFF_SCRIPT = fileURLToPath(new URL('../scripts/make-handoff.mjs', import.meta.url));
+
+/** 构造完整产物（answers.json + answers.md + .progress.json） */
+function writeArtifact(dir, json, mdLines) {
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'answers.json'), JSON.stringify(json, null, 2), 'utf8');
+  fs.writeFileSync(path.join(dir, 'answers.md'), mdLines.join('\n'), 'utf8');
+  fs.writeFileSync(path.join(dir, '.progress.json'), JSON.stringify({ offset: 999, done: true }), 'utf8');
+}
+
+const MD_LINES = [
+  '# 问题标题',
+  '',
+  '> 问题链接: [知乎问题](https://www.zhihu.com/question/123)',
+  '> 抓取时间: 2026-08-10T00:00:00.000Z',
+  '> 问题回答总数: 1，本次抓取到: 共 1 条回答',
+  '',
+  '---',
+  '',
+  '## 1. 作者 — 1 赞 · 0 评论',
+  '',
+  '- 链接: [知乎回答](https://www.zhihu.com/question/123/answer/1)',
+  '- 创建时间: (未知)',
+  '',
+  '回答正文',
+  '',
+  '---',
+  '',
+];
+
+test('P3-F2: 新产物（question present）过 verify-output valid + make-handoff verified（additive 不影响 14 项校验）', () => {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-p3-verify-new-'));
+  const dir = path.join(base, '123'); // verify-output 三方一致：目录名必须等于 questionId
+  const json = {
+    questionId: '123',
+    questionTitle: '问题标题',
+    answerCount: 1,
+    url: 'https://www.zhihu.com/question/123',
+    fetchedAt: '2026-08-10T00:00:00.000Z',
+    question: {
+      id: '123',
+      title: '问题标题',
+      descriptionHtml: '<p>描述</p>',
+      descriptionMarkdown: '描述',
+      topics: [{ id: '1', name: '话题' }],
+    },
+    answers: [{ id: '1', author: '作者', content: '<p>回答正文</p>', url: 'https://www.zhihu.com/question/123/answer/1' }],
+  };
+  writeArtifact(dir, json, MD_LINES);
+  try {
+    const v = JSON.parse(execFileSync(process.execPath, [VERIFY_SCRIPT, dir], { encoding: 'utf8' }));
+    assert.equal(v.valid, true, '新产物 verify valid');
+    execFileSync(process.execPath, [HANDOFF_SCRIPT, dir], { encoding: 'utf8' });
+    const handoff = JSON.parse(fs.readFileSync(path.join(dir, 'handoff.json'), 'utf8'));
+    assert.equal(handoff.verified, true, 'handoff verified=true');
+    assert.equal(handoff.answerCount, 1);
+  } finally {
+    fs.rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test('P3-F3: 旧 V1 产物（无 question 字段）过 verify-output 仍 valid（additive 向后兼容）', () => {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-p3-verify-old-'));
+  const dir = path.join(base, '123'); // verify-output 三方一致：目录名必须等于 questionId
+  const json = {
+    questionId: '123',
+    questionTitle: '问题标题',
+    answerCount: 1,
+    url: 'https://www.zhihu.com/question/123',
+    fetchedAt: '2026-08-10T00:00:00.000Z',
+    answers: [{ id: '1', author: '作者', content: '<p>回答正文</p>', url: 'https://www.zhihu.com/question/123/answer/1' }],
+  };
+  writeArtifact(dir, json, MD_LINES);
+  try {
+    const v = JSON.parse(execFileSync(process.execPath, [VERIFY_SCRIPT, dir], { encoding: 'utf8' }));
+    assert.equal(v.valid, true, '旧产物（无 question）verify 仍 valid');
+  } finally {
+    fs.rmSync(base, { recursive: true, force: true });
+  }
+});
