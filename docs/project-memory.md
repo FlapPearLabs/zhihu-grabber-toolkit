@@ -35,7 +35,7 @@
   - code fence / language 处理
   - 已实现的 text-node / title / author 转义面
 - **V2 Phase 2（S1-S6）已实现并覆盖**：image metadata / external link assets / code block metadata / reference-footnote assets（`test/asset-extractor.test.js`）；脚注重建与对抗（重复/非法/缺失 numero、跨 answer collision、Markdown 注入、恶意脚注 URL，`test/rich-renderer.test.js`）；additive `answers[].assets` 集成、断点续传兼容、determinism（`test/grabber.test.js`）；V1 兼容回归 render/verify/handoff/CLI status（`test/v1-compat.test.js`）。
-- **V2 Phase 3 — Question Metadata 已实现并覆盖**（`test/question-metadata.test.js`）：additive `question` 对象（`{ id, title, descriptionHtml, descriptionMarkdown, topics }`）；description source/canonicality（descriptionHtml 严格等于 server raw `detail`，渲染不突变）、description security（Markdown 注入惰性 / raw HTML 活性移除 / headingOffset=2 防 `## N.` 越界 / javascript:/data: 链接不可点击）、topics 最小字段 `{ id, name }` 确定性提取与恶意文本惰性、V1/Phase2 兼容（旧产物无 question 可读、verify/handoff 不受影响）、request budget（question info 请求恰 1 次/抓取，零新增）、determinism；missing vs empty 区分（detail/topics 缺失 ≠ 明确空值）、metadata 失败用户可见 warning（CLI 级）、resume 保留已有合法 question、identity gate（`QUESTION_METADATA_IDENTITY_CONFLICT`）、topic id/name 严格 string 校验。
+- **V2 Phase 3 — Question Metadata 已纳入 accepted project baseline 并覆盖**（`test/question-metadata.test.js`）：additive `question` 对象（`{ id, title, descriptionHtml, descriptionMarkdown, topics }`）；description source/canonicality（descriptionHtml 严格等于 server raw `detail`，渲染不突变）、description security（Markdown 注入惰性 / raw HTML 活性移除 / headingOffset=2 防 `## N.` 越界 / javascript:/data: 链接不可点击）、topics 最小字段 `{ id, name }` 确定性提取与恶意文本惰性、V1/Phase2 兼容（旧产物无 question 可读、verify/handoff 不受影响）、request budget（question info 请求恰 1 次/抓取，零新增）、determinism；missing vs empty 区分（detail/topics 缺失 ≠ 明确空值）、metadata 失败用户可见 warning（CLI 级）、resume 保留已有合法 question、identity gate（`QUESTION_METADATA_IDENTITY_CONFLICT`）、topic id/name 严格 string 校验、topics 非空全非法 omit、公开 warning 固定最小文本、resume ID 严格 string。
 - **尚未完成、不得标记为 covered**（按已批准 Spec 相应 Phase 再补测试）：comments、Agent projection / capability isolation、video（Spec §16 待真实样本）。
 
 ## 已批准产品决策 / 长期约束
@@ -53,6 +53,7 @@
 ## 路线图（下一阶段，未经批准不得开始）
 
 - **V2 Phase 2 — Rich Content Assets 已纳入 accepted project baseline**：additive `answers[].assets`（images / links / references / codeBlocks / videos）、canonical `content` 不可变、脚注重建（renderer 生成 `a<answerId>-r<index>`）、1px placeholder 确定性合同（Spec §10.1）均为长期合同，保持不变（见上文已批准决策与 Spec）。
+- **V2 Phase 3 — Question Metadata 已纳入 accepted project baseline**：additive `question` metadata（description/topics）、NETWORK_REQUEST_DELTA=0、failure/empty semantics（Spec §20.2.1）、resume preservation 与 identity gate 均为长期合同（见上文 PHASE3_SCHEMA_DISCOVERY 与已批准决策）。
 - 下一个计划阶段：comments enrichment（Spec §15，默认 off，实现前必须先真实 API 验证）→ Agent projection / capability isolation（Spec §9/§9.1）→ video detect（Spec §16，待真实样本）。
 - 后续阶段开始前：从**届时最新的 remote master** 创建（或重建）其 feature 分支；不依赖任何历史临时分支 ref 作为长期事实。
 - **browser-smoke caveat（长期）**：`browser-smoke` 存在已知的 pre-existing false-negative baseline（部分渲染形态的内容匹配）；其绝对结果 FAIL 不得改标为 PASS；Phase 2 是在已明确批准的 no-regression baseline exception 下被接受的；browser-smoke 工具本身的改进是独立 follow-up defect，不属于任何已接受 Phase 的交付范围。
@@ -62,6 +63,7 @@
 - DOCUMENT gate（V2 Spec）：PASS（2026-08-09，Spec APPROVED）。
 - CODE gate（Phase 1）：PASS @ `27e68c1`（P0/P1/P2 全 0，四轮 review：escape 完整性、framing 收口、lockfile registry、localhost namespace、cross-node 与 split-whitespace 绕过修复）。
 - **CODE gate（Phase 2 — Rich Content Assets）**：PASS（2026-08-09），已纳入 accepted project baseline。
+- **CODE gate（Phase 3 — Question Metadata）**：PASS（2026-08-10），已纳入 accepted project baseline。
 - 建议：停止无限制地静态加 gate，进入真实使用验证与按 Phase 推进。
 
 ## Maintenance Contract
