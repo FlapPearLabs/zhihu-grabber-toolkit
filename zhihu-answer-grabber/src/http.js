@@ -92,7 +92,13 @@ export function buildCommentsUrl(answerId) {
   // answerId 作为单个 opaque path segment 编码（Phase 4 CODE review P1-2）：
   // 禁止让来自 untrusted server data / persisted artifact 的异常 ID 通过 path/query/
   // fragment 控制字符改变 authenticated request 的目标路径（host allowlist 无法防此）。
-  const segment = encodeURIComponent(String(answerId));
+  // 空 ID 无法构成任何 path segment（/answers//root_comment），必须 fail closed；
+  // 不引入"纯数字"或"ID>0"等未经 Spec 批准的产品规则（"0" 仍合法）。
+  const raw = String(answerId);
+  if (raw.length === 0) {
+    throw new TypeError('非法 answerId：无法构成单一路径段');
+  }
+  const segment = encodeURIComponent(raw);
   const u = new URL(`https://www.zhihu.com/api/v4/comment_v5/answers/${segment}/root_comment`);
   // fail-closed：WHATWG URL 规范化会消除字面 dot segment（如 answerId=".." 或 "." 会移除
   // /answers/ 段）；必须在构造后确认 pathname 结构未被改变（answers 后恰好一个 encoded 段）。

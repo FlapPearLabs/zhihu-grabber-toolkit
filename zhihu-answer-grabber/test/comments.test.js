@@ -145,6 +145,13 @@ test('P1-2: 对抗 answerId 不能改变 endpoint 结构（opaque path segment�
   // fail-closed：字面 dot segment 会被 URL 规范化消除 → 直接拒绝
   assert.throws(() => buildCommentsUrl('..'), /非法 answerId/);
   assert.throws(() => buildCommentsUrl('.'), /非法 answerId/);
+  // fail-closed：空 answerId 无法构成任何 path segment（/answers//root_comment）→ 直接拒绝
+  assert.throws(() => buildCommentsUrl(''), /非法 answerId/);
+  // 不引入"ID 必须 > 0"等未经 Spec 批准的产品规则："0" 仍必须产生结构有效 URL
+  assert.equal(
+    buildCommentsUrl('0'),
+    'https://www.zhihu.com/api/v4/comment_v5/answers/0/root_comment?order_by=score&limit=3&offset=',
+  );
 });
 
 // ===== B. selection =====
