@@ -471,7 +471,12 @@ export async function grabAll(config, qid, { outDir = 'out', onProgress, comment
   // 既有 answer.comments（B 路径）不触碰，原样保留。
   if (comments === true) {
     const selected = selectTopAnswers(answers, MAX_SELECTED_ANSWERS);
-    for (const answer of selected) {
+    for (let i = 0; i < selected.length; i += 1) {
+      const answer = selected[i];
+      // 低频限速（Phase 4 CODE review P1-1）：delay 控制"下一次请求何时允许发出"，
+      // 位于每次请求之前（除第一个），与上一个 selected answer 的结果无关——
+      // 无论前一请求成功、HTTP/network 失败或 schema 失败，都不会造成紧邻 burst。
+      if (i > 0) await humanDelay();
       // 每个 selected answer 至多 1 次真实 HTTP 尝试（Spec §15.3 / reviewer 确认的 retries=0 预算合同）。
       // 注意：requestJson 默认 retries=2 会在 429/5xx 下最多发 3 次实际 HTTP 请求，
       // 会暗中突破"≤1 request/answer"预算；comments 请求必须显式 retries: 0。
@@ -501,7 +506,6 @@ export async function grabAll(config, qid, { outDir = 'out', onProgress, comment
         }
         onProgress?.({ event: 'comments_failed', qid });
       }
-      await humanDelay();
     }
     // enrichment 完成后写最终 canonical 快照（comments 只进 additive JSON，answers.md 布局不变）
     writeJson(answersFile, { ...meta, fetchedAt: new Date().toISOString(), answers });
