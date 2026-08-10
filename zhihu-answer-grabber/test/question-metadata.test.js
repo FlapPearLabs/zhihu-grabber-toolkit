@@ -256,9 +256,9 @@ test('P3-J3: question.title 与 canonical questionTitle 单一归一化来源（
   }
 });
 
-// ===== K. RESUME PRESERVATION（P1-3）=====
+// ===== K. RESUME PRESERVATION（P1-3 / re-review P1-1）=====
 
-test('P3-K1: resume 时 fresh metadata 失败 → 保留磁盘已有合法 question（不得抹掉）', async () => {
+test('P3-K1: resume 时 fresh metadata 失败 → 保留兼容 question + canonical questionTitle（不变量成立）', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-p3-resume-preserve-'));
   const outDir = path.join(dir, 'out');
   const qdir = path.join(outDir, '123');
@@ -298,10 +298,14 @@ test('P3-K1: resume 时 fresh metadata 失败 → 保留磁盘已有合法 quest
     const result = await grabAll(TEST_CONFIG, '123', { outDir, onProgress: (p) => events.push(p) });
     assert.ok(events.some((e) => e.event === 'metadata_failed'), 'metadata 失败事件触发');
     assert.equal(result.answers.length, 2, 'core 抓取继续');
-    assert.deepEqual(result.question, previousQuestion, '已有合法 question 必须被保留（deepEqual）');
+    assert.deepEqual(result.question, previousQuestion, '已有兼容 question 必须被保留（deepEqual）');
+    assert.equal(result.questionTitle, '旧标题', 'canonical questionTitle 同时保留');
+    assert.equal(result.question.title, result.questionTitle, 'question.title === canonical questionTitle（不变量）');
     // 磁盘 snapshot 同样保留
     const disk = JSON.parse(fs.readFileSync(path.join(qdir, 'answers.json'), 'utf8'));
     assert.deepEqual(disk.question, previousQuestion, '磁盘产物不得抹掉已有 question');
+    assert.equal(disk.questionTitle, '旧标题');
+    assert.equal(disk.question.title, disk.questionTitle);
   } finally {
     globalThis.fetch = original;
   }
@@ -328,18 +332,124 @@ test('P3-K2: fresh capture（无已有 question）+ metadata 失败 → question
   }
 });
 
-test('P3-K3: loadExistingQuestion 读取/拒绝逻辑（合法 object → 返回；无/非法 → null）', () => {
+test('P3-K3: loadExistingQuestion 兼容性校验（re-review P1-1 逐项）', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-p3-leq-'));
   const file = path.join(dir, 'answers.json');
-  assert.equal(loadExistingQuestion(file), null, '文件不存在 → null');
-  fs.writeFileSync(file, JSON.stringify({ questionId: '1', question: { id: '1', title: 'T' } }));
-  assert.deepEqual(loadExistingQuestion(file), { id: '1', title: 'T' });
+  assert.equal(loadExistingQuestion(file, '1'), null, '文件不存在 → null');
+
+  // 完全兼容 → 返回 { question, questionTitle }
+  fs.writeFileSync(file, JSON.stringify({
+    questionId: '1', questionTitle: 'T',
+    question: { id: '1', title: 'T', descriptionHtml: '', descriptionMarkdown: '', topics: [] },
+  }));
+  assert.deepEqual(loadExistingQuestion(file, '1'), {
+    question: { id: '1', title: 'T', descriptionHtml: '', descriptionMarkdown: '', topics: [] },
+    questionTitle: 'T',
+  });
+
+  // 无 question 字段
   fs.writeFileSync(file, JSON.stringify({ questionId: '1', answers: [] }));
-  assert.equal(loadExistingQuestion(file), null, '无 question 字段 → null');
+  assert.equal(loadExistingQuestion(file, '1'), null, '无 question 字段 → null');
+
+  // question 非 object
   fs.writeFileSync(file, JSON.stringify({ questionId: '1', question: 'not-an-object' }));
-  assert.equal(loadExistingQuestion(file), null, 'question 非 object → null');
+  assert.equal(loadExistingQuestion(file, '1'), null, 'question 非 object → null');
+
+  // A. question.id != 当前 qid → 不保留（不允许绕过 identity gate）
+  fs.writeFileSync(file, JSON.stringify({ questionId: '1', questionTitle: 'T', question: { id: '999', title: 'T' } }));
+  assert.equal(loadExistingQuestion(file, '1'), null, 'question.id 与 qid 不一致 → null');
+  fs.writeFileSync(file, JSON.stringify({ questionId: '1', questionTitle: 'T', question: { id: '1', title: 'T' } }));
+  assert.equal(loadExistingQuestion(file, '2'), null, 'artifact.questionId 与当前 qid 不一致 → null');
+
+  // B. question.title != artifact.questionTitle → 不保留
+  fs.writeFileSync(file, JSON.stringify({ questionId: '1', questionTitle: 'TT', question: { id: '1', title: 'T' } }));
+  assert.equal(loadExistingQuestion(file, '1'), null, 'question.title !== questionTitle → null');
+
+  // D. malformed optional shape → 不视为合法
+  fs.writeFileSync(file, JSON.stringify({ questionId: '1', questionTitle: 'T', question: { id: '1', title: 'T', descriptionHtml: 42 } }));
+  assert.equal(loadExistingQuestion(file, '1'), null, 'descriptionHtml 非 string → null');
+  fs.writeFileSync(file, JSON.stringify({ questionId: '1', questionTitle: 'T', question: { id: '1', title: 'T', descriptionMarkdown: {} } }));
+  assert.equal(loadExistingQuestion(file, '1'), null, 'descriptionMarkdown 非 string → null');
+  fs.writeFileSync(file, JSON.stringify({ questionId: '1', questionTitle: 'T', question: { id: '1', title: 'T', topics: 'nope' } }));
+  assert.equal(loadExistingQuestion(file, '1'), null, 'topics 非 array → null');
+  fs.writeFileSync(file, JSON.stringify({ questionId: '1', questionTitle: 'T', question: { id: '1', title: 'T', topics: [{ id: 5, name: 'x' }] } }));
+  assert.equal(loadExistingQuestion(file, '1'), null, 'topics item id 非 string → null');
+  fs.writeFileSync(file, JSON.stringify({ questionId: '1', questionTitle: 'T', question: { id: '1', title: 'T', topics: [{ id: '1', name: 5 }] } }));
+  assert.equal(loadExistingQuestion(file, '1'), null, 'topics item name 非 string → null');
+
+  // 损坏文件 → null（不抛错）
   fs.writeFileSync(file, 'corrupt{{{');
-  assert.equal(loadExistingQuestion(file), null, '损坏文件 → null（不抛错）');
+  assert.equal(loadExistingQuestion(file, '1'), null, '损坏文件 → null（不抛错）');
+});
+
+test('P3-K4: resume 保留不兼容 question 的回归（re-review P1-1 A/B）', async () => {
+  for (const bad of [
+    // A. question.id != qid → 不保留
+    { questionId: '123', questionTitle: 'T', question: { id: '999', title: 'T' }, label: 'id mismatch' },
+    // B. question.title != questionTitle → 不保留
+    { questionId: '123', questionTitle: 'TT', question: { id: '123', title: 'T' }, label: 'title mismatch' },
+    // D. malformed topics shape → 不保留
+    { questionId: '123', questionTitle: 'T', question: { id: '123', title: 'T', topics: [{ id: 5, name: 'x' }] }, label: 'malformed topics' },
+  ]) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-p3-resume-bad-'));
+    const outDir = path.join(dir, 'out');
+    const qdir = path.join(outDir, '123');
+    fs.mkdirSync(qdir, { recursive: true });
+    fs.writeFileSync(path.join(qdir, 'answers.json'), JSON.stringify({
+      ...bad, url: 'https://www.zhihu.com/question/123',
+      answers: [{ id: '1', author: 'A', content: '<p>old</p>' }],
+    }));
+    fs.writeFileSync(path.join(qdir, '.progress.json'), JSON.stringify({ offset: 1, done: false }));
+    const body = { data: [{ id: '2', content: '<p>new</p>' }], paging: { is_end: true } };
+    const original = globalThis.fetch;
+    globalThis.fetch = async (url) => {
+      const u = String(url);
+      if (u.includes('/answers?')) {
+        return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      return new Response('{}', { status: 500, headers: { 'content-type': 'application/json' } });
+    };
+    try {
+      const result = await grabAll(TEST_CONFIG, '123', { outDir });
+      assert.ok(!('question' in result), `[${bad.label}] 不兼容 question 不得保留`);
+      const disk = JSON.parse(fs.readFileSync(path.join(qdir, 'answers.json'), 'utf8'));
+      assert.ok(!('question' in disk), `[${bad.label}] 磁盘产物不得含不兼容 question`);
+    } finally {
+      globalThis.fetch = original;
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }
+});
+
+test('P3-K5: resume 兼容 question 保留后 canonical title 不变量（re-review P1-1 C）', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-p3-resume-ok-'));
+  const outDir = path.join(dir, 'out');
+  const qdir = path.join(outDir, '123');
+  fs.mkdirSync(qdir, { recursive: true });
+  fs.writeFileSync(path.join(qdir, 'answers.json'), JSON.stringify({
+    questionId: '123', questionTitle: '兼容标题', url: 'https://www.zhihu.com/question/123',
+    question: { id: '123', title: '兼容标题', descriptionHtml: '', descriptionMarkdown: '', topics: [] },
+    answers: [{ id: '1', author: 'A', content: '<p>old</p>' }],
+  }));
+  fs.writeFileSync(path.join(qdir, '.progress.json'), JSON.stringify({ offset: 1, done: false }));
+  const body = { data: [{ id: '2', content: '<p>new</p>' }], paging: { is_end: true } };
+  const original = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const u = String(url);
+    if (u.includes('/answers?')) {
+      return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+    }
+    return new Response('{}', { status: 500, headers: { 'content-type': 'application/json' } });
+  };
+  try {
+    const result = await grabAll(TEST_CONFIG, '123', { outDir });
+    assert.equal(result.questionTitle, '兼容标题', 'canonical questionTitle 保留');
+    assert.equal(result.question.title, result.questionTitle, 'question.title === questionTitle');
+    assert.equal(result.question.id, '123');
+  } finally {
+    globalThis.fetch = original;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 // ===== C. DESCRIPTION CANONICALITY =====

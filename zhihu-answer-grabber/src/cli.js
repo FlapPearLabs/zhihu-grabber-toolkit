@@ -98,15 +98,17 @@ async function cmdGrab(config, input, { outDir = 'out', json = false, silent = f
     throw error;
   }
   if (!json && !silent) log(`▶ 开始抓取问题 ${qid} …`);
-  // V2 Phase 3（P1-2）：metadata 失败必须用户可见。复用现有 capture warning
-  // surface（payload.warnings / 人类日志），不建新框架；内容稳定最小，不含
-  // Cookie / Secret / headers / 绝对路径 / raw server body / 长正文。
+  // V2 Phase 3（P1-2/P1-3 re-review）：metadata 失败必须用户可见。
+  // 复用现有 capture warning surface（payload.warnings / 人类日志），不建新框架。
+  // 文案语义为“获取/刷新失败”（resume 场景可能已保留既有 metadata，不写“未写入”）。
+  // 原因必须走 public-display sanitizer（sanitizeDisplayPaths + terminalSafe），
+  // 与 publicErrorMessage 同级，防止 Windows/POSIX 绝对路径、Cookie 等泄漏。
   const warnings = [];
   const result = await grabAll(config, qid, {
     outDir,
     onProgress: (p) => {
       if (p.event === 'metadata_failed') {
-        const warning = `问题元信息获取失败，question metadata（description/topics）未写入: ${terminalSafe(p.error || '未知原因')}`;
+        const warning = `本次问题元信息获取/刷新失败: ${sanitizeDisplayPaths(terminalSafe(p.error || '未知原因'))}`;
         warnings.push(warning);
         if (!json && !silent) log(`  ⚠ ${warning}`);
         return;
@@ -164,6 +166,12 @@ async function cmdBatch(config, file, { outDir = 'out', json = false, inputs = n
     try {
       const p = await cmdGrab(config, input, { outDir, json: false, silent: true });
       succeeded.push(p);
+      // V2 Phase 3（P1-2 re-review）：human batch 模式必须让 metadata warning 用户可见。
+      // cmdGrab 在 silent 时不打印，由 batch 在成功后统一补打印（warnings 已收集进 p）。
+      // 复用同一 warning surface，不建新框架；JSON batch 已通过 succeeded[].warnings 暴露。
+      if (!json && Array.isArray(p.warnings) && p.warnings.length > 0) {
+        for (const w of p.warnings) log(`  ⚠ ${w}`);
+      }
     } catch (error) {
       failed.push({
         input: displayInput,

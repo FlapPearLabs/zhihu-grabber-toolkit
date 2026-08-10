@@ -303,7 +303,7 @@ globalThis.fetch = async (url) => {
   assert.equal(parsed.command, 'grab');
   assert.ok(Array.isArray(parsed.warnings), 'warnings 必须为数组');
   assert.ok(parsed.warnings.length > 0, 'metadata 失败时 warnings 不得为空');
-  assert.ok(parsed.warnings[0].includes('问题元信息获取失败'), 'warning 说明 metadata 未写入');
+  assert.ok(parsed.warnings[0].includes('本次问题元信息获取/刷新失败'), 'warning 说明 metadata 获取/刷新失败');
   // 不得泄漏凭据 / 绝对路径
   assert.ok(!r.stdout.includes('z_c0='), 'warning 不得含凭据');
   assert.ok(!r.stdout.includes(dir), 'warning 不得含绝对路径');
@@ -340,4 +340,170 @@ globalThis.fetch = async (url) => {
   assert.equal(parsed.ok, true);
   assert.deepEqual(parsed.warnings, [], '正常抓取 warnings 为空');
   fs.rmSync(dir, { recursive: true, force: true });
+});
+
+// ===== P1-2 re-review：human batch 模式必须显示 metadata warning =====
+
+test('P3-P1-2-BATCH: human batch + metadata 失败 → stdout 包含 metadata warning（batch core 行为不变）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-p3-cli-batch-warn-'));
+  const stubFile = path.join(dir, 'stub-fetch.mjs');
+  fs.writeFileSync(stubFile, `
+globalThis.fetch = async (url) => {
+  const u = String(url);
+  if (u.includes('/answers?')) {
+    return new Response(JSON.stringify({ data: [{ id: '1', content: '<p>x</p>' }], paging: { is_end: true } }), {
+      status: 200, headers: { 'content-type': 'application/json' },
+    });
+  }
+  return new Response('{}', { status: 500, headers: { 'content-type': 'application/json' } });
+};
+`, 'utf8');
+  const listFile = path.join(dir, 'list.txt');
+  fs.writeFileSync(listFile, '123\n', 'utf8');
+  const r = spawnSync(process.execPath, [
+    '--import', pathToFileURL(stubFile).href,
+    CLI, 'batch', listFile, '--out-dir', path.join(dir, 'out'),
+  ], {
+    encoding: 'utf8',
+    cwd: process.cwd(),
+    env: { ...process.env, PATH: process.env.PATH, ZHIHU_COOKIE: 'z_c0=fake123; d_c0=fake456' },
+    timeout: 30_000,
+  });
+  assert.equal(r.status, 0, `batch 应成功退出（enrichment 失败不致命）: ${r.stderr}`);
+  assert.ok(r.stdout.includes('本次问题元信息获取/刷新失败'), 'human batch stdout 必须包含 metadata warning');
+  assert.ok(!r.stdout.includes('z_c0='), 'warning 不得含凭据');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('P3-P1-2-BATCH-JSON: JSON batch + metadata 失败 → succeeded[].warnings 非空（机器通道保留）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-p3-cli-batch-json-'));
+  const stubFile = path.join(dir, 'stub-fetch.mjs');
+  fs.writeFileSync(stubFile, `
+globalThis.fetch = async (url) => {
+  const u = String(url);
+  if (u.includes('/answers?')) {
+    return new Response(JSON.stringify({ data: [{ id: '1', content: '<p>x</p>' }], paging: { is_end: true } }), {
+      status: 200, headers: { 'content-type': 'application/json' },
+    });
+  }
+  return new Response('{}', { status: 500, headers: { 'content-type': 'application/json' } });
+};
+`, 'utf8');
+  const listFile = path.join(dir, 'list.txt');
+  fs.writeFileSync(listFile, '123\n', 'utf8');
+  const r = spawnSync(process.execPath, [
+    '--import', pathToFileURL(stubFile).href,
+    CLI, 'batch', listFile, '--json', '--out-dir', path.join(dir, 'out'),
+  ], {
+    encoding: 'utf8',
+    cwd: process.cwd(),
+    env: { ...process.env, PATH: process.env.PATH, ZHIHU_COOKIE: 'z_c0=fake123; d_c0=fake456' },
+    timeout: 30_000,
+  });
+  assert.equal(r.status, 0, `batch --json 应成功: ${r.stderr}`);
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.failed.length, 0, 'enrichment 失败不算 batch fail');
+  assert.equal(parsed.succeeded.length, 1);
+  assert.ok(Array.isArray(parsed.succeeded[0].warnings) && parsed.succeeded[0].warnings.length > 0,
+    'JSON batch 经 succeeded[].warnings 暴露 metadata warning');
+  assert.ok(parsed.succeeded[0].warnings[0].includes('本次问题元信息获取/刷新失败'));
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+// ===== P1-3 re-review：warning 必须走 public path sanitizer（Windows/POSIX 反例）=====
+
+function runCliWithFetchStub({ stubBody, args, listFile = null }) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-p3-sanitize-'));
+  const stubFile = path.join(dir, 'stub-fetch.mjs');
+  fs.writeFileSync(stubFile, stubBody, 'utf8');
+  const outDir = path.join(dir, 'out');
+  // 把 args 中的 __OUT__ 占位符替换为实际输出目录
+  const replacedArgs = args.map((a) => (a === '__OUT__' ? outDir : a));
+  const finalArgs = listFile
+    ? [...replacedArgs.slice(0, 2), listFile, ...replacedArgs.slice(2)]
+    : replacedArgs;
+  const r = spawnSync(process.execPath, ['--import', pathToFileURL(stubFile).href, CLI, ...finalArgs], {
+    encoding: 'utf8',
+    cwd: process.cwd(),
+    env: { ...process.env, PATH: process.env.PATH, ZHIHU_COOKIE: 'z_c0=fake123; d_c0=fake456' },
+    timeout: 30_000,
+  });
+  return { r, dir };
+}
+
+test('P3-P1-3: warning 内 Windows 绝对路径被脱敏（fetch throw 含 D:\\Users\\alice\\secret）', () => {
+  const { r, dir } = runCliWithFetchStub({
+    stubBody: `
+globalThis.fetch = async (url) => {
+  const u = String(url);
+  if (u.includes('/answers?')) {
+    return new Response(JSON.stringify({ data: [{ id: '1', content: '<p>x</p>' }], paging: { is_end: true } }), {
+      status: 200, headers: { 'content-type': 'application/json' },
+    });
+  }
+  throw new Error('connect failed at D:\\\\Users\\\\alice\\\\secret\\\\cookie.txt');
+};
+`,
+    args: ['grab', '123', '--json', '--out-dir', '__OUT__'],
+  });
+  try {
+    const parsed = JSON.parse(r.stdout);
+    assert.ok(Array.isArray(parsed.warnings) && parsed.warnings.length > 0, 'metadata 失败 warning 存在');
+    assert.ok(!r.stdout.includes('Users\\\\alice'), 'Windows 路径不得泄漏（原始形态）');
+    assert.ok(!r.stdout.includes('Users\\alice'), 'Windows 路径不得泄漏');
+    assert.ok(!r.stdout.includes('cookie.txt'), '文件名不得泄漏');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('P3-P1-3: warning 内 POSIX 绝对路径被脱敏（fetch throw 含 /home/alice/secret）', () => {
+  const { r, dir } = runCliWithFetchStub({
+    stubBody: `
+globalThis.fetch = async (url) => {
+  const u = String(url);
+  if (u.includes('/answers?')) {
+    return new Response(JSON.stringify({ data: [{ id: '1', content: '<p>x</p>' }], paging: { is_end: true } }), {
+      status: 200, headers: { 'content-type': 'application/json' },
+    });
+  }
+  throw new Error('connect failed at /home/alice/secret/cookie.txt');
+};
+`,
+    args: ['grab', '123', '--json', '--out-dir', '__OUT__'],
+  });
+  try {
+    const parsed = JSON.parse(r.stdout);
+    assert.ok(Array.isArray(parsed.warnings) && parsed.warnings.length > 0, 'metadata 失败 warning 存在');
+    assert.ok(!r.stdout.includes('/home/alice'), 'POSIX 路径不得泄漏');
+    assert.ok(!r.stdout.includes('cookie.txt'), '文件名不得泄漏');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('P3-P1-3: human grab + fetch throw 含绝对路径 → 人类 warning 同样脱敏', () => {
+  const { r, dir } = runCliWithFetchStub({
+    stubBody: `
+globalThis.fetch = async (url) => {
+  const u = String(url);
+  if (u.includes('/answers?')) {
+    return new Response(JSON.stringify({ data: [{ id: '1', content: '<p>x</p>' }], paging: { is_end: true } }), {
+      status: 200, headers: { 'content-type': 'application/json' },
+    });
+  }
+  throw new Error('connect failed at /home/alice/secret/cookie.txt');
+};
+`,
+    args: ['grab', '123', '--out-dir', '__OUT__'],
+  });
+  try {
+    assert.equal(r.status, 0, 'enrichment 失败不致命');
+    assert.ok(r.stdout.includes('本次问题元信息获取/刷新失败'), '人类模式显示 warning');
+    assert.ok(!r.stdout.includes('/home/alice'), '人类 warning 不含 POSIX 路径');
+    assert.ok(!r.stdout.includes('cookie.txt'), '人类 warning 不含文件名');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });

@@ -180,14 +180,28 @@ export function loadExistingAnswers(file) {
 }
 
 /**
- * V2 Phase 3（P1-3）：读取已有产物中的 additive `question` 对象。
+ * V2 Phase 3（P1-1/re-review）：读取已有产物中**canonical-compatible**的
+ * additive `question` 对象，供 resume 场景使用。
  *
- * 仅用于 resume 场景：fresh metadata 请求失败时，若磁盘已有此前成功持久化的
- * 合法 question（durable fact），保留它而非抹掉。
- * 返回 null 表示没有可用 question（文件不存在 / 无 question 字段 / 类型不合法）。
+ * 仅当 fresh metadata 请求失败时调用：若磁盘已有此前成功持久化的
+ * 合法且**与当前 qid/产物兼容**的 question（durable fact），保留它而非抹掉。
+ *
+ * 可复用判定（re-review P1-1，逐项校验，不允许绕过 identity gate 或破坏
+ * `question.title === questionTitle` 不变量）：
+ *   artifact.questionId  === 当前 qid
+ *   question.id          === 当前 qid
+ *   question.title       string
+ *   artifact.questionTitle string
+ *   question.title       === artifact.questionTitle
+ *   optional descriptionHtml    : absent 或 string
+ *   optional descriptionMarkdown: absent 或 string
+ *   optional topics             : absent 或 array（保留项均 {id:string, name:string}）
+ *
+ * 返回 { question, questionTitle }（canonical title 一并保留，保持
+ * `question.title === questionTitle`）；不兼容/缺失 → null。
  * 文件损坏时不在此抛错（由 loadExistingAnswers / corruptError 统一处理）。
  */
-export function loadExistingQuestion(file) {
+export function loadExistingQuestion(file, qid) {
   if (!fs.existsSync(file)) return null;
   let parsed;
   try {
@@ -196,9 +210,22 @@ export function loadExistingQuestion(file) {
     return null;
   }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  if (String(parsed.questionId ?? '') !== String(qid)) return null;
   const q = parsed.question;
   if (!q || typeof q !== 'object' || Array.isArray(q)) return null;
-  return q;
+  if (String(q.id ?? '') !== String(qid)) return null;
+  if (typeof q.title !== 'string') return null;
+  if (typeof parsed.questionTitle !== 'string') return null;
+  if (q.title !== parsed.questionTitle) return null;
+  if ('descriptionHtml' in q && typeof q.descriptionHtml !== 'string') return null;
+  if ('descriptionMarkdown' in q && typeof q.descriptionMarkdown !== 'string') return null;
+  if ('topics' in q) {
+    if (!Array.isArray(q.topics)) return null;
+    for (const t of q.topics) {
+      if (!t || typeof t !== 'object' || typeof t.id !== 'string' || typeof t.name !== 'string') return null;
+    }
+  }
+  return { question: q, questionTitle: parsed.questionTitle };
 }
 
 function writeJson(file, value) {
@@ -247,15 +274,17 @@ export async function grabAll(config, qid, { outDir = 'out', onProgress } = {}) 
     // description 复用同一请求；该请求失败时 question 对象缺省（additive optional，
     // 老 reader 忽略新字段即可，Spec §18/§19）。不把 metadata 失败升级为 core fatal
     // （Spec §20.2 / approved QUESTION_METADATA_FAILURE_SEMANTICS #2）。
-    // P1-3：若磁盘已有**合法且兼容**的 question（此前成功抓取的 durable fact），
-    // 必须保留，不得因本次临时 enrichment 失败抹掉。
-    const existingQuestion = loadExistingQuestion(answersFile);
+    // P1-1/re-review：若磁盘已有**canonical-compatible**的 question（此前成功
+    // 抓取的 durable fact，且与当前 qid/title 一致），必须保留它及其对应的
+    // canonical questionTitle，保持 `question.title === questionTitle` 不变量；
+    // 不得因本次临时 enrichment 失败抹掉，也不得保留不兼容/错 id 的 question。
+    const existing = loadExistingQuestion(answersFile, qid);
     meta = {
       questionId: qid,
-      questionTitle: '',
+      questionTitle: existing !== null ? existing.questionTitle : '',
       answerCount: null,
       url: `https://www.zhihu.com/question/${qid}`,
-      ...(existingQuestion !== null ? { question: existingQuestion } : {}),
+      ...(existing !== null ? { question: existing.question } : {}),
     };
   }
 
