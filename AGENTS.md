@@ -165,14 +165,104 @@ WorkBuddy 自动 memory 写入 `.workbuddy/` 可以发生（已 ignored）。`do
   REVIEW_STAGE: CODE / DOCUMENT
   REVIEW_STATUS: PENDING
   NEXT_GATE: Independent review
+  HANDOFF_COMPLETE: YES | NO
   ```
   此处的 `COMPLETED` 只表示"当前实现任务执行结束"，**不表示** Phase accepted / merge approved / released / final PASS。
+- 若下一 gate 是 independent review：按上方 **Review Handoff Contract** 必须输出可原样复制的 `NEXT_REVIEW_PROMPT`；已提供 → `HANDOFF_COMPLETE: YES`，未提供 → `HANDOFF_COMPLETE: NO`。`RESULT: COMPLETED` 与 `HANDOFF_COMPLETE` 是不同维度。
 - **禁止在 reviewer 明确 PASS 前声称**：
   ```text
   PHASE ACCEPTED / MERGE APPROVED / RELEASED / FINAL PASS
   ```
 
 Gate PASS 前禁止：merge master、删除分支、宣称 Phase accepted / merge approved / released / final PASS。
+
+### Review Handoff Contract（审查交接合同，2026-08-11 补充）
+
+任何 task 在结束时，若满足以下任一条件：
+
+```text
+REVIEW_STATUS: PENDING
+或
+NEXT_GATE: Independent review
+```
+
+则执行 Agent **必须**输出 `NEXT_REVIEW_PROMPT`——一段可由用户**原样复制**给独立 reviewer 的提示词，不要求用户自行重组上下文。仅写"等待独立审查"或 `NEXT_GATE: Independent review` 不算完成交接。
+
+**A. EXECUTION → REVIEWER HANDOFF（NEXT_REVIEW_PROMPT 最低内容）**
+
+```text
+- 发送位置 / target reviewer
+- repository
+- 精确当前 branch
+- 精确 base SHA / head SHA
+- Compare scope
+- REVIEW_STAGE
+- authoritative sources
+- task objective
+- changed-file scope
+- explicit non-goals
+- validation / test / integrity evidence
+- 已知 caveats / 环境 incident
+- reviewer 必须逐项核查的 acceptance contract
+- 要求的 verdict schema
+```
+
+**B. HANDOFF COMPLETION（交接完成判定）**
+
+```text
+RESULT: COMPLETED
+≠
+HANDOFF_COMPLETE: YES
+```
+
+若 independent review 仍未进行，只有已提供 `NEXT_REVIEW_PROMPT` 才允许报告 `HANDOFF_COMPLETE: YES`；否则 `HANDOFF_COMPLETE: NO`。
+
+**C. REVIEWER → EXECUTION HANDOFF（NEXT_AGENT_PROMPT）**
+
+任何独立 reviewer 返回 `PASS` / `PASS with non-blocking notes` / `CHANGES_REQUESTED`，**必须**同时提供可由用户原样复制给执行 Agent 的 `NEXT_AGENT_PROMPT`：
+
+```text
+CHANGES_REQUESTED 必须包含:
+  exact reviewed HEAD
+  blocking / non-blocking findings
+  允许的修复范围
+  禁止范围
+  validation requirements
+  commit / push rules
+  merge authorization = NO
+  next gate
+
+PASS 必须包含:
+  exact reviewed HEAD
+  merge authorization
+  pre-merge identity / drift checks
+  ff-only merge rules
+  remote verification
+  branch cleanup
+  POST_GATE_MEMORY_UPDATE_REQUIRED decision
+  下一授权阶段 / task
+
+PASS 不得以"可以合并。"一句话结束。
+```
+
+**D. TARGET ROUTING（路由）**
+
+reviewer 无法确定下一执行 Agent 时：
+
+```text
+TARGET_AGENT:
+待确认
+```
+
+不得猜测。
+
+**E. REVIEW HEAD IMMUTABILITY（审查基准不可变）**
+
+PASS 只适用于被审查的精确 HEAD。PASS 之后分支若再变化，新 HEAD 不在旧 PASS 覆盖范围内。
+
+**F. 既有 gate 规则保持（不削弱）**
+
+本小节只补 handoff 缺口，**不削弱**：DOCUMENT gate / CODE gate / ff-only merge / independent review / scope control / project-memory lifecycle 的任何既有要求。
 
 ## 6. Scope Control
 
@@ -216,7 +306,7 @@ cd .. && node --test test/agent-pipeline.test.mjs
 
 ## 11. 停止条件
 
-- 实现任务执行结束后：报告 `RESULT: COMPLETED` + `REVIEW_STATUS: PENDING` + `NEXT_GATE: Independent review`，附证据（测试输出、`git diff --check`、branch 状态、Compare）。
+- 实现任务执行结束后：报告 `RESULT: COMPLETED` + `REVIEW_STATUS: PENDING` + `NEXT_GATE: Independent review`，附证据（测试输出、`git diff --check`、branch 状态、Compare）。若下一 gate 是 independent review，必须同时输出可原样复制的 `NEXT_REVIEW_PROMPT` 并报告 `HANDOFF_COMPLETE`（见上方 **Review Handoff Contract**）。
 - **COMPLETED 只表示实现任务执行结束**，不表示 Phase accepted / merge approved / released / final PASS；这些状态只有在 reviewer 明确 PASS 后才有资格被声称。
 - gate 未过 / 环境异常（如 git refs 损坏）→ 按 `RULES.md` 恢复流程处理，**不得用破坏性操作跳过**。
 - **任务明确的"下一步 gate"未完成前，不得自行开始下一阶段（如 V2 Phase 2）。**
