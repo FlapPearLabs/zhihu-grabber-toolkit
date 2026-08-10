@@ -924,6 +924,18 @@ questionId 不合法
 - 例外（fail closed）：renderer 自身如果产生不安全输出，必须 fail closed，不能偷偷 raw passthrough（§14.3）。
 - 输出语义：`core capture valid + enrichment warnings`。
 
+### 20.2.1 Question metadata failure semantics（Phase 3 澄清，2026-08-10，用户批准的最小 clarification）
+
+`question metadata`（description / topics，Spec §17）既是 V2 MUST capability，又属于 enrichment 范畴。失败语义收敛如下（本小节为 §17.2/§17.3 与 §20.2 的最小澄清，替代实现层自行取舍）：
+
+1. **MUST capability**：实现必须正常请求 question metadata，并在数据可用时生成 `question` 对象（description / topics）。
+2. **运行时请求失败 = enrichment failure**：question metadata 请求临时失败，**不得**使已经成功的 answer core capture 失败。
+3. **失败必须用户可见**：失败时必须产生用户可见 warning（复用现有 warning surface，不建新框架）。
+4. **不得合成空事实**：`detail` 字段缺失 / 类型不对 ≠ `detail: ""`；`topics` 字段缺失 / 类型不对 ≠ `topics: []`。只有服务器**明确返回** `detail: ""` 或 `topics: []` 时才允许持久化真正的 empty value。
+5. **fresh capture 无可用 metadata**：additive `question` 对象可缺省（optional / additive，Spec §18）。
+6. **resume 已有合法 question**：若磁盘产物已有此前成功持久化的合法 question，而本次 fresh metadata 请求失败，**必须保留**既有 question，不得因 enrichment 失败删除已存在事实。
+7. **身份一致性**：server 返回的 question `id` 必须与 canonical `questionId` 一致；不一致是**身份冲突**（`QUESTION_METADATA_IDENTITY_CONFLICT`，core 级错误，非 enrichment），不得静默选择一方覆盖另一方，也不得吞进普通 `metadata_failed` warning。
+
 ---
 
 ## 21. Security model（汇总）

@@ -81,6 +81,7 @@ function emitJson(payload) {
 /** 错误分类：稳定可识别的结构化 error.type */
 function classifyError(error) {
   if (error instanceof ConfigError) return error.errorType ?? 'configuration_error';
+  if (error && error.name === 'QuestionMetadataIdentityError') return 'question_metadata_identity_conflict';
   if (error && error.name === 'HttpError') return 'http_error';
   if (error instanceof TypeError) return 'invalid_input';
   if (error && error.invalidInput === true) return 'invalid_input';
@@ -97,9 +98,19 @@ async function cmdGrab(config, input, { outDir = 'out', json = false, silent = f
     throw error;
   }
   if (!json && !silent) log(`▶ 开始抓取问题 ${qid} …`);
+  // V2 Phase 3（P1-2）：metadata 失败必须用户可见。复用现有 capture warning
+  // surface（payload.warnings / 人类日志），不建新框架；内容稳定最小，不含
+  // Cookie / Secret / headers / 绝对路径 / raw server body / 长正文。
+  const warnings = [];
   const result = await grabAll(config, qid, {
     outDir,
     onProgress: (p) => {
+      if (p.event === 'metadata_failed') {
+        const warning = `问题元信息获取失败，question metadata（description/topics）未写入: ${terminalSafe(p.error || '未知原因')}`;
+        warnings.push(warning);
+        if (!json && !silent) log(`  ⚠ ${warning}`);
+        return;
+      }
       if (json || silent) return; // 机器模式不输出逐页进度
       if (p.event === 'page') {
         log(`  第 ${p.page} 页 offset=${p.offset} 新增 ${p.fetched} 条，累计 ${p.total} 条${p.isEnd ? '（已到末尾）' : ''}`);
@@ -127,7 +138,7 @@ async function cmdGrab(config, input, { outDir = 'out', json = false, silent = f
       progress: relPath(path.join(dir, '.progress.json')),
     },
     verified: false,
-    warnings: [],
+    warnings,
   };
   if (json) {
     emitJson(payload);

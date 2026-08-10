@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const CLI = fileURLToPath(new URL('../src/cli.js', import.meta.url));
 
@@ -267,4 +267,77 @@ test('Fix1: 合法 1-20 位 QID 原行为不回归（无凭据 → configuration
   const r = runCli(['grab', '2063557784394785882', '--json'], { env: { PATH: process.env.PATH } });
   const parsed = JSON.parse(r.stdout);
   assert.equal(parsed.error.type, 'configuration_error', '合法 19 位 QID + 缺凭据 → configuration_error');
+});
+
+// ===== P1-2（Phase 3）：metadata 失败必须用户可见 warning =====
+// 通过 node --import 预加载 stub 网络（子进程内替换 globalThis.fetch），
+// 验证 CLI grab --json 在 question info 失败时 warnings 非空且确定性。
+
+test('P3-P1-2: question info 失败 → CLI --json warnings 非空（metadata 丢失用户可见）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-p3-cli-meta-fail-'));
+  const stubFile = path.join(dir, 'stub-fetch.mjs');
+  fs.writeFileSync(stubFile, `
+// 临时测试 stub（不进仓库）：question info 500，answers 成功
+globalThis.fetch = async (url) => {
+  const u = String(url);
+  if (u.includes('/answers?')) {
+    return new Response(JSON.stringify({ data: [{ id: '1', content: '<p>x</p>' }], paging: { is_end: true } }), {
+      status: 200, headers: { 'content-type': 'application/json' },
+    });
+  }
+  return new Response('{}', { status: 500, headers: { 'content-type': 'application/json' } });
+};
+`, 'utf8');
+  const r = spawnSync(process.execPath, [
+    '--import', pathToFileURL(stubFile).href,
+    CLI, 'grab', '123', '--json', '--out-dir', path.join(dir, 'out'),
+  ], {
+    encoding: 'utf8',
+    cwd: process.cwd(),
+    env: { ...process.env, PATH: process.env.PATH, ZHIHU_COOKIE: 'z_c0=fake123; d_c0=fake456' },
+    timeout: 30_000,
+  });
+  assert.equal(r.status, 0, `CLI 应成功退出: ${r.stderr}`);
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.ok, true, 'core capture 仍成功');
+  assert.equal(parsed.command, 'grab');
+  assert.ok(Array.isArray(parsed.warnings), 'warnings 必须为数组');
+  assert.ok(parsed.warnings.length > 0, 'metadata 失败时 warnings 不得为空');
+  assert.ok(parsed.warnings[0].includes('问题元信息获取失败'), 'warning 说明 metadata 未写入');
+  // 不得泄漏凭据 / 绝对路径
+  assert.ok(!r.stdout.includes('z_c0='), 'warning 不得含凭据');
+  assert.ok(!r.stdout.includes(dir), 'warning 不得含绝对路径');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('P3-P1-2: question info 成功 → CLI --json warnings 为空（正常路径无噪音）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-p3-cli-meta-ok-'));
+  const stubFile = path.join(dir, 'stub-fetch.mjs');
+  fs.writeFileSync(stubFile, `
+globalThis.fetch = async (url) => {
+  const u = String(url);
+  if (u.includes('/answers?')) {
+    return new Response(JSON.stringify({ data: [{ id: '1', content: '<p>x</p>' }], paging: { is_end: true } }), {
+      status: 200, headers: { 'content-type': 'application/json' },
+    });
+  }
+  return new Response(JSON.stringify({ id: '123', title: 'T', answer_count: 0, detail: '', topics: [] }), {
+    status: 200, headers: { 'content-type': 'application/json' },
+  });
+};
+`, 'utf8');
+  const r = spawnSync(process.execPath, [
+    '--import', pathToFileURL(stubFile).href,
+    CLI, 'grab', '123', '--json', '--out-dir', path.join(dir, 'out'),
+  ], {
+    encoding: 'utf8',
+    cwd: process.cwd(),
+    env: { ...process.env, PATH: process.env.PATH, ZHIHU_COOKIE: 'z_c0=fake123; d_c0=fake456' },
+    timeout: 30_000,
+  });
+  assert.equal(r.status, 0, `CLI 应成功退出: ${r.stderr}`);
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.ok, true);
+  assert.deepEqual(parsed.warnings, [], '正常抓取 warnings 为空');
+  fs.rmSync(dir, { recursive: true, force: true });
 });

@@ -19,25 +19,46 @@ export function validateQuestionId(value) {
 }
 
 /**
+ * 稳定的身份冲突错误（P1-4 / 任务 §8 QUESTION_METADATA_IDENTITY_CONFLICT）。
+ *
+ * 当 server question info 返回的 id 与请求的 canonical qid 不一致时抛出。
+ * 这是**身份冲突**，不是普通 metadata enrichment 失败：
+ * 不得被 metadata_failed 分支吞掉降级（不得静默选择一方覆盖另一方）。
+ */
+export class QuestionMetadataIdentityError extends Error {
+  constructor(qid, serverId) {
+    super(`QUESTION_METADATA_IDENTITY_CONFLICT: 服务端返回问题 id ${serverId} 与请求问题 ${qid} 不一致`);
+    this.name = 'QuestionMetadataIdentityError';
+    this.errorType = 'question_metadata_identity_conflict';
+    this.qid = qid;
+    this.serverId = serverId;
+  }
+}
+
+/**
  * V2 Phase 3（Spec §17.1/§17.3）：从 question info response 提取 topics。
  *
  * 真实 schema evidence（2026-08-10 schema discovery，/api/v4/questions/{qid}）：
  *   topics: array of { id: string, type: string, url: string, name: string,
  *                       avatar_url: string, topic_type: string }
  * 只持久化 Spec + 真实 schema 明确支持的最小字段 { id, name }：
- *   - id：稳定标识（topic object 内唯一）
- *   - name：展示文本（UNTRUSTED_EXTERNAL_CONTENT，进入 Markdown 前必须 escape）
+ *   - id：稳定标识（实测 type=string）
+ *   - name：展示文本（实测 type=string；UNTRUSTED_EXTERNAL_CONTENT，进入 Markdown 前必须 escape）
+ * 严格按 observed schema 校验：id 与 name 均须为 string，拒绝任意对象 String() 强转
+ * （P2-1：不产生 "[object Object]" 之类伪造 id）。
  * 不保存 url / avatar_url / type / topic_type（无 Spec 支持、无必要、避免引入额外字段）。
- * 服务器未返回 topics（非数组）→ 返回 []。
+ *
+ * 注意：本函数只接受**数组**输入；"topics 字段缺失/类型不对"由调用方
+ * （buildQuestionMetadata）负责省略 question.topics（P1-1：missing != []）。
  */
 export function extractTopics(rawTopics) {
   if (!Array.isArray(rawTopics)) return [];
   const out = [];
   for (const t of rawTopics) {
     if (!t || typeof t !== 'object') continue;
-    if (t.id === undefined || t.id === null) continue;
+    if (typeof t.id !== 'string') continue;
     if (typeof t.name !== 'string') continue;
-    out.push({ id: String(t.id), name: t.name });
+    out.push({ id: t.id, name: t.name });
   }
   return out;
 }
@@ -50,23 +71,26 @@ export function extractTopics(rawTopics) {
  *   title:  string —— 问题标题
  *   topics: array  —— 话题数组（见 extractTopics）
  *
- * descriptionMarkdown 由 descriptionHtml 经与回答正文**同一**安全 renderer 确定性派生
- * （richHtmlToMarkdown，headingOffset=2 → description 内部 heading 最多 H3，
- *  严格低于 answers.md 的 `## N.` framing，Spec §14.1.1）。
- * 不回写 descriptionHtml（canonical 原样保留，Spec §6.1/RULES §3）。
+ * **missing vs empty 严格区分（P1-1 / approved QUESTION_METADATA_FAILURE_SEMANTICS #4/#7）**：
+ *   detail 是 string（含 ""）→ descriptionHtml = 该 raw 值（"" = 明确无描述），
+ *                                  descriptionMarkdown = 确定性派生（"" 时为 ""）
+ *   detail 缺失 / 非 string  → 不写 descriptionHtml / descriptionMarkdown（缺省，不伪造 ""）
+ *   topics 是 array（含 []）→ topics = 提取结果（[] = 服务器明确返回 0 个话题）
+ *   topics 缺失 / 非 array   → 不写 question.topics（缺省，不伪造 []）
  *
- * question.id / question.title 与 canonical 顶层 questionId / questionTitle 保持一致
- * （Spec §17.1，避免第二套冲突事实；真实 server metadata 冲突时由上层 STOP 上报）。
+ * question.id 恒等于 canonical qid（身份一致性由 grabAll 在 identity gate 保障）；
+ * question.title 由调用方传入同一个 canonical title 值（单一归一化来源，P1-4）。
  */
-export function buildQuestionMetadata(qid, info) {
-  const detail = typeof info?.detail === 'string' ? info.detail : '';
-  return {
-    id: String(qid),
-    title: typeof info?.title === 'string' ? info.title : '',
-    descriptionHtml: detail,
-    descriptionMarkdown: detail ? richHtmlToMarkdown(detail, { headingOffset: 2 }) : '',
-    topics: extractTopics(info?.topics),
-  };
+export function buildQuestionMetadata(qid, info, canonicalTitle) {
+  const q = { id: String(qid), title: canonicalTitle };
+  if (typeof info?.detail === 'string') {
+    q.descriptionHtml = info.detail;
+    q.descriptionMarkdown = info.detail ? richHtmlToMarkdown(info.detail, { headingOffset: 2 }) : '';
+  }
+  if (Array.isArray(info?.topics)) {
+    q.topics = extractTopics(info.topics);
+  }
+  return q;
 }
 
 /** 解析输出目录并校验 containment：最终目录必须位于 outDir 之下 */
@@ -155,6 +179,28 @@ export function loadExistingAnswers(file) {
   }
 }
 
+/**
+ * V2 Phase 3（P1-3）：读取已有产物中的 additive `question` 对象。
+ *
+ * 仅用于 resume 场景：fresh metadata 请求失败时，若磁盘已有此前成功持久化的
+ * 合法 question（durable fact），保留它而非抹掉。
+ * 返回 null 表示没有可用 question（文件不存在 / 无 question 字段 / 类型不合法）。
+ * 文件损坏时不在此抛错（由 loadExistingAnswers / corruptError 统一处理）。
+ */
+export function loadExistingQuestion(file) {
+  if (!fs.existsSync(file)) return null;
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  const q = parsed.question;
+  if (!q || typeof q !== 'object' || Array.isArray(q)) return null;
+  return q;
+}
+
 function writeJson(file, value) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const tmp = `${file}.${process.pid}.tmp`;
@@ -175,23 +221,42 @@ export async function grabAll(config, qid, { outDir = 'out', onProgress } = {}) 
   let meta = null;
   try {
     const info = await requestJson(config, buildQuestionInfoUrl(qid), { referer: `https://www.zhihu.com/question/${qid}` });
+    // P1-4 identity gate：server 返回的问题 id 必须与请求 canonical qid 一致。
+    // 不一致是身份冲突（非普通 enrichment 失败），抛出稳定错误并向上传播，
+    // 不得被 metadata_failed 分支吞掉（不得静默选择一方覆盖另一方）。
+    if (info?.id !== undefined && info?.id !== null && String(info.id) !== qid) {
+      throw new QuestionMetadataIdentityError(qid, String(info.id));
+    }
+    // 单一 canonical title 归一化来源（P1-4）：top-level 与 question.title 用同一值。
+    const canonicalTitle = typeof info?.title === 'string' ? info.title : '';
     meta = {
       questionId: qid,
-      questionTitle: info.title || '',
+      questionTitle: canonicalTitle,
       answerCount: info.answer_count ?? null,
       url: `https://www.zhihu.com/question/${qid}`,
       // V2 Phase 3 additive（Spec §17.1）：question 对象。
-      // id/title 与 canonical 顶层字段一致；descriptionHtml 为原始 detail HTML 原样保留；
-      // descriptionMarkdown 确定性派生；topics 仅当服务器真实返回时写入。
-      // 服务器未返回 description（detail 缺失/空）→ descriptionHtml/descriptionMarkdown 为明确空值 ''。
-      question: buildQuestionMetadata(qid, info),
+      // 详情见 buildQuestionMetadata（missing vs empty 区分见 P1-1 / approved clarification）。
+      question: buildQuestionMetadata(qid, info, canonicalTitle),
     };
   } catch (error) {
+    // 身份冲突是核心事实错误：不是 enrichment，直接向上抛（CLI 将归类为
+    // question_metadata_identity_conflict，且不吞进 metadata_failed 事件）。
+    if (error instanceof QuestionMetadataIdentityError) throw error;
     onProgress?.({ event: 'metadata_failed', qid, error: error.message });
     // V1 语义保持：question info 失败 → 顶层元信息降级（questionTitle 为空等），core 抓取继续。
-    // description 复用同一请求；该请求失败时 question 对象整体缺失（additive optional，
-    // 老 reader 忽略新字段即可，Spec §18/§19）。不把 metadata 失败升级为 core fatal（Spec §20.2）。
-    meta = { questionId: qid, questionTitle: '', answerCount: null, url: `https://www.zhihu.com/question/${qid}` };
+    // description 复用同一请求；该请求失败时 question 对象缺省（additive optional，
+    // 老 reader 忽略新字段即可，Spec §18/§19）。不把 metadata 失败升级为 core fatal
+    // （Spec §20.2 / approved QUESTION_METADATA_FAILURE_SEMANTICS #2）。
+    // P1-3：若磁盘已有**合法且兼容**的 question（此前成功抓取的 durable fact），
+    // 必须保留，不得因本次临时 enrichment 失败抹掉。
+    const existingQuestion = loadExistingQuestion(answersFile);
+    meta = {
+      questionId: qid,
+      questionTitle: '',
+      answerCount: null,
+      url: `https://www.zhihu.com/question/${qid}`,
+      ...(existingQuestion !== null ? { question: existingQuestion } : {}),
+    };
   }
 
   const answers = loadExistingAnswers(answersFile);
