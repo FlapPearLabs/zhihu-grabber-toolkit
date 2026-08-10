@@ -975,27 +975,33 @@ authorName / createdTime 属 optional:
 ### 15.7 Field presence / resume semantics
 
 ```text
-FRESH + comments OFF:
+A. FRESH + comments OFF:
   answer.comments absent
 
-EXISTING artifact + comments OFF:
-  若已有合法 comments → preserve unchanged（不得因 comments OFF 删除此前 enrichment fact）
+B. EXISTING artifact + comments OFF:
+  answer.comments 存在 → preserve 其 JSON 值原样不变
+  （不 validate / 不 normalize / 不 delete / 不 coerce / 不 migrate；
+   即使既有值不是 v1-compatible 也原样保留）
+  不因 comments OFF 删除此前 enrichment fact
+  不发任何 comments 网络请求
 
-COMMENTS ON + answer not selected:
+C. COMMENTS ON + answer NOT selected:
   fresh → comments absent
-  existing valid comments → preserve unchanged
+  existing answer.comments 存在 → preserve 其 JSON 值原样不变
+  同样不 validate / 不 normalize / 不 delete
+  该 answer 不发 comment request
 
-SELECTED + EXPLICIT ZERO（唯一合法来源，见下）:
-  comments: []
-
-SELECTED + success:
-  replace answer.comments 为当前 server score-order root Top3（max 3）
-  不得与旧 comments merge 形成历史累积
-
-SELECTED + request/schema failure:
-  existing v1-compatible comments → preserve（见下"existing comments 兼容性合同"）
-  otherwise → comments absent
-  同时触发 aggregate comments warning
+D. COMMENTS ON + answer SELECTED（唯一使用 v1-compatible validator 的路径）:
+  SELECTED + EXPLICIT ZERO（唯一合法来源，见下）:
+    comments: []
+  SELECTED + success:
+    replace answer.comments 为当前 server score-order root Top3（max 3）
+    不得与旧 comments merge 形成历史累积
+  SELECTED + fresh request/schema failure:
+    existing comments 为 v1-compatible → preserve unchanged（见下"兼容性合同"）
+    otherwise → refreshed canonical result 中 comments absent
+    同时触发 aggregate comments warning
+  不得 merge / 不得 normalize
 ```
 
 **Explicit-zero 语义（Phase 4 v1 唯一合法来源）**：
@@ -1018,10 +1024,10 @@ NOT EMPTY / FAILURE（属于 enrichment/schema failure，不得伪造 comments: 
   Phase 4 v1 不得以 commentCount===0 做请求跳过或 [] 判定（见 §15.3）。
 ```
 
-**Existing comments 兼容性合同（v1-compatible fallback 定义）**：
+**v1-compatible validator（仅用于 D 路径：SELECTED + fresh failure 的 fallback 判定）**：
 
 ```text
-"existing valid comments" 在 Phase 4 v1 中定义为 v1-compatible:
+"existing valid comments"（v1-compatible）定义，仅用于 SELECTED + fresh failure:
 
   Array
   length <= 3
@@ -1036,17 +1042,17 @@ NOT EMPTY / FAILURE（属于 enrichment/schema failure，不得伪造 comments: 
   未知 extra keys 本身不得使 item invalid（additive 向前兼容）。
 
 行为:
-  comments OFF / answer not selected:
-    不 inspect / 不改写 answer.comments，原样 preserve
+  comments OFF（B） / answer not selected（C）:
+    不使用本 validator；不 inspect / 不改写 / 不 delete，原样 preserve exact JSON value
 
-  SELECTED + fresh success:
+  SELECTED + fresh success（D）:
     replace 为当前 fresh comments
 
-  SELECTED + endpoint explicit-zero:
+  SELECTED + endpoint explicit-zero（D）:
     replace 为 []
 
-  SELECTED + fresh request/schema failure:
-    existing comments 为 v1-compatible → preserve
+  SELECTED + fresh request/schema failure（D）:
+    existing comments 为 v1-compatible → preserve unchanged
     otherwise → refreshed canonical result 中 comments absent
     aggregate warning 保持可见
 
@@ -1263,7 +1269,10 @@ questionId 不合法
 4. **不得合成空事实**：`comments: []` 在 Phase 4 v1 只允许**唯一** explicit-zero 来源（§15.7）：endpoint true-zero（`data=[]` 且 `totals=0` 且 `is_end=true`）。canonical `answer.commentCount === 0` **不是** explicit-zero 事实（V1 canonicalization 把 raw 0 / null / missing 收敛为 0）。`data=[]` 但 `totals>0`、schema/paging 矛盾、字段缺失/类型错误 → **failure**，不得伪造 `[]`。
 5. **item schema failure**：目标 Top3 中存在违反 required root predicate（`typeof item.id === "string"` 且 `reply_comment_id === "0"` 且 `reply_root_comment_id === item.id`）或 `content` 非 string 的 item → 该 answer 的 comments enrichment 视为失败，**不得过滤后用后续 item 补位**。
 6. **fresh success = replace**：成功时以当前 server score-order root Top3（max 3）替换 `answer.comments`，不得与旧 comments merge 形成历史累积。
-7. **resume 保留既有事实**：磁盘已有合法 comments 而本次 fresh 失败 → **必须保留**既有 comments（enrichment failure 不得删除已存在事实）。
+7. **resume 保留既有事实（仅针对 selected answer）**：
+   - **selected + fresh comments request/schema failure + existing v1-compatible comments** → **preserve unchanged**（enrichment failure 不得删除已存在事实）。
+   - **selected + fresh failure + existing comments 非 v1-compatible** → refreshed canonical result 中 **omit comments**，aggregate warning 保持可见。
+   - **comments OFF / answer not selected** 的 untouched-preservation 规则见 §15.7（不 validate / 不 delete，原样 preserve exact JSON value），不在本小节重复定义第二种语义。
 
 ---
 
@@ -1502,7 +1511,13 @@ LLM map/final claim 文本含：[link](https://evil.example)、![img](https://ev
   - Top3 目标 item 违反 root/content schema → 该 answer enrichment 失败，无后续 item 补位；
   - `contentHtml` 严格等于 server raw string（不 trim / 不回写）；`contentMarkdown` 走同一 rich renderer；
   - public warning 为固定 aggregate 文本，不含 raw error / 正文 / 用户数据；
-  - existing comments 兼容性：v1-compatible 定义（Array、length≤3、item 含 contentHtml/contentMarkdown required string、authorName absent|string、createdTime absent|number、未知 keys 不 invalid）；fresh failure + v1-compatible existing → preserve；fresh success / explicit-zero → replace（不 merge 累积）；
+  - existing comments 兼容性：v1-compatible validator（Array、length≤3、item 含 contentHtml/contentMarkdown required string、authorName absent|string、createdTime absent|number、未知 keys 不 invalid）**仅用于 SELECTED + fresh failure**；
+  - **preserve 语义对抗（§15.7 A–D）**：
+    - comments OFF + 既有任意 legacy/incompatible answer.comments → exact JSON value 原样 preserve、不 validate、0 comments 请求；
+    - comments ON + answer not selected + 既有任意 legacy/incompatible comments → exact JSON value 原样 preserve、不 validate、该 answer 0 请求；
+    - selected + fresh failure + v1-compatible existing → preserve；
+    - selected + fresh failure + incompatible existing → comments absent + aggregate warning；
+    - selected + fresh success / explicit-zero → replace existing comments（不 merge / 不 normalize）；
   - `--comments` 命令合法性：`batch/search/status + --comments` → static invalid_input、0 网络调用、无 capture side effect；
   - 评论正文注入（prompt injection / 链接 / 代码）全部 inert，无工具行为；
   - `answers.md` 布局与 verify-output `## N.` framing 不变（comments 只进 canonical JSON）。
