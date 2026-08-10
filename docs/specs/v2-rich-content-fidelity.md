@@ -798,14 +798,21 @@ COMMENTS MODE:
 默认 OFF；v1 唯一显式开启面：grab <question> --comments（见 §15.8）
 
 SELECTION（enrichment 只能在 core answers pagination 完整成功后执行）:
-最多 Top 10 answers，按 canonical voteup_count DESC，tie = canonical capture order
-canonical comment_count === 0            → 不发 comment request（zero-request shortcut），
-                                           且该 answer 持久化 comments: []（explicit-zero source A，见 §15.7）
-comment_count missing/invalid            → 不得视为 0（按正常 selection 处理，请求与否见 §15.3 请求形态）
+最多 Top 10 answers，按 canonical answer.voteupCount DESC，tie = canonical capture order
+
+注: canonical 字段名为 answer.voteupCount / answer.commentCount（camelCase，V1 answers.json 合同）；
+raw 知乎 API source 字段才是 item.voteup_count / item.comment_count（snake_case），两层不得混用。
+
+commentCount 决策语义:
+canonical answer.commentCount === 0 **不是** explicit-zero 事实
+（V1 canonicalization: commentCount = item.comment_count ?? 0，
+ raw 0 / null / missing 都会收敛为 0 → 无法证明服务器明确 0）。
+因此 Phase 4 v1 **不**使用 commentCount 做任何请求跳过决策；
+每个 selected answer 一律按请求形态处理（见下）。
 
 REQUEST BUDGET:
 MAX_SELECTED_ANSWERS                 = 10
-MAX_COMMENT_REQUESTS_PER_QUESTION    = 10   （每 selected answer ≤ 1 次 comment request）
+MAX_COMMENT_REQUESTS_PER_QUESTION    = 10   （每 selected answer ≤ 1 次 comment request，与 persisted commentCount 无关）
 MAX_PERSISTED_COMMENTS_PER_ANSWER    = 3
 MAX_PERSISTED_COMMENTS_PER_QUESTION  = 30
 request count 与 comment persisted count 必须明确分开。
@@ -978,7 +985,7 @@ COMMENTS ON + answer not selected:
   fresh → comments absent
   existing valid comments → preserve unchanged
 
-SELECTED + EXPLICIT ZERO（两个且仅两个合法来源，见下）:
+SELECTED + EXPLICIT ZERO（唯一合法来源，见下）:
   comments: []
 
 SELECTED + success:
@@ -986,22 +993,15 @@ SELECTED + success:
   不得与旧 comments merge 形成历史累积
 
 SELECTED + request/schema failure:
-  existing valid comments → preserve
+  existing v1-compatible comments → preserve（见下"existing comments 兼容性合同"）
   otherwise → comments absent
   同时触发 aggregate comments warning
 ```
 
-**Explicit-zero 语义**（两个且仅两个合法来源，其余空/畸形形态均为 failure）：
+**Explicit-zero 语义（Phase 4 v1 唯一合法来源）**：
 
 ```text
-EXPLICIT ZERO SOURCE A（canonical 计数零，zero-request shortcut）:
-  canonical answer.comment_count === 0
-  → 不发 comment request
-  → comments: []
-  若已有旧 comments → replace 为 []
-  （canonical answer fact 已明确报告 0 评论，无需为确认 0 浪费请求）
-
-EXPLICIT ZERO SOURCE B（endpoint true-zero，Phase 4A.1 实测确认）:
+EXPLICIT ZERO（endpoint true-zero，Phase 4A.1 实测确认）:
   data = []
   totals = 0
   is_end = true
@@ -1011,7 +1011,47 @@ NOT EMPTY / FAILURE（属于 enrichment/schema failure，不得伪造 comments: 
   data = [] 但 totals > 0
   或 response schema/paging 矛盾
   或字段缺失/类型错误
-  （上述 zero-source 判定仅适用于 comments ON 且 answer 被选中的场景）
+
+注意:
+  canonical answer.commentCount === 0 **不是** explicit-zero 来源
+  （V1 canonicalization 把 raw 0 / null / missing 均收敛为 0，无法证明服务器明确 0）。
+  Phase 4 v1 不得以 commentCount===0 做请求跳过或 [] 判定（见 §15.3）。
+```
+
+**Existing comments 兼容性合同（v1-compatible fallback 定义）**：
+
+```text
+"existing valid comments" 在 Phase 4 v1 中定义为 v1-compatible:
+
+  Array
+  length <= 3
+
+  每个 item:
+    非 null object
+    contentHtml:    REQUIRED string
+    contentMarkdown: REQUIRED string
+    authorName:     absent OR string
+    createdTime:    absent OR number
+
+  未知 extra keys 本身不得使 item invalid（additive 向前兼容）。
+
+行为:
+  comments OFF / answer not selected:
+    不 inspect / 不改写 answer.comments，原样 preserve
+
+  SELECTED + fresh success:
+    replace 为当前 fresh comments
+
+  SELECTED + endpoint explicit-zero:
+    replace 为 []
+
+  SELECTED + fresh request/schema failure:
+    existing comments 为 v1-compatible → preserve
+    otherwise → refreshed canonical result 中 comments absent
+    aggregate warning 保持可见
+
+  不得 merge 新旧 comments
+  不得 normalize 被 preserve 的 comments
 ```
 
 ### 15.8 Enable surface / answers.md / agent projection
@@ -1026,6 +1066,19 @@ PHASE 4 V1 唯一显式开启面:
 V1 不支持:
   batch --comments（DEFERRED）
   search --grab --comments
+  status --comments
+
+--comments 命令合法性（deterministic，不允许静默忽略）:
+  --comments 只允许 command = grab。
+  任何其他命令带 --comments:
+    batch ... --comments
+    search ... --comments
+    status ... --comments
+  → 一律 static invalid_input
+  → 在 loadConfig / 任何网络访问之前失败
+  → 不产生任何 capture side effect、不发任何 comments request
+  → 复用现有 invalid_input 错误分类与 public error surface（JSON 模式用现有分类，人类模式可见失败）
+  → 不引入第二个 CLI 错误框架
 
 普通 grab 不得自动新增 comments 网络请求（comments OFF → NETWORK_REQUEST_DELTA = 0）。
 
@@ -1207,7 +1260,7 @@ questionId 不合法
 1. **core 不受影响**：comments 请求失败/超时/schema 异常，**不得**使已经成功的 core answer capture 失败（core 永远优先）。
 2. **时序**：comments enrichment 只能在 core answers pagination 完整成功结束后执行（必须基于完整 answer set 做 deterministic Top10 selection）。
 3. **失败必须用户可见**：产生**单一 question-level aggregate warning**（固定文本，见 §15.5），不逐 answer 暴露 raw diagnostics。
-4. **不得合成空事实**：`comments: []` 只允许两个 explicit-zero 来源（§15.7）：(A) canonical `comment_count === 0`（zero-request shortcut，不发请求）；(B) endpoint true-zero（`data=[]` 且 `totals=0` 且 `is_end=true`）。`data=[]` 但 `totals>0`、schema/paging 矛盾、字段缺失/类型错误 → **failure**，不得伪造 `[]`。
+4. **不得合成空事实**：`comments: []` 在 Phase 4 v1 只允许**唯一** explicit-zero 来源（§15.7）：endpoint true-zero（`data=[]` 且 `totals=0` 且 `is_end=true`）。canonical `answer.commentCount === 0` **不是** explicit-zero 事实（V1 canonicalization 把 raw 0 / null / missing 收敛为 0）。`data=[]` 但 `totals>0`、schema/paging 矛盾、字段缺失/类型错误 → **failure**，不得伪造 `[]`。
 5. **item schema failure**：目标 Top3 中存在违反 required root predicate（`typeof item.id === "string"` 且 `reply_comment_id === "0"` 且 `reply_root_comment_id === item.id`）或 `content` 非 string 的 item → 该 answer 的 comments enrichment 视为失败，**不得过滤后用后续 item 补位**。
 6. **fresh success = replace**：成功时以当前 server score-order root Top3（max 3）替换 `answer.comments`，不得与旧 comments merge 形成历史累积。
 7. **resume 保留既有事实**：磁盘已有合法 comments 而本次 fresh 失败 → **必须保留**既有 comments（enrichment failure 不得删除已存在事实）。
@@ -1438,18 +1491,19 @@ LLM map/final claim 文本含：[link](https://evil.example)、![img](https://ev
 - [ ] 真实样本上 `answers.md` 结构恢复可见（标题/列表/代码/图片占位/脚注）且无危险输出；
 - [ ] `answers.json` 仅 additive 变更，`content` 不变；
 - [ ] `verify-output` 对 V2 产物返回 valid；
-- [ ] comments 默认 off；开启时请求数 ≤ §15.3 预算；
+- [ ] comments 默认 off；开启时请求数 ≤ §15.3 预算（每 selected answer ≤ 1 次，与 persisted commentCount 无关）；
 - [ ] **comments 合同对抗（§15，Phase 4）**：
   - comments off → 0 新增请求（NETWORK_REQUEST_DELTA = 0）；
-  - Top10 request cap（MAX_COMMENT_REQUESTS_PER_QUESTION ≤ 10，每 answer ≤ 1 次）；
+  - Top10 request cap：按 canonical `answer.voteupCount` DESC 选择（非 snake_case `voteup_count`）；MAX_COMMENT_REQUESTS_PER_QUESTION ≤ 10；
   - 请求形态 `order_by=score&limit=3&offset=`（无 `status=open`），无分页；
-  - true empty / explicit zero（`comment_count===0` → zero-request + `[]`；`data=[]`+`totals=0`+`is_end=true` → `[]`）vs anomaly（`totals>0` 且 `data=[]` → failure，不伪造 `[]`）；
+  - explicit zero **唯一来源**：`data=[]`+`totals=0`+`is_end=true` → `[]`；`commentCount===0`（canonical）**不得**作为 zero-request 或 `[]` 判定（V1 canonicalization 收敛 raw null/missing）；`totals>0` 且 `data=[]` → failure，不伪造 `[]`；
   - root predicate 完整三条件（`typeof item.id === "string"` 且 `reply_comment_id === "0"` 且 `reply_root_comment_id === item.id`）校验生效；`child_comments` 被忽略、不持久化、不触发 reply 请求；
   - 反例：`reply_comment_id === "0"` 但 `reply_root_comment_id !== item.id` → schema failure，无后续 item 补位；
   - Top3 目标 item 违反 root/content schema → 该 answer enrichment 失败，无后续 item 补位；
   - `contentHtml` 严格等于 server raw string（不 trim / 不回写）；`contentMarkdown` 走同一 rich renderer；
   - public warning 为固定 aggregate 文本，不含 raw error / 正文 / 用户数据；
-  - resume：既有合法 comments + fresh 失败 → preserve；fresh 成功 → replace（不 merge 累积）；
+  - existing comments 兼容性：v1-compatible 定义（Array、length≤3、item 含 contentHtml/contentMarkdown required string、authorName absent|string、createdTime absent|number、未知 keys 不 invalid）；fresh failure + v1-compatible existing → preserve；fresh success / explicit-zero → replace（不 merge 累积）；
+  - `--comments` 命令合法性：`batch/search/status + --comments` → static invalid_input、0 网络调用、无 capture side effect；
   - 评论正文注入（prompt injection / 链接 / 代码）全部 inert，无工具行为；
   - `answers.md` 布局与 verify-output `## N.` framing 不变（comments 只进 canonical JSON）。
 - [ ] Agent projection 折叠代码块、不暴露可执行内容、不触发工具行为。
