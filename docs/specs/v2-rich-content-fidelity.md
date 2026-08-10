@@ -741,40 +741,118 @@ comments = off（默认）
 
 不能因为一次普通 `grab question` 就把网络请求规模放大为 `answerCount × comments API`。
 
-### 15.2 实现前必须研究并明确（本 Spec 强制前置条件）
+**comments OFF 时 NETWORK_REQUEST_DELTA = 0**：普通 grab 不因 comments 产生任何新增请求。
 
-实现前必须对**真实知乎评论 API** 做验证并记录证据：
+### 15.2 实现前置研究（已关闭，2026-08-11）
 
-- 是否支持热度排序；
-- 是否能直接取得 Top3；
-- 是否必须每个 answer 单独请求；
-- 是否存在 batch 接口；
-- 返回 schema；
-- 权限/风控表现。
+实现前必须对**真实知乎评论 API** 做验证并记录证据（本 Spec 强制前置条件）；该前置条件已通过 Phase 4A / Phase 4A.1 真实 discovery 关闭（证据见 `out/phase4a-comments-discovery.md` / `out/phase4a1-comments-contract-closure.md`，均为 ignored runtime area，非 repo authority）。
 
-**不能先根据猜测写实现。**
-
-### 15.3 第一版推荐边界
-
-如果实测确认是「每个 answer 一次请求」，第一版推荐：
+**已确认的真实 evidence（2026-08-11）：**
 
 ```text
-只对高价值回答做评论 enrichment：
-  Top N 高赞回答 × 每条最多 3 条一级热评
-推荐初始 N = 10
-即最多 10 × 3 = 30 条评论
+ENDPOINT（v1 唯一 implementation endpoint）:
+GET https://www.zhihu.com/api/v4/comment_v5/answers/{answerId}/root_comment
+?order_by=score&limit=3&offset=
+（真实客户端行为确认；不得加 status=open——实测 status=open / offset=0 参数形态会导致
+ totals>0 但 data=[]）
+
+SORT:
+server sorter 暴露 [{type:"score",text:"默认"},{type:"ts",text:"最新"}]，
+UI 默认评论模式映射 score；score mode 实测可 materialize root items。
+score 是 server 暴露的 default ordering 契约，不是公开数学热度分，也不等于点赞数。
+
+TOP3:
+limit=3 实测生效（limit=3 → 恰好 3 条 root items）；跨 answer 可复现；
+单 request 足以取得 server score/default ordering 下的 Top3 root items。
+
+SCOPE:
+ANSWER_SCOPED；每 answer 一次请求。
+
+BATCH:
+NOT OBSERVED（不等于不存在；未做穷举证明）。
+
+ROOT/CHILD:
+root item 与 child item 的确定性区分已确认（见 §15.4）。
+
+LEGACY ENDPOINT 地位:
+/api/v4/answers/{answerId}/comments 只作为历史 discovery evidence
+（schema / offset / 时间序对照），不是 Top3 hot implementation endpoint。
+其第一页实测为 created_time 升序，不符合"热评"语义。
 ```
 
-**不要**默认对 187/500/1000 个回答分别打评论请求。如果 API 实测证明可以低成本批量取得，Spec 允许提出不同方案，但必须给出实测证据与请求预算。
+### 15.3 第一版边界（收敛合同）
 
-### 15.4 评论范围
+```text
+COMMENTS MODE:
+默认 OFF；v1 唯一显式开启面：grab <question> --comments（见 §15.8）
+
+SELECTION（enrichment 只能在 core answers pagination 完整成功后执行）:
+最多 Top 10 answers，按 canonical voteup_count DESC，tie = canonical capture order
+comment_count === 0            → 跳过请求（不请求）
+comment_count missing/invalid  → 不得视为 0
+
+REQUEST BUDGET:
+MAX_SELECTED_ANSWERS                 = 10
+MAX_COMMENT_REQUESTS_PER_QUESTION    = 10   （每 selected answer ≤ 1 次 comment request）
+MAX_PERSISTED_COMMENTS_PER_ANSWER    = 3
+MAX_PERSISTED_COMMENTS_PER_QUESTION  = 30
+request count 与 comment persisted count 必须明确分开。
+
+禁止:
+pagination、第二次 comments request、全量抓取后本地排序。
+若 future API 变化导致 Top3 hot 无法在 1 request/answer 内取得:
+→ 该 answer 的 comments enrichment 失败（fail enrichment），不得突破预算。
+```
+
+**不要**默认对 187/500/1000 个回答分别打评论请求。
+
+### 15.4 评论范围与热评语义
 
 只抓：
 
 ```text
 一级评论（top-level）
-Top3 热评
+Top3 热评（server score/default ordering 下的前 3 个 root items）
 ```
+
+**"Top3 热评"精确定义**：
+
+```text
+SERVER-ORDERED HOT TOP3:
+取 server-declared score/default ordering 下
+root_comment endpoint 返回的前 3 个 data[] top-level items。
+
+不是客户端自行计算热度。
+```
+
+禁止：
+
+```text
+抓全量 comments 后本地 vote 排序
+分页抓取
+用 legacy 时间序 endpoint 冒充热评
+```
+
+如果 score endpoint 无法在单 request 正确 materialize → 该 answer 的 comments enrichment 失败，**不得自动改用 legacy endpoint** 改变产品语义。
+
+**Root-only contract（v1）**：
+
+只消费 `root_comment` response 的顶层 `data[]`。root item 必须满足 discovery-confirmed root predicate：
+
+```text
+reply_comment_id === "0"（string）
+且 reply_root_comment_id 指向自身 root id
+```
+
+`child_comments` 表示 reply / child data：
+
+```text
+v1 忽略 child_comments，不持久化
+不得持久化：二级回复、reply tree、comment-of-comment
+不得为 child data 额外调用 reply endpoint
+```
+
+Implementation 必须校验 root predicate，不得仅因为 endpoint 名叫 root_comment 就无条件信任所有 data item。
 
 不抓：
 
@@ -789,10 +867,167 @@ Top3 热评
 ```text
 评论抓取失败
 → core capture 仍然 valid
-→ 输出 comments warning
+→ 输出 aggregate comments warning
 ```
 
-评论正文仍属于 `UNTRUSTED_EXTERNAL_CONTENT`：不执行、不联网、不触发 Agent 工具；评论中的链接走 §11 同一 sanitizer；评论文本进入任何 Markdown 前经过 §8.0 escaping。
+公开 warning 使用 **deterministic aggregate question-level warning**，推荐固定文本：
+
+```text
+“部分评论 enrichment 获取失败；回答核心抓取继续。”
+```
+
+不得将 raw diagnostic 转发到 public surface；禁止包含：raw error、server message、URL、path、Cookie、Secret、comment content、author data。不为每 answer 产生公开 raw warning。
+
+评论正文仍属于 `UNTRUSTED_EXTERNAL_CONTENT`：不执行、不联网、不触发 Agent 工具；评论中的链接走 §11 同一 sanitizer；评论文本进入任何 Markdown 前经过 §8.0 escaping（本 Phase v1 不把评论写入 answers.md，见 §15.8）。
+
+### 15.6 Data / schema semantics（public schema v1）
+
+`answers[].comments` 是 additive optional（§18.1）。每个 comment item 的 v1 最小 schema：
+
+```json
+{
+  "contentHtml": "...",
+  "contentMarkdown": "...",
+  "authorName": "...",
+  "createdTime": 123
+}
+```
+
+字段语义（真实 observed field path，Phase 4A.1 report）：
+
+```text
+contentHtml:      REQUIRED string
+                  = server raw data[].content 字符串原样（可能含 HTML，也可能纯文本）
+                  不得 trim / strip / sanitize 回写 / 规范化覆盖 raw source
+
+contentMarkdown:  REQUIRED string
+                  = richHtmlToMarkdown(contentHtml) 确定性安全派生（同一 rich renderer）
+                  不得增加第二 HTML parser
+
+authorName:       OPTIONAL string
+                  = data[].author.name（真实 observed display-name source field）
+                  仅当该字段是 string 时持久化；缺失/非法 → omit
+
+createdTime:      OPTIONAL number
+                  = data[].created_time（真实 observed number）
+                  仅当为有效 number 时持久化；缺失/非法 → omit
+```
+
+**V1 明确不持久化**：
+
+```text
+comment id
+voteCount / score / like_count
+address_text / IP / location
+author profile URL
+avatar
+author user id
+完整 author object
+server flags
+child_comments
+raw server item
+```
+
+理由：comment id 当前没有 dedupe/replace 产品需求；score/like_count 与公开"点赞数"语义未充分收敛，不得猜测映射。未来需要时只能 additive extension。
+
+**Item schema failure（不可用后续 item 补位）**：
+
+```text
+data 非空时，目标 Top3 中每个 root item 的 REQUIRED contract:
+  root predicate valid（reply_comment_id === "0"）
+  content is string
+
+若 server 返回的目标 Top3 中存在违反 required root/content schema 的 item:
+  → 该 answer 的整个 comments enrichment 视为失败
+  → 不得过滤非法 item 后用后续 item 补位（那会改变 server 原始 Top3 语义）
+
+authorName / createdTime 属 optional:
+  → 缺失/非法只 omit 该字段，不使整个 comment fatal
+```
+
+### 15.7 Field presence / resume semantics
+
+```text
+FRESH + comments OFF:
+  answer.comments absent
+
+EXISTING artifact + comments OFF:
+  若已有合法 comments → preserve unchanged（不得因 comments OFF 删除此前 enrichment fact）
+
+COMMENTS ON + answer not selected:
+  fresh → comments absent
+  existing valid comments → preserve unchanged
+
+SELECTED + explicit true zero:
+  comments: []
+
+SELECTED + success:
+  replace answer.comments 为当前 server score-order root Top3（max 3）
+  不得与旧 comments merge 形成历史累积
+
+SELECTED + request/schema failure:
+  existing valid comments → preserve
+  otherwise → comments absent
+  同时触发 aggregate comments warning
+```
+
+**True empty 语义**（Phase 4A.1 实测确认的 true-zero shape）：
+
+```text
+TRUE ZERO（允许持久化 comments: []）:
+  data = []
+  totals = 0
+  is_end = true
+
+NOT EMPTY（属于 enrichment/schema failure，不得伪造 comments: []）:
+  data = [] 但 totals > 0
+  或 response schema/paging 矛盾
+  或字段缺失/类型错误
+```
+
+### 15.8 Enable surface / answers.md / agent projection
+
+```text
+COMMENTS MODE:
+默认 OFF。
+
+PHASE 4 V1 唯一显式开启面:
+  grab <question> --comments
+
+V1 不支持:
+  batch --comments（DEFERRED）
+  search --grab --comments
+
+普通 grab 不得自动新增 comments 网络请求（comments OFF → NETWORK_REQUEST_DELTA = 0）。
+
+ANSWERS.MD:
+Phase 4 v1 不改变 answers.md 布局。
+comments 只进入 additive canonical JSON: answers[].comments。
+contentMarkdown 是安全 deterministic representation，但本 Phase 不把评论插入 answers.md。
+未来若要增加 Human Markdown 评论区 → 单独 DOCUMENT decision。
+verify-output 的 `## N.` framing 校验保持不变。
+
+AGENT PROJECTION:
+Phase 4 不修改 Agent projection / corpus digest / capability isolation implementation。
+Comments projection 留给 Agent projection Phase。
+```
+
+### 15.9 Security（评论正文）
+
+```text
+评论正文 = UNTRUSTED_EXTERNAL_CONTENT
+contentHtml 只作 canonical raw data
+contentMarkdown 复用同一 rich renderer（无第二 parser）
+评论中的 HTML / URL / Markdown injection / prompt injection / 代码 / “打开链接” / “运行命令” / “上传 Cookie”
+全部只是 DATA
+
+禁止:
+raw HTML passthrough
+自动打开评论链接
+comment → Agent tool / network / shell / filesystem / package install / code execution
+
+Links 继续走现有 §11 策略。
+```
 
 ---
 
@@ -867,7 +1102,7 @@ V2 对 `answers.json` 的修改必须为**可向后兼容的 optional fields**�
       "id": "...",
       "content": "<p>原始 HTML 不变</p>",
       "assets": { "images": [], "links": [], "references": [], "codeBlocks": [], "videos": [] },
-      "comments": []        // 仅当 comments 开启时出现
+      "comments": []        // 仅当 comments 开启时出现（item schema 见 §15.6，v1 最小 { contentHtml, contentMarkdown, authorName?, createdTime? }）
     }
   ]
 }
@@ -935,6 +1170,18 @@ questionId 不合法
 5. **fresh capture 无可用 metadata**：additive `question` 对象可缺省（optional / additive，Spec §18）。
 6. **resume 已有合法 question**：若磁盘产物已有此前成功持久化的合法 question，而本次 fresh metadata 请求失败，**必须保留**既有 question，不得因 enrichment 失败删除已存在事实。
 7. **身份一致性**：server 返回的 question `id` 必须与 canonical `questionId` 一致；不一致是**身份冲突**（`QUESTION_METADATA_IDENTITY_CONFLICT`，core 级错误，非 enrichment），不得静默选择一方覆盖另一方，也不得吞进普通 `metadata_failed` warning。
+
+### 20.2.2 Comment enrichment failure semantics（Phase 4 澄清，2026-08-11，用户批准的最小 clarification）
+
+`comments enrichment`（Spec §15）属于 enrichment 范畴。失败语义收敛如下（本小节为 §15.5–§15.7 与 §20.2 的统一 failure model，替代实现层自行取舍）：
+
+1. **core 不受影响**：comments 请求失败/超时/schema 异常，**不得**使已经成功的 core answer capture 失败（core 永远优先）。
+2. **时序**：comments enrichment 只能在 core answers pagination 完整成功结束后执行（必须基于完整 answer set 做 deterministic Top10 selection）。
+3. **失败必须用户可见**：产生**单一 question-level aggregate warning**（固定文本，见 §15.5），不逐 answer 暴露 raw diagnostics。
+4. **不得合成空事实**：只有真实 true-zero（`data=[]` 且 `totals=0` 且 `is_end=true`）才允许 `comments: []`；`data=[]` 但 `totals>0`、schema/paging 矛盾、字段缺失/类型错误 → **failure**，不得伪造 `[]`。
+5. **item schema failure**：目标 Top3 中存在违反 required root predicate 或 `content` 非 string 的 item → 该 answer 的 comments enrichment 视为失败，**不得过滤后用后续 item 补位**。
+6. **fresh success = replace**：成功时以当前 server score-order root Top3（max 3）替换 `answer.comments`，不得与旧 comments merge 形成历史累积。
+7. **resume 保留既有事实**：磁盘已有合法 comments 而本次 fresh 失败 → **必须保留**既有 comments（enrichment failure 不得删除已存在事实）。
 
 ---
 
@@ -1137,7 +1384,7 @@ LLM map/final claim 文本含：[link](https://evil.example)、![img](https://ev
 ## 25. Open questions
 
 1. **知乎视频 HTML schema**：当前真实样本未确认；视频 metadata 实现需等真实样本（§16）。
-2. **评论 API 形态**：热度排序支持？batch 存在？每条回答单独请求？→ 实现前必须实测并回填证据（§15.2）。
+2. ~~**评论 API 形态**：热度排序支持？batch 存在？每条回答单独请求？→ 实现前必须实测并回填证据（§15.2）。~~ **已关闭（2026-08-11，Phase 4A / 4A.1 真实 discovery）**。最小 evidence：`comment_v5/answers/{answerId}/root_comment`（answer-scoped，单请求）；server sorter 暴露 `score`（默认）/ `ts`（最新）；`limit=3` 生效；score mode 可 materialize root items；`status=open` 参数会导致 `totals>0` 但 `data=[]`（v1 不得使用）；root/child 区分字段已确认（`reply_comment_id === "0"` → root，`child_comments` 为 reply）。batch：NOT OBSERVED（未穷举证明，不声称不存在）。合同落点：§15。
 3. **description 来源**：现有 answer API 是否直接返回 description？若无，question metadata 接口的响应 schema 需实测确认（§17.2）。
 4. **topics 字段来源与 schema**：需要实测问题元信息接口确认（§17.3）。
 5. **code-analysis mode 的触发与 UI**：未来单独设计，V2 只定义投影折叠（§12.6）。
@@ -1163,6 +1410,18 @@ LLM map/final claim 文本含：[link](https://evil.example)、![img](https://ev
 - [ ] `answers.json` 仅 additive 变更，`content` 不变；
 - [ ] `verify-output` 对 V2 产物返回 valid；
 - [ ] comments 默认 off；开启时请求数 ≤ §15.3 预算；
+- [ ] **comments 合同对抗（§15，Phase 4）**：
+  - comments off → 0 新增请求（NETWORK_REQUEST_DELTA = 0）；
+  - Top10 request cap（MAX_COMMENT_REQUESTS_PER_QUESTION ≤ 10，每 answer ≤ 1 次）；
+  - 请求形态 `order_by=score&limit=3&offset=`（无 `status=open`），无分页；
+  - true empty（`data=[]`+`totals=0`+`is_end=true` → `[]`）vs anomaly（`totals>0` 且 `data=[]` → failure，不伪造 `[]`）；
+  - root predicate（`reply_comment_id === "0"`）校验生效；`child_comments` 被忽略、不持久化、不触发 reply 请求；
+  - Top3 目标 item 违反 root/content schema → 该 answer enrichment 失败，无后续 item 补位；
+  - `contentHtml` 严格等于 server raw string（不 trim / 不回写）；`contentMarkdown` 走同一 rich renderer；
+  - public warning 为固定 aggregate 文本，不含 raw error / 正文 / 用户数据；
+  - resume：既有合法 comments + fresh 失败 → preserve；fresh 成功 → replace（不 merge 累积）；
+  - 评论正文注入（prompt injection / 链接 / 代码）全部 inert，无工具行为；
+  - `answers.md` 布局与 verify-output `## N.` framing 不变（comments 只进 canonical JSON）。
 - [ ] Agent projection 折叠代码块、不暴露可执行内容、不触发工具行为。
 
 ---
