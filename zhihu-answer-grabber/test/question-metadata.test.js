@@ -205,6 +205,36 @@ test('P3-I4: topics 缺失/非数组 → 不写 question.topics（缺省，不�
   assert.ok(!('topics' in buildQuestionMetadata('1', { title: 'T', topics: {} }, 'T')));
 });
 
+test('P3-I5: 非空但全非法的 topics → 不写 question.topics（不得伪造 []，P1-NEW-1）', () => {
+  // A. id 非 string（number）
+  assert.ok(!('topics' in buildQuestionMetadata('1', { title: 'T', topics: [{ id: 123, name: 'A' }] }, 'T')),
+    '全部非法 item → omit，不得伪造 []');
+  // B. id 为对象
+  assert.ok(!('topics' in buildQuestionMetadata('1', { title: 'T', topics: [{ id: {}, name: 'A' }] }, 'T')),
+    '全部非法 item → omit');
+  // 混合：非数组元素
+  assert.ok(!('topics' in buildQuestionMetadata('1', { title: 'T', topics: ['not-an-object'] }, 'T')));
+  assert.ok(!('topics' in buildQuestionMetadata('1', { title: 'T', topics: [null] }, 'T')));
+});
+
+test('P3-I6: 非空数组 + 至少 1 个合法 item → 只持久化合法子集（P1-NEW-1）', () => {
+  const q = buildQuestionMetadata('1', {
+    title: 'T',
+    topics: [
+      { id: 123, name: '非法' },
+      { id: '1', name: '合法' },
+      { id: {}, name: '非法2' },
+    ],
+  }, 'T');
+  assert.ok('topics' in q, '存在合法 item 时 topics 必须持久化');
+  assert.deepEqual(q.topics, [{ id: '1', name: '合法' }], '只保留合法子集');
+});
+
+test('P3-I7: topics 明确返回 [] → topics=[]；非空全非法 → omit（同一函数内区分）', () => {
+  assert.deepEqual(buildQuestionMetadata('1', { title: 'T', topics: [] }, 'T').topics, []);
+  assert.ok(!('topics' in buildQuestionMetadata('1', { title: 'T', topics: [{ id: 1, name: 'x' }] }, 'T')));
+});
+
 // ===== J. IDENTITY GATE（P1-4）=====
 
 test('P3-J1: server info.id 与 canonical qid 不一致 → QuestionMetadataIdentityError（不被 metadata_failed 吞掉）', async () => {
@@ -360,6 +390,11 @@ test('P3-K3: loadExistingQuestion 兼容性校验（re-review P1-1 逐项）', (
   assert.equal(loadExistingQuestion(file, '1'), null, 'question.id 与 qid 不一致 → null');
   fs.writeFileSync(file, JSON.stringify({ questionId: '1', questionTitle: 'T', question: { id: '1', title: 'T' } }));
   assert.equal(loadExistingQuestion(file, '2'), null, 'artifact.questionId 与当前 qid 不一致 → null');
+  // P2-NEW-1: numeric ID 拒绝（严格 string，不做 String() 强转）
+  fs.writeFileSync(file, JSON.stringify({ questionId: '1', questionTitle: 'T', question: { id: 123, title: 'T' } }));
+  assert.equal(loadExistingQuestion(file, '123'), null, 'question.id 为 number → 不保留');
+  fs.writeFileSync(file, JSON.stringify({ questionId: 123, questionTitle: 'T', question: { id: '123', title: 'T' } }));
+  assert.equal(loadExistingQuestion(file, '123'), null, 'artifact.questionId 为 number → 不保留');
 
   // B. question.title != artifact.questionTitle → 不保留
   fs.writeFileSync(file, JSON.stringify({ questionId: '1', questionTitle: 'TT', question: { id: '1', title: 'T' } }));

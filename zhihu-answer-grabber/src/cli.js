@@ -98,17 +98,18 @@ async function cmdGrab(config, input, { outDir = 'out', json = false, silent = f
     throw error;
   }
   if (!json && !silent) log(`▶ 开始抓取问题 ${qid} …`);
-  // V2 Phase 3（P1-2/P1-3 re-review）：metadata 失败必须用户可见。
-  // 复用现有 capture warning surface（payload.warnings / 人类日志），不建新框架。
-  // 文案语义为“获取/刷新失败”（resume 场景可能已保留既有 metadata，不写“未写入”）。
-  // 原因必须走 public-display sanitizer（sanitizeDisplayPaths + terminalSafe），
-  // 与 publicErrorMessage 同级，防止 Windows/POSIX 绝对路径、Cookie 等泄漏。
+  // V2 Phase 3（P1-2/P1-3/P1-NEW-2 re-review）：metadata 失败必须用户可见，但
+  // **公开 warning 不得转发 raw error**。p.error 可能包含 Cookie / Secret /
+  // 服务器 parsed.message / URL / 长外部文本 / 多行注入（requestJson 会把外部
+  // 字符串拼进 error.message），而 sanitizeDisplayPaths 只脱敏路径、不处理
+  // 凭据与服务器正文。因此公开面固定为确定性最小文本；内部 metadata_failed
+  // 事件保留原样（如现有内部诊断需要，不扩 scope）。
   const warnings = [];
   const result = await grabAll(config, qid, {
     outDir,
     onProgress: (p) => {
       if (p.event === 'metadata_failed') {
-        const warning = `本次问题元信息获取/刷新失败: ${sanitizeDisplayPaths(terminalSafe(p.error || '未知原因'))}`;
+        const warning = '本次问题元信息获取/刷新失败；回答核心抓取继续。';
         warnings.push(warning);
         if (!json && !silent) log(`  ⚠ ${warning}`);
         return;

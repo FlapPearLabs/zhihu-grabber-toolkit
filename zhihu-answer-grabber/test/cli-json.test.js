@@ -507,3 +507,89 @@ globalThis.fetch = async (url) => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// ===== P1-NEW-2（final re-review）：公开 warning 必须 stable/minimal，不得转发 raw error =====
+
+test('P3-P1-NEW-2: fetch throw 含 Cookie 值 → 公开 warning 不泄漏（z_c0/d_c0/secret）', () => {
+  const { r, dir } = runCliWithFetchStub({
+    stubBody: `
+globalThis.fetch = async (url) => {
+  const u = String(url);
+  if (u.includes('/answers?')) {
+    return new Response(JSON.stringify({ data: [{ id: '1', content: '<p>x</p>' }], paging: { is_end: true } }), {
+      status: 200, headers: { 'content-type': 'application/json' },
+    });
+  }
+  throw new Error('request failed; Cookie: z_c0=TOP_SECRET; d_c0=SECRET2');
+};
+`,
+    args: ['grab', '123', '--json', '--out-dir', '__OUT__'],
+  });
+  try {
+    const parsed = JSON.parse(r.stdout);
+    assert.ok(Array.isArray(parsed.warnings) && parsed.warnings.length > 0, 'metadata 失败 warning 存在');
+    assert.ok(parsed.warnings[0].includes('本次问题元信息获取/刷新失败；回答核心抓取继续。'), 'warning 为固定最小文本');
+    // 固定文本不含 raw error → 不泄漏 Cookie
+    for (const needle of ['z_c0', 'd_c0', 'TOP_SECRET', 'SECRET2', 'request failed']) {
+      assert.ok(!parsed.warnings[0].includes(needle), `warning 不得包含 ${needle}`);
+    }
+    assert.ok(!r.stdout.includes('TOP_SECRET'), 'stdout 不得包含 secret');
+    assert.ok(!r.stdout.includes('SECRET2'), 'stdout 不得包含 d_c0 值');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('P3-P1-NEW-2: HTTP 失败响应携带服务器 message → 公开 warning 不包含该外部文本', () => {
+  const { r, dir } = runCliWithFetchStub({
+    stubBody: `
+globalThis.fetch = async (url) => {
+  const u = String(url);
+  if (u.includes('/answers?')) {
+    return new Response(JSON.stringify({ data: [{ id: '1', content: '<p>x</p>' }], paging: { is_end: true } }), {
+      status: 200, headers: { 'content-type': 'application/json' },
+    });
+  }
+  return new Response(JSON.stringify({ message: 'EXTERNAL_SERVER_TEXT_SHOULD_NOT_SURFACE' }), {
+    status: 500, headers: { 'content-type': 'application/json' },
+  });
+};
+`,
+    args: ['grab', '123', '--json', '--out-dir', '__OUT__'],
+  });
+  try {
+    const parsed = JSON.parse(r.stdout);
+    assert.ok(Array.isArray(parsed.warnings) && parsed.warnings.length > 0, 'metadata 失败 warning 存在');
+    assert.ok(parsed.warnings[0].includes('本次问题元信息获取/刷新失败；回答核心抓取继续。'), 'warning 为固定最小文本');
+    assert.ok(!parsed.warnings[0].includes('EXTERNAL_SERVER_TEXT_SHOULD_NOT_SURFACE'),
+      'warning 不得包含服务器返回的 message 正文');
+    assert.ok(!r.stdout.includes('EXTERNAL_SERVER_TEXT_SHOULD_NOT_SURFACE'), 'stdout 不得包含服务器正文');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('P3-P1-NEW-2: human 模式 warning 同为固定文本（多行注入/服务器文本被消除）', () => {
+  const { r, dir } = runCliWithFetchStub({
+    stubBody: `
+globalThis.fetch = async (url) => {
+  const u = String(url);
+  if (u.includes('/answers?')) {
+    return new Response(JSON.stringify({ data: [{ id: '1', content: '<p>x</p>' }], paging: { is_end: true } }), {
+      status: 200, headers: { 'content-type': 'application/json' },
+    });
+  }
+  throw new Error('line1\\nINJECTED_LOG_LINE\\nz_c0=HIDDEN');
+};
+`,
+    args: ['grab', '123', '--out-dir', '__OUT__'],
+  });
+  try {
+    assert.equal(r.status, 0, 'enrichment 失败不致命');
+    assert.ok(r.stdout.includes('本次问题元信息获取/刷新失败；回答核心抓取继续。'), '人类 warning 为固定文本');
+    assert.ok(!r.stdout.includes('INJECTED_LOG_LINE'), '人类 warning 不含注入行');
+    assert.ok(!r.stdout.includes('HIDDEN'), '人类 warning 不含 Cookie 值');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

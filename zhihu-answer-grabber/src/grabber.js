@@ -75,8 +75,11 @@ export function extractTopics(rawTopics) {
  *   detail 是 string（含 ""）→ descriptionHtml = 该 raw 值（"" = 明确无描述），
  *                                  descriptionMarkdown = 确定性派生（"" 时为 ""）
  *   detail 缺失 / 非 string  → 不写 descriptionHtml / descriptionMarkdown（缺省，不伪造 ""）
- *   topics 是 array（含 []）→ topics = 提取结果（[] = 服务器明确返回 0 个话题）
- *   topics 缺失 / 非 array   → 不写 question.topics（缺省，不伪造 []）
+ *   topics 明确返回 []（空数组）→ topics = []（服务器明确 0 个话题）
+ *   topics 非空数组 且 至少 1 个合法 item → topics = 合法子集
+ *   topics 非空数组 但 0 个合法 item（全部 schema 不合法）→ **不写** question.topics
+ *     （不得把 non-empty-but-unusable 伪装成服务器明确返回 []，P1-NEW-1）
+ *   topics 缺失 / 非 array → 不写 question.topics（缺省，不伪造 []）
  *
  * question.id 恒等于 canonical qid（身份一致性由 grabAll 在 identity gate 保障）；
  * question.title 由调用方传入同一个 canonical title 值（单一归一化来源，P1-4）。
@@ -88,7 +91,17 @@ export function buildQuestionMetadata(qid, info, canonicalTitle) {
     q.descriptionMarkdown = info.detail ? richHtmlToMarkdown(info.detail, { headingOffset: 2 }) : '';
   }
   if (Array.isArray(info?.topics)) {
-    q.topics = extractTopics(info.topics);
+    if (info.topics.length === 0) {
+      // 服务器明确返回 topics: [] → 真实空值
+      q.topics = [];
+    } else {
+      const valid = extractTopics(info.topics);
+      if (valid.length > 0) {
+        // 至少 1 个合法 item → 持久化合法子集
+        q.topics = valid;
+      }
+      // 非空但 0 个合法 item → omit（不伪造 []）
+    }
   }
   return q;
 }
@@ -186,10 +199,10 @@ export function loadExistingAnswers(file) {
  * 仅当 fresh metadata 请求失败时调用：若磁盘已有此前成功持久化的
  * 合法且**与当前 qid/产物兼容**的 question（durable fact），保留它而非抹掉。
  *
- * 可复用判定（re-review P1-1，逐项校验，不允许绕过 identity gate 或破坏
+ * 可复用判定（re-review P1-1 + P2-NEW-1，逐项校验，不允许绕过 identity gate 或破坏
  * `question.title === questionTitle` 不变量）：
- *   artifact.questionId  === 当前 qid
- *   question.id          === 当前 qid
+ *   artifact.questionId  === 当前 qid（均须 string，拒绝 numeric ID 强转）
+ *   question.id          === 当前 qid（均须 string，拒绝 numeric ID 强转）
  *   question.title       string
  *   artifact.questionTitle string
  *   question.title       === artifact.questionTitle
@@ -210,10 +223,10 @@ export function loadExistingQuestion(file, qid) {
     return null;
   }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
-  if (String(parsed.questionId ?? '') !== String(qid)) return null;
+  if (typeof parsed.questionId !== 'string' || parsed.questionId !== qid) return null;
   const q = parsed.question;
   if (!q || typeof q !== 'object' || Array.isArray(q)) return null;
-  if (String(q.id ?? '') !== String(qid)) return null;
+  if (typeof q.id !== 'string' || q.id !== qid) return null;
   if (typeof q.title !== 'string') return null;
   if (typeof parsed.questionTitle !== 'string') return null;
   if (q.title !== parsed.questionTitle) return null;
