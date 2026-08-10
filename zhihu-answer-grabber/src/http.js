@@ -78,6 +78,24 @@ export function buildQuestionInfoUrl(qid) {
   return u.toString();
 }
 
+/**
+ * V2 Phase 4（Spec §15.2/§15.4）：comments root_comment URL builder（v1 唯一 implementation endpoint）。
+ *
+ * 真实客户端形态（Phase 4A.1 discovery 确认，2026-08-11）：
+ *   - order_by=score：server sorter 暴露的默认排序（热度契约，SERVER-ORDERED HOT TOP3）
+ *   - limit=3：server 直接满足，单请求取得 Top3 root items
+ *   - offset=：空值（真实客户端形态）
+ *   - 禁止加 status=open（含 status=open + offset=0 的测试形态出现 totals>0 + data=[] anomaly；
+ *     未隔离证明任一单参数为唯一原因，v1 严格采用真实客户端形态）
+ */
+export function buildCommentsUrl(answerId) {
+  const u = new URL(`https://www.zhihu.com/api/v4/comment_v5/answers/${String(answerId)}/root_comment`);
+  u.searchParams.set('order_by', 'score');
+  u.searchParams.set('limit', '3');
+  u.searchParams.set('offset', '');
+  return u.toString();
+}
+
 /** 随机延迟（模拟真人浏览节奏），默认 1.5–4s */
 export function humanDelay(min = 1500, max = 4000) {
   return new Promise((resolve) => {

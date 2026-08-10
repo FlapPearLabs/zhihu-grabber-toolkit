@@ -11,7 +11,7 @@ import { verifyOutput } from './verifier.js';
 const HELP = `zhigrab — 知乎回答抓取工具（用你自己的 zhihu-cli 登录态）
 
 用法:
-  zhigrab grab <问题链接或ID> [--out-dir <dir>]  抓取单个问题的全部回答（支持断点续传）
+  zhigrab grab <问题链接或ID> [--comments] [--out-dir <dir>]  抓取单个问题的全部回答（支持断点续传）；--comments 追加 Top3 一级热评（默认关闭）
   zhigrab batch <file.txt> [--out-dir <dir>]     每行一个问题链接/ID，批量顺序抓取
   zhigrab search <关键词> [--grab]               用官方开放平台搜索问题；--grab 直接抓第一个结果（人类模式）
   zhigrab status [--out-dir <dir>]               查看产物目录下的抓取与验收状态
@@ -51,14 +51,15 @@ function relPath(absPath) {
   return (rel || path.basename(absPath)).split(path.sep).join('/');
 }
 
-/** 解析命令行：提取 --json / --out-dir，返回结构化参数 */
+/** 解析命令行：提取 --json / --comments / --out-dir，返回结构化参数 */
 function parseArgs(argv) {
   const json = argv.includes('--json');
+  const comments = argv.includes('--comments');
   const positional = [];
   let outDir = 'out';
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
-    if (a === '--json') continue;
+    if (a === '--json' || a === '--comments') continue;
     if (a === '--out-dir') {
       outDir = argv[i + 1] || 'out';
       i += 1;
@@ -70,7 +71,7 @@ function parseArgs(argv) {
     }
     positional.push(a);
   }
-  return { json, outDir, positional };
+  return { json, comments, outDir, positional };
 }
 
 /** 输出单个 JSON 文档到 stdout（机器契约） */
@@ -89,7 +90,7 @@ function classifyError(error) {
   return 'unknown_error';
 }
 
-async function cmdGrab(config, input, { outDir = 'out', json = false, silent = false } = {}) {
+async function cmdGrab(config, input, { outDir = 'out', json = false, silent = false, comments = false } = {}) {
   let qid;
   try {
     qid = normalizeQuestionInput(input);
@@ -104,12 +105,24 @@ async function cmdGrab(config, input, { outDir = 'out', json = false, silent = f
   // 字符串拼进 error.message），而 sanitizeDisplayPaths 只脱敏路径、不处理
   // 凭据与服务器正文。因此公开面固定为确定性最小文本；内部 metadata_failed
   // 事件保留原样（如现有内部诊断需要，不扩 scope）。
+  // V2 Phase 4（Spec §15.5）：comments failure 同样只产生 question-level 聚合 warning，
+  // 即使多个 selected answer 失败也只提示一次；不转发 raw error / 正文 / 用户数据。
   const warnings = [];
+  let commentsWarningEmitted = false;
   const result = await grabAll(config, qid, {
     outDir,
+    comments,
     onProgress: (p) => {
       if (p.event === 'metadata_failed') {
         const warning = '本次问题元信息获取/刷新失败；回答核心抓取继续。';
+        warnings.push(warning);
+        if (!json && !silent) log(`  ⚠ ${warning}`);
+        return;
+      }
+      if (p.event === 'comments_failed') {
+        if (commentsWarningEmitted) return; // question-level aggregate，仅提示一次
+        commentsWarningEmitted = true;
+        const warning = '部分评论 enrichment 获取失败；回答核心抓取继续。';
         warnings.push(warning);
         if (!json && !silent) log(`  ⚠ ${warning}`);
         return;
@@ -375,18 +388,24 @@ function publicErrorMessage(error) {
 }
 
 async function main() {
-  const { json, outDir, positional } = parseArgs(process.argv.slice(2));
+  const { json, comments, outDir, positional } = parseArgs(process.argv.slice(2));
   const [cmd, arg1, ...rest] = positional;
   if (!cmd || cmd === '--help' || cmd === '-h') {
     process.stdout.write(HELP);
     return;
   }
   try {
+    // V2 Phase 4（Spec §15.8）：--comments 只允许 command = grab。
+    // batch / search / status + --comments → 静态 invalid_input，先于 loadConfig /
+    // resolveSecret / 任何网络访问 / capture side effect；不产生任何 comments 请求。
+    if (comments && cmd !== 'grab') {
+      throw invalidInput('--comments 仅支持 grab 命令');
+    }
     if (cmd === 'grab') {
       if (!arg1) throw invalidInput('grab 需要一个参数：问题链接或 ID');
       const qid = parseQuestionId(arg1); // 静态校验先于凭据检查（P1-2）
       const config = loadConfig();
-      await cmdGrab(config, qid, { outDir, json });
+      await cmdGrab(config, qid, { outDir, json, comments });
     } else if (cmd === 'batch') {
       if (!arg1) throw invalidInput('batch 需要一个参数：批量文件路径');
       const inputs = readBatchInputs(arg1); // 静态校验先于凭据检查（P1-2）

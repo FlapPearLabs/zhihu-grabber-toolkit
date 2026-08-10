@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import fs from 'node:fs';
 import path from 'node:path';
-import { buildAnswersUrl, buildQuestionInfoUrl, humanDelay, requestJson } from './http.js';
+import { buildAnswersUrl, buildCommentsUrl, buildQuestionInfoUrl, humanDelay, requestJson } from './http.js';
 import { extractAssets } from './asset-extractor.js';
 import { richHtmlToMarkdown } from './rich-renderer.js';
 
 const DEFAULT_STATE = Object.freeze({ offset: 0, done: false });
 /** 安全阈值：单问题最多抓 300 页（约 6000 条），防止异常分页导致无限循环 */
 const MAX_PAGES = 300;
+/** V2 Phase 4（Spec §15.3）：comments enrichment 最多处理的 selected answers */
+const MAX_SELECTED_ANSWERS = 10;
 
 /** 校验问题 ID：纯数字白名单，拒绝一切路径注入（questionId 唯一合法性规则的事实来源） */
 export function validateQuestionId(value) {
@@ -248,8 +250,102 @@ function writeJson(file, value) {
   fs.renameSync(tmp, file);
 }
 
+/**
+ * V2 Phase 4（Spec §15.7）：v1-compatible comments validator。
+ *
+ * 仅用于 SELECTED + fresh comments failure 的 fallback 判定（§15.7-D）：
+ * 既有 comments 为 v1-compatible → preserve；否则 refreshed canonical result 中 omit。
+ * comments OFF（B）与 not-selected（C）路径不得使用本 validator（原样 preserve，不 inspect）。
+ *
+ * v1-compatible 定义：
+ *   Array、length <= 3；
+ *   每 item：非 null object、contentHtml REQUIRED string、contentMarkdown REQUIRED string、
+ *   authorName absent|string、createdTime absent|number；未知 extra keys 允许（additive 向前兼容）。
+ */
+export function isV1CompatibleComments(value) {
+  if (!Array.isArray(value) || value.length > 3) return false;
+  for (const item of value) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
+    if (typeof item.contentHtml !== 'string') return false;
+    if (typeof item.contentMarkdown !== 'string') return false;
+    if ('authorName' in item && typeof item.authorName !== 'string') return false;
+    if ('createdTime' in item && !Number.isFinite(item.createdTime)) return false;
+  }
+  return true;
+}
+
+/**
+ * V2 Phase 4（Spec §15.3）：deterministic high-value answer selection。
+ *
+ * 取最多 max 个 answer，按 canonical answer.voteupCount DESC，
+ * tie 保持 canonical answer capture order（原数组顺序，稳定排序）。
+ * 不使用 voteup_count / commentCount 作为 canonical selection 键。
+ */
+export function selectTopAnswers(answers, max = 10) {
+  return answers
+    .slice()
+    .sort((a, b) => (b.voteupCount ?? 0) - (a.voteupCount ?? 0))
+    .slice(0, max);
+}
+
+/**
+ * V2 Phase 4（Spec §15.4/§15.6）：从 root_comment response 确定性提取 Top3 root items。
+ *
+ * 返回 { comments, isExplicitZero }；任何 schema 违约抛错（该 answer enrichment 失败）：
+ *   - data 非数组 / 非对象响应 → failure
+ *   - explicit zero（唯一来源）：data=[] && paging.totals===0 && paging.is_end===true → []
+ *   - data=[] 但 totals>0 → failure（不得伪造 []）
+ *   - 目标 Top3 中任一 item 违反 root/content contract → failure（不得过滤后用后续 item 补位）
+ *
+ * root predicate（raw response identity validation）：
+ *   typeof item.id === "string" && reply_comment_id === "0" &&
+ *   typeof item.reply_root_comment_id === "string" && reply_root_comment_id === item.id &&
+ *   typeof item.content === "string"
+ *
+ * child_comments 完全忽略；comment id / score / like_count 等不进入 public schema。
+ */
+export function extractTopComments(response) {
+  if (!response || typeof response !== 'object' || Array.isArray(response)) {
+    throw new Error('评论响应不是对象');
+  }
+  const data = response.data;
+  if (!Array.isArray(data)) {
+    throw new Error('评论响应 data 不是数组');
+  }
+  const totals = response.paging?.totals;
+  const isEnd = response.paging?.is_end;
+  if (data.length === 0) {
+    // explicit zero：唯一合法来源（Spec §15.7）
+    if (totals === 0 && isEnd === true) {
+      return { comments: [], isExplicitZero: true };
+    }
+    // data=[] 但 totals>0（或分页矛盾）→ enrichment/schema failure，不得伪造 []
+    throw new Error('评论响应异常：data=[] 但非 explicit zero（totals 或 is_end 不满足）');
+  }
+  const top = data.slice(0, 3);
+  for (const item of top) {
+    if (typeof item?.id !== 'string'
+      || item.reply_comment_id !== '0'
+      || typeof item.reply_root_comment_id !== 'string'
+      || item.reply_root_comment_id !== item.id
+      || typeof item.content !== 'string') {
+      throw new Error('评论 item 违反 root/content schema');
+    }
+  }
+  const comments = top.map((item) => {
+    const out = {
+      contentHtml: item.content, // server raw string 原样（不 trim / 不 sanitize 回写）
+      contentMarkdown: richHtmlToMarkdown(item.content), // 同一 rich renderer 确定性派生
+    };
+    if (typeof item.author?.name === 'string') out.authorName = item.author.name;
+    if (Number.isFinite(item.created_time)) out.createdTime = item.created_time;
+    return out;
+  });
+  return { comments, isExplicitZero: false };
+}
+
 /** 抓取指定问题的全部回答（支持断点续传）。返回 { qid, questionTitle, answerCount, answers } */
-export async function grabAll(config, qid, { outDir = 'out', onProgress } = {}) {
+export async function grabAll(config, qid, { outDir = 'out', onProgress, comments = false } = {}) {
   qid = validateQuestionId(qid);
   const dir = resolveQuestionDir(outDir, qid);
   fs.mkdirSync(dir, { recursive: true });
@@ -368,6 +464,47 @@ export async function grabAll(config, qid, { outDir = 'out', onProgress } = {}) 
     onProgress?.({ event: 'page', page, offset, fetched: added, total: answers.length, isEnd: done });
     if (!done) await humanDelay();
     offset += items.length;
+  }
+
+  // V2 Phase 4（Spec §15.3/§15.7）：comments enrichment —— 仅在 core answers pagination 完整成功后执行。
+  // comments OFF（默认）：NETWORK_REQUEST_DELTA = 0，不产生任何 comments 请求；
+  // 既有 answer.comments（B 路径）不触碰，原样保留。
+  if (comments === true) {
+    const selected = selectTopAnswers(answers, MAX_SELECTED_ANSWERS);
+    for (const answer of selected) {
+      // 每个 selected answer 至多 1 次真实 HTTP 尝试（Spec §15.3 / reviewer 确认的 retries=0 预算合同）。
+      // 注意：requestJson 默认 retries=2 会在 429/5xx 下最多发 3 次实际 HTTP 请求，
+      // 会暗中突破"≤1 request/answer"预算；comments 请求必须显式 retries: 0。
+      let parsed;
+      try {
+        parsed = await requestJson(config, buildCommentsUrl(answer.id), {
+          retries: 0,
+          referer: `https://www.zhihu.com/question/${qid}`,
+        });
+      } catch {
+        // SELECTED + fresh failure：v1-compatible 既有 comments → preserve；否则 omit
+        if (!isV1CompatibleComments(answer.comments)) {
+          delete answer.comments;
+        }
+        onProgress?.({ event: 'comments_failed', qid });
+        continue;
+      }
+      try {
+        const { comments, isExplicitZero } = extractTopComments(parsed);
+        // SELECTED + success → replace；explicit zero → replace []（均不 merge 旧评论）
+        answer.comments = comments;
+        onProgress?.({ event: 'comments_ok', qid, answerId: answer.id, count: comments.length, isExplicitZero });
+      } catch {
+        // SELECTED + schema failure：v1-compatible 既有 comments → preserve；否则 omit
+        if (!isV1CompatibleComments(answer.comments)) {
+          delete answer.comments;
+        }
+        onProgress?.({ event: 'comments_failed', qid });
+      }
+      await humanDelay();
+    }
+    // enrichment 完成后写最终 canonical 快照（comments 只进 additive JSON，answers.md 布局不变）
+    writeJson(answersFile, { ...meta, fetchedAt: new Date().toISOString(), answers });
   }
 
   return { ...meta, fetchedAt: new Date().toISOString(), answers };
