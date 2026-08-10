@@ -745,7 +745,7 @@ comments = off（默认）
 
 ### 15.2 实现前置研究（已关闭，2026-08-11）
 
-实现前必须对**真实知乎评论 API** 做验证并记录证据（本 Spec 强制前置条件）；该前置条件已通过 Phase 4A / Phase 4A.1 真实 discovery 关闭（证据见 `out/phase4a-comments-discovery.md` / `out/phase4a1-comments-contract-closure.md`，均为 ignored runtime area，非 repo authority）。
+实现前必须对**真实知乎评论 API** 做验证并记录证据（本 Spec 强制前置条件）；该前置条件已通过 Phase 4A / Phase 4A.1 真实 discovery 关闭。**Phase 4A / Phase 4A.1 的已批准 discovery 结论已直接固化在本节；本节即后续实现的 authoritative contract / evidence summary。**
 
 **已确认的真实 evidence（2026-08-11）：**
 
@@ -753,8 +753,14 @@ comments = off（默认）
 ENDPOINT（v1 唯一 implementation endpoint）:
 GET https://www.zhihu.com/api/v4/comment_v5/answers/{answerId}/root_comment
 ?order_by=score&limit=3&offset=
-（真实客户端行为确认；不得加 status=open——实测 status=open / offset=0 参数形态会导致
- totals>0 但 data=[]）
+
+REQUEST SHAPE 合同（真实客户端行为确认）:
+v1 请求必须严格采用真实客户端已验证形态：
+  无 status=open
+  offset=（空值）
+此前包含 status=open + offset=0 的测试形态出现 totals>0 + data=[] anomaly；
+未隔离证明其中任一单参数为唯一原因。
+因此 endpoint 合同明确禁止加 status=open，但不断言单变量因果。
 
 SORT:
 server sorter 暴露 [{type:"score",text:"默认"},{type:"ts",text:"最新"}]，
@@ -778,6 +784,11 @@ LEGACY ENDPOINT 地位:
 /api/v4/answers/{answerId}/comments 只作为历史 discovery evidence
 （schema / offset / 时间序对照），不是 Top3 hot implementation endpoint。
 其第一页实测为 created_time 升序，不符合"热评"语义。
+
+AUTH / RISK OBSERVATION（sampled，不归因）:
+本次受控 discovery 请求均成功返回；样本范围内未观察到 401 / 403 / 429 / captcha。
+这只是 sampled observation，不代表 endpoint 永远不会触发权限或风控。
+（不含账号身份 / Cookie / headers / credential / IP 归因 / 风控因果推断）
 ```
 
 ### 15.3 第一版边界（收敛合同）
@@ -788,8 +799,9 @@ COMMENTS MODE:
 
 SELECTION（enrichment 只能在 core answers pagination 完整成功后执行）:
 最多 Top 10 answers，按 canonical voteup_count DESC，tie = canonical capture order
-comment_count === 0            → 跳过请求（不请求）
-comment_count missing/invalid  → 不得视为 0
+canonical comment_count === 0            → 不发 comment request（zero-request shortcut），
+                                           且该 answer 持久化 comments: []（explicit-zero source A，见 §15.7）
+comment_count missing/invalid            → 不得视为 0（按正常 selection 处理，请求与否见 §15.3 请求形态）
 
 REQUEST BUDGET:
 MAX_SELECTED_ANSWERS                 = 10
@@ -837,11 +849,13 @@ root_comment endpoint 返回的前 3 个 data[] top-level items。
 
 **Root-only contract（v1）**：
 
-只消费 `root_comment` response 的顶层 `data[]`。root item 必须满足 discovery-confirmed root predicate：
+只消费 `root_comment` response 的顶层 `data[]`。root item 必须满足 discovery-confirmed root predicate（**全文统一，§15.4 / §15.6 / §26 完全一致**）：
 
 ```text
+REQUIRED root predicate:
+typeof item.id === "string"
 reply_comment_id === "0"（string）
-且 reply_root_comment_id 指向自身 root id
+reply_root_comment_id === item.id（string，且指向该 root item 自身）
 ```
 
 `child_comments` 表示 reply / child data：
@@ -933,9 +947,15 @@ raw server item
 **Item schema failure（不可用后续 item 补位）**：
 
 ```text
-data 非空时，目标 Top3 中每个 root item 的 REQUIRED contract:
-  root predicate valid（reply_comment_id === "0"）
-  content is string
+data 非空时，目标 Top3 中每个 root item 的 REQUIRED root predicate（与 §15.4 完全一致）:
+  typeof item.id === "string"
+  reply_comment_id === "0"（string）
+  reply_root_comment_id === item.id（string，且指向该 root item 自身）
+content is string（raw data[].content）
+
+注意:
+  item.id 只用于 raw response 的 root identity validation，
+  仍不要求持久化到 public comment schema（comment id 依旧不持久化，见上）。
 
 若 server 返回的目标 Top3 中存在违反 required root/content schema 的 item:
   → 该 answer 的整个 comments enrichment 视为失败
@@ -958,7 +978,7 @@ COMMENTS ON + answer not selected:
   fresh → comments absent
   existing valid comments → preserve unchanged
 
-SELECTED + explicit true zero:
+SELECTED + EXPLICIT ZERO（两个且仅两个合法来源，见下）:
   comments: []
 
 SELECTED + success:
@@ -971,18 +991,27 @@ SELECTED + request/schema failure:
   同时触发 aggregate comments warning
 ```
 
-**True empty 语义**（Phase 4A.1 实测确认的 true-zero shape）：
+**Explicit-zero 语义**（两个且仅两个合法来源，其余空/畸形形态均为 failure）：
 
 ```text
-TRUE ZERO（允许持久化 comments: []）:
+EXPLICIT ZERO SOURCE A（canonical 计数零，zero-request shortcut）:
+  canonical answer.comment_count === 0
+  → 不发 comment request
+  → comments: []
+  若已有旧 comments → replace 为 []
+  （canonical answer fact 已明确报告 0 评论，无需为确认 0 浪费请求）
+
+EXPLICIT ZERO SOURCE B（endpoint true-zero，Phase 4A.1 实测确认）:
   data = []
   totals = 0
   is_end = true
+  → comments: []
 
-NOT EMPTY（属于 enrichment/schema failure，不得伪造 comments: []）:
+NOT EMPTY / FAILURE（属于 enrichment/schema failure，不得伪造 comments: []）:
   data = [] 但 totals > 0
   或 response schema/paging 矛盾
   或字段缺失/类型错误
+  （上述 zero-source 判定仅适用于 comments ON 且 answer 被选中的场景）
 ```
 
 ### 15.8 Enable surface / answers.md / agent projection
@@ -1102,7 +1131,7 @@ V2 对 `answers.json` 的修改必须为**可向后兼容的 optional fields**�
       "id": "...",
       "content": "<p>原始 HTML 不变</p>",
       "assets": { "images": [], "links": [], "references": [], "codeBlocks": [], "videos": [] },
-      "comments": []        // 仅当 comments 开启时出现（item schema 见 §15.6，v1 最小 { contentHtml, contentMarkdown, authorName?, createdTime? }）
+      "comments": []        // additive optional（item schema 见 §15.6，v1 最小 { contentHtml, contentMarkdown, authorName?, createdTime? }）；fresh comments OFF 时缺省；existing artifacts 可按 §15.7 preserve 保留既有 comments
     }
   ]
 }
@@ -1178,8 +1207,8 @@ questionId 不合法
 1. **core 不受影响**：comments 请求失败/超时/schema 异常，**不得**使已经成功的 core answer capture 失败（core 永远优先）。
 2. **时序**：comments enrichment 只能在 core answers pagination 完整成功结束后执行（必须基于完整 answer set 做 deterministic Top10 selection）。
 3. **失败必须用户可见**：产生**单一 question-level aggregate warning**（固定文本，见 §15.5），不逐 answer 暴露 raw diagnostics。
-4. **不得合成空事实**：只有真实 true-zero（`data=[]` 且 `totals=0` 且 `is_end=true`）才允许 `comments: []`；`data=[]` 但 `totals>0`、schema/paging 矛盾、字段缺失/类型错误 → **failure**，不得伪造 `[]`。
-5. **item schema failure**：目标 Top3 中存在违反 required root predicate 或 `content` 非 string 的 item → 该 answer 的 comments enrichment 视为失败，**不得过滤后用后续 item 补位**。
+4. **不得合成空事实**：`comments: []` 只允许两个 explicit-zero 来源（§15.7）：(A) canonical `comment_count === 0`（zero-request shortcut，不发请求）；(B) endpoint true-zero（`data=[]` 且 `totals=0` 且 `is_end=true`）。`data=[]` 但 `totals>0`、schema/paging 矛盾、字段缺失/类型错误 → **failure**，不得伪造 `[]`。
+5. **item schema failure**：目标 Top3 中存在违反 required root predicate（`typeof item.id === "string"` 且 `reply_comment_id === "0"` 且 `reply_root_comment_id === item.id`）或 `content` 非 string 的 item → 该 answer 的 comments enrichment 视为失败，**不得过滤后用后续 item 补位**。
 6. **fresh success = replace**：成功时以当前 server score-order root Top3（max 3）替换 `answer.comments`，不得与旧 comments merge 形成历史累积。
 7. **resume 保留既有事实**：磁盘已有合法 comments 而本次 fresh 失败 → **必须保留**既有 comments（enrichment failure 不得删除已存在事实）。
 
@@ -1384,7 +1413,7 @@ LLM map/final claim 文本含：[link](https://evil.example)、![img](https://ev
 ## 25. Open questions
 
 1. **知乎视频 HTML schema**：当前真实样本未确认；视频 metadata 实现需等真实样本（§16）。
-2. ~~**评论 API 形态**：热度排序支持？batch 存在？每条回答单独请求？→ 实现前必须实测并回填证据（§15.2）。~~ **已关闭（2026-08-11，Phase 4A / 4A.1 真实 discovery）**。最小 evidence：`comment_v5/answers/{answerId}/root_comment`（answer-scoped，单请求）；server sorter 暴露 `score`（默认）/ `ts`（最新）；`limit=3` 生效；score mode 可 materialize root items；`status=open` 参数会导致 `totals>0` 但 `data=[]`（v1 不得使用）；root/child 区分字段已确认（`reply_comment_id === "0"` → root，`child_comments` 为 reply）。batch：NOT OBSERVED（未穷举证明，不声称不存在）。合同落点：§15。
+2. ~~**评论 API 形态**：热度排序支持？batch 存在？每条回答单独请求？→ 实现前必须实测并回填证据（§15.2）。~~ **已关闭（2026-08-11，Phase 4A / 4A.1 真实 discovery）**。最小 evidence：`comment_v5/answers/{answerId}/root_comment`（answer-scoped，单请求）；server sorter 暴露 `score`（默认）/ `ts`（最新）；`limit=3` 生效；score mode 可 materialize root items；**此前包含 `status=open` + `offset=0` 的测试形态出现 `totals>0` 但 `data=[]` anomaly；未隔离证明其中任一单参数为唯一原因。v1 请求严格采用已观测真实客户端形态：无 `status=open`、`offset=`（§15.2）**；root/child 区分字段已确认（`reply_comment_id === "0"` 且 `reply_root_comment_id === item.id` → root，`child_comments` 为 reply）。batch：NOT OBSERVED（未穷举证明，不声称不存在）。合同落点：§15。
 3. **description 来源**：现有 answer API 是否直接返回 description？若无，question metadata 接口的响应 schema 需实测确认（§17.2）。
 4. **topics 字段来源与 schema**：需要实测问题元信息接口确认（§17.3）。
 5. **code-analysis mode 的触发与 UI**：未来单独设计，V2 只定义投影折叠（§12.6）。
@@ -1414,8 +1443,9 @@ LLM map/final claim 文本含：[link](https://evil.example)、![img](https://ev
   - comments off → 0 新增请求（NETWORK_REQUEST_DELTA = 0）；
   - Top10 request cap（MAX_COMMENT_REQUESTS_PER_QUESTION ≤ 10，每 answer ≤ 1 次）；
   - 请求形态 `order_by=score&limit=3&offset=`（无 `status=open`），无分页；
-  - true empty（`data=[]`+`totals=0`+`is_end=true` → `[]`）vs anomaly（`totals>0` 且 `data=[]` → failure，不伪造 `[]`）；
-  - root predicate（`reply_comment_id === "0"`）校验生效；`child_comments` 被忽略、不持久化、不触发 reply 请求；
+  - true empty / explicit zero（`comment_count===0` → zero-request + `[]`；`data=[]`+`totals=0`+`is_end=true` → `[]`）vs anomaly（`totals>0` 且 `data=[]` → failure，不伪造 `[]`）；
+  - root predicate 完整三条件（`typeof item.id === "string"` 且 `reply_comment_id === "0"` 且 `reply_root_comment_id === item.id`）校验生效；`child_comments` 被忽略、不持久化、不触发 reply 请求；
+  - 反例：`reply_comment_id === "0"` 但 `reply_root_comment_id !== item.id` → schema failure，无后续 item 补位；
   - Top3 目标 item 违反 root/content schema → 该 answer enrichment 失败，无后续 item 补位；
   - `contentHtml` 严格等于 server raw string（不 trim / 不回写）；`contentMarkdown` 走同一 rich renderer；
   - public warning 为固定 aggregate 文本，不含 raw error / 正文 / 用户数据；
