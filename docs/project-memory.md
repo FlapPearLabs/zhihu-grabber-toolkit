@@ -22,7 +22,7 @@
 
 ## 测试基线（稳定，离线）
 
-- `cd zhihu-answer-grabber && npm test` → 412 pass / 0 fail / 3 skip
+- `cd zhihu-answer-grabber && npm test` → 435 pass / 0 fail / 3 skip
 - `cd corpus-anthology && node --test` → 93 pass / 0 fail / 2 skip
 - `node --test test/agent-pipeline.test.mjs`（仓库根，CLI×Skill 集成）→ 6 pass / 0 fail
 - skip 均为既有 Windows 平台限制（symlink 相关），与实现改动无关。
@@ -36,7 +36,8 @@
   - 已实现的 text-node / title / author 转义面
 - **V2 Phase 2（S1-S6）已实现并覆盖**：image metadata / external link assets / code block metadata / reference-footnote assets（`test/asset-extractor.test.js`）；脚注重建与对抗（重复/非法/缺失 numero、跨 answer collision、Markdown 注入、恶意脚注 URL，`test/rich-renderer.test.js`）；additive `answers[].assets` 集成、断点续传兼容、determinism（`test/grabber.test.js`）；V1 兼容回归 render/verify/handoff/CLI status（`test/v1-compat.test.js`）。
 - **V2 Phase 3 — Question Metadata 已纳入 accepted project baseline 并覆盖**（`test/question-metadata.test.js`）：additive `question` 对象（`{ id, title, descriptionHtml, descriptionMarkdown, topics }`）；description source/canonicality（descriptionHtml 严格等于 server raw `detail`，渲染不突变）、description security（Markdown 注入惰性 / raw HTML 活性移除 / headingOffset=2 防 `## N.` 越界 / javascript:/data: 链接不可点击）、topics 最小字段 `{ id, name }` 确定性提取与恶意文本惰性、V1/Phase2 兼容（旧产物无 question 可读、verify/handoff 不受影响）、request budget（question info 请求恰 1 次/抓取，零新增）、determinism；missing vs empty 区分（detail/topics 缺失 ≠ 明确空值）、metadata 失败用户可见 warning（CLI 级）、resume 保留已有合法 question、identity gate（`QUESTION_METADATA_IDENTITY_CONFLICT`）、topic id/name 严格 string 校验、topics 非空全非法 omit、公开 warning 固定最小文本、resume ID 严格 string。
-- **尚未完成、不得标记为 covered**（按已批准 Spec 相应 Phase 再补测试）：comments、Agent projection / capability isolation、video（Spec §16 待真实样本）。
+- **V2 Phase 4 — Comments Enrichment 已纳入 accepted project baseline 并覆盖**（`test/comments.test.js`）：additive optional `answers[].comments`（默认 OFF；唯一显式开启面 `grab <question> --comments`；batch/search/status 带 `--comments` → 静态 `invalid_input`，先于凭据/网络）；`comment_v5/answers/{answerId}/root_comment?order_by=score&limit=3&offset=`（server score/default ordering 的 Top3 root comments，禁 `status=open`，无 legacy fallback、无分页）；Top10 selected answers（canonical `voteupCount` DESC + capture-order tie）；每 selected answer 至多 1 次真实 HTTP 尝试（**`retries:0`**，requestJson 默认 retries=2 会暗中突破预算）、每 question ≤10 次、attempt 间顺序低延迟（`humanDelay` 前置，失败路径同样限速，无并发）；root predicate 五条件校验（含 `reply_root_comment_id === item.id`）任一违约 → 整个 answer enrichment 失败、无后续 item 补位；`child_comments`/reply 完全忽略；唯一 explicit-zero = `data=[] + totals=0 + is_end=true`（`commentCount===0` 不是 zero fact——V1 canonicalization 收敛 raw null/missing）；A/B/C/D resume/preservation 语义（OFF/not-selected 原样保留 exact JSON 值不 validate，selected success replace、failure 时仅 v1-compatible 保留否则 omit）；固定 question-level aggregate warning（"部分评论 enrichment 获取失败；回答核心抓取继续。"）；`contentHtml` 严格 raw + `contentMarkdown` 同一 `richHtmlToMarkdown`（无第二 parser，hostile content 全程 inert）；`answerId` 作为单 opaque path segment 且空/dot-segment path 破坏时 fail closed；`answers.md` / verify-output / handoff 合同未改。Phase 4 产品合同完整见 Approved Spec §15/§18/§20.2.2/§25/§26。
+- **尚未完成、不得标记为 covered**（按已批准 Spec 相应 Phase 再补测试）：Agent projection / capability isolation、video（Spec §16 待真实样本）。
 
 ## 已批准产品决策 / 长期约束
 
@@ -54,7 +55,7 @@
 
 - **V2 Phase 2 — Rich Content Assets 已纳入 accepted project baseline**：additive `answers[].assets`（images / links / references / codeBlocks / videos）、canonical `content` 不可变、脚注重建（renderer 生成 `a<answerId>-r<index>`）、1px placeholder 确定性合同（Spec §10.1）均为长期合同，保持不变（见上文已批准决策与 Spec）。
 - **V2 Phase 3 — Question Metadata 已纳入 accepted project baseline**：additive `question` metadata（description/topics）、NETWORK_REQUEST_DELTA=0、failure/empty semantics（Spec §20.2.1）、resume preservation 与 identity gate 均为长期合同（见上文 PHASE3_SCHEMA_DISCOVERY 与已批准决策）。
-- 下一个计划阶段：comments enrichment（Spec §15，默认 off，实现前必须先真实 API 验证）→ Agent projection / capability isolation（Spec §9/§9.1）→ video detect（Spec §16，待真实样本）。
+- 下一个计划阶段：Agent projection / capability isolation（Spec §9/§9.1）→ video detect（Spec §16，待真实样本）。
 - 后续阶段开始前：从**届时最新的 remote master** 创建（或重建）其 feature 分支；不依赖任何历史临时分支 ref 作为长期事实。
 - **browser-smoke caveat（长期）**：`browser-smoke` 存在已知的 pre-existing false-negative baseline（部分渲染形态的内容匹配）；其绝对结果 FAIL 不得改标为 PASS；Phase 2 是在已明确批准的 no-regression baseline exception 下被接受的；browser-smoke 工具本身的改进是独立 follow-up defect，不属于任何已接受 Phase 的交付范围。
 
@@ -64,6 +65,7 @@
 - CODE gate（Phase 1）：PASS @ `27e68c1`（P0/P1/P2 全 0，四轮 review：escape 完整性、framing 收口、lockfile registry、localhost namespace、cross-node 与 split-whitespace 绕过修复）。
 - **CODE gate（Phase 2 — Rich Content Assets）**：PASS（2026-08-09），已纳入 accepted project baseline。
 - **CODE gate（Phase 3 — Question Metadata）**：PASS（2026-08-10），已纳入 accepted project baseline。
+- **CODE gate（Phase 4 — Comments Enrichment）**：PASS（2026-08-11），已纳入 accepted project baseline。
 - 建议：停止无限制地静态加 gate，进入真实使用验证与按 Phase 推进。
 
 ## Maintenance Contract
