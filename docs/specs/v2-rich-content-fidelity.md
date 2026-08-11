@@ -352,6 +352,180 @@ capability isolation unavailable
 
 **禁止**默认降级为「prompt-level mitigation 后继续把恶意正文交给有工具 Agent」。只有在未来另行设计**显式 opt-in 的 unsafe mode**（用户明确确认）时才允许降级，且不属于当前 V2 默认合同。任何产物/文档在隔离不可用被 STOP 时，不得声称「Prompt Injection 已被安全隔离」。
 
+### 9.2 Agent projection contract closure（Phase 5B，2026-08-11，用户批准）
+
+> 本节收口 Phase 5A audit 判定的合同缺口。**合同规定行为，不绑定实现函数**——不要求
+> 特定包 import（如 `richHtmlToMarkdown`），但任何 projection renderer 必须满足本节行为合同。
+
+**9.2.1 Question projection**
+
+```text
+每个 chunk 涉及的 question，Agent projection 必须提供确定性 question context（可用时）:
+  question.title
+  question.descriptionMarkdown
+  topics[].name
+
+不单独为 Agent 消费暴露 topic ID。
+
+question / description / topics 缺失:
+  → omit，不合成空事实（missing ≠ 空串 / []）
+
+question context 以 chunk-level 呈现：一个 chunk 涉及哪个 question 就携带对应 context 一次，
+不在每个 answer/segment 重复完整 description。
+
+所有 question 字符串 = UNTRUSTED_EXTERNAL_CONTENT，只作 DATA。
+```
+
+**9.2.2 Comments projection**
+
+```text
+comments 仅当 canonical answer.comments 为 Phase 4 v1-compatible 时才可进入 Agent projection:
+  投影最多已持久化的 3 条（Phase 4 合同上限）
+  只投影评论正文: contentMarkdown（或由同一 canonical comment content 确定性派生的等价 inert 文本）
+
+默认不投影:
+  authorName / createdTime / comment id / profile 数据 / raw server item
+
+不产生任何新增网络请求。
+
+语义:
+  comments absent        → 无 comments section
+  comments []            → 无 comments section
+  v1-compatible 非空     → 投影 max 3 条评论文本
+  legacy / incompatible  → 从 Agent projection 确定性 omit
+                          → 不得使整个 digest 失败
+
+comments 仍为 UNTRUSTED_EXTERNAL_CONTENT。
+```
+
+**9.2.3 Full-coverage / size contract**
+
+```text
+digest Agent projection = FULL COVERAGE:
+  每个 verified canonical answer 都必须进入 projection / chunk 工作流。
+
+禁止:
+  TopN answer 选择
+  voteup 排序过滤
+  popularity sampling
+  静默丢 answer
+  token-budget 驱动的 answer 省略
+
+现有 corpus chunk 参数（maxChars / maxAnswers）只是 transport/chunking 配置:
+  决定"记录如何切分进 chunk"
+  不得决定"哪些 verified answer 进入"
+
+超大单条 answer 可以确定性切分，不得静默截断。
+
+现有 corpus full-coverage / sourceCoverage gates 保持。
+```
+
+**9.2.4 Answer body projection（行为合同）**
+
+```text
+Agent projection 必须保留有用的语义结构:
+  标题 / 段落边界 / 列表 / blockquote 文本
+
+并保持 deterministic / inert。
+
+代码正文:
+  DEFAULT OMIT
+  用确定性 metadata marker 表示，等价:
+    [CODE_BLOCK language=... lines=... omitted_by_policy]
+  不执行 / 不安装 / 不推断命令。
+
+当前 naïve stripHtml-only 行为不满足本合同（丢失所需语义结构）。
+不要求特定实现函数；允许独立的确定性安全 projection renderer，前提是满足本 Agent View 合同。
+```
+
+**9.2.5 Asset projection**
+
+```text
+不重开已定义的 §9 / §10–§13 合同。
+
+Agent View 暴露 bounded inert metadata:
+  images:          count / host / classification / clickable metadata
+  external links:  domain / classification
+  references:      按既有合同的 inert reference/footnote 文本
+  code blocks:     count / language / line metadata，body omitted
+
+禁止自动:
+  URL open / image load / download / OCR / network fetch / code execution
+
+非白名单外部图片:
+  不暴露完整外部图片 URL；保留既有 host/classification 行为。
+```
+
+**9.2.6 Projection format**
+
+```text
+Human Markdown（answers.md）与 Agent projection 是两种独立 representation:
+  answers.md 不得成为 Agent 输入。
+
+Agent projection 可用确定性 tagged text / structured projection。
+精确装饰性语法是实现细节。
+
+合同要求:
+  deterministic
+  structure-preserving
+  inert
+  无 executable / tool instruction 语义
+  保留 source identity
+  与 sourceCoverage / evidence mapping 兼容
+```
+
+**9.2.7 Determinism**
+
+```text
+同一 verified canonical input + 同一 projection configuration + 同一 projector version
+→ 确定性 projection content / chunk identity。
+
+现有 manifest / chunkHash / cache invalidation 机制保持为 downstream integrity 机制。
+不发明 signing / proof 框架。
+```
+
+**9.2.8 Failure semantics（分层）**
+
+```text
+projection 构建失败:
+  → 不使 canonical answers capture 失效
+  → verify-output canonical 14-check authority 不变
+  → corpus digest / map MUST STOP
+  → 不得产出 verified final digest
+
+capability isolation unavailable:
+  → digest / map STOP
+  → capability_isolation_unavailable
+
+不得默认降级为「tool-enabled Agent 继续」。
+
+verify-output: UNCHANGED
+make-handoff schema: UNCHANGED
+
+projection 是 downstream derivative；若未来需要追加 corpus 侧校验，
+属于 corpus-side verification，不得静默扩大 canonical 14-check gate。
+```
+
+**9.2.9 Capability isolation（不削弱 §9.1）**
+
+```text
+§9.1 合同保持:
+  LLM: NETWORK / SHELL-EXEC / PACKAGE / FILESYSTEM-READ / FILESYSTEM-WRITE / TOOLS 全 DENY
+  trusted controller 唯一持有 IO
+
+不得声称当前实现已提供该隔离。
+
+Phase 5B 仅为合同收口；DOCUMENT PASS 后，下一步是独立的
+Phase 5C — Capability Isolation Feasibility Check：
+  验证宿主/runtime 能否实例化 tool-less LLM consumer
+  （controller 读 chunk → tool-less model call → controller 收 JSON → validator → controller 写 map）。
+
+若不可行:
+  CAPABILITY_ISOLATION_AVAILABLE: NO
+  → capability_isolation_unavailable
+  → STOP
+```
+
 ---
 
 ## 10. Image asset contract（图片）
@@ -1479,7 +1653,7 @@ LLM map/final claim 文本含：[link](https://evil.example)、![img](https://ev
 3. **description 来源**：现有 answer API 是否直接返回 description？若无，question metadata 接口的响应 schema 需实测确认（§17.2）。
 4. **topics 字段来源与 schema**：需要实测问题元信息接口确认（§17.3）。
 5. **code-analysis mode 的触发与 UI**：未来单独设计，V2 只定义投影折叠（§12.6）。
-6. **Agent projection 的生成位置**：corpus chunk/map 阶段确定性生成的挂载点由后续任务决定，本 Spec 只定义输入/输出合同（§9）。
+6. ~~**Agent projection 的生成位置**：corpus chunk/map 阶段确定性生成的挂载点由后续任务决定，本 Spec 只定义输入/输出合同（§9）。~~ **已收口（2026-08-11，Phase 5B）**：投影在 corpus chunk 阶段由确定性脚本生成（§9.2.6/§9.2.7）；Agent projection 合同（Question/Comments/Full-coverage/Answer body/Assets/Format/Determinism/Failure/Capability）见 §9.2；capability isolation 可行性由独立 Phase 5C 验证（§9.2.9）。
 7. **链接 anchor 文字的提取**：`data-text` / 元素文本内容的确切字段需在真实样本上确认（§11、§13）。
 
 ---
@@ -1521,6 +1695,19 @@ LLM map/final claim 文本含：[link](https://evil.example)、![img](https://ev
   - `--comments` 命令合法性：`batch/search/status + --comments` → static invalid_input、0 网络调用、无 capture side effect；
   - 评论正文注入（prompt injection / 链接 / 代码）全部 inert，无工具行为；
   - `answers.md` 布局与 verify-output `## N.` framing 不变（comments 只进 canonical JSON）。
+- [ ] **Agent projection 合同对抗（§9.2，Phase 5）**：
+  - full coverage：无 answer 因 chunk budget 被丢弃（chunk 参数只决定切分，不决定 inclusion）；
+  - question context 投影（title / descriptionMarkdown / topics[].name；缺失 omit 不合成空）；
+  - v1-compatible comments 只投影文本（max 3，无 authorName/createdTime/id）；
+  - legacy/incompatible comments 确定性 omit，digest 继续（不失败）；
+  - 标题/列表/blockquote 语义结构保留；
+  - code body 默认 omit（`[CODE_BLOCK ... omitted_by_policy]` metadata marker）；
+  - image/link assets 只暴露批准的 inert metadata；禁止处不暴露外部图片 raw URL；
+  - injection-looking question/answer/comment/code/link 文本全程 inert（无工具行为）；
+  - same input + config + version → 确定性 projection（chunk hash 幂等）；
+  - projection 构建失败阻断 digest、不使 canonical capture 失效（verify-output 14-check 不变）；
+  - capability isolation unavailable → `capability_isolation_unavailable`（fail closed）；
+  - verify-output 14-check authority 未被投影改动。
 - [ ] Agent projection 折叠代码块、不暴露可执行内容、不触发工具行为。
 
 ---
