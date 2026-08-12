@@ -65,7 +65,7 @@ node "<SKILL_ROOT>/scripts/zhigrab.mjs" status --json
 #    "error":{"type":"configuration_error","message":"..."}}
 ```
 
-错误类型枚举：`configuration_error` / `invalid_input` / `not_found` / `network_error` / `http_error` / `unknown_error`（`ConfigError.errorType` 优先复用）。
+错误类型枚举：`configuration_error` / `invalid_input` / `network_error` / `http_error` / `question_metadata_identity_conflict` / `unknown_error`（`ConfigError.errorType` 优先复用）。
 
 **规则：**
 

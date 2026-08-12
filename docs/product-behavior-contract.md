@@ -57,26 +57,50 @@ FUTURE_CODE_TICKET_REQUIRED  需要后续 CODE 票（本文件不实现）
 ### 3.1 Accepted inputs（接受的输入）
 
 ```text
-CURRENT_BEHAVIOR:
-  - question URL（含 https://www.zhihu.com/question/<digits>）或纯数字问题 ID（1-20 位）
-  - batch 文件：每行一个问题链接/ID，逐行 trim、跳过空行与 # 注释行；文件缺失/为空 → invalid_input
-  - search：关键词（需要 Access Secret）
-  - 非法/无法识别输入（非纯数字、非 question/<digits> URL、超长数字）→ invalid_input
-  - 静态输入校验先于凭据检查（invalid_input 不依赖凭据状态）
+CURRENT_BEHAVIOR（真实实现）:
+  - grab <input> 解析（normalizeQuestionInput）：
+      * 输入 trim 后为纯数字 → 直接作为 candidate
+      * 否则在字符串中搜索子串 /question\/(\d+)/，命中则取 <digits> 为 candidate
+        （不校验 URL scheme / hostname / 是否为合法 URL；任意含
+        "question/<digits>" 子串的字符串都可能被接受，
+        如 https://evil.example/question/123、foo-question/123）
+      * candidate 再经 validateQuestionId 强制 1-20 位纯数字
+      * 非法输入 → invalid_input
+  - batch <file>：文件级静态校验（存在、非空、trim、跳过空行/# 注释行）
+    在 loadConfig 之前完成；但【逐行】问题输入校验并不前置——
+    发生在 loadConfig 之后、cmdGrab 内部（每行失败 → failed[] 中
+    invalid_input 分类）。凭据缺失时 batch 在逐行校验前即整体
+    configuration_error。
+  - 解析接受后的请求 URL 一律由代码构造为受信知乎 URL
+    （https://www.zhihu.com/question/<qid>），不信任用户输入原文；
+    HTTP 层另有主机白名单（仅 www.zhihu.com 携带凭据/签名）。
 
 PRODUCT_DECISION:
   KEEP_CURRENT_BEHAVIOR
-  - 接受：question URL / 纯数字 ID / batch 文件 / search 关键词
-  - 拒绝：其余一切 → invalid_input（静态校验先于凭据 / 网络 / capture side effect）
+  - 接受：纯数字 ID，或任意含 "question/<digits>" 子串的字符串
+    （覆盖无 scheme 链接、m.zhihu.com、/answer/ 分段 URL 等真实形态）
+  - 拒绝：不含 question/<digits> 且非纯数字 → invalid_input
+  - batch：文件级静态校验前置；逐行校验保持在后（cmdGrab 内），
+    失败行 → failed[] 中 invalid_input 分类
+  - 不引入"精确 URL scheme/host 白名单"输入校验
 
 RATIONALE:
-  纯数字白名单（1-20 位）防路径注入与 ID 混淆；静态校验前置保证错误分类稳定、
-  不因凭据状态而漂移；batch 行内注释支持便于维护列表。
+  - 输入面宽松解析是有意保留的兼容性设计：知乎问题链接有多种合法形态
+    （无 scheme / m.zhihu.com / 带 /answer/ 分段等），收紧到精确
+    https://www.zhihu.com 校验会拒绝真实可用输入
+  - 安全边界不依赖输入校验：请求 URL 恒由代码构造为受信知乎 URL，
+    HTTP 层主机白名单保证凭据/签名不外发（RULES §1）
+  - batch 逐行校验在凭据之后的现状可预测：凭据缺失时"先修凭据"
+    是正确用户路径；凭据可用时非法行以 invalid_input 分类出现在
+    failed[]，不升级为整批失败
 
 AUTHORITY / EVIDENCE:
   src/grabber.js validateQuestionId / normalizeQuestionInput
-  src/cli.js parseQuestionId / readBatchInputs（invalidInput 标记）
-  test/grabber.test.js（normalize/21 位拒绝）、test/cli-json.test.js（P1-2 静态前置）
+    （纯数字 → candidate；否则 regex 子串搜索 question/(\d+)）
+  src/cli.js readBatchInputs（文件级静态校验）/ cmdBatch / cmdGrab
+    （逐行 normalizeQuestionInput 在 cmdGrab 内，loadConfig 之后）
+  src/http.js assertAuthenticatedTarget（主机白名单）
+  test/grabber.test.js（normalize/21 位拒绝）、test/cli-json.test.js（P1-2）
 
 IMPLEMENTATION_IMPACT: NONE
 ```
@@ -93,9 +117,11 @@ PRODUCT_DECISION:
   KEEP_CURRENT_BEHAVIOR
 
 RATIONALE:
-  out-dir 默认与 cwd 解耦（可 ZAG_CONFIG_DIR / --out-dir 显式指定）；
-  comments 默认 OFF 是请求面防护（Spec §15.1 NETWORK_REQUEST_DELTA = 0）；
-  sample 上限防无限放大浏览器请求面。
+  output directory 与 credential directory 是两个独立配置维度：
+  默认 output directory 仍为 cwd-relative ./out（ZAG_CONFIG_DIR 只控制
+  凭据目录，不影响输出目录）；comments 默认 OFF 是请求面防护
+  （Spec §15.1 NETWORK_REQUEST_DELTA = 0）；sample 上限防无限放大
+  浏览器请求面。
 
 AUTHORITY / EVIDENCE:
   src/cli.js parseArgs、src/http.js（comments OFF 时零请求）
@@ -187,7 +213,9 @@ CURRENT_BEHAVIOR（实现实测）:
   0   browser-smoke pass
   1   browser-smoke fail（mismatch）
   2   browser-smoke inconclusive（含环境不可用 / gate page / 配置失败）
-  0   status 恒 0（即使某产物 invalid——status 自身执行成功）
+  0   status：artifact invalid / unverified 本身不会使成功执行的 status
+      命令非零；但 status 命令自身若发生未处理运行错误，仍走 main() 的
+      统一 catch → exit 1
 
   结构化错误 type 枚举（以实现为准）:
     configuration_error / invalid_input / network_error / http_error /
@@ -195,10 +223,12 @@ CURRENT_BEHAVIOR（实现实测）:
 
 PRODUCT_DECISION:
   KEEP_CURRENT_BEHAVIOR（exit-code 矩阵按上表固化）
-  【已记录文档漂移】references/usage.md 的错误枚举含 not_found 且未列
-  question_metadata_identity_conflict，与实现 classifyError 不一致；
-  本合同以实现为准。该 usage.md 漂移属 reference 文档问题，后续另行处理，
-  不属于本 ticket 修改范围。
+  【已校准 reference 漂移】references/usage.md 原错误枚举含 not_found 且
+  未列 question_metadata_identity_conflict，与实现 classifyError 不一致
+  （历史 drift：Approved V1 base 305db1c 时 usage.md 已含 not_found，
+  而当时 classifyError 已无 not_found 分支，非新引入 regression）。
+  本票内已校准 usage.md 错误枚举以实现为准（documentation-only，
+  无运行时行为变更）；见 §6 D-1。
 
 RATIONALE:
   机器契约可依赖；0/1/2 语义区分成功 / 失败 / 不确定（inconclusive 不得 exit 0）。
@@ -214,22 +244,47 @@ IMPLEMENTATION_IMPACT: NONE
 ### 3.7 Machine JSON contract（机器 JSON 契约）
 
 ```text
-CURRENT_BEHAVIOR:
+CURRENT_BEHAVIOR（真实实现）:
   - stdout 只输出单一合法 JSON 文档（可直接 JSON.parse，不混入人类日志/ANSI/进度）
   - 错误结构化：{ schemaVersion:1, ok:false, command, error:{ type, message } }
-  - 错误消息脱敏：无绝对路径（sanitizeDisplayPaths）、无凭据、无服务器正文、无注入行
+  - 路径脱敏：publicErrorMessage 对非 ConfigError 返回
+    sanitizeDisplayPaths(terminalSafe(error.message))——抹掉任意绝对路径
+    （Windows 盘符 / POSIX 根）、移除终端控制字符
+  - 凭据隔离：错误消息不含 Cookie / Secret（凭据不进入任何错误构造路径）
+  - 但【服务器派生正文可能进入顶层错误 message】：
+    requestJson 在 HTTP 失败时把 server JSON 的 parsed.message 拼进
+    HttpError.message（"知乎请求失败: HTTP <status> <parsed.message>"）；
+    非 ConfigError 的 publicErrorMessage 不剥离该 server-derived 文本。
+    因此机器 JSON 的 error.message 目前【可能】包含服务器返回的
+    message 正文（经 JSON 序列化 + terminalSafe + 路径脱敏，
+    但不等于"无服务器正文"）。
+  - 通道区分：metadata/comments enrichment 的 public warning 是固定
+    聚合文本（"本次问题元信息获取/刷新失败…"等），【不】携带
+    server-derived 正文；这与顶层 HttpError 通道不同。
   - JSON 输出路径一律相对路径
   - grab 成功：stage=captured、verified:false、warnings[]（固定最小文本）
 
 PRODUCT_DECISION:
-  KEEP_CURRENT_BEHAVIOR
+  KEEP_CURRENT_BEHAVIOR（选项 A）
+  - 顶层 HttpError public message 允许携带 server parsed.message，
+    边界精确为：JSON-encoded + terminalSafe（无控制字符）+
+    路径脱敏（无绝对路径）+ 凭据隔离（无 Cookie/Secret）
+  - enrichment warning 通道保持固定聚合文本（与顶层错误通道区分，
+    不混用）
 
 RATIONALE:
-  Agent 优先 --json 机器契约；错误面统一脱敏是凭据安全（RULES §1）与路径脱敏
-  （RULES §9）的落地。
+  - 顶层错误携带 server message 有诊断价值（HTTP 状态 + 服务器说明帮助
+    人类用户定位 401/403/风控），且与 V1 行为一致
+  - 安全边界已由 terminalSafe + 路径脱敏 + 凭据隔离保证：JSON 序列化
+    保证仍是合法 JSON string；控制字符被移除；凭据从不进入错误构造
+  - 若未来要求"public error 一律不含 server-derived 正文"
+    → 另立 FUTURE_CODE_TICKET（本决策不隐含该项已实现）
 
 AUTHORITY / EVIDENCE:
-  src/cli.js emitJson / classifyError / publicErrorMessage / sanitizeDisplayPaths
+  src/cli.js emitJson / classifyError / publicErrorMessage /
+    sanitizeDisplayPaths / terminalSafe
+  src/http.js requestJson（HttpError message 拼入 parsed.message）
+  src/cli.js cmdGrab（metadata/comments 固定 warning 通道）
   references/usage.md（JSON 机器契约）
   test/cli-json.test.js（stdout 纯净 / 脱敏 / 错误分类）
 
@@ -262,23 +317,48 @@ IMPLEMENTATION_IMPACT: NONE
 ### 3.9 Rerun / resume（重跑与断点续传）
 
 ```text
-CURRENT_BEHAVIOR:
-  - 重跑同命令（grab <qid>）自动续传：读 .progress.json（offset/done）+ answers.json
-  - seen-set 去重：已有答案不被重复添加；旧答案（无 assets/comments）不被改写
-  - 每页成功即写 answers.json 快照 + 保存 progress（tmp+rename 原子写）
-  - answers.md 每次全量重渲染（派生视图）
-  - 中断后重跑从 saved offset 继续；已完成的（done=true）再跑也会重新执行分页循环
+CURRENT_BEHAVIOR（真实实现，按 code 路径）:
+  grab 重跑（grabAll）的完整执行序列：
+  1. 加载 .progress.json 状态（offset / done）；加载 answers.json 既有回答
+  2. question metadata 请求【总是发生】（成功 → 内存 meta 更新；
+     失败 → metadata_failed warning + 保留兼容既有 question）
+  3. done = state.done：
+     - done === false → 从 saved offset 继续分页（seen-set 去重，
+       每页写 answers.json 快照 + progress 原子保存）
+     - done === true → while(!done) 分页循环【完全跳过】，不再请求任何回答页
+  4. cmdGrab 随后【总是】用返回的 answers 重新渲染 answers.md（派生视图）
+  5. comments 分支（仅 --comments 时）：
+     - selected-answer comments enrichment 在分页之后【仍会执行】，
+       可能按 Spec §15.7 语义新增/替换既有 answer.comments
+     - enrichment 完成后写最终 canonical 快照（新 meta + answers）
+  6. 磁盘写入语义（done=true 重跑时）：
+     - comments OFF：无分页、无最终 writeJson → answers.json 保持
+       磁盘原样（新 metadata 不持久化）；answers.md 被重新渲染
+     - comments ON：enrichment 后 writeJson 会用新 meta + comments
+       变更重写 answers.json
+
+  核心字段语义：
+  - 既有 core answer 字段 / assets 不被 resume 反向改写（backfill）
+    ——只有分页新抓取的答案才带 assets
+  - comments 字段是唯一可能被 enrichment 新增/替换的既有字段
+    （仅 --comments 时；Spec §15.7 B/C/D 语义）
 
 PRODUCT_DECISION:
   KEEP_CURRENT_BEHAVIOR
   - resume-merge 是唯一重跑语义；不提供 clean-restart（见 §3.10）
+  - done=true 的 completed rerun 保持上述"metadata 刷新 + md 重渲染 +
+    分页跳过"语义（不新增"强制重新分页"行为）
 
 RATIONALE:
-  断点续传保证中断可恢复、不丢数据、不重复；与 V1 合同一致。
+  断点续传保证中断可恢复、不丢数据、不重复；completed rerun 的
+  md 重渲染语义保证产物视图始终与最新 meta 一致；comments 行为
+  由 Spec §15.7 明确定义。与 V1 合同一致。
 
 AUTHORITY / EVIDENCE:
-  src/grabber.js ProgressStore / loadExistingAnswers / grabAll
-  references/usage.md（断点续传不生效排查）、Spec §5（V1 基线）
+  src/grabber.js grabAll（state.done → while(!done) 跳过；
+    metadata 请求前置；comments 分支在循环后；writeJson 条件执行）
+  src/cli.js cmdGrab（renderAnswers 总是执行）
+  Spec §15.7（comments B/C/D 语义）、references/usage.md
 
 IMPLEMENTATION_IMPACT: NONE
 ```
@@ -432,7 +512,10 @@ DO_NOT_SUPPORT（当前阶段）:      3.10（clean-restart / --fresh）、
                                 3.12（batch 自动重试）
 DEFER_UNTIL_EVIDENCE:           无（当前无待证据决策；如未来出现 clean-restart /
                                 corrupt-cleanup / batch-retry 需求，重新走 DOCUMENT 决策）
-FUTURE_CODE_TICKET_REQUIRED:    无（本合同全部决策保持现状，不产生实现票）
+FUTURE_CODE_TICKET_REQUIRED:    无
+                                （注：本表按"决策结果"归类；§3.1/§3.7 中
+                                "若未来要求更严格输入校验 / 剥离 server message"
+                                属条件性未来决策，非当前承诺）
 ```
 
 **关键结论**：本合同 14 项决策**全部保持现状或明确不支持**，不引入任何新的产品行为。
@@ -467,16 +550,28 @@ CURRENT_IMPLEMENTATION_CONTRACT_VIOLATIONS: NONE
 审计对照 Approved Spec 与实现（grabber / cli / http / verifier / make-handoff /
 browser-smoke-core）未发现实现违反已批准合同的情况。
 
-**已记录 reference 文档漂移（非 Spec violation，不属本 ticket 修改范围）**：
+**已记录 reference 文档漂移（非 Spec violation）**：
 
 ```text
-OBSERVATION D-1:
+OBSERVATION D-1（已在本票内校准）:
   references/usage.md 的错误类型枚举声明含 not_found，且未列
-  question_metadata_identity_conflict；
-  实际实现（src/cli.js classifyError）无 not_found 分支，
-  但有 question_metadata_identity_conflict。
-  → 本合同 §3.6 以实现为准；usage.md 的后续更新属 reference 文档维护，
-     不在 T-1 范围内修改。
+  question_metadata_identity_conflict；实际实现（src/cli.js classifyError）
+  无 not_found 分支，但有 question_metadata_identity_conflict。
+  独立 review 确认：Approved V1 base（305db1c…）时 usage.md 已含 not_found，
+  而当时 classifyError 已无 not_found 分支 → 历史 reference drift，
+  非本阶段新引入的 runtime regression。
+  → 本票已在 docs/product-behavior-contract 分支内校准 usage.md 错误枚举
+    （documentation correction only，runtime behavior unchanged）：
+    移除 not_found（确认非活跃分类）；加入 question_metadata_identity_conflict。
+```
+
+```text
+OBSERVATION D-2（记录，不在本票修改范围）:
+  SKILL.md（zhihu-answer-grabber/SKILL.md）的错误类型示例文本
+  （"configuration_error|invalid_input|network_error|http_error|unknown_error"）
+  同样未列 question_metadata_identity_conflict。
+  → 与 usage.md 同类 drift，建议后续 reference 文档维护时一并校准
+    （不在 T-1 allowed files 内，不属本票修改范围）。
 ```
 
 ---
