@@ -135,7 +135,7 @@ node "<SKILL_ROOT>/scripts/zhigrab.mjs" status --json
 
 - `stage: "captured"` = 抓取阶段结束、产物已写入，**不代表验收通过**。
 - `verified: false` 是 grab 的合法输出；**grab 从不自行把 verified 置为 true**。只有 `verify-output.mjs` 能授予。
-- 错误时输出结构化 JSON：`{ "ok": false, "error": { "type": "configuration_error|invalid_input|network_error|http_error|unknown_error", "message": "..." } }`。
+- 错误时输出结构化 JSON：`{ "ok": false, "error": { "type": "configuration_error|invalid_input|network_error|http_error|question_metadata_identity_conflict|unknown_error", "message": "..." } }`。
 
 **搜索工作流（禁止默认自动抓第一条）：**
 

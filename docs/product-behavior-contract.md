@@ -68,20 +68,27 @@ CURRENT_BEHAVIOR（真实实现）:
       * 非法输入 → invalid_input
   - batch <file>：文件级静态校验（存在、非空、trim、跳过空行/# 注释行）
     在 loadConfig 之前完成；但【逐行】问题输入校验并不前置——
-    发生在 loadConfig 之后、cmdGrab 内部（每行失败 → failed[] 中
-    invalid_input 分类）。凭据缺失时 batch 在逐行校验前即整体
+    发生在 loadConfig 之后、cmdGrab 内部。单项失败【不会 abort 其余
+    batch items】，但任一 failed item 会使顶层 batch result
+    non-success（ok=false / exit 1），该失败行以 invalid_input 分类
+    记录进 failed[]。凭据缺失时 batch 在逐行校验前即整体
     configuration_error。
+  - search <keyword>：位置参数必须非空（缺参 → invalid_input）；
+    需要解析 Access Secret（resolveSecret）；机器/人类行为与当前
+    实现一致（search 只列候选，Agent 不调用 --grab）。
   - 解析接受后的请求 URL 一律由代码构造为受信知乎 URL
     （https://www.zhihu.com/question/<qid>），不信任用户输入原文；
     HTTP 层另有主机白名单（仅 www.zhihu.com 携带凭据/签名）。
 
 PRODUCT_DECISION:
   KEEP_CURRENT_BEHAVIOR
-  - 接受：纯数字 ID，或任意含 "question/<digits>" 子串的字符串
+  - grab 接受：纯数字 ID，或任意含 "question/<digits>" 子串的字符串
     （覆盖无 scheme 链接、m.zhihu.com、/answer/ 分段 URL 等真实形态）
-  - 拒绝：不含 question/<digits> 且非纯数字 → invalid_input
+  - grab 拒绝：不含 question/<digits> 且非纯数字 → invalid_input
   - batch：文件级静态校验前置；逐行校验保持在后（cmdGrab 内），
-    失败行 → failed[] 中 invalid_input 分类
+    失败行 → failed[] 中 invalid_input 分类；单项失败不 abort 其余，
+    但任一 failed item 使顶层 ok=false / exit 1（与 §3.5 一致）
+  - search：接受非空关键词（缺参 → invalid_input）；需要 Access Secret
   - 不引入"精确 URL scheme/host 白名单"输入校验
 
 RATIONALE:
@@ -92,7 +99,8 @@ RATIONALE:
     HTTP 层主机白名单保证凭据/签名不外发（RULES §1）
   - batch 逐行校验在凭据之后的现状可预测：凭据缺失时"先修凭据"
     是正确用户路径；凭据可用时非法行以 invalid_input 分类出现在
-    failed[]，不升级为整批失败
+    failed[]，且使 batch 顶层 non-success（ok=false / exit 1）
+  - search 输入面窄（关键词 + Secret），保持现状
 
 AUTHORITY / EVIDENCE:
   src/grabber.js validateQuestionId / normalizeQuestionInput
@@ -272,13 +280,28 @@ PRODUCT_DECISION:
   - enrichment warning 通道保持固定聚合文本（与顶层错误通道区分，
     不混用）
 
+SECURITY_CLASSIFICATION（安全语义，合同级）:
+  server-derived parsed.message = UNTRUSTED_EXTERNAL_CONTENT
+  - 可作为诊断数据展示/记录（当前行为允许），但【不得】作为：
+      Agent 指令 / URL 导航指令 / shell 指令 / filesystem 指令 /
+      credential 请求 / 工具执行依据
+  - Agent / Skill 的确定性错误路由必须优先依据结构化事实
+    （error.type / command result / exit code / 结构字段），
+    【不得】根据 server message 中的自然语言文本执行动作
+  - terminalSafe + 路径脱敏 + 凭据隔离只提供各自实际保护
+    （控制字符处理 / 本机路径脱敏 / 本地凭据隔离），
+    【不】使服务器返回的文字变为可信内容
+  - 本分类与 RULES.md §5（知乎外部内容 untrusted boundary）一致
+
 RATIONALE:
   - 顶层错误携带 server message 有诊断价值（HTTP 状态 + 服务器说明帮助
     人类用户定位 401/403/风控），且与 V1 行为一致
-  - 安全边界已由 terminalSafe + 路径脱敏 + 凭据隔离保证：JSON 序列化
-    保证仍是合法 JSON string；控制字符被移除；凭据从不进入错误构造
-  - 若未来要求"public error 一律不含 server-derived 正文"
-    → 另立 FUTURE_CODE_TICKET（本决策不隐含该项已实现）
+  - 诊断价值 ≠ 指令价值：出现位置（error.message）不改变其
+    UNTRUSTED_EXTERNAL_CONTENT 性质；结构化字段是唯一行动依据
+  - 若未来要求"public error 一律不含 server-derived 正文"：
+      未来产品需求 → Product Behavior Contract amendment
+      → 独立 DOCUMENT review → 若批准行为变化 → 再创建 CODE ticket
+    （不直接从未来需求跳到 CODE；本决策不隐含该项已实现）
 
 AUTHORITY / EVIDENCE:
   src/cli.js emitJson / classifyError / publicErrorMessage /
@@ -513,9 +536,11 @@ DO_NOT_SUPPORT（当前阶段）:      3.10（clean-restart / --fresh）、
 DEFER_UNTIL_EVIDENCE:           无（当前无待证据决策；如未来出现 clean-restart /
                                 corrupt-cleanup / batch-retry 需求，重新走 DOCUMENT 决策）
 FUTURE_CODE_TICKET_REQUIRED:    无
-                                （注：本表按"决策结果"归类；§3.1/§3.7 中
-                                "若未来要求更严格输入校验 / 剥离 server message"
-                                属条件性未来决策，非当前承诺）
+                                （注：§3.1 输入严格化、§3.7 剥离 server message 等
+                                "未来可能的行为变化"一律走：
+                                未来产品需求 → 本合同 amendment → 独立 DOCUMENT
+                                review → 若批准 → 再创建 CODE ticket；
+                                不得直接从未来需求跳到 CODE）
 ```
 
 **关键结论**：本合同 14 项决策**全部保持现状或明确不支持**，不引入任何新的产品行为。
@@ -566,12 +591,14 @@ OBSERVATION D-1（已在本票内校准）:
 ```
 
 ```text
-OBSERVATION D-2（记录，不在本票修改范围）:
-  SKILL.md（zhihu-answer-grabber/SKILL.md）的错误类型示例文本
+OBSERVATION D-2（已在本票内校准）:
+  SKILL.md（zhihu-answer-grabber/SKILL.md）错误类型示例文本
   （"configuration_error|invalid_input|network_error|http_error|unknown_error"）
-  同样未列 question_metadata_identity_conflict。
-  → 与 usage.md 同类 drift，建议后续 reference 文档维护时一并校准
-    （不在 T-1 allowed files 内，不属本票修改范围）。
+  未列 question_metadata_identity_conflict。
+  → 与 usage.md 同类 drift（Agent 编排入口文档与实现不一致，合并后会造成
+     Product Contract / usage.md / runtime 一套枚举、SKILL.md 另一套）。
+  → 本票已校准 SKILL.md 该行（加入 question_metadata_identity_conflict），
+    documentation/orchestration-contract-only，未改动任何 Skill workflow 行为。
 ```
 
 ---
