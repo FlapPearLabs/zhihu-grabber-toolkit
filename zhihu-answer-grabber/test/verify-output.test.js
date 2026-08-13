@@ -169,3 +169,63 @@ test('Fix6: answers.json 为 raw-array（缺 questionId）→ valid=false，拒�
   assert.equal(parsed.valid, false);
   assert.ok(parsed.warnings.some((w) => w.includes('raw-array')), '应明确指出 raw-array 形态问题');
 });
+
+// ===== F1: fenced code 假匹配回归（VERIFIER_FALSE_POSITIVE_FENCED_CODE） =====
+// 真实证据：538 真帧 + 7 fenced-code 假匹配（回答代码块内 markdown 文档 `## 0.` … `## 6.`）→ 545。
+// verifier 必须 fence-aware 计数：fence 内 `## N.` 不计入，fence 外真帧全计入。
+
+test('F1: fenced code 内 ## N. 假匹配不再导致 valid=false', () => {
+  const { outDir, files } = makeFixture();
+  // 1 条 JSON 回答；answers.md 真帧 1 个 + fenced code 内 2 个假 ## N. 行
+  const json = JSON.parse(fs.readFileSync(files.answersJson, 'utf8'));
+  json.answers = [{ id: '1', author: 'A', content: '<p>x</p>' }];
+  fs.writeFileSync(files.answersJson, JSON.stringify(json));
+  fs.writeFileSync(files.answersMd, [
+    '# 测试',
+    '',
+    '## 1. A — 0 赞 · 0 评论',
+    '',
+    '```markdown',
+    '## 1. 假帧一',
+    '## 2. 假帧二',
+    '```',
+    '',
+  ].join('\n'));
+  const r = runVerify(outDir);
+  assert.equal(r.status, 0, r.stdout);
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.valid, true, 'fenced code 内 ## N. 不得影响记录数校验');
+});
+
+test('F1: 多帧 + 带 lang fence 形态 valid=true（真实 DOGFOOD_1 场景）', () => {
+  const { outDir, files } = makeFixture();
+  // 2 条 JSON 回答；md 2 真帧 + 带 lang fence 内 3 个假帧
+  fs.writeFileSync(files.answersMd, [
+    '# 测试',
+    '',
+    '## 1. A — 1 赞 · 0 评论',
+    '',
+    '``` js',
+    '## 0. 任务坐标',
+    '## 1. 目录层',
+    '## 2. 配置层',
+    '```',
+    '',
+    '## 2. B — 2 赞 · 0 评论',
+    '',
+  ].join('\n'));
+  const r = runVerify(outDir);
+  assert.equal(r.status, 0, r.stdout);
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.valid, true, '带 lang fence 内假帧不得计入，真帧必须全部计入');
+});
+
+test('F1: fence 外真帧缺失仍报记录数不一致（修复不放松既有语义）', () => {
+  const { outDir, files } = makeFixture();
+  // 2 条 JSON；md 只有 1 个真帧（无 fence）—— 修复不得掩盖真实缺帧
+  fs.writeFileSync(files.answersMd, '# 测试\n\n## 1. A\nx\n');
+  const r = runVerify(outDir);
+  const parsed = JSON.parse(r.stdout);
+  assert.equal(parsed.valid, false);
+  assert.ok(parsed.warnings.some((w) => w.includes('Markdown')));
+});

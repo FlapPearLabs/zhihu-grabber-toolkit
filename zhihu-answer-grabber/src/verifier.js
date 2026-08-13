@@ -28,6 +28,53 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+// ---------------------------------------------------------------------------
+// F1 修复（OPTION 1）：fence-aware 答案帧计数
+// ---------------------------------------------------------------------------
+// 背景：verifier 曾用 /^## \d+\./gm 统计 renderer 答案帧（render.js 每回答恰好一帧
+// `## N. 作者 — N 赞 · N 评论`）。该正则不感知 fenced code —— 回答正文代码块内的
+// `## N.` 文本（如 markdown 示例）会被误计为答案帧，导致 valid=false 假阴性
+// （VERIFIER_FALSE_POSITIVE_FENCED_CODE；真实数据 538 帧 + 7 fenced-code 假匹配 → 545）。
+//
+// 证据链（fenced code 是正文中唯一能原样保留 `## N.` 的通道）：
+//   - 正文纯文本 `#` 全部经 escapeUntrustedMarkdownText 转义（markdown-security.js
+//     MD_CONTROL_RE 含 #），`## 1.` → `\#\# 1.`，不匹配 /^## \d+\./；
+//   - 正文 heading 经 rich-renderer heading offset（h1→H3）永不产生 H2；
+//   - renderPre 原样输出 code 文本（fence 长度自适应 = longestBacktickRun+1）。
+//
+// fence 语义（CommonMark 子集，与 renderer 合同一致，行首无缩进）：
+//   - open：行首 3+ backtick + 可选 info string（renderer lang 白名单保证不含 backtick；
+//     注意 langPart 带前导空格，如 "``` js"，info 组必须允许空白）；
+//   - close：行首 3+ backtick（长度 ≥ open 长度）+ 仅空白；
+//   - 自适应 fence 保证 fence 内任何行的 backtick 串 < open 长度，
+//     fence 内不会出现嵌套 open / 满足长度的 close。
+//
+// 本函数供 verifyOutput 复用（单一事实来源），export 供单元测试直接断言。
+//
+// @param {string} mdText answers.md 全文
+// @returns {number} fence 之外的答案帧数
+export function countMarkdownAnswerFrames(mdText) {
+  const FENCE_OPEN_RE = /^(`{3,})([^`]*)$/;
+  const FENCE_CLOSE_RE = /^(`{3,})\s*$/;
+  const FRAME_RE = /^## \d+\./;
+  let count = 0;
+  let fenceLen = null; // 当前 open fence 长度；null = 不在 fence 内
+  for (const line of mdText.split('\n')) {
+    const open = line.match(FENCE_OPEN_RE);
+    const close = line.match(FENCE_CLOSE_RE);
+    if (fenceLen === null) {
+      // 3+ backtick 行（纯 backtick 或带 lang）开启 fence
+      if (open !== null) fenceLen = open[1].length;
+    } else if (close !== null && close[1].length >= fenceLen) {
+      // close 长度必须 ≥ open 长度（CommonMark）；renderer 自适应 fence 下
+      // fence 内不会出现满足条件的行，此处只在真实配对处触发
+      fenceLen = null;
+    }
+    if (fenceLen === null && FRAME_RE.test(line)) count += 1;
+  }
+  return count;
+}
+
 export function verifyOutput(questionDir) {
   const dir = path.resolve(questionDir);
   const basename = path.basename(dir);
@@ -149,8 +196,8 @@ export function verifyOutput(questionDir) {
       fail('answers.md 为空文件');
     } else {
       result.markdownPresent = true;
-      // 10. Markdown 与 JSON 记录数一致
-      const mdCount = (mdText.match(/^## \d+\./gm) || []).length;
+      // 10. Markdown 与 JSON 记录数一致（F1：fence-aware 计数，跳过 fenced code 内假匹配）
+      const mdCount = countMarkdownAnswerFrames(mdText);
       if (result.answers > 0 && mdCount !== result.answers) {
         fail(`Markdown 记录数 ${mdCount} 与 JSON 记录数 ${result.answers} 不一致`);
       }
