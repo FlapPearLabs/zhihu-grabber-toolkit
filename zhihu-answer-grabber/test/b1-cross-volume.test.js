@@ -193,18 +193,30 @@ test('B1-batch: 跨盘语义传播到 succeeded[].artifacts（顺序/失败语�
 });
 
 // ===== make-handoff：JSON 合同不变 + human display 无绝对路径 =====
+//
+// 合成自包含 verified fixture（不依赖 out/ 下被 .gitignore 忽略的真实产物）：
+// 在测试临时目录内构造满足 verify-output / make-handoff 的最小 canonical 产物。
 
 const HANDOFF_SCRIPT = fileURLToPath(new URL('../scripts/make-handoff.mjs', import.meta.url));
-const REAL_ARTIFACT = fileURLToPath(new URL('../../out/439521858', import.meta.url));
+const FIXTURE_QID = '123456789';
 
-test('B1-handoff: JSON 合同不变（inputJson/inputMarkdown/verified/questionId）+ display 无绝对/跨盘路径', () => {
-  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-b1-handoff-'));
-  const dir = path.join(base, '439521858');
+function writeVerifiedFixture(baseDir) {
+  const dir = path.join(baseDir, FIXTURE_QID);
   fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'answers.json'), JSON.stringify({
+    questionId: FIXTURE_QID,
+    questionTitle: 'fixture question',
+    answers: [{ id: '1001', content: '<p>fixture answer content</p>' }],
+  }, null, 2) + '\n', 'utf8');
+  fs.writeFileSync(path.join(dir, 'answers.md'), '# 回答\n\n## 1. fixture answer content\n', 'utf8');
+  fs.writeFileSync(path.join(dir, '.progress.json'), JSON.stringify({ done: true }, null, 2) + '\n', 'utf8');
+  return dir;
+}
+
+test('B1-handoff: JSON 合同不变（inputJson/inputMarkdown/verified/questionId）+ display 无绝对/跨盘路径（合成 fixture）', () => {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-b1-handoff-'));
   try {
-    for (const f of ['answers.json', 'answers.md', '.progress.json']) {
-      fs.copyFileSync(path.join(REAL_ARTIFACT, f), path.join(dir, f));
-    }
+    const dir = writeVerifiedFixture(base);
     const r = spawnSync(process.execPath, [HANDOFF_SCRIPT, dir, '--task', 'inspect'], {
       encoding: 'utf8',
       cwd: process.cwd(),
@@ -216,7 +228,7 @@ test('B1-handoff: JSON 合同不变（inputJson/inputMarkdown/verified/questionI
     assert.equal(handoff.inputJson, 'answers.json');
     assert.equal(handoff.inputMarkdown, 'answers.md');
     assert.equal(handoff.verified, true);
-    assert.equal(handoff.questionId, '439521858');
+    assert.equal(handoff.questionId, FIXTURE_QID);
     assert.equal(handoff.base, undefined, 'handoff.json 不得出现 artifacts.base');
     // human display 无绝对 / drive-qualified 路径
     assert.ok(r.stdout.includes('handoff.json'), 'display 应含确定性相对标识');
