@@ -166,19 +166,39 @@ CURRENT_BEHAVIOR:
   - 产物：answers.json / answers.md / .progress.json（以及可选的 handoff.json）
   - resolveQuestionDir 强制 containment：最终目录必须位于 out-dir 之下（防路径越界）
   - 机器输出（--json）中的路径一律相对路径（相对 cwd），不泄漏绝对路径
+  - 已知缺陷（BUG_ID: B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE）：
+    src/cli.js relPath 用 path.relative(process.cwd(), absPath)；Windows 下
+    cwd 与 out-dir 跨盘时（如 cwd=D:\project、out-dir=C:\capture）无法产生
+    正常 cwd-relative 路径，path.relative 返回 drive-qualified 路径 →
+    机器 JSON 可能输出绝对路径，违反本合同的 no-absolute-path 要求
 
 PRODUCT_DECISION:
-  KEEP_CURRENT_BEHAVIOR
+  OPTION A —— 保持跨盘 --out-dir 受支持，但机器 artifact 路径【绝不】是绝对路径：
+  1) 正常可表达时（cwd 与 out-dir 同盘或可相对）：
+     保持现状 —— artifacts.json/markdown/progress 为 relative-to-cwd
+  2) Windows cross-volume 无法 relative-to-cwd 时：
+     artifacts 路径改为 relative-to-out-dir（不含盘符/前导斜杠），
+     并新增结构化字段 artifacts.base（"cwd" | "outdir"）标明该批路径的基准，
+     消费方按 resolve(<base 对应根>, path) 解析；
+     禁止输出绝对路径 / drive-qualified 路径 / path.basename-only 丢身份
 
 RATIONALE:
   每问题独立目录保证 artifact isolation；containment 防止 qid 被利用做目录穿越；
-  相对路径是机器契约的脱敏要求。
+  相对路径是机器契约的脱敏要求（no-absolute-path 是不可弱化不变量）。
+  cross-volume 场景下"relative-to-cwd"与"跨盘 out-dir"物理上无法同时满足，
+  因此用显式 base 标识提供确定性、无歧义的替代语义（不禁止跨盘抓取，
+  不把绝对路径放回 JSON）。仅 Windows 跨盘边界触发，正常场景零行为变化。
 
 AUTHORITY / EVIDENCE:
   src/grabber.js resolveQuestionDir、src/cli.js relPath
-  references/usage.md（输出文件）、references/handoff-schema.md（相对路径）
+  references/usage.md（输出文件、相对路径）、references/handoff-schema.md
+  （handoff 内部 inputJson/inputMarkdown 是相对 handoff 所在目录的独立合同，
+   不受本决策影响——handoff 由 make-handoff 自建路径，不消费 artifacts 字段）
 
-IMPLEMENTATION_IMPACT: NONE
+IMPLEMENTATION_IMPACT: CODE_TICKET_REQUIRED（B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE
+  修复：relPath 增加跨盘分支 + artifacts.base 字段；含 Windows/portable 回归测试。
+  另需同步 references/usage.md §"路径一律相对路径" 的表述为"同盘 relative-to-cwd、
+  跨盘 relative-to-out-dir + base"。本合同批准后开独立 CODE ticket）
 ```
 
 ### 3.4 Captured vs verified（抓取态与验收态）
@@ -548,14 +568,22 @@ IMPLEMENTATION_IMPACT: NONE
 ## 4. 决策汇总
 
 ```text
-KEEP_CURRENT_BEHAVIOR:          3.1 / 3.2 / 3.3 / 3.4 / 3.5 / 3.6 / 3.7 / 3.8 / 3.9 /
+KEEP_CURRENT_BEHAVIOR:          3.1 / 3.2 / 3.4 / 3.5 / 3.6 / 3.7 / 3.8 / 3.9 /
                                 3.11 / 3.12(transport) / 3.13 / 3.14
+OPTION A（跨盘路径规则，替代 3.3 的 KEEP_CURRENT）:
+                                3.3 —— 机器 artifact 路径绝不绝对；
+                                同盘 relative-to-cwd 保持现状；
+                                Windows cross-volume 时 relative-to-out-dir
+                                + artifacts.base 字段（见 §3.3）
 DO_NOT_SUPPORT（当前阶段）:      3.10（clean-restart / --fresh）、
                                 3.11（corrupt 自动清理）、
                                 3.12（batch 自动重试）
 DEFER_UNTIL_EVIDENCE:           无（当前无待证据决策；如未来出现 clean-restart /
                                 corrupt-cleanup / batch-retry 需求，重新走 DOCUMENT 决策）
-FUTURE_CODE_TICKET_REQUIRED:    无
+FUTURE_CODE_TICKET_REQUIRED:    1 项 —— 3.3（B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE
+                                修复：relPath 跨盘分支 + artifacts.base 字段 +
+                                Windows/portable 回归测试；基于本合同批准后开独立
+                                CODE ticket）
                                 （注：§3.1 输入严格化、§3.7 剥离 server message 等
                                 "未来可能的行为变化"一律走：
                                 未来产品需求 → 本合同 amendment → 独立 DOCUMENT
@@ -563,9 +591,7 @@ FUTURE_CODE_TICKET_REQUIRED:    无
                                 不得直接从未来需求跳到 CODE）
 ```
 
-**关键结论**：本合同 14 项决策**全部保持现状或明确不支持**，不引入任何新的产品行为。
-T-2（batch 回归测试）与 T-3（browser matcher 修复）可按各自边界推进，不会因本合同
-产生新的投机功能。
+**关键结论**：本合同 13 项决策保持现状或明确不支持；**1 项（§3.3）已批准跨盘路径规则变化**（B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE 修复依据），该变化仅影响 Windows 跨盘边界的机器路径表示，正常场景零行为变化。T-2（batch 回归测试）已按 §3.1-§3.14 边界推进；不因本合同产生投机功能。
 
 ---
 
