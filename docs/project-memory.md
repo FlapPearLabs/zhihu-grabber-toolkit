@@ -55,9 +55,21 @@
 
 - **V2 Phase 2 — Rich Content Assets 已纳入 accepted project baseline**：additive `answers[].assets`（images / links / references / codeBlocks / videos）、canonical `content` 不可变、脚注重建（renderer 生成 `a<answerId>-r<index>`）、1px placeholder 确定性合同（Spec §10.1）均为长期合同，保持不变（见上文已批准决策与 Spec）。
 - **V2 Phase 3 — Question Metadata 已纳入 accepted project baseline**：additive `question` metadata（description/topics）、NETWORK_REQUEST_DELTA=0、failure/empty semantics（Spec §20.2.1）、resume preservation 与 identity gate 均为长期合同（见上文 PHASE3_SCHEMA_DISCOVERY 与已批准决策）。
-- 下一个计划阶段：Agent projection / capability isolation（Spec §9/§9.1）→ video detect（Spec §16，待真实样本）。
+- **当前产品阶段（CURRENT PRODUCT STAGE）**：**批量抓取稳定性 / 大规模抓取加固**
+  （Batch capture stability / large-scale capture hardening）——分页完整性、失败隔离、
+  断点续传、产物完整性、受控真实批量证据。
+- **DEFERRED（长期，未经批准不得开始）**：
+  - Phase 5 实现 / Agent projection / capability isolation（Spec §9/§9.1）
+  - video（Spec §16，待真实样本）
+  - browser-smoke 高级 matcher 硬化（provenance / 折叠形态 / link-card 归一化）
+- **BROWSER_SMOKE_ROLE（持久）**：`browser-smoke` = **尽力而为的外部一致性诊断**
+  （best-effort external diagnostic），**不是产物有效性权威**；verify-output 才是
+  确定性产物有效性权威（RULES §4）。其 PASS / FAIL / INCONCLUSIVE 不影响
+  verify-output 结论；渲染 / gate-page / DOM 歧义导致无法可靠结论时 INCONCLUSIVE
+  可接受。**REOPEN 条件**：仅当 1) 明确新产品需求 / 用户授权，且 2) 对拟议匹配
+  语义有足够的结构性浏览器证据（扁平 innerText 无法确定性恢复 body-vs-card-title
+  provenance——不重开该类纯文本 heuristic 工作）。
 - 后续阶段开始前：从**届时最新的 remote master** 创建（或重建）其 feature 分支；不依赖任何历史临时分支 ref 作为长期事实。
-- **browser-smoke caveat（长期）**：`browser-smoke` 存在已知的 pre-existing false-negative baseline（部分渲染形态的内容匹配）；其绝对结果 FAIL 不得改标为 PASS；Phase 2 是在已明确批准的 no-regression baseline exception 下被接受的；browser-smoke 工具本身的改进是独立 follow-up defect，不属于任何已接受 Phase 的交付范围。
 
 ## 历史 review 结论（沉淀）
 

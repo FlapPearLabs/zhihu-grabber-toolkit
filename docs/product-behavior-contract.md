@@ -1,10 +1,30 @@
 # Product Behavior Contract — zhihu-grabber-toolkit
 
-- **Status**: DRAFT（本文件需经独立 DOCUMENT review PASS 后方为 APPROVED）
+- **Status**: APPROVED（经独立 DOCUMENT review PASS 后合并 master）
 - **Type**: DOCUMENT（Product Behavior Contract）
-- **Base**: `master` @ `f614e3683630670b321ac79659d9137f7134a161`
-- **Branch**: `docs/product-behavior-contract`
 - **Scope**: 本文件只定义产品行为合同，**不包含任何实现代码**。
+
+## 0. 权威角色澄清（Authority Roles）
+
+以下为持久产品角色，任何后续阶段不得改变：
+
+```text
+VERIFY_OUTPUT_ROLE:
+  verify-output = 产物有效性的确定性权威（deterministic artifact validity authority）
+  （RULES §4；captured ≠ verified；valid === true 唯一授予路径）
+
+BROWSER_SMOKE_ROLE:
+  browser-smoke = 尽力而为的外部一致性诊断（best-effort external diagnostic）
+  - 不是产物有效性权威；其 PASS / FAIL / INCONCLUSIVE 不影响 verify-output 结论
+  - 浏览器渲染 / gate-page / DOM 歧义导致无法可靠结论时，INCONCLUSIVE 是可接受结果
+  - INCONCLUSIVE ≠ 产物无效
+  - 高级 matcher 硬化（provenance / 折叠形态 / link-card 归一化）不是 standing
+    requirement；未来任何 matcher 工作需同时满足：
+      1) 明确的新产品需求 / 用户授权
+      2) 对拟议匹配语义足够的结构性浏览器证据
+    （扁平 innerText 无法确定性恢复 body-vs-card-title provenance——不重开
+      该类纯文本 heuristic 工作，除非存在更强的结构性浏览器证据）
+```
 
 ## 1. 权威层级（AUTHORITY POSITION）
 
