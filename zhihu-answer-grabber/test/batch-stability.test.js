@@ -79,7 +79,9 @@ test('T2-maxpages: 达到 MAX_PAGES 阈值仍未结束 → 确定性失败（不
   globalThis.setTimeout = (fn) => { fn(); return 0; };
   try {
     await assert.rejects(grabAll(TEST_CONFIG, '123', { outDir }), /达到安全阈值（300 页）仍未见结尾/);
-    assert.ok(page >= 300, `应已请求至少 300 页（实际 ${page}）`);
+    // 精确边界：MAX_PAGES=300，逐页循环在 page>=300 时抛错 → 恰好请求 300 页后失败。
+    // 不允许 301/350 等更多页仍以"300 页"文本通过（锁定当前实现的确切语义）。
+    assert.equal(page, 300, `应恰好请求 300 页后失败（实际 ${page}）`);
   } finally {
     globalThis.fetch = originalFetch;
     globalThis.setTimeout = originalSetTimeout;
@@ -93,8 +95,17 @@ const CLI = fileURLToPath(new URL('../src/cli.js', import.meta.url));
 
 /**
  * 运行 batch CLI 子进程（离线 stub，不联网）。
- * CLI 子进程 cwd 设为临时目录（与 out-dir 同盘）→ relPath 生成相对路径
- * （Windows 下跨盘 path.relative 会退化为绝对路径，非产品语义，测试避开）。
+ *
+ * SAME_VOLUME_RELATIVE_PATH 场景：CLI 子进程 cwd 设为临时目录（与 out-dir 同盘）
+ * → relPath 生成相对路径。此测试只证明"正常同盘"下的相对路径契约成立。
+ *
+ * 注意（T-2 review 修正）：Windows 跨盘时 path.relative() 会退化为
+ * drive-qualified 绝对路径 —— 这不是"非产品语义"，而是真实的实现违约
+ * （Product Behavior Contract §3.3 要求机器 JSON 路径一律相对 cwd、不泄漏
+ * 绝对路径，且 --out-dir 与 cwd 是独立配置维度、无同盘限制）。
+ * BUG_ID: B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE（BUG_CONFIRMED: YES）。
+ * 跨盘失败回归与生产修复由独立的 B-1 CODE bug ticket 负责（T-2 纯测试票
+ * 不修 source、不加永久失败用例、不用 skip/todo 编码该 bug）。
  * 临时目录位于 os.tmpdir()，删除方式与既有 cli-json.test.js 一致。
  */
 function runBatchCli({ qids, failingQids }) {
@@ -164,7 +175,9 @@ test('T2-batch: 全成功 → exit 0、ok=true、artifacts 相对路径', () => 
     assert.equal(parsed.ok, true);
     assert.equal(parsed.failed.length, 0);
     assert.deepEqual(parsed.succeeded.map((s) => s.questionId), ['111', '222']);
-    // 机器契约：artifacts 路径为相对路径（CLI cwd = out-dir 同盘；不泄漏绝对路径）
+    // 机器契约：artifacts 路径为相对路径 —— 仅证明 SAME_VOLUME_RELATIVE_PATH 场景
+    // （CLI cwd 与 out-dir 同盘）。跨盘（RELATIVE_PATH_CROSS_VOLUME）属已确认违约
+    // B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE，由独立 CODE bug ticket 修复，不在本票。
     for (const s of parsed.succeeded) {
       for (const key of ['json', 'markdown', 'progress']) {
         const p = s.artifacts?.[key];
