@@ -58,7 +58,12 @@ CURRENT_BEHAVIOR:      仓库当前实际行为（可复现事实）
 PRODUCT_DECISION:      批准生效的产品行为（= 后续一致同意的契约）
 RATIONALE:             为什么（产品/安全/兼容性理由）
 AUTHORITY / EVIDENCE:  现状规则的来源（HELP / Spec / references / 测试 / 代码）
-IMPLEMENTATION_IMPACT: NONE / CONDITIONAL_FUTURE_TICKET / SPEC_CONFLICT
+IMPLEMENTATION_IMPACT: NONE / CONDITIONAL_FUTURE_TICKET / CODE_TICKET_REQUIRED / SPEC_CONFLICT
+  - NONE:                   保持现状，无需实现
+  - CONDITIONAL_FUTURE_TICKET: 若未来触发条件成立才需实现（未批准）
+  - CODE_TICKET_REQUIRED:    目标行为已批准（见 APPROVED_TARGET_BEHAVIOR），
+                             代码尚未实现，需开独立 CODE 票
+  - SPEC_CONFLICT:           与 Approved Spec 冲突（须 STOP 走 §1 流程）
 ```
 
 有效决策值（不一定每个都要新功能）：
@@ -69,6 +74,10 @@ DO_NOT_SUPPORT            明确不支持（当前阶段）
 DEFER_UNTIL_EVIDENCE      待证据/需求出现再决策
 FUTURE_CODE_TICKET_REQUIRED  需要后续 CODE 票（本文件不实现）
 ```
+
+当 `PRODUCT_DECISION = FUTURE_CODE_TICKET_REQUIRED` 且目标行为已批准时，
+**必须**附加 `APPROVED_TARGET_BEHAVIOR` 字段，精确描述待实现的目标行为
+（作为后续 CODE 票的验收依据；未批准的候选方案不得写入该字段）。
 
 ---
 
@@ -173,21 +182,32 @@ CURRENT_BEHAVIOR:
     机器 JSON 可能输出绝对路径，违反本合同的 no-absolute-path 要求
 
 PRODUCT_DECISION:
+  FUTURE_CODE_TICKET_REQUIRED（目标行为已批准，代码待 B-1 CODE 票实现）
+
+APPROVED_TARGET_BEHAVIOR:
   OPTION A —— 保持跨盘 --out-dir 受支持，但机器 artifact 路径【绝不】是绝对路径：
   1) 正常可表达时（cwd 与 out-dir 同盘或可相对）：
-     保持现状 —— artifacts.json/markdown/progress 为 relative-to-cwd
-  2) Windows cross-volume 无法 relative-to-cwd 时：
-     artifacts 路径改为 relative-to-out-dir（不含盘符/前导斜杠），
-     并新增结构化字段 artifacts.base（"cwd" | "outdir"）标明该批路径的基准，
-     消费方按 resolve(<base 对应根>, path) 解析；
-     禁止输出绝对路径 / drive-qualified 路径 / path.basename-only 丢身份
+     机器 JSON 保持现状【一字不变】——artifacts.json/markdown/progress 为
+     relative-to-cwd，且【不发射 artifacts.base 字段】
+     （absence ⇒ legacy cwd-relative 语义）
+  2) Windows cross-volume 无法 relative-to-cwd 时（唯一触发条件）：
+     artifacts 路径改为相对【effective invocation out-dir root】
+     （不含盘符、无前导斜杠、绝不绝对），
+     并发射 artifacts.base = "outdir" 标明该批路径的基准；
+     消费方按 resolve(effective out-dir root, path) 解析
+  3) "effective invocation out-dir root" 定义：本次 CLI 调用实际生效的
+     --out-dir 根目录；若用户传入相对 out-dir，先相对 invocation cwd
+     解析为实际根
+  4) 禁止：绝对路径 / drive-qualified 路径 / path.basename-only 丢身份
 
 RATIONALE:
   每问题独立目录保证 artifact isolation；containment 防止 qid 被利用做目录穿越；
   相对路径是机器契约的脱敏要求（no-absolute-path 是不可弱化不变量）。
   cross-volume 场景下"relative-to-cwd"与"跨盘 out-dir"物理上无法同时满足，
   因此用显式 base 标识提供确定性、无歧义的替代语义（不禁止跨盘抓取，
-  不把绝对路径放回 JSON）。仅 Windows 跨盘边界触发，正常场景零行为变化。
+  不把绝对路径放回 JSON）。仅 Windows 跨盘边界触发；正常同盘 JSON 逐字节不变，
+  向后兼容最大化（artifacts.base 只在原本已坏掉的跨盘 case 作为 additive
+  metadata 出现）。
 
 AUTHORITY / EVIDENCE:
   src/grabber.js resolveQuestionDir、src/cli.js relPath
@@ -570,11 +590,6 @@ IMPLEMENTATION_IMPACT: NONE
 ```text
 KEEP_CURRENT_BEHAVIOR:          3.1 / 3.2 / 3.4 / 3.5 / 3.6 / 3.7 / 3.8 / 3.9 /
                                 3.11 / 3.12(transport) / 3.13 / 3.14
-OPTION A（跨盘路径规则，替代 3.3 的 KEEP_CURRENT）:
-                                3.3 —— 机器 artifact 路径绝不绝对；
-                                同盘 relative-to-cwd 保持现状；
-                                Windows cross-volume 时 relative-to-out-dir
-                                + artifacts.base 字段（见 §3.3）
 DO_NOT_SUPPORT（当前阶段）:      3.10（clean-restart / --fresh）、
                                 3.11（corrupt 自动清理）、
                                 3.12（batch 自动重试）
@@ -582,8 +597,9 @@ DEFER_UNTIL_EVIDENCE:           无（当前无待证据决策；如未来出现
                                 corrupt-cleanup / batch-retry 需求，重新走 DOCUMENT 决策）
 FUTURE_CODE_TICKET_REQUIRED:    1 项 —— 3.3（B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE
                                 修复：relPath 跨盘分支 + artifacts.base 字段 +
-                                Windows/portable 回归测试；基于本合同批准后开独立
-                                CODE ticket）
+                                Windows/portable 回归测试 + usage.md 措辞同步；
+                                目标行为 = APPROVED_TARGET_BEHAVIOR OPTION A（见 §3.3）；
+                                基于本合同批准后开独立 CODE ticket）
                                 （注：§3.1 输入严格化、§3.7 剥离 server message 等
                                 "未来可能的行为变化"一律走：
                                 未来产品需求 → 本合同 amendment → 独立 DOCUMENT
@@ -591,7 +607,11 @@ FUTURE_CODE_TICKET_REQUIRED:    1 项 —— 3.3（B-1 CROSS_VOLUME_MACHINE_PATH
                                 不得直接从未来需求跳到 CODE）
 ```
 
-**关键结论**：本合同 13 项决策保持现状或明确不支持；**1 项（§3.3）已批准跨盘路径规则变化**（B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE 修复依据），该变化仅影响 Windows 跨盘边界的机器路径表示，正常场景零行为变化。T-2（batch 回归测试）已按 §3.1-§3.14 边界推进；不因本合同产生投机功能。
+**关键结论**：本合同 13 项决策保持现状或明确不支持；**1 项（§3.3）为已批准目标行为
+（APPROVED_TARGET_BEHAVIOR = OPTION A）且 FUTURE_CODE_TICKET_REQUIRED**——B-1
+CROSS_VOLUME_MACHINE_PATH_DISCLOSURE 修复依据；该变化仅影响 Windows 跨盘边界的机器
+路径表示，正常同盘 JSON 逐字节不变。T-2（batch 回归测试）已按 §3.1-§3.14 边界推进；
+不因本合同产生投机功能。
 
 ---
 
@@ -615,11 +635,24 @@ SPEC_CONFLICTS: NONE
 ## 6. 实现与已批准合同的一致性核查
 
 ```text
-CURRENT_IMPLEMENTATION_CONTRACT_VIOLATIONS: NONE
+CURRENT_IMPLEMENTATION_CONTRACT_VIOLATIONS: 1
+
+B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE:
+  status: CONFIRMED / CODE_FIX_PENDING
+  contract: §3.3（机器 --json 路径一律相对 cwd、不泄漏绝对路径；no-absolute-path
+            不变量）
+  current behavior: src/cli.js relPath 用 path.relative(process.cwd(), absPath)；
+            Windows 下 cwd 与 out-dir 跨盘时返回 drive-qualified 路径 → 机器
+            JSON 可能输出绝对路径
+  expected: 按 §3.3 APPROVED_TARGET_BEHAVIOR（OPTION A：同盘保持现状；跨盘
+            relative-to-effective-out-dir + artifacts.base="outdir"）
+  fix: 待独立 B-1 CODE ticket（relPath 跨盘分支 + artifacts.base 字段 +
+       Windows/portable 回归测试 + usage.md 措辞同步）
 ```
 
 审计对照 Approved Spec 与实现（grabber / cli / http / verifier / make-handoff /
-browser-smoke-core）未发现实现违反已批准合同的情况。
+browser-smoke-core）确认：上述 B-1 是唯一已确认的实现违反已批准合同项；其余未发现
+实现违反已批准合同。
 
 **已记录 reference 文档漂移（非 Spec violation）**：
 
