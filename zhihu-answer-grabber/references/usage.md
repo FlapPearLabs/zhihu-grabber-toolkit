@@ -70,7 +70,12 @@ node "<SKILL_ROOT>/scripts/zhigrab.mjs" status --json
 **规则：**
 
 - JSON 模式 stdout 必须可直接 `JSON.parse`，不混入 `✓` / `▶` / 进度日志 / ANSI。
-- 路径一律相对路径（相对当前工作目录），不泄漏绝对本机路径。
+- 路径一律相对路径、不泄漏绝对本机路径：
+  - 同盘 / 正常场景：artifacts 路径相对当前工作目录（`artifacts.base` 缺席；
+    absence 即 legacy cwd-relative 语义）
+  - Windows 跨盘场景（cwd 与 `--out-dir` 不同盘，cwd-relative 无法表达）：
+    artifacts 路径相对本次调用生效的 `--out-dir` 根，并附 `artifacts.base="outdir"`
+  - 绝对本机路径永不输出（同盘与跨盘都不允许）
 - 不输出 Cookie / Secret / Token 内容。
 - `verified` 只能由 `verify-output.mjs` 置 true；`grab` / `batch` 永远输出 `verified: false`。
 

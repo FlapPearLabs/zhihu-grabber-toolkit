@@ -7,6 +7,7 @@ import { grabAll, normalizeQuestionInput } from './grabber.js';
 import { renderAnswers } from './render.js';
 import { searchQuestions, extractQuestionId } from './official.js';
 import { verifyOutput } from './verifier.js';
+import { machineArtifacts } from './machine-paths.js';
 
 const HELP = `zhigrab — 知乎回答抓取工具（用你自己的 zhihu-cli 登录态）
 
@@ -43,12 +44,6 @@ function terminalSafe(value) {
 
 function log(msg) {
   process.stdout.write(`${msg}\n`);
-}
-
-/** 相对当前工作目录的路径（JSON 输出不泄漏绝对路径） */
-function relPath(absPath) {
-  const rel = path.relative(process.cwd(), absPath);
-  return (rel || path.basename(absPath)).split(path.sep).join('/');
 }
 
 /** 解析命令行：提取 --json / --comments / --out-dir，返回结构化参数 */
@@ -139,6 +134,19 @@ async function cmdGrab(config, input, { outDir = 'out', json = false, silent = f
   const dir = path.join(outDir, qid);
   fs.writeFileSync(path.join(dir, 'answers.md'), md, 'utf8');
 
+  // B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE（Product Behavior Contract §3.3
+  // APPROVED_TARGET_BEHAVIOR OPTION A）：机器 artifact 路径绝不绝对；
+  // 同盘 relative-to-cwd（base 缺席，JSON 与旧版逐字节一致）；
+  // 跨盘 relative-to-effective-out-dir + artifacts.base="outdir"。
+  // fail closed：无法生成安全相对路径时抛错，绝不输出绝对路径。
+  const artifacts = machineArtifacts(dir, {
+    cwd: process.cwd(),
+    outDirRoot: path.resolve(process.cwd(), outDir),
+  });
+  if (!artifacts) {
+    throw new Error('internal_error: 无法为产物生成安全的相对机器路径（fail closed）');
+  }
+
   // 语义：capture stage finished，artifact verification pending（绝不声称 verified）
   const payload = {
     schemaVersion: 1,
@@ -148,21 +156,18 @@ async function cmdGrab(config, input, { outDir = 'out', json = false, silent = f
     questionId: qid,
     questionTitle: result.questionTitle || '',
     capturedAnswerCount: result.answers.length,
-    artifacts: {
-      json: relPath(path.join(dir, 'answers.json')),
-      markdown: relPath(path.join(dir, 'answers.md')),
-      progress: relPath(path.join(dir, '.progress.json')),
-    },
+    artifacts,
     verified: false,
     warnings,
   };
   if (json) {
     emitJson(payload);
   } else if (!silent) {
+    const baseLabel = payload.artifacts.base === 'outdir' ? '（相对 --out-dir）' : '';
     log(`✓ 抓取阶段结束：问题「${terminalSafe(result.questionTitle || qid)}」已写入 ${result.answers.length} 条回答`);
     log('  产物状态：尚未验证（请运行 node scripts/verify-output.mjs <目录>）');
-    log(`  JSON: ${payload.artifacts.json}`);
-    log(`  MD  : ${payload.artifacts.markdown}`);
+    log(`  JSON${baseLabel}: ${payload.artifacts.json}`);
+    log(`  MD${baseLabel}  : ${payload.artifacts.markdown}`);
   }
   return payload;
 }

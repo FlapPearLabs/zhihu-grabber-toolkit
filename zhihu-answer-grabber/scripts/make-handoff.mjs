@@ -76,5 +76,8 @@ const handoff = {
 // 4. 写入 question 输出目录
 const outFile = path.join(dir, 'handoff.json');
 fs.writeFileSync(outFile, JSON.stringify(handoff, null, 2) + '\n', 'utf8');
-console.log(`handoff 已生成: ${path.relative(process.cwd(), outFile)}`);
+// human display：不输出 path.relative(process.cwd(), outFile)——Windows 跨盘时可能
+// 退化为 drive-qualified 绝对路径（RULES 禁止日志泄漏本机绝对路径）。handoff 内
+// inputJson/inputMarkdown 相对 handoff 所在目录的合同不变（见 references/handoff-schema.md）。
+console.log(`handoff 已生成: handoff.json（位于问题目录 ${questionId} 内）`);
 console.log(`  task=${task} questionId=${questionId} answers=${answerCount} verified=true`);
