@@ -9,7 +9,7 @@ Current milestone: **v0.2.0**, a minimal usable version that has completed real-
 | Module | What it does |
 |---|---|
 | [`zhihu-answer-grabber`](./zhihu-answer-grabber) | A Zhihu command-line tool + skill package: search, single-question and batch capture, full pagination, resume, JSON/Markdown output, result verification. |
-| [`corpus-anthology`](./corpus-anthology) | A skill package for questions with many long answers: chunked processing, completeness checking, full digest / popular sample / archive, without filling up the context at once. |
+| [`corpus-anthology`](./corpus-anthology) | A skill package for questions with many long answers: chunked processing, completeness checking, full digest / top-voted sample / archive, without filling up the context at once. |
 
 ---
 
@@ -71,7 +71,7 @@ The simplest way is to place these two files in the current `zhihu-answer-grabbe
   - `answers.json`: the data file with the raw captured results, suitable for further programmatic processing;
   - `answers.md`: a version organized for direct human reading.
 - **Strict verification**: "captured" is not the same as "verified"; only when `verify-output` returns `valid=true` is the job truly done;
-- **Large answer sets**: first check the size, process in chunks, check for gaps, then produce a full digest / popular sample / archive;
+- **Large answer sets**: first check the size, process in chunks, check for gaps, then produce a full digest / top-voted sample / archive;
 - **Rich content**: question extra info, plus images, external links, references, and code blocks; optional comment fetching.
 
 Real-world validation has processed a question with **538 answers / 29 pages**.
