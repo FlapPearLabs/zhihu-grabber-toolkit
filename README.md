@@ -153,6 +153,7 @@ node scripts/preflight.mjs --json
       "comments": [
         {
           "authorName": "评论作者",
+          "contentHtml": "<p>评论内容……</p>",
           "contentMarkdown": "评论内容……",
           "createdTime": 1234567890
         }
@@ -162,7 +163,27 @@ node scripts/preflight.mjs --json
 }
 ```
 
-`answers.md` 是适合人阅读的版本：开头是问题标题和链接，然后按点赞数从高到低排列每条回答，每条包含作者、赞数、评论数、创建时间和回答正文。
+这是为了说明结构而简化的示例。`comments` 只有显式开启 `--comments` 后才可能出现；默认抓取不会新增评论字段，实际字段以当前版本输出为准。
+
+`answers.md` 是适合人阅读的版本，主要包含：
+
+- 问题标题；
+- 问题链接；
+- 抓取时间；
+- 知乎显示的回答总数；
+- 本次实际抓到的回答数；
+- 回答按点赞数从高到低排列；
+- 每条回答的作者名称；
+- 点赞数；
+- 评论数；
+- 回答链接；
+- 创建时间；
+- 回答正文。
+
+两个当前边界：
+
+1. 用 `--comments` 补抓到的评论主要保存在 `answers.json` 的 `comments` 字段中，当前不会自动插进 `answers.md`。
+2. 问题描述会保存在 `answers.json` 的 `question` 信息中，当前 `answers.md` 阅读版没有单独插入问题描述。
 
 ---
 
