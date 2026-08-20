@@ -2,7 +2,7 @@
 
 [简体中文](./README.md) | English
 
-Lets an Agent reliably do: **search Zhihu → capture all accessible answers → verify the output → process large answer sets**.
+A toolkit for coding agents to reliably **search Zhihu → capture accessible answers → verify the output → process large answer sets**.
 
 Current milestone: **v0.2.0**, a minimal usable version that has completed real-world validation. (v0.2.0 is the repository's current feature milestone, not an npm package version.)
 
@@ -13,9 +13,9 @@ Current milestone: **v0.2.0**, a minimal usable version that has completed real-
 
 ---
 
-## Easiest way: give the repository to an Agent
+## Easiest way: give the repository to an agent
 
-Send the repository link to a coding Agent such as WorkBuddy, Codex, or Claude Code, together with this prompt:
+Send the repository link to a coding agent such as WorkBuddy, Codex, or Claude Code, together with this prompt:
 
 ```text
 Read this repository's README.md, AGENTS.md, RULES.md, and
@@ -29,7 +29,7 @@ for large answer sets, follow the skill rules and use corpus-anthology —
 do not dump the entire corpus into the context at once.
 ```
 
-The Agent should be able to handle the rest by itself:
+The agent should be able to handle the rest by itself:
 
 **Read the docs → install dependencies → check local configuration → search / capture / batch → verify results → chunk large answer sets.**
 
@@ -48,23 +48,23 @@ npm ci --registry=https://registry.npmjs.org
 node scripts/preflight.mjs --json
 ```
 
-Installation and checks can be done automatically by the Agent.
+Installation and checks can be done automatically by the agent.
 
-Login credentials still need to be configured by you on this machine; the Agent will not ask you to paste Cookie or Secret into the chat:
+Login credentials still need to be configured by you on this machine; the agent will not ask you to paste Cookie or Secret into the chat:
 
 - `zhihu_cookie.txt`: needed for capturing answers;
 - `zhihu_secret.txt`: needed only for `search`.
 
 The simplest way is to place these two files in the current `zhihu-answer-grabber/` directory and re-run the configuration check.
 
-`preflight.mjs` only reports whether things are usable and what kind of error exists; it never outputs credential contents.
+`preflight.mjs` only reports whether things are usable and what type of error occurred; it never outputs credential contents.
 
 ---
 
 ## What it can do
 
 - **Search questions**: keyword → Zhihu question ID;
-- **Full capture**: it does not only fetch the first page — it keeps paginating to capture all currently accessible answers. Normally it keeps paginating until Zhihu explicitly reports the end; to avoid an infinite loop on abnormal pagination, there is currently a safety cap of 300 pages per question;
+- **Full capture**: it does not just fetch the first page — it keeps paginating to capture all currently accessible answers. Normally it keeps paginating until Zhihu explicitly reports the end; to avoid an infinite loop on abnormal pagination, there is currently a safety cap of 300 pages per question;
 - **Batch capture**: capture multiple questions in one run; one failure does not affect the others;
 - **Resume**: if interrupted, it continues where it stopped instead of restarting from the first page;
 - **Output files**: you mainly get two files after capture —
@@ -72,7 +72,7 @@ The simplest way is to place these two files in the current `zhihu-answer-grabbe
   - `answers.md`: a version organized for direct human reading.
 - **Strict verification**: "captured" is not the same as "verified"; only when `verify-output` returns `valid=true` is the job truly done;
 - **Large answer sets**: first check the size, process in chunks, check for gaps, then produce a full digest / popular sample / archive;
-- **Rich content**: question extra info, plus images, external links, references, and code blocks; optional comment enrichment.
+- **Rich content**: question extra info, plus images, external links, references, and code blocks; optional comment fetching.
 
 Real-world validation has processed a question with **538 answers / 29 pages**.
 
@@ -84,14 +84,14 @@ When capturing a question, the tool saves **information about the question itsel
 
 ### Question information
 
-The question ID and URL are base information. When the question info request succeeds, it additionally saves the question title, description, topics, and the total answer count reported by Zhihu. A failure to fetch question info does not prevent the answer bodies from being captured.
+The question ID and URL are basic information. When the question info request succeeds, it additionally saves the question title, description, topics, and the total answer count reported by Zhihu. A failure to fetch question info does not prevent the answer bodies from being captured.
 
 ### Each answer
 
 For each answer, the tool saves:
 
 - answer ID, answer URL, full answer body, excerpt;
-- vote count, comment count, creation time, update time;
+- vote count, comment count, creation time, last updated time;
 - structured extras extracted from the body: images, external links, references / footnotes, code blocks.
 
 Currently only the **author name** is saved. It does not capture the full author profile, follower count, following count, verification details, or full bio.
@@ -167,7 +167,7 @@ This is not a full copy of the Zhihu page. Explicitly not captured: complete aut
 }
 ```
 
-This is a simplified example to illustrate the structure; it is not the full formal data contract. `comments` can only appear when `--comments` is explicitly enabled; the default capture does not add comment fields, and the actual fields depend on the current version's output.
+This is a simplified example to illustrate the structure; it is not the full formal data contract. `comments` can only appear when `--comments` is explicitly enabled; the default capture does not add comment fields, and the exact fields may vary by version.
 
 `answers.md` is the human-readable version. It mainly contains:
 
@@ -187,7 +187,7 @@ This is a simplified example to illustrate the structure; it is not the full for
 Two current boundaries:
 
 1. Comments fetched via `--comments` are stored in the `comments` field of the corresponding answer, i.e. `answers[].comments`; they are not automatically inserted into `answers.md` for now.
-2. A successfully fetched question description is stored in the `question` info of `answers.json`; the `answers.md` reading version does not display it separately for now.
+2. A successfully fetched question description is stored in the `question` info of `answers.json`; the human-readable `answers.md` does not display it separately for now.
 
 ---
 
@@ -211,7 +211,7 @@ node scripts/zhigrab.mjs batch batch.txt --json
 # Show status
 node scripts/zhigrab.mjs status --json
 
-# Verify results: the only acceptance gate
+# Verify results: the required verification step
 node scripts/verify-output.mjs out/<QUESTION_ID>
 
 # After verification, hand off to the skill for large answer sets
@@ -232,12 +232,12 @@ Instead it:
 4. checks whether any part was missed;
 5. combines the results at the end.
 
-This reduces missed reading, truncation, or summaries that only cover the first half, caused by an overlong context.
+This reduces omissions and truncation, and helps avoid summaries that cover only the beginning of an oversized corpus.
 
 There are three modes for different needs:
 
 - **Full digest**: aims to cover all answers;
-- **Popular sample**: only a portion of the highest-voted answers — it does not claim to be a complete summary;
+- **Top-voted sample**: only a portion of the highest-voted answers — it does not claim to be a complete summary;
 - **Archive**: organizes the original text together without rewriting it.
 
 Implementation details: see [`corpus-anthology/SKILL.md`](./corpus-anthology/SKILL.md).
@@ -266,7 +266,7 @@ What the tool currently does:
 
 To be clear: **this version does not claim to fully solve all natural-language prompt-injection risks.**
 
-Stricter safety isolation for large models is still being improved.
+Stricter safeguards around model interactions are still being improved.
 
 That is why this project always treats Zhihu content as:
 
@@ -274,7 +274,7 @@ That is why this project always treats Zhihu content as:
 
 not as:
 
-**instructions for the Agent**.
+**instructions for the agent**.
 
 ---
 
