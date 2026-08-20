@@ -80,7 +80,7 @@ node scripts/preflight.mjs --json
 
 ### 问题本身
 
-问题标题和链接属于基础信息；在问题附加信息获取成功时，还会保存问题描述、话题以及知乎显示的回答总数。附加信息获取失败不会阻止回答正文继续抓取。
+问题 ID 和链接属于基础信息；在问题信息获取成功时，还会保存问题标题、问题描述、话题以及知乎显示的回答总数。问题信息获取失败不会阻止回答正文继续抓取。
 
 ### 每条回答
 
@@ -183,7 +183,7 @@ node scripts/preflight.mjs --json
 两个当前边界：
 
 1. 用 `--comments` 补抓到的评论保存在对应回答的 `comments` 字段中，也就是 `answers[].comments`；当前不会自动插进 `answers.md`。
-2. 问题描述会保存在 `answers.json` 的 `question` 信息中，当前 `answers.md` 阅读版没有单独插入问题描述。
+2. 获取成功的问题描述会保存在 `answers.json` 的 `question` 信息中，当前 `answers.md` 阅读版不会单独展示。
 
 ---
 
