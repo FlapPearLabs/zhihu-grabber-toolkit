@@ -22,7 +22,7 @@ zhihu-answer-grabber/SKILL.md，自主完成安装、配置检查和知乎任务
 不要读取、展示或要求我把 Cookie / Secret 粘贴到聊天里；
 如果缺凭据，只告诉我应该在本机放哪个文件。
 抓取后必须先运行 verify-output 检查结果，只有 valid=true 才能继续；
-回答很多时按照 Skill 规则使用 corpus-anthology，不要一次性把全文塞进上下文。
+回答很多时按照技能包规则使用 corpus-anthology，不要一次性把全文塞进上下文。
 ```
 
 Agent 应该能自己完成：
@@ -51,6 +51,8 @@ node scripts/preflight.mjs --json
 - `zhihu_cookie.txt`：抓回答需要；
 - `zhihu_secret.txt`：搜索问题需要。
 
+最简单的方式是把这两个文件放在当前 `zhihu-answer-grabber/` 目录，然后重新运行配置检查。
+
 `preflight.mjs` 只报告“是否可用”和错误类型，不输出凭据内容。
 
 ---
@@ -66,7 +68,7 @@ node scripts/preflight.mjs --json
   - `answers.md`：整理成更适合人直接阅读的版本。
 - **严格验收**：“抓到了”不等于“确认有效”，只有 `verify-output` 返回 `valid=true` 才算真正完成；
 - **回答很多时**：长回答列表先看看规模、分块处理、检查有没有漏，再做全量摘要 / 高赞样本 / 原文归档；
-- **富内容**：问题附加信息，以及图片、外链、引用、代码块等丰富内容；评论补充抓取可选。
+- **更多内容**：问题附加信息，以及图片、外链、引用、代码块等丰富内容；评论补充抓取可选。
 
 真实使用验证已处理过 **538 条回答 / 29 页** 的问题。
 
@@ -176,7 +178,7 @@ node scripts/make-handoff.mjs out/<QUESTION_ID> --task digest
 
 请遵守知乎平台服务条款与当地法律法规，仅用于合法的个人学习、研究和自动化工作流。
 
-## License
+## 许可证
 
 - `zhihu-answer-grabber`：**AGPL-3.0-only**；
 - `corpus-anthology`：**MIT**。
