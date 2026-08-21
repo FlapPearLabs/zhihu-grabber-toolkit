@@ -85,7 +85,7 @@ FUTURE_CODE_TICKET_REQUIRED  需要后续 CODE 票（本文件不实现）
 
 ---
 
-## 3. 十四项产品行为决策
+## 3. 产品行为决策
 
 ### 3.1 Accepted inputs（接受的输入）
 
@@ -762,9 +762,9 @@ PENDING_V0_3_CODE_TICKETS:      4 项（均为 V0.3 决策归一化，CODE PENDI
                                 不得直接从未来需求跳到 CODE）
 ```
 
-**关键结论**：本合同历史 13 项决策保持现状或明确不支持；**B-1（§3.3）已在 master 修复
+**关键结论**：本合同既有行为决策保持现状或明确不支持；**B-1（§3.3）已在 master 修复
 （ffd41ca），属 RESOLVED_IN_MASTER、IMPLEMENTATION_IMPACT: NONE**，不再作为
-FUTURE_CODE_TICKET_REQUIRED。V0.3 引入 4 项 PENDING_V0_3_CODE_TICKETS（§3.15–§3.18），
+FUTURE_CODE_TICKET_REQUIRED。V0.3 引入若干 PENDING_V0_3_CODE_TICKETS（§3.15–§3.18），
 均为**已批准产品目标的 CODE 待办**，当前代码行为仍是各自 CURRENT_BEHAVIOR，未在 master
 生效。T-2（batch 回归测试）已按 §3.1-§3.14 边界推进；不因本合同产生投机功能。
 
@@ -776,7 +776,7 @@ FUTURE_CODE_TICKET_REQUIRED。V0.3 引入 4 项 PENDING_V0_3_CODE_TICKETS（§3.
 SPEC_CONFLICTS: NONE
 ```
 
-本合同 14 项决策均与 Approved Spec（docs/specs/v2-rich-content-fidelity.md）一致：
+本合同各行为决策均与 Approved Spec（docs/specs/v2-rich-content-fidelity.md）一致：
 - comments 默认 OFF / 仅 grab 支持（Spec §15.1/§15.8）→ §3.2
 - captured ≠ verified / verify-output 权威（Spec §5、§18.2）→ §3.4
 - canonical content 不可变 / additive only（Spec §6.1/§18.1）→ §3.13
@@ -790,24 +790,26 @@ SPEC_CONFLICTS: NONE
 ## 6. 实现与已批准合同的一致性核查
 
 ```text
-CURRENT_IMPLEMENTATION_CONTRACT_VIOLATIONS: 1
+CURRENT_IMPLEMENTATION_CONTRACT_VIOLATIONS: 0
 
 B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE:
-  status: CONFIRMED / CODE_FIX_PENDING
-  contract: §3.3（机器 --json 路径一律相对 cwd、不泄漏绝对路径；no-absolute-path
-            不变量）
-  current behavior: src/cli.js relPath 用 path.relative(process.cwd(), absPath)；
-            Windows 下 cwd 与 out-dir 跨盘时返回 drive-qualified 路径 → 机器
-            JSON 可能输出绝对路径
-  expected: 按 §3.3 APPROVED_TARGET_BEHAVIOR（OPTION A：同盘保持现状；跨盘
-            relative-to-effective-out-dir + artifacts.base="outdir"）
-  fix: 待独立 B-1 CODE ticket（relPath 跨盘分支 + artifacts.base 字段 +
-       Windows/portable 回归测试 + usage.md 措辞同步）
+  status: RESOLVED_IN_MASTER
+  implementation: ffd41ca
+  contract: §3.3
+  remaining_code_work: NONE
+  当前 machineArtifacts 实现已满足：
+    - 正常 relative-to-cwd
+    - Windows cross-volume relative-to-effective-out-dir
+    - artifacts.base="outdir"
+    - no absolute path
+    - fail closed
+  不得再出现：CODE_FIX_PENDING / 待 B-1 CODE ticket / 当前仍泄露绝对路径
+  等 active-state 表述。
 ```
 
 审计对照 Approved Spec 与实现（grabber / cli / http / verifier / make-handoff /
-browser-smoke-core）确认：上述 B-1 是唯一已确认的实现违反已批准合同项；其余未发现
-实现违反已批准合同。
+browser-smoke-core）确认：未发现实现违反已批准合同项。既有行为决策（含 §3.3 B-1
+RESOLVED_IN_MASTER）均与当前 master 实现一致。
 
 **已记录 reference 文档漂移（非 Spec violation）**：
 

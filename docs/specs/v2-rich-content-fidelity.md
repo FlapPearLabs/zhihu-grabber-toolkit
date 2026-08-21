@@ -1315,7 +1315,12 @@ Links 继续走现有 §11 策略。
 
 ### 16.1 历史立场（V2 原 §16，已被 V0.3 覆盖，保留可追溯）
 
-视频**不是**当前核心需求，只做 detect + metadata：
+> **NON-NORMATIVE HISTORICAL TEXT（非规范性历史文本）**
+> 以下小节仅用于历史追溯，**不具有当前实现要求、未来 roadmap 或 discovery 指示效力**。
+> 其中「等真实样本出现再补」**已被 V0.3 永久废止**（见本 §16 顶部 V0.3 amendment 与 §25）。
+> 当前权威视频合同唯一为：`VIDEO_SUPPORT = DO_NOT_SUPPORT`（IMPLEMENTATION_IMPACT: NONE；`videos: []` 兼容保留）。任何局部检索命中本小节时，不得据此理解为「未来将支持视频」或「video 仍待样本」。
+
+<del>视频**不是**当前核心需求，只做 detect + metadata：</del>
 
 ```json
 {
@@ -1328,7 +1333,8 @@ Links 继续走现有 §11 策略。
 
 - 写入 `assets.videos[]`。
 - **不做**：视频加载、下载、转码、语音识别、字幕抓取、视频理解。
-- **重要约束**：当前真实样本尚未确认知乎视频 HTML schema。**禁止提前猜测结构并实现一堆 speculative parser**；等真实样本出现再补（见 §25 Open questions，该 open question 已被 V0.3 关闭）。
+- <del>**重要约束**：当前真实样本尚未确认知乎视频 HTML schema。**禁止提前猜测结构并实现一堆 speculative parser**；等真实样本出现再补（见 §25 Open questions，该 open question 已被 V0.3 关闭）。</del>
+  （该「等真实样本出现再补」表述已被 V0.3 永久废止，无未来 roadmap / discovery 效力。）
 
 ---
 
