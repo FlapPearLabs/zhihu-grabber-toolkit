@@ -6,7 +6,7 @@
 ## 仓库与基线
 
 - 仓库：https://github.com/FlapPearLabs/zhihu-grabber-toolkit
-- 权威 Spec：`docs/specs/v2-rich-content-fidelity.md`（Status: APPROVED，禁止未经批准修改）
+- 权威 Spec（双）：`docs/specs/v2-rich-content-fidelity.md`（Status: APPROVED，禁止未经批准修改）+ `docs/specs/v0.3-product-scope.md`（Status: APPROVED）。V0.3 为 **additive / amendment Spec**：对明确 amendment target（video / search answerCount / countMismatch / Agent projection / large corpus）增量覆盖 V2 对应旧状态；其余未被 V0.3 amendment 的 V2 合同继续有效。两者均禁止未经批准修改。
 - **Phase 1 approved checkpoint**（historical，非 current master）：`27e68c1b344ed5af1e1b05887462f2792ffa4fde` —— V2 Phase 1（安全 Markdown renderer 信任根）在此提交收口合并 master，CODE gate PASS，四轮 review 全过。
 
 > 本文件不记录 `current master SHA` / `HEAD` / 临时分支存在性等运行时 Git 状态；需要时现场获取（`git fetch` → `git rev-parse` / `git compare`）。
@@ -37,7 +37,8 @@
 - **V2 Phase 2（S1-S6）已实现并覆盖**：image metadata / external link assets / code block metadata / reference-footnote assets（`test/asset-extractor.test.js`）；脚注重建与对抗（重复/非法/缺失 numero、跨 answer collision、Markdown 注入、恶意脚注 URL，`test/rich-renderer.test.js`）；additive `answers[].assets` 集成、断点续传兼容、determinism（`test/grabber.test.js`）；V1 兼容回归 render/verify/handoff/CLI status（`test/v1-compat.test.js`）。
 - **V2 Phase 3 — Question Metadata 已纳入 accepted project baseline 并覆盖**（`test/question-metadata.test.js`）：additive `question` 对象（`{ id, title, descriptionHtml, descriptionMarkdown, topics }`）；description source/canonicality（descriptionHtml 严格等于 server raw `detail`，渲染不突变）、description security（Markdown 注入惰性 / raw HTML 活性移除 / headingOffset=2 防 `## N.` 越界 / javascript:/data: 链接不可点击）、topics 最小字段 `{ id, name }` 确定性提取与恶意文本惰性、V1/Phase2 兼容（旧产物无 question 可读、verify/handoff 不受影响）、request budget（question info 请求恰 1 次/抓取，零新增）、determinism；missing vs empty 区分（detail/topics 缺失 ≠ 明确空值）、metadata 失败用户可见 warning（CLI 级）、resume 保留已有合法 question、identity gate（`QUESTION_METADATA_IDENTITY_CONFLICT`）、topic id/name 严格 string 校验、topics 非空全非法 omit、公开 warning 固定最小文本、resume ID 严格 string。
 - **V2 Phase 4 — Comments Enrichment 已纳入 accepted project baseline 并覆盖**（`test/comments.test.js`）：additive optional `answers[].comments`（默认 OFF；唯一显式开启面 `grab <question> --comments`；batch/search/status 带 `--comments` → 静态 `invalid_input`，先于凭据/网络）；`comment_v5/answers/{answerId}/root_comment?order_by=score&limit=3&offset=`（server score/default ordering 的 Top3 root comments，禁 `status=open`，无 legacy fallback、无分页）；Top10 selected answers（canonical `voteupCount` DESC + capture-order tie）；每 selected answer 至多 1 次真实 HTTP 尝试（**`retries:0`**，requestJson 默认 retries=2 会暗中突破预算）、每 question ≤10 次、attempt 间顺序低延迟（`humanDelay` 前置，失败路径同样限速，无并发）；root predicate 五条件校验（含 `reply_root_comment_id === item.id`）任一违约 → 整个 answer enrichment 失败、无后续 item 补位；`child_comments`/reply 完全忽略；唯一 explicit-zero = `data=[] + totals=0 + is_end=true`（`commentCount===0` 不是 zero fact——V1 canonicalization 收敛 raw null/missing）；A/B/C/D resume/preservation 语义（OFF/not-selected 原样保留 exact JSON 值不 validate，selected success replace、failure 时仅 v1-compatible 保留否则 omit）；固定 question-level aggregate warning（"部分评论 enrichment 获取失败；回答核心抓取继续。"）；`contentHtml` 严格 raw + `contentMarkdown` 同一 `richHtmlToMarkdown`（无第二 parser，hostile content 全程 inert）；`answerId` 作为单 opaque path segment 且空/dot-segment path 破坏时 fail closed；`answers.md` / verify-output / handoff 合同未改。Phase 4 产品合同完整见 Approved Spec §15/§18/§20.2.2/§25/§26。
-- **尚未完成、不得标记为 covered**（按已批准 Spec 相应 Phase 再补测试）：Agent projection / capability isolation、video（Spec §16 待真实样本）。
+- **尚未完成、不得标记为 covered**（按已批准 Spec 相应 Phase 再补测试）：Agent projection / capability isolation（V0.3 决策 C，待 T4/T5 真实可行性审计，runtime-scoped）。
+  - 注：video 已于 V0.3 决策 B 永久定为 `VIDEO_SUPPORT = DO_NOT_SUPPORT`（无 video CODE、无后续 discovery），不属于「未覆盖待补」项；`answers[].assets.videos` 仅保留兼容空字段 `[]`。
 
 ## 已批准产品决策 / 长期约束
 
@@ -55,13 +56,34 @@
 
 - **V2 Phase 2 — Rich Content Assets 已纳入 accepted project baseline**：additive `answers[].assets`（images / links / references / codeBlocks / videos）、canonical `content` 不可变、脚注重建（renderer 生成 `a<answerId>-r<index>`）、1px placeholder 确定性合同（Spec §10.1）均为长期合同，保持不变（见上文已批准决策与 Spec）。
 - **V2 Phase 3 — Question Metadata 已纳入 accepted project baseline**：additive `question` metadata（description/topics）、NETWORK_REQUEST_DELTA=0、failure/empty semantics（Spec §20.2.1）、resume preservation 与 identity gate 均为长期合同（见上文 PHASE3_SCHEMA_DISCOVERY 与已批准决策）。
-- **当前产品阶段（CURRENT PRODUCT STAGE）**：**批量抓取稳定性 / 大规模抓取加固**
-  （Batch capture stability / large-scale capture hardening）——分页完整性、失败隔离、
-  断点续传、产物完整性、受控真实批量证据。
+- **当前产品阶段（CURRENT PRODUCT STAGE）**：**V0.3 authority normalization / implementation preparation**
+  ——V0.3 Draft Spec 已通过独立 DOCUMENT review 并 ff-only 合并 master（base `22b8ed3`，Status: APPROVED）。
+  当前进行 **T0 DOCUMENT NORMALIZATION**（把 V0.3 + V2 + Product Behavior Contract + project-memory + README 统一到同一权威状态）；
+  T0 exact commit 经独立 DOCUMENT review PASS + ff-only merge 后，进入 T1–T11 gated execution。
+- **V0.3 已批准产品决策（durable，见 `docs/specs/v0.3-product-scope.md`）**：
+  - **A. Search Answer Count**：目标——搜索候选应尽可能提供来自可信上游的回答数量；缺失 / null 优于虚构。
+    `UPSTREAM_SCHEMA_STATUS: UNKNOWN / DISCOVERY_REQUIRED`（官方 search Item 原始 schema 未实测）；CODE PENDING T1 + OPEN-D1；
+    当前 search 输出不含 answerCount（来自 question-info，非 search 通道）。
+  - **B. Video**：`VIDEO_SUPPORT = DO_NOT_SUPPORT`（永久产品立场）。不抓 / 不 enrich / 不加载 / 不下载 / 不转码 /
+    不抓字幕 / 不做语音识别 / 不做视频理解 / 不为视频做 discovery / 不建 speculative parser；
+    `answers[].assets.videos: []` 仅作兼容保留字段。IMPLEMENTATION_IMPACT: NONE。V2 §16/§24/§25 已由 T0 归一化为该立场。
+  - **C. Agent projection / capability isolation**：V2 §9/§9.1/§9.2 安全合同已批准（LLM NETWORK/SHELL/FS/TOOLS 全 DENY，
+    trusted controller 唯一 IO，隔离不可用 → fail closed）；但**实现可行性尚未证明**。`CAPABILITY_ISOLATION_AVAILABLE[target_runtime] = YES|NO`
+    逐 runtime 独立判定，UNKNOWN → STOP，禁止跨 runtime 推导、禁止 prompt-only 降级。T4（Phase5 实现审计）/ T5（Phase5C 隔离可行性）必须真实执行。
+  - **D. countMismatch**：`COUNT_MISMATCH_SEVERITY = DIAGNOSTIC_ONLY`（保留 reportedAnswerCount/capturedAnswerCount/countMismatch 三诊断字段，
+    移出 verifier.warnings[]，不影响 valid，因而不进 handoff.warnings）。CODE PENDING T3；当前代码仍把 countMismatch 推入 warnings[]。
+  - **大型语料四层能力**：CURRENT IMPLEMENTED（popular-sample / full-coverage digest / archive）vs
+    APPROVED TARGET（top-percent sampled analysis / hierarchical full digest）。硬不变量 `SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST`；
+    hierarchical full digest 必须保持 source coverage / evidence mapping / canonical source ID lineage。
+    top-percent 受 OPEN-D2 + OPEN-D6 约束，解决前不得 CODE。
+- **V0.3 关键 gate（immediate）**：T1 search schema discovery / T3 countMismatch / T4+T5 Agent consumer & isolation feasibility /
+  T7 top-percent contract / T9 hierarchical digest contract。各 T 遵循 Spec gate，不无条件并行。
 - **DEFERRED（长期，未经批准不得开始）**：
-  - Phase 5 实现 / Agent projection / capability isolation（Spec §9/§9.1）
-  - video（Spec §16，待真实样本）
   - browser-smoke 高级 matcher 硬化（provenance / 折叠形态 / link-card 归一化）
+  - 研究流程自动化（research pipeline automation）：NEXT_STAGE，非当前 V0.3 范围
+  - 旧 cross-shell Architecture Grill 设计线：不恢复
+  - 注：Phase 5 实现 / Agent projection（原 DEFERRED 项）已转为 V0.3 当前工作进行（决策 C）；
+    video（原 DEFERRED 项）已转为 V0.3 决策 B 永久 DO_NOT_SUPPORT，不再属于 DEFERRED。
 - **BROWSER_SMOKE_ROLE（持久）**：`browser-smoke` = **尽力而为的外部一致性诊断**
   （best-effort external diagnostic），**不是产物有效性权威**；verify-output 才是
   确定性产物有效性权威（RULES §4）。其 PASS / FAIL / INCONCLUSIVE 不影响

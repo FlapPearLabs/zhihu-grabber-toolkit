@@ -106,11 +106,11 @@ Comments are off by default. When enabled with `--comments`, the tool picks at m
 - **External links**: records external links found in the answer body and their basic info.
 - **References / footnotes**: references and footnotes in an answer are additionally organized into structured info.
 - **Code blocks**: the code text stays in the answer body; the language and line count are recorded as well.
-- **Videos**: video structure extraction is not officially supported yet.
+- **Videos**: Not supported and not planned. The existing `videos: []` field is retained only for compatibility.
 
 ### What is not captured
 
-This is not a full copy of the Zhihu page. Explicitly not captured: complete author profiles, the full comment section, all child comments; image files are not downloaded automatically; video structure is not officially supported yet.
+This is not a full copy of the Zhihu page. Explicitly not captured: complete author profiles, the full comment section, all child comments; image files are not downloaded automatically; videos are not supported (and will not be).
 
 ### What do the output files look like?
 

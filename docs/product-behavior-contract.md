@@ -33,7 +33,11 @@ BROWSER_SMOKE_ROLE:
 
 1. `AGENTS.md`（执行 / branch / review 工作流）
 2. `RULES.md`（hard project / safety invariants）
-3. Approved Specs（`docs/specs/v2-rich-content-fidelity.md`，产品需求唯一事实来源）
+3. Approved Specs：
+   - `docs/specs/v2-rich-content-fidelity.md`（V2 APPROVED Spec，产品需求主要事实来源）
+   - `docs/specs/v0.3-product-scope.md`（V0.3 APPROVED Spec，additive / amendment Spec）
+   - V0.3 对**明确 amendment target** 进行增量覆盖，不是替代全部 V2；例如 video：
+     V0.3 amendment 覆盖旧 V2 §16 / §25；其他无 amendment 的 V2 合同继续有效。
 
 **SPEC_CONFLICT 流程**：若本合同任何期望的产品决策与 Approved Spec 冲突：
 
@@ -169,56 +173,49 @@ IMPLEMENTATION_IMPACT: NONE
 
 ### 3.3 Output-directory semantics（输出目录语义）
 
+> **B-1 文档债已解决（2026-08-21 更新）**：原 §3.3 将 `B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE` 标为 `FUTURE_CODE_TICKET_REQUIRED`，但代码侧 `machine-paths.js`（`ffd41ca` "fix: B-1 cross-volume machine path disclosure"）**已实现修复**且 `cli.js` 已 `import { machineArtifacts }` 使用。原 APPROVED_TARGET_BEHAVIOR（OPTION A）已落地为当前真实行为；本合同据此归一化为 `KEEP_CURRENT_BEHAVIOR` / `IMPLEMENTATION_IMPACT: NONE`。OPTION A 采用理由保留于 RATIONALE。
+
 ```text
-CURRENT_BEHAVIOR:
+CURRENT_BEHAVIOR（真实实现，已含 B-1 修复）:
   - 默认 ./out，每问题写入 out/<questionId>/ 子目录
   - 产物：answers.json / answers.md / .progress.json（以及可选的 handoff.json）
   - resolveQuestionDir 强制 containment：最终目录必须位于 out-dir 之下（防路径越界）
-  - 机器输出（--json）中的路径一律相对路径（相对 cwd），不泄漏绝对路径
-  - 已知缺陷（BUG_ID: B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE）：
-    src/cli.js relPath 用 path.relative(process.cwd(), absPath)；Windows 下
-    cwd 与 out-dir 跨盘时（如 cwd=D:\project、out-dir=C:\capture）无法产生
-    正常 cwd-relative 路径，path.relative 返回 drive-qualified 路径 →
-    机器 JSON 可能输出绝对路径，违反本合同的 no-absolute-path 要求
+  - 机器输出（--json）中的路径一律相对路径，不泄漏绝对路径（no-absolute-path 不变量）
+  - 机器 artifact 路径由 src/machine-paths.js machineArtifacts() 生成：
+    1) 正常可表达时（cwd 与 out-dir 同盘 / path.relative(cwd,dir) 为合法相对路径）：
+       artifacts.json/markdown/progress 为 relative-to-cwd，且【不发射】artifacts.base
+       字段（absence ⇒ legacy cwd-relative 语义；机器 JSON 与修复前逐字节一致）
+    2) Windows cross-volume（cwd 与 out-dir 跨盘，cwd-relative 无法表达）唯一触发条件：
+       artifacts 路径改为相对【effective invocation out-dir root】
+       （不含盘符、无前导斜杠、绝不绝对），并发射 artifacts.base = "outdir"
+       标明该批路径基准；消费方按 resolve(effective out-dir root, path) 解析
+    3) fail closed：两种表示都无法生成安全相对路径 → 返回 null
+       （绝不输出绝对 / drive-qualified 路径）
+  - handoff 内部 inputJson/inputMarkdown 是相对 handoff 所在目录的独立合同，
+    不消费 artifacts 字段（不受本决策影响）
 
 PRODUCT_DECISION:
-  FUTURE_CODE_TICKET_REQUIRED（目标行为已批准，代码待 B-1 CODE 票实现）
-
-APPROVED_TARGET_BEHAVIOR:
-  OPTION A —— 保持跨盘 --out-dir 受支持，但机器 artifact 路径【绝不】是绝对路径：
-  1) 正常可表达时（cwd 与 out-dir 同盘或可相对）：
-     机器 JSON 保持现状【一字不变】——artifacts.json/markdown/progress 为
-     relative-to-cwd，且【不发射 artifacts.base 字段】
-     （absence ⇒ legacy cwd-relative 语义）
-  2) Windows cross-volume 无法 relative-to-cwd 时（唯一触发条件）：
-     artifacts 路径改为相对【effective invocation out-dir root】
-     （不含盘符、无前导斜杠、绝不绝对），
-     并发射 artifacts.base = "outdir" 标明该批路径的基准；
-     消费方按 resolve(effective out-dir root, path) 解析
-  3) "effective invocation out-dir root" 定义：本次 CLI 调用实际生效的
-     --out-dir 根目录；若用户传入相对 out-dir，先相对 invocation cwd
-     解析为实际根
-  4) 禁止：绝对路径 / drive-qualified 路径 / path.basename-only 丢身份
+  KEEP_CURRENT_BEHAVIOR（B-1 OPTION A 已落地为当前实现；见 RATIONALE 采用理由）
+  - 同盘 JSON 逐字节不变（artifacts.base 仅在跨盘 case 作为 additive metadata 出现）
+  - 跨盘场景绝不输出绝对 / drive-qualified 路径
 
 RATIONALE:
   每问题独立目录保证 artifact isolation；containment 防止 qid 被利用做目录穿越；
   相对路径是机器契约的脱敏要求（no-absolute-path 是不可弱化不变量）。
-  cross-volume 场景下"relative-to-cwd"与"跨盘 out-dir"物理上无法同时满足，
-  因此用显式 base 标识提供确定性、无歧义的替代语义（不禁止跨盘抓取，
-  不把绝对路径放回 JSON）。仅 Windows 跨盘边界触发；正常同盘 JSON 逐字节不变，
-  向后兼容最大化（artifacts.base 只在原本已坏掉的跨盘 case 作为 additive
-  metadata 出现）。
+  原 B-1 缺陷根因：src/cli.js relPath 用 path.relative(process.cwd(), absPath)，
+  Windows 跨盘时返回 drive-qualified 路径 → 机器 JSON 可能泄漏绝对路径。
+  修复采用 OPTION A：跨盘边界改 relative-to-effective-out-dir + artifacts.base="outdir"，
+  正常同盘 JSON 逐字节不变（向后兼容最大化）；仅 Windows 跨盘边界触发 base 字段。
+  不禁止跨盘抓取，不把绝对路径放回 JSON。
 
 AUTHORITY / EVIDENCE:
-  src/grabber.js resolveQuestionDir、src/cli.js relPath
-  references/usage.md（输出文件、相对路径）、references/handoff-schema.md
-  （handoff 内部 inputJson/inputMarkdown 是相对 handoff 所在目录的独立合同，
-   不受本决策影响——handoff 由 make-handoff 自建路径，不消费 artifacts 字段）
+  src/machine-paths.js machineArtifacts()（ffd41ca 实现）、src/cli.js import + 调用
+    （artifacts.base === 'outdir' 标注分支）
+  references/usage.md §"路径一律相对路径"（已同步为"同盘 relative-to-cwd、
+    跨盘 relative-to-out-dir + base"）
+  references/handoff-schema.md（handoff 内部路径为独立合同）
 
-IMPLEMENTATION_IMPACT: CODE_TICKET_REQUIRED（B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE
-  修复：relPath 增加跨盘分支 + artifacts.base 字段；含 Windows/portable 回归测试。
-  另需同步 references/usage.md §"路径一律相对路径" 的表述为"同盘 relative-to-cwd、
-  跨盘 relative-to-out-dir + base"。本合同批准后开独立 CODE ticket）
+IMPLEMENTATION_IMPACT: NONE（B-1 修复代码已 merge master；本项目不再需要 B-1 CODE ticket）
 ```
 
 ### 3.4 Captured vs verified（抓取态与验收态）
@@ -585,6 +582,156 @@ IMPLEMENTATION_IMPACT: NONE
 
 ---
 
+### 3.15 Search Answer Count（搜索回答数量，V0.3 决策 A 归一化）
+
+```text
+CURRENT_BEHAVIOR（真实实现）:
+  - search 命令当前只返回问题 ID / 标题 / 类型（src/cli.js cmdSearch 映射为 { id, title, type }）
+  - 当前 search 输出【不含】answerCount
+  - 既有 answerCount 来源是 question metadata API（grabber.js: answerCount: info.answer_count ?? null），
+    非 search 通道；每问题恰 1 次请求
+
+APPROVED_PRODUCT_GOAL（已批准产品目标，V0.3 决策 A）:
+  - 搜索候选应尽可能提供来自【可信上游】的回答数量
+  - 缺失 / null 优于虚构（绝不编造数字）
+  - search 单候选 answerCount 获取失败不得拖累整个 search 命令
+  - 新增 candidates[].answerCount 为 additive optional（老 reader 忽略即兼容）
+
+IMPLEMENTATION_SOURCE:
+  PENDING T1 DISCOVERY / OPEN-D1
+  - 官方 search Item 原始 schema 是否有回答数量字段，当前仓库【未实测】
+    （UPSTREAM_SCHEMA_STATUS: UNKNOWN / DISCOVERY_REQUIRED）
+  - T1 真实 schema discovery 前，不得声称「官方 Item schema 已证明没有 answerCount」
+  - 若官方不携带，是否用 question-info answer_count 补充受 OPEN-D1 产品决策约束
+    （可能引入 Cookie / 每候选额外请求，须明确决策，不得默认静默引入）
+
+CODE_STATUS: PENDING
+
+RATIONALE:
+  数据完整性铁律：answerCount 必须来自可信上游；缺失即 null / 缺省优于虚构。
+  搜索规模可见性（用户预估语料规模与成本）是产品目标，但实现路径须先经真实 discovery。
+
+AUTHORITY / EVIDENCE:
+  src/official.js searchQuestions()、src/cli.js cmdSearch()（lines 221–256）
+  src/grabber.js:371、src/http.js:41,75（question-info answer_count 来源）
+  V0.3 Spec §3（决策 A）、§16 OPEN-D1
+
+IMPLEMENTATION_IMPACT: CONDITIONAL_FUTURE_TICKET（仅当 T1 discovery + OPEN-D1 决策批准后才开 CODE 票；
+  当前不实现、不写死「T2 后必然支持 answerCount」）
+```
+
+### 3.16 countMismatch severity（V0.3 决策 D 归一化）
+
+```text
+CURRENT_BEHAVIOR（真实实现）:
+  - verifier.js verifyOutput() 当 reportedAnswerCount !== answers.length 时：
+    result.countMismatch = true
+    且 result.warnings.push(...) 把该提示写入 verifier.warnings[]
+  - make-handoff.mjs: warnings = verification.warnings
+    → 当前 handoff.warnings 也会收到 countMismatch 这类 warning
+  - 这些字段（reportedAnswerCount / capturedAnswerCount / countMismatch）属于
+    VERIFIER_DIAGNOSTIC_RESULT，非 canonical answers.json 字段
+
+APPROVED_TARGET（V0.3 决策 D，待 T3 实现）:
+  COUNT_MISMATCH_SEVERITY = DIAGNOSTIC_ONLY
+  - 保留：reportedAnswerCount / capturedAnswerCount / countMismatch 三诊断字段
+  - 不再进入 verifier.warnings[]（移除 warnings.push 那一行）
+  - 不影响 valid（历来不设失败门）
+  - 因此 handoff.warnings 也不再包含 countMismatch
+  - 其他 warning / verifier failure / handoff 语义不变
+
+CODE_STATUS: PENDING T3
+
+RATIONALE:
+  countMismatch 仅是诊断性提示（V2 §20 / references/verification.md「仅提示，不设失败门」），
+  混入 warnings[] 使其被下游当作失败 / 警告信号消费，造成语义污染。
+
+AUTHORITY / EVIDENCE:
+  src/verifier.js:145–156、scripts/make-handoff.mjs:73
+  V0.3 Spec §6（决策 D）、§12.4、R2-5
+
+IMPLEMENTATION_IMPACT: CODE_TICKET_REQUIRED（T3：移除 countMismatch 的 warnings.push，
+  保留三诊断字段；补单测覆盖 R2-5 六项传播断言）
+```
+
+### 3.17 Agent projection / capability isolation（V0.3 决策 C 归一化）
+
+```text
+CURRENT STAGE（真实状态）:
+  - V2 已批准安全合同（§9 / §9.1 / §9.2）：LLM NETWORK/SHELL/FILESYSTEM/TOOLS 全 DENY，
+    trusted controller 唯一 IO；隔离不可用 → digest/map fail closed
+  - 但【实现可行性尚未证明】：当前仓库不存在已完成的
+    CAPABILITY_ISOLATION_AVAILABLE: YES/NO 结论可供消费
+  - V2 §9.2.9 规定 Phase 5B 收口后的下一步是 Phase 5C — Capability Isolation Feasibility Check，
+    须由 V0.3 在当前阶段真实执行（T4 / T5），非消费既有结论
+
+APPROVED_STAGE（V0.3 决策 C）:
+  - T4 PHASE5_IMPLEMENTATION_AUDIT：审计 corpus 管线把 chunk/projection 交给模型的边界、
+    runtime 能否创建 tool-less LLM consumer、controller 与 LLM 边界
+  - T5 PHASE5C_CAPABILITY_ISOLATION_FEASIBILITY：NETWORK/SHELL/FS/TOOLS 能否确定性 DENY、
+    如何【证明】而非只靠 prompt、无法证明时如何 fail closed
+
+CAPABILITY_ISOLATION_AVAILABLE[target_runtime] = YES | NO（逐 runtime 独立）:
+  - 某 runtime YES（确定性证据）→ 仅允许该 runtime 进入 Agent projection/isolation CODE
+  - 某 runtime NO / UNKNOWN → capability_isolation_unavailable → 该 runtime digest/map STOP
+  - 禁止「一个 runtime 可用 → 推导其他 runtime 也可用」
+  - UNKNOWN 视为 STOP（不得预设 YES、不得 PARTIAL 模糊 fail closed）
+
+RATIONALE:
+  安全边界不依赖 prompt 声明；隔离可用性必须由真实证据门控，fail closed 不可被静默降级。
+
+AUTHORITY / EVIDENCE:
+  V2 Spec §9 / §9.1 / §9.2 / §9.2.9
+  V0.3 Spec §5（决策 C）、§16 OPEN-D3、§17 T4/T5
+
+IMPLEMENTATION_IMPACT: CONDITIONAL_FUTURE_TICKET（T4/T5 真实审计 + 可行性结论后才进入 T6 CODE；
+  任何 runtime 启用须以该 runtime 自身 AVAILABLE=YES 为前提；NO/UNKNOWN 不得标记支持）
+```
+
+### 3.18 Large corpus four-layer capability（V0.3 大型语料归一化）
+
+```text
+CURRENT IMPLEMENTED（真实已实现）:
+  1. popular-sample：corpus-anthology/scripts/popular-sample.mjs，按 voteupCount 取 Top N，
+     截断，明确标注「不代表整个语料」（高赞快速预览，非摘要、不进 coverage gate）
+  2. digest：corpus-anthology 既有 100% full-coverage canonical digest 管线
+     （chunk.mjs → map → verify.mjs → reduce.mjs，含 coverage / evidence gate / lineage）
+  3. archive：corpus-anthology 既有机械拼接、零改写归档能力
+
+APPROVED_TARGET / CODE_PENDING（V0.3 新增能力，待 T7/T9/T10）:
+  4. top-percent-digest：按 canonical voteupCount 降序取前 X% 回答，完整正文生成 digest；
+     显式声明覆盖比例、不冒充全量（与 full-coverage digest 不同）
+  5. hierarchical full digest：在保留 100% source coverage / evidence lineage 下
+     增加中间聚合层降本
+
+HARD INVARIANT:
+  SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST
+  - top-percent sampled output 不得声明 task=digest / full coverage
+  - hierarchical full digest 必须保持 source coverage / evidence mapping /
+    canonical source ID lineage（R10 lineage 不变量写死）
+
+OPEN DECISIONS（仍 OPEN，T0 不擅自解决）:
+  - OPEN-D2（top-percent 8 项 selection 合同：取整 / minimum / 范围 / 同赞边界 /
+    tie-break / X=100 / 默认 X / output 字段）
+  - OPEN-D6（top-percent vs V2 canonical full-coverage digest 合同冲突 / mode identity /
+    是否新增 handoff task / schema version）
+  - OPEN-D4（hierarchical intermediate evidence lineage 具体结构，T9）
+  - 上述未批准前，不得把具体百分比 / 字段 / 新 handoff task / schema version 写死
+
+RATIONALE:
+  在【不削弱】V2 coverage / evidence gate 前提下为不同规模与分析目的提供分层能力；
+  sampled 与 full coverage 语义必须严格区分，不冒充全量。
+
+AUTHORITY / EVIDENCE:
+  corpus-anthology/scripts/{popular-sample,verify,reduce,chunk}.mjs
+  V0.3 Spec §7（大型语料四层）、§16 OPEN-D2/D4/D6、§17 T7/T9/T10
+
+IMPLEMENTATION_IMPACT: CONDITIONAL_FUTURE_TICKET（T7/T9/T10 经对应 OPEN 决策批准后才开 CODE 票；
+  当前不实现、不声称 top-percent / hierarchical 新行为已可用）
+```
+
+---
+
 ## 4. 决策汇总
 
 ```text
@@ -595,11 +742,19 @@ DO_NOT_SUPPORT（当前阶段）:      3.10（clean-restart / --fresh）、
                                 3.12（batch 自动重试）
 DEFER_UNTIL_EVIDENCE:           无（当前无待证据决策；如未来出现 clean-restart /
                                 corrupt-cleanup / batch-retry 需求，重新走 DOCUMENT 决策）
-FUTURE_CODE_TICKET_REQUIRED:    1 项 —— 3.3（B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE
-                                修复：relPath 跨盘分支 + artifacts.base 字段 +
-                                Windows/portable 回归测试 + usage.md 措辞同步；
-                                目标行为 = APPROVED_TARGET_BEHAVIOR OPTION A（见 §3.3）；
-                                基于本合同批准后开独立 CODE ticket）
+RESOLVED_IN_MASTER:             1 项 —— 3.3（B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE
+                                已在 master 修复，commit ffd41ca；CURRENT_BEHAVIOR 即
+                                OPTION A：同盘 relative-to-cwd、Windows 跨盘
+                                relative-to-out-dir + artifacts.base="outdir"、
+                                绝不输出绝对路径。PRODUCT_DECISION: KEEP_CURRENT_BEHAVIOR；
+                                IMPLEMENTATION_IMPACT: NONE。见 §3.3 更新）
+PENDING_V0_3_CODE_TICKETS:      4 项（均为 V0.3 决策归一化，CODE PENDING，非当前行为）——
+                                3.15 Search Answer Count（PENDING T1 / OPEN-D1）
+                                3.16 countMismatch severity（PENDING T3，DIAGNOSTIC_ONLY）
+                                3.17 Agent projection / capability isolation
+                                     （PENDING T4/T5，runtime-scoped feasibility）
+                                3.18 Large corpus four-layer（PENDING T7/T9/T10，
+                                     sampled != full coverage，OPEN-D2/D4/D6）
                                 （注：§3.1 输入严格化、§3.7 剥离 server message 等
                                 "未来可能的行为变化"一律走：
                                 未来产品需求 → 本合同 amendment → 独立 DOCUMENT
@@ -607,11 +762,11 @@ FUTURE_CODE_TICKET_REQUIRED:    1 项 —— 3.3（B-1 CROSS_VOLUME_MACHINE_PATH
                                 不得直接从未来需求跳到 CODE）
 ```
 
-**关键结论**：本合同 13 项决策保持现状或明确不支持；**1 项（§3.3）为已批准目标行为
-（APPROVED_TARGET_BEHAVIOR = OPTION A）且 FUTURE_CODE_TICKET_REQUIRED**——B-1
-CROSS_VOLUME_MACHINE_PATH_DISCLOSURE 修复依据；该变化仅影响 Windows 跨盘边界的机器
-路径表示，正常同盘 JSON 逐字节不变。T-2（batch 回归测试）已按 §3.1-§3.14 边界推进；
-不因本合同产生投机功能。
+**关键结论**：本合同历史 13 项决策保持现状或明确不支持；**B-1（§3.3）已在 master 修复
+（ffd41ca），属 RESOLVED_IN_MASTER、IMPLEMENTATION_IMPACT: NONE**，不再作为
+FUTURE_CODE_TICKET_REQUIRED。V0.3 引入 4 项 PENDING_V0_3_CODE_TICKETS（§3.15–§3.18），
+均为**已批准产品目标的 CODE 待办**，当前代码行为仍是各自 CURRENT_BEHAVIOR，未在 master
+生效。T-2（batch 回归测试）已按 §3.1-§3.14 边界推进；不因本合同产生投机功能。
 
 ---
 

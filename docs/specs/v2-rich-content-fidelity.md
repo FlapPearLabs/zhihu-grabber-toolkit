@@ -1295,6 +1295,26 @@ Links 继续走现有 §11 策略。
 
 ## 16. Video metadata contract（视频）
 
+> **V0.3 amendment（2026-08-21，T0 DOCUMENT NORMALIZATION）**：自 V0.3 起，视频立场由 V2 原「detect + metadata，待真实样本」**正式收敛为 `VIDEO_SUPPORT = DO_NOT_SUPPORT`**。本 §16 原 detect / metadata 描述为历史立场，已被 V0.3 覆盖；**不进入任何 CODE、不等待真实视频 HTML schema、不建立 speculative parser**。详见 V0.3 Spec §4 / 决策 B（`IMPLEMENTATION_IMPACT: NONE`）。
+
+**VIDEO_SUPPORT = DO_NOT_SUPPORT**（永久产品立场；非 `DEFERRED`、非 `TODO`、非「未来可能」）：
+
+- 不支持视频结构抓取；
+- 不支持视频 metadata enrichment（不 detect、不生成 `detected` / `sourceUrl` / `posterUrl` 等结构）；
+- 不加载、不下载、不转码、不做语音识别、不抓字幕、不做视频理解；
+- 不为视频进行后续 discovery；
+- 不再等待真实视频 HTML schema；
+- 不建立 speculative parser。
+
+**兼容性约束：**
+- `answers[].assets.videos` 继续作为**兼容保留字段**存在，且**恒为空数组 `[]`**；
+- 不得删除该字段、不得破坏已有 consumer；
+- 当前实现已满足（`src/asset-extractor.js` `videos: []` 硬编码，无新 CODE）。
+
+**IMPLEMENTATION_IMPACT: NONE** —— 无新 CODE、无新常量 / guard、无视频样本 discovery。
+
+### 16.1 历史立场（V2 原 §16，已被 V0.3 覆盖，保留可追溯）
+
 视频**不是**当前核心需求，只做 detect + metadata：
 
 ```json
@@ -1308,7 +1328,7 @@ Links 继续走现有 §11 策略。
 
 - 写入 `assets.videos[]`。
 - **不做**：视频加载、下载、转码、语音识别、字幕抓取、视频理解。
-- **重要约束**：当前真实样本尚未确认知乎视频 HTML schema。**禁止提前猜测结构并实现一堆 speculative parser**；等真实样本出现再补（见 §25 Open questions）。
+- **重要约束**：当前真实样本尚未确认知乎视频 HTML schema。**禁止提前猜测结构并实现一堆 speculative parser**；等真实样本出现再补（见 §25 Open questions，该 open question 已被 V0.3 关闭）。
 
 ---
 
@@ -1640,7 +1660,7 @@ LLM map/final claim 文本含：[link](https://evil.example)、![img](https://ev
    4. Agent projection（§9）→ corpus 侧确定性投影；
    5. question metadata（§17）→ additive `question`；
    6. comments enrichment（§15，默认 off）→ 先真实 API 验证再实现；
-   7. video detect（§16）→ 等真实样本。
+   7. ~~video detect（§16）→ 等真实样本。~~ **已关闭（2026-08-21，V0.3 T0 amendment）：`VIDEO_SUPPORT = DO_NOT_SUPPORT`，无 video 实现工作（见 §16 / V0.3 Spec 决策 B）。**
 4. **灰度**：V2 渲染默认输出开关（如 `--render v2`）或直接替换，以不破坏现有产物为准；验证 V1 旧产物可读、V2 新产物过 verify-output。
 5. **回滚**：V2 仅 additive + renderer 替换，回滚 = 切回旧 renderer，无 schema 迁移负担。
 
@@ -1648,7 +1668,7 @@ LLM map/final claim 文本含：[link](https://evil.example)、![img](https://ev
 
 ## 25. Open questions
 
-1. **知乎视频 HTML schema**：当前真实样本未确认；视频 metadata 实现需等真实样本（§16）。
+1. ~~**知乎视频 HTML schema**：当前真实样本未确认；视频 metadata 实现需等真实样本（§16）。~~ **CLOSED BY V0.3 PRODUCT DECISION（2026-08-21，T0 amendment）：`VIDEO_SUPPORT = DO_NOT_SUPPORT`（见 §16 / V0.3 Spec 决策 B）。无需继续 video discovery；`assets.videos[]` 恒 `[]` 兼容保留。**
 2. ~~**评论 API 形态**：热度排序支持？batch 存在？每条回答单独请求？→ 实现前必须实测并回填证据（§15.2）。~~ **已关闭（2026-08-11，Phase 4A / 4A.1 真实 discovery）**。最小 evidence：`comment_v5/answers/{answerId}/root_comment`（answer-scoped，单请求）；server sorter 暴露 `score`（默认）/ `ts`（最新）；`limit=3` 生效；score mode 可 materialize root items；**此前包含 `status=open` + `offset=0` 的测试形态出现 `totals>0` 但 `data=[]` anomaly；未隔离证明其中任一单参数为唯一原因。v1 请求严格采用已观测真实客户端形态：无 `status=open`、`offset=`（§15.2）**；root/child 区分字段已确认（`reply_comment_id === "0"` 且 `reply_root_comment_id === item.id` → root，`child_comments` 为 reply）。batch：NOT OBSERVED（未穷举证明，不声称不存在）。合同落点：§15。
 3. **description 来源**：现有 answer API 是否直接返回 description？若无，question metadata 接口的响应 schema 需实测确认（§17.2）。
 4. **topics 字段来源与 schema**：需要实测问题元信息接口确认（§17.3）。
