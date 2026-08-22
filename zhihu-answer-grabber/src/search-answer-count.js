@@ -33,7 +33,10 @@ export async function enrichAnswerCounts(candidates, config, { delay = humanDela
         retries: 0, // 预算合同：每候选至多 1 次真实 HTTP 尝试
         referer: `https://www.zhihu.com/question/${cand.questionId}`,
       });
-      answerCount = typeof parsed?.answer_count === 'number' ? parsed.answer_count : null;
+      // 严格 count 校验：仅非负 safe integer 视为可信；异常上游值 fail closed 到 null
+      // （-1 / 1.5 / "12" / null / missing 一律 null，绝不伪造、绝不把未知显示为 0）
+      const n = parsed?.answer_count;
+      answerCount = Number.isSafeInteger(n) && n >= 0 ? n : null;
     } catch {
       // enrichment failure != search failure：单候选失败 → null，search 继续
       answerCount = null;

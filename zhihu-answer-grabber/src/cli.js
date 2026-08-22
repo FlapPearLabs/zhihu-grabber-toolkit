@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { loadConfig, resolveSecret, ConfigError } from './config.js';
 import { grabAll, normalizeQuestionInput } from './grabber.js';
 import { renderAnswers } from './render.js';
@@ -219,10 +220,24 @@ async function cmdBatch(config, file, { outDir = 'out', json = false, inputs = n
   return payload;
 }
 
-async function cmdSearch(keyword, { grab = false, json = false, outDir = 'out' } = {}) {
-  const secret = resolveSecret();
+/**
+ * search 命令：官方平台搜索 + T2 bounded question-info enrichment（OPEN-D1 批准合同）。
+ *
+ * deps 仅供测试注入（默认即生产实现，不改变生产语义）：
+ *   resolveSecretImpl / searchQuestionsImpl / enrichmentImpl / loadConfigImpl / cmdGrabImpl
+ */
+async function cmdSearch(keyword, { grab = false, json = false, outDir = 'out', deps = {} } = {}) {
+  const {
+    resolveSecretImpl = resolveSecret,
+    searchQuestionsImpl = searchQuestions,
+    enrichmentImpl = applyAnswerCountEnrichment,
+    loadConfigImpl = loadConfig,
+    cmdGrabImpl = cmdGrab,
+    enrichmentOptions = {},
+  } = deps;
+  const secret = resolveSecretImpl();
   if (!json) log(`▶ 官方平台搜索「${terminalSafe(keyword)}」…`);
-  const items = await searchQuestions(keyword, secret);
+  const items = await searchQuestionsImpl(keyword, secret);
   const questions = items
     .map((it) => ({ id: extractQuestionId(it), title: it.Title, type: it.ContentType }))
     .filter((it) => it.id);
@@ -238,6 +253,7 @@ async function cmdSearch(keyword, { grab = false, json = false, outDir = 'out' }
   const base = unique.map((q) => ({
     questionId: q.id,
     title: terminalSafe(q.title),
+    answerCount: null, // 占位（#8 contract 键序）；enrichment 覆盖值，位置不变
     contentType: q.type,
     url: `https://www.zhihu.com/question/${q.id}`,
   }));
@@ -245,7 +261,7 @@ async function cmdSearch(keyword, { grab = false, json = false, outDir = 'out' }
   // 只对最终 candidates enrichment（dedupe/slice 丢弃的 Item 不发请求）；
   // Cookie 不可用 → 整体降级 answerCount=null，search 仍成功；
   // 单候选失败 → 该候选 null，search 继续。
-  const candidates = await applyAnswerCountEnrichment(base);
+  const candidates = await enrichmentImpl(base, { loadConfigImpl, ...enrichmentOptions });
   if (json) {
     emitJson({ schemaVersion: 1, ok: true, command: 'search', query: keyword, candidates });
     return { candidates };
@@ -255,8 +271,8 @@ async function cmdSearch(keyword, { grab = false, json = false, outDir = 'out' }
   if (grab) {
     const first = unique[0];
     log(`\n--grab 已指定（人类模式），抓取第一个结果（ID=${first.id}）…`);
-    const config = loadConfig();
-    await cmdGrab(config, first.id, { outDir }); // P2-1: 透传 --out-dir
+    const config = loadConfigImpl();
+    await cmdGrabImpl(config, first.id, { outDir }); // P2-1: 透传 --out-dir
   }
   return { candidates };
 }
@@ -455,4 +471,9 @@ async function main() {
   }
 }
 
-main();
+// bin 入口：仅当直接执行本文件时运行 main()；
+// 作为模块被 import（测试）时不触发命令行执行。
+const isMain = Boolean(process.argv[1]) && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) main();
+
+export { cmdSearch };

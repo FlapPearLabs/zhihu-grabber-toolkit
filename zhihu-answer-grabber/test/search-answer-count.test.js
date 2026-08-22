@@ -100,6 +100,39 @@ test('响应无 answer_count 字段 / 非数值 → null（不伪造、不显示
   }
 });
 
+// ===== P2-1：严格 count 校验（异常上游值 fail closed 到 null）=====
+
+const COUNT_VALIDATION_CASES = [
+  { name: '负数 -1 → null', raw: -1, expected: null },
+  { name: '小数 1.5 → null', raw: 1.5, expected: null },
+  { name: '字符串 "12" → null', raw: '12', expected: null },
+  { name: 'null → null', raw: null, expected: null },
+  { name: 'missing 字段 → null', raw: undefined, expected: null },
+  { name: '0 → 0（真实零值保留）', raw: 0, expected: 0 },
+  { name: '正整数 → 正整数', raw: 538, expected: 538 },
+  { name: '超 safe 整数（2^53）→ null', raw: Number.MAX_SAFE_INTEGER + 1, expected: null },
+];
+
+for (const c of COUNT_VALIDATION_CASES) {
+  test(`P2-1 count 校验: ${c.name}`, async () => {
+    const original = globalThis.fetch;
+    globalThis.fetch = async () => {
+      const body = c.raw === undefined ? { title: 'no count' } : { answer_count: c.raw };
+      return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+    };
+    try {
+      const out = await enrichAnswerCounts(
+        [{ questionId: '1', title: 'a', contentType: 'question', url: 'https://www.zhihu.com/question/1' }],
+        CONFIG,
+        { delay: NO_DELAY },
+      );
+      assert.equal(out[0].answerCount, c.expected, `期望 ${String(c.expected)}`);
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+}
+
 test('enrichment 错误信息不泄漏（失败仅产生 null，错误文本不进结果）', async () => {
   const original = globalThis.fetch;
   globalThis.fetch = async () => {
