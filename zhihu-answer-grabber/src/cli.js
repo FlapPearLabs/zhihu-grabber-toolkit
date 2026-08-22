@@ -8,6 +8,7 @@ import { renderAnswers } from './render.js';
 import { searchQuestions, extractQuestionId } from './official.js';
 import { verifyOutput } from './verifier.js';
 import { machineArtifacts } from './machine-paths.js';
+import { applyAnswerCountEnrichment } from './search-answer-count.js';
 
 const HELP = `zhigrab — 知乎回答抓取工具（用你自己的 zhihu-cli 登录态）
 
@@ -234,18 +235,23 @@ async function cmdSearch(keyword, { grab = false, json = false, outDir = 'out' }
     return { candidates: [] };
   }
   const unique = [...new Map(questions.map((q) => [q.id, q])).values()].slice(0, 10);
-  const candidates = unique.map((q) => ({
+  const base = unique.map((q) => ({
     questionId: q.id,
     title: terminalSafe(q.title),
     contentType: q.type,
     url: `https://www.zhihu.com/question/${q.id}`,
   }));
+  // T2（OPEN-D1 批准合同：bounded question-info enrichment）：
+  // 只对最终 candidates enrichment（dedupe/slice 丢弃的 Item 不发请求）；
+  // Cookie 不可用 → 整体降级 answerCount=null，search 仍成功；
+  // 单候选失败 → 该候选 null，search 继续。
+  const candidates = await applyAnswerCountEnrichment(base);
   if (json) {
     emitJson({ schemaVersion: 1, ok: true, command: 'search', query: keyword, candidates });
     return { candidates };
   }
   log(`找到 ${unique.length} 个相关话题/问题：`);
-  unique.forEach((q, i) => log(`  ${i + 1}. [${terminalSafe(q.type)}] ${terminalSafe(q.title)}\n     ID=${q.id}  https://www.zhihu.com/question/${q.id}`));
+  unique.forEach((q, i) => log(`  ${i + 1}. [${terminalSafe(q.type)}] ${terminalSafe(q.title)}\n     ID=${q.id}  回答数：${candidates[i]?.answerCount ?? '未知'}  https://www.zhihu.com/question/${q.id}`));
   if (grab) {
     const first = unique[0];
     log(`\n--grab 已指定（人类模式），抓取第一个结果（ID=${first.id}）…`);

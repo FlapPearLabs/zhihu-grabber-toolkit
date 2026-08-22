@@ -63,7 +63,7 @@ The simplest way is to place these two files in the current `zhihu-answer-grabbe
 
 ## What it can do
 
-- **Search questions**: keyword → Zhihu question ID;
+- **Search questions**: keyword → Zhihu question ID; search results try to include an answer count for each candidate question (shown as "unknown" when the count cannot be fetched; this never breaks the search itself);
 - **Full capture**: it does not just fetch the first page — it keeps paginating to capture all currently accessible answers. Normally it keeps paginating until Zhihu explicitly reports the end; to avoid an infinite loop on abnormal pagination, there is currently a safety cap of 300 pages per question;
 - **Batch capture**: capture multiple questions in one run; one failure does not affect the others;
 - **Resume**: if interrupted, it continues where it stopped instead of restarting from the first page;

@@ -585,39 +585,55 @@ IMPLEMENTATION_IMPACT: NONE
 ### 3.15 Search Answer Count（搜索回答数量，V0.3 决策 A 归一化）
 
 ```text
-CURRENT_BEHAVIOR（真实实现）:
-  - search 命令当前只返回问题 ID / 标题 / 类型（src/cli.js cmdSearch 映射为 { id, title, type }）
-  - 当前 search 输出【不含】answerCount
-  - 既有 answerCount 来源是 question metadata API（grabber.js: answerCount: info.answer_count ?? null），
-    非 search 通道；每问题恰 1 次请求
+CURRENT_BEHAVIOR（真实实现，T2 已实现）:
+  - search 命令输出 candidates[]，每个候选新增 additive optional 字段
+    answerCount: number | null（src/cli.js cmdSearch）
+  - answerCount 来源：既有可信 question-info 端点 /api/v4/questions/{qid} 的 answer_count，
+    经 bounded enrichment（src/search-answer-count.js，OPEN-D1
+    APPROVED_BOUNDED_QUESTION_INFO_ENRICHMENT）：
+      * 仅 enrichment 最终 candidates（dedupe/slice 丢弃的 Item 不发请求）
+      * 每候选至多 1 次真实 HTTP 尝试（retries: 0）；当前候选上限 10 →
+        MAX_EXTRA_REQUESTS_PER_SEARCH = 10
+      * Cookie 不可用 → 全部降级 answerCount=null，search 本身仍成功
+      * 单候选 enrichment 失败 → 该候选 null，search 继续成功
+      * 缺失 / 非数值 / 失败 → null；绝不伪造数字、绝不把未知显示为 0
+  - 人类输出：已知值显示「回答数：N」；未知显示「回答数：未知」
+  - 排序 / 去重语义不变；--grab 行为不变（仅候选多一个展示字段）
+  - answerCount 仅为 upstream scale metadata，不是 verified claim /
+    capture completeness proof；不影响 verifier / verify-output 权威
 
-APPROVED_PRODUCT_GOAL（已批准产品目标，V0.3 决策 A）:
+APPROVED_PRODUCT_GOAL（V0.3 决策 A，已实现）:
   - 搜索候选应尽可能提供来自【可信上游】的回答数量
   - 缺失 / null 优于虚构（绝不编造数字）
   - search 单候选 answerCount 获取失败不得拖累整个 search 命令
-  - 新增 candidates[].answerCount 为 additive optional（老 reader 忽略即兼容）
+  - candidates[].answerCount 为 additive optional（老 reader 忽略即兼容）
 
-IMPLEMENTATION_SOURCE:
-  PENDING T1 DISCOVERY / OPEN-D1
-  - 官方 search Item 原始 schema 是否有回答数量字段，当前仓库【未实测】
-    （UPSTREAM_SCHEMA_STATUS: UNKNOWN / DISCOVERY_REQUIRED）
-  - T1 真实 schema discovery 前，不得声称「官方 Item schema 已证明没有 answerCount」
-  - 若官方不携带，是否用 question-info answer_count 补充受 OPEN-D1 产品决策约束
-    （可能引入 Cookie / 每候选额外请求，须明确决策，不得默认静默引入）
+IMPLEMENTATION_SOURCE: RESOLVED
+  - T1 discovery（#7，PASS + merged）：采样结论
+    NO_DIRECT_ANSWER_COUNT_FIELD_OBSERVED_IN_SAMPLED_SEARCH_RESPONSES
+    （官方 zhihu_search Item schema 无直接回答数字段；采样观察，
+    非 schema 级穷举否定）
+  - OPEN-D1（用户批准）：APPROVED_BOUNDED_QUESTION_INFO_ENRICHMENT
 
-CODE_STATUS: PENDING
+CODE_STATUS: IMPLEMENTED（T2，Issue #8）
+  - 实现：src/search-answer-count.js（enrichAnswerCounts /
+    applyAnswerCountEnrichment）+ src/cli.js cmdSearch 接入
+  - 测试：test/search-answer-count.test.js（9 项：已知值 / Cookie
+    降级 / 单候选失败 / 请求预算 / retries:0 / 顺序保持 / 凭据不泄漏）
 
 RATIONALE:
   数据完整性铁律：answerCount 必须来自可信上游；缺失即 null / 缺省优于虚构。
-  搜索规模可见性（用户预估语料规模与成本）是产品目标，但实现路径须先经真实 discovery。
+  搜索规模可见性（用户预估语料规模与成本）是产品目标；实现路径经真实
+  discovery（T1）+ 用户批准的有界补充（OPEN-D1）后落地。
 
 AUTHORITY / EVIDENCE:
-  src/official.js searchQuestions()、src/cli.js cmdSearch()（lines 221–256）
-  src/grabber.js:371、src/http.js:41,75（question-info answer_count 来源）
-  V0.3 Spec §3（决策 A）、§16 OPEN-D1
+  src/search-answer-count.js、src/cli.js cmdSearch（enrichment 接入）
+  src/official.js searchQuestions()、src/http.js buildQuestionInfoUrl /
+    requestJson（retries:0 预算）
+  V0.3 Spec §3（决策 A）、§16 OPEN-D1（RESOLVED）
+  Issue #7（T1 discovery）、#8（T2 实现合同）
 
-IMPLEMENTATION_IMPACT: CONDITIONAL_FUTURE_TICKET（仅当 T1 discovery + OPEN-D1 决策批准后才开 CODE 票；
-  当前不实现、不写死「T2 后必然支持 answerCount」）
+IMPLEMENTATION_IMPACT: NONE（已实现）
 ```
 
 ### 3.16 countMismatch severity（V0.3 决策 D 归一化）
@@ -736,20 +752,22 @@ IMPLEMENTATION_IMPACT: CONDITIONAL_FUTURE_TICKET（T7/T9/T10 经对应 OPEN 决�
 
 ```text
 KEEP_CURRENT_BEHAVIOR:          3.1 / 3.2 / 3.4 / 3.5 / 3.6 / 3.7 / 3.8 / 3.9 /
-                                3.11 / 3.12(transport) / 3.13 / 3.14
+                                3.11 / 3.12(transport) / 3.13 / 3.14 / 3.15
+                                （3.15 Search Answer Count：T2 已实现，见 §3.15）
 DO_NOT_SUPPORT（当前阶段）:      3.10（clean-restart / --fresh）、
                                 3.11（corrupt 自动清理）、
                                 3.12（batch 自动重试）
 DEFER_UNTIL_EVIDENCE:           无（当前无待证据决策；如未来出现 clean-restart /
                                 corrupt-cleanup / batch-retry 需求，重新走 DOCUMENT 决策）
-RESOLVED_IN_MASTER:             1 项 —— 3.3（B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE
+RESOLVED_IN_MASTER:             2 项 —— 3.3（B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE
                                 已在 master 修复，commit ffd41ca；CURRENT_BEHAVIOR 即
                                 OPTION A：同盘 relative-to-cwd、Windows 跨盘
                                 relative-to-out-dir + artifacts.base="outdir"、
                                 绝不输出绝对路径。PRODUCT_DECISION: KEEP_CURRENT_BEHAVIOR；
                                 IMPLEMENTATION_IMPACT: NONE。见 §3.3 更新）
-PENDING_V0_3_CODE_TICKETS:      4 项（均为 V0.3 决策归一化，CODE PENDING，非当前行为）——
-                                3.15 Search Answer Count（PENDING T1 / OPEN-D1）
+                                3.15（Search Answer Count：T2 已实现并纳入
+                                CURRENT_BEHAVIOR；IMPLEMENTATION_IMPACT: NONE。见 §3.15 更新）
+PENDING_V0_3_CODE_TICKETS:      3 项（均为 V0.3 决策归一化，CODE PENDING，非当前行为）——
                                 3.16 countMismatch severity（PENDING T3，DIAGNOSTIC_ONLY）
                                 3.17 Agent projection / capability isolation
                                      （PENDING T4/T5，runtime-scoped feasibility）
@@ -764,9 +782,10 @@ PENDING_V0_3_CODE_TICKETS:      4 项（均为 V0.3 决策归一化，CODE PENDI
 
 **关键结论**：本合同既有行为决策保持现状或明确不支持；**B-1（§3.3）已在 master 修复
 （ffd41ca），属 RESOLVED_IN_MASTER、IMPLEMENTATION_IMPACT: NONE**，不再作为
-FUTURE_CODE_TICKET_REQUIRED。V0.3 引入若干 PENDING_V0_3_CODE_TICKETS（§3.15–§3.18），
-均为**已批准产品目标的 CODE 待办**，当前代码行为仍是各自 CURRENT_BEHAVIOR，未在 master
-生效。T-2（batch 回归测试）已按 §3.1-§3.14 边界推进；不因本合同产生投机功能。
+FUTURE_CODE_TICKET_REQUIRED；**3.15 Search Answer Count 已由 T2 实现并纳入 CURRENT_BEHAVIOR**。
+V0.3 其余 PENDING_V0_3_CODE_TICKETS（§3.16–§3.18）均为**已批准产品目标的 CODE 待办**，
+当前代码行为仍是各自 CURRENT_BEHAVIOR，未在 master 生效。T-2（batch 回归测试）已按
+§3.1-§3.14 边界推进；不因本合同产生投机功能。
 
 ---
 
