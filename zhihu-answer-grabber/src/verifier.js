@@ -17,7 +17,7 @@
  *   5. 回答 ID 无重复
  *   6. .progress.json 可解析
  *   7. done === true
- *   8. JSON 中回答数量与实际数组长度一致（captured vs reported，仅提示不设失败门）
+ *   8. JSON 中回答数量与实际数组长度一致（captured vs reported，仅 DIAGNOSTIC_ONLY 诊断，不设失败门；T3 起不写 warnings[]）
  *   9. Markdown 文件存在
  *  10. Markdown 与 JSON 记录数一致
  *  11. 输出不是空文件
@@ -142,7 +142,11 @@ export function verifyOutput(questionDir) {
       fail('answers 不是数组');
     } else {
       result.answers = answers.length;
-      // 8. captured vs reported（warning/metadata，不设失败门）
+      // 8. captured vs reported（V0.3 决策 D：DIAGNOSTIC_ONLY）
+      // 保留 reportedAnswerCount / capturedAnswerCount / countMismatch 三诊断字段
+      // (VERIFIER_DIAGNOSTIC_RESULT)，不再写入 warnings[]（不设失败门；T3 归一化）。
+      // handoff.warnings 经 make-handoff 投影 verifier.warnings → countMismatch
+      // 自然不再出现于 handoff.warnings；其他 warnings / failure 语义不变。
       result.capturedAnswerCount = answers.length;
       const reported = parsed && typeof parsed === 'object' && !Array.isArray(parsed)
         ? (parsed.reportedAnswerCount ?? parsed.answerCount ?? parsed.total ?? null)
@@ -152,7 +156,7 @@ export function verifyOutput(questionDir) {
         && Number.isFinite(result.reportedAnswerCount)
         && result.reportedAnswerCount !== answers.length) {
         result.countMismatch = true;
-        result.warnings.push(`页面统计 ${result.reportedAnswerCount} 与实际抓取 ${answers.length} 不一致（原因未知，仅提示，不设失败）`);
+        // 故意不 push 到 result.warnings —— DIAGNOSTIC_ONLY 语义见 V0.3 Spec §6。
       }
       // 4. 每条回答 ID 合法
       const badIds = answers.filter((a) => !/^\d{1,20}$/.test(String(a?.id ?? '')));

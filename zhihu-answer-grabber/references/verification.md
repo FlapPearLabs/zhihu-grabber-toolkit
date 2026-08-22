@@ -34,12 +34,12 @@ node "<SKILL_ROOT>/scripts/verify-output.mjs" out/<问题ID>
   "duplicates": 0,
   "jsonValid": true,
   "markdownPresent": true,
-  "warnings": ["页面统计 253 与实际抓取 247 不一致（原因未知，仅提示，不设失败）"]
+  "warnings": []
 }
 ```
 
 - `jsonQuestionId`：`answers.json.questionId` 字段；必须与 `questionId`（目录名）一致（P1-4 三方一致：目录名 = JSON = handoff）。
-- `capturedAnswerCount` / `reportedAnswerCount` / `countMismatch`：页面/接口统计值与实际抓取数的对比（P2-3）；**仅提示，不设失败门**——统计值与 API 可获取数可能天然不一致，原因未知时不得据此判失败。
+- `capturedAnswerCount` / `reportedAnswerCount` / `countMismatch`：页面/接口统计值与实际抓取数的对比（P2-3，V0.3 决策 D 归一化为 **DIAGNOSTIC_ONLY**）；**仅诊断事实，不设失败门**——统计值与 API 可获取数可能天然不一致，原因未知时不得据此判失败；T3 起该差异不再写入 `warnings[]`（既不升 valid=false，也不再作为 warning 出现在 handoff）。
 
 ## 1b. 单一事实来源
 
@@ -76,7 +76,7 @@ node "<SKILL_ROOT>/scripts/verify-output.mjs" out/<问题ID>
 
 ## 3. 数量不一致处理
 
-当 `reportedAnswerCount`（页面统计值）与 `capturedAnswerCount`（接口实际抓取数）不一致时，`verify-output` 输出 `countMismatch: true` 并附 warning——**这只是提示/元数据，不设失败门**（统计值与 API 可获取数可能天然不一致，原因未知）。
+当 `reportedAnswerCount`（页面统计值）与 `capturedAnswerCount`（接口实际抓取数）不一致时，`verify-output` 输出 `countMismatch: true` 作为结构化诊断事实（与 `reportedAnswerCount` / `capturedAnswerCount` 一同在 verifier 产物中保留）——**这只是诊断元数据，不设失败门**（V0.3 决策 D 归一化为 `DIAGNOSTIC_ONLY`；T3 起该差异不再写入 `warnings[]`，也不进入 `handoff.warnings`）。
 
 **正确输出：**
 

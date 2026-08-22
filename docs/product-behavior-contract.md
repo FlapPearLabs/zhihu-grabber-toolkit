@@ -639,35 +639,39 @@ IMPLEMENTATION_IMPACT: NONE（已实现）
 ### 3.16 countMismatch severity（V0.3 决策 D 归一化）
 
 ```text
-CURRENT_BEHAVIOR（真实实现）:
+CURRENT_BEHAVIOR（T3 后真实实现）:
   - verifier.js verifyOutput() 当 reportedAnswerCount !== answers.length 时：
     result.countMismatch = true
-    且 result.warnings.push(...) 把该提示写入 verifier.warnings[]
-  - make-handoff.mjs: warnings = verification.warnings
-    → 当前 handoff.warnings 也会收到 countMismatch 这类 warning
-  - 这些字段（reportedAnswerCount / capturedAnswerCount / countMismatch）属于
-    VERIFIER_DIAGNOSTIC_RESULT，非 canonical answers.json 字段
+    仅此而已（不再 result.warnings.push(...); V0.3 决策 D T3 归一化）
+  - 三诊断字段（reportedAnswerCount / capturedAnswerCount / countMismatch）保留
+    在 verifier 产物中（VERIFIER_DIAGNOSTIC_RESULT；非 canonical answers.json 字段）
+  - make-handoff.mjs: warnings = verification.warnings（投影保真）
+    → handoff.warnings 不再含 countMismatch
+  - 其他 warning / verifier failure / handoff 语义不变；
+    14 项 verify-output 校验权威不变；
+    canonical answers.json / answerCount 事实不变
 
-APPROVED_TARGET（V0.3 决策 D，待 T3 实现）:
+APPROVED_TARGET（V0.3 决策 D，与 CURRENT 一致）:
   COUNT_MISMATCH_SEVERITY = DIAGNOSTIC_ONLY
   - 保留：reportedAnswerCount / capturedAnswerCount / countMismatch 三诊断字段
-  - 不再进入 verifier.warnings[]（移除 warnings.push 那一行）
+  - 不进入 verifier.warnings[]（T3 移除 warnings.push 那一行）
   - 不影响 valid（历来不设失败门）
-  - 因此 handoff.warnings 也不再包含 countMismatch
+  - handoff.warnings 不再包含 countMismatch（因 make-handoff 投影 verifier.warnings）
   - 其他 warning / verifier failure / handoff 语义不变
 
-CODE_STATUS: PENDING T3
+CODE_STATUS: IMPLEMENTED（T3 ff-only merge 后落入 CURRENT；T3 仍待 independent
+  CODE review PASS 确认）
 
 RATIONALE:
   countMismatch 仅是诊断性提示（V2 §20 / references/verification.md「仅提示，不设失败门」），
   混入 warnings[] 使其被下游当作失败 / 警告信号消费，造成语义污染。
 
 AUTHORITY / EVIDENCE:
-  src/verifier.js:145–156、scripts/make-handoff.mjs:73
+  src/verifier.js:145–158（三诊断字段写入 + 不再 push warning）、scripts/make-handoff.mjs:73
   V0.3 Spec §6（决策 D）、§12.4、R2-5
 
-IMPLEMENTATION_IMPACT: CODE_TICKET_REQUIRED（T3：移除 countMismatch 的 warnings.push，
-  保留三诊断字段；补单测覆盖 R2-5 六项传播断言）
+IMPLEMENTATION_IMPACT: RESOLVED（T3 已实现，CODE_STATUS = IMPLEMENTED；T3 exact
+  reviewed SHA 独立 CODE review PASS 之后正式生效到 CURRENT_BEHAVIOR）
 ```
 
 ### 3.17 Agent projection / capability isolation（V0.3 决策 C 归一化）
@@ -767,8 +771,10 @@ RESOLVED_IN_MASTER:             2 项 —— 3.3（B-1 CROSS_VOLUME_MACHINE_PATH
                                 IMPLEMENTATION_IMPACT: NONE。见 §3.3 更新）
                                 3.15（Search Answer Count：T2 已实现并纳入
                                 CURRENT_BEHAVIOR；IMPLEMENTATION_IMPACT: NONE。见 §3.15 更新）
-PENDING_V0_3_CODE_TICKETS:      3 项（均为 V0.3 决策归一化，CODE PENDING，非当前行为）——
-                                3.16 countMismatch severity（PENDING T3，DIAGNOSTIC_ONLY）
+PENDING_V0_3_CODE_TICKETS:      2 项（均为 V0.3 决策归一化，CODE PENDING，非当前行为）——
+                                3.16 countMismatch severity（T3 已实现，CODE_STATUS
+                                     = IMPLEMENTED；待 independent CODE review PASS；
+                                     见 §3.16 更新）
                                 3.17 Agent projection / capability isolation
                                      （PENDING T4/T5，runtime-scoped feasibility）
                                 3.18 Large corpus four-layer（PENDING T7/T9/T10，

@@ -94,8 +94,16 @@
   - **C. Agent projection / capability isolation**：V2 §9/§9.1/§9.2 安全合同已批准（LLM NETWORK/SHELL/FS/TOOLS 全 DENY，
     trusted controller 唯一 IO，隔离不可用 → fail closed）；但**实现可行性尚未证明**。`CAPABILITY_ISOLATION_AVAILABLE[target_runtime] = YES|NO`
     逐 runtime 独立判定，UNKNOWN → STOP，禁止跨 runtime 推导、禁止 prompt-only 降级。T4（Phase5 实现审计）/ T5（Phase5C 隔离可行性）必须真实执行。
-  - **D. countMismatch**：`COUNT_MISMATCH_SEVERITY = DIAGNOSTIC_ONLY`（保留 reportedAnswerCount/capturedAnswerCount/countMismatch 三诊断字段，
-    移出 verifier.warnings[]，不影响 valid，因而不进 handoff.warnings）。CODE PENDING T3；当前代码仍把 countMismatch 推入 warnings[]。
+  - **D. countMismatch**：`COUNT_MISMATCH_SEVERITY = DIAGNOSTIC_ONLY`（V0.3 决策 D 已进入 accepted implementation baseline；
+    保留 reportedAnswerCount / capturedAnswerCount / countMismatch 三诊断字段（VERIFIER_DIAGNOSTIC_RESULT），
+    移出 `verifier.warnings[]`（不影响 `valid`；因 `make-handoff` 投影 `verifier.warnings` → `handoff.warnings` 自然不再含 countMismatch）。
+    真实实现合同：`src/verifier.js:145–158` 写入三诊断字段但不再 push warning；`scripts/make-handoff.mjs` 仍按原样
+    投影 `verification.warnings`（T3 不改 schema，不改投影源）；`references/verification.md` §3 已同步为「DIAGNOSTIC_ONLY」
+    描述。其他 warning / failure / handoff / 14 项 verify-output 权威语义不变。回归：matched-counts / 真实 failure
+    仍 `valid=false` 且 warning 保留；matched counts 不再产生 warning。Test coverage：
+    `test/count-mismatch-diagnostic.test.js`（R2-5 六项 contract assertions + 8 项回归）+ 既有 `test/verify-output.test.js` P2-3
+    已重写为 DIAGNOSTIC_ONLY 断言。Issue #4 product-problem record 是否 close 取决于 T3 exact reviewed SHA
+    PASS + ff-only merge + 行为满足 #4 acceptance（见 Issue #9 close 流程）。
   - **大型语料四层能力**：CURRENT IMPLEMENTED（popular-sample / full-coverage digest / archive）vs
     APPROVED TARGET（top-percent sampled analysis / hierarchical full digest）。硬不变量 `SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST`；
     hierarchical full digest 必须保持 source coverage / evidence mapping / canonical source ID lineage。

@@ -61,7 +61,9 @@ const questionId = verification.questionId; // 来自 verifier（= 目录名 = a
 const answerCount = Array.isArray(answers) ? answers.length : 0;
 
 // 3. 构建 handoff（相对路径，相对 handoff 所在目录）
-//    warnings 原样保留（含 countMismatch 等非失败提示，供下游知情；不设失败门）
+//    warnings 原样保留（投影 verifier.warnings；T3 后 countMismatch 不再进
+//    verifier.warnings，故也自然不再出现于 handoff.warnings；其他 warnings
+//    / failure 语义不变；不设失败门）。
 const handoff = {
   task,
   sourceType: 'zhihu-answers',

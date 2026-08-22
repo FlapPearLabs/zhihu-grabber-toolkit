@@ -140,18 +140,23 @@ test('verify-output answers.json 缺少 questionId → valid false（P1-4）', (
   assert.ok(parsed.warnings.some((w) => w.includes('questionId')));
 });
 
-test('verify-output reportedAnswerCount 不一致 → warning 但不设失败门（P2-3）', () => {
+test('verify-output reportedAnswerCount 不一致 → 诊断字段保留 + DIAGNOSTIC_ONLY（不进 warnings，P2-3，T3 归一化）', () => {
   const { outDir, files } = makeFixture();
   const json = JSON.parse(fs.readFileSync(files.answersJson, 'utf8'));
   json.reportedAnswerCount = 253; // 页面统计 253，实际抓 2
   fs.writeFileSync(files.answersJson, JSON.stringify(json));
   const r = runVerify(outDir);
   const parsed = JSON.parse(r.stdout);
-  assert.equal(parsed.valid, true, '数量不一致只是提示，不得让 valid=false');
+  assert.equal(parsed.valid, true, '数量不一致只是诊断，不得让 valid=false');
+  // 三诊断字段必须保留（VERIFIER_DIAGNOSTIC_RESULT 不变）
   assert.equal(parsed.countMismatch, true);
   assert.equal(parsed.capturedAnswerCount, 2);
   assert.equal(parsed.reportedAnswerCount, 253);
-  assert.ok(parsed.warnings.some((w) => w.includes('不一致')));
+  // T3 归一化后，countMismatch 不再写入 warnings[]（DIAGNOSTIC_ONLY）
+  assert.ok(
+    !parsed.warnings.some((w) => w.includes('不一致') || w.includes('countMismatch')),
+    'countMismatch 不得再进入 verifier.warnings[]'
+  );
 });
 
 // ===== Fix 6：legacy raw-array 不能升级为 canonical verified handoff =====
