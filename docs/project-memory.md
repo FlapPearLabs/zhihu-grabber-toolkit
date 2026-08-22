@@ -58,12 +58,13 @@
 - **V2 Phase 3 — Question Metadata 已纳入 accepted project baseline**：additive `question` metadata（description/topics）、NETWORK_REQUEST_DELTA=0、failure/empty semantics（Spec §20.2.1）、resume preservation 与 identity gate 均为长期合同（见上文 PHASE3_SCHEMA_DISCOVERY 与已批准决策）。
 - **当前产品阶段（CURRENT PRODUCT STAGE）**：**V0.3 gated execution**
   ——V0.3 Draft Spec 已通过独立 DOCUMENT review 并 ff-only 合并 master（base `22b8ed3`，Status: APPROVED）；
-  T0 DOCUMENT NORMALIZATION 已 PASS + merge；T1（search schema discovery）已完成并 merge master；
+  T0 DOCUMENT NORMALIZATION 已 PASS + merge；T1（search schema discovery）与 T2（search answer count
+  implementation）已完成并进入 accepted implementation baseline；
   各 ticket 状态以 **Tracker #6** 为执行事实源，严格按 T1→T11 顺序 gate 推进；
   gate conclusion（PASS / merge / close）不在此文件预写，由 Git history 与 Tracker 保存。
 - **V0.3 已批准产品决策（durable，见 `docs/specs/v0.3-product-scope.md`）**：
-  - **A. Search Answer Count（T1 已完成；T2 candidate 待独立 CODE review）**：目标——搜索候选应尽可能提供来自可信上游的回答数量；缺失 / null 优于虚构。
-    - T1（#7，已 PASS + merged）：官方 `zhihu_search` Item schema 采样结论
+  - **A. Search Answer Count（T1/T2 已进入 accepted implementation baseline）**：目标——搜索候选应尽可能提供来自可信上游的回答数量；缺失 / null 优于虚构。
+    - T1 discovery 结论（独立 review PASS 后 merge）：官方 `zhihu_search` Item schema 采样结论
       `NO_DIRECT_ANSWER_COUNT_FIELD_OBSERVED_IN_SAMPLED_SEARCH_RESPONSES`（3 关键词 / 30 Items，
       顶层 schema 无 answer-count 字段；仅 `CommentCount`=评论数 / `VoteUpCount`=点赞数；采样观察，非 schema 级否定）。
     - OPEN-D1（用户批准）：`APPROVED_BOUNDED_QUESTION_INFO_ENRICHMENT`——用既有 question-info
@@ -71,11 +72,22 @@
       每候选至多 1 次真实 HTTP 尝试（retries:0）；候选上限 10 → `MAX_EXTRA_REQUESTS_PER_SEARCH = 10`；
       Cookie 不可用 → 全部 `answerCount=null`，search 仍成功；单候选失败 → 该候选 null；
       `answerCount` 仅是 upstream scale metadata，非 verified claim / capture completeness proof。
-    - T2（#8，实现 candidate）：`src/search-answer-count.js`（`enrichAnswerCounts` /
-      `applyAnswerCountEnrichment`）+ `src/cli.js cmdSearch` 接入；输出 `candidates[].answerCount: number|null`
-      （additive optional）；人类输出「回答数：N / 未知」；`test/search-answer-count.test.js` 覆盖
-      已知值 / Cookie 降级 / 单候选失败 / 请求预算 / retries:0 / 顺序保持 / 凭据不泄漏。
-      （独立 CODE review 结论与 merge 状态以 Tracker #6 / Issue #8 / Git history 为准。）
+    - T2 accepted implementation（durable）：
+      - search final candidates 暴露 `answerCount: number | null`（additive optional，
+        candidates[] 键序 `questionId/title/answerCount/contentType/url`）；
+      - 来源：既有 question-info `/api/v4/questions/{qid}` 的 `answer_count`；
+      - 仅 final candidates enrichment（dedupe/slice 丢弃的 Item 不发请求）；
+      - 每候选至多 1 次真实 HTTP 尝试（retries:0）；当前候选 cap 10 → max +10 / search；
+      - Cookie 不可用 → search 仍成功，`answerCount=null`（enrichment 降级，非 search 失败）；
+      - 单候选 enrichment 失败 → 仅该候选 null，search 继续；
+      - 异常 `answer_count`（负数 / 小数 / 字符串 / 缺失 / 超 safe 整数）→ null；
+        仅非负 safe integer 被接受；真实 0 保留为 0；
+      - 人类输出：已知「回答数：N」/ 未知「回答数：未知」/ 真实 0 显示 0（未知绝不显示 0）；
+      - `answerCount` 仅是 upstream scale metadata，非 verified claim / capture completeness proof；
+      - 无 browser scraping；verifier 语义不变；
+      - CLI 直接执行兼容 POSIX bin symlink 安装（`isDirectExecution` realpath 判定）；
+      - 测试：`test/search-answer-count.test.js`（count 校验 / 预算 / 降级语义）+
+        `test/search-answer-count-cli.test.js`（CLI 集成合同）+ `test/cli-entrypoint.test.js`（bin 入口）。
   - **B. Video**：`VIDEO_SUPPORT = DO_NOT_SUPPORT`（永久产品立场）。不抓 / 不 enrich / 不加载 / 不下载 / 不转码 /
     不抓字幕 / 不做语音识别 / 不做视频理解 / 不为视频做 discovery / 不建 speculative parser；
     `answers[].assets.videos: []` 仅作兼容保留字段。IMPLEMENTATION_IMPACT: NONE。V2 §16/§24/§25 已由 T0 归一化为该立场。
