@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadConfig, resolveSecret, ConfigError } from './config.js';
 import { grabAll, normalizeQuestionInput } from './grabber.js';
 import { renderAnswers } from './render.js';
@@ -471,9 +471,29 @@ async function main() {
   }
 }
 
+/**
+ * 判定是否直接执行本文件（bin 入口）。
+ *
+ * 用 canonical real path 比较：npm/pnpm/yarn 安装的 POSIX bin symlink
+ * （node_modules/.bin/zhigrab -> ../package/src/cli.js）下，process.argv[1]
+ * 保留 symlink 路径而 import.meta.url 是 real target 路径，字面比较会误判。
+ * realpath 失败时 fail safe 退回字面比较（不抛错、不弄崩 import 或 CLI）。
+ */
+export function isDirectExecution() {
+  if (!process.argv[1]) return false;
+  try {
+    const entryReal = fs.realpathSync(process.argv[1]);
+    const selfReal = fs.realpathSync(fileURLToPath(import.meta.url));
+    return process.platform === 'win32'
+      ? entryReal.toLowerCase() === selfReal.toLowerCase()
+      : entryReal === selfReal;
+  } catch {
+    return import.meta.url === pathToFileURL(process.argv[1]).href;
+  }
+}
+
 // bin 入口：仅当直接执行本文件时运行 main()；
 // 作为模块被 import（测试）时不触发命令行执行。
-const isMain = Boolean(process.argv[1]) && import.meta.url === pathToFileURL(process.argv[1]).href;
-if (isMain) main();
+if (isDirectExecution()) main();
 
 export { cmdSearch };
