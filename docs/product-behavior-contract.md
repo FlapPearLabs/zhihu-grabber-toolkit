@@ -771,10 +771,10 @@ RESOLVED_IN_MASTER:             2 项 —— 3.3（B-1 CROSS_VOLUME_MACHINE_PATH
                                 IMPLEMENTATION_IMPACT: NONE。见 §3.3 更新）
                                 3.15（Search Answer Count：T2 已实现并纳入
                                 CURRENT_BEHAVIOR；IMPLEMENTATION_IMPACT: NONE。见 §3.15 更新）
+IMPLEMENTED_UNMERGED_CANDIDATE: 1 项 —— 3.16 countMismatch severity（T3 已实现，
+                                CODE_STATUS = IMPLEMENTED；待 independent CODE review PASS；
+                                尚未作为 master CURRENT_BEHAVIOR；见 §3.16 更新）
 PENDING_V0_3_CODE_TICKETS:      2 项（均为 V0.3 决策归一化，CODE PENDING，非当前行为）——
-                                3.16 countMismatch severity（T3 已实现，CODE_STATUS
-                                     = IMPLEMENTED；待 independent CODE review PASS；
-                                     见 §3.16 更新）
                                 3.17 Agent projection / capability isolation
                                      （PENDING T4/T5，runtime-scoped feasibility）
                                 3.18 Large corpus four-layer（PENDING T7/T9/T10，
@@ -789,8 +789,9 @@ PENDING_V0_3_CODE_TICKETS:      2 项（均为 V0.3 决策归一化，CODE PENDI
 **关键结论**：本合同既有行为决策保持现状或明确不支持；**B-1（§3.3）已在 master 修复
 （ffd41ca），属 RESOLVED_IN_MASTER、IMPLEMENTATION_IMPACT: NONE**，不再作为
 FUTURE_CODE_TICKET_REQUIRED；**3.15 Search Answer Count 已由 T2 实现并纳入 CURRENT_BEHAVIOR**。
-V0.3 其余 PENDING_V0_3_CODE_TICKETS（§3.16–§3.18）均为**已批准产品目标的 CODE 待办**，
-当前代码行为仍是各自 CURRENT_BEHAVIOR，未在 master 生效。T-2（batch 回归测试）已按
+**3.16 countMismatch severity 已作为 IMPLEMENTED_UNMERGED_CANDIDATE，待独立 CODE review PASS，
+尚未在 master 生效**。V0.3 的 PENDING_V0_3_CODE_TICKETS 仅为 §3.17–§3.18，均为
+**已批准产品目标的 CODE 待办**，当前代码行为仍是各自 CURRENT_BEHAVIOR，未在 master 生效。T-2（batch 回归测试）已按
 §3.1-§3.14 边界推进；不因本合同产生投机功能。
 
 ---

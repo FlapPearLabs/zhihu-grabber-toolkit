@@ -99,8 +99,9 @@
     移出 `verifier.warnings[]`（不影响 `valid`；因 `make-handoff` 投影 `verifier.warnings` → `handoff.warnings` 自然不再含 countMismatch）。
     真实实现合同：`src/verifier.js:145–158` 写入三诊断字段但不再 push warning；`scripts/make-handoff.mjs` 仍按原样
     投影 `verification.warnings`（T3 不改 schema，不改投影源）；`references/verification.md` §3 已同步为「DIAGNOSTIC_ONLY」
-    描述。其他 warning / failure / handoff / 14 项 verify-output 权威语义不变。回归：matched-counts / 真实 failure
-    仍 `valid=false` 且 warning 保留；matched counts 不再产生 warning。Test coverage：
+    描述。其他 warning / failure / handoff / 14 项 verify-output 权威语义不变。回归：matched counts 不产生
+    countMismatch warning，且无其他 verifier failure 时保持 `valid=true`；mismatch-only 同样不影响
+    `valid`；真实 verifier failure 继续 `valid=false`，保留对应 warning / failure 语义。Test coverage：
     `test/count-mismatch-diagnostic.test.js`（R2-5 六项 contract assertions + 8 项回归）+ 既有 `test/verify-output.test.js` P2-3
     已重写为 DIAGNOSTIC_ONLY 断言。Issue #4 product-problem record 是否 close 取决于 T3 exact reviewed SHA
     PASS + ff-only merge + 行为满足 #4 acceptance（见 Issue #9 close 流程）。
