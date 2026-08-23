@@ -169,6 +169,16 @@
     verify hierarchyIssues 门、reduce 顶层节点 claims → final.json（mode="digest" 消费合同不变）。
     实测性能（合成 538 源，MEASURED）：reduce-input 192.9KB/538 claims → 105.8KB/7 顶层 claims
     （claims -98.7%、bytes -45.2%）。flat digest 行为不变；hierarchy 显式启用不自动路由。
+- **T11 #17 Real Dogfood（2026-08-24，STOPPED）**：4 真实知乎语料抓取+验收全部 `valid=true`
+  （47/79/183/318；19668080=183/185、23933514=318/324 countMismatch 保持 DIAGNOSTIC_ONLY）；
+  archive/popular-sample/top-percent select(10%) 三带完成；**唯一完成的全量 digest 为 47 源
+  （26546908）**：mode=digest、47/47 claims 带 canonical evidenceSourceIds、coverage 全 gate 0、
+  hierarchy 默认 profile 下 flat 等价（2 L1，ADAPTIVE 正确）。**决定性限制（MODEL_QUALITY_LIMITATION）**：
+  Qwen3 1.7B 对长 sourceId token 截断回显（`question-<qid>-answer-<aid>` → `question-<qid>`，5/5 复现）
+  与 confidence 越界 [0,1]（meta 数字回显，2/2 复现）→ 79/183/318 规模各 ≥1 源确定性失败 → full-coverage
+  digest 被正确 fail-closed 阻断（失败率 ~1-2%/源，与长度/voteup 无关）。缓解路径已用诊断证实
+  （短不透明回显 token 1/1 成功）——**需独立 ticket（PO 批准）**。#3 保持 OPEN；V0_3_EXECUTION_COMPLETE
+  NOT DECLARED。证据：`docs/v0.3-real-dogfood-report.md`（merged 02475bd）；语料在 /tmp/t11-corpora。
 - **V0.3 关键 gate（immediate）**：T3 countMismatch / T4+T5 Agent consumer & isolation feasibility /
   T7 top-percent contract（**已批准，2026-08-23**）/ T9 hierarchical digest contract（**已批准，2026-08-23**）。
   各 T 遵循 Spec gate，不无条件并行。
