@@ -5,7 +5,7 @@
 ```text
 TICKET: #22 / T5-R
 TYPE: DISCOVERY / SECURITY EVIDENCE
-BASE: e2bf5e1bfad4daac98c3e21b5b59432c8c1d7038
+BASE: f9f6813c24e5997407b7ff3c8499b32f3b10d66c
 RUNTIME_ID: openai-responses-tool-less
 PROVIDER: OpenAI API
 ENDPOINT: POST https://api.openai.com/v1/responses
