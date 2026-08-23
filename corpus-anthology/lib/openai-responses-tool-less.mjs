@@ -71,6 +71,9 @@ function hasExactKeys(value, keys) {
 }
 
 const SOURCE_TAG = /^\[SOURCE ([A-Za-z0-9][A-Za-z0-9._-]{0,127})\]$/;
+const RESPONSE_KEYS = ['id', 'object', 'created_at', 'completed_at', 'status', 'error', 'incomplete_details', 'instructions', 'max_output_tokens', 'model', 'output', 'parallel_tool_calls', 'previous_response_id', 'reasoning', 'store', 'temperature', 'text', 'tool_choice', 'tools', 'top_p', 'truncation', 'usage', 'user', 'metadata'];
+const MESSAGE_KEYS = ['id', 'type', 'role', 'status', 'content'];
+const OUTPUT_TEXT_KEYS = ['type', 'text', 'annotations'];
 
 function isValidSourceId(sourceId) {
   return typeof sourceId === 'string' && SOURCE_TAG.test(`[SOURCE ${sourceId}]`);
@@ -109,7 +112,7 @@ function hasRemoteOrFileReference(text) {
   }
   const normalized = normalizePercentEncoding(text);
   return /(?:^|[^A-Za-z0-9+.-])[A-Za-z][A-Za-z0-9+.-]*:/u.test(normalized)
-    || /(?:\/\/|\\\\|\bwww\.)/iu.test(normalized)
+    || /(?:\/\/|\\|\bwww\.)/iu.test(normalized)
     || /(?:^|[\s<("'])\/(?:[A-Za-z0-9._~-]+(?:\/|$))/u.test(normalized)
     || /(?:^|\s)(?:\.\.?[\\/])/u.test(normalized)
     || /[\p{Cf}\p{Cs}]/u.test(normalized)
@@ -221,11 +224,13 @@ export function validateToolLessResponse(response, { sourceIds, runtime = REVIEW
   assertReviewedRuntime(runtime);
   assertSourceIds(sourceIds);
   if (!isPlainObject(response)
-    || !hasExactKeys(response, ['status', 'model', 'tools', 'tool_choice', 'output'])
+    || Object.keys(response).some((key) => !RESPONSE_KEYS.includes(key))
+    || response.object !== 'response'
     || response.status !== 'completed'
     || response.model !== MODEL_ID
     || !sameStringArray(response.tools, [])
     || response.tool_choice !== 'none'
+    || response.parallel_tool_calls !== false
     || !Array.isArray(response.output)
     || response.output.length !== 1) {
     fail('response runtime identity, tool configuration, status, or output item count is invalid');
@@ -233,16 +238,18 @@ export function validateToolLessResponse(response, { sourceIds, runtime = REVIEW
 
   const [message] = response.output;
   if (!isPlainObject(message)
-    || !hasExactKeys(message, ['type', 'role', 'status', 'content'])
+    || Object.keys(message).some((key) => !MESSAGE_KEYS.includes(key))
     || message.type !== 'message'
     || message.role !== 'assistant'
     || message.status !== 'completed'
     || !Array.isArray(message.content)
     || message.content.length !== 1
     || !isPlainObject(message.content[0])
-    || !hasExactKeys(message.content[0], ['type', 'text'])
+    || !hasExactKeys(message.content[0], OUTPUT_TEXT_KEYS)
     || message.content[0].type !== 'output_text'
-    || typeof message.content[0].text !== 'string') {
+    || typeof message.content[0].text !== 'string'
+    || !Array.isArray(message.content[0].annotations)
+    || message.content[0].annotations.length !== 0) {
     fail('response contains an unsupported output item');
   }
 

@@ -69,7 +69,10 @@ model. This is a constructive, fail-closed text boundary: any RFC scheme token
 `data:`, and `blob:`), protocol-relative `//host`, `www.`, UNC or apparent
 absolute/relative file path rejects the entire projection. This deliberately
 also rejects ambiguous colon-bearing text rather than treating a prompt
-instruction as a security control.
+instruction as a security control. A literal backslash is also rejected
+outright: this restricted qualification format has no complete safe Windows
+path grammar, so `\Windows\...` and every other backslash-bearing input fail
+closed.
 
 Before that reference scan, every percent-bearing input must decode with
 `decodeURIComponent` repeatedly to a stable value within eight passes; invalid
@@ -87,6 +90,8 @@ OpenAI endpoint, and validates the returned data. The request body contains
 only the projection text plus fixed configuration; its API credential remains
 in the HTTP authorization header and is never included in model input or JSON
 request content.
+
+The validator follows the official [Create Responses reference](https://developers.openai.com/api/reference/cli/resources/responses/methods/create): it permits documented top-level response metadata such as `id`, timestamps, `error`, `usage`, and `metadata`, while requiring the security-relevant `object: "response"`, completed status, fixed model, `tools: []`, `tool_choice: "none"`, and `parallel_tool_calls: false`. It accepts only one completed assistant `message`; only one `output_text` item is accepted, its documented `annotations` must be an empty array, and only its `text` is parsed. Tool/function/MCP/reasoning/computer and every other output-item type remain rejected.
 
 The response is accepted only when all of the following hold:
 

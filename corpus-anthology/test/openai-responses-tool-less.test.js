@@ -17,16 +17,27 @@ const projection = Object.freeze({
 
 function validResponse(overrides = {}) {
   return {
+    id: 'resp_qualification_fixture',
+    object: 'response',
+    created_at: 1740000000,
+    completed_at: 1740000001,
     status: 'completed',
+    error: null,
+    incomplete_details: null,
     model: REVIEWED_RUNTIME.model,
     tools: [],
     tool_choice: 'none',
+    parallel_tool_calls: false,
+    store: false,
+    metadata: {},
     output: [{
       type: 'message',
+      id: 'msg_qualification_fixture',
       role: 'assistant',
       status: 'completed',
       content: [{
         type: 'output_text',
+        annotations: [],
         text: JSON.stringify({
           schemaVersion: 1,
           claims: [{ claim: '来源表达了一个观点。', evidenceSourceIds: ['source-a'], confidence: 'low' }],
@@ -78,6 +89,7 @@ test('配置、非文本输入和任意 scheme / remote / file reference 均在�
     'read www.example.test',
     'read \\server\\share\\file',
     'read /private/file',
+    `[SOURCE source-a]\ntext\n[SOURCE source-b]\nread \\Windows\\System32`,
     'read ../relative-file',
     'read https%3A%2F%2Fexample.test',
     'read %252F%252Fexample.test',
@@ -158,11 +170,16 @@ test('模型身份、工具配置、非 message 输出、JSON/schema 与来源�
   const extraContentEnvelope = validResponse();
   extraContentEnvelope.output[0].content[0].extra = true;
   assert.throws(() => validateToolLessResponse(extraContentEnvelope, { sourceIds: projection.sourceIds }), /unsupported output item/);
+  const annotatedOutput = validResponse();
+  annotatedOutput.output[0].content[0].annotations = [{ type: 'url_citation' }];
+  assert.throws(() => validateToolLessResponse(annotatedOutput, { sourceIds: projection.sourceIds }), /unsupported output item/);
   assert.throws(() => validateToolLessResponse(validResponse(), { sourceIds: [] }), /source IDs/);
   assert.throws(() => validateToolLessResponse(validResponse(), { sourceIds: ['source-a', 'source-a'] }), /source IDs/);
   assert.throws(() => validateToolLessResponse(validResponse(), { sourceIds: ['source:a'] }), /source IDs/);
   assert.throws(() => validateToolLessResponse(validResponse({ output: [{ type: 'function_call' }] }), { sourceIds: projection.sourceIds }), /unsupported output item/);
-  assert.throws(() => validateToolLessResponse(validResponse({ output: [{ type: 'message', role: 'assistant', status: 'completed', content: [{ type: 'output_text', text: '{bad json' }] }] }), { sourceIds: projection.sourceIds }), /not valid JSON/);
+  const malformedJson = validResponse();
+  malformedJson.output[0].content[0].text = '{bad json';
+  assert.throws(() => validateToolLessResponse(malformedJson, { sourceIds: projection.sourceIds }), /not valid JSON/);
   const invalidEvidence = validResponse();
   invalidEvidence.output[0].content[0].text = JSON.stringify({
     schemaVersion: 1,
