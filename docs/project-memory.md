@@ -183,6 +183,13 @@
   **剩余第三类观测限制**：自指/递归文本触发模型回显循环至 max_tokens（`finish_reason=length`，
   fail-closed 正确）→ 19668080/23933514 仍阻断（缓解需新批准）。#3 保持 OPEN；
   V0_3_EXECUTION_COMPLETE NOT DECLARED。证据：`docs/v0.3-real-dogfood-report.md`；语料在 /tmp/t11-corpora。
+- **T11-R2 #28 DeepSeek runtime（2026-08-24，已合并 0ee53b4）**：additive runtime `deepseek-api-tool-less`
+  （远程 OpenAI 兼容，deepseek-v4-flash，thinking 显式 disabled，json_object，无 tools，#27 输出契约共享）。
+  **CAPABILITY_ISOLATION_AVAILABLE[deepseek-api-tool-less] = YES（runtime-scoped；不推广其他 provider）**。
+  凭据：env DEEPSEEK_API_KEY 或仓库根 0600 git-ignored `.deepseek_api_key`（绝不打日志/入库）。
+  云出网仅限 V0.3 T11 公开知乎语料（不推广私密语料）。§8 probes 10/10、battery allSafe、
+  §11 真实回归 26421707 3/3 / 19668080 8/8 / 23933514 17/17（1 源偶发空 summary 有界重试）/ 26546908-tp 1/1
+  ——**Qwen 第三类（自指递归回显）在 DeepSeek 上通过**。lmstudio-local-tool-less 保留（已知模型质量限制）。
 - **V0.3 关键 gate（immediate）**：T3 countMismatch / T4+T5 Agent consumer & isolation feasibility /
   T7 top-percent contract（**已批准，2026-08-23**）/ T9 hierarchical digest contract（**已批准，2026-08-23**）。
   各 T 遵循 Spec gate，不无条件并行。
