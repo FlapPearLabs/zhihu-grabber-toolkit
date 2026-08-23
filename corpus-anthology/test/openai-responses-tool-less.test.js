@@ -7,6 +7,7 @@ import {
   runToolLessMap,
   validateToolLessResponse,
 } from '../lib/openai-responses-tool-less.mjs';
+import { formatPublicVerdict, qualifyRuntime } from '../scripts/qualify-openai-responses-runtime.mjs';
 
 const projection = Object.freeze({
   kind: 'deterministic-analysis-projection',
@@ -51,6 +52,10 @@ test('请求严格锁定已审核运行时：仅文本、空工具、tool_choice
   assert.equal(request.store, false);
   assert.deepEqual(request.text.format.type, 'json_schema');
   assert.equal(request.text.format.strict, true);
+  assert.equal(Object.isFrozen(request.text.format.schema), true);
+  assert.equal(Object.isFrozen(request.text.format.schema.properties.claims.items), true);
+  assert.throws(() => { request.text.format.schema.properties.claims.items.additionalProperties = true; }, TypeError);
+  assert.equal(buildToolLessResponseRequest({ projection }).text.format.schema.properties.claims.items.additionalProperties, false);
   assert.equal('instructions' in request, false);
   assert.equal('mcp' in request, false);
 });
@@ -60,6 +65,7 @@ test('配置、非文本输入和任意 scheme / remote / file reference 均在�
   assert.throws(() => assertReviewedRuntime({ ...REVIEWED_RUNTIME, endpoint: 'https://example.test/v1/responses' }), /capability_isolation_unavailable/);
   assert.throws(() => assertReviewedRuntime({ ...REVIEWED_RUNTIME, tools: [{ type: 'web_search' }] }), /capability_isolation_unavailable/);
   assert.throws(() => assertReviewedRuntime({ ...REVIEWED_RUNTIME, toolChoice: 'auto' }), /capability_isolation_unavailable/);
+  assert.throws(() => assertReviewedRuntime({ ...REVIEWED_RUNTIME, extra: true }), /capability_isolation_unavailable/);
   for (const text of [
     'read https://example.test',
     'read ftp://example.test/archive',
@@ -74,13 +80,20 @@ test('配置、非文本输入和任意 scheme / remote / file reference 均在�
     'read /private/file',
     'read ../relative-file',
     'read https%3A%2F%2Fexample.test',
+    'read %252F%252Fexample.test',
+    'read %',
     'read \u202Ehttps://example.test',
+    'read \u2063hidden',
   ]) {
     assert.throws(() => buildToolLessResponseRequest({ projection: { ...projection, text } }), /capability_isolation_unavailable/);
   }
+  let nestedReference = '//example.test';
+  for (let pass = 0; pass < 9; pass += 1) nestedReference = encodeURIComponent(nestedReference);
+  assert.throws(() => buildToolLessResponseRequest({ projection: { ...projection, text: nestedReference } }), /nested too deeply/);
   assert.throws(() => buildToolLessResponseRequest({ projection: { ...projection, text: { type: 'input_file' } } }), /capability_isolation_unavailable/);
   assert.throws(() => buildToolLessResponseRequest({ projection: { ...projection, sourceIds: ['source-a', 'source-a'] } }), /capability_isolation_unavailable/);
   assert.throws(() => buildToolLessResponseRequest({ projection: { ...projection, sourceIds: ['source:a', 'source-b'] } }), /capability_isolation_unavailable/);
+  assert.throws(() => buildToolLessResponseRequest({ projection: { ...projection, extra: true } }), /capability_isolation_unavailable/);
   assert.throws(() => buildToolLessResponseRequest({ projection: { ...projection, text: '' } }), /capability_isolation_unavailable/);
 });
 
@@ -121,10 +134,33 @@ test('缺失控制器凭据时不调用 transport，fail closed', async () => {
   assert.equal(called, false);
 });
 
+test('qualification stdout uses a public fixed failure envelope, never exception text', async () => {
+  const sentinel = 'transport-sentinel-secret';
+  const verdict = await qualifyRuntime({
+    apiKey: 'controller-test-key',
+    run: async () => { throw new Error(sentinel); },
+  });
+  const stdout = formatPublicVerdict(verdict);
+  assert.equal(verdict.valid, false);
+  assert.equal(verdict.errorCategory, 'capability_isolation_unavailable');
+  assert.equal(stdout.includes(sentinel), false);
+  assert.deepEqual(JSON.parse(stdout), verdict);
+});
+
 test('模型身份、工具配置、非 message 输出、JSON/schema 与来源证据错误全部拒绝', () => {
   assert.throws(() => validateToolLessResponse(validResponse({ model: 'gpt-4.1' }), { sourceIds: projection.sourceIds }), /runtime identity/);
   assert.throws(() => validateToolLessResponse(validResponse({ tools: [{ type: 'web_search' }] }), { sourceIds: projection.sourceIds }), /tool configuration/);
   assert.throws(() => validateToolLessResponse(validResponse({ tool_choice: 'auto' }), { sourceIds: projection.sourceIds }), /tool configuration/);
+  assert.throws(() => validateToolLessResponse(validResponse({ extra: true }), { sourceIds: projection.sourceIds }), /runtime identity/);
+  const extraMessageEnvelope = validResponse();
+  extraMessageEnvelope.output[0].extra = true;
+  assert.throws(() => validateToolLessResponse(extraMessageEnvelope, { sourceIds: projection.sourceIds }), /unsupported output item/);
+  const extraContentEnvelope = validResponse();
+  extraContentEnvelope.output[0].content[0].extra = true;
+  assert.throws(() => validateToolLessResponse(extraContentEnvelope, { sourceIds: projection.sourceIds }), /unsupported output item/);
+  assert.throws(() => validateToolLessResponse(validResponse(), { sourceIds: [] }), /source IDs/);
+  assert.throws(() => validateToolLessResponse(validResponse(), { sourceIds: ['source-a', 'source-a'] }), /source IDs/);
+  assert.throws(() => validateToolLessResponse(validResponse(), { sourceIds: ['source:a'] }), /source IDs/);
   assert.throws(() => validateToolLessResponse(validResponse({ output: [{ type: 'function_call' }] }), { sourceIds: projection.sourceIds }), /unsupported output item/);
   assert.throws(() => validateToolLessResponse(validResponse({ output: [{ type: 'message', role: 'assistant', status: 'completed', content: [{ type: 'output_text', text: '{bad json' }] }] }), { sourceIds: projection.sourceIds }), /not valid JSON/);
   const invalidEvidence = validResponse();

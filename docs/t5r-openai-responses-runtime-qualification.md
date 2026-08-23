@@ -5,7 +5,7 @@
 ```text
 TICKET: #22 / T5-R
 TYPE: DISCOVERY / SECURITY EVIDENCE
-BASE: 3aa2b072632b97b35312809e3605f1f4b98e151c
+BASE: f9f6813c24e5997407b7ff3c8499b32f3b10d66c
 RUNTIME_ID: openai-responses-tool-less
 PROVIDER: OpenAI API
 ENDPOINT: POST https://api.openai.com/v1/responses
@@ -67,11 +67,20 @@ The projection rejects remote or file references before sending input to the
 model. This is a constructive, fail-closed text boundary: any RFC scheme token
 (`scheme:`; therefore including `http:`, `ftp:`, `s3:`, `ssh:`, `file:`,
 `data:`, and `blob:`), protocol-relative `//host`, `www.`, UNC or apparent
-absolute/relative file path, encoded URI delimiter, or inline invisible control
-character rejects the entire projection. This deliberately also rejects
-ambiguous colon-bearing text rather than treating a prompt instruction as a
-security control. The prototype accepts no content blocks, uploaded files, or
-file input types.
+absolute/relative file path rejects the entire projection. This deliberately
+also rejects ambiguous colon-bearing text rather than treating a prompt
+instruction as a security control.
+
+Before that reference scan, every percent-bearing input must decode with
+`decodeURIComponent` repeatedly to a stable value within eight passes; invalid
+percent syntax or further nesting is rejected. The scan then applies to the
+stable decoded value, so the tested `%252F%252F` double-encoding cannot bypass
+the `//` check. The original and decoded text reject every Unicode `Cf` or
+surrogate (`Cs`) code point and every C0/C1 control except structural tab, LF,
+and CR. This includes U+2063. These are the complete enforced encoding and
+invisible-character rules; they are controller-local checks, not claims about
+actual remote runtime behavior. The prototype accepts no content blocks,
+uploaded files, or file input types.
 
 The controller alone receives an API key parameter, sends HTTPS to the fixed
 OpenAI endpoint, and validates the returned data. The request body contains
@@ -108,8 +117,9 @@ as security evidence.
 The tests also prove controller-local fail-closed handling for:
 
 1. changed model, endpoint, tools, or tool choice;
-2. every scheme, protocol-relative/host, file-path, encoded-delimiter, or
-   invisible-character reference mutation, plus non-text projection input;
+2. the listed scheme, protocol-relative/host, file-path, invalid-percent,
+   double-percent (`%252F%252F`), over-eight-pass, U+2063, and non-text
+   projection mutations;
 3. source-tag missing/unknown/mismatched/out-of-order/duplicate/malformed
    mutations against the exact source-ID mapping contract;
 4. missing controller API credential before transport is called;
@@ -129,10 +139,10 @@ The following commands were run against this candidate based on
 
 | Command | Result |
 | --- | --- |
-| `node --test test/openai-responses-tool-less.test.js` | PASS — 6/6 tests |
-| `node --test` (from `corpus-anthology`) | PASS — 101/101 tests |
+| `node --test test/openai-responses-tool-less.test.js` | PASS — 7/7 tests |
+| `node --test` (from `corpus-anthology`) | PASS — 102/102 tests |
 | `node --test test/agent-pipeline.test.mjs` | PASS — 6/6 tests |
-| `node scripts/qualify-openai-responses-runtime.mjs` | FAIL-CLOSED — exit 1; `valid: false`; no controller credential was available |
+| `node scripts/qualify-openai-responses-runtime.mjs` | FAIL-CLOSED — exit 1; fixed public `valid: false` / `errorCategory: capability_isolation_unavailable`; no controller credential was available |
 
 For the required unrelated-product regression comparison, the identical
 `npm test` suite was run in a clean `f9f6813c24e5997407b7ff3c8499b32f3b10d66c`

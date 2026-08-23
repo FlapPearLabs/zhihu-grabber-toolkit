@@ -10,7 +10,15 @@ export const REVIEWED_RUNTIME = Object.freeze({
   toolChoice: 'none',
 });
 
-const MAP_SCHEMA = Object.freeze({
+function deepFreeze(value) {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    for (const child of Object.values(value)) deepFreeze(child);
+    Object.freeze(value);
+  }
+  return value;
+}
+
+const MAP_SCHEMA = deepFreeze({
   type: 'object',
   additionalProperties: false,
   required: ['schemaVersion', 'claims', 'sourceCoverage'],
@@ -68,13 +76,44 @@ function isValidSourceId(sourceId) {
   return typeof sourceId === 'string' && SOURCE_TAG.test(`[SOURCE ${sourceId}]`);
 }
 
+function assertSourceIds(sourceIds) {
+  if (!Array.isArray(sourceIds)
+    || sourceIds.length === 0
+    || sourceIds.some((sourceId) => !isValidSourceId(sourceId))
+    || new Set(sourceIds).size !== sourceIds.length) {
+    fail('source IDs must be non-empty, unique, and use the restricted source-ID grammar');
+  }
+}
+
+function normalizePercentEncoding(text) {
+  let normalized = text;
+  for (let pass = 0; pass < 8; pass += 1) {
+    if (!normalized.includes('%')) return normalized;
+    let decoded;
+    try {
+      decoded = decodeURIComponent(normalized);
+    } catch {
+      fail('projection contains invalid or ambiguous percent encoding');
+    }
+    if (decoded === normalized) return normalized;
+    normalized = decoded;
+  }
+  if (!normalized.includes('%')) return normalized;
+  fail('projection contains percent encoding nested too deeply to verify safely');
+}
+
 function hasRemoteOrFileReference(text) {
-  return /(?:^|[^A-Za-z0-9+.-])[A-Za-z][A-Za-z0-9+.-]*:/u.test(text)
-    || /(?:\/\/|\\\\|\bwww\.)/iu.test(text)
-    || /(?:^|[\s<("'])\/(?:[A-Za-z0-9._~-]+(?:\/|$))/u.test(text)
-    || /(?:^|\s)(?:\.\.?[\\/])/u.test(text)
-    || /%(?:2f|3a|5c)/iu.test(text)
-    || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/u.test(text);
+  if (/[\p{Cf}\p{Cs}]/u.test(text)
+    || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/u.test(text)) {
+    return true;
+  }
+  const normalized = normalizePercentEncoding(text);
+  return /(?:^|[^A-Za-z0-9+.-])[A-Za-z][A-Za-z0-9+.-]*:/u.test(normalized)
+    || /(?:\/\/|\\\\|\bwww\.)/iu.test(normalized)
+    || /(?:^|[\s<("'])\/(?:[A-Za-z0-9._~-]+(?:\/|$))/u.test(normalized)
+    || /(?:^|\s)(?:\.\.?[\\/])/u.test(normalized)
+    || /[\p{Cf}\p{Cs}]/u.test(normalized)
+    || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/u.test(normalized);
 }
 
 function assertSourceTagContract(text, sourceIds) {
@@ -93,6 +132,7 @@ function assertSourceTagContract(text, sourceIds) {
 
 export function assertReviewedRuntime(runtime = REVIEWED_RUNTIME) {
   if (!isPlainObject(runtime)
+    || !hasExactKeys(runtime, ['runtimeId', 'endpoint', 'model', 'tools', 'toolChoice'])
     || runtime.runtimeId !== RUNTIME_ID
     || runtime.endpoint !== ENDPOINT
     || runtime.model !== MODEL_ID
@@ -105,15 +145,13 @@ export function assertReviewedRuntime(runtime = REVIEWED_RUNTIME) {
 export function buildToolLessResponseRequest({ projection, runtime = REVIEWED_RUNTIME }) {
   assertReviewedRuntime(runtime);
   if (!isPlainObject(projection)
+    || !hasExactKeys(projection, ['kind', 'text', 'sourceIds'])
     || projection.kind !== 'deterministic-analysis-projection'
     || typeof projection.text !== 'string'
-    || projection.text.trim() === ''
-    || !Array.isArray(projection.sourceIds)
-    || projection.sourceIds.length === 0
-    || projection.sourceIds.some((sourceId) => !isValidSourceId(sourceId))
-    || new Set(projection.sourceIds).size !== projection.sourceIds.length) {
+    || projection.text.trim() === '') {
     fail('projection must be non-empty deterministic text with explicit source IDs');
   }
+  assertSourceIds(projection.sourceIds);
   if (hasRemoteOrFileReference(projection.text)) {
     fail('projection contains a remote or file reference');
   }
@@ -181,7 +219,9 @@ function validateMap(map, sourceIds) {
 
 export function validateToolLessResponse(response, { sourceIds, runtime = REVIEWED_RUNTIME }) {
   assertReviewedRuntime(runtime);
+  assertSourceIds(sourceIds);
   if (!isPlainObject(response)
+    || !hasExactKeys(response, ['status', 'model', 'tools', 'tool_choice', 'output'])
     || response.status !== 'completed'
     || response.model !== MODEL_ID
     || !sameStringArray(response.tools, [])
@@ -193,12 +233,14 @@ export function validateToolLessResponse(response, { sourceIds, runtime = REVIEW
 
   const [message] = response.output;
   if (!isPlainObject(message)
+    || !hasExactKeys(message, ['type', 'role', 'status', 'content'])
     || message.type !== 'message'
     || message.role !== 'assistant'
     || message.status !== 'completed'
     || !Array.isArray(message.content)
     || message.content.length !== 1
     || !isPlainObject(message.content[0])
+    || !hasExactKeys(message.content[0], ['type', 'text'])
     || message.content[0].type !== 'output_text'
     || typeof message.content[0].text !== 'string') {
     fail('response contains an unsupported output item');
