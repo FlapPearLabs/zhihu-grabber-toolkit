@@ -58,6 +58,10 @@ function sameStringArray(left, right) {
     && left.every((item, index) => item === right[index]);
 }
 
+function hasExactKeys(value, keys) {
+  return Object.keys(value).length === keys.length && keys.every((key) => Object.hasOwn(value, key));
+}
+
 function hasRemoteOrFileReference(text) {
   return /(?:https?:\/\/|\bwww\.|\bfile:|\bdata:|\bblob:)/i.test(text);
 }
@@ -119,6 +123,7 @@ function validateMap(map, sourceIds) {
   const expected = new Set(sourceIds);
   for (const claim of map.claims) {
     if (!isPlainObject(claim)
+      || !hasExactKeys(claim, ['claim', 'evidenceSourceIds', 'confidence'])
       || typeof claim.claim !== 'string'
       || claim.claim.trim() === ''
       || !['high', 'medium', 'low'].includes(claim.confidence)
@@ -132,6 +137,7 @@ function validateMap(map, sourceIds) {
   const covered = new Set();
   for (const entry of map.sourceCoverage) {
     if (!isPlainObject(entry)
+      || !hasExactKeys(entry, ['sourceId', 'summary'])
       || typeof entry.sourceId !== 'string'
       || !expected.has(entry.sourceId)
       || covered.has(entry.sourceId)

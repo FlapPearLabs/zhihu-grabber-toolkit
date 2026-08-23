@@ -108,4 +108,14 @@ test('模型身份、工具配置、非 message 输出、JSON/schema 与来源�
     sourceCoverage: [{ sourceId: 'source-a', summary: 'x' }, { sourceId: 'source-b', summary: 'y' }],
   });
   assert.throws(() => validateToolLessResponse(invalidEvidence, { sourceIds: projection.sourceIds }), /invalid source\/evidence IDs/);
+  const extraClaimField = validResponse();
+  const parsedClaim = JSON.parse(extraClaimField.output[0].content[0].text);
+  parsedClaim.claims[0].unexpected = true;
+  extraClaimField.output[0].content[0].text = JSON.stringify(parsedClaim);
+  assert.throws(() => validateToolLessResponse(extraClaimField, { sourceIds: projection.sourceIds }), /claim has invalid source\/evidence IDs or schema/);
+  const extraCoverageField = validResponse();
+  const parsedCoverage = JSON.parse(extraCoverageField.output[0].content[0].text);
+  parsedCoverage.sourceCoverage[0].unexpected = true;
+  extraCoverageField.output[0].content[0].text = JSON.stringify(parsedCoverage);
+  assert.throws(() => validateToolLessResponse(extraCoverageField, { sourceIds: projection.sourceIds }), /sourceCoverage has invalid source IDs or schema/);
 });
