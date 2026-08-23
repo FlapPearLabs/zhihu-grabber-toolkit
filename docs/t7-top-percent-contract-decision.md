@@ -103,6 +103,8 @@
 
 **RECOMMENDED: 保持 sampled 身份。** 核心论断：**selection identity 与 coverage identity 必须保持分离**，即使 `selectedTotal == originalTotal`。X=100 是 sampled 模式的合法参数上限，其输出披露 `requestedPercent=100`、`actualCoveragePercent=100`、`isFullCoverage:false`、selection rule 显式声明「top-100%-by-voteupCount」——数值上覆盖全量，但身份上是 sampled 管线的退化情况，**不得**自称为 full coverage digest。这保证身份语义随 X 连续、无静默切换，并为 T9/T10 保留「full coverage 身份 = hierarchical/digest 管线」的唯一归属。
 
+> **NOTE（对 PO 明示的分歧点）**：本推荐**逆转**了 V0.3 §16 OPEN-D2 D2.6 的既有倾向（原 RECOMMENDATION 为「X=100 自动路由 full digest」）。理由：身份应随 mode 而非参数决定，避免同一管线按 X 静默切换身份；数值全量 ≠ 身份全量（`SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST` 恒成立）。PO 可据此选择逆转后的推荐或维持原倾向（维持原倾向则需接受身份随 X 不连续的语义代价）。
+
 ### D2.7 默认 X（mandatory vs default）
 
 | 选项 | 行为 | 风险 |
