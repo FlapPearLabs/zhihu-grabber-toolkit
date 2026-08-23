@@ -100,11 +100,16 @@ export function selectTopPercent(candidates, percent) {
     throw new Error('invalid_input: 无候选回答可选中');
   }
   // 排序：(voteupCount DESC, canonical decimal answerId ASC)
-  const ordered = [...candidates].map((c) => ({
-    sourceId: String(c.sourceId ?? ''),
-    answerId: String(c.answerId ?? ''),
-    voteupCount: c.voteupCount === undefined || c.voteupCount === null ? 0 : Number(c.voteupCount),
-  }));
+  // voteupCount 非有限数值（NaN/Infinity/非数字串）→ 归一化为 0，保证确定性排序语义明确
+  const ordered = [...candidates].map((c) => {
+    const rawVote = c.voteupCount === undefined || c.voteupCount === null ? 0 : Number(c.voteupCount);
+    const vote = Number.isFinite(rawVote) ? rawVote : 0;
+    return {
+      sourceId: String(c.sourceId ?? ''),
+      answerId: String(c.answerId ?? ''),
+      voteupCount: vote,
+    };
+  });
   // 前置校验：所有 sourceId/answerId 必须合法（fail closed，避免排序中途才炸）
   for (const c of ordered) {
     if (c.sourceId.trim() === '') throw new Error('invalid_input: 候选缺少 sourceId');
@@ -149,7 +154,9 @@ function sha256Of(text) {
  * @param {number} percent
  * @returns {object} selection.json：
  *   { schemaVersion, requestedPercent, selectionRule, originalTotal,
- *     selectedSourceIds, selectorHash, actualCoveragePercent, isFullCoverage }
+ *     selectedSourceIds, selectorHash }
+ *   （actualCoveragePercent / isFullCoverage 为覆盖事实，由 reduce 侧按
+ *     selectedSourceIds 与 originalTotal 计算，不写入 selection.json。）
  */
 export function buildSelection(candidates, percent) {
   const x = parsePercent(percent);
