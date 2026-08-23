@@ -103,6 +103,11 @@
     read-only sandbox / approval 并不移除工具，且 live model catalogue refresh 失败导致固定 model identity 未验证，
     repository-owned controller / fail-closed boundary 也未建立。该结论仅适用于这一精确版本与配置，不推导到其他
     Codex/ChatGPT runtime；T6 继续因 `capability_isolation_unavailable` 阻塞。
+    T5-L 对具名 `llamacpp-local-tool-less`（ggml-org/llama.cpp `v0.2.0`、commit
+    `bb4caa7540188872173c44d161602d9271386413`）给出 runtime-scoped `NO`：二进制支持显式关闭 agent/
+    UI/MCP proxy 和默认无 tools，但所选 instruction GGUF 未能在本地获取，因而没有成功 inference、有效
+    `MODEL_VISIBLE_TOOL_COUNT=0`、schema output 或 controller 边界的实际证据。固定本地模型缺失时 safe startup
+    会在接收不可信文本前 fail closed；该 NO 不推导到其他 llama.cpp build/model/runtime，T6 继续阻塞。
   - **D. countMismatch**：`COUNT_MISMATCH_SEVERITY = DIAGNOSTIC_ONLY`（V0.3 决策 D 已进入 accepted implementation baseline；
     保留 reportedAnswerCount / capturedAnswerCount / countMismatch 三诊断字段（VERIFIER_DIAGNOSTIC_RESULT），
     移出 `verifier.warnings[]`（不影响 `valid`；因 `make-handoff` 投影 `verifier.warnings` → `handoff.warnings` 自然不再含 countMismatch）。
