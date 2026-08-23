@@ -683,10 +683,19 @@ IMPLEMENTATION_IMPACT: RESOLVED_IN_MASTER（T3 已实现、独立 CODE review PA
 CURRENT STAGE（真实状态）:
   - V2 已批准安全合同（§9 / §9.1 / §9.2）：LLM NETWORK/SHELL/FILESYSTEM/TOOLS 全 DENY，
     trusted controller 唯一 IO；隔离不可用 → digest/map fail closed
-  - 但【实现可行性尚未证明】：当前仓库不存在已完成的
-    CAPABILITY_ISOLATION_AVAILABLE: YES/NO 结论可供消费
-  - V2 §9.2.9 规定 Phase 5B 收口后的下一步是 Phase 5C — Capability Isolation Feasibility Check，
-    须由 V0.3 在当前阶段真实执行（T4 / T5），非消费既有结论
+  - T5 系列已给出逐 runtime 结论：T5 #11 两个未具名 YAML interface host = NO；
+    T5-R #22（Responses 无凭据）= NO；T5-C #24（Codex-ChatGPT 0.136.0）= NO；
+    T5-L #25（llama.cpp 无固定 GGUF）= NO。
+  - **T5-LM #26 对 `lmstudio-local-tool-less`（LM Studio 0.4.19+2 localhost-only + 本地
+    qwen/qwen3-1.7b MLX 8-bit）给出独立评审 YES**：`CAPABILITY_ISOLATION_AVAILABLE
+    [lmstudio-local-tool-less] = YES`，`MODEL_VISIBLE_TOOL_COUNT = 0`，live probe +
+    12 项对抗 battery + 哨兵全过（证据：docs/t5lm-lmstudio-local-runtime-qualification.md）。
+  - **T6 #12 已为 `lmstudio-local-tool-less` 实现 per-source Agent projection + capability
+    isolation CODE**（corpus-anthology lib/lmstudio-projection.mjs /
+    lib/lmstudio-map-executor.mjs / scripts/map.mjs）：每来源短 token 投影 →
+    tool-less runtime 调用 → controller 确定性装配全覆盖 map 结果；任一来源失败 →
+    整个 chunk fail closed（`capability_isolation_unavailable`），无 prompt-only 降级；
+    空正文来源由 controller 合成确定性条目。其余 runtime（NO/UNKNOWN）一律不得启用。
 
 APPROVED_STAGE（V0.3 决策 C）:
   - T4 PHASE5_IMPLEMENTATION_AUDIT：审计 corpus 管线把 chunk/projection 交给模型的边界、
@@ -707,8 +716,9 @@ AUTHORITY / EVIDENCE:
   V2 Spec §9 / §9.1 / §9.2 / §9.2.9
   V0.3 Spec §5（决策 C）、§16 OPEN-D3、§17 T4/T5
 
-IMPLEMENTATION_IMPACT: CONDITIONAL_FUTURE_TICKET（T4/T5 真实审计 + 可行性结论后才进入 T6 CODE；
-  任何 runtime 启用须以该 runtime 自身 AVAILABLE=YES 为前提；NO/UNKNOWN 不得标记支持）
+IMPLEMENTATION_IMPACT: RESOLVED_IN_MASTER for `lmstudio-local-tool-less`（T5-LM #26 YES + T6 #12 CODE 已合并）；
+  其余 runtime（T5 #11 / T5-R #22 / T5-C #24 / T5-L #25 的 NO 或 UNKNOWN）仍保持
+  `capability_isolation_unavailable` → 该 runtime digest/map STOP，不得标记支持。
 ```
 
 ### 3.18 Large corpus four-layer capability（V0.3 大型语料归一化）

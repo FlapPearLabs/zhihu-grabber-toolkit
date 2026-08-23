@@ -70,13 +70,13 @@ node scripts/chunk.mjs <answers.json 或目录> --work work/ --mode digest
 
    生成 `work/manifest.json` 与 `work/chunks/chunk-*.json`。分块规则、manifest schema、断点恢复见 `references/state-and-resume.md`。
 
-2. **逐块生成 map 结果**（LLM 读取每个 chunk，按 `references/evidence-schema.md` 写出结构化结果）：
+2. **逐块生成 map 结果**（受支持 runtime：`lmstudio-local-tool-less`——LM Studio 本地服务器 + 本地 Qwen3 1.7B；`scripts/map.mjs` 逐来源调用 tool-less runtime，由 trusted controller 确定性装配 `references/evidence-schema.md` 的结构化结果）：
 
 ```bash
-work/map-results/map-chunk-0001.json
+node scripts/map.mjs --work work/            # 受支持 runtime 路径（需本地 LM Studio 服务器运行于 127.0.0.1:1234 且 qwen/qwen3-1.7b 已加载）
 ```
 
-   每块必须输出结构化 JSON：`chunkId / chunkHash / sourceIds / summary / claims（含 evidenceSourceIds 与 confidence）/ themes / uncertainties`。**禁止**输出无法追溯来源的自由文本。
+   前置可用性验证（fail closed）：`node scripts/qualify-lmstudio-runtime.mjs` 必须 exit 0（`valid:true` / `allSafe:true`）才允许执行 map；任一来源请求失败 → 该 chunk 不写 map 并整体 fail closed（`capability_isolation_unavailable`），禁止 prompt-only 降级或静默跳过。空正文来源由 controller 确定性合成"来源正文为空"条目（不调用模型），保持全覆盖。**未获 `CAPABILITY_ISOLATION_AVAILABLE=YES` 的 runtime（如 llama.cpp / Codex-ChatGPT / 未具名 YAML host）不得用于 map 步骤。** 输出结构化 JSON：`chunkId / chunkHash / sourceIds / summary / claims（含 evidenceSourceIds 与 confidence）/ themes / uncertainties`。**禁止**输出无法追溯来源的自由文本。
 
 3. **验证覆盖率**（确定性脚本）：
 

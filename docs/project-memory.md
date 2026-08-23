@@ -113,6 +113,15 @@
     属模型质量（T6/dogfood 另行评估），不影响本运行时安全 YES。该 YES 仅适用于这一精确 LM Studio 版本/
     配置/模型组合，不推导到其他 runtime；既有 NO（T5 两个 YAML host、T5-R、T5-C、T5-L llama.cpp）不变。
     T6 现仅对该 runtime 合法解锁（START_GATE 满足），其余 runtime 仍不得标记支持。
+  - **T6（#12）已为 `lmstudio-local-tool-less` 实现 per-source Agent projection + isolation CODE**（已合并 master）：
+    `corpus-anthology/lib/lmstudio-projection.mjs`（确定性投影消毒：URL/路径/协议/反斜杠/百分号/控制字符
+    中和，占位符用无方括号形式「（外部链接）/（路径）」；**短 token 投影设计**——长真实 sourceId 无法被
+    1.7B 可靠回显，投影声明 `[SOURCE <index>]` 短 token，模型只回显 token，controller 映射回真实 ID）、
+    `lib/lmstudio-map-executor.mjs`（逐来源调用 tool-less runtime，空正文来源由 controller 确定性合成
+    「来源正文为空」条目不调用模型，全来源成功后确定性装配全覆盖 map 结果；任一来源失败 → 整个 chunk
+    fail closed，无部分结果）、`scripts/map.mjs`（digest map 步骤 CLI，幂等复用）。`verify.mjs` 全覆盖
+    门（missingMappedSources/duplicateMaps/malformedMaps 等）在真实 live 端到端 smoke 中全 0。模型质量
+    （1.7B 摘要忠实度、themes 暂为空数组）与运行时安全分离，由后续 dogfood 评估。
   - **D. countMismatch**：`COUNT_MISMATCH_SEVERITY = DIAGNOSTIC_ONLY`（V0.3 决策 D 已进入 accepted implementation baseline；
     保留 reportedAnswerCount / capturedAnswerCount / countMismatch 三诊断字段（VERIFIER_DIAGNOSTIC_RESULT），
     移出 `verifier.warnings[]`（不影响 `valid`；因 `make-handoff` 投影 `verifier.warnings` → `handoff.warnings` 自然不再含 countMismatch）。
