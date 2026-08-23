@@ -24,6 +24,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { assertProjection, validateMinimalMap } from './lmstudio-tool-less.mjs';
 
 export const DEEPSEEK_RUNTIME = Object.freeze({
@@ -51,34 +52,46 @@ function hasExactKeys(value, keys) {
 }
 
 /**
- * 解析凭据（env DEEPSEEK_API_KEY 优先，其次 cwd 下 0600 git-ignored 文件）。
+ * 解析凭据（env DEEPSEEK_API_KEY 优先；其次 cwd 下 0600 git-ignored 文件；
+ * 最后仓库根（本模块 ../../）下的同一文件——使任意 cwd 调用一致可用）。
  * 返回状态字段 + 内部 key；调用方不得把 key 写入日志/报告/测试快照。
  */
-export function resolveDeepSeekCredential({ env = process.env, cwd = process.cwd() } = {}) {
+export function resolveDeepSeekCredential({ env = process.env, cwd = process.cwd(), repoRoot = null } = {}) {
   const envKey = typeof env.DEEPSEEK_API_KEY === 'string' && env.DEEPSEEK_API_KEY.trim() !== ''
     ? env.DEEPSEEK_API_KEY
     : null;
   if (envKey) return { source: 'env', configured: true, usable: true, error: 'none', key: envKey };
 
-  const file = path.join(cwd, DEEPSEEK_CREDENTIAL_FILE);
+  // 仓库根 = 本模块所在目录 corpus-anthology/lib 的上两级（可注入以便测试模拟缺失）
+  const resolvedRepoRoot = repoRoot ?? path.resolve(fileURLToPath(new URL('../../', import.meta.url)));
+  for (const dir of [cwd, resolvedRepoRoot]) {
+    const found = readCredentialFileAt(dir);
+    if (found.usable) return { ...found, source: 'file' };
+    if (found.configured) return { ...found, source: 'file' };
+  }
+  return { source: 'file', configured: false, usable: false, error: 'missing', key: null };
+}
+
+function readCredentialFileAt(dir) {
+  const file = path.join(dir, DEEPSEEK_CREDENTIAL_FILE);
   let st;
   try {
     st = fs.lstatSync(file);
   } catch {
-    return { source: 'file', configured: false, usable: false, error: 'missing', key: null };
+    return { configured: false, usable: false, error: 'missing', key: null };
   }
-  if (st.isSymbolicLink()) return { source: 'file', configured: true, usable: false, error: 'symlink', key: null };
+  if (st.isSymbolicLink()) return { configured: true, usable: false, error: 'symlink', key: null };
   if (process.platform !== 'win32' && (st.mode & 0o077) !== 0) {
-    return { source: 'file', configured: true, usable: false, error: 'permission', key: null };
+    return { configured: true, usable: false, error: 'permission', key: null };
   }
   let content;
   try {
     content = fs.readFileSync(file, 'utf8').trim();
   } catch {
-    return { source: 'file', configured: true, usable: false, error: 'unreadable', key: null };
+    return { configured: true, usable: false, error: 'unreadable', key: null };
   }
-  if (content === '') return { source: 'file', configured: true, usable: false, error: 'empty', key: null };
-  return { source: 'file', configured: true, usable: true, error: 'none', key: content };
+  if (content === '') return { configured: true, usable: false, error: 'empty', key: null };
+  return { configured: true, usable: true, error: 'none', key: content };
 }
 
 /** DeepSeek JSON 模式要求 prompt 含 "json" 关键字与示例（官方指南），以降低空 content 概率。 */

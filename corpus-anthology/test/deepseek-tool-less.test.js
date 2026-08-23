@@ -187,8 +187,8 @@ test('凭据解析：环境变量或 0600 文件；只读状态不读内容', ()
   assert.equal(env.configured, true);
   assert.equal(env.usable, true);
   assert.equal(env.error, 'none');
-  // 无凭据路径
-  const none = resolveDeepSeekCredential({ env: {}, cwd: '/nonexistent-dir-xyz' });
+  // 无凭据路径（注入不存在的 cwd 与 repoRoot 模拟缺失）
+  const none = resolveDeepSeekCredential({ env: {}, cwd: '/nonexistent-dir-xyz', repoRoot: '/nonexistent-repo-xyz' });
   assert.equal(none.configured, false);
   assert.equal(none.usable, false);
 });
