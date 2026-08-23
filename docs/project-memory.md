@@ -98,6 +98,10 @@
     边界、或 NETWORK/SHELL/FILESYSTEM/TOOLS 的确定性 DENY 证据。每个 runtime 的 `NO`（以及任何
     未评估 runtime 的 UNKNOWN）都必须路由为 `capability_isolation_unavailable` → digest/map STOP；
     禁止跨 runtime 推导、禁止 prompt-only 降级，且 T6 不得实现或启用受支持 runtime path。
+    `codex-chatgpt-login-tool-less`（OpenAI Codex CLI 0.136.0、ChatGPT login）另有可复核的
+    runtime/version-scoped `NO`：model-visible shell tool 数量至少为 1，且 model identity 为
+    `NOT_VERIFIED`，故同样为 `capability_isolation_unavailable`、T6 blocked。该结论不泛化到
+    其他 Codex 版本或 runtime；不记录认证、配置或其他机密内容。
   - **D. countMismatch**：`COUNT_MISMATCH_SEVERITY = DIAGNOSTIC_ONLY`（V0.3 决策 D 已进入 accepted implementation baseline；
     保留 reportedAnswerCount / capturedAnswerCount / countMismatch 三诊断字段（VERIFIER_DIAGNOSTIC_RESULT），
     移出 `verifier.warnings[]`（不影响 `valid`；因 `make-handoff` 投影 `verifier.warnings` → `handoff.warnings` 自然不再含 countMismatch）。
