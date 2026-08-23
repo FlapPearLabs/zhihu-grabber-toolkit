@@ -160,9 +160,15 @@
     parameters，T10 从 qualified runtime 推导）；HYBRID lineage（child refs + controller materialized
     union；每层递归覆盖不变量 union(children)==parent；COVERAGE ≠ CLAIM EVIDENCE）；fail-closed 验证；
     stale 向上传播（依赖祖先失效、无关 sibling 可复用）；仅 lmstudio-local-tool-less；无静默 fallback；
-    final.json 消费合同不变（mode="digest" flat/hierarchical 一致）。T10 CODE 待 T9 完整 merge。
+    final.json 消费合同不变（mode="digest" flat/hierarchical 一致）。
     实测证据：reduce-input 线性增长（38→9.6K chars；538→134.7K chars，ESTIMATED 52-95K token），
     顶层撰写阶段是压力点。
+    **T10 #16 实现**（2026-08-23）：`lib/hierarchy.mjs`（packGroups 贪婪分组 / nodeHash /
+    inputHash / controller materialized union / validateHierarchy 递归覆盖不变量）、
+    `map.mjs --hierarchy`（L1 maps 后自适应聚合，L2 合成经 T6 控制器 tool-less/json_schema）、
+    verify hierarchyIssues 门、reduce 顶层节点 claims → final.json（mode="digest" 消费合同不变）。
+    实测性能（合成 538 源，MEASURED）：reduce-input 192.9KB/538 claims → 105.8KB/7 顶层 claims
+    （claims -98.7%、bytes -45.2%）。flat digest 行为不变；hierarchy 显式启用不自动路由。
 - **V0.3 关键 gate（immediate）**：T3 countMismatch / T4+T5 Agent consumer & isolation feasibility /
   T7 top-percent contract（**已批准，2026-08-23**）/ T9 hierarchical digest contract（**已批准，2026-08-23**）。
   各 T 遵循 Spec gate，不无条件并行。

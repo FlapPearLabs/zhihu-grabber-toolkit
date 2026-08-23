@@ -34,6 +34,11 @@ function sha256Of(text) {
   return crypto.createHash('sha256').update(text).digest('hex');
 }
 
+function displayPath(p) {
+  const rel = path.relative(process.cwd(), p);
+  return rel || '.';
+}
+
 /** top-percent-analysis 披露块（D2.8 + D6 OPTION C）：mode 恒为 top-percent-analysis
  *  isFullCoverage 为覆盖事实：selectedSourceIds 与 original 集合比较。因 selectedSourceIds
  *  来自同一候选集（无重复、无外部 ID），「selected == original」⟺「长度相等」。
@@ -82,6 +87,91 @@ function main() {
   if (!fs.existsSync(mapDir)) {
     console.error(`map-results 目录不存在: ${mapDir}`);
     process.exit(1);
+  }
+
+  // ---- hierarchy 模式（T10 #16 / T9 合同）：若 hierarchy manifest 存在，
+  //      顶层撰写输入 = 顶层聚合节点 claims（组级综合），而非全部 L1 map claims。
+  //      final.json 消费合同不变（mode="digest" + claims + evidenceSourceIds +
+  //      minorityViews/uncertainties）；hierarchy 为 internal execution structure。
+  //      门禁：coverage 必须验证通过（含 hierarchyIssues==0），否则 fail closed。 ----
+  const hierarchyManifestFile = path.join(workDir, 'hierarchy', 'manifest.json');
+  let hierarchyInfo = null;
+  if (fs.existsSync(hierarchyManifestFile)) {
+    if (coverage.valid !== true) {
+      console.error('覆盖率验证未通过（含 hierarchy 校验），禁止 hierarchical reduce（请先修复并重新 verify.mjs）');
+      process.exit(1);
+    }
+    const hManifest = readJson(hierarchyManifestFile);
+    const topNodes = hManifest.topNodeIds.map((id) => readJson(path.join(workDir, 'hierarchy', 'nodes', `${id}.json`)));
+    hierarchyInfo = {
+      levels: hManifest.levels,
+      nodeCountByLevel: hManifest.nodeCountByLevel,
+      topLevel: hManifest.topLevel,
+      topNodeIds: hManifest.topNodeIds,
+      effectiveParams: hManifest.effectiveParams,
+      l1Count: hManifest.l1Count,
+    };
+    // 顶层节点 claims 作为聚合视图（evidence 已由 controller 校验 ⊆ 各节点 union）
+    const claims = topNodes.flatMap((n) => n.claims ?? []);
+    const minorityViews = [...new Set(topNodes.flatMap((n) => n.minorityViews ?? []))];
+    const uncertainties = [...new Set(topNodes.flatMap((n) => n.uncertainties ?? []))];
+    const themes = [];
+    const unverifiedInferences = claims
+      .filter((c) => c.confidence === 'low')
+      .map((c) => ({ claim: c.claim, evidenceSourceIds: c.evidenceSourceIds }));
+
+    // reduce-input（internal；供 LLM 撰写最终文档）
+    const reduceInput = {
+      schemaVersion: 1,
+      mode: 'digest',
+      inputCount: manifest.inputs.length,
+      chunkCount: hManifest.l1Count,
+      hierarchy: hierarchyInfo,
+      themes,
+      claims,
+      minorityViews,
+      uncertainties,
+      unverifiedInferences,
+      sourceIndex: Object.fromEntries(
+        [...new Set(manifest.inputs.map((i) => i.sourceId))].map((sid) => [sid, {
+          questionId: manifest.inputs.find((i) => i.sourceId === sid)?.questionId,
+          answerId: manifest.inputs.find((i) => i.sourceId === sid)?.answerId,
+          relativePath: manifest.inputs.find((i) => i.sourceId === sid)?.relativePath,
+          voteupCount: manifest.inputs.find((i) => i.sourceId === sid)?.voteupCount,
+        }]),
+      ),
+      note: 'hierarchical full digest（T10）：顶层节点为组级综合 claim，evidence 为各节点 canonical source union；hierarchical 输出与 flat 模型合成输出无需 byte-for-byte 相同。',
+    };
+
+    const finalDir = path.join(workDir, 'final');
+    fs.mkdirSync(finalDir, { recursive: true });
+    fs.writeFileSync(path.join(workDir, 'reduce-input.json'), JSON.stringify(reduceInput, null, 2), 'utf8');
+
+    // canonical final.json（消费合同不变：mode="digest"）
+    const finalJson = {
+      schemaVersion: 1,
+      mode: 'digest',
+      inputCount: manifest.inputs.length,
+      chunkCount: hManifest.l1Count,
+      claims: claims.map((c) => ({
+        text: c.claim,
+        evidenceSourceIds: c.evidenceSourceIds,
+        confidence: c.confidence,
+      })),
+      minorityViews,
+      uncertainties,
+    };
+    fs.writeFileSync(path.join(finalDir, 'final.json'), JSON.stringify(finalJson, null, 2), 'utf8');
+
+    const out = arg('--out', path.join(finalDir, 'digest.md'));
+    fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
+    fs.writeFileSync(out, renderDigest(finalJson), 'utf8');
+
+    console.log(`reduce-input: ${displayPath(path.join(workDir, 'reduce-input.json'))}`);
+    console.log(`final.json: ${displayPath(path.join(finalDir, 'final.json'))}`);
+    console.log(`digest.md: ${displayPath(out)}`);
+    console.log(`hierarchical digest（T10）：L1=${hManifest.l1Count}，顶层=${hManifest.topNodeIds.length} 节点，claims=${claims.length} 条 / 少数观点 ${minorityViews.length} 条 / 不确定性 ${uncertainties.length} 条`);
+    return;
   }
 
   const mapFiles = fs.readdirSync(mapDir).filter((f) => f.endsWith('.json')).sort();

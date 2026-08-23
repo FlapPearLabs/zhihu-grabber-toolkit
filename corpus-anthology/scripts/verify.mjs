@@ -23,6 +23,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { validateSelection } from '../lib/top-percent-selector.mjs';
+import { validateHierarchy, resolveProfileParams } from '../lib/hierarchy.mjs';
 
 /** 共享 handoff schema（仓库级，两个 Skill 的唯一事实来源） */
 const HANDOFF_SCHEMA_FILE = fileURLToPath(new URL('../../references/zhihu-corpus-handoff.schema.json', import.meta.url));
@@ -154,6 +155,83 @@ function verifyCoverage(workDir, manifest) {
         if (report.selectionScopeIssues > 0) report.valid = false;
       }
     }
+  }
+
+  // 0b. hierarchy 校验（T10 #16 / T9 合同）：work/hierarchy/manifest.json 存在时，
+  //     验证 L1 union == manifest set、每层递归覆盖不变量、node hash 链（fail-closed）。
+  let hierarchyIssues = 0;
+  const hierarchyManifestFile = path.join(workDir, 'hierarchy', 'manifest.json');
+  if (fs.existsSync(hierarchyManifestFile)) {
+    try {
+      const hManifest = JSON.parse(fs.readFileSync(hierarchyManifestFile, 'utf8'));
+      const params = resolveProfileParams(hManifest.effectiveParams);
+      const l1BySource = new Map();
+      for (const chunk of chunks.values()) {
+        // L1 节点从 nodes 目录读取（buildHierarchy 已持久化，含 nodeHash；hash 校验需要）
+        const l1File = path.join(workDir, 'hierarchy', 'nodes', `${chunk.chunkId}.json`);
+        let l1Node;
+        if (fs.existsSync(l1File)) {
+          try {
+            l1Node = JSON.parse(fs.readFileSync(l1File, 'utf8'));
+          } catch {
+            l1Node = { nodeId: chunk.chunkId, canonicalSourceIds: chunk.sourceIds, nodeHash: null };
+          }
+        } else {
+          l1Node = { nodeId: chunk.chunkId, canonicalSourceIds: chunk.sourceIds, nodeHash: null };
+        }
+        for (const sid of chunk.sourceIds) {
+          if (l1BySource.has(sid)) {
+            hierarchyIssues += 1;
+            report.issues.push(`hierarchy: 同一 source 出现于多个 L1 节点: ${sid}`);
+          }
+          l1BySource.set(sid, l1Node);
+        }
+      }
+      const nodesByLevel = new Map();
+      for (const level of hManifest.levels ?? []) {
+        const nodes = new Map();
+        const count = hManifest.nodeCountByLevel?.[level] ?? 0;
+        for (let i = 1; i <= count; i += 1) {
+          const id = `level-${level}-node-${String(i).padStart(4, '0')}`;
+          const nodeFile = path.join(workDir, 'hierarchy', 'nodes', `${id}.json`);
+          if (!fs.existsSync(nodeFile)) {
+            hierarchyIssues += 1;
+            report.issues.push(`hierarchy: 缺失节点文件: ${id}`);
+            continue;
+          }
+          try {
+            nodes.set(id, JSON.parse(fs.readFileSync(nodeFile, 'utf8')));
+          } catch (error) {
+            hierarchyIssues += 1;
+            report.issues.push(`hierarchy: 节点文件损坏: ${id} — ${error.message}`);
+          }
+        }
+        nodesByLevel.set(level, nodes);
+      }
+      const manifestSourceIds = manifest.inputs.map((i) => i.sourceId);
+      try {
+        const { l1Union, topLevel, topNodeIds } = validateHierarchy({
+          l1BySource,
+          nodesByLevel,
+          manifestSourceIds,
+          effectiveParams: params,
+        });
+        if (hManifest.topLevel !== topLevel || JSON.stringify(hManifest.topNodeIds) !== JSON.stringify(topNodeIds)) {
+          hierarchyIssues += 1;
+          report.issues.push('hierarchy: manifest 顶层身份与验证结果不一致');
+        }
+        report.hierarchyL1Union = l1Union.length;
+        report.hierarchyTopLevel = topLevel;
+      } catch (error) {
+        hierarchyIssues += 1;
+        report.issues.push(`hierarchy: ${error.message}`);
+      }
+      report.hierarchyIssues = hierarchyIssues;
+    } catch (error) {
+      hierarchyIssues += 1;
+      report.issues.push(`hierarchy manifest 非法: ${error.message}`);
+    }
+    if (hierarchyIssues > 0) report.valid = false;
   }
 
   // 2. 每个输入进入某个 chunk
@@ -400,7 +478,8 @@ function verifyCoverage(workDir, manifest) {
   report.mapCount = maps.length;
 
   report.valid =
-    report.selectionScopeIssues === 0
+    (report.hierarchyIssues ?? 0) === 0
+    && report.selectionScopeIssues === 0
     && report.missingSources === 0
     && report.duplicateAssignments === 0
     && report.failedChunks === 0
