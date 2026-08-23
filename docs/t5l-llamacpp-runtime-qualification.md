@@ -6,7 +6,7 @@
 TICKET: #25 / T5-L
 TYPE: DISCOVERY / SECURITY EVIDENCE
 BASE: 55752c5016fa206e95fa1ac80b528a88be2be4e7
-RUNTIME_ID: llamacpp-tool-less
+RUNTIME_ID: llamacpp-local-tool-less
 PROVIDER / CLIENT: llama.cpp
 FINAL_VERDICT: NO
 ACTUAL_RUNTIME_BEHAVIOR: NOT_PROVEN
@@ -52,6 +52,7 @@ CONTROLLER_FAIL_CLOSED_EVIDENCE: NOT_PROVEN
 
 Because no actual bound runtime exists for verification, the required
 capability-isolation dimensions are not proven. The required disposition is
+`CAPABILITY_ISOLATION_AVAILABLE[llamacpp-local-tool-less] = NO` →
 `capability_isolation_unavailable`; T6 remains BLOCKED. A default shown in
 help, an unloaded model cache, or the absence of a request is not evidence that
 tools are unavailable to a future bound model.
