@@ -231,7 +231,7 @@ export function computeNodeHash(node) {
  * @returns {{schemaVersion, hierarchyContractVersion, level, nodeId, children, childHashes,
  *   canonicalSourceIds, inputHash, runtime, claims: [], minorityViews: [], uncertainties: []}}
  */
-export function buildAggregationNode({ nodeId, level, children, effectiveParams }) {
+export function buildAggregationNode({ nodeId, level, children, effectiveParams, runtime = REVIEWED_HIERARCHY_RUNTIME }) {
   const params = resolveProfileParams(effectiveParams);
   const childHashes = children.map((c) => c.nodeHash);
   const canonicalSourceIds = computeSourceUnion(children);
@@ -253,7 +253,7 @@ export function buildAggregationNode({ nodeId, level, children, effectiveParams 
     childHashes,
     canonicalSourceIds,
     inputHash,
-    runtime: REVIEWED_HIERARCHY_RUNTIME,
+    runtime,
     claims: [],
     minorityViews: [],
     uncertainties: [],
@@ -317,7 +317,8 @@ export function validateAggregationNode(node, childrenById, effectiveParams) {
   if (typeof node.nodeId !== 'string' || node.nodeId.trim() === '' || typeof node.nodeHash !== 'string') {
     throw new Error('capability_isolation_unavailable: nodeId/nodeHash missing');
   }
-  if (node.runtime !== REVIEWED_HIERARCHY_RUNTIME) {
+  // T11-R2 #28：approved runtimes（CAPABILITY_ISOLATION_AVAILABLE=YES 的 runtime-scoped 集合）
+  if (node.runtime !== 'lmstudio-local-tool-less' && node.runtime !== 'deepseek-api-tool-less') {
     throw new Error(`capability_isolation_unavailable: unsupported runtime ${node.runtime}`);
   }
   if (!Array.isArray(node.children) || node.children.length < 2) {

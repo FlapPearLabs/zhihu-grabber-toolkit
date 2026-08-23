@@ -64,8 +64,9 @@ function displayPath(p) {
   return rel || '.';
 }
 
-/** 将已验证的 L1 map 结果转换为 hierarchy L1 节点（nodeId = chunkId；inputHash = chunkHash） */
-export function toHierarchyL1(map) {
+/** 将已验证的 L1 map 结果转换为 hierarchy L1 节点（nodeId = chunkId；inputHash = chunkHash）。
+ *  runtimeId：实际执行 map 的 runtime（T11-R2 #28：节点身份必须反映真实传输，避免跨 runtime 错误复用）。 */
+export function toHierarchyL1(map, runtimeId = REVIEWED_HIERARCHY_RUNTIME) {
   const node = {
     schemaVersion: NODE_SCHEMA_VERSION,
     hierarchyContractVersion: HIERARCHY_CONTRACT_VERSION,
@@ -75,7 +76,7 @@ export function toHierarchyL1(map) {
     childHashes: [],
     canonicalSourceIds: [...map.sourceIds],
     inputHash: map.chunkHash,
-    runtime: REVIEWED_HIERARCHY_RUNTIME,
+    runtime: runtimeId,
     claims: (map.claims ?? []).map((c) => ({
       claim: c.claim,
       evidenceSourceIds: [...c.evidenceSourceIds],
@@ -97,14 +98,14 @@ export function toHierarchyL1(map) {
  * @param {string} nodesDir node 文件目录
  * @returns {Promise<Array<object>>} 本层合成节点
  */
-async function synthesizeLevel(level, nodes, params, existingNodes, nodesDir, run = runToolLessMap) {
+async function synthesizeLevel(level, nodes, params, existingNodes, nodesDir, run = runToolLessMap, runtimeId = REVIEWED_HIERARCHY_RUNTIME) {
   const groups = packGroups(nodes, params);
   const next = [];
   for (let gi = 0; gi < groups.length; gi += 1) {
     const g = groups[gi];
     const nodeId = `level-${level}-node-${String(gi + 1).padStart(4, '0')}`;
     const token = String(gi + 1);
-    const agg = buildAggregationNode({ nodeId, level, children: g, effectiveParams: params });
+    const agg = buildAggregationNode({ nodeId, level, children: g, effectiveParams: params, runtime: runtimeId });
     // 幂等：inputHash 匹配 + childHashes 匹配 + 版本/runtime 匹配 → 复用（FILE EXISTS != VALID CACHE）
     const nodeFile = path.join(nodesDir, `${nodeId}.json`);
     const existing = existingNodes.get(nodeId) ?? (fs.existsSync(nodeFile)
@@ -114,7 +115,7 @@ async function synthesizeLevel(level, nodes, params, existingNodes, nodesDir, ru
       && existing.inputHash === agg.inputHash
       && existing.hierarchyContractVersion === HIERARCHY_CONTRACT_VERSION
       && existing.schemaVersion === NODE_SCHEMA_VERSION
-      && existing.runtime === REVIEWED_HIERARCHY_RUNTIME
+      && existing.runtime === runtimeId
       && JSON.stringify(existing.childHashes) === JSON.stringify(agg.childHashes)) {
       next.push(existing);
       console.log(`  复用聚合节点: ${nodeId}（${g.length} 子节点，inputHash 匹配）`);
@@ -156,7 +157,7 @@ async function synthesizeLevel(level, nodes, params, existingNodes, nodesDir, ru
  * @param {string} hierarchyDir work/hierarchy
  * @returns {Promise<{manifest: object, nodesByLevel: Map<number, Map<string, object>>, topNodes: Array<object>}>}
  */
-export async function buildHierarchy(l1Nodes, params, hierarchyDir, run = runToolLessMap) {
+export async function buildHierarchy(l1Nodes, params, hierarchyDir, run = runToolLessMap, runtimeId = REVIEWED_HIERARCHY_RUNTIME) {
   const nodesDir = path.join(hierarchyDir, 'nodes');
   fs.mkdirSync(nodesDir, { recursive: true });
   const nodesByLevel = new Map();
@@ -184,7 +185,7 @@ export async function buildHierarchy(l1Nodes, params, hierarchyDir, run = runToo
       break; // 顶层可被 final reduce 直接消费
     }
     levelNum += 1;
-    const next = await synthesizeLevel(levelNum, levelNodes, params, existingNodes, nodesDir, run);
+    const next = await synthesizeLevel(levelNum, levelNodes, params, existingNodes, nodesDir, run, runtimeId);
     for (const n of next) existingNodes.set(n.nodeId, n);
     nodesByLevel.set(levelNum, new Map(next.map((n) => [n.nodeId, n])));
     if (next.length >= levelNodes.length) {
@@ -198,7 +199,7 @@ export async function buildHierarchy(l1Nodes, params, hierarchyDir, run = runToo
     schemaVersion: 1,
     hierarchyContractVersion: HIERARCHY_CONTRACT_VERSION,
     effectiveParams: params,
-    runtime: REVIEWED_HIERARCHY_RUNTIME,
+    runtime: runtimeId,
     l1Count: l1Nodes.length,
     levels: [...nodesByLevel.keys()],
     nodeCountByLevel: Object.fromEntries([...nodesByLevel].map(([l, m]) => [l, m.size])),
@@ -282,14 +283,14 @@ async function main() {
         process.exit(1);
       }
       const map = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
-      if (map.chunkHash !== undefined && map.chunkHash !== '') l1Nodes.push(toHierarchyL1(map));
+      if (map.chunkHash !== undefined && map.chunkHash !== '') l1Nodes.push(toHierarchyL1(map, runtimeId));
       else {
         console.error(`hierarchy 前置 L1 map 无效: ${mapPath}`);
         process.exit(1);
       }
     }
     const hierarchyDir = path.join(workDir, 'hierarchy');
-    const { manifest } = await buildHierarchy(l1Nodes, params, hierarchyDir, runWithUsage);
+    const { manifest } = await buildHierarchy(l1Nodes, params, hierarchyDir, runWithUsage, runtimeId);
     console.log(`hierarchy 完成：L1=${manifest.l1Count}，聚合层=${manifest.levels.join('/') || '(无，flat 等价)'}，顶层节点=${manifest.topNodeIds.length}`);
     console.log(`hierarchy manifest: ${displayPath(path.join(hierarchyDir, 'manifest.json'))}`);
   }

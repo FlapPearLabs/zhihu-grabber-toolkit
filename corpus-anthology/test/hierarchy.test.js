@@ -233,6 +233,19 @@ test('H13 unsupported runtime fail：非 lmstudio-local-tool-less 节点被拒',
   assert.throws(() => validateAggregationNode(bad, new Map(l1.map((n) => [n.nodeId, n])), params), /unsupported runtime/);
 });
 
+test('T11-R2 #28：deepseek-api-tool-less 为批准 runtime（节点身份正确且通过验证）', () => {
+  const l1 = makeL1Nodes(3);
+  const params = { maxChildren: 8, maxProjectedBytes: 100_000 };
+  const node = finalizeAggregationNode(
+    buildAggregationNode({ nodeId: 'n1', level: 1, children: l1, effectiveParams: params, runtime: 'deepseek-api-tool-less' }),
+    { claims: l1[0].claims },
+  );
+  assert.equal(node.runtime, 'deepseek-api-tool-less');
+  // 不抛错即通过（deepseek 已批准）；校验后节点身份保留
+  validateAggregationNode(node, new Map(l1.map((n) => [n.nodeId, n])), params);
+  assert.equal(node.runtime, 'deepseek-api-tool-less');
+});
+
 // ---------- T9 §16 test 14: 缺 1 个 L1 source 不得声称 full coverage ----------
 test('H14 缺 1 个 L1 source → validateHierarchy fail（不可声称 full coverage）', () => {
   const l1 = makeL1Nodes(5);
