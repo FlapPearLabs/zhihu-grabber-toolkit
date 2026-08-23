@@ -13,7 +13,7 @@
  * 不改变 lmstudio-local-tool-less 的历史资格结论（runtime-specific）。
  * 未配置凭据 → fail closed（exit 1）。
  */
-import { runDeepSeekToolLessMap } from '../lib/deepseek-tool-less.mjs';
+import { DEEPSEEK_RUNTIME, runDeepSeekToolLessMap } from '../lib/deepseek-tool-less.mjs';
 import {
   HOSTILE_PROJECTION,
   qualifyRuntime,
@@ -28,11 +28,14 @@ async function main() {
     process.exit(1);
   }
   const battery = await runAdversarialBattery({ run: runDeepSeekToolLessMap });
+  // 注意：lmstudio 版 qualifyRuntime 的 verdict 元数据硬编码 REVIEWED_RUNTIME（lmstudio 身份）；
+  // 本脚本的 verdict 身份必须来自 DEEPSEEK_RUNTIME（实际传输是 DeepSeek）。
   const verdict = {
     valid: true,
-    runtimeId: qual.runtimeId,
-    model: qual.model,
-    sourceId: qual.sourceId,
+    runtimeId: DEEPSEEK_RUNTIME.runtimeId,
+    model: DEEPSEEK_RUNTIME.model,
+    thinking: DEEPSEEK_RUNTIME.thinking,
+    sourceId: HOSTILE_PROJECTION.sourceIds[0],
     stance: qual.stance,
     allSafe: battery.results.every((item) => item.controllerRejected || item.failedClosed || item.validMap),
     adversarialBattery: battery,
