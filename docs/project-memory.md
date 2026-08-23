@@ -92,8 +92,12 @@
     不抓字幕 / 不做语音识别 / 不做视频理解 / 不为视频做 discovery / 不建 speculative parser；
     `answers[].assets.videos: []` 仅作兼容保留字段。IMPLEMENTATION_IMPACT: NONE。V2 §16/§24/§25 已由 T0 归一化为该立场。
   - **C. Agent projection / capability isolation**：V2 §9/§9.1/§9.2 安全合同已批准（LLM NETWORK/SHELL/FS/TOOLS 全 DENY，
-    trusted controller 唯一 IO，隔离不可用 → fail closed）；但**实现可行性尚未证明**。`CAPABILITY_ISOLATION_AVAILABLE[target_runtime] = YES|NO`
-    逐 runtime 独立判定，UNKNOWN → STOP，禁止跨 runtime 推导、禁止 prompt-only 降级。T4（Phase5 实现审计）/ T5（Phase5C 隔离可行性）必须真实执行。
+    trusted controller 唯一 IO，隔离不可用 → fail closed）。T5 对当前仓库可识别的两个未命名 interface host
+    分别给出 `NO`：`zhihu-answer-grabber/agents/openai.yaml` host 与
+    `corpus-anthology/agents/openai.yaml` host 均没有可审查的 host product/version、模型调用与 controller
+    边界、或 NETWORK/SHELL/FILESYSTEM/TOOLS 的确定性 DENY 证据。每个 runtime 的 `NO`（以及任何
+    未评估 runtime 的 UNKNOWN）都必须路由为 `capability_isolation_unavailable` → digest/map STOP；
+    禁止跨 runtime 推导、禁止 prompt-only 降级，且 T6 不得实现或启用受支持 runtime path。
   - **D. countMismatch**：`COUNT_MISMATCH_SEVERITY = DIAGNOSTIC_ONLY`（V0.3 决策 D 已进入 accepted implementation baseline；
     保留 reportedAnswerCount / capturedAnswerCount / countMismatch 三诊断字段（VERIFIER_DIAGNOSTIC_RESULT），
     移出 `verifier.warnings[]`（不影响 `valid`；因 `make-handoff` 投影 `verifier.warnings` → `handoff.warnings` 自然不再含 countMismatch）。
