@@ -14,26 +14,33 @@
  * reference-like tokens in untrusted text before the model ever sees them.
  */
 
-const URL_PATTERN = /(?:^|[^A-Za-z0-9+.-])([A-Za-z][A-Za-z0-9+.-]*:\/\/[^\s'"<>\u4e00-\u9fff]+)/gu;
-const PROTO_REL_PATTERN = /(?:^|[^A-Za-z0-9])(\/\/[^\s'"<>\u4e00-\u9fff]+)/gu;
-const WWW_PATTERN = /(?:^|[^A-Za-z0-9])(www\.[^\s'"<>]+)/giu;
-const SCHEME_REST_PATTERN = /(?:^|[^A-Za-z0-9+.-])([A-Za-z][A-Za-z0-9+.-]*:)([^\s'"<>]*)/gu;
-const ABS_PATH_PATTERN = /(?:^|[\s=("'])((?:(?:~\/)|(?:\$HOME\/)|(?:\.\.?\/)|\/)(?:[A-Za-z0-9._~/-]+))/gu;
-const BACKSLASH_PATTERN = /(?:^|\s)((?:\\.{1,2}|[A-Za-z]:)?[^\s\\]*\\[^\s]*)/gu;
+/**
+ * 消毒正则是被评审控制器（lmstudio-tool-less.mjs hasRemoteOrFileReference）
+ * 拒绝文法的**超集**：控制器的路径前缀 `(?:^|[\s=("'])?` 是可选组、`//`/`\`
+ * 任意位置即拒绝，因此消毒器必须对 CJK 相邻的路径类 token（如「修改/etc/hosts」、
+ * 「配置~/.zshrc」、「甲//乙」）同样生效。任何控制器会拒绝的形态都必须被中和，
+ * 否则真实中文语料会让整个 chunk fail-closed。
+ */
+const SCHEME_PATTERN = /(?:^|[^A-Za-z0-9+.-])([A-Za-z][A-Za-z0-9+.-]*:)[^\s'"<>]*/gu;
+const DOUBLE_SLASH_PATTERN = /\/\/[^\s]*/gu;
+const BACKSLASH_PATTERN = /\\[^\s]*/gu;
+const WWW_PATTERN = /\bwww\.[^\s'"<>]*/giu;
+const PATH_PATTERN = /(?:^|[\s=("'])?((?:~\/|\$HOME\/|\.\.?\/|\/)[A-Za-z0-9._~/-]+)/gu;
+const SOURCE_TAG_NEUTRAL = /\[SOURCE/giu;
 
 /**
  * 消毒占位符使用无方括号的括号形式（如（外部链接）），保证 `[SOURCE <id>]` 是投影中
- * 唯一的方括号 token——实测 1.7B 会把正文中的方括号 token 误抄进 sourceId 回显
- * （如 `[外部链接 1]` 导致回显 "SOURCE 1"）。投影必须是「唯一方括号 token」的受限格式。
+ * 唯一的方括号 token——实测 1.7B 会把正文中的方括号 token 误抄进 sourceId 回显。
+ * 正文中的 `[SOURCE` 字样也被中和（控制器对任何含 [SOURCE 的行执行 source-tag 契约）。
  */
 function replaceRefs(text) {
   let out = text;
-  out = out.replace(URL_PATTERN, ' （外部链接）');
-  out = out.replace(PROTO_REL_PATTERN, ' （外部链接）');
-  out = out.replace(WWW_PATTERN, ' （外部链接）');
-  out = out.replace(SCHEME_REST_PATTERN, (_m, scheme) => ` （链接协议${scheme.slice(0, -1)}）`);
-  out = out.replace(ABS_PATH_PATTERN, ' （路径）');
+  out = out.replace(SCHEME_PATTERN, (_m, scheme) => ` （链接协议${scheme.slice(0, -1)}）`);
+  out = out.replace(DOUBLE_SLASH_PATTERN, ' （外部链接）');
   out = out.replace(BACKSLASH_PATTERN, ' （路径）');
+  out = out.replace(WWW_PATTERN, ' （外部链接）');
+  out = out.replace(PATH_PATTERN, ' （路径）');
+  out = out.replace(SOURCE_TAG_NEUTRAL, ' （来源标记）');
   return out;
 }
 
@@ -48,6 +55,13 @@ export function sanitizeProjectionText(text) {
   return neutralized
     .replace(/[\p{Cf}\p{Cs}]/gu, '')
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/gu, '');
+}
+
+const PLACEHOLDER_PATTERN = /（外部链接）|（路径）|（链接协议[^）]*）/gu;
+
+/** 消毒并剥离占位符后是否仍存在可提取的语义内容。 */
+export function hasExtractableContent(text) {
+  return sanitizeProjectionText(text).replace(PLACEHOLDER_PATTERN, '').trim() !== '';
 }
 
 /**

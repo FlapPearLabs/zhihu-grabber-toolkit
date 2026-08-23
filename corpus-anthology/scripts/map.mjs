@@ -5,7 +5,7 @@
  * 由 trusted controller 确定性装配 corpus map 结果（T6, Issue #12）。
  *
  * 用法:
- *   node scripts/map.mjs --work work/ [--runtime lmstudio-local-tool-less]
+ *   node scripts/map.mjs --work work/
  *
  * 前置: LM Studio 本地服务器运行于 127.0.0.1:1234 且 qwen/qwen3-1.7b 已加载
  *       （corpus-anthology/scripts/qualify-lmstudio-runtime.mjs 可先行验证）。

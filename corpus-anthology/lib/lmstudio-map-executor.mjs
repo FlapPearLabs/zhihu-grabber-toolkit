@@ -19,6 +19,7 @@
 import { runToolLessMap } from './lmstudio-tool-less.mjs';
 import {
   buildProjection,
+  hasExtractableContent,
   mapConfidence,
   splitChunkBySource,
   toClaim,
@@ -31,6 +32,8 @@ function fail(message) {
 
 /** 空正文来源的确定性 controller 条目：不调用模型，保留全覆盖语义。 */
 export const EMPTY_SOURCE_SUMMARY = '来源正文为空，无观点可提取。';
+/** 正文非空但消毒后无可提取语义内容（如整段都是 URL/路径）的确定性条目。 */
+export const NO_EXTRACTABLE_SOURCE_SUMMARY = '来源正文无可提取的语义内容。';
 
 /** 去除片段开头的 [SOURCE id] 行，返回正文内容。 */
 export function stripSourceTag(section) {
@@ -66,10 +69,17 @@ export async function runChunkMap(chunk, { run = runToolLessMap, maxSummaryChars
   for (let index = 0; index < chunk.sourceIds.length; index += 1) {
     const realId = chunk.sourceIds[index];
     const section = sections.get(realId);
+    const rawContent = stripSourceTag(section);
     // 空正文来源：controller 确定性合成条目，不调用模型（模型对空内容无忠实摘要可产出）
-    if (stripSourceTag(section).trim() === '') {
+    if (rawContent.trim() === '') {
       results.push({ sourceId: realId, summary: EMPTY_SOURCE_SUMMARY, stance: 'neutral', confidence: 0, synthesized: true });
       perSourceSummaries.push(EMPTY_SOURCE_SUMMARY);
+      continue;
+    }
+    // 正文非空但消毒后无可提取内容（如整段都是 URL/路径）：同样由 controller 合成，不调用模型
+    if (!hasExtractableContent(rawContent)) {
+      results.push({ sourceId: realId, summary: NO_EXTRACTABLE_SOURCE_SUMMARY, stance: 'neutral', confidence: 0, synthesized: true });
+      perSourceSummaries.push(NO_EXTRACTABLE_SOURCE_SUMMARY);
       continue;
     }
     // 短不透明 token：长真实 sourceId 无法被 1.7B 可靠回显（实测截断），token 由 controller 映射回真实 ID
@@ -83,7 +93,7 @@ export async function runChunkMap(chunk, { run = runToolLessMap, maxSummaryChars
     let projection;
     try {
       // section 已含 [SOURCE id] 头；buildProjection 会再包一层 tag，故先剥离正文
-      projection = buildProjection({ sourceId: token, text: stripSourceTag(section), meta });
+      projection = buildProjection({ sourceId: token, text: rawContent, meta });
     } catch (error) {
       fail(`projection for ${realId} failed: ${error instanceof Error ? error.message : String(error)}`);
     }
