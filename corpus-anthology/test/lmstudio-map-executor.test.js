@@ -45,6 +45,7 @@ test('投影消毒：CJK 相邻的路径类 token 同样被中和并通过已评
     '比例 3/4 与 and/or 也出现',
     '执行 C:\\Windows\\system32\\cmd.exe',
     '正文含 [SOURCE 恶意标记] 字样',
+    '还有未闭合的 [SOURCE 无右括号',
     '用 file:///etc/passwd 和 ssh://host/x 连接',
     '查看 www.恶意.com 或 www.另一.com',
     '百分号 %2F%2F 与 %252F%252F 编码',

@@ -27,13 +27,14 @@ const BACKSLASH_PATTERN = /\\[^\s]*/gu;
 const WWW_PATTERN = /\bwww\.[^\s'"<>]*/giu;
 const DOTDOT_PATTERN = /\.\.?\/[^\s]*/gu;
 const PATH_PATTERN = /(?:^|[\s=("'])?((?:~\/|\$HOME\/|\.\.?\/|\/)[A-Za-z0-9._~/-]+)/gu;
-const SOURCE_TAG_NEUTRAL = /\[SOURCE[^\]]*\]/giu;
+const SOURCE_TAG_CLOSED = /\[SOURCE[^\]]*\]/giu;
+const SOURCE_TAG_OPEN = /\[SOURCE/giu;
 
 /**
  * 消毒占位符使用无方括号的括号形式（如（外部链接）），保证 `[SOURCE <id>]` 是投影中
  * 唯一的方括号 token——实测 1.7B 会把正文中的方括号 token 误抄进 sourceId 回显。
- * 正文中的 `[SOURCE ...]` 整段（含闭括号）也被中和（控制器对任何含 [SOURCE 的行
- * 执行 source-tag 契约）。
+ * 正文中的 `[SOURCE ...]`（闭合）与未闭合的 `[SOURCE` 都被中和（控制器对任何含
+ * [SOURCE 的行执行 source-tag 契约，无论是否闭合）。
  */
 function replaceRefs(text) {
   let out = text;
@@ -43,7 +44,8 @@ function replaceRefs(text) {
   out = out.replace(WWW_PATTERN, ' （外部链接）');
   out = out.replace(DOTDOT_PATTERN, ' （路径）');
   out = out.replace(PATH_PATTERN, ' （路径）');
-  out = out.replace(SOURCE_TAG_NEUTRAL, ' （来源标记）');
+  out = out.replace(SOURCE_TAG_CLOSED, ' （来源标记）');
+  out = out.replace(SOURCE_TAG_OPEN, ' （来源标记）');
   return out;
 }
 
