@@ -103,6 +103,16 @@
     read-only sandbox / approval 并不移除工具，且 live model catalogue refresh 失败导致固定 model identity 未验证，
     repository-owned controller / fail-closed boundary 也未建立。该结论仅适用于这一精确版本与配置，不推导到其他
     Codex/ChatGPT runtime；T6 继续因 `capability_isolation_unavailable` 阻塞。
+    **T5-LM（#26）对具名 `lmstudio-local-tool-less`（LM Studio app `0.4.19+2`、localhost-only `127.0.0.1:1234`、
+    CORS OFF、无 MCP servers；本地 `qwen/qwen3-1.7b` MLX 8-bit，`model.safetensors` sha256
+    `637386c1…a6a1`）独立给出 runtime-scoped `YES`：`MODEL_VISIBLE_TOOL_COUNT = 0`（请求恒 `tools: []` +
+    `tool_choice: "none"`；LM Studio 工具面为请求驱动，对照 probe 证明提供函数工具时才暴露 tool_calls），
+    json_schema 结构化输出（MLX 经 Outlines 约束解码）与 controller 确定性校验双层成立，live probe + 12 项
+    对抗 battery + 哨兵全过，repository-owned controller 唯一 IO，fail-closed 路径实证。**模型质量与运行时
+    安全分离**：1.7B 对完整 map schema（claims + 全 sourceCoverage）覆盖不稳，被 controller fail-closed 拒绝，
+    属模型质量（T6/dogfood 另行评估），不影响本运行时安全 YES。该 YES 仅适用于这一精确 LM Studio 版本/
+    配置/模型组合，不推导到其他 runtime；既有 NO（T5 两个 YAML host、T5-R、T5-C、T5-L llama.cpp）不变。
+    T6 现仅对该 runtime 合法解锁（START_GATE 满足），其余 runtime 仍不得标记支持。
   - **D. countMismatch**：`COUNT_MISMATCH_SEVERITY = DIAGNOSTIC_ONLY`（V0.3 决策 D 已进入 accepted implementation baseline；
     保留 reportedAnswerCount / capturedAnswerCount / countMismatch 三诊断字段（VERIFIER_DIAGNOSTIC_RESULT），
     移出 `verifier.warnings[]`（不影响 `valid`；因 `make-handoff` 投影 `verifier.warnings` → `handoff.warnings` 自然不再含 countMismatch）。
