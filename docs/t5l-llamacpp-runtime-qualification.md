@@ -19,7 +19,8 @@ another llama.cpp version, model, server configuration, or runtime.
 
 `PROJECT_MEMORY_UPDATE_REQUIRED: NO`: this conclusion records only the current
 external-model availability gap, not a durable verified runtime capability
-result. With no identified model, project-memory and Tracker remain unchanged.
+result. Project-memory remains unchanged; Tracker #6 records this
+runtime-scoped `NO` and the continuing T6 block.
 
 ## 2. Non-sensitive direct observations
 
