@@ -1,278 +1,410 @@
 # AGENTS.md — Agent 工作流程（Repository Governance）
 
-> **状态说明**：本文件为治理资产迁移重建版（2026-08-09）。原仓库 git 历史中不存在同名文件；以下规则重建自历史任务契约、多轮独立审查决策、仓库既有 `SKILL.md` / `references/security.md` / `references/verification.md` / 已批准 V2 Spec 中实际执行并被验证的治理实践。只做必要路径/状态更新，不引入未经实践的新政策。
->
-> **一致性说明**：本文件与同一治理迁移中首次重建的 `RULES.md` 做过交叉校验（`RULES.md` 不是历史既有文件，而是本次迁移新建）；两者职责互补，`AGENTS.md` 的流程性文字不得覆盖 `RULES.md` 的硬约束。
+> **状态说明**：本文件最初于 2026-08-09 由历史任务契约、多轮独立审查决策、仓库既有 `SKILL.md` / `references/security.md` / `references/verification.md` / Approved Specs 中已执行并验证的治理实践重建；2026-08-23 进一步归一化为 **repository-driven continuous goal execution + independent Subagent review**。本文件定义执行、分支、审查、合并、恢复与长任务工作流；不得覆盖 `RULES.md` 的硬约束或 Applicable Approved Specs 的产品合同。
 
-## 1. Authority 职责划分（冲突时的裁决方式）
+## 1. Authority 与状态源
 
-各文件职责不同，不是简单叠加的优先级链：
+本仓库的长期连续性属于 **GitHub repository**，不属于某个 Agent、某个聊天窗口或某个 runtime memory。
 
-- `RULES.md` —— **hard project / safety invariants**（凭据安全、契约权威、scope 红线等不可违反的约束）。
-- 已批准的 Spec（`docs/specs/v2-rich-content-fidelity.md`，Status: APPROVED）—— **approved product requirements / contracts**（产品需求唯一事实来源）。
-- `docs/project-memory.md` —— **durable project memory**（Git tracked 的长期项目知识；不是运行状态，不是 changelog）。
-- `.workbuddy/memory/` —— **WorkBuddy runtime / working memory**（本地运行状态，自动产生，ignored，non-authoritative；只作参考输入，不得覆盖 Git tracked authority）。
-- 本文件（`AGENTS.md`）—— **execution / branch / review workflow**（Agent 怎么干活、怎么过 gate）。
-- 当前 task / ticket —— **current authorized execution scope**（本次任务范围）。
+职责划分：
+
+- `RULES.md` —— **hard project / safety invariants**：凭据安全、canonical data、验证权威、scope / git 红线、Spec authority 等不可违反约束。
+- Applicable Approved Specs —— **approved product requirements / contracts**。当前至少包括：
+  - `docs/specs/v2-rich-content-fidelity.md`：baseline Approved Spec；
+  - `docs/specs/v0.3-product-scope.md`：Approved additive amendment；对其明确 amendment targets 覆盖 V2 对应条款，其余 V2 合同继续有效。
+- `docs/product-behavior-contract.md` —— 已批准产品合同与 CURRENT / TARGET 行为的可执行归一化视图；不得覆盖 Approved Specs。
+- `docs/project-memory.md` —— **durable project memory**；不是运行状态、不是 changelog。
+- GitHub Tracker + child Issues —— **durable execution state / dependency graph / current authorized ticket**。
+- Git history + remote refs —— 已发生事实、exact-SHA review / merge identity 的权威记录。
+- 本文件 —— **execution / branch / review / merge / recovery workflow**。
+- `.workbuddy/memory/`、Codex thread、MiniMax context、其他 Agent 私有 memory —— runtime / working memory，**non-authoritative**。
 
 裁决原则：
 
-- `RULES.md` 的硬约束优先于一切流程性文字；Approved Spec 的产品合同优先于本文件的流程性安排——**本文件的流程性文字不得覆盖 Approved Spec 的产品合同**。
-- 低层级指示与高层级约束冲突时，**STOP**，报告 `GOVERNANCE_CONFLICT` / `SPEC_CONFLICT`，请示裁决，不得静默选择方便的一方。
-- 任何对 APPROVED Spec 的修改必须经独立 DOCUMENT review 通过。
+1. `RULES.md` 硬约束不得被流程性文字覆盖。
+2. Applicable Approved Specs 的产品合同优先于本文件、Tracker、Issue 中的便利性描述。
+3. V0.3 对明确 amendment targets 覆盖 V2；未明确 amendment 的 V2 合同继续有效。
+4. 当前 ticket 只能授权自己的 scope，不能修改更高层 authority。
+5. repo authority 内部出现无法按上述关系解决的真实冲突 → **STOP：`CONTRACT_CONFLICT`**，不得静默选方便的一方；`GOVERNANCE_CONFLICT` / `SPEC_CONFLICT` 只能作为 finding / reason category 随该 STOP 报告，不能替代规范 STOP 状态。
+6. 对 Approved Spec / governance authority 的修改必须经过规定的独立 review quorum。
 
-## 2. 任务开始前必读（bootstrap 合同）
+## 2. Bootstrap 与状态恢复
 
-任何代码修改之前，Agent **必须**先检查并读取：
+任何实现、审计、文档或治理任务开始前，Agent 必须读取或核验：
 
-- [x] `AGENTS.md`（本文件）
+- [x] `AGENTS.md`
 - [x] `RULES.md`
-- [x] `docs/project-memory.md`（durable project memory）
-- [x] 相关 approved Spec（`docs/specs/v2-rich-content-fidelity.md` 或任务指定的其他 Spec）
-- [x] 当前 task / ticket 描述
+- [x] `docs/project-memory.md`
+- [x] relevant Applicable Approved Specs
+- [x] `docs/product-behavior-contract.md`（若任务涉及产品行为）
+- [x] Tracker / execution graph（若当前版本使用 Tracker）
+- [x] 当前 / 下一 child Issue
+- [x] latest remote `master`
+- [x] 当前 branch / reviewed HEAD / merge ancestry（如适用）
 
-若 `AGENTS.md` 或 `RULES.md` 缺失 → **STOP，报告 `GOVERNANCE_FILES_MISSING`**，不得以"文件不存在，所以继续实现"为由绕过。
-若 `docs/project-memory.md` 缺失 → **STOP，报告 `PROJECT_MEMORY_MISSING`**，不得继续实现。
+若 `AGENTS.md` 或 `RULES.md` 缺失 → **STOP：`GOVERNANCE_FILES_MISSING`**。
+若 `docs/project-memory.md` 缺失 → **STOP：`PROJECT_MEMORY_MISSING`**。
 
-## 3. Project Memory Lifecycle
+每个 execution cycle 必须从 repo 重新推导，而不是依赖聊天记忆：
 
-### 3.1 两种 memory 的主从关系
+```text
+CURRENT_MASTER
+CURRENT_ACTIVE_TICKET
+CURRENT_TICKET_STATUS
+CURRENT_BRANCH
+CURRENT_HEAD
+DEPENDENCIES
+START_GATE
+REVIEW_STATUS
+NEXT_LEGAL_ACTION
+```
 
-- `.workbuddy/memory/` = WorkBuddy runtime / working memory：自动产生、non-authoritative、ignored、可含临时上下文；**不得覆盖 GitHub 中的项目事实**。
-- `docs/project-memory.md` = durable project memory：Git tracked、reviewed、portable、project-authoritative durable knowledge。
-- GitHub master = repository sole authoritative source。
-- 若 `.workbuddy` memory 与 `AGENTS.md` / `RULES.md` / Approved Spec / `docs/project-memory.md` / tracked code / tests 冲突：以 Git tracked authority 为准，不得用 runtime memory 覆盖 repo 内容；若 repo 内部自身冲突，**STOP 并报告 `GOVERNANCE_CONFLICT`**。
+`remote truth > local assumption > conversation memory`。
 
-### 3.2 Memory Decision（按任务阶段）
+一个全新的 Codex / MiniMax / Claude Code / 其他 Agent 会话，应能仅凭 repo + GitHub state 恢复到正确下一步；如果做不到，说明 durable execution state 不完整，应先修状态而不是依赖旧聊天。
 
-每个会产生项目知识的 task 结束时，都必须执行**适用于其阶段**的 memory decision。task 类型包括：implementation / document / spec / fix / research / smoke / independent review。
+## 3. Continuous Goal Execution
 
-**A. Pre-gate（普通实现 / 文档 / 修复 / research / smoke 任务）**
+当用户授权某版本 / milestone（例如 V0.3）进行连续施工时，默认采用 **CONTINUOUS GOAL MODE**：
 
-在 independent review 之前执行一次：
+```text
+OBSERVE
+→ READ AUTHORITY
+→ DERIVE NEXT LEGAL TICKET
+→ CHECK START_GATE
+→ EXECUTE
+→ VERIFY
+→ SELF-REVIEW
+→ COMMIT / PUSH
+→ INDEPENDENT REVIEW
+→ REPAIR / FRESH RE-REVIEW（如需要）
+→ EXACT-SHA PASS
+→ FF-ONLY MERGE
+→ REMOTE VERIFY
+→ CLOSE / TRACKER UPDATE
+→ RE-OBSERVE
+→ NEXT TICKET
+```
+
+不得因为以下普通事件停止：
+
+- 一个子步骤完成；
+- tests green；
+- 一个 commit 完成；
+- 一个 Issue 更新完成；
+- reviewer 提出可修复 findings；
+- 一个 ticket PASS / merge 完成。
+
+除非当前 ticket / Spec 明确要求人工 gate，否则连续执行到真正 hard stop。
+
+允许的人类停止状态：
+
+```text
+USER_DECISION_REQUIRED
+CONTRACT_CONFLICT
+BLOCKED_BY_EXTERNAL_EVIDENCE
+CAPABILITY_ISOLATION_UNAVAILABLE   # 仅当当前 Spec/Issue 将其定义为 hard gate
+PERMISSION_OR_TOOL_FAILURE
+V0_3_EXECUTION_COMPLETE            # 或当前 milestone 的等价最终状态
+```
+
+不得自动进入当前 Approved Scope 明确排除的 NEXT_STAGE。
+
+### 3.1 已有 capability STOP 后的受限资格审计
+
+已有 runtime 得到 `NO` / `UNKNOWN` 而触发 hard capability STOP 后，常规实现不得继续。只有 product-owner **明确授权**、范围严格限定为新增具名 runtime 的 evidence / qualification audit 的 ticket，才可作为 next legal action；它不解除任何既有 `NO` / `UNKNOWN` runtime 的 STOP，也不得实现或启用被阻断的代码、设计 workaround，或以 prompt-only fallback 代替 capability isolation。
+
+该资格审计仍须对其 exact candidate HEAD 完成要求的独立 review；只有该新增 runtime 获得 exact independently reviewed `YES`，后续实现才可按 Applicable Approved Specs 与对应 ticket 重新判断是否解锁。审计为 `NO`、`UNKNOWN` 或证据不足时，保持 STOP。
+
+## 4. Agent Roles
+
+连续模式包含四个逻辑职责；可由一个 Orchestrator 调度多个 Subagent，但 final review 必须职责隔离。
+
+### 4.1 Orchestrator
+
+负责：
+
+- 从 GitHub 重建 current state；
+- 选择 next legal ticket；
+- 调度 Executor / Reviewer；
+- 处理 reviewer findings；
+- exact-SHA / ancestry / ff-only merge gate；
+- close Issue / update Tracker；
+- 自动进入下一合法 ticket；
+- 遇到真正 human stop 时生成最小充分决策包。
+
+Orchestrator **不能以自己的 self-review 替代独立 reviewer PASS**。
+
+### 4.2 Executor
+
+可以：
+
+- 读取 authority；
+- 修改当前 ticket 授权文件；
+- 运行测试 / evidence collection；
+- self-review；
+- 修复自己发现的同 scope 缺陷；
+- commit / push。
+
+不能：
+
+- 为自己的 candidate HEAD 产生最终 independent `PASS`；
+- 在未满足 review quorum 前 merge；
+- 将未来 ticket 可见需求当作当前授权。
+
+### 4.3 Reviewer Subagent
+
+Reviewer 必须使用**独立 review context**重新构建结论。Executor summary 只能作为导航，不能作为事实证据。
+
+Reviewer 默认是 review-only：
+
+- 可读取 repo / Issue / Tracker / Spec / diff；
+- 可运行测试、检查源码、搜索证据；
+- 不得修改 reviewed branch；
+- 不得 commit / amend / rebase / merge；
+- 不得 close Issue / 标记 Tracker DONE。
+
+Reviewer 必须明确：
+
+```text
+REVIEW_VERDICT: PASS | CHANGES_REQUESTED
+REVIEWED_HEAD: <exact SHA>
+FINDINGS: <P0/P1/P2 as applicable>
+POST_GATE_MEMORY_UPDATE_REQUIRED: YES | NO
+```
+
+`SELF_REVIEW != INDEPENDENT_REVIEW`。
+
+### 4.4 Integrator
+
+仅在 required reviewer quorum 对**同一个 exact HEAD** PASS 后执行：
+
+- pre-merge remote identity / drift check；
+- ff-only merge；
+- push；
+- remote verify；
+- close / Tracker update；
+- branch cleanup（若 policy 允许）。
+
+## 5. Review Quorum 与 PASS Contract
+
+### 5.1 Reviewer 类型
+
+按 ticket TYPE 选择最低 quorum：
+
+| Ticket 类型 | Required reviewer quorum |
+|---|---|
+| 普通 CODE | 1 × `CODE_REVIEWER` |
+| DOCUMENT | 1 × `CONTRACT_REVIEWER` |
+| DISCOVERY / EVIDENCE | 1 × `EVIDENCE_REVIEWER` |
+| DOGFOOD | 1 × `ACCEPTANCE_EVIDENCE_REVIEWER` |
+| SECURITY / capability isolation | 1 × `SECURITY_REVIEWER` + 1 × `CODE_OR_CONTRACT_REVIEWER`，同 exact HEAD |
+| Approved Spec / governance authority change | 1 × `CONTRACT_REVIEWER` + 1 × `CONSISTENCY_REVIEWER`，同 exact HEAD |
+
+若一个 reviewer PASS、另一个 `CHANGES_REQUESTED`，overall verdict = `CHANGES_REQUESTED`。
+
+默认不要过度 spawn reviewer；普通票 1 个 reviewer 足够。安全 / Spec / governance 才要求双 reviewer。
+
+### 5.2 Universal PASS Contract
+
+Reviewer 只有在所有 applicable 条件满足时才能 PASS：
+
+**Identity**
+- Issue / task 正确；
+- BASE / HEAD exact；
+- remote branch 指向被审 HEAD；
+- review scope 无歧义。
+
+**Scope**
+- changed files 在 ticket 授权内；
+- 无 unrelated refactor / cleanup；
+- 无 future-ticket implementation；
+- 无 credential / schema / Spec scope 偷扩。
+
+**Requirements / Contract**
+- Goal / Acceptance / Required Evidence 满足；
+- STOP_CONDITIONS 未违反；
+- Applicable Approved Specs / Product Behavior Contract 保持；
+- `UNKNOWN != PASS`；
+- `captured != verified`；
+- sampled evidence 不得升级成 global claim；
+- sampled analysis 不得冒充 full coverage；
+- prompt-only guard 不得冒充 capability isolation。
+
+**Correctness / Failure semantics**
+- happy path 与相关 failure path 均检查；
+- valid / fail-closed / warning semantics 未被偷改；
+- backward compatibility / canonical data / schema 约束保持。
+
+**Tests / Evidence**
+- required tests 真正覆盖目标合同，不是 tautology；
+- evidence 支持所声明范围；
+- pre-existing failure 必须有 base 对照证据，不能只靠口头声明。
+
+**Docs / Memory**
+- current-state docs 与实现一致；
+- historical / current / candidate 状态不混写；
+- `PROJECT_MEMORY_UPDATE_REQUIRED` 判断合理；
+- memory 无 transient SHA / branch / machine-private 信息。
+
+**Security / Privacy**
+- 无凭据 / secrets / 本机隐私路径泄漏；
+- 无未经批准能力扩张；
+- untrusted content boundary 保持。
+
+**Findings**
+- 无 unresolved P0；
+- 无 unresolved P1；
+- 无 meaningful correctness / contract P2 blocker。
+
+纯 cosmetic / style note 可标 `NON_BLOCKING`，但 reviewer 必须清楚说明不影响 contract / correctness。
+
+## 6. Review → Repair → Fresh Review Loop
+
+Candidate HEAD push 后，Orchestrator 启动 required Reviewer Subagent。
+
+若：
+
+```text
+REVIEW_VERDICT: CHANGES_REQUESTED
+```
+
+则：
+
+1. 把 findings 交给 Executor；
+2. 只修 reviewer 指出的 blocker，以及同 scope 明确发现的真实缺陷；
+3. **追加 repair commit**；
+4. 禁止 amend reviewed commit；
+5. 禁止 rebase reviewed history；
+6. 禁止 force push；
+7. push 新 exact HEAD；
+8. 启动 **fresh Reviewer Subagent** 重新审查新 HEAD；
+9. 重复直到 quorum PASS。
+
+普通 review findings 不需要停下来找用户。
+
+## 7. Exact-SHA Review 与 Merge
+
+PASS 只绑定：
+
+```text
+REVIEWED_HEAD = exact commit SHA
+```
+
+PASS 不自动转移给：
+
+- amend 后 SHA；
+- rebase 后 SHA；
+- repair child commit；
+- force-pushed branch；
+- “看起来等价”的新 commit。
+
+merge 前必须：
+
+1. fetch remote；
+2. `origin/<feature-branch> == REVIEWED_HEAD`；
+3. 核验 current remote master / merge-base；
+4. 若 master drift 导致 candidate 不再可合法 ff-only merge，旧 PASS 不得静默转移；按治理规则重新形成 candidate 并 fresh review；
+5. 使用 ff-only merge；
+6. push；
+7. remote verify；
+8. 只有 remote verify 后才能 close Issue / Tracker DONE。
+
+禁止 squash / merge commit / rebase-after-review（除非某 Approved workflow 明确另有要求并经过同等级 review）。
+
+## 8. Branch Workflow
+
+- 所有开发 / document / audit / governance change 在独立 feature branch 进行。
+- branch 基于最新 remote master。
+- 禁止直接在 master 上施工。
+- 一个 ticket = 一个 branch = scope-clean commits（除明确 follow-up governance / memory ticket 外）。
+- `master...HEAD` 或明确 `BASE..HEAD` Compare 应只包含该 ticket 范围。
+- reviewer 开始后 reviewed history 不改写。
+- branch cleanup 仅发生在 exact-SHA PASS + verified merge 后。
+
+## 9. Tracker / Issue Execution Ledger
+
+GitHub Tracker + child Issues 是 durable execution ledger，不是 reviewer 本身。
+
+在每个 meaningful gate，状态必须足够让 fresh Agent 回答：
+
+- 什么已完成？
+- 当前合法 ticket 是什么？
+- dependency 是否满足？
+- 哪个 exact HEAD 正在 review / 已 PASS？
+- 下一 gate 是什么？
+
+Issue STATUS 不能单独作为事实；必须与 remote refs / Git history / Tracker / dependencies 交叉核验。
+
+票序有 sequential policy 时，不得并行施工后续 ticket。能并行的仅限不会造成 scope / branch 冲突的内部读取、测试分析或证据搜集。
+
+## 10. Project Memory Lifecycle
+
+### 10.1 两种 memory
+
+- `.workbuddy/memory/` 或其他 Agent runtime memory：non-authoritative、可丢失、不得覆盖 repo truth。
+- `docs/project-memory.md`：Git tracked durable project knowledge。
+
+### 10.2 Pre-gate decision
+
+每个可能产生长期知识的 task 在 independent review 前必须报告：
 
 ```text
 PROJECT_MEMORY_UPDATE_REQUIRED: YES | NO
 ```
 
-不能省略。
+YES：在同一 task branch 中做最小 durable update，随 candidate HEAD 一起 review。
+NO：不得为了“保持新鲜”机械修改。
 
-- **YES**：必须在**同一个 task branch** 中更新 `docs/project-memory.md`，并与本次任务内容一起进入 review。
-- **NO**：不得为了"保持新鲜"而修改 project-memory；最终报告必须写明：
+适合进入 memory：
 
-```text
-PROJECT_MEMORY_UPDATE_REQUIRED: NO
-reason: <为什么本任务没有产生长期项目知识>
-```
+- approved architecture / product decisions；
+- stable API / schema / compatibility contracts；
+- durable security invariants；
+- repeatable real smoke / runtime evidence；
+- important failure modes / non-goals；
+- 后续 Agent 不知道会重复踩坑的长期事实。
 
-**B. Post-gate（仅独立 reviewer 执行）**
+不得进入 memory：
 
-gate-generated durable knowledge（如 final DOCUMENT / CODE gate conclusion、accepted historical checkpoint、reviewer 才确认的长期工程结论）只有 reviewer 才能产生。reviewer 必须报告：
+- current HEAD / temporary branch / review progress；
+- machine path / username / backup path；
+- credentials / secrets；
+- scratch reasoning；
+- 临时测试失败；
+- conversation transcript / changelog。
+
+### 10.3 Post-gate knowledge
+
+Reviewer 必须报告：
 
 ```text
 POST_GATE_MEMORY_UPDATE_REQUIRED: YES | NO
 ```
 
-reviewer **不得**为写 memory 而修改正在审查的 branch（否则最新 HEAD 不再被刚给出的 PASS 覆盖，形成 review loop）。若 YES，走 §3.5 的 post-gate memory follow-up 流程；若 NO，说明依赖 Git history 保存纯版本控制事实，无需额外沉淀。
+Reviewer 不得为了写 memory 修改正在审查的 HEAD。
 
-### 3.3 何时判 YES（durable knowledge 触发）
+若 YES：
 
-以下结果属于 durable project knowledge，由**对应阶段的判断方**（实现 Agent 或 reviewer）确认是否需要沉淀：
+1. 正常 merge reviewed task；
+2. 从最新 master 建最小 `docs/memory` follow-up branch；
+3. 只修改 durable memory 所需内容；
+4. 按 DOCUMENT reviewer gate 独立 review；
+5. PASS 后 ff-only merge。
 
-**Pre-gate 可确认（实现 / 文档 / 修复 / research / smoke 阶段）：**
+纯 PASS / SHA / merge 状态由 Git history 保存，不机械写进 memory。
 
-- 用户明确批准的新架构决策
-- Approved Spec / 合同产生的长期决策
-- 新的长期 security invariant
-- 新确认的 API / schema / compatibility contract
-- 真实 smoke test 得出的可重复稳定事实
-- 新的重要 failure mode
-- 新的长期 non-goal
-- 测试体系发生有意义的稳定变化
-- 后续 Agent 不知道就容易重复踩坑的信息
+## 11. Scope Control
 
-**Gate-generated（仅 reviewer 产生，走 post-gate follow-up）：**
+- 严格按当前 ticket / Applicable Specs 的 scope 实现。
+- 未授权不新增 runtime dependency。
+- “顺手修”无关文件 = scope violation。
+- audit / discovery ticket 不得偷变 implementation；document ticket 不得偷改 runtime behavior。
+- future requirement visible ≠ current requirement authorized。
 
-- 一个 Phase 最终通过 review 的稳定结果（DOCUMENT / CODE gate conclusion）
-- accepted historical checkpoint
-- reviewer 才确认的新通用 failure pattern / 工程陷阱
+## 12. 测试与 Baseline Failure 规则
 
-不要机械地每次都写；由对应判断方确认满足 durable 原则。纯 gate PASS / SHA / merge 状态由 Git history 保存，不必机械复制进 memory。
-
-### 3.4 什么不能写入 project-memory
-
-禁止写入：current HEAD / current master SHA（除非作为 historical approved checkpoint）/ 当前临时 branch 是否存在 / workspace path / 本机用户名 / backup path / 临时 blocker / 临时 task progress / 一次性命令输出 / scratch reasoning / 未经确认的猜测 / Cookie / Secret / Token / credential / private WorkBuddy runtime state / 个人隐私 / 临时测试失败 / Agent 内部计划。
-
-原则：**durable + verified + project-level + long-lived + non-sensitive** 同时成立才适合沉淀。
-
-### 3.5 更新必须被独立 review 覆盖
-
-Agent 不允许在任务结束后偷偷更新 project-memory 并直接 push master。
-
-**Pre-gate update**：随 task branch 一起 review：
-
-```text
-task branch → implementation/docs → memory decision → 如 YES 更新 project-memory → independent review → PASS → merge
-```
-
-**Gate-generated update（post-gate memory follow-up）**：reviewer 不得修改正在审的 branch，不得在给出 PASS 后直接改已审 branch 并把修改视为已通过（否则最新 HEAD 不再被该 PASS 覆盖）。若 `POST_GATE_MEMORY_UPDATE_REQUIRED: YES`：
-
-1. reviewed task branch 保持不变；
-2. 按 PASS 的 reviewed HEAD 正常 merge；
-3. 从最新 master 新建最小 `docs/memory` follow-up branch；
-4. 只更新 `docs/project-memory.md`（及确有必要的治理引用）；
-5. 单独 independent review；
-6. PASS 后 ff-only merge；
-7. 删除 follow-up branch。
-
-核心原则：不要为了把 gate PASS / SHA 写进 memory 而制造无限 review loop；纯版本控制事实（PASS、SHA、merge 状态）由 Git history 保存，project-memory 只沉淀真正影响后续决策的知识。
-
-Reviewer 必须同时检查被审任务的 `PROJECT_MEMORY_UPDATE_REQUIRED` 判断是否合理：
-
-- 若 YES：project-memory 是否准确、稳定、非敏感、没有 stale runtime state
-- 若 NO：是否漏掉了明显应该长期沉淀的重要决策
-
-### 3.6 project-memory 不是 changelog
-
-`docs/project-memory.md` 不是 commit history / daily log / task log / review transcript / conversation archive；不要记录所有变化。只保存以后 Agent 做正确决策真正需要的 durable context。既有信息已失效时：优先更新为新的长期事实，或标注 historical checkpoint；不要无限向文件尾部堆日志。
-
-### 3.7 防脏工作区
-
-WorkBuddy 自动 memory 写入 `.workbuddy/` 可以发生（已 ignored）。`docs/project-memory.md` 只能在 `PROJECT_MEMORY_UPDATE_REQUIRED: YES` 且当前任务确实产生 durable knowledge 时修改。因此普通任务若判 NO，工作树仍应保持 clean。
-
-## 4. Branch Workflow
-
-- 所有开发在**独立 feature 分支**进行，命名 `feat/<scope>` / `fix/<scope>` / `chore/<scope>`。
-- 分支必须基于**最新 remote master**（先 `git pull --ff-only origin master` 再切分支）。
-- **禁止直接在 master 上写开发代码。**
-- 合并仅允许 **ff-only**（`git merge --ff-only`）或经明确审查的等价流程；禁止 `reset --hard` / `clean -fd` / 改写已推送历史。
-- 分支收口（merge + 删除本地/远程分支）只发生在对应 gate PASS 之后。
-- 一个任务 = 一个分支 = 一组干净 commit；Compare（`master...HEAD`）应只包含该任务范围的文件。
-
-## 5. DOCUMENT / CODE Gate
-
-- **DOCUMENT gate**：任何 Spec / 合同文档（如 V2 Spec）须经独立 reviewer 明确返回 `VERDICT: PASS`（或 `PASS with notes`）且无 blocking findings，才可标记 APPROVED 并作为实现依据。`CHANGES_REQUESTED` 时修复后重审，不得带 blocker 进入实现。
-- **CODE gate**：feature 实现完成后，由独立 reviewer 审查；**reviewer 明确返回 `VERDICT: PASS` 且无 blocking findings** 后才允许 ff-only 合并 master。reviewer 明确标注为 `NON_BLOCKING` 的 note（如 P2 级备注）不自动成为 merge blocker。
-- 审查基准：`git diff master...HEAD`；审查者需能访问完整源码（公开仓库直读或打包 bundle）。
-
-### Implementation completion ≠ Gate acceptance
-
-两个状态必须区分：
-
-- **允许**（实现任务执行结束即可报告）：
-  ```text
-  RESULT: COMPLETED
-  REVIEW_STAGE: CODE / DOCUMENT
-  REVIEW_STATUS: PENDING
-  NEXT_GATE: Independent review
-  HANDOFF_COMPLETE: YES | NO
-  ```
-  此处的 `COMPLETED` 只表示"当前实现任务执行结束"，**不表示** Phase accepted / merge approved / released / final PASS。
-- 若下一 gate 是 independent review：按上方 **Review Handoff Contract** 必须输出可原样复制的 `NEXT_REVIEW_PROMPT`；已提供 → `HANDOFF_COMPLETE: YES`，未提供 → `HANDOFF_COMPLETE: NO`。`RESULT: COMPLETED` 与 `HANDOFF_COMPLETE` 是不同维度。
-- **禁止在 reviewer 明确 PASS 前声称**：
-  ```text
-  PHASE ACCEPTED / MERGE APPROVED / RELEASED / FINAL PASS
-  ```
-
-Gate PASS 前禁止：merge master、删除分支、宣称 Phase accepted / merge approved / released / final PASS。
-
-### Review Handoff Contract（审查交接合同，2026-08-11 补充）
-
-任何 task 在结束时，若满足以下任一条件：
-
-```text
-REVIEW_STATUS: PENDING
-或
-NEXT_GATE: Independent review
-```
-
-则执行 Agent **必须**输出 `NEXT_REVIEW_PROMPT`——一段可由用户**原样复制**给独立 reviewer 的提示词，不要求用户自行重组上下文。仅写"等待独立审查"或 `NEXT_GATE: Independent review` 不算完成交接。
-
-**A. EXECUTION → REVIEWER HANDOFF（NEXT_REVIEW_PROMPT 最低内容）**
-
-```text
-- 发送位置 / target reviewer
-- repository
-- 精确当前 branch
-- 精确 base SHA / head SHA
-- Compare scope
-- REVIEW_STAGE
-- authoritative sources
-- task objective
-- changed-file scope
-- explicit non-goals
-- validation / test / integrity evidence
-- 已知 caveats / 环境 incident
-- reviewer 必须逐项核查的 acceptance contract
-- 要求的 verdict schema
-```
-
-**B. HANDOFF COMPLETION（交接完成判定）**
-
-```text
-RESULT: COMPLETED
-≠
-HANDOFF_COMPLETE: YES
-```
-
-若 independent review 仍未进行，只有已提供 `NEXT_REVIEW_PROMPT` 才允许报告 `HANDOFF_COMPLETE: YES`；否则 `HANDOFF_COMPLETE: NO`。
-
-**C. REVIEWER → EXECUTION HANDOFF（NEXT_AGENT_PROMPT）**
-
-任何独立 reviewer 返回 `PASS` / `PASS with non-blocking notes` / `CHANGES_REQUESTED`，**必须**同时提供可由用户原样复制给执行 Agent 的 `NEXT_AGENT_PROMPT`：
-
-```text
-CHANGES_REQUESTED 必须包含:
-  exact reviewed HEAD
-  blocking / non-blocking findings
-  允许的修复范围
-  禁止范围
-  validation requirements
-  commit / push rules
-  merge authorization = NO
-  next gate
-
-PASS 必须包含:
-  exact reviewed HEAD
-  merge authorization
-  pre-merge identity / drift checks
-  ff-only merge rules
-  remote verification
-  branch cleanup
-  POST_GATE_MEMORY_UPDATE_REQUIRED decision
-  下一授权阶段 / task
-
-PASS 不得以"可以合并。"一句话结束。
-```
-
-**D. TARGET ROUTING（路由）**
-
-reviewer 无法确定下一执行 Agent 时：
-
-```text
-TARGET_AGENT:
-待确认
-```
-
-不得猜测。
-
-**E. REVIEW HEAD IMMUTABILITY（审查基准不可变）**
-
-PASS 只适用于被审查的精确 HEAD。PASS 之后分支若再变化，新 HEAD 不在旧 PASS 覆盖范围内。
-
-**F. 既有 gate 规则保持（不削弱）**
-
-本小节只补 handoff 缺口，**不削弱**：DOCUMENT gate / CODE gate / ff-only merge / independent review / scope control / project-memory lifecycle 的任何既有要求。
-
-## 6. Scope Control
-
-- 严格按当前 task / Spec 的阶段（Phase）范围实现；**禁止擅自扩大 Phase scope**。
-- 未授权不引入新依赖（runtime dependency 每新增一个都要记录理由并过审查）。
-- "顺手修"其他文件 = scope violation，除非任务明确允许。
-
-## 7. 测试要求
-
-- 任何代码改动必须运行现有测试且满足 `fail = 0`：
+代码改动应运行 ticket 要求的 focused tests + relevant regression；通常也应运行现有主要 suites：
 
 ```bash
 cd zhihu-answer-grabber && npm test
@@ -280,33 +412,84 @@ cd ../corpus-anthology && node --test
 cd .. && node --test test/agent-pipeline.test.mjs
 ```
 
-- 新行为必须有对应测试（Spec 对抗类别 / 反例覆盖，参照 `test/markdown-security.test.js`、`test/rich-renderer.test.js`）。
-- skip 仅允许既有平台限制（Windows symlink 等），新 skip 需说明理由。
-- `git diff --check` 必须 clean。
-- 测试断言避免依赖 renderer/输出内部结构细节，防脆弱。
+默认目标：`fail = 0`。
 
-## 8. Commit / Push 规则
+若 suite 不能达到 `fail = 0`，不得简单写“pre-existing”后 PASS，必须：
 
-- commit message 遵循 Conventional Commits：`feat:` / `fix:` / `chore:` / `docs:` / `test:` / `refactor:`。
-- 只 commit 任务范围内的文件；凭据、本地产物、临时文件一律不 commit（见 `RULES.md` 与 `.gitignore`）。
-- push 使用普通 push；**禁止 force push**（除非用户明确批准的特殊情况）。
-- 合并 master 必须满足：对应 gate PASS + ff-only。
+1. 在 clean BASE / master 对照重现；
+2. 记录 base 与 candidate 的 pass / fail / skip 差异；
+3. 证明 candidate 没有新增相关 failure；
+4. 区分 dependency / environment / platform incident 与代码回归；
+5. focused required tests 必须满足 ticket contract；
+6. Reviewer 明确判断 residual baseline failures 是否阻塞。
 
-## 9. Handoff
+禁止通过新增 skip、删除 assertion、缩小测试范围来伪造绿灯，除非 ticket 明确授权且 reviewer 接受。
 
-- 产物交接（Skill → corpus-anthology）只允许通过确定性脚本：`make-handoff.mjs` 生成，`verify.mjs --handoff` 校验。
-- **禁止手工构造 handoff 字段**；`verified` 只能由 `verify-output` 授予。
-- 交接前产物必须通过 `verify-output`（`valid === true`）。
+其他要求：
 
-## 10. SPEC_CONFLICT 处理
+- 新行为必须有对应反例 / contract tests；
+- skip 仅允许已知平台限制，新 skip 必须解释；
+- `git diff --check` 必须 clean；
+- test 必须真正触达目标 behavior，避免 tautological assertion。
 
-- 实现中发现 Spec 与实际行为冲突 → **停止**，记录冲突点，向用户报告，等待裁决（修订 Spec 走 DOCUMENT gate 或调整实现）。
-- 不得擅自修改 APPROVED Spec 的合同条款来迁就实现。
-- 不确定语义时以 Spec 文本为准（Spec 是已批准的唯一需求事实来源），实现不得擅自解释。
+## 13. Commit / Push
 
-## 11. 停止条件
+- Conventional Commits：`feat:` / `fix:` / `chore:` / `docs:` / `test:` / `refactor:`。
+- 仅提交当前 scope；凭据 / 临时产物 / runtime memory 不提交。
+- 普通 push；禁止 force push（除用户明确批准的特殊恢复场景且不破坏 reviewed history）。
+- 不得使用破坏性 `reset --hard` / `clean -fd` 绕过异常。
 
-- 实现任务执行结束后：报告 `RESULT: COMPLETED` + `REVIEW_STATUS: PENDING` + `NEXT_GATE: Independent review`，附证据（测试输出、`git diff --check`、branch 状态、Compare）。若下一 gate 是 independent review，必须同时输出可原样复制的 `NEXT_REVIEW_PROMPT` 并报告 `HANDOFF_COMPLETE`（见上方 **Review Handoff Contract**）。
-- **COMPLETED 只表示实现任务执行结束**，不表示 Phase accepted / merge approved / released / final PASS；这些状态只有在 reviewer 明确 PASS 后才有资格被声称。
-- gate 未过 / 环境异常（如 git refs 损坏）→ 按 `RULES.md` 恢复流程处理，**不得用破坏性操作跳过**。
-- **任务明确的"下一步 gate"未完成前，不得自行开始下一阶段（如 V2 Phase 2）。**
+## 14. Handoff / Verification Authority
+
+- Skill → corpus-anthology 的产物交接只能走确定性 `make-handoff.mjs`，并按现有 verifier / schema 校验。
+- 禁止手工构造 verified handoff。
+- `verified` 只能由 verify-output authority 授予。
+- `captured != verified`。
+
+## 15. SPEC / GOVERNANCE CONFLICT
+
+发现实现或治理 authority 与 Applicable Approved Specs 冲突：
+
+- STOP 当前实现扩张；
+- 定位 exact conflicting clauses；
+- 若可通过明确 authority hierarchy 解决，按 hierarchy 执行并记录；
+- 若无法解决 → **STOP：`CONTRACT_CONFLICT`**，并将 `SPEC_CONFLICT` 或 `GOVERNANCE_CONFLICT` 作为 finding / reason category，请求 product-owner 裁决；
+- 不得擅自修改 Approved Spec 迁就实现。
+
+Approved Spec / governance authority change 属高风险文档 gate，要求 `CONTRACT_REVIEWER + CONSISTENCY_REVIEWER` 同 exact HEAD PASS。
+
+## 16. Human Fallback / External Handoff
+
+Subagent review 是默认 internal gate；**不再要求用户为每个普通 ticket 手工复制 `NEXT_REVIEW_PROMPT` / `NEXT_AGENT_PROMPT`**。
+
+只有以下情况需要 external human / ChatGPT handoff：
+
+- runtime 没有可用的独立 Subagent review 能力；
+- 用户明确要求 external review；
+- `USER_DECISION_REQUIRED`；
+- authority conflict；
+- external evidence / permission blocker；
+- 当前 Issue / Spec 明确要求人工 reviewer。
+
+若进入 external handoff，必须提供可复制 review packet / verdict packet，至少包含：repository、Issue、BASE、HEAD、Compare、authority、objective、scope、tests/evidence、known caveats、acceptance、要求的 verdict schema。
+
+## 17. Ticket Completion 与停止条件
+
+Implementation complete ≠ accepted。
+
+票内完成流程：
+
+```text
+IMPLEMENTED
+→ REVIEWED
+→ required quorum PASS on exact SHA
+→ ff-only MERGED
+→ remote verified
+→ Issue CLOSED / Tracker DONE
+```
+
+只有完成上述序列，当前 ticket 才是 DONE。
+
+连续 Goal Mode 下，ticket DONE 后自动 re-observe 并进入 next legal ticket；不得停下来问“是否继续”。
+
+真正允许停止的状态见 §3。最终 milestone 完成后只报告已授权 milestone 的完成，不自动进入明确排除的下一阶段。

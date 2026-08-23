@@ -146,7 +146,7 @@
 - **任务开始必须读取本文件**；缺失时 STOP 并报告 `PROJECT_MEMORY_MISSING`。
 - **memory decision 分两类，按任务角色执行**：
   - **PRE-GATE TASK**（实现 / 文档 / 修复 / research / smoke）：结束前必须判断 `PROJECT_MEMORY_UPDATE_REQUIRED: YES | NO`。YES 时随**当前 task branch** 更新本文件并进入同一次 independent review；NO 时不得修改本文件（工作树保持 clean）。
-  - **INDEPENDENT REVIEWER**：必须判断 `POST_GATE_MEMORY_UPDATE_REQUIRED: YES | NO`。YES 时 reviewer **不修改被审 branch**；被审 branch 按 reviewed HEAD 正常 merge 后，依 `AGENTS.md` §3.5 创建独立 `docs/memory` follow-up branch 更新本文件，单独通过 independent review 后才能 merge；NO 时不产生 post-gate memory follow-up。
+  - **INDEPENDENT REVIEWER**：必须判断 `POST_GATE_MEMORY_UPDATE_REQUIRED: YES | NO`。YES 时 reviewer **不修改被审 branch**；被审 branch 按 reviewed HEAD 正常 merge 后，依 `AGENTS.md` §10.3 创建独立 `docs/memory` follow-up branch 更新本文件，单独通过 independent review 后才能 merge；NO 时不产生 post-gate memory follow-up。
 - **pre-gate durable knowledge 随产生它的 task branch 一起 review**；**gate-generated durable knowledge**（如 final gate conclusion、accepted checkpoint）如需沉淀，走独立 post-gate memory follow-up（reviewer 只报告 `POST_GATE_MEMORY_UPDATE_REQUIRED`，不修改被审 branch）。
 - **Git history 足以保存的纯 SHA / merge 状态无需机械复制进本文件**；不要为了把 gate PASS 写进来而制造 review loop。
 - 只有 **durable + verified + project-level + non-sensitive** 的信息才进入本文件。
