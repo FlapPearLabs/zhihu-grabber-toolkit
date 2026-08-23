@@ -108,27 +108,36 @@ The following is the complete repository-tracked runtime-facing inventory found
 by this audit. It intentionally does not turn the current Codex/WorkBuddy
 execution environment into a product runtime.
 
-### `corpus-anthology/agents/openai.yaml` interface host (product name/version unspecified)
+### YAML-declared interface hosts (product name/version unspecified)
 
 ```text
-RUNTIME_ID: corpus-anthology/agents/openai.yaml interface host
-WHY_IN_SCOPE: This is the only tracked runtime-integration artifact. It declares
-  an OpenAI-facing Skill interface and allow_implicit_invocation policy; the
-  corpus Skill test asserts that this file exists and has that policy.
-EVIDENCE: corpus-anthology/agents/openai.yaml; corpus-anthology/test/skill-behavior.test.js
-MODEL_CALL_BOUNDARY: Not present. The YAML contains display/prompt/policy metadata,
-  not an API client, model configuration, process boundary, or LLM call.
+RUNTIME_ID: zhihu-answer-grabber/agents/openai.yaml and
+  corpus-anthology/agents/openai.yaml interface hosts
+WHY_IN_SCOPE: These are the complete tracked runtime-integration metadata set.
+  Both declare an interface and allow_implicit_invocation policy. The first
+  documents an upstream zhihu-grabber Skill activation and retains its preflight
+  credential gate; the second documents corpus Skill activation for local corpus
+  processing. The corpus Skill test asserts that the corpus YAML exists and has
+  that policy.
+EVIDENCE: zhihu-answer-grabber/agents/openai.yaml;
+  corpus-anthology/agents/openai.yaml;
+  corpus-anthology/test/skill-behavior.test.js
+MODEL_CALL_BOUNDARY: Not present in either YAML or their scripts. They contain
+  display/prompt/policy metadata, not an API client, model configuration,
+  process boundary, or LLM call. The zhihu-grabber YAML is upstream collection
+  metadata, not evidence of a corpus chunk/model-consumer boundary.
 TRUSTED_CONTROLLER_BOUNDARY: Not present. No controller implementation is named
-  by the YAML or corpus scripts.
+  by either YAML or corpus scripts.
 TOOL_CAPABILITY_CONTROL_SURFACE: `policy.allow_implicit_invocation` controls only
-  invocation policy. It does not demonstrate deterministic DENY for network,
+  invocation policy. Neither YAML demonstrates deterministic DENY for network,
   shell, filesystem, package installation, or tools.
 CURRENT_VERDICT: UNASSESSED
 ```
 
-`agents/openai.yaml` explicitly says hosts that do not support its policy or
-interface fields may ignore them. It therefore cannot establish a particular
-host product, version, or security property.
+Both `agents/openai.yaml` files explicitly say hosts that do not support their
+policy or interface fields may ignore them. They therefore cannot establish a
+particular host product, version, model call, trusted controller, or security
+property.
 
 ### Excluded from the target-runtime inventory: WorkBuddy runtime memory
 
@@ -139,15 +148,15 @@ an audit could be executed in a WorkBuddy/Codex environment is not product
 evidence and does not put WorkBuddy in scope as an approved target runtime.
 
 No other model client, model provider configuration, subprocess launcher, or
-runtime capability document was found under the repository's tracked corpus
-implementation. In particular, the `openai.yaml` filename must not be expanded
-into an invented OpenAI product/runtime name.
+runtime capability document was found in the tracked repository. In particular,
+the two `openai.yaml` filenames must not be expanded into an invented OpenAI
+product/runtime name.
 
 ## 6. Capability-control surfaces by runtime
 
 | Runtime | Network | Shell / package | Filesystem read/write | Tools | Evidence-based conclusion |
 |---|---|---|---|---|---|
-| `corpus-anthology/agents/openai.yaml` interface host | No deterministic control identified | No deterministic control identified | No deterministic control identified | No deterministic control identified | The only surface found is implicit-invocation metadata. It is not capability isolation; all required controls remain unassessed. |
+| `zhihu-answer-grabber/agents/openai.yaml` and `corpus-anthology/agents/openai.yaml` interface hosts | No deterministic control identified | No deterministic control identified | No deterministic control identified | No deterministic control identified | The only surfaces found are implicit-invocation metadata and default prompts. They are not a model call, trusted controller, or capability isolation; all required controls remain unassessed. |
 
 The local corpus scripts themselves use filesystem IO by design. That does not
 prove a separate LLM consumer lacks filesystem access. Likewise, the absence
