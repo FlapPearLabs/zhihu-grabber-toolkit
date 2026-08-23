@@ -305,6 +305,22 @@ Phase B 归一化目标（本分支）:
 
 ---
 
+## 10.5 ALTERNATIVES_REJECTED（明确记录）
+
+```text
+D2.1 floor / round        —— REJECT：floor 可致空样本；round 在 .5 边界非确定（跨实现分歧）
+D2.4 include tie group    —— REJECT：有界成本模式；tie 超选可使 X=5/10% 意外逼近 100% 覆盖
+                              （strict count 获批；同赞由 D2.5 确定性排序解决）
+D2.5 answerId 普通字符串序 / Number 转换 —— REJECT：JS 字符串字典序非数值序、
+                              Number 转换有精度依赖；decimal 数字串比较获批
+D2.6 X=100 路由 full digest —— REJECT：身份随参数静默切换，破坏语义稳定性；
+                              保持 sampled identity + isFullCoverage 覆盖事实获批
+D2.7 默认 X（如 20%）     —— REJECT：隐含 selection rule 不可审计；mandatory --percent 获批
+D6 OPTION A（新增 handoff task / schema 身份）—— REJECT（本阶段）：触碰共享 schema、
+                              需 §10 独立兼容性 review；OPTION C（零共享 schema 变更）获批。
+                              可作未来 additive 后补，不构成不可逆决策
+```
+
 ## 附录 A — T8 实现前提（README for T8）
 
 - T8 仅在 T7 完整（本批准 + authority 归一化 + exact reviewed SHA PASS + ff-only merge + #13 关闭）后开始。
