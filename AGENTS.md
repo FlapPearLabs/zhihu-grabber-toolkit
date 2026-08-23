@@ -342,7 +342,7 @@ GitHub Tracker + child Issues 是 durable execution ledger，不是 reviewer 本
 
 Issue STATUS 不能单独作为事实；必须与 remote refs / Git history / Tracker / dependencies 交叉核验。
 
-票序有 sequential policy 时，不得并行施工后续 ticket。能并行的仅限不会造成 scope / branch 冲突的内部读取、测试分析或证据搜集。
+票序有 sequential policy 时，不得并行施工后续 ticket。独立的、互不冲突的 feature branch 可并行施工（见 §8 并发模型：可并行施工，remote master 集成串行）；同一 ticket 或同一依赖链内，能并行的仅限不会造成 scope / branch 冲突的内部读取、测试分析或证据搜集。
 
 ## 10. Project Memory Lifecycle
 
