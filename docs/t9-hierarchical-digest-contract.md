@@ -55,7 +55,7 @@ verified canonical answers（manifest.inputs）
 
 （token 上限 ESTIMATED：chunk `estimatedTokens.max` 合计 + reduce-input 按 chars/1.4-2.2 启发式；无真实 token 计量 → 货币/时延成本 **UNKNOWN**，T11 需加计量。）
 
-**证据局限**：Issue #3 的真实 538-answer 抓取产物未在本仓库工作区（真实 corpus 不在仓库）；上表用合成语料按真实分布测量，结构性结论（reduce-input 线性增长、顶层压力点）不受合成影响，但绝对数值以真实语料为准（T10 验收时用真实 538 复测）。
+**证据局限**：Issue #3 的真实 538-answer 抓取产物未在本仓库工作区（真实 corpus 不在仓库）；上表用合成语料按真实分布测量，结构性结论（reduce-input 线性增长、顶层压力点）不受合成影响，但绝对数值以真实语料为准（T10 验收时用真实 538 复测）。此外 map-results 字节为 **mock map** 实测（满足 verify 契约的结构化结果；真实 LLM map 的冗长程度可能不同），而 **reduce-input / final.json 为真实 `reduce.mjs` 产出**——顶层压力结论（基于 reduce-input）不受 mock 影响。
 
 ### 2.3 上下文压力量化结论
 
@@ -78,7 +78,7 @@ verified canonical answers（manifest.inputs）
 | 成本/上下文收益 | 大任务显式启用时收益相同 | 自动收益（需阈值） | 收益相同但代价最大 |
 
 **RECOMMENDED：OPTION A**（additive hierarchical full-digest path，flat digest 行为不变）。
-理由：最小爆炸半径（用户强偏好）；digest 消费合同（final.json/digest.md）保持兼容；既有 678 项测试的 flat 回归零改动；hierarchy 是否启用由调用者显式决定（`--hierarchy`），无需未批准阈值自动路由；OPTION B 的确定性路由可作为**未来 product parameter**（需 PO 批准阈值）增量追加，不构成不可逆决策。
+理由：最小爆炸半径（用户强偏好）；digest 消费合同（final.json/digest.md）保持兼容；既有 flat 回归套件（T8 merge 实测：corpus-anthology 143 + agent-pipeline 6 + zhihu-answer-grabber 507，`git diff --check` clean）零改动；hierarchy 是否启用由调用者显式决定（`--hierarchy`），无需未批准阈值自动路由；OPTION B 的确定性路由可作为**未来 product parameter**（需 PO 批准阈值）增量追加，不构成不可逆决策。
 
 ## 4. 层级架构对比（深度策略）
 
@@ -240,6 +240,90 @@ malformed node / duplicate node（同 nodeId 出现两次）/ missing child（ch
 | R5 | final.json 兼容性漂移 | §14：hierarchy 为 internal；final.json 消费合同不变；additive 字段需 PO 批准 |
 | R6 | 无 token 计量 → 成本仅 ESTIMATED | T11 加真实计量校准（与 T7 R3 一致） |
 | R7 | real 538 corpus 不在仓库 → 绝对数值为合成测量 | T10 验收时用真实 538 复测；结构性结论不受影响 |
+
+## 17.5 决策包速览（STOP format，供 product-owner 快速裁决）
+
+```text
+RECOMMENDED_ARCHITECTURE:
+  OPTION A — additive hierarchical full-digest path；flat digest 行为不变；
+  hierarchy 为 internal execution structure（显式启用，如 --hierarchy）
+
+HIERARCHY_DEPTH_POLICY:
+  ADAPTIVE（TWO-LEVEL 为最小实例）—— while level_input 超限（节点数 / 字节 /
+  token 信封超 reviewed limit）: deterministic group → validate → synthesize next level；
+  深度由确定性输入规模推导，非硬编码；循环因节点数单调递减必然收敛
+
+GROUPING_POLICY:
+  controller-owned 顺序分批（canonical chunk 顺序）；MAX_CHILDREN + LEVEL_BYTES_LIMIT
+  （reviewed parameters）；LLM 无权决定分组/去留/省略；同输入同参数 → 同 group 身份
+
+INTERMEDIATE_NODE_IDENTITY:
+  { schemaVersion, level, nodeId, nodeHash, children, childHashes, canonicalSourceIds,
+    inputHash, runtime, claims, minorityViews, uncertainties }；nodeHash 输入含
+  childHashes + canonicalSourceIds + 契约版本 → 检测 stale/membership/order/version
+
+LINEAGE_POLICY:
+  OPTION C（hybrid）—— child refs + controller 确定性 materialized canonical source union；
+  claim.evidenceSourceIds ⊆ 本节点 union；summary 文本不是权威证据；
+  canonical source IDs 恒为 evidence root（R10）
+
+VALIDATION_POLICY:
+  每层 fail-closed（malformed/duplicate/missing/unexpected child、child/node hash
+  mismatch、lineage escape、coverage miss、stale、unsupported schema/runtime、
+  invalid evidence、interrupted level）；无上层模型调用可在无效下层证据上继续
+
+RESUME_STALE_POLICY:
+  节点独立文件 + 原子写 + level manifest + inputHash；inputHash+childHashes+schemaVersion+
+  contractVersion+runtime 全匹配才复用（文件存在 ≠ 有效缓存）；stale 只重算失效后代；
+  顶层 final 需整个 required level 验证通过
+
+FINAL_OUTPUT_COMPATIBILITY:
+  final.json / digest.md 消费合同不变（mode="digest" + claims + evidenceSourceIds +
+  minorityViews/uncertainties）；hierarchy 为 internal；provenance/metrics 字段 additive，
+  需 PO 批准；无 schema migration
+
+EXISTING_FLAT_DIGEST: PRESERVED（默认 flat；hierarchy 显式启用）
+
+BREAKING_CHANGE: NO（推荐包；flat digest 行为/输出逐字节不变）
+
+SCHEMA_VERSION_CHANGE: NO（推荐包；共享 handoff schema / final.json 消费合同不变；
+  若未来加 additive provenance 字段，属 additive 扩展，仍非 migration）
+
+EXPECTED_COST_CONTEXT_EFFECT:
+  DERIVED（结构性）：顶层撰写输入从「全部 reduce-input」（538: ~135K chars）降为
+  「顶层节点 claims + 披露」（组级聚合，量级 O(顶层节点)）；L1 调用数不变（= 非空来源数）；
+  ESTIMATED：顶层 token 压力随层数收敛，组级聚合节点数 ≈ ceil(L1/MAX_CHILDREN)^depth；
+  UNKNOWN：真实 token/时延/货币（无计量，T11 校准）
+
+ALTERNATIVES_REJECTED:
+  OPTION B（自动路由大任务进 hierarchy）—— REJECT（本阶段）：需已批准规模阈值，
+    隐性行为切换审计难；可作未来 additive product parameter
+  OPTION C（所有 digest 任务换 hierarchy）—— REJECT：V0.2/V2 兼容与迁移风险高，
+    语义身份/恢复/验证链全变动
+  FLAT（不引入 hierarchy）—— REJECT（作为目标）：538 顶层 ~135K chars / ~52-95K token
+    超出常见本地模型单次上下文预算（§2.2 实测）
+  MULTI-LEVEL 固定深度 —— REJECT：深度随规模硬编码不必要；ADAPTIVE 自动收敛
+  Lineage A（每 claim 直接存 canonical ids）—— REJECT：文件体积与重复开销大
+  Lineage B（仅 child 引用 + 递归解析）—— REJECT：每层递归验证成本高、traceback 复杂
+
+UNRESOLVED_RISKS:
+  R1 MAX_CHILDREN / LEVEL_BYTES_LIMIT 数值 → Phase B 按 LM Studio 上下文预算推导并 PO 批准
+  R2 L2 合成质量（1.7B 组级聚合忠实度）→ T10/T11 dogfood 真实语料评估，不假装质量
+  R3 递归覆盖不变量验证成本 → union 由 controller 计算（O(children)），与合成同阶
+  R4 hierarchy 内部复杂度 → OPTION A additive 隔离，flat 零改动
+  R5 final.json 兼容漂移 → §14 消费合同不变 + additive 字段另批
+  R6 无 token 计量 → T11 加计量校准
+  R7 real 538 corpus 不在仓库 → T10 用真实 538 复测；绝对数值为合成测量
+
+WHY_THIS_PACKAGE:
+  1. 最小爆炸半径：flat digest 行为/输出/测试逐字节不变（OPTION A + PRESERVED）；
+  2. 精确打击压力点：顶层撰写输入从 ~135K chars 收敛到组级聚合（实测定位，非猜测）；
+  3. 完全确定性：分组/节点身份/lineage union 全由 controller 决定，LLM 零裁决权；
+  4. 机械可验证：递归覆盖不变量 + nodeHash/childHashes/inputHash 全链 hash；
+  5. 安全继承 T6：只 lmstudio-local-tool-less，投影/控制器边界不弱化；
+  6. 身份严格隔离：hierarchy 产出 mode="digest"（full），top-percent 不受影响；
+  7. 不硬编码阈值：LIMIT 为 reviewed product parameters，Phase B 批准定值。
+```
 
 ## 18. PRODUCT_OWNER_DECISION_REQUIRED
 
