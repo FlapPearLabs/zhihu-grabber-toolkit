@@ -186,6 +186,8 @@ POST_GATE_MEMORY_UPDATE_REQUIRED: YES | NO
 - close / Tracker update；
 - branch cleanup（若 policy 允许）。
 
+remote master 的集成是**串行**的：任一时刻**至多一个 Integrator** 更新 remote master。多个互不冲突的 feature branch 可并行施工，但其 master 集成必须逐个串行；后到者在 merge 前必须重新 fetch + 核验 remote master 未 drift（见 §7），不得在旧 PASS 或旧 master 基础上直接 push 覆盖。
+
 ## 5. Review Quorum 与 PASS Contract
 
 ### 5.1 Reviewer 类型
@@ -299,16 +301,18 @@ PASS 不自动转移给：
 - force-pushed branch；
 - “看起来等价”的新 commit。
 
-merge 前必须：
+merge 前必须（**每次 merge 前都重新执行，不得沿用上次结论**）：
 
 1. fetch remote；
 2. `origin/<feature-branch> == REVIEWED_HEAD`；
 3. 核验 current remote master / merge-base；
-4. 若 master drift 导致 candidate 不再可合法 ff-only merge，旧 PASS 不得静默转移；按治理规则重新形成 candidate 并 fresh review；
+4. 若 master drift 导致 candidate 不再可合法 ff-only merge，旧 PASS 不得静默转移；**不得 force-push / 改写已 reviewed history**；从 latest remote master 重新形成 candidate 并 fresh review；
 5. 使用 ff-only merge；
 6. push；
 7. remote verify；
 8. 只有 remote verify 后才能 close Issue / Tracker DONE。
+
+**`MASTER_DRIFT != CONTENT_CONFLICT`**：`MASTER_DRIFT` 是 master 已前进导致 candidate 不再可 ff-only 的机械/时序条件，处理方式是 re-form candidate + fresh review，**不触发** product-owner 契约裁决，也**不解除** exact-SHA / ff-only 要求；`CONTENT_CONFLICT`（`CONTRACT_CONFLICT` / `SPEC_CONFLICT` / `GOVERNANCE_CONFLICT`）才是需 product-owner 裁决的契约冲突，见 §15。
 
 禁止 squash / merge commit / rebase-after-review（除非某 Approved workflow 明确另有要求并经过同等级 review）。
 
@@ -321,6 +325,8 @@ merge 前必须：
 - `master...HEAD` 或明确 `BASE..HEAD` Compare 应只包含该 ticket 范围。
 - reviewer 开始后 reviewed history 不改写。
 - branch cleanup 仅发生在 exact-SHA PASS + verified merge 后。
+
+**并发模型**：允许多个**互不冲突**的 feature branch 并行施工（independent feature-branch concurrency）。remote master 的集成仍**串行**：任一时刻至多一个 Integrator 更新 remote master（见 §4.4）。各并行 branch 在 merge 前独立 fetch + 核验 master；出现 drift 时各自 re-form + fresh review，不互相阻塞，也不得 force-push 覆盖他人已合入的 master。
 
 ## 9. Tracker / Issue Execution Ledger
 

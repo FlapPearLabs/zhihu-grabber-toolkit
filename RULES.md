@@ -75,6 +75,9 @@
 - merge master 前必须满足当前 ticket 类型要求的 **independent review quorum PASS on the same exact HEAD**。
 - PASS 只绑定 exact reviewed SHA；amend / rebase / repair child commit / branch drift 后旧 PASS 失效。
 - 合并默认只允许 **ff-only**；禁止未经授权 squash / merge commit / rebase-after-review。
+- **remote master 集成串行**：任一时刻至多一个 Integrator 更新 remote master；允许独立 feature branch 并发施工，但 master 集成逐个串行，不得并行写 master。
+- **每次 merge 前必须重新 fetch 并核验 remote master**；若 master 已 drift，旧 PASS 不得转移，**不得 force-push / 改写已 reviewed history**，须从 latest remote master 重新形成 candidate 并 fresh review。
+- **`MASTER_DRIFT != CONTENT_CONFLICT`**：`MASTER_DRIFT` 是 master 已前进导致的机械/时序条件，走 re-form + fresh review，不触发 product-owner 契约裁决；`CONTRACT_CONFLICT` / `SPEC_CONFLICT` / `GOVERNANCE_CONFLICT` 才是契约冲突，走 §6 / §13 的 STOP 裁决。
 - remote merge 未验证前禁止 close Issue、标记 Tracker DONE、宣称 Phase accepted / released / final PASS。
 - `SELF_REVIEW != INDEPENDENT_REVIEW`：Executor / Orchestrator 不得批准自己的 candidate HEAD。
 - 独立 Reviewer Subagent 必须职责隔离、review-only；不得修改正在审查的 branch 后仍声称原 PASS 有效。
