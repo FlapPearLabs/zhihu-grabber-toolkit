@@ -57,7 +57,7 @@
 - **V2 Phase 2 — Rich Content Assets 已纳入 accepted project baseline**：additive `answers[].assets`（images / links / references / codeBlocks / videos）、canonical `content` 不可变、脚注重建（renderer 生成 `a<answerId>-r<index>`）、1px placeholder 确定性合同（Spec §10.1）均为长期合同，保持不变（见上文已批准决策与 Spec）。
 - **V2 Phase 3 — Question Metadata 已纳入 accepted project baseline**：additive `question` metadata（description/topics）、NETWORK_REQUEST_DELTA=0、failure/empty semantics（Spec §20.2.1）、resume preservation 与 identity gate 均为长期合同（见上文 PHASE3_SCHEMA_DISCOVERY 与已批准决策）。
 - **当前产品阶段（CURRENT PRODUCT STAGE）**：**V0.3 gated execution**
-  ——V0.3 Draft Spec 已通过独立 DOCUMENT review 并 ff-only 合并 master（base `22b8ed3`，Status: APPROVED）；
+  ——V0.3 Draft-review 的历史 baseline 为 `22b8ed3`；Approved authority effective 的历史 checkpoint 为 T0 DOCUMENT NORMALIZATION `234a315`（独立 DOCUMENT review PASS 并 ff-only merge master）；
   T0 DOCUMENT NORMALIZATION 已 PASS + merge；T1（search schema discovery）与 T2（search answer count
   implementation）已完成并进入 accepted implementation baseline；
   各 ticket 状态以 **Tracker #6** 为执行事实源，严格按 T1→T11 顺序 gate 推进；
@@ -146,7 +146,7 @@
 - **任务开始必须读取本文件**；缺失时 STOP 并报告 `PROJECT_MEMORY_MISSING`。
 - **memory decision 分两类，按任务角色执行**：
   - **PRE-GATE TASK**（实现 / 文档 / 修复 / research / smoke）：结束前必须判断 `PROJECT_MEMORY_UPDATE_REQUIRED: YES | NO`。YES 时随**当前 task branch** 更新本文件并进入同一次 independent review；NO 时不得修改本文件（工作树保持 clean）。
-  - **INDEPENDENT REVIEWER**：必须判断 `POST_GATE_MEMORY_UPDATE_REQUIRED: YES | NO`。YES 时 reviewer **不修改被审 branch**；被审 branch 按 reviewed HEAD 正常 merge 后，依 `AGENTS.md` §3.5 创建独立 `docs/memory` follow-up branch 更新本文件，单独通过 independent review 后才能 merge；NO 时不产生 post-gate memory follow-up。
+  - **INDEPENDENT REVIEWER**：必须判断 `POST_GATE_MEMORY_UPDATE_REQUIRED: YES | NO`。YES 时 reviewer **不修改被审 branch**；被审 branch 按 reviewed HEAD 正常 merge 后，依 `AGENTS.md` §10.3 创建独立 `docs/memory` follow-up branch 更新本文件，单独通过 independent review 后才能 merge；NO 时不产生 post-gate memory follow-up。
 - **pre-gate durable knowledge 随产生它的 task branch 一起 review**；**gate-generated durable knowledge**（如 final gate conclusion、accepted checkpoint）如需沉淀，走独立 post-gate memory follow-up（reviewer 只报告 `POST_GATE_MEMORY_UPDATE_REQUIRED`，不修改被审 branch）。
 - **Git history 足以保存的纯 SHA / merge 状态无需机械复制进本文件**；不要为了把 gate PASS 写进来而制造 review loop。
 - 只有 **durable + verified + project-level + non-sensitive** 的信息才进入本文件。

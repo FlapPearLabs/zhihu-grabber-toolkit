@@ -29,22 +29,23 @@ BROWSER_SMOKE_ROLE:
 ## 1. 权威层级（AUTHORITY POSITION）
 
 本文件是 **AUTHORITATIVE_PRODUCT_BEHAVIOR_SOURCE**（产品行为的权威现状与决策记录），
-**从属于**以下更高权威（发生冲突时以更高权威为准）：
+是已批准产品合同的**执行性视图**，不得覆盖以下更高权威（发生冲突时以更高权威为准）：
 
-1. `AGENTS.md`（执行 / branch / review 工作流）
-2. `RULES.md`（hard project / safety invariants）
-3. Approved Specs：
+1. `RULES.md`（hard project / safety invariants）
+2. Applicable Approved Specs：
    - `docs/specs/v2-rich-content-fidelity.md`（V2 APPROVED Spec，产品需求主要事实来源）
    - `docs/specs/v0.3-product-scope.md`（V0.3 APPROVED Spec，additive / amendment Spec）
    - V0.3 对**明确 amendment target** 进行增量覆盖，不是替代全部 V2；例如 video：
      V0.3 amendment 覆盖旧 V2 §16 / §25；其他无 amendment 的 V2 合同继续有效。
+3. 本文件（已批准产品合同的执行性视图）
+4. `AGENTS.md`（执行 / branch / review 流程文本）
 
-**SPEC_CONFLICT 流程**：若本合同任何期望的产品决策与 Approved Spec 冲突：
+**CONTRACT_CONFLICT 流程**：若本合同任何期望的产品决策与更高 authority 冲突，且无法按上述层级解决：
 
 ```text
-SPEC_CONFLICT
+CONTRACT_CONFLICT
 → STOP 该决策
-→ 在 §6 记录冲突
+→ 以 SPEC_CONFLICT 或 GOVERNANCE_CONFLICT 作为 finding / reason category 记录
 → 不得在本 ticket 内修订 Spec
 → 不得静默选择另一个行为
 → 冲突经 Spec amendment + DOCUMENT review 处理
@@ -62,12 +63,13 @@ CURRENT_BEHAVIOR:      仓库当前实际行为（可复现事实）
 PRODUCT_DECISION:      批准生效的产品行为（= 后续一致同意的契约）
 RATIONALE:             为什么（产品/安全/兼容性理由）
 AUTHORITY / EVIDENCE:  现状规则的来源（HELP / Spec / references / 测试 / 代码）
-IMPLEMENTATION_IMPACT: NONE / CONDITIONAL_FUTURE_TICKET / CODE_TICKET_REQUIRED / SPEC_CONFLICT
+IMPLEMENTATION_IMPACT: NONE / CONDITIONAL_FUTURE_TICKET / CODE_TICKET_REQUIRED / CONTRACT_CONFLICT
   - NONE:                   保持现状，无需实现
   - CONDITIONAL_FUTURE_TICKET: 若未来触发条件成立才需实现（未批准）
   - CODE_TICKET_REQUIRED:    目标行为已批准（见 APPROVED_TARGET_BEHAVIOR），
                              代码尚未实现，需开独立 CODE 票
-  - SPEC_CONFLICT:           与 Approved Spec 冲突（须 STOP 走 §1 流程）
+  - CONTRACT_CONFLICT:       与更高 authority 冲突且无法按层级解决（须 STOP 走 §1 流程；
+                             SPEC_CONFLICT / GOVERNANCE_CONFLICT 仅作 finding / reason category）
 ```
 
 有效决策值（不一定每个都要新功能）：
@@ -871,5 +873,5 @@ OBSERVATION D-2（已在本票内校准）:
 1. 本合同一经独立 DOCUMENT review APPROVED，即成为后续行为决策的权威现状/决策记录。
 2. 任何行为变更 CODE 票必须引用本合同对应条款（§3.x）作为需求依据。
 3. 任何对本合同的修改（含新增决策、变更决策）必须经独立 DOCUMENT review；
-   与 Approved Spec 冲突的决策必须先走 SPEC_CONFLICT 流程（§1）。
-4. 本合同不取代、不覆盖 AGENTS.md / RULES.md / Approved Spec；冲突时以更高权威为准。
+   与更高 authority 冲突且无法按层级解决的决策必须先走 CONTRACT_CONFLICT 流程（§1）。
+4. 本合同不取代、不覆盖 RULES.md / Applicable Approved Specs；AGENTS.md 的流程文本不得覆盖前述产品/安全 authority。
