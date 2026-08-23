@@ -92,6 +92,12 @@ test('配置、非文本输入和任意 scheme / remote / file reference 均在�
     'read www.example.test',
     'read \\server\\share\\file',
     'read /private/file',
+    'data=./secret',
+    '(./secret)',
+    'value=../secret',
+    'x=/etc/passwd',
+    'read ~/.ssh/id_rsa',
+    'read $HOME/.config/secret',
     `[SOURCE source-a]\ntext\n[SOURCE source-b]\nread \\Windows\\System32`,
     'read ../relative-file',
     'read https%3A%2F%2Fexample.test',
@@ -132,6 +138,7 @@ test('controller transport receives no tool capability and API key never enters 
   });
   assert.equal(seen.url, REVIEWED_RUNTIME.endpoint);
   assert.equal(seen.options.headers.authorization, 'Bearer test-controller-only-key');
+  assert.equal(seen.options.redirect, 'error');
   assert.equal(seen.options.body.includes('test-controller-only-key'), false);
   const body = JSON.parse(seen.options.body);
   assert.deepEqual(body.tools, []);
@@ -166,6 +173,10 @@ test('模型身份、工具配置、非 message 输出、JSON/schema 与来源�
   assert.throws(() => validateToolLessResponse(validResponse({ model: 'gpt-4.1' }), { sourceIds: projection.sourceIds }), /runtime identity/);
   assert.throws(() => validateToolLessResponse(validResponse({ tools: [{ type: 'web_search' }] }), { sourceIds: projection.sourceIds }), /tool configuration/);
   assert.throws(() => validateToolLessResponse(validResponse({ tool_choice: 'auto' }), { sourceIds: projection.sourceIds }), /tool configuration/);
+  assert.throws(() => validateToolLessResponse(validResponse({ store: true }), { sourceIds: projection.sourceIds }), /runtime identity/);
+  const missingStore = validResponse();
+  delete missingStore.store;
+  assert.throws(() => validateToolLessResponse(missingStore, { sourceIds: projection.sourceIds }), /runtime identity/);
   assert.throws(() => validateToolLessResponse(validResponse({ object: 'other' }), { sourceIds: projection.sourceIds }), /runtime identity/);
   const annotatedOutput = validResponse();
   annotatedOutput.output[0].content[0].annotations = [{ type: 'url_citation' }];

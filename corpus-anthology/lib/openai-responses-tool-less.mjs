@@ -110,6 +110,7 @@ function hasRemoteOrFileReference(text) {
   const normalized = normalizePercentEncoding(text);
   return /(?:^|[^A-Za-z0-9+.-])[A-Za-z][A-Za-z0-9+.-]*:/u.test(normalized)
     || /(?:\/\/|\\|\bwww\.)/iu.test(normalized)
+    || /(?:^|[\s=("'])?(?:~\/|\$HOME\/|\.\.?\/|\/)[A-Za-z0-9._~/-]+/u.test(normalized)
     || /(?:^|[\s<("'])\/(?:[A-Za-z0-9._~-]+(?:\/|$))/u.test(normalized)
     || /(?:^|\s)(?:\.\.?[\\/])/u.test(normalized)
     || /[\p{Cf}\p{Cs}]/u.test(normalized)
@@ -227,6 +228,7 @@ export function validateToolLessResponse(response, { sourceIds, runtime = REVIEW
     || !sameStringArray(response.tools, [])
     || response.tool_choice !== 'none'
     || response.parallel_tool_calls !== false
+    || response.store !== false
     || !Array.isArray(response.output)
     || response.output.length !== 1) {
     fail('response runtime identity, tool configuration, status, or output item count is invalid');
@@ -269,6 +271,7 @@ export async function runToolLessMap({ projection, apiKey, runtime = REVIEWED_RU
       authorization: `Bearer ${apiKey}`,
       'content-type': 'application/json',
     },
+    redirect: 'error',
     body: JSON.stringify(request),
   });
   if (!response || response.ok !== true) {
