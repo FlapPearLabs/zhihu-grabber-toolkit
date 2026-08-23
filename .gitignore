@@ -3,6 +3,9 @@ zhihu_cookie.txt
 zhihu_secret.txt
 *.cookie
 *.secret
+.deepseek_api_key
+deepseek_api_key.txt
+DEEPSEEK_API_KEY
 .env
 .env.local
 

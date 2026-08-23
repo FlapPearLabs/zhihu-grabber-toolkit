@@ -31,6 +31,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { runChunkMap } from '../lib/lmstudio-map-executor.mjs';
 import { runToolLessMap } from '../lib/lmstudio-tool-less.mjs';
+import { runDeepSeekToolLessMap } from '../lib/deepseek-tool-less.mjs';
 import { mapConfidence } from '../lib/lmstudio-projection.mjs';
 import {
   buildAggregationNode,
@@ -50,6 +51,13 @@ function arg(name, fallback) {
 }
 
 const has = (name) => process.argv.includes(name);
+
+/** 运行时路由（additive）：默认 lmstudio-local-tool-less；--runtime deepseek-api-tool-less 选 DeepSeek。 */
+export function resolveMapRuntime(runtimeId) {
+  if (runtimeId === 'deepseek-api-tool-less') return runDeepSeekToolLessMap;
+  if (runtimeId === 'lmstudio-local-tool-less' || runtimeId == null) return runToolLessMap;
+  throw new Error(`capability_isolation_unavailable: unsupported runtime ${runtimeId}`);
+}
 
 function displayPath(p) {
   const rel = path.relative(process.cwd(), p);
@@ -210,6 +218,8 @@ async function main() {
   const chunksDir = path.join(workDir, 'chunks');
   const mapsDir = path.join(workDir, 'map-results');
   const hierarchy = has('--hierarchy');
+  // T11-R2：additive 运行时路由（默认 lmstudio-local-tool-less；deepseek-api-tool-less 需凭据已配置）
+  const runMap = resolveMapRuntime(arg('--runtime', 'lmstudio-local-tool-less'));
   // profile 参数：未显式提供时使用引擎 safe defaults（flat 模式不得因缺省参数失败）
   const maxChildrenArg = arg('--max-children', undefined);
   const maxProjArg = arg('--max-projected-bytes', undefined);
@@ -246,7 +256,7 @@ async function main() {
         continue;
       }
     }
-    const map = await runChunkMap(chunk, { run: runToolLessMap });
+    const map = await runChunkMap(chunk, { run: runMap });
     const tmp = `${mapFile}.${process.pid}.tmp`;
     fs.writeFileSync(tmp, JSON.stringify(map, null, 2), 'utf8');
     fs.renameSync(tmp, mapFile);
@@ -273,7 +283,7 @@ async function main() {
       }
     }
     const hierarchyDir = path.join(workDir, 'hierarchy');
-    const { manifest } = await buildHierarchy(l1Nodes, params, hierarchyDir, runToolLessMap);
+    const { manifest } = await buildHierarchy(l1Nodes, params, hierarchyDir, runMap);
     console.log(`hierarchy 完成：L1=${manifest.l1Count}，聚合层=${manifest.levels.join('/') || '(无，flat 等价)'}，顶层节点=${manifest.topNodeIds.length}`);
     console.log(`hierarchy manifest: ${displayPath(path.join(hierarchyDir, 'manifest.json'))}`);
   }

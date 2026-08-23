@@ -177,7 +177,7 @@ export function assertReviewedRuntime(runtime = REVIEWED_RUNTIME) {
   }
 }
 
-function assertProjection(projection) {
+export function assertProjection(projection) {
   if (!isPlainObject(projection)
     || !hasExactKeys(projection, ['kind', 'text', 'sourceIds'])
     || projection.kind !== 'deterministic-analysis-projection'
@@ -221,7 +221,7 @@ export function buildToolLessChatRequest({ projection, runtime = REVIEWED_RUNTIM
   };
 }
 
-function validateMinimalMap(map) {
+export function validateMinimalMap(map) {
   if (!isPlainObject(map)
     || !hasExactKeys(map, ['summary', 'stance', 'confidence'])) {
     fail('structured output does not match the strict qualification schema (missing or extra fields)');
