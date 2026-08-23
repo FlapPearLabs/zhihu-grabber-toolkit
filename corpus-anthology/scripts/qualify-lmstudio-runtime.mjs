@@ -93,7 +93,8 @@ export async function qualifyRuntime({ run = runToolLessMap } = {}) {
       valid: true,
       runtimeId: REVIEWED_RUNTIME.runtimeId,
       model: REVIEWED_RUNTIME.model,
-      sourceId: map.sourceId,
+      // T11-R1 #27：身份由 controller 归属（投影声明），模型输出不含 sourceId
+      sourceId: HOSTILE_PROJECTION.sourceIds[0],
       stance: map.stance,
     };
   } catch (error) {

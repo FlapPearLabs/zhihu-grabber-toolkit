@@ -68,14 +68,12 @@ function writeMapsForWork(work) {
   }
 }
 
-/** mock L2 合成 run：回显 token，返回合法 summary/stance/confidence */
+/** mock L2 合成 run：T11-R1 #27 契约（无 sourceId；confidence 枚举） */
 function mockRun({ projection }) {
-  const token = projection.sourceIds[0];
   return Promise.resolve({
-    sourceId: token,
     summary: `组级综合共识（${projection.text.length} 字符投影）`,
     stance: 'positive',
-    confidence: 0.8,
+    confidence: 'high',
   });
 }
 

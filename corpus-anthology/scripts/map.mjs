@@ -115,8 +115,15 @@ async function synthesizeLevel(level, nodes, params, existingNodes, nodesDir, ru
     // 新合成：确定性投影 → T6 控制器（tool-less, json_schema, MODEL_VISIBLE_TOOL_COUNT=0）
     const projection = buildHierarchyProjection({ token, nodeId, children: g });
     const result = await run({ projection });
-    if (!result || result.sourceId !== token) {
-      throw new Error(`capability_isolation_unavailable: 聚合节点 ${nodeId} 模型回显 token 不匹配`);
+    // T11-R1 #27：模型不再回显身份；controller 从 trusted 请求状态归属节点身份。
+    // 校验仅针对 summary/stance/confidence（枚举），且禁止模型输出 sourceId 字段。
+    if (!result || typeof result !== 'object'
+      || typeof result.summary !== 'string'
+      || result.summary.trim() === ''
+      || !['positive', 'neutral', 'negative'].includes(result.stance)
+      || !['high', 'medium', 'low'].includes(result.confidence)
+      || Object.hasOwn(result, 'sourceId')) {
+      throw new Error(`capability_isolation_unavailable: 聚合节点 ${nodeId} 模型输出不符合协议`);
     }
     // 综合 claim：evidence = 本节点 union（controller 确定性赋予；LLM 不得发明证据）
     const claims = [{

@@ -13,11 +13,11 @@ import { runChunkMap } from '../lib/lmstudio-map-executor.mjs';
 const SAMPLE = '这篇回答主要介绍了一种新的学习方法。作者认为循序渐进比速成更有效。';
 
 function safeRun(overrides = {}) {
-  return async ({ projection }) => ({
-    sourceId: projection.sourceIds[0],
+  return async () => ({
+    // T11-R1 #27：模型输出不含 sourceId（身份由 controller 归属）；confidence 为枚举
     summary: SAMPLE,
     stance: 'positive',
-    confidence: 0.8,
+    confidence: 'high',
     ...overrides,
   });
 }
@@ -185,6 +185,27 @@ test('runChunkMap：短 token 回显被映射回真实 sourceId，模型只看�
     'question-448089541-answer-1002',
   ]);
   assert.deepEqual(map.claims[0].evidenceSourceIds, ['question-448089541-answer-1001']);
+});
+
+test('T11-R1 #27：模型输出携带 sourceId 字段 → runChunkMap fail closed（模型不得拥有身份）', async () => {
+  const chunk = makeChunk(['q1-a1', 'q1-a2']);
+  // 恶意/污染模型输出：即使 sourceId 与投影 token 匹配，也因携带身份字段被拒绝
+  const run = async () => ({
+    sourceId: '1', summary: SAMPLE, stance: 'positive', confidence: 'high',
+  });
+  await assert.rejects(() => runChunkMap(chunk, { run }), /capability_isolation_unavailable/);
+});
+
+test('T11-R1 #27：runChunkMap 非法模型输出（数字 confidence / 非枚举 stance / 空 summary）fail closed', async () => {
+  const chunk = makeChunk(['q1-a1']);
+  for (const bad of [
+    { summary: SAMPLE, stance: 'positive', confidence: 0.5 },
+    { summary: SAMPLE, stance: 'evil', confidence: 'high' },
+    { summary: '', stance: 'positive', confidence: 'high' },
+    { summary: SAMPLE, stance: 'positive', confidence: 'very-high' },
+  ]) {
+    await assert.rejects(() => runChunkMap(chunk, { run: async () => bad }), /capability_isolation_unavailable/);
+  }
 });
 
 test('runChunkMap：空正文来源由 controller 确定性合成条目，不调用模型', async () => {

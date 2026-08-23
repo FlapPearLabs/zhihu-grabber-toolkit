@@ -125,8 +125,9 @@ export function splitChunkBySource(chunk) {
   return bySource;
 }
 
-/** 置信度数值 → corpus map claim 的 high/medium/low。 */
+/** 置信度 → corpus map claim 的 high/medium/low（T11-R1 #27：wire 已用枚举，直接透传；数值映射保留给确定性合成条目）。 */
 export function mapConfidence(value) {
+  if (value === 'high' || value === 'medium' || value === 'low') return value;
   const n = Number(value);
   if (!Number.isFinite(n)) return 'low';
   if (n >= 0.66) return 'high';

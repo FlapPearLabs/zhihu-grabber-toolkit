@@ -82,13 +82,16 @@ export async function runChunkMap(chunk, { run = runToolLessMap, maxSummaryChars
       perSourceSummaries.push(NO_EXTRACTABLE_SOURCE_SUMMARY);
       continue;
     }
-    // 短不透明 token：长真实 sourceId 无法被 1.7B 可靠回显（实测截断），token 由 controller 映射回真实 ID
+    // 短不透明 token（T11-R1 #27：模型不再回显身份；token 仅作投影内来源引用，
+    // controller 从请求状态确定性归属真实 sourceId）
     const token = String(index + 1);
     const sourceMeta = Array.isArray(chunk.sources)
       ? chunk.sources.find((s) => s && s.sourceId === realId)
       : null;
+    // 投影 meta 最小化：仅保留安全作者名；voteupCount 是 controller/corpus 元数据，
+    // 不进模型可见投影（T11 实测 meta 数字/作者被模型抄进输出字段造成污染）
     const meta = sourceMeta
-      ? `来源: ${sourceMeta.author ?? '(匿名)'}（赞同 ${sourceMeta.voteupCount ?? 0}）`
+      ? `来源: ${sourceMeta.author ?? '(匿名)'}`
       : '';
     let projection;
     try {
@@ -103,13 +106,14 @@ export async function runChunkMap(chunk, { run = runToolLessMap, maxSummaryChars
     } catch (error) {
       fail(`map for source ${realId} failed closed: ${error instanceof Error ? error.message : String(error)}`);
     }
-    // run 的成功契约：已通过控制器确定性校验，sourceId 必须等于投影 token（回显），
-    // summary/stance/confidence 合法；随后映射回真实 sourceId
-    if (!result || typeof result.sourceId !== 'string'
-      || result.sourceId !== token
+    // run 的成功契约：已通过控制器确定性校验（summary/stance/confidence 枚举合法，
+    // 无 sourceId 字段——模型不得拥有身份）；controller 从 trusted 请求状态归属真实 sourceId
+    if (!result || typeof result !== 'object'
       || typeof result.summary !== 'string'
       || result.summary.trim() === ''
-      || !Number.isFinite(Number(result.confidence))) {
+      || !['positive', 'neutral', 'negative'].includes(result.stance)
+      || !['high', 'medium', 'low'].includes(result.confidence)
+      || Object.hasOwn(result, 'sourceId')) {
       fail(`map for source ${realId} returned an invalid validated result`);
     }
     results.push({ ...result, sourceId: realId });

@@ -56,21 +56,29 @@ function deepFreeze(value) {
 }
 
 /**
- * Strict minimal qualification schema (Issue #26 §12). The full production
- * map-result schema (claims + sourceCoverage) is T6 scope; a sub-7B model may
- * not satisfy its coverage contract reliably, and model quality is explicitly
- * NOT this ticket's gate. The qualification only needs to prove deterministic
- * isolation plus a strict structured-output contract end to end.
+ * Strict minimal qualification schema (Issue #26 §12), hardened by T11-R1 #27.
+ * Source identity is controller-owned deterministic state: the model does NOT
+ * output a sourceId (it must not own canonical identity or lineage); the
+ * controller knows which projection it sent and deterministically attaches
+ * sourceId / sourceCoverage / claim.evidenceSourceIds from trusted request
+ * state. confidence is a constrained categorical enum (high/medium/low) — the
+ * canonical corpus claim already uses these three values, and the intermediate
+ * floating-point number was the source of live probabilistic out-of-range
+ * failures (LM Studio qwen3-1.7b emitted e.g. confidence 950). The full
+ * production map-result schema (claims + sourceCoverage) is T6 scope; a
+ * sub-7B model may not satisfy its coverage contract reliably, and model
+ * quality is explicitly NOT this ticket's gate. The qualification only needs
+ * to prove deterministic isolation plus a strict structured-output contract
+ * end to end.
  */
 const QUALIFICATION_SCHEMA = deepFreeze({
   type: 'object',
   additionalProperties: false,
-  required: ['sourceId', 'summary', 'stance', 'confidence'],
+  required: ['summary', 'stance', 'confidence'],
   properties: {
-    sourceId: { type: 'string', minLength: 1 },
     summary: { type: 'string', minLength: 1 },
     stance: { type: 'string', enum: ['positive', 'neutral', 'negative'] },
-    confidence: { type: 'number', minimum: 0, maximum: 1 },
+    confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
   },
 });
 
@@ -213,13 +221,10 @@ export function buildToolLessChatRequest({ projection, runtime = REVIEWED_RUNTIM
   };
 }
 
-function validateMinimalMap(map, sourceIds) {
+function validateMinimalMap(map) {
   if (!isPlainObject(map)
-    || !hasExactKeys(map, ['sourceId', 'summary', 'stance', 'confidence'])) {
+    || !hasExactKeys(map, ['summary', 'stance', 'confidence'])) {
     fail('structured output does not match the strict qualification schema (missing or extra fields)');
-  }
-  if (typeof map.sourceId !== 'string' || !sourceIds.includes(map.sourceId)) {
-    fail('structured output references an unknown or mismatched source ID');
   }
   if (typeof map.summary !== 'string' || map.summary.trim() === '') {
     fail('structured output summary is missing or empty');
@@ -227,18 +232,14 @@ function validateMinimalMap(map, sourceIds) {
   if (!['positive', 'neutral', 'negative'].includes(map.stance)) {
     fail('structured output stance is invalid');
   }
-  if (typeof map.confidence !== 'number'
-    || !Number.isFinite(map.confidence)
-    || map.confidence < 0
-    || map.confidence > 1) {
+  if (!['high', 'medium', 'low'].includes(map.confidence)) {
     fail('structured output confidence is invalid');
   }
   return map;
 }
 
-export function validateToolLessChatResponse(response, { sourceIds, runtime = REVIEWED_RUNTIME }) {
+export function validateToolLessChatResponse(response, { runtime = REVIEWED_RUNTIME } = {}) {
   assertReviewedRuntime(runtime);
-  assertSourceIds(sourceIds);
 
   if (!isPlainObject(response)
     || response.object !== 'chat.completion'
@@ -272,7 +273,7 @@ export function validateToolLessChatResponse(response, { sourceIds, runtime = RE
   } catch {
     fail('structured output is not valid JSON');
   }
-  return validateMinimalMap(parsed, sourceIds);
+  return validateMinimalMap(parsed);
 }
 
 export async function runToolLessMap({ projection, runtime = REVIEWED_RUNTIME, fetchImpl = fetch }) {
@@ -294,5 +295,5 @@ export async function runToolLessMap({ projection, runtime = REVIEWED_RUNTIME, f
   } catch {
     fail('LM Studio returned non-JSON data');
   }
-  return validateToolLessChatResponse(payload, { sourceIds: projection.sourceIds, runtime });
+  return validateToolLessChatResponse(payload, { runtime });
 }
