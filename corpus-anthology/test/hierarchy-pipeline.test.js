@@ -73,7 +73,7 @@ function mockRun({ projection }) {
   const token = projection.sourceIds[0];
   return Promise.resolve({
     sourceId: token,
-    summary: `组级综合：${projection.nodeId} 覆盖 ${projection.union.length} 个来源的共识观点`,
+    summary: `组级综合共识（${projection.text.length} 字符投影）`,
     stance: 'positive',
     confidence: 0.8,
   });

@@ -20,6 +20,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { renderDigest } from './render-final.mjs';
 import { validateSelection } from '../lib/top-percent-selector.mjs';
+import { computeNodeHash } from '../lib/hierarchy.mjs';
 
 function arg(name, fallback) {
   const i = process.argv.indexOf(name);
@@ -103,6 +104,13 @@ function main() {
     }
     const hManifest = readJson(hierarchyManifestFile);
     const topNodes = hManifest.topNodeIds.map((id) => readJson(path.join(workDir, 'hierarchy', 'nodes', `${id}.json`)));
+    // 纵深防御：顶层节点 nodeHash 自检（verify 后篡改节点文件 → 拒绝；FAIL CLOSED）
+    for (const n of topNodes) {
+      if (typeof n?.nodeHash !== 'string' || n.nodeHash !== computeNodeHash(n)) {
+        console.error(`hierarchy 顶层节点 hash 校验失败（节点可能被篡改）: ${n?.nodeId ?? '(unknown)'}`);
+        process.exit(1);
+      }
+    }
     hierarchyInfo = {
       levels: hManifest.levels,
       nodeCountByLevel: hManifest.nodeCountByLevel,

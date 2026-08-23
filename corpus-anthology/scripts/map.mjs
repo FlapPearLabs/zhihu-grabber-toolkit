@@ -203,9 +203,12 @@ async function main() {
   const chunksDir = path.join(workDir, 'chunks');
   const mapsDir = path.join(workDir, 'map-results');
   const hierarchy = has('--hierarchy');
+  // profile 参数：未显式提供时使用引擎 safe defaults（flat 模式不得因缺省参数失败）
+  const maxChildrenArg = arg('--max-children', undefined);
+  const maxProjArg = arg('--max-projected-bytes', undefined);
   const params = resolveProfileParams({
-    maxChildren: arg('--max-children', null),
-    maxProjectedBytes: arg('--max-projected-bytes', null),
+    ...(maxChildrenArg !== undefined ? { maxChildren: maxChildrenArg } : {}),
+    ...(maxProjArg !== undefined ? { maxProjectedBytes: maxProjArg } : {}),
   });
 
   if (!fs.existsSync(chunksDir)) {

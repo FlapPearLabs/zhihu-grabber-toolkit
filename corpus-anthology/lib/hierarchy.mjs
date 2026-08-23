@@ -101,9 +101,10 @@ export function packGroups(nodes, params) {
     current.push(node);
   }
   if (current.length > 0) groups.push(current);
-  // 非终止组（>1 组时）禁止 single-child：若尾部组只有 1 节点且前面还有组 → fail closed
-  if (groups.length > 1 && groups[groups.length - 1].length === 1) {
-    throw new Error('hierarchy_input_too_large: 尾部组仅含 1 个子节点（禁止 single-child 聚合；且该子节点无法装入任何合法 >=2 组）');
+  // 非终止场景禁止 single-child（T9 §3）：节点总数 > 1 时，任何组（含中间组）长度 == 1
+  // → 该子节点无法与任何其他节点组成合法 >=2 组 → fail closed
+  if (nodes.length > 1 && groups.some((g) => g.length === 1)) {
+    throw new Error('hierarchy_input_too_large: 存在仅含 1 个子节点的组（禁止 single-child 聚合；该子节点无法装入任何合法 >=2 组）');
   }
   return groups;
 }
@@ -131,17 +132,19 @@ export function computeSourceUnion(children) {
 }
 
 /**
- * 节点投影输入（供 L2+ 合成模型调用）——**T6 控制器兼容**：
- * kind='deterministic-analysis-projection' + 单 token sourceId + `[SOURCE <token>]` 头；
+ * 节点投影输入（供 L2+ 合成模型调用）——**T6 控制器兼容（恰好 3 键）**：
+ * kind='deterministic-analysis-projection' + 单 token sourceIds + `[SOURCE <token>]` 头；
  * body（子节点 claims + union + meta）先经 sanitizeProjectionText 消毒
  * （防 URL/路径/方括号注入；sanitizer 中和 `[SOURCE` 保证唯一 source tag）。
  * 模型只能回显 token；token 由 controller 映射回 nodeId。
+ * 注意：返回对象必须恰好 {kind, sourceIds, text}（assertProjection hasExactKeys）。
+ * nodeId / union 由调用方从聚合节点（agg）持有，不进入投影对象。
  * @param {object} param0
  * @param {string} param0.token 短不透明 token（模型回显目标）
- * @param {string} param0.nodeId 真实聚合节点 ID（仅 controller 可见）
+ * @param {string} param0.nodeId 真实聚合节点 ID（仅用于文本标注，不进投影对象）
  * @param {Array<object>} param0.children 已验证子节点
  * @param {string} [param0.meta]
- * @returns {{kind: string, sourceIds: string[], text: string, nodeId: string, union: string[]}}
+ * @returns {{kind: string, sourceIds: string[], text: string}}
  */
 export function buildHierarchyProjection({ token, nodeId, children, meta = '' }) {
   if (typeof nodeId !== 'string' || nodeId.trim() === '' || !Array.isArray(children) || children.length === 0) {
@@ -163,12 +166,11 @@ export function buildHierarchyProjection({ token, nodeId, children, meta = '' })
   rawLines.push(`覆盖来源（union）: ${union.join(', ')}`);
   const sanitizedBody = sanitizeProjectionText(rawLines.join('\n'));
   const text = `[SOURCE ${token}]\n${sanitizedBody}`;
+  // 恰好 3 键（T6 控制器 assertProjection hasExactKeys 契约）
   return {
     kind: 'deterministic-analysis-projection',
     sourceIds: [token],
     text,
-    nodeId,
-    union,
   };
 }
 
