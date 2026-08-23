@@ -12,6 +12,7 @@ AUTH_METHOD: ChatGPT login (supported non-secret client status)
 CLIENT_VERSION: codex-cli 0.136.0
 OS: macOS arm64
 FINAL_VERDICT: NO
+PROJECT_MEMORY_UPDATE_REQUIRED: YES
 ```
 
 This ticket evaluates exactly the named Codex-client runtime. It neither changes
@@ -158,5 +159,5 @@ DO NOT REPRODUCE BY: reading auth files/tokens, calling private backends,
 
 This `NO` is a valid, runtime-scoped discovery result only after independent
 SECURITY and CONTRACT reviews pass on the same exact candidate SHA. It does not
-change the still-open T5-R issue, and it says nothing about a later client
+change the merged and CLOSED T5-R #22 outcome, and it says nothing about a later client
 version or a different runtime that could expose a genuine tool-less interface.
