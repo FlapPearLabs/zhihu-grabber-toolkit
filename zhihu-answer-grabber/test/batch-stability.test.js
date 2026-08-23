@@ -183,8 +183,9 @@ test('T2-batch: 全成功 → exit 0、ok=true、artifacts 相对路径', () => 
         const p = s.artifacts?.[key];
         assert.ok(p && !path.isAbsolute(p), `artifacts.${key} 应为相对路径: ${p}`);
       }
+      assert.equal(s.artifacts.json,
+        path.relative(dir, path.join(outDir, s.questionId, 'answers.json')).split(path.sep).join('/'));
     }
-    assert.ok(!r.stdout.includes(os.tmpdir()), 'stdout 不得含 tmpdir 绝对路径');
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

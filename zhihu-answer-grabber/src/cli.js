@@ -141,9 +141,9 @@ async function cmdGrab(config, input, { outDir = 'out', json = false, silent = f
   // 同盘 relative-to-cwd（base 缺席，JSON 与旧版逐字节一致）；
   // 跨盘 relative-to-effective-out-dir + artifacts.base="outdir"。
   // fail closed：无法生成安全相对路径时抛错，绝不输出绝对路径。
-  const artifacts = machineArtifacts(dir, {
-    cwd: process.cwd(),
-    outDirRoot: path.resolve(process.cwd(), outDir),
+  const artifacts = machineArtifacts(fs.realpathSync(dir), {
+    cwd: fs.realpathSync(process.cwd()),
+    outDirRoot: fs.realpathSync(path.resolve(process.cwd(), outDir)),
   });
   if (!artifacts) {
     throw new Error('internal_error: 无法为产物生成安全的相对机器路径（fail closed）');

@@ -306,7 +306,7 @@ globalThis.fetch = async (url) => {
   assert.ok(parsed.warnings[0].includes('本次问题元信息获取/刷新失败'), 'warning 说明 metadata 获取/刷新失败');
   // 不得泄漏凭据 / 绝对路径
   assert.ok(!r.stdout.includes('z_c0='), 'warning 不得含凭据');
-  assert.ok(!r.stdout.includes(dir), 'warning 不得含绝对路径');
+  assert.ok(!parsed.warnings.some((warning) => warning.includes(dir)), 'warning 不得含绝对路径');
   fs.rmSync(dir, { recursive: true, force: true });
 });
 

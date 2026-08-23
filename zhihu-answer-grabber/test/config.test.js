@@ -8,7 +8,7 @@ import { loadZhihuCliConfig, loadConfig, parseCookieHeader, resolveSecret, Confi
 function makeFixture(json) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zhihu-config-test-'));
   const file = path.join(dir, 'config.json');
-  fs.writeFileSync(file, JSON.stringify(json));
+  fs.writeFileSync(file, JSON.stringify(json), { mode: 0o600 });
   return { dir, file };
 }
 

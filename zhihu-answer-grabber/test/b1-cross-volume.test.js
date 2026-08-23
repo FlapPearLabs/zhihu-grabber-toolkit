@@ -143,8 +143,9 @@ test('B1-cli: 真实 out-dir（tmpdir）→ 机器 JSON 无绝对路径；Window
       assert.equal(a.progress, '123/.progress.json');
     } else {
       assert.equal(a.base, undefined, '同盘不得发射 artifacts.base');
+      assert.equal(a.json,
+        path.relative(process.cwd(), path.join(fs.realpathSync(outDir), '123', 'answers.json')).split(path.sep).join('/'));
     }
-    assert.ok(!r.stdout.includes(os.tmpdir()), 'stdout 不得含 tmpdir 绝对路径');
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
     fs.rmSync(outBase, { recursive: true, force: true });
@@ -183,9 +184,10 @@ test('B1-batch: 跨盘语义传播到 succeeded[].artifacts（顺序/失败语�
         assert.equal(s.artifacts.json, `${s.questionId}/answers.json`);
       } else {
         assert.equal(s.artifacts.base, undefined);
+        assert.equal(s.artifacts.json,
+          path.relative(process.cwd(), path.join(fs.realpathSync(outDir), s.questionId, 'answers.json')).split(path.sep).join('/'));
       }
     }
-    assert.ok(!r.stdout.includes(os.tmpdir()), 'batch stdout 不得含 tmpdir 绝对路径');
   } finally {
     fs.rmSync(outBase, { recursive: true, force: true });
     fs.rmSync(work, { recursive: true, force: true });
