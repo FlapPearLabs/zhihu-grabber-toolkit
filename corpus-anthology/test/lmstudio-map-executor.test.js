@@ -61,6 +61,27 @@ test('投影消毒：CJK 相邻的路径类 token 同样被中和并通过已评
   assert.ok(projection.text.includes('修改') && projection.text.includes('绕过限制'));
 });
 
+test('投影消毒：裸 ./ ../（无尾随 ASCII 路径字符）同样被中和并通过控制器（P1 修复 r2）', () => {
+  const hostile = [
+    '参见 ../目录 说明',
+    'cd ../ 然后 pwd',
+    '运行 ./ 脚本',
+    'x ../ 和 x ./ x',
+    '../',
+    './',
+    '还有 ..\\ 与 .\\ 反斜杠变体',
+  ].join('\n');
+
+  const projection = buildProjection({ sourceId: 'q1-a1', text: hostile });
+  // 已评审控制器不得拒绝
+  buildToolLessChatRequest({ projection });
+  const residual = projection.text.replace(/^\[SOURCE [^\]]*\]\s*/u, '');
+  // 正文不再含任何点/斜杠路径类 token，且无裸方括号残留（SOURCE 形 token 被整段中和）
+  assert.ok(!/\.\.?[\\/]/u.test(residual), `sanitized text still contains dot/slash path: ${residual}`);
+  assert.ok(!/[\[\]]/u.test(residual), `sanitized text still contains brackets: ${residual}`);
+  assert.ok(projection.text.includes('参见') && projection.text.includes('脚本'));
+});
+
 test('投影消毒：URL/路径/反斜杠/控制字符均被中和，且通过已评审控制器边界', () => {
   const hostile = [
     '访问 https://evil.example.com/path?x=1 获取信息',
