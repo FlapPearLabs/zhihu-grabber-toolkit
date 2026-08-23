@@ -659,8 +659,9 @@ APPROVED_TARGET（V0.3 决策 D，与 CURRENT 一致）:
   - handoff.warnings 不再包含 countMismatch（因 make-handoff 投影 verifier.warnings）
   - 其他 warning / verifier failure / handoff 语义不变
 
-CODE_STATUS: IMPLEMENTED（T3 ff-only merge 后落入 CURRENT；T3 仍待 independent
-  CODE review PASS 确认）
+CODE_STATUS: IMPLEMENTED_IN_MASTER（T3 exact reviewed SHA
+  7c4e5ca69aec885a2d093b09f536235dc44819cf 已 independent CODE review PASS，
+  并已 ff-only merge 到 master）
 
 RATIONALE:
   countMismatch 仅是诊断性提示（V2 §20 / references/verification.md「仅提示，不设失败门」），
@@ -670,8 +671,8 @@ AUTHORITY / EVIDENCE:
   src/verifier.js:145–158（三诊断字段写入 + 不再 push warning）、scripts/make-handoff.mjs:73
   V0.3 Spec §6（决策 D）、§12.4、R2-5
 
-IMPLEMENTATION_IMPACT: RESOLVED（T3 已实现，CODE_STATUS = IMPLEMENTED；T3 exact
-  reviewed SHA 独立 CODE review PASS 之后正式生效到 CURRENT_BEHAVIOR）
+IMPLEMENTATION_IMPACT: RESOLVED_IN_MASTER（T3 已实现、独立 CODE review PASS，
+  并 ff-only merge；CURRENT_BEHAVIOR 已生效）
 ```
 
 ### 3.17 Agent projection / capability isolation（V0.3 决策 C 归一化）
@@ -763,7 +764,7 @@ DO_NOT_SUPPORT（当前阶段）:      3.10（clean-restart / --fresh）、
                                 3.12（batch 自动重试）
 DEFER_UNTIL_EVIDENCE:           无（当前无待证据决策；如未来出现 clean-restart /
                                 corrupt-cleanup / batch-retry 需求，重新走 DOCUMENT 决策）
-RESOLVED_IN_MASTER:             2 项 —— 3.3（B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE
+RESOLVED_IN_MASTER:             3 项 —— 3.3（B-1 CROSS_VOLUME_MACHINE_PATH_DISCLOSURE
                                 已在 master 修复，commit ffd41ca；CURRENT_BEHAVIOR 即
                                 OPTION A：同盘 relative-to-cwd、Windows 跨盘
                                 relative-to-out-dir + artifacts.base="outdir"、
@@ -771,9 +772,9 @@ RESOLVED_IN_MASTER:             2 项 —— 3.3（B-1 CROSS_VOLUME_MACHINE_PATH
                                 IMPLEMENTATION_IMPACT: NONE。见 §3.3 更新）
                                 3.15（Search Answer Count：T2 已实现并纳入
                                 CURRENT_BEHAVIOR；IMPLEMENTATION_IMPACT: NONE。见 §3.15 更新）
-IMPLEMENTED_UNMERGED_CANDIDATE: 1 项 —— 3.16 countMismatch severity（T3 已实现，
-                                CODE_STATUS = IMPLEMENTED；待 independent CODE review PASS；
-                                尚未作为 master CURRENT_BEHAVIOR；见 §3.16 更新）
+                                3.16（countMismatch severity：T3 exact reviewed SHA
+                                7c4e5ca69aec885a2d093b09f536235dc44819cf 已 independent
+                                CODE review PASS 并 ff-only merge；已纳入 CURRENT_BEHAVIOR。见 §3.16 更新）
 PENDING_V0_3_CODE_TICKETS:      2 项（均为 V0.3 决策归一化，CODE PENDING，非当前行为）——
                                 3.17 Agent projection / capability isolation
                                      （PENDING T4/T5，runtime-scoped feasibility）
@@ -789,8 +790,8 @@ PENDING_V0_3_CODE_TICKETS:      2 项（均为 V0.3 决策归一化，CODE PENDI
 **关键结论**：本合同既有行为决策保持现状或明确不支持；**B-1（§3.3）已在 master 修复
 （ffd41ca），属 RESOLVED_IN_MASTER、IMPLEMENTATION_IMPACT: NONE**，不再作为
 FUTURE_CODE_TICKET_REQUIRED；**3.15 Search Answer Count 已由 T2 实现并纳入 CURRENT_BEHAVIOR**。
-**3.16 countMismatch severity 已作为 IMPLEMENTED_UNMERGED_CANDIDATE，待独立 CODE review PASS，
-尚未在 master 生效**。V0.3 的 PENDING_V0_3_CODE_TICKETS 仅为 §3.17–§3.18，均为
+**3.16 countMismatch severity 已由 T3 independent CODE review PASS 并 ff-only merge，
+归入 RESOLVED_IN_MASTER / CURRENT_BEHAVIOR**。V0.3 的 PENDING_V0_3_CODE_TICKETS 仅为 §3.17–§3.18，均为
 **已批准产品目标的 CODE 待办**，当前代码行为仍是各自 CURRENT_BEHAVIOR，未在 master 生效。T-2（batch 回归测试）已按
 §3.1-§3.14 边界推进；不因本合同产生投机功能。
 
