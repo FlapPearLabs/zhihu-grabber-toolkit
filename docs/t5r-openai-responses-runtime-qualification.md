@@ -75,6 +75,8 @@ The response is accepted only when all of the following hold:
 - exactly one completed assistant `message` is present, with exactly one
   `output_text` item; any tool/function/MCP/other output item fails closed;
 - the text parses as the strict qualification JSON schema;
+- the root, every claim, and every `sourceCoverage` entry have exactly the
+  schema's declared fields (extra fields fail closed locally);
 - every claim evidence ID is among the supplied IDs, and `sourceCoverage`
   covers each supplied ID exactly once.
 
