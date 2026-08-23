@@ -135,7 +135,7 @@
     PASS + ff-only merge + 行为满足 #4 acceptance（见 Issue #9 close 流程）。
   - **大型语料四层能力**：CURRENT IMPLEMENTED（popular-sample / full-coverage digest / archive /
     **top-percent-analysis（T8 #14，2026-08-23 实现并合并）**）vs APPROVED TARGET（hierarchical full digest，
-    待 T9/T10）。硬不变量 `SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST`
+    **合同已批准（T9 #15，2026-08-23），CODE 待 T10**）。硬不变量 `SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST`
     ——指 **pipeline identity 保持分离**（`mode` 恒为 `top-percent-analysis`，绝不因 X=100 静默变 `digest`；
     `isFullCoverage` 是覆盖事实，非模式身份；仅 `mode=="digest"` 代表全量 digest 管线）；
     hierarchical full digest 必须保持 source coverage / evidence mapping / canonical source ID lineage。
@@ -151,8 +151,21 @@
     `scripts/select.mjs`（→ selection.json）、chunk `--mode top-percent-analysis --selection`、verify selection-scope
     门（selectionScopeIssues 交叉校验）、reduce `mode="top-percent-analysis"` + 披露块、render 7 项披露；
     digest/popular-sample/archive 零改动；测试 22 项（selector 14 + pipeline 8）。
+    **hierarchical full digest 合同已由 T9 #15 批准（2026-08-23，MODIFY + APPROVE AS MODIFIED；
+    decision record：`docs/t9-hierarchical-digest-contract.md`）**：
+    架构 OPTION A additive explicit（flat digest 行为/消费合同不变、仍默认；V0.3 不自动路由）；
+    ADAPTIVE 深度（nodeCount==1 终止；2≤childCount≤MAX_CHILDREN_PER_NODE 禁 single-child；
+    nextLevel.nodeCount 严格递减；hierarchy_input_too_large fail closed）；controller 左到右贪婪分组
+    （MAX_CHILDREN_PER_NODE / MAX_PROJECTED_INPUT_BUDGET 为 reviewed runtime/execution profile
+    parameters，T10 从 qualified runtime 推导）；HYBRID lineage（child refs + controller materialized
+    union；每层递归覆盖不变量 union(children)==parent；COVERAGE ≠ CLAIM EVIDENCE）；fail-closed 验证；
+    stale 向上传播（依赖祖先失效、无关 sibling 可复用）；仅 lmstudio-local-tool-less；无静默 fallback；
+    final.json 消费合同不变（mode="digest" flat/hierarchical 一致）。T10 CODE 待 T9 完整 merge。
+    实测证据：reduce-input 线性增长（38→9.6K chars；538→134.7K chars，ESTIMATED 52-95K token），
+    顶层撰写阶段是压力点。
 - **V0.3 关键 gate（immediate）**：T3 countMismatch / T4+T5 Agent consumer & isolation feasibility /
-  T7 top-percent contract（**已批准，2026-08-23**）/ T9 hierarchical digest contract。各 T 遵循 Spec gate，不无条件并行。
+  T7 top-percent contract（**已批准，2026-08-23**）/ T9 hierarchical digest contract（**已批准，2026-08-23**）。
+  各 T 遵循 Spec gate，不无条件并行。
 - **DEFERRED（长期，未经批准不得开始）**：
   - browser-smoke 高级 matcher 硬化（provenance / 折叠形态 / link-card 归一化）
   - 研究流程自动化（research pipeline automation）：NEXT_STAGE，非当前 V0.3 范围

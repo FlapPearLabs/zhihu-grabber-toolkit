@@ -1,10 +1,9 @@
-# T9 — Hierarchical Full Digest Contract (OPEN-D4) — Phase A Decision Packet
+# T9 — Hierarchical Full Digest Contract (OPEN-D4) — Phase B Approved Contract
 
-> **STATUS: PHASE A / NOT APPROVED**
-> 本文档是 T9 #15 Phase A 交付物（证据收集 + 架构对比 + 完整产品决策包），
-> 供 product-owner 审阅批准。**不构成任何 hierarchy 设计的批准**，不授权 T10 生产实现。
-> 批准前不写入：Approved Specs / PBC-as-authority / project-memory(D4 accepted) / 生产代码 / T8 / 共享 schema / 依赖。
-> 评审者不得把 `PROPOSED` 改为 `APPROVED`。
+> **STATUS: PHASE B / APPROVED AS MODIFIED（2026-08-23 product-owner decision）**
+> 本文档现为批准合同记录：Phase A 决策包 + product-owner MODIFY + APPROVE 明细 + 被取代措辞修正。
+> Phase B 将把批准合同归一化进 authority docs（V0.3 Spec / PBC / project-memory / corpus docs）。
+> **仍不授权 T10 生产实现**；T10 仅在 T9 完整 merge 且其 START_GATE 满足后开始。
 > 关联：Issue #15（T9）、Issue #3（large-corpus，保持 OPEN）、V0.3 §7.3 / §15-E / OPEN-D4。
 
 ---
@@ -12,10 +11,10 @@
 ## 1. STATUS
 
 ```text
-PHASE: A（evidence + decision packet）
-APPROVAL: NOT APPROVED — 等待 product-owner APPROVE / MODIFY / REJECT
-T10 CODE: 未授权
-#15: OPEN（Phase A 完成后仍保持 OPEN）
+PHASE: B（approved contract normalization）
+APPROVAL: APPROVED AS MODIFIED（product-owner, 2026-08-23；未修改推荐全部接受）
+T10 CODE: 未授权（T10 在 T9 完整 merge 后单独解锁）
+#15: OPEN（Phase B 完成后依 DONE 定义关闭）
 #3:  OPEN（贯穿 T9/T10，不因本决策关闭）
 ```
 
@@ -89,34 +88,44 @@ verified canonical answers（manifest.inputs）
 | MULTI-LEVEL | L1 → L2 → L3… → final | 逐层收敛 | 任意规模可扩展 | 每层都需验证/身份/恢复，复杂度高 |
 | ADAPTIVE | `while input 超限: 分组 → 验证 → 合成下一层`（深度由确定性输入规模推导，非固定） | 恒 ≤ 限制 | 深度随规模自适应；小任务不产生额外层（零开销）；不硬编码 10/20/50 | 循环终止性需由确定性上界保证（每层节点数单调减半/受限） |
 
-**RECOMMENDED：ADAPTIVE（TWO-LEVEL 为最小实例）**。深度不由 corpus answer count 硬编码，而由确定性判据推导：
+**RECOMMENDED：ADAPTIVE（APPROVED，收敛不变量强化）**。深度不由 corpus answer count 硬编码，而由确定性判据推导：
 
 ```text
-level_input 超限（节点数 或 序列化字节 或 估算 token 信封 超过 reviewed limit）
-→ deterministic group（controller-owned）
+while currentLevel.nodeCount > 1 AND currentLevel_input 超限（节点数 或 序列化字节 或 估算 token 信封 超过有效 profile limit）:
+→ deterministic group（controller-owned，§5）
 → validate groups（fail-closed）
-→ synthesize next level（每组合成 1 个 L2 节点，仅经 approved runtime）
-→ 递归至顶层输入不超限 → final reduce
+→ synthesize next level（每组合成 1 个聚合节点，仅经 approved runtime）
+→ 递归至顶层输入不超限 或 currentLevel.nodeCount == 1 → final reduce
 ```
 
-limit 定义为 **reviewed product parameter**（非任意常数）：`LEVEL_INPUT_LIMIT`（节点数上限）与 `LEVEL_BYTES_LIMIT`（序列化字节上限）——需 PO 批准数值（Phase B），T9 仅锁定机制与判定公式。循环终止性：分组保证每层节点数 ≤ ceil(children/MAX_CHILDREN) < 当前层节点数（MAX_CHILDREN ≥ 2 时严格递减）→ 必然收敛。
+**批准收敛不变量（APPROVED，强化）**：
+- `if currentLevel.nodeCount == 1: hierarchy terminates`。
+- 每个非终止聚合节点必须满足 **`2 <= childCount <= MAX_CHILDREN_PER_NODE`**；**禁止 synthetic single-child 聚合节点**（一个子节点的「聚合」无收敛意义，禁止）。
+- 因此对每个生成的聚合层：**`nextLevel.nodeCount < currentLevel.nodeCount`**（严格递减 → 必然终止）。
+- 若一组**合法（≥2 子节点）**无法装进 reviewed runtime input envelope → **FAIL CLOSED: `hierarchy_input_too_large`**；不得绕过预算、不得制造无限 single-child 层级。
+- 不硬编码固定 two-level / three-level 架构（深度自适应）。
 
-## 5. Deterministic Grouping Contract（controller-owned，LLM 无权决定）
+LIMIT 参数为 **reviewed runtime/execution profile parameters**（§5）：`MAX_CHILDREN_PER_NODE`（≥2 整数）与 `MAX_PROJECTED_INPUT_BUDGET`（与 approved runtime context envelope 兼容的正确定性上限）。T10 可从实际 qualified runtime/model 配置与实测投影序列化行为推导 safe defaults；有效参数必须显式记录、可复现、执行前验证、纳入 hierarchy manifest、直接或间接纳入 node inputHash、变化时使 stale 节点失效。若 runtime input/context budget 无法可靠建立 → **FAIL CLOSED: `hierarchy_runtime_budget_unknown`**（不猜测）。
 
-- **group 输入顺序**：canonical chunk 顺序（chunk.mjs 已按 manifest.inputs 确定性顺序分块；chunkIds 稳定）。同输入同参数 → 同 group 身份。
-- **分组规则**：按节点序列顺序**顺序分批**（不重排、不聚类——聚类含 LLM 或非平凡相似度，违反确定性优先）；批内满足：
-  - `children ≤ MAX_CHILDREN`（reviewed parameter，建议 8-16，Phase B 定值）；且
-  - `serialized(children) ≤ LEVEL_BYTES_LIMIT`（组合 count+size 上限，防单组超上下文）。
-- **禁止**：LLM 选择 source 归属 / 节点去留 / 子节点省略；任何分组逻辑都不得包含非确定性输入（时间戳、随机、LLM 输出）。
-- **不变量**：`same canonical inputs + same reviewed parameters = same group identities`（跨运行逐字节可复现）。
+## 5. Deterministic Grouping Contract（controller-owned，LLM 零裁决权，APPROVED）
 
-## 6. Intermediate Node Identity / Hash Contract
+- **group 输入顺序**：canonical chunk/节点顺序（chunk.mjs 已按 manifest.inputs 确定性顺序分块；chunkIds 稳定）。同输入同顺序同参数 → 同 group 身份。
+- **批准分组算法（APPROVED）**：
+  1. 取已验证子节点，按 canonical 确定性顺序排列；
+  2. **left-to-right greedy packing**：仅当 **同时满足** `childCount <= MAX_CHILDREN_PER_NODE` 且 `projected serialized input size <= MAX_PROJECTED_INPUT_BUDGET` 时才加入下一个子节点；
+  3. 加入下一个子节点将违反任一约束 → **关闭当前组，开启下一组**；
+  4. 每个完成的非终止组必须**至少含 2 个子节点**（无 single-child 组）。
+- **禁止**：LLM 选择 source 归属 / 节点去留 / 子节点省略；任何分组逻辑不得包含非确定性输入（时间戳、随机、LLM 输出）。
+- **不变量**：`same inputs + same ordering + same parameters + same hierarchy contract version = same group identities`（跨运行逐字节可复现）。
 
-节点最小充分结构（决策包推荐，待 PO 批准）：
+## 6. Intermediate Node Identity / Hash Contract（APPROVED 概念）
+
+节点最小充分结构（语义 APPROVED；精确序列化可由 Phase B/T10 归一化，但语义不变）：
 
 ```json
 {
   "schemaVersion": 1,
+  "hierarchyContractVersion": 1,
   "level": 1,
   "nodeId": "level-1-node-0001",
   "nodeHash": "sha256(规范化 node 内容 + children hashes + 契约版本)",
@@ -131,8 +140,8 @@ limit 定义为 **reviewed product parameter**（非任意常数）：`LEVEL_INP
 }
 ```
 
-- `nodeHash` 输入（精确）：`nodeId | level | schemaVersion | children | childHashes | canonicalSourceIds | inputHash | runtime | claims | minorityViews | uncertainties` 的规范化 JSON 序列化 SHA-256。
-- 检测：**stale child**（childHashes 不匹配）→ **source membership 变化**（canonicalSourceIds 或 children 集合变化 → children/hash 变化）→ **child 顺序变化**（children 有序数组，顺序进 hash）→ **聚合契约/版本变化**（schemaVersion / 契约版本进 hash）。
+- `nodeHash` 输入（精确）：`nodeId | level | schemaVersion | hierarchyContractVersion | children | childHashes | canonicalSourceIds | inputHash | runtime | claims | minorityViews | uncertainties` 的规范化 JSON 序列化 SHA-256。
+- node identity/hash **必须至少检测**：changed child content/hash / changed child membership / changed ordering（order 规范处）/ changed grouping parameters（有效 profile 参数变化） / changed hierarchy contract version / changed projection/controller/runtime semantic identity（相关处）。
 - 顶层节点（level=0 等价物）即现有 `map-chunk-*.json`（已带 chunkHash）；level ≥ 1 为新增合成节点。
 
 ## 7. Canonical Lineage Contract（T9 最重要决策）
@@ -175,12 +184,13 @@ malformed node / duplicate node（同 nodeId 出现两次）/ missing child（ch
 - **每层强校验递归不变量**：`union(children source sets) == parent canonical source set`（集合相等，非仅包含）——任一节点违反即失败。
 - 顶层（final）`union(final level nodes) == manifest source set` 成立后，才允许报告 `mode=digest` + full coverage。
 
-## 11. Resume / Stale Semantics
+## 11. Resume / Stale Semantics（APPROVED，stale 传播方向修正）
 
-- **resume**：每节点独立文件 + 原子写（tmp+rename）；level manifest 记录 `{level, nodeIds, inputHashes, contractVersion, runtime}`；节点 `inputHash` 允许仅 hash 匹配时复用。
-- **复用条件**：`inputHash + childHashes + schemaVersion + contractVersion + runtime` 全部匹配才复用；**「文件存在」不是有效缓存判据**。
-- **部分层级中断**：中断于层级中间 → 只重新生成缺失/失效节点（`stale` 后代重算）；顶层 final reduce **不得**在整个 required level 验证通过前执行。
-- **stale 定义（精确失效条件）**：canonical input 变化（inputHash）/ child 节点变化（childHashes）/ grouping 参数变化（契约版本）/ schema version 变化 / hierarchy contract 变化 / runtime identity 变化（若语义需要）/ controller/projection contract 变化（若相关）。nodeHash 输入集即上述的机械编码（§6）。
+- **resume**：每节点独立文件 + 原子写（tmp+rename）；level manifest 记录 `{level, nodeIds, inputHashes, schemaVersion, hierarchyContractVersion, effectiveGroupingParams, runtime}`；节点 `inputHash` 允许仅 hash 匹配时复用。
+- **复用条件（全部匹配才复用）**：`inputHash + childHashes + schemaVersion + hierarchyContractVersion + effective grouping parameters + required runtime/projection identity`；**「文件存在」不是有效缓存判据（FILE EXISTS != VALID CACHE）**。
+- **stale 传播方向（修正 Phase A 措辞）**：若某 child/input 节点变化 → **使从该节点到 root 路径上的每个依赖 ANCESTOR 失效**（向上传播）；**未变化的 sibling 子树在其完整 identity/hash 契约仍验证通过时可复用**。示例：changed L1-A → 其 L2 parent stale → 该 parent 的 L3 parent stale → root stale；但无关的 L2 sibling 子树保持可复用。
+- **部分层级中断**：中断于层级中间 → 重跑只生成缺失/失效节点（按 §6 hash 判定）；顶层 final reduce **不得**在整个 required level 验证通过前执行。
+- **stale 定义（精确失效条件）**：canonical input 变化（inputHash）/ child 节点变化（childHashes）/ grouping 参数变化（effective params 进契约）/ schema version 变化 / hierarchy contract version 变化 / runtime identity 变化（若语义需要）/ projection/controller contract 变化（若相关）。nodeHash 输入集即上述的机械编码（§6）。
 
 ## 12. Capability Isolation Interaction（继承 T6，不新增 runtime）
 
@@ -195,17 +205,25 @@ malformed node / duplicate node（同 nodeId 出现两次）/ missing child（ch
 - T9 定义产品合同**不假装 1.7B 足以支撑 538-answer 生产合成**；L2 合成节点数量级更小（组级），质量压力低于单次全量顶层。
 - 若需要 model-routing 灵活性：specify runtime/model 边界，**不硬编码 vendor/model**（除非技术要求）；任何 model 仍须经 approved capability-isolated runtime。
 
-## 14. Final Output Compatibility
+## 14. Final Output Compatibility（APPROVED with clarification）
 
-- **强推荐**：hierarchy 是 **internal execution structure**；最终 public/canonical `final.json` / `digest.md` 保持现有 digest 消费合同（claims + evidenceSourceIds + minorityViews/uncertainties + `mode="digest"`）不变——既有消费者零改动。
-- 新增可选 provenance/metrics 字段（如 `hierarchyLevels`、`l2NodeCount`、`nodeHashes`）：分类为 **additive**（默认不进 final.json，或经 PO 批准后作为 additive optional）；**不引入 schema migration**；任何 final.json 结构变更须 PO 批准。
+- **APPROVED**：既有 flat digest 实现行为**保持不变**；public/canonical digest 消费身份对 flat 与 hierarchical 均为 `mode="digest"`；既有 public digest schema/consumer contract 保持兼容。
+- **「Preserved」定义（批准澄清）**：① 旧 flat 路径原样保留；② 既有调用方有效；③ 既有 public digest 字段语义保留；④ hierarchy **不静默重定义** digest 的 coverage/evidence 行为。**不要求** hierarchical 语义输出与 flat 模型合成结果 byte-for-byte 相同。
+- **internal hierarchy artifacts**（node 文件 / level manifests / hashes / lineage / execution metrics）为内部结构，**不要求**成为 public final.json 合同字段；任何新 public final.json 字段须在实现前做 **explicit additive compatibility 分类**（additive/required/breaking）。
 - 顶层撰写输入从「全部 reduce-input」变为「顶层节点 claims + 披露/provenance」，输出仍写入同一 final.json schema。
 
-## 15. Relation to Top-percent（identity 严格分离）
+## 15. Relation to Top-percent（identity 严格分离，APPROVED）
 
 - `top-percent-analysis != digest`；hierarchical digest 是 **100% full coverage digest 的实现策略**。
 - hierarchy **不得**继承 requestedPercent / selected-subset / sampled identity；不触碰 T8 代码与行为（T9 不改 T8，T10 也不得改 T8——除非未来 ticket 显式创建共享原语）。
 - `mode` 判定：hierarchy 路径产出 `mode="digest"`（与 flat 相同）；top-percent 路径恒 `mode="top-percent-analysis"`。
+
+## 15.5 Failure Semantics（APPROVED）
+
+- **无静默 fallback**：hierarchical full digest 不得静默降级为 sampled / partial hierarchy / missing-node hierarchy / unverified summaries / best-effort full digest。
+- **若 hierarchy 被显式请求且无法满足其合同 → FAIL CLOSED**；**不得**静默切到 flat 只为产出答案。
+- caller 可在 hierarchy 失败后**显式单独重试 flat digest**（flat 是独立保留路径）。
+- 关键 failure 状态码（Phase B 归一化）：`hierarchy_input_too_large`（合法 ≥2 子组无法装进 envelope）、`hierarchy_runtime_budget_unknown`（runtime budget 无法可靠建立）。
 
 ## 16. T10 Acceptance Test Contract（实现前定义，Phase B 批准后写入 T10）
 
@@ -217,7 +235,7 @@ malformed node / duplicate node（同 nodeId 出现两次）/ missing child（ch
 4. **缺失子节点 fail**：任一子节点缺失 → 父合成 fail closed，无部分输出。
 5. **多余子节点 fail**：未声明子节点出现 → fail。
 6. **子节点 hash 破坏 fail**：篡改子节点 → childHashes 不匹配 → fail。
-7. **stale 节点失效/重生成**：canonical input 变化 → 受影响节点 inputHash 变 → 只重算失效后代。
+7. **stale 节点失效/重生成（向上传播）**：canonical input 变化 → 该节点到 root 路径上的每个依赖祖先失效（inputHash/childHashes 变），无关 sibling 子树保持可复用。
 8. **lineage 越界 fail**：claim.evidenceSourceIds ∉ 本节点 union → fail。
 9. **最终 claim 追溯**：final claims 的每个 evidenceSourceId ∈ manifest set。
 10. **中断恢复**：层级中间中断 → 重跑只补缺失/失效节点。
@@ -233,114 +251,147 @@ malformed node / duplicate node（同 nodeId 出现两次）/ missing child（ch
 
 | # | 风险 | 缓解 |
 |---|---|---|
-| R1 | 分组上限参数（MAX_CHILDREN / LEVEL_BYTES_LIMIT）需具体数值 | Phase B 以模型上下文预算（LM Studio 本地上下文 + 投影开销）推导并 PO 批准；T9 只锁机制 |
+| R1 | 分组上限参数（MAX_CHILDREN_PER_NODE / MAX_PROJECTED_INPUT_BUDGET）具体数值 | **APPROVED 澄清**：数值是 reviewed **runtime/execution profile parameters**（非 product semantics）；T10 从实际 qualified runtime/model 配置与实测投影序列化推导 safe defaults；约束为 MAX_CHILDREN_PER_NODE ≥ 2 整数、MAX_PROJECTED_INPUT_BUDGET 与 approved runtime context envelope 兼容；有效参数必须显式记录/可复现/执行前验证/进 manifest/进 inputHash/变化时失效 |
 | R2 | L2 合成质量（1.7B 对组级聚合的忠实度）未知 | §13：不假装质量；T10/T11 dogfood 用真实语料评估；T10 验收含 500-source 规模测试 |
 | R3 | 递归覆盖不变量在超大语料下的验证成本 | 每层 union 由 controller 确定性计算（O(children)），非模型生成；验证与合成同阶 |
 | R4 | hierarchy 内部结构复杂度 | OPTION A（additive）隔离；flat 路径零改动；hierarchy 仅显式启用 |
-| R5 | final.json 兼容性漂移 | §14：hierarchy 为 internal；final.json 消费合同不变；additive 字段需 PO 批准 |
+| R5 | final.json 兼容性漂移 | §14：hierarchy 为 internal；flat 行为/消费合同不变；新 public 字段需 additive 分类 + PO 批准 |
 | R6 | 无 token 计量 → 成本仅 ESTIMATED | T11 加真实计量校准（与 T7 R3 一致） |
 | R7 | real 538 corpus 不在仓库 → 绝对数值为合成测量 | T10 验收时用真实 538 复测；结构性结论不受影响 |
+| R8 | runtime context budget 无法可靠建立 | FAIL CLOSED: `hierarchy_runtime_budget_unknown`（不猜测） |
 
-## 17.5 决策包速览（STOP format，供 product-owner 快速裁决）
+## 17.5 决策包速览（STOP format — 已批准版本，含 MODIFY 修正）
 
 ```text
 RECOMMENDED_ARCHITECTURE:
   OPTION A — additive hierarchical full-digest path；flat digest 行为不变；
-  hierarchy 为 internal execution structure（显式启用，如 --hierarchy）
+  hierarchy 为 internal execution structure（显式启用，如 --hierarchy）；
+  V0.3 不自动路由大任务进 hierarchy（OPTION B 仅在 T11 50/200/500 dogfood 出证据后重估）
 
-HIERARCHY_DEPTH_POLICY:
-  ADAPTIVE（TWO-LEVEL 为最小实例）—— while level_input 超限（节点数 / 字节 /
-  token 信封超 reviewed limit）: deterministic group → validate → synthesize next level；
-  深度由确定性输入规模推导，非硬编码；循环因节点数单调递减必然收敛
+HIERARCHY_DEPTH_POLICY（APPROVED 强化）:
+  ADAPTIVE —— while currentLevel.nodeCount > 1 AND 超限: deterministic group → validate
+  → synthesize next level；if nodeCount == 1: terminate；每个非终止聚合节点
+  2 <= childCount <= MAX_CHILDREN_PER_NODE（禁止 single-child）；nextLevel.nodeCount
+  < currentLevel.nodeCount（严格递减）；合法 ≥2 子组无法装进 envelope → FAIL CLOSED
+  hierarchy_input_too_large
 
-GROUPING_POLICY:
-  controller-owned 顺序分批（canonical chunk 顺序）；MAX_CHILDREN + LEVEL_BYTES_LIMIT
-  （reviewed parameters）；LLM 无权决定分组/去留/省略；同输入同参数 → 同 group 身份
+GROUPING_POLICY（APPROVED）:
+  controller-owned left-to-right greedy packing（canonical 顺序）；加入下一子节点仅当
+  childCount <= MAX_CHILDREN_PER_NODE AND projected serialized input <=
+  MAX_PROJECTED_INPUT_BUDGET；违反任一约束 → 关组开新组；每个非终止组 ≥2 子节点；
+  LLM 零分组裁决权；同 inputs+ordering+parameters+contract version → 同 group 身份
 
-INTERMEDIATE_NODE_IDENTITY:
-  { schemaVersion, level, nodeId, nodeHash, children, childHashes, canonicalSourceIds,
-    inputHash, runtime, claims, minorityViews, uncertainties }；nodeHash 输入含
-  childHashes + canonicalSourceIds + 契约版本 → 检测 stale/membership/order/version
+INTERMEDIATE_NODE_IDENTITY（APPROVED 概念）:
+  { schemaVersion, hierarchyContractVersion, level, nodeId, nodeHash, children,
+    childHashes, canonicalSourceIds, inputHash, runtime, claims, minorityViews,
+    uncertainties }；nodeHash 输入含 childHashes + canonicalSourceIds + 契约版本 +
+  有效分组参数 → 检测 stale/membership/order/grouping/version/runtime 变化
 
-LINEAGE_POLICY:
-  OPTION C（hybrid）—— child refs + controller 确定性 materialized canonical source union；
-  claim.evidenceSourceIds ⊆ 本节点 union；summary 文本不是权威证据；
+LINEAGE_POLICY（APPROVED）:
+  HYBRID —— child refs + controller 确定性 materialized canonical source union；
+  node.canonicalSourceIds == union(children.canonicalSourceIds)（LLM 不得发明/修改）；
+  COVERAGE（node.canonicalSourceIds）≠ CLAIM EVIDENCE（claim.evidenceSourceIds ⊆
+  被消费子 claims 的 validated evidence union）；summary 不是权威证据；
   canonical source IDs 恒为 evidence root（R10）
 
-VALIDATION_POLICY:
+VALIDATION_POLICY（APPROVED）:
   每层 fail-closed（malformed/duplicate/missing/unexpected child、child/node hash
-  mismatch、lineage escape、coverage miss、stale、unsupported schema/runtime、
-  invalid evidence、interrupted level）；无上层模型调用可在无效下层证据上继续
+  mismatch、lineage escape、coverage miss、stale、unsupported schema/contract
+  version/runtime、invalid evidence、interrupted level）；无上层模型调用可在无效
+  下层证据上继续
 
-RESUME_STALE_POLICY:
-  节点独立文件 + 原子写 + level manifest + inputHash；inputHash+childHashes+schemaVersion+
-  contractVersion+runtime 全匹配才复用（文件存在 ≠ 有效缓存）；stale 只重算失效后代；
-  顶层 final 需整个 required level 验证通过
+RESUME_STALE_POLICY（APPROVED，传播方向修正）:
+  节点独立文件 + 原子写 + level manifest + inputHash；inputHash+childHashes+
+  schemaVersion+hierarchyContractVersion+effective grouping params+runtime 全匹配
+  才复用（FILE EXISTS != VALID CACHE）；child/input 变化 → 向上使路径上所有依赖祖先
+  失效（无关 sibling 子树保持可复用）；顶层 final 需整个 required level 验证通过
 
-FINAL_OUTPUT_COMPATIBILITY:
-  final.json / digest.md 消费合同不变（mode="digest" + claims + evidenceSourceIds +
-  minorityViews/uncertainties）；hierarchy 为 internal；provenance/metrics 字段 additive，
-  需 PO 批准；无 schema migration
+FINAL_OUTPUT_COMPATIBILITY（APPROVED with clarification）:
+  flat digest 行为不变；public/canonical 消费身份 mode="digest"（flat 与 hierarchical 一致）；
+  既有 public digest schema/consumer contract 兼容；「Preserved」= 行为+消费合同稳定，
+  非 byte-identical 模型输出；internal hierarchy artifacts 不进 public final.json；
+  新 public 字段需 additive 分类 + PO 批准；无 schema migration
 
-EXISTING_FLAT_DIGEST: PRESERVED（默认 flat；hierarchy 显式启用）
+EXISTING_FLAT_DIGEST: PRESERVED（默认 flat；hierarchy 显式启用；无静默 fallback）
 
-BREAKING_CHANGE: NO（推荐包；flat digest 行为/输出逐字节不变）
+BREAKING_CHANGE: NO（批准包；flat 行为/消费合同不变）
 
-SCHEMA_VERSION_CHANGE: NO（推荐包；共享 handoff schema / final.json 消费合同不变；
-  若未来加 additive provenance 字段，属 additive 扩展，仍非 migration）
+SCHEMA_VERSION_CHANGE: NO（批准包；共享 handoff schema / final.json 消费合同不变）
 
 EXPECTED_COST_CONTEXT_EFFECT:
   DERIVED（结构性）：顶层撰写输入从「全部 reduce-input」（538: ~135K chars）降为
-  「顶层节点 claims + 披露」（组级聚合，量级 O(顶层节点)）；L1 调用数不变（= 非空来源数）；
-  ESTIMATED：顶层 token 压力随层数收敛，组级聚合节点数 ≈ ceil(L1/MAX_CHILDREN)^depth；
-  UNKNOWN：真实 token/时延/货币（无计量，T11 校准）
+  「顶层节点 claims + 披露」；L1 调用数不变（= 非空来源数）；
+  ESTIMATED：顶层 token 压力随层数收敛；UNKNOWN：真实 token/时延/货币（T11 校准）
 
 ALTERNATIVES_REJECTED:
-  OPTION B（自动路由大任务进 hierarchy）—— REJECT（本阶段）：需已批准规模阈值，
-    隐性行为切换审计难；可作未来 additive product parameter
-  OPTION C（所有 digest 任务换 hierarchy）—— REJECT：V0.2/V2 兼容与迁移风险高，
-    语义身份/恢复/验证链全变动
-  FLAT（不引入 hierarchy）—— REJECT（作为目标）：538 顶层 ~135K chars / ~52-95K token
-    超出常见本地模型单次上下文预算（§2.2 实测）
-  MULTI-LEVEL 固定深度 —— REJECT：深度随规模硬编码不必要；ADAPTIVE 自动收敛
-  Lineage A（每 claim 直接存 canonical ids）—— REJECT：文件体积与重复开销大
-  Lineage B（仅 child 引用 + 递归解析）—— REJECT：每层递归验证成本高、traceback 复杂
+  OPTION B（自动路由）—— REJECT（V0.3）：需已批准阈值，隐性行为切换；T11 dogfood 后重估
+  OPTION C（全部任务换 hierarchy）—— REJECT：V0.2/V2 兼容与迁移风险高
+  FLAT（不引入 hierarchy）—— REJECT（作为目标）：538 顶层 ~135K chars 超出本地上下文（实测）
+  固定 two-level/three-level —— REJECT：深度硬编码不必要；ADAPTIVE 严格收敛
+  single-child 聚合节点 —— REJECT：无收敛意义，禁止
+  Lineage A（每 claim 直接存 canonical ids）—— REJECT：体积/重复开销大
+  Lineage B（仅 child 引用递归解析）—— REJECT：验证成本高、traceback 复杂
 
 UNRESOLVED_RISKS:
-  R1 MAX_CHILDREN / LEVEL_BYTES_LIMIT 数值 → Phase B 按 LM Studio 上下文预算推导并 PO 批准
+  R1 有效 profile 参数数值 → T10 从 qualified runtime 推导 safe defaults（约束见 §5/§17 R1）
   R2 L2 合成质量（1.7B 组级聚合忠实度）→ T10/T11 dogfood 真实语料评估，不假装质量
   R3 递归覆盖不变量验证成本 → union 由 controller 计算（O(children)），与合成同阶
   R4 hierarchy 内部复杂度 → OPTION A additive 隔离，flat 零改动
-  R5 final.json 兼容漂移 → §14 消费合同不变 + additive 字段另批
+  R5 final.json 兼容漂移 → §14 消费合同不变 + additive 分类另批
   R6 无 token 计量 → T11 加计量校准
   R7 real 538 corpus 不在仓库 → T10 用真实 538 复测；绝对数值为合成测量
+  R8 runtime budget 无法可靠建立 → FAIL CLOSED hierarchy_runtime_budget_unknown
 
 WHY_THIS_PACKAGE:
-  1. 最小爆炸半径：flat digest 行为/输出/测试逐字节不变（OPTION A + PRESERVED）；
-  2. 精确打击压力点：顶层撰写输入从 ~135K chars 收敛到组级聚合（实测定位，非猜测）；
-  3. 完全确定性：分组/节点身份/lineage union 全由 controller 决定，LLM 零裁决权；
+  1. 最小爆炸半径：flat digest 行为/消费合同/测试不变（OPTION A + PRESERVED）；
+  2. 精确打击实测压力点（顶层 reduce-input 线性增长），非猜测；
+  3. 完全确定性：分组/节点身份/lineage union 全 controller-owned，LLM 零裁决权；
   4. 机械可验证：递归覆盖不变量 + nodeHash/childHashes/inputHash 全链 hash；
   5. 安全继承 T6：只 lmstudio-local-tool-less，投影/控制器边界不弱化；
   6. 身份严格隔离：hierarchy 产出 mode="digest"（full），top-percent 不受影响；
-  7. 不硬编码阈值：LIMIT 为 reviewed product parameters，Phase B 批准定值。
+  7. 不硬编码任意阈值：LIMIT 为 reviewed runtime/execution profile parameters，
+     T10 从 qualified runtime 推导 safe defaults（约束见 §5）。
 ```
 
-## 18. PRODUCT_OWNER_DECISION_REQUIRED
-
-请对下列推荐包 APPROVE / MODIFY / REJECT（Phase B 将在批准后归一化 authority 文档；T10 仅在 T9 完整 merge 后开始）：
-
-- 架构 OPTION A（additive hierarchical path；flat digest 行为不变）
-- ADAPTIVE 深度策略（TWO-LEVEL 为最小实例；LIMIT 参数 Phase B 定值并批准）
-- 确定性顺序分批分组（MAX_CHILDREN + LEVEL_BYTES_LIMIT；LLM 无权分组）
-- 节点身份（nodeHash 输入集 §6）
-- Lineage OPTION C（hybrid：child refs + controller materialized union）
-- 父 claim 证据 ⊆ union(子 claims evidence)（§8）
-- 每层递归覆盖不变量（union(children) == parent）
-- resume/stale 语义（inputHash+childHashes+契约版本 全匹配才复用）
-- capability 仅 lmstudio-local-tool-less（不新增）
-- final.json/digest.md 消费合同不变；hierarchy 为 internal；additive 字段另批
-- T10 acceptance 17 项（§16）
+## 18. PRODUCT_OWNER_DECISION RECORD（2026-08-23）
 
 ```text
-PRODUCT_OWNER_DECISION_REQUIRED: APPROVE / MODIFY / REJECT
+DECISION: MODIFY + APPROVE AS MODIFIED（product-owner, 2026-08-23）
+修改项:
+  M1  架构 OPTION A 批准（additive explicit；V0.3 不自动路由大任务进 hierarchy；
+      自动路由仅在 T11 50/200/500 dogfood 出证据后重估）
+  M2  收敛不变量强化：if nodeCount==1: terminate；每个非终止聚合节点
+      2 <= childCount <= MAX_CHILDREN_PER_NODE；禁止 synthetic single-child；
+      nextLevel.nodeCount < currentLevel.nodeCount（严格递减）；
+      合法 ≥2 子组无法装进 envelope → FAIL CLOSED hierarchy_input_too_large
+  M3  分组算法明确：left-to-right greedy packing（childCount + projected size 双约束）
+  M4  LIMIT 数值降级：MAX_CHILDREN_PER_NODE / MAX_PROJECTED_INPUT_BUDGET 是 reviewed
+      runtime/execution profile parameters（非 product semantics）；T10 从 qualified
+      runtime 推导 safe defaults；有效参数必须显式记录/可复现/执行前验证/进 manifest/
+      进 inputHash/变化时失效；runtime budget 不可靠 → FAIL CLOSED hierarchy_runtime_budget_unknown
+  M5  节点身份 + hierarchyContractVersion；nodeHash 输入扩展（分组参数、契约版本等）
+  M6  Lineage 批准为 HYBRID；COVERAGE（node.canonicalSourceIds）≠ CLAIM EVIDENCE
+      （parent claim evidence ⊆ 被消费子 claims 的 validated evidence union）；
+      LLM 不得发明/修改 source union
+  M7  stale 传播方向修正：child/input 变化 → 向上使路径上所有依赖祖先失效；
+      无关 sibling 子树保持可复用（非「重算后代」）
+  M8  final-output 澄清：flat 行为/消费合同稳定（非 byte-identical 模型输出）；
+      internal hierarchy artifacts 不进 public final.json；新 public 字段需 additive 分类
+  M9  无静默 fallback：hierarchy 显式请求且无法满足合同 → FAIL CLOSED；
+      caller 可显式单独 retry flat
+批准未改项:
+  full-coverage 不变量（100% / final claim 追溯 / lineage 不切断）
+  每层递归覆盖不变量 union(children)==parent；L1 union == manifest set
+  validation fail-closed 清单；capability 仅 lmstudio-local-tool-less；
+  MODEL_QUALITY != RUNTIME_SECURITY；top-percent 隔离；T10 acceptance 17 项
+兼容性:  BREAKING_CHANGE = NO；SCHEMA_VERSION_CHANGE = NO（批准包）
 ```
+
+## 19. PHASE B 归一化范围（本分支执行）
+
+- 本决策文档（记录批准 + 修正被取代措辞）✅
+- V0.3 Spec §7.3 / §15-E / §16 OPEN-D4 / §17 T9-T10
+- Product Behavior Contract §3.18
+- project-memory（durable D4 合同，无 accepted 前不写——本分支仅记录已批准事实）
+- corpus reference/mode docs（仅在表达批准合同所必需时）
+- 不实现 T10 生产代码；不改 T8 行为；不改共享 handoff schema
