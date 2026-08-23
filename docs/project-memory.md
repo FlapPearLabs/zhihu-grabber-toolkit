@@ -134,11 +134,20 @@
     已重写为 DIAGNOSTIC_ONLY 断言。Issue #4 product-problem record 是否 close 取决于 T3 exact reviewed SHA
     PASS + ff-only merge + 行为满足 #4 acceptance（见 Issue #9 close 流程）。
   - **大型语料四层能力**：CURRENT IMPLEMENTED（popular-sample / full-coverage digest / archive）vs
-    APPROVED TARGET（top-percent sampled analysis / hierarchical full digest）。硬不变量 `SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST`；
+    APPROVED TARGET（top-percent sampled analysis / hierarchical full digest）。硬不变量 `SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST`
+    ——指 **pipeline identity 保持分离**（`mode` 恒为 `top-percent-analysis`，绝不因 X=100 静默变 `digest`；
+    `isFullCoverage` 是覆盖事实，非模式身份；仅 `mode=="digest"` 代表全量 digest 管线）；
     hierarchical full digest 必须保持 source coverage / evidence mapping / canonical source ID lineage。
-    top-percent 受 OPEN-D2 + OPEN-D6 约束，解决前不得 CODE。
+    **top-percent selection + identity 合同已由 T7 #13 批准（2026-08-23，decision record：
+    `docs/t7-top-percent-contract-decision.md`）**：`K=max(1,ceil(X/100×N))`、X∈[1,100] 整数（禁 0/小数/负/>100，
+    非法 → invalid_input）、strict count 取前 K（无 tie 扩展）、排序 `(voteupCount DESC, canonical decimal
+    answerId ASC)`（decimal 比较：先比数字位数再按位比，非 JS 字符串序/非 Number 转换）、mandatory --percent；
+    X=100 不路由 digest（identity 恒 sampled，`isFullCoverage` 按覆盖事实为 true）；披露结构
+    `totalAnswers/selectedAnswers/requestedPercent/actualCoveragePercent/selectionRule/selectedSourceIds/isFullCoverage`
+    + `mode="top-percent-analysis"`；selectionRule 机器表示 `top-<X>-pct-voteup-desc-answerid-dec-asc-strict`；
+    共享 handoff schema 不变（OPTION C，corpus 侧 selection.json scope + selectorHash）。T8 CODE 待 T7 完整 merge 后开始。
 - **V0.3 关键 gate（immediate）**：T3 countMismatch / T4+T5 Agent consumer & isolation feasibility /
-  T7 top-percent contract / T9 hierarchical digest contract。各 T 遵循 Spec gate，不无条件并行。
+  T7 top-percent contract（**已批准，2026-08-23**）/ T9 hierarchical digest contract。各 T 遵循 Spec gate，不无条件并行。
 - **DEFERRED（长期，未经批准不得开始）**：
   - browser-smoke 高级 matcher 硬化（provenance / 折叠形态 / link-card 归一化）
   - 研究流程自动化（research pipeline automation）：NEXT_STAGE，非当前 V0.3 范围

@@ -731,36 +731,49 @@ CURRENT IMPLEMENTED（真实已实现）:
      （chunk.mjs → map → verify.mjs → reduce.mjs，含 coverage / evidence gate / lineage）
   3. archive：corpus-anthology 既有机械拼接、零改写归档能力
 
-APPROVED_TARGET / CODE_PENDING（V0.3 新增能力，待 T7/T9/T10）:
-  4. top-percent-digest：按 canonical voteupCount 降序取前 X% 回答，完整正文生成 digest；
-     显式声明覆盖比例、不冒充全量（与 full-coverage digest 不同）
+APPROVED_TARGET / CODE_PENDING（合同已批准，CODE 待 T8）:
+  4. top-percent-digest —— **selection + identity 合同已由 T7 #13 批准（2026-08-23，
+     decision record：docs/t7-top-percent-contract-decision.md）**：
+     - selection：K = max(1, ceil(X/100 × N))；X ∈ [1,100] 整数（禁 0/小数/负/>100，非法 → invalid_input）；
+       strict count 取前 K（无 tie 扩展）；排序 (voteupCount DESC, canonical decimal answerId ASC)；
+       mandatory --percent（无默认）
+     - identity：corpus 侧模式（OPTION C），共享 handoff schema 不变、无新 task；
+       final.json mode="top-percent-analysis"；isFullCoverage 为覆盖事实（选中集==原集时 true，
+       X=100 正常输出 isFullCoverage=true 但 mode 恒为 top-percent-analysis）
+     - 披露：totalAnswers / selectedAnswers / requestedPercent / actualCoveragePercent /
+       selectionRule / selectedSourceIds / isFullCoverage；人类输出披露 7 项
+     - selectionRule 机器表示：top-<X>-pct-voteup-desc-answerid-dec-asc-strict
+     - CODE（T8）在 T7 完整 merge 后开始；当前不实现、不声称 top-percent 已可用
   5. hierarchical full digest：在保留 100% source coverage / evidence lineage 下
-     增加中间聚合层降本
+     增加中间聚合层降本（合同待 T9/T10）
 
 HARD INVARIANT:
   SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST
-  - top-percent sampled output 不得声明 task=digest / full coverage
+  - 指 pipeline identity 保持分离：mode 恒为 "top-percent-analysis"（绝不因 X=100 静默变 digest）；
+    isFullCoverage 是覆盖事实（coverage metadata），不是模式身份；仅 mode=="digest" 代表全量 digest 管线
   - hierarchical full digest 必须保持 source coverage / evidence mapping /
     canonical source ID lineage（R10 lineage 不变量写死）
 
-OPEN DECISIONS（仍 OPEN，T0 不擅自解决）:
-  - OPEN-D2（top-percent 8 项 selection 合同：取整 / minimum / 范围 / 同赞边界 /
-    tie-break / X=100 / 默认 X / output 字段）
-  - OPEN-D6（top-percent vs V2 canonical full-coverage digest 合同冲突 / mode identity /
-    是否新增 handoff task / schema version）
+RESOLVED DECISIONS:
+  - OPEN-D2（top-percent 8 项 selection 合同）—— RESOLVED by T7 #13（2026-08-23）
+  - OPEN-D6（mode / pipeline identity）—— RESOLVED by T7 #13（OPTION C：共享 handoff schema 不变；
+    corpus 侧 selection.json scope；final.json mode 身份 + isFullCoverage 覆盖事实 + 披露块）
+
+STILL OPEN:
   - OPEN-D4（hierarchical intermediate evidence lineage 具体结构，T9）
-  - 上述未批准前，不得把具体百分比 / 字段 / 新 handoff task / schema version 写死
 
 RATIONALE:
   在【不削弱】V2 coverage / evidence gate 前提下为不同规模与分析目的提供分层能力；
-  sampled 与 full coverage 语义必须严格区分，不冒充全量。
+  sampled 与 full coverage 语义必须严格区分（pipeline identity 分离），
+  但覆盖事实（isFullCoverage）必须如实，不被模式身份掩盖。
 
 AUTHORITY / EVIDENCE:
   corpus-anthology/scripts/{popular-sample,verify,reduce,chunk}.mjs
-  V0.3 Spec §7（大型语料四层）、§16 OPEN-D2/D4/D6、§17 T7/T9/T10
+  V0.3 Spec §7（大型语料四层）、§16 OPEN-D2/D4/D6、§17 T7/T8/T9/T10
+  docs/t7-top-percent-contract-decision.md（T7 批准合同记录）
 
-IMPLEMENTATION_IMPACT: CONDITIONAL_FUTURE_TICKET（T7/T9/T10 经对应 OPEN 决策批准后才开 CODE 票；
-  当前不实现、不声称 top-percent / hierarchical 新行为已可用）
+IMPLEMENTATION_IMPACT: top-percent = CODE_PENDING（T8，合同已批准）；hierarchical = CONDITIONAL_FUTURE_TICKET（T9/T10）；
+  当前不实现、不声称 top-percent / hierarchical 新行为已可用。
 ```
 
 ---
@@ -788,10 +801,11 @@ RESOLVED_IN_MASTER:             3 项 —— 3.3（B-1 CROSS_VOLUME_MACHINE_PATH
                                 7c4e5ca69aec885a2d093b09f536235dc44819cf 已 independent
                                 CODE review PASS 并 ff-only merge；已纳入 CURRENT_BEHAVIOR。见 §3.16 更新）
 PENDING_V0_3_CODE_TICKETS:      2 项（均为 V0.3 决策归一化，CODE PENDING，非当前行为）——
-                                3.17 Agent projection / capability isolation
-                                     （PENDING T4/T5，runtime-scoped feasibility）
-                                3.18 Large corpus four-layer（PENDING T7/T9/T10，
-                                     sampled != full coverage，OPEN-D2/D4/D6）
+                                3.18 Large corpus four-layer
+                                    - top-percent-digest：合同已由 T7 #13 批准（2026-08-23，
+                                      decision record：docs/t7-top-percent-contract-decision.md），
+                                      CODE PENDING T8
+                                    - hierarchical full digest：PENDING T9/T10（OPEN-D4）
                                 （注：§3.1 输入严格化、§3.7 剥离 server message 等
                                 "未来可能的行为变化"一律走：
                                 未来产品需求 → 本合同 amendment → 独立 DOCUMENT
@@ -803,8 +817,12 @@ PENDING_V0_3_CODE_TICKETS:      2 项（均为 V0.3 决策归一化，CODE PENDI
 （ffd41ca），属 RESOLVED_IN_MASTER、IMPLEMENTATION_IMPACT: NONE**，不再作为
 FUTURE_CODE_TICKET_REQUIRED；**3.15 Search Answer Count 已由 T2 实现并纳入 CURRENT_BEHAVIOR**。
 **3.16 countMismatch severity 已由 T3 independent CODE review PASS 并 ff-only merge，
-归入 RESOLVED_IN_MASTER / CURRENT_BEHAVIOR**。V0.3 的 PENDING_V0_3_CODE_TICKETS 仅为 §3.17–§3.18，均为
-**已批准产品目标的 CODE 待办**，当前代码行为仍是各自 CURRENT_BEHAVIOR，未在 master 生效。T-2（batch 回归测试）已按
+归入 RESOLVED_IN_MASTER / CURRENT_BEHAVIOR**。**3.17 Agent projection / capability isolation
+已由 T5-LM #26（lmstudio-local-tool-less YES）+ T6 #12（per-source map CODE）merge 纳入
+RESOLVED_IN_MASTER（仅该 runtime）；其余 runtime NO/UNKNOWN 保持 fail-closed**。
+V0.3 的 PENDING_V0_3_CODE_TICKETS 现仅为 §3.18：top-percent-digest（合同已批准，CODE 待 T8）
+与 hierarchical full digest（待 T9/T10）。当前代码行为仍是各自 CURRENT_BEHAVIOR，未在 master
+生效的仅为未实现部分（top-percent / hierarchical 不声称已可用）。T-2（batch 回归测试）已按
 §3.1-§3.14 边界推进；不因本合同产生投机功能。
 
 ---
