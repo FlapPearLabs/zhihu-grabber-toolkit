@@ -142,7 +142,7 @@ controller process as `OPENAI_API_KEY`.
 ### 4.1 New-base execution record (2026-08-23)
 
 The following commands were run against this candidate based on
-`f9f6813c24e5997407b7ff3c8499b32f3b10d66c`:
+`c9ff7b045737c2eddd4a5799702d720ade844a6d`:
 
 | Command | Result |
 | --- | --- |
@@ -152,7 +152,7 @@ The following commands were run against this candidate based on
 | `node scripts/qualify-openai-responses-runtime.mjs` | FAIL-CLOSED — exit 1; fixed public `valid: false` / `errorCategory: capability_isolation_unavailable`; no controller credential was available |
 
 For the required unrelated-product regression comparison, the identical
-`npm test` suite was run in a clean `f9f6813c24e5997407b7ff3c8499b32f3b10d66c`
+`npm test` suite was run in a clean `c9ff7b045737c2eddd4a5799702d720ade844a6d`
 worktree and in this candidate. Both exited 0 with exactly 507 tests: 507
 pass, 0 fail, and 0 skipped.
 
