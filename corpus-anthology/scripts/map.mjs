@@ -218,8 +218,14 @@ async function main() {
   const chunksDir = path.join(workDir, 'chunks');
   const mapsDir = path.join(workDir, 'map-results');
   const hierarchy = has('--hierarchy');
+  const runtimeId = arg('--runtime', 'lmstudio-local-tool-less');
   // T11-R2：additive 运行时路由（默认 lmstudio-local-tool-less；deepseek-api-tool-less 需凭据已配置）
-  const runMap = resolveMapRuntime(arg('--runtime', 'lmstudio-local-tool-less'));
+  const runMap = resolveMapRuntime(runtimeId);
+  // §10 用量证据（deepseek 运行时）：非敏感 token/时长收集
+  const usageSink = runtimeId === 'deepseek-api-tool-less' ? [] : null;
+  const runWithUsage = usageSink
+    ? (opts) => runMap({ ...opts, usageSink })
+    : runMap;
   // profile 参数：未显式提供时使用引擎 safe defaults（flat 模式不得因缺省参数失败）
   const maxChildrenArg = arg('--max-children', undefined);
   const maxProjArg = arg('--max-projected-bytes', undefined);
@@ -256,7 +262,7 @@ async function main() {
         continue;
       }
     }
-    const map = await runChunkMap(chunk, { run: runMap });
+    const map = await runChunkMap(chunk, { run: runWithUsage });
     const tmp = `${mapFile}.${process.pid}.tmp`;
     fs.writeFileSync(tmp, JSON.stringify(map, null, 2), 'utf8');
     fs.renameSync(tmp, mapFile);
@@ -283,9 +289,28 @@ async function main() {
       }
     }
     const hierarchyDir = path.join(workDir, 'hierarchy');
-    const { manifest } = await buildHierarchy(l1Nodes, params, hierarchyDir, runMap);
+    const { manifest } = await buildHierarchy(l1Nodes, params, hierarchyDir, runWithUsage);
     console.log(`hierarchy 完成：L1=${manifest.l1Count}，聚合层=${manifest.levels.join('/') || '(无，flat 等价)'}，顶层节点=${manifest.topNodeIds.length}`);
     console.log(`hierarchy manifest: ${displayPath(path.join(hierarchyDir, 'manifest.json'))}`);
+  }
+
+  // §10 用量证据（deepseek 运行时；非敏感，仅 token/时长/模型/调用数）
+  if (usageSink && usageSink.length > 0) {
+    const rollup = {
+      schemaVersion: 1,
+      runtimeId,
+      calls: usageSink.length,
+      promptTokens: usageSink.reduce((a, c) => a + (c.promptTokens ?? 0), 0),
+      completionTokens: usageSink.reduce((a, c) => a + (c.completionTokens ?? 0), 0),
+      totalTokens: usageSink.reduce((a, c) => a + (c.totalTokens ?? 0), 0),
+      wallMs: usageSink.reduce((a, c) => a + (c.ms ?? 0), 0),
+      perCall: usageSink,
+    };
+    const usageFile = path.join(workDir, 'deepseek-usage.json');
+    const tmp = `${usageFile}.${process.pid}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(rollup, null, 2), 'utf8');
+    fs.renameSync(tmp, usageFile);
+    console.log(`deepseek usage: calls=${rollup.calls} prompt=${rollup.promptTokens} completion=${rollup.completionTokens} total=${rollup.totalTokens} tokens, wall=${Math.round(rollup.wallMs / 1000)}s`);
   }
 }
 

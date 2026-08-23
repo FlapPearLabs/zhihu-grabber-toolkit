@@ -179,6 +179,7 @@ export async function runDeepSeekToolLessMap({
   fetchImpl = fetch,
   credential = null,
   timeoutMs = 120000,
+  usageSink = null,
 } = {}) {
   const cred = credential ?? resolveDeepSeekCredential();
   if (!cred || cred.usable !== true || typeof cred.key !== 'string' || cred.key.trim() === '') {
@@ -186,6 +187,7 @@ export async function runDeepSeekToolLessMap({
   }
   const request = buildDeepSeekChatRequest({ projection, runtime });
   if (typeof fetchImpl !== 'function') fail('controller has no HTTP transport');
+  const startedAt = Date.now();
   let response;
   try {
     response = await fetchImpl(runtime.endpoint, {
@@ -214,5 +216,16 @@ export async function runDeepSeekToolLessMap({
   } catch {
     fail('deepseek returned non-JSON data');
   }
-  return validateDeepSeekResponse(payload, { runtime });
+  const result = validateDeepSeekResponse(payload, { runtime });
+  // §10 非敏感用量证据（API 返回 usage 时收集；不改返回契约）
+  if (usageSink && Array.isArray(usageSink) && payload && typeof payload.usage === 'object' && payload.usage !== null) {
+    usageSink.push({
+      model: payload.model ?? runtime.model,
+      promptTokens: payload.usage.prompt_tokens ?? null,
+      completionTokens: payload.usage.completion_tokens ?? null,
+      totalTokens: payload.usage.total_tokens ?? null,
+      ms: Date.now() - startedAt,
+    });
+  }
+  return result;
 }
