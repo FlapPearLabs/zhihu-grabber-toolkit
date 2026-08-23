@@ -5,7 +5,7 @@
 ```text
 TICKET: #24 / T5-C
 TYPE: DISCOVERY / SECURITY EVIDENCE
-BASE: c9ff7b045737c2eddd4a5799702d720ade844a6d
+BASE: 7f7eb0ab3060088f9ba18b184783e73ab6c6e8b4
 RUNTIME_ID: codex-chatgpt-login-tool-less
 PROVIDER / CLIENT: OpenAI Codex CLI
 AUTH_METHOD: ChatGPT login (supported non-secret client status)
