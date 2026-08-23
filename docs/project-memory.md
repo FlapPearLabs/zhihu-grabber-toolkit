@@ -133,8 +133,9 @@
     `test/count-mismatch-diagnostic.test.js`（R2-5 六项 contract assertions + 8 项回归）+ 既有 `test/verify-output.test.js` P2-3
     已重写为 DIAGNOSTIC_ONLY 断言。Issue #4 product-problem record 是否 close 取决于 T3 exact reviewed SHA
     PASS + ff-only merge + 行为满足 #4 acceptance（见 Issue #9 close 流程）。
-  - **大型语料四层能力**：CURRENT IMPLEMENTED（popular-sample / full-coverage digest / archive）vs
-    APPROVED TARGET（top-percent sampled analysis / hierarchical full digest）。硬不变量 `SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST`
+  - **大型语料四层能力**：CURRENT IMPLEMENTED（popular-sample / full-coverage digest / archive /
+    **top-percent-analysis（T8 #14，2026-08-23 实现并合并）**）vs APPROVED TARGET（hierarchical full digest，
+    待 T9/T10）。硬不变量 `SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST`
     ——指 **pipeline identity 保持分离**（`mode` 恒为 `top-percent-analysis`，绝不因 X=100 静默变 `digest`；
     `isFullCoverage` 是覆盖事实，非模式身份；仅 `mode=="digest"` 代表全量 digest 管线）；
     hierarchical full digest 必须保持 source coverage / evidence mapping / canonical source ID lineage。
@@ -145,7 +146,11 @@
     X=100 不路由 digest（identity 恒 sampled，`isFullCoverage` 按覆盖事实为 true）；披露结构
     `totalAnswers/selectedAnswers/requestedPercent/actualCoveragePercent/selectionRule/selectedSourceIds/isFullCoverage`
     + `mode="top-percent-analysis"`；selectionRule 机器表示 `top-<X>-pct-voteup-desc-answerid-dec-asc-strict`；
-    共享 handoff schema 不变（OPTION C，corpus 侧 selection.json scope + selectorHash）。T8 CODE 待 T7 完整 merge 后开始。
+    共享 handoff schema 不变（OPTION C，corpus 侧 selection.json scope + selectorHash）。
+    **T8 #14 实现**（2026-08-23）：`lib/top-percent-selector.mjs`（确定性选择/validateSelection/selectorHash）、
+    `scripts/select.mjs`（→ selection.json）、chunk `--mode top-percent-analysis --selection`、verify selection-scope
+    门（selectionScopeIssues 交叉校验）、reduce `mode="top-percent-analysis"` + 披露块、render 7 项披露；
+    digest/popular-sample/archive 零改动；测试 22 项（selector 14 + pipeline 8）。
 - **V0.3 关键 gate（immediate）**：T3 countMismatch / T4+T5 Agent consumer & isolation feasibility /
   T7 top-percent contract（**已批准，2026-08-23**）/ T9 hierarchical digest contract。各 T 遵循 Spec gate，不无条件并行。
 - **DEFERRED（长期，未经批准不得开始）**：

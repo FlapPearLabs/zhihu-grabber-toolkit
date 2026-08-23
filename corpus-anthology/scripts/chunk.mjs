@@ -6,6 +6,7 @@
  * 用法:
  *   node scripts/chunk.mjs <answers.json 或目录> [更多...] --work work/ [--mode digest]
  *     [--max-chars 24000] [--max-answers 40]
+ *   node scripts/chunk.mjs <answers.json 或目录> [更多...] --work work/ --mode top-percent-analysis --selection work/selection.json
  *
  * 行为:
  *   - 收集所有 answers.json（单个文件或递归目录），解析每条回答。
@@ -15,11 +16,18 @@
  *     一并清除），不静默复用任何过期中间结果。
  *   - 每个 chunk 带 chunkHash；map 结果必须回传相同 chunkHash 才能通过 verify。
  *   - 所有路径为相对路径（相对 --work 的 sourceRoot）；stdout 路径相对 cwd。
+ *
+ * top-percent-analysis 模式（T8, Issue #14）:
+ *   - 必须先运行 scripts/select.mjs 生成 work/selection.json。
+ *   - 仅对 selection.selectedSourceIds 中的来源分块（strict count 子集，完整正文）。
+ *   - manifest.mode 与 selectionHash 记录选择身份；verify/reduce 依此走 selection-scope 门。
+ *   - SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST：mode 恒为 top-percent-analysis。
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { stripHtml } from '../lib/text.mjs';
+import { validateSelection } from '../lib/top-percent-selector.mjs';
 
 function arg(name, fallback) {
   const i = process.argv.indexOf(name);
@@ -39,7 +47,7 @@ function parseArgs() {
   for (let i = 2; i < process.argv.length; i += 1) {
     const a = process.argv[i];
     if (a.startsWith('--')) {
-      if (['--work', '--mode', '--max-chars', '--max-answers'].includes(a)) i += 1; // 跳过值
+      if (['--work', '--mode', '--max-chars', '--max-answers', '--selection'].includes(a)) i += 1; // 跳过值
       continue;
     }
     positional.push(a);
@@ -48,6 +56,7 @@ function parseArgs() {
     inputs: positional,
     workDir: arg('--work', 'work'),
     mode: arg('--mode', 'digest'),
+    selectionFile: arg('--selection', null),
     maxChars: parsePositiveInt(arg('--max-chars', '24000'), { min: 1000, max: 1_000_000, name: '--max-chars' }),
     maxAnswers: parsePositiveInt(arg('--max-answers', '40'), { min: 1, max: 10000, name: '--max-answers' }),
   };
@@ -241,12 +250,32 @@ function buildChunks(records, { maxChars, maxAnswers }) {
 async function main() {
   const opts = parseArgs();
   if (opts.inputs.length === 0) {
-    console.error('用法: node scripts/chunk.mjs <answers.json 或目录> [更多...] --work work/ [--mode digest]');
+    console.error('用法: node scripts/chunk.mjs <answers.json 或目录> [更多...] --work work/ [--mode digest|top-percent-analysis]');
     process.exit(2);
   }
-  if (opts.mode !== 'digest') {
-    console.error(`不支持的 mode: ${opts.mode}（当前仅支持 digest）`);
+  if (!['digest', 'top-percent-analysis'].includes(opts.mode)) {
+    console.error(`不支持的 mode: ${opts.mode}（支持 digest / top-percent-analysis）`);
     process.exit(2);
+  }
+
+  // top-percent-analysis：必须携带 selection.json（由 select.mjs 生成）
+  let selection = null;
+  if (opts.mode === 'top-percent-analysis') {
+    if (!opts.selectionFile) {
+      console.error('top-percent-analysis 模式必须提供 --selection <selection.json>（先运行 scripts/select.mjs）');
+      process.exit(2);
+    }
+    const selPath = path.resolve(opts.selectionFile);
+    if (!fs.existsSync(selPath)) {
+      console.error(`selection 文件不存在: ${displayPath(selPath)}（请先运行 scripts/select.mjs --percent X）`);
+      process.exit(2);
+    }
+    try {
+      selection = validateSelection(JSON.parse(fs.readFileSync(selPath, 'utf8')));
+    } catch (error) {
+      console.error(`selection 非法: ${error.message}`);
+      process.exit(2);
+    }
   }
 
   const files = collectJsonFiles(opts.inputs);
@@ -282,7 +311,26 @@ async function main() {
     }
   }
 
-  // 幂等检查：现有 manifest 且输入哈希 + chunkConfig 全部一致 → 复用
+  // top-percent-analysis：仅对 selection 选中的来源分块（strict count 子集，完整正文）
+  if (selection) {
+    if (parsedInputs.length !== selection.originalTotal) {
+      console.error(`原始输入数量（${parsedInputs.length}）与 selection.originalTotal（${selection.originalTotal}）不一致——输入已变化，请重新运行 scripts/select.mjs --percent ${selection.requestedPercent}`);
+      process.exit(2);
+    }
+    const selectedSet = new Set(selection.selectedSourceIds);
+    const filtered = parsedInputs.filter((i) => selectedSet.has(i.sourceId));
+    if (filtered.length !== selection.selectedSourceIds.length) {
+      console.error('selection.selectedSourceIds 与当前输入不匹配（部分选中来源缺失）——请重新运行 scripts/select.mjs');
+      process.exit(2);
+    }
+    // 按 selection.selectedSourceIds 顺序重排（审计一致性：与 selection.json 完全对齐）
+    const bySourceId = new Map(filtered.map((i) => [i.sourceId, i]));
+    parsedInputs.length = 0;
+    for (const sid of selection.selectedSourceIds) parsedInputs.push(bySourceId.get(sid));
+    console.log(`top-percent-analysis: 仅分块 ${parsedInputs.length}/${selection.originalTotal} 个选中来源（X=${selection.requestedPercent}%）`);
+  }
+
+  // 幂等检查：现有 manifest 且输入哈希 + chunkConfig + selectionHash 全部一致 → 复用
   const manifestFile = path.join(workDir, 'manifest.json');
   let reuse = false;
   if (fs.existsSync(manifestFile)) {
@@ -290,10 +338,11 @@ async function main() {
       const existing = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
       if (existing.schemaVersion === 1 && existing.mode === opts.mode) {
         const configMatch = JSON.stringify(existing.chunkConfig) === JSON.stringify(chunkConfig);
+        const selMatch = selection ? existing.selectionHash === selection.selectorHash : true;
         const existingHashes = new Map(existing.inputs.map((i) => [i.sourceId, i.sha256]));
         const allMatch = configMatch && parsedInputs.every((i) => existingHashes.get(i.sourceId) === i.fileHash);
         const countMatch = existing.inputs.length === parsedInputs.length;
-        if (allMatch && countMatch) reuse = true;
+        if (allMatch && countMatch && selMatch) reuse = true;
       }
     } catch {
       // manifest 损坏 → 重建
@@ -340,6 +389,9 @@ async function main() {
     createdAt: new Date().toISOString(),
     sourceRoot: path.relative(process.cwd(), workDir).split(path.sep).join('/') || '.',
     mode: opts.mode,
+    ...(selection
+      ? { selectionFile: path.relative(workDir, path.resolve(opts.selectionFile)).split(path.sep).join('/'), selectionHash: selection.selectorHash }
+      : {}),
     chunkConfig,
     inputs: parsedInputs.map((i) => ({
       sourceId: i.sourceId,

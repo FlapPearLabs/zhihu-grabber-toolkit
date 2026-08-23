@@ -730,10 +730,11 @@ CURRENT IMPLEMENTED（真实已实现）:
   2. digest：corpus-anthology 既有 100% full-coverage canonical digest 管线
      （chunk.mjs → map → verify.mjs → reduce.mjs，含 coverage / evidence gate / lineage）
   3. archive：corpus-anthology 既有机械拼接、零改写归档能力
-
-APPROVED_TARGET / CODE_PENDING（合同已批准，CODE 待 T8）:
-  4. top-percent-digest —— **selection + identity 合同已由 T7 #13 批准（2026-08-23，
-     decision record：docs/t7-top-percent-contract-decision.md）**：
+  4. top-percent-analysis —— **selection + identity 合同已由 T7 #13 批准（2026-08-23，
+     decision record：docs/t7-top-percent-contract-decision.md）并由 T8 #14 实现（2026-08-23）**：
+     - 管线：select.mjs（确定性选择 → selection.json）→ chunk.mjs --mode top-percent-analysis
+       --selection（仅选中来源分块，完整正文）→ map.mjs（复用 T6 lmstudio-local-tool-less
+       per-source）→ verify.mjs（selection-scope 门）→ reduce.mjs（mode 身份 + 披露块）
      - selection：K = max(1, ceil(X/100 × N))；X ∈ [1,100] 整数（禁 0/小数/负/>100，非法 → invalid_input）；
        strict count 取前 K（无 tie 扩展）；排序 (voteupCount DESC, canonical decimal answerId ASC)；
        mandatory --percent（无默认）
@@ -743,7 +744,9 @@ APPROVED_TARGET / CODE_PENDING（合同已批准，CODE 待 T8）:
      - 披露：totalAnswers / selectedAnswers / requestedPercent / actualCoveragePercent /
        selectionRule / selectedSourceIds / isFullCoverage；人类输出披露 7 项
      - selectionRule 机器表示：top-<X>-pct-voteup-desc-answerid-dec-asc-strict
-     - CODE（T8）在 T7 完整 merge 后开始；当前不实现、不声称 top-percent 已可用
+     - 共享 handoff schema 零变更；digest / popular-sample / archive 运行行为零改动
+
+APPROVED_TARGET / CODE_PENDING（合同待后续 CODE 票）:
   5. hierarchical full digest：在保留 100% source coverage / evidence lineage 下
      增加中间聚合层降本（合同待 T9/T10）
 
@@ -768,12 +771,13 @@ RATIONALE:
   但覆盖事实（isFullCoverage）必须如实，不被模式身份掩盖。
 
 AUTHORITY / EVIDENCE:
-  corpus-anthology/scripts/{popular-sample,verify,reduce,chunk}.mjs
+  corpus-anthology/scripts/{popular-sample,select,chunk,map,verify,reduce,render-final}.mjs
+  corpus-anthology/lib/top-percent-selector.mjs
   V0.3 Spec §7（大型语料四层）、§16 OPEN-D2/D4/D6、§17 T7/T8/T9/T10
   docs/t7-top-percent-contract-decision.md（T7 批准合同记录）
 
-IMPLEMENTATION_IMPACT: top-percent = CODE_PENDING（T8，合同已批准）；hierarchical = CONDITIONAL_FUTURE_TICKET（T9/T10）；
-  当前不实现、不声称 top-percent / hierarchical 新行为已可用。
+IMPLEMENTATION_IMPACT: top-percent-analysis = RESOLVED_IN_MASTER（T8 #14，post-merge 生效）；
+  hierarchical = CONDITIONAL_FUTURE_TICKET（T9/T10）；当前不实现、不声称 hierarchical 新行为已可用。
 ```
 
 ---
@@ -800,11 +804,8 @@ RESOLVED_IN_MASTER:             3 项 —— 3.3（B-1 CROSS_VOLUME_MACHINE_PATH
                                 3.16（countMismatch severity：T3 exact reviewed SHA
                                 7c4e5ca69aec885a2d093b09f536235dc44819cf 已 independent
                                 CODE review PASS 并 ff-only merge；已纳入 CURRENT_BEHAVIOR。见 §3.16 更新）
-PENDING_V0_3_CODE_TICKETS:      2 项（均为 V0.3 决策归一化，CODE PENDING，非当前行为）——
+PENDING_V0_3_CODE_TICKETS:      1 项（V0.3 决策归一化，CODE PENDING，非当前行为）——
                                 3.18 Large corpus four-layer
-                                    - top-percent-digest：合同已由 T7 #13 批准（2026-08-23，
-                                      decision record：docs/t7-top-percent-contract-decision.md），
-                                      CODE PENDING T8
                                     - hierarchical full digest：PENDING T9/T10（OPEN-D4）
                                 （注：§3.1 输入严格化、§3.7 剥离 server message 等
                                 "未来可能的行为变化"一律走：
@@ -820,10 +821,11 @@ FUTURE_CODE_TICKET_REQUIRED；**3.15 Search Answer Count 已由 T2 实现并纳�
 归入 RESOLVED_IN_MASTER / CURRENT_BEHAVIOR**。**3.17 Agent projection / capability isolation
 已由 T5-LM #26（lmstudio-local-tool-less YES）+ T6 #12（per-source map CODE）merge 纳入
 RESOLVED_IN_MASTER（仅该 runtime）；其余 runtime NO/UNKNOWN 保持 fail-closed**。
-V0.3 的 PENDING_V0_3_CODE_TICKETS 现仅为 §3.18：top-percent-digest（合同已批准，CODE 待 T8）
-与 hierarchical full digest（待 T9/T10）。当前代码行为仍是各自 CURRENT_BEHAVIOR，未在 master
-生效的仅为未实现部分（top-percent / hierarchical 不声称已可用）。T-2（batch 回归测试）已按
-§3.1-§3.14 边界推进；不因本合同产生投机功能。
+**3.18 top-percent-analysis 已由 T7 #13（合同批准）+ T8 #14（CODE，2026-08-23）实现并纳入
+RESOLVED_IN_MASTER（post-merge 生效）；hierarchical full digest 仍 PENDING T9/T10（OPEN-D4）**。
+V0.3 的 PENDING_V0_3_CODE_TICKETS 现仅为 hierarchical full digest（待 T9/T10）。当前代码行为
+仍是各自 CURRENT_BEHAVIOR；未在 master 生效的仅为未实现部分（hierarchical 不声称已可用）。
+T-2（batch 回归测试）已按 §3.1-§3.14 边界推进；不因本合同产生投机功能。
 
 ---
 

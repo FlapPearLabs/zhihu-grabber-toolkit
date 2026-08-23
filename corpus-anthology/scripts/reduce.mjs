@@ -19,6 +19,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { renderDigest } from './render-final.mjs';
+import { validateSelection } from '../lib/top-percent-selector.mjs';
 
 function arg(name, fallback) {
   const i = process.argv.indexOf(name);
@@ -31,6 +32,25 @@ function readJson(file) {
 
 function sha256Of(text) {
   return crypto.createHash('sha256').update(text).digest('hex');
+}
+
+/** top-percent-analysis 披露块（D2.8 + D6 OPTION C）：mode 恒为 top-percent-analysis
+ *  isFullCoverage 为覆盖事实：selectedSourceIds 与 original 集合比较。因 selectedSourceIds
+ *  来自同一候选集（无重复、无外部 ID），「selected == original」⟺「长度相等」。
+ */
+function buildDisclosure(selection) {
+  const selectedSourceIds = selection.selectedSourceIds;
+  const totalAnswers = selection.originalTotal;
+  return {
+    mode: 'top-percent-analysis',
+    totalAnswers,
+    selectedAnswers: selectedSourceIds.length,
+    requestedPercent: selection.requestedPercent,
+    actualCoveragePercent: `${((selectedSourceIds.length / totalAnswers) * 100).toFixed(1)}`,
+    selectionRule: selection.selectionRule,
+    selectedSourceIds,
+    isFullCoverage: selectedSourceIds.length === totalAnswers,
+  };
 }
 
 function main() {
@@ -94,6 +114,28 @@ function main() {
   if (coverage.valid !== true) {
     console.error('覆盖率验证未通过，禁止 reduce（请先修复并重新 verify.mjs）');
     process.exit(1);
+  }
+
+  // top-percent-analysis：读取并校验 selection.json，构建披露块（D2.8）
+  let disclosure = null;
+  if (manifest.mode === 'top-percent-analysis') {
+    const selectionFile = path.join(workDir, 'selection.json');
+    if (!fs.existsSync(selectionFile)) {
+      console.error('top-percent-analysis 缺少 selection.json（请先运行 scripts/select.mjs 与 chunk.mjs --mode top-percent-analysis）');
+      process.exit(1);
+    }
+    let selection;
+    try {
+      selection = validateSelection(readJson(selectionFile));
+    } catch (error) {
+      console.error(`selection.json 非法: ${error.message}`);
+      process.exit(1);
+    }
+    if (manifest.selectionHash !== selection.selectorHash) {
+      console.error('manifest.selectionHash 与 selection.selectorHash 不一致（chunk 与 selection 不同步）');
+      process.exit(1);
+    }
+    disclosure = buildDisclosure(selection);
   }
 
   const validSources = new Set(manifest.inputs.map((i) => i.sourceId));
@@ -168,7 +210,8 @@ function main() {
   // reduce-input（供 LLM 撰写最终文档的结构化输入）
   const reduceInput = {
     schemaVersion: 1,
-    mode: 'digest',
+    mode: manifest.mode ?? 'digest',
+    ...(disclosure ?? {}),
     inputCount: manifest.inputs.length,
     chunkCount: maps.length,
     themes,
@@ -197,7 +240,8 @@ function main() {
   // digest.md 只是展示层，由 render-final.mjs 确定性渲染（LLM 完善时改 final.json，不改 md）。
   const finalJson = {
     schemaVersion: 1,
-    mode: 'digest',
+    mode: manifest.mode ?? 'digest',
+    ...(disclosure ?? {}),
     inputCount: manifest.inputs.length,
     chunkCount: maps.length,
     claims: claims.map((c) => ({

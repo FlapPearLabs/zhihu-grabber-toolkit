@@ -22,6 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { validateSelection } from '../lib/top-percent-selector.mjs';
 
 /** 共享 handoff schema（仓库级，两个 Skill 的唯一事实来源） */
 const HANDOFF_SCHEMA_FILE = fileURLToPath(new URL('../../references/zhihu-corpus-handoff.schema.json', import.meta.url));
@@ -83,12 +84,13 @@ function listMaps(workDir) {
   return maps;
 }
 
-/** 覆盖率验证（digest 完成判定） */
+/** 覆盖率验证（digest 完成判定 / top-percent selection-scope 判定） */
 function verifyCoverage(workDir, manifest) {
   const chunks = listChunks(workDir);
   const maps = listMaps(workDir);
   const report = {
     valid: true,
+    mode: manifest.mode ?? 'digest',
     missingSources: 0,
     duplicateAssignments: 0,
     failedChunks: 0,
@@ -100,8 +102,59 @@ function verifyCoverage(workDir, manifest) {
     malformedMaps: 0,
     duplicateMaps: 0,
     missingMappedSources: 0,
+    selectionScopeIssues: 0,
     issues: [],
   };
+
+  // 0. top-percent-analysis：selection-scope 交叉校验（R5：selection.json 与
+  //    manifest/chunks 必须一致；防 scope 外来源混入或 scope 内来源缺失）
+  if (manifest.mode === 'top-percent-analysis') {
+    const selectionFile = path.join(workDir, 'selection.json');
+    if (!fs.existsSync(selectionFile)) {
+      report.selectionScopeIssues += 1;
+      report.issues.push(`top-percent-analysis 缺少 selection.json（请先运行 scripts/select.mjs）`);
+      report.valid = false;
+    } else {
+      let selection;
+      try {
+        selection = validateSelection(JSON.parse(fs.readFileSync(selectionFile, 'utf8')));
+      } catch (error) {
+        report.selectionScopeIssues += 1;
+        report.issues.push(`selection.json 非法: ${error.message}`);
+        report.valid = false;
+        selection = null;
+      }
+      if (selection) {
+        // manifest.selectionHash 必须与 selection.selectorHash 一致（chunk 使用的选择身份）
+        if (manifest.selectionHash !== selection.selectorHash) {
+          report.selectionScopeIssues += 1;
+          report.issues.push(`manifest.selectionHash 与 selection.selectorHash 不一致（chunk 与 selection 不同步）`);
+        }
+        const selectedSet = new Set(selection.selectedSourceIds);
+        const manifestIds = manifest.inputs.map((i) => i.sourceId);
+        const manifestSet = new Set(manifestIds);
+        // 选中集 == manifest 输入集（chunk 只分块了选中来源）
+        for (const sid of selection.selectedSourceIds) {
+          if (!manifestSet.has(sid)) {
+            report.selectionScopeIssues += 1;
+            report.issues.push(`selection 选中来源未进入 chunk（缺失）: ${sid}`);
+          }
+        }
+        for (const sid of manifestIds) {
+          if (!selectedSet.has(sid)) {
+            report.selectionScopeIssues += 1;
+            report.issues.push(`chunk 包含 selection 之外的来源（scope 外混入）: ${sid}`);
+          }
+        }
+        // originalTotal 一致性（manifest 只含选中子集 → 小于等于 originalTotal）
+        if (manifestIds.length > selection.originalTotal) {
+          report.selectionScopeIssues += 1;
+          report.issues.push(`manifest 输入数量超过 selection.originalTotal`);
+        }
+        if (report.selectionScopeIssues > 0) report.valid = false;
+      }
+    }
+  }
 
   // 2. 每个输入进入某个 chunk
   for (const input of manifest.inputs) {
@@ -347,7 +400,8 @@ function verifyCoverage(workDir, manifest) {
   report.mapCount = maps.length;
 
   report.valid =
-    report.missingSources === 0
+    report.selectionScopeIssues === 0
+    && report.missingSources === 0
     && report.duplicateAssignments === 0
     && report.failedChunks === 0
     && report.invalidEvidenceRefs === 0

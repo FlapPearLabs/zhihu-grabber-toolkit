@@ -35,12 +35,13 @@ metadata:
 3. 无法获得上下文预算时，保守回退阈值：总字符 ≤ 40KB / ≈400 行以内才允许直接读取；超出必须走本 Skill 的脚本管线。
 4. 阈值是启发式规则，不得伪装成精确 token 数。
 
-## 模式（仅支持三种）
+## 模式（仅支持四种）
 
 | 模式 | 用途 | 入口脚本 |
 |---|---|---|
 | `inspect` | 规模统计、分块建议 | `scripts/stats.mjs` |
 | `digest` | 全覆盖分块摘要（map-reduce，带来源证据） | `scripts/chunk.mjs` → map → `scripts/verify.mjs` → `scripts/reduce.mjs` → `scripts/verify.mjs --final` |
+| `top-percent-analysis` | 前 X% 高赞采样分析（完整正文、有界成本，非全量摘要） | `scripts/select.mjs` → `scripts/chunk.mjs --mode top-percent-analysis` → map → `scripts/verify.mjs` → `scripts/reduce.mjs` → `scripts/verify.mjs --final` |
 | `archive` | 机械归档（脚本拼接，正文零改写） | `scripts/archive.mjs` |
 
 **不支持（未实现，禁止声称）：** `edit` / `full` / 成书 / 深度编排 / 自动去重改写 / 章节化完整版。只有具备确定性工作流、状态文件、来源追踪、断点恢复、覆盖率验证、验收测试与完整成功样例后，未来才能重新加入。
@@ -126,6 +127,60 @@ node scripts/verify.mjs --work work/ --final work/final/final.json
 
 - 任意步骤中断后重跑同命令即可续跑：chunk 幂等（manifest 哈希比对），map 结果按 chunkId 增量补齐，verify/reduce 只消费已完成状态。
 - 输入文件变化时通过 sha256 发现，**不得静默复用过期中间结果**（见 `references/state-and-resume.md`）。
+
+## top-percent-analysis 工作流（前 X% 高赞采样分析，有界成本）
+
+**这是采样分析，不是 full-coverage digest。** 合同见 `docs/t7-top-percent-contract-decision.md`（T7 #13 批准）：按 canonical `voteupCount` 降序 + canonical decimal `answerId` 升序取前 `K = max(1, ceil(X/100 × N))` 条（strict count，无 tie 扩展），使用**完整正文**（非 popular-sample 截断），仅对选中来源调用模型。
+
+```
+verified canonical answers
+→ select.mjs（确定性 selector → selection.json）
+→ chunk.mjs --mode top-percent-analysis --selection（仅选中来源分块）
+→ map.mjs（复用 T6 lmstudio-local-tool-less per-source）
+→ verify.mjs（selection-scope 门）
+→ reduce.mjs（mode="top-percent-analysis" + 披露块）
+→ verify.mjs --final
+```
+
+### 步骤
+
+1. **确定性选择**（必填 `--percent X`，X ∈ [1,100] 整数，无默认值；非法输入 → `invalid_input` fail closed）：
+
+```bash
+node scripts/select.mjs <answers.json 或目录> --work work/ --percent 10
+```
+
+   生成 `work/selection.json`：`schemaVersion / requestedPercent / selectionRule / originalTotal / selectedSourceIds / selectorHash`。selectionRule 机器表示 `top-<X>-pct-voteup-desc-answerid-dec-asc-strict`。selectorHash 对规范化内容确定性计算，同输入同 X 恒等。
+
+2. **仅对选中来源分块**：
+
+```bash
+node scripts/chunk.mjs <answers.json 或目录> --work work/ --mode top-percent-analysis --selection work/selection.json
+```
+
+   manifest.mode='top-percent-analysis' 并记录 selectionHash；输入数量与 selection.originalTotal 不一致（输入已变）→ fail closed，须重跑 select。
+
+3. **map**（与 digest 相同）：`node scripts/map.mjs --work work/` —— 仅处理选中来源的 chunk，T6 per-source tool-less runtime，前置 qualification 同 digest。
+
+4. **selection-scope verify**：
+
+```bash
+node scripts/verify.mjs --work work/
+```
+
+   除 digest 全部覆盖门（在选中子集上执行）外，还交叉校验 selection-scope：`selection.json` 必须合法、`manifest.selectionHash == selection.selectorHash`、selection.selectedSourceIds 与 manifest 输入集合完全一致（scope 外来源混入 / 选中来源缺失 → `selectionScopeIssues > 0` → fail）。
+
+5. **reduce + 披露**：
+
+```bash
+node scripts/reduce.mjs --work work/ --out work/final/digest.md
+```
+
+   final.json `mode="top-percent-analysis"`（**恒为采样身份**）+ 披露块：`totalAnswers / selectedAnswers / requestedPercent / actualCoveragePercent(1位小数) / selectionRule / selectedSourceIds / isFullCoverage` + `claims / minorityViews / uncertainties`。`isFullCoverage` 是**覆盖事实**（选中集==原集时为 true，如 X=100），**不是** mode identity。digest.md 头部 ⚠️ 披露块 7 项：采样分析非全量、请求比例、选中/总数、实际覆盖、选择规则、覆盖是否恰好完整、即使 100% 也不是 canonical full-digest 管线。
+
+6. **验证最终产物**：`node scripts/verify.mjs --work work/ --final work/final/final.json`（同 digest）。
+
+**硬不变量 `SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST`：** top-percent 输出**永远不得**呈现为 `task=digest` / full coverage 身份；`mode` 由管线身份决定，不随 X 改变（X=100 时 isFullCoverage=true 但 mode 仍为 top-percent-analysis）。
 
 ## popular-sample（高赞样本，不是摘要）
 

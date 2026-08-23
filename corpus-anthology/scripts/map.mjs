@@ -37,7 +37,7 @@ async function main() {
   const mapsDir = path.join(workDir, 'map-results');
 
   if (!fs.existsSync(chunksDir)) {
-    console.error('未找到 chunk 目录（先运行 scripts/chunk.mjs --work work/ --mode digest）');
+    console.error('未找到 chunk 目录（先运行 scripts/chunk.mjs --work work/ --mode digest|top-percent-analysis）');
     process.exit(2);
   }
   fs.mkdirSync(mapsDir, { recursive: true });

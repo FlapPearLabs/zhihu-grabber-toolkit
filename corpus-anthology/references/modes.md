@@ -1,6 +1,6 @@
 # corpus-anthology 模式详解
 
-本 Skill 仅支持三种模式：`inspect`、`digest`、`archive`。
+本 Skill 支持四种模式：`inspect`、`digest`、`top-percent-analysis`、`archive`。
 
 ## inspect — 规模统计
 
@@ -26,6 +26,28 @@ chunk.mjs（manifest + 分块）
 → verify.mjs --final（最终引用验证）
 ```
 
+## top-percent-analysis — 前 X% 高赞采样分析（有界成本）
+
+**这是采样分析，不是 full-coverage digest。** 合同见 `docs/t7-top-percent-contract-decision.md`（T7 #13 批准，D2.1–D2.8 + OPEN-D6 OPTION C）。
+
+- 选择算法：`K = max(1, ceil(X/100 × N))`；排序 `(voteupCount DESC, canonical decimal answerId ASC)`；**strict count** 恰好取前 K（无 tie 扩展，成本有界）。X 必须为显式整数 ∈ [1,100]（无默认值；0/小数/负数/>100 → `invalid_input`）。
+- 与 popular-sample 不同：使用**完整正文**（不截断），保持语义与可被 evidence 引用。
+- 管线：
+
+```
+select.mjs（确定性选择 → selection.json）
+→ chunk.mjs --mode top-percent-analysis --selection（仅选中来源分块）
+→ map.mjs（复用 T6 lmstudio-local-tool-less per-source）
+→ verify.mjs（selection-scope 门：selection.json 与 manifest 交叉校验）
+→ reduce.mjs（mode="top-percent-analysis" + 披露块）
+→ verify.mjs --final
+```
+
+- `selection.json`：`schemaVersion / requestedPercent / selectionRule / originalTotal / selectedSourceIds / selectorHash`；selectionRule 机器表示 `top-<X>-pct-voteup-desc-answerid-dec-asc-strict`。
+- final.json 披露块：`mode="top-percent-analysis"`（**恒为采样身份**）+ `totalAnswers / selectedAnswers / requestedPercent / actualCoveragePercent / selectionRule / selectedSourceIds / isFullCoverage` + `claims / minorityViews / uncertainties`。
+- `isFullCoverage` 是**覆盖事实**（选中集恰等于原集，如 X=100 时为 true），**不是** mode identity；`mode` 由管线身份决定，不随 X 改变。
+- 硬不变量 **`SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST`**：top-percent 输出永远不得呈现为 `task=digest` / full coverage 身份。
+
 ## archive — 机械归档
 
 ```bash
@@ -47,5 +69,6 @@ node scripts/archive.mjs <srcDir> --verify <collection.md>   # 完整性核验
 | "这批语料多大？" / "先统计一下规模" | inspect |
 | "全部回答都要覆盖，做完整摘要" | digest |
 | "只要最高赞的几个回答看看" | popular-sample（高赞样本，标注清楚） |
+| "语料太大，先按前 X% 高赞做有界成本分析" | top-percent-analysis（采样分析，标注清楚） |
 | "机械合并成分卷合集，正文别动" | archive |
 | "改改排版 / 去重 / 出书" | **不支持**——本 Skill 未实现 edit/full/成书 |
