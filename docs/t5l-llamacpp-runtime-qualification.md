@@ -5,6 +5,7 @@
 ```text
 TICKET: #25 / T5-L
 TYPE: DISCOVERY / SECURITY EVIDENCE
+PROJECT_MEMORY_UPDATE_REQUIRED: NO
 BASE: 052feacfa83444fb1ab16c3a89482c126cd9b7f0
 RUNTIME_ID: llamacpp-local-tool-less
 IMPLEMENTATION: official ggml-org/llama.cpp llama-server
