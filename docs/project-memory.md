@@ -37,7 +37,10 @@
 - **V2 Phase 2（S1-S6）已实现并覆盖**：image metadata / external link assets / code block metadata / reference-footnote assets（`test/asset-extractor.test.js`）；脚注重建与对抗（重复/非法/缺失 numero、跨 answer collision、Markdown 注入、恶意脚注 URL，`test/rich-renderer.test.js`）；additive `answers[].assets` 集成、断点续传兼容、determinism（`test/grabber.test.js`）；V1 兼容回归 render/verify/handoff/CLI status（`test/v1-compat.test.js`）。
 - **V2 Phase 3 — Question Metadata 已纳入 accepted project baseline 并覆盖**（`test/question-metadata.test.js`）：additive `question` 对象（`{ id, title, descriptionHtml, descriptionMarkdown, topics }`）；description source/canonicality（descriptionHtml 严格等于 server raw `detail`，渲染不突变）、description security（Markdown 注入惰性 / raw HTML 活性移除 / headingOffset=2 防 `## N.` 越界 / javascript:/data: 链接不可点击）、topics 最小字段 `{ id, name }` 确定性提取与恶意文本惰性、V1/Phase2 兼容（旧产物无 question 可读、verify/handoff 不受影响）、request budget（question info 请求恰 1 次/抓取，零新增）、determinism；missing vs empty 区分（detail/topics 缺失 ≠ 明确空值）、metadata 失败用户可见 warning（CLI 级）、resume 保留已有合法 question、identity gate（`QUESTION_METADATA_IDENTITY_CONFLICT`）、topic id/name 严格 string 校验、topics 非空全非法 omit、公开 warning 固定最小文本、resume ID 严格 string。
 - **V2 Phase 4 — Comments Enrichment 已纳入 accepted project baseline 并覆盖**（`test/comments.test.js`）：additive optional `answers[].comments`（默认 OFF；唯一显式开启面 `grab <question> --comments`；batch/search/status 带 `--comments` → 静态 `invalid_input`，先于凭据/网络）；`comment_v5/answers/{answerId}/root_comment?order_by=score&limit=3&offset=`（server score/default ordering 的 Top3 root comments，禁 `status=open`，无 legacy fallback、无分页）；Top10 selected answers（canonical `voteupCount` DESC + capture-order tie）；每 selected answer 至多 1 次真实 HTTP 尝试（**`retries:0`**，requestJson 默认 retries=2 会暗中突破预算）、每 question ≤10 次、attempt 间顺序低延迟（`humanDelay` 前置，失败路径同样限速，无并发）；root predicate 五条件校验（含 `reply_root_comment_id === item.id`）任一违约 → 整个 answer enrichment 失败、无后续 item 补位；`child_comments`/reply 完全忽略；唯一 explicit-zero = `data=[] + totals=0 + is_end=true`（`commentCount===0` 不是 zero fact——V1 canonicalization 收敛 raw null/missing）；A/B/C/D resume/preservation 语义（OFF/not-selected 原样保留 exact JSON 值不 validate，selected success replace、failure 时仅 v1-compatible 保留否则 omit）；固定 question-level aggregate warning（"部分评论 enrichment 获取失败；回答核心抓取继续。"）；`contentHtml` 严格 raw + `contentMarkdown` 同一 `richHtmlToMarkdown`（无第二 parser，hostile content 全程 inert）；`answerId` 作为单 opaque path segment 且空/dot-segment path 破坏时 fail closed；`answers.md` / verify-output / handoff 合同未改。Phase 4 产品合同完整见 Approved Spec §15/§18/§20.2.2/§25/§26。
-- **尚未完成、不得标记为 covered**（按已批准 Spec 相应 Phase 再补测试）：Agent projection / capability isolation（V0.3 决策 C，待 T4/T5 真实可行性审计，runtime-scoped）。
+- **V0.3 决策 C（Agent projection / capability isolation）已完成**（不再标记"尚未完成"）：
+  T5-LM（`lmstudio-local-tool-less` runtime-scoped YES）+ T5-R / T5-C / T5-L / 两个 YAML host（NO）
+  + T6 per-source projection CODE 均已落地并合并 master；T11-R2 另为 `deepseek-api-tool-less` 取得
+  runtime-scoped YES（详见下文 V0.3 Runtime Closeout 段）。
   - 注：video 已于 V0.3 决策 B 永久定为 `VIDEO_SUPPORT = DO_NOT_SUPPORT`（无 video CODE、无后续 discovery），不属于「未覆盖待补」项；`answers[].assets.videos` 仅保留兼容空字段 `[]`。
 
 ## 已批准产品决策 / 长期约束
@@ -169,27 +172,22 @@
     verify hierarchyIssues 门、reduce 顶层节点 claims → final.json（mode="digest" 消费合同不变）。
     实测性能（合成 538 源，MEASURED）：reduce-input 192.9KB/538 claims → 105.8KB/7 顶层 claims
     （claims -98.7%、bytes -45.2%）。flat digest 行为不变；hierarchy 显式启用不自动路由。
-- **T11 #17 Real Dogfood（2026-08-24，STOPPED→T11-R1 #27 协议硬化）**：4 真实知乎语料抓取+验收全部 `valid=true`
-  （47/79/183/318；19668080=183/185、23933514=318/324 countMismatch 保持 DIAGNOSTIC_ONLY）；
-  archive/popular-sample/top-percent select(10%) 三带完成；唯一完成的全量 digest 为 47 源
-  （26546908）：mode=digest、47/47 claims 带 canonical evidenceSourceIds、coverage 全 gate 0、
-  hierarchy 默认 profile 下 flat 等价（2 L1，ADAPTIVE 正确）。
-  **RCA 纠正（#27，2026-08-24）**：生产 L1/hierarchy **已用短 token**（`String(index+1)`/`String(gi+1)`）；
-  原「长 sourceId 截断」归因不成立（那是诊断实验）。真实生产失败为 Qwen3 1.7B **概率性输出身份污染**
-  （把 `[SOURCE N]` 头或 meta 行抄进 sourceId 字段）与**概率性数字 confidence 越界**。
-  **#27 修复（已合并前验证）**：模型输出移除 sourceId（身份 controller 确定性归属）、confidence 枚举化
-  high/medium/low（strict json_schema 实测 6/6 约束）、投影 meta 去 voteupCount；requalification
-  `valid:true`。回归：26421707 3/3、26546908-tp 1/1 完成（两类 blocker 消除）；
-  **剩余第三类观测限制**：自指/递归文本触发模型回显循环至 max_tokens（`finish_reason=length`，
-  fail-closed 正确）→ 19668080/23933514 仍阻断（缓解需新批准）。#3 保持 OPEN；
-  V0_3_EXECUTION_COMPLETE NOT DECLARED。证据：`docs/v0.3-real-dogfood-report.md`；语料在 /tmp/t11-corpora。
-- **T11-R2 #28 DeepSeek runtime（2026-08-24，已合并 0ee53b4）**：additive runtime `deepseek-api-tool-less`
-  （远程 OpenAI 兼容，deepseek-v4-flash，thinking 显式 disabled，json_object，无 tools，#27 输出契约共享）。
-  **CAPABILITY_ISOLATION_AVAILABLE[deepseek-api-tool-less] = YES（runtime-scoped；不推广其他 provider）**。
-  凭据：env DEEPSEEK_API_KEY 或仓库根 0600 git-ignored `.deepseek_api_key`（绝不打日志/入库）。
-  云出网仅限 V0.3 T11 公开知乎语料（不推广私密语料）。§8 probes 10/10、battery allSafe、
-  §11 真实回归 26421707 3/3 / 19668080 8/8 / 23933514 17/17（1 源偶发空 summary 有界重试）/ 26546908-tp 1/1
-  ——**Qwen 第三类（自指递归回显）在 DeepSeek 上通过**。lmstudio-local-tool-less 保留（已知模型质量限制）。
+- **V0.3 Runtime Closeout（2026-08-24，V0_3_EXECUTION_COMPLETE）**：真实 dogfood 在约 79 / 183 / 318
+  回答带（另加 47 补充语料）完成，全五类 run（capture / archive / popular-sample / top-percent /
+  hierarchical full digest）全部通过确定性验证。
+  - `lmstudio-local-tool-less`：独立能力资格通过（`CAPABILITY_ISOLATION_AVAILABLE = YES`，runtime-scoped），
+    保留为有效本地 runtime；真实 dogfood 暴露 Qwen3 1.7B 在该工作负载下的模型质量限制（概率性输出身份污染、
+    数字 confidence 越界、自指文本回显循环）——这些是**模型质量观测**，不否定其能力隔离。
+  - `deepseek-api-tool-less`：独立能力资格通过（`CAPABILITY_ISOLATION_AVAILABLE = YES`，provider/runtime-specific），
+    用于完成 V0.3 真实 dogfood；该资格**不得推广**为任意 OpenAI 兼容 provider 支持。
+    云出网批准仅限 V0.3 T11 公开知乎语料，**不得推广**到私密 / 敏感语料（私密语料云策略需独立授权）。
+  - 协议硬化（T11-R1 #27）：模型输出移除 sourceId（身份 controller 确定性归属）、confidence 枚举化
+    high/medium/low、投影 meta 去 voteupCount；RCA 纠正确认生产 L1/hierarchy 本就使用短不透明 token。
+  - **持久教训**：能力隔离与模型质量是独立轴；可信 controller 拥有 canonical 源身份 / 源覆盖 /
+    证据 lineage / 结构化校验 / fail-closed 权威，模型只拥有语义生成。
+  - **排序教训**：不得让较弱 / 本地 runtime 成为产品验证的阻断依赖，除非隐私、离线、实测成本、
+    实测时延、可用性或已批准需求确实要求。
+  - **成本教训**：先实测真实成本，再围绕假设的成本优化架构。
 - **V0.3 关键 gate（immediate）**：T3 countMismatch / T4+T5 Agent consumer & isolation feasibility /
   T7 top-percent contract（**已批准，2026-08-23**）/ T9 hierarchical digest contract（**已批准，2026-08-23**）。
   各 T 遵循 Spec gate，不无条件并行。

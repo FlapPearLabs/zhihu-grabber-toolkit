@@ -408,6 +408,28 @@ Reviewer 不得为了写 memory 修改正在审查的 HEAD。
 - audit / discovery ticket 不得偷变 implementation；document ticket 不得偷改 runtime behavior。
 - future requirement visible ≠ current requirement authorized。
 
+### 11.1 MODEL / RUNTIME SELECTION（模型 / 运行时选择）
+
+当产品验证需要模型执行时，按以下顺序选择运行时：
+
+1. 首选能力足以验证目标产品行为的运行时（capable-runtime first）；
+2. 在真实负载上度量质量 / 可靠性 / 时延 / token 用量 / 成本；
+3. 仅当存在已批准或实测的约束（隐私 / 数据出网、离线运行、实测 API 成本、实测时延、
+   可用性 / 部署约束）时，才将本地推理作为阻断性要求。
+
+运行时专属模型参数（thinking / temperature / top_p / top_k / max_tokens / 模型版本等）
+是 qualification / profile 证据，不是产品语义；除非 Applicable Approved Spec 显式提升为产品需求。
+
+持久原则：
+
+```text
+UNKNOWN != PASS
+CAPABILITY_ISOLATION_RUNTIME_SCOPED（一个 runtime/provider PASS 不得推广为任意兼容 provider PASS）
+MODEL_QUALITY != RUNTIME_SECURITY（模型质量限制不否定能力隔离）
+```
+
+本规则不硬编码任何未来首选 provider；不强推 cloud，也不把本地推理设为默认阻断条件。
+
 ## 12. 测试与 Baseline Failure 规则
 
 代码改动应运行 ticket 要求的 focused tests + relevant regression；通常也应运行现有主要 suites：
