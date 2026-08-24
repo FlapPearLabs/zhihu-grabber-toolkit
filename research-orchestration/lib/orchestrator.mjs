@@ -202,15 +202,20 @@ export function createOrchestrator({
     return { clarificationRequired: false, selection: state.selection };
   }
 
+  function captureParentDir() {
+    return path.join(workDir, 'zhihu');
+  }
+
   function captureDir() {
-    return path.join(workDir, 'zhihu', String(state.selectedQuestionId));
+    return path.join(captureParentDir(), String(state.selectedQuestionId));
   }
 
   function stageCapture() {
     stageStart(STAGE_CAPTURE);
     const dir = captureDir();
-    fs.mkdirSync(dir, { recursive: true });
-    const res = run('zhihu-grab', [String(state.selectedQuestionId), '--out-dir', dir, '--json']);
+    fs.mkdirSync(captureParentDir(), { recursive: true });
+    // zhigrab treats --out-dir as the PARENT: it writes <out-dir>/<questionId>/answers.json
+    const res = run('zhihu-grab', [String(state.selectedQuestionId), '--out-dir', captureParentDir(), '--json']);
     const data = parseJson(res.stdout, 'grab');
     if (data.ok !== true) {
       fail(new OrchestrationError('capture_failed', 'grab returned ok=false', { stage: STAGE_CAPTURE, details: data.error?.message }));
@@ -403,7 +408,21 @@ export function createOrchestrator({
       : '';
     const coverage = state.coverage ?? readCoverage();
 
-    const disclosure = finalJson?.disclosure ?? null;
+    // reduce.mjs spreads the top-percent disclosure block at final.json top level
+    // (mode / totalAnswers / selectedAnswers / requestedPercent / actualCoveragePercent /
+    //  selectionRule / selectedSourceIds / isFullCoverage) rather than a nested `disclosure`.
+    const disclosure = finalJson
+      ? {
+          mode: finalJson.mode ?? mode,
+          totalAnswers: finalJson.totalAnswers ?? null,
+          selectedAnswers: finalJson.selectedAnswers ?? null,
+          requestedPercent: finalJson.requestedPercent ?? null,
+          actualCoveragePercent: finalJson.actualCoveragePercent ?? null,
+          selectionRule: finalJson.selectionRule ?? null,
+          selectedSourceIds: finalJson.selectedSourceIds ?? null,
+          isFullCoverage: finalJson.isFullCoverage ?? null,
+        }
+      : null;
     const isFullCoverage = mode === MODE_DIGEST;
     const result = {
       schemaVersion: 1,

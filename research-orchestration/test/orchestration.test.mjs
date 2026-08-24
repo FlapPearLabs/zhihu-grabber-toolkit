@@ -113,8 +113,10 @@ function makeFakeRunner({ searchCandidates, deepseekUsable = true, failOn = {} }
         return { status: 0, stdout: JSON.stringify({ schemaVersion: 1, ok: true, command: 'search', query: args[0], candidates }), stderr: '' };
       }
       case 'zhihu-grab': {
-        // args: [qid, --out-dir, dir, --json]
-        const outDir = args[2];
+        // args: [qid, --out-dir, <parentDir>, --json] → writes <parentDir>/<qid>/answers.json
+        const qid = args[0];
+        const parentDir = args[2];
+        const outDir = path.join(parentDir, qid);
         fs.mkdirSync(outDir, { recursive: true });
         fs.writeFileSync(path.join(outDir, 'answers.json'), JSON.stringify(fixtureAnswers));
         fs.writeFileSync(path.join(outDir, 'answers.md'), '# 测试问题\n\n## 1. 甲 — 99 赞\n回答一内容\n\n## 2. 乙 — 50 赞\n回答二内容\n\n## 3. 丙 — 10 赞\n回答三内容\n');
@@ -126,7 +128,7 @@ function makeFakeRunner({ searchCandidates, deepseekUsable = true, failOn = {} }
             ok: true,
             command: 'grab',
             stage: 'captured',
-            questionId: args[0],
+            questionId: qid,
             capturedAnswerCount: 3,
             artifacts: { json: 'answers.json', markdown: 'answers.md', progress: '.progress.json' },
             verified: false,
@@ -208,19 +210,30 @@ function makeFakeRunner({ searchCandidates, deepseekUsable = true, failOn = {} }
         const work = args[1];
         const finalDir = path.join(work, 'final');
         fs.mkdirSync(finalDir, { recursive: true });
-        fs.writeFileSync(
-          path.join(finalDir, 'final.json'),
-          JSON.stringify({
-            schemaVersion: 1,
-            mode: 'digest',
-            disclosure: { mode: 'digest', isFullCoverage: true },
-            inputCount: 3,
-            chunkCount: 1,
-            claims: [{ text: '核心观点一。', evidenceSourceIds: ['question-123-answer-1'], confidence: 'high' }],
-            minorityViews: ['少数观点。'],
-            uncertainties: ['不确定性。'],
-          }),
-        );
+        // top-percent disclosure fields are spread at top level (mirrors real reduce.mjs)
+        const mode = fs.existsSync(path.join(work, 'selection.json')) ? 'top-percent-analysis' : 'digest';
+        const base = {
+          schemaVersion: 1,
+          mode,
+          inputCount: 3,
+          chunkCount: 1,
+          claims: [{ text: '核心观点一。', evidenceSourceIds: ['question-123-answer-1'], confidence: 'high' }],
+          minorityViews: ['少数观点。'],
+          uncertainties: ['不确定性。'],
+        };
+        const final = mode === 'top-percent-analysis'
+          ? {
+              ...base,
+              totalAnswers: 198,
+              selectedAnswers: 40,
+              requestedPercent: 20,
+              actualCoveragePercent: 20.2,
+              selectionRule: 'top-20-pct-voteup-desc-answerid-dec-asc-strict',
+              selectedSourceIds: ['question-123-answer-1'],
+              isFullCoverage: false,
+            }
+          : { ...base, disclosure: { mode: 'digest', isFullCoverage: true } };
+        fs.writeFileSync(path.join(finalDir, 'final.json'), JSON.stringify(final));
         return { status: 0, stdout: '', stderr: '' };
       }
       case 'corpus-render': {
@@ -465,6 +478,11 @@ test('CASE C: explicit sampled intent → top-percent mode + disclosure, no full
   assert.equal(outcome.analysis.mode, MODE_TOP_PERCENT);
   assert.equal(outcome.analysis.isFullCoverage, false);
   assert.equal(outcome.analysis.requestedPercent, 20);
+  // sampled disclosure must be surfaced (mode identity + coverage facts)
+  assert.ok(outcome.analysis.disclosure, 'sampled disclosure must be surfaced');
+  assert.equal(outcome.analysis.disclosure.mode, MODE_TOP_PERCENT);
+  assert.equal(outcome.analysis.disclosure.requestedPercent, 20);
+  assert.equal(outcome.analysis.disclosure.isFullCoverage, false);
   const names = fake.calls.map((c) => c.name);
   assert.ok(names.includes('corpus-select'));
   const selectCall = fake.calls.find((c) => c.name === 'corpus-select');

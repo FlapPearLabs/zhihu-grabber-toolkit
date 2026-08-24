@@ -195,7 +195,8 @@ async function main() {
             status: 'clarification_required',
             reason: outcome.selection?.rationale ?? 'material ambiguity',
             candidates,
-            resume: { workDir, select: '<questionId>' },
+            // cwd-relative only — no machine-private absolute paths in machine output (RULES §11)
+            resume: { workDir: path.relative(process.cwd(), workDir) || '.', select: '<questionId>' },
           },
           null,
           2,
