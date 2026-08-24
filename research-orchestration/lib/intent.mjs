@@ -18,14 +18,13 @@ export const MODE_TOP_PERCENT = 'top-percent-analysis';
 export const QUICK_PERCENT = 20;
 
 const SAMPLED_HINTS = [
-  /快速(看看|预览|看一下)?/i,
-  /quick(?: look)?/i,
-  /只看高赞/i,
-  /高赞/i,
+  /快速(看看|预览|看一下)/i,
+  /quick\s+(look|view|preview)/i,
+  /只看高赞(回答)?/i,
   /前\s*\d+\s*%/,
   /top\s*\d+\s*%/i,
-  /(\d+)\s*%/,
-  /sampled?/i,
+  /(\d{1,3})\s*%/,
+  /sampled?\s*(view|look|digest)/i,
   /采样/i,
   /(不|无|非|不是).{0,4}(需要|要求|要).{0,4}(全量|全貌|全部|full)/i,
   /(不需要|不用|无需|不要).{0,4}(全量|全貌|全部)/i,
@@ -101,8 +100,10 @@ export function resolveRequestedMode({ explicitMode = null, explicitPercent = nu
   }
 
   if (mode === MODE_TOP_PERCENT) {
-    const n = Number.parseInt(percent, 10);
-    if (!Number.isInteger(n) || n < 1 || n > 100) return { valid: false, mode, percent: null };
+    const raw = String(percent ?? '').trim();
+    if (!/^\d{1,3}$/.test(raw)) return { valid: false, mode, percent: null };
+    const n = Number.parseInt(raw, 10);
+    if (n < 1 || n > 100) return { valid: false, mode, percent: null };
     percent = n;
   }
   return { valid: true, mode, percent };

@@ -290,6 +290,26 @@ test('intent: explicit sampled hints select top-percent with disclosure percent'
   assert.equal(resolveAnalysisIntent('只看高赞').percent, QUICK_PERCENT);
 });
 
+test('intent: subject words containing 快速/高赞 must NOT trigger silent sampled downgrade (Acceptance E/J)', () => {
+  for (const t of [
+    '研究一下快速排序算法',
+    '如何快速提升写作能力',
+    '快速学习英语的方法',
+    '高赞回答有什么特点',
+    '高赞率的营销技巧',
+    '量子计算',
+    '帮我研究人工智能对教育的影响',
+  ]) {
+    const r = resolveAnalysisIntent(t);
+    assert.equal(r.mode, MODE_DIGEST, `generic intent with subject word must stay full-coverage: ${t}`);
+    assert.equal(r.sampledIntent, false);
+  }
+  // explicit sampled phrasings still route to sampled
+  for (const t of ['快速看看新能源汽车', '只看高赞回答 新能源汽车', '前20%的回答', 'sampled view', '不需要全量']) {
+    assert.equal(resolveAnalysisIntent(t).mode, MODE_TOP_PERCENT, `explicit sampled phrasing must be sampled: ${t}`);
+  }
+});
+
 test('intent: normalizeTopic strips quoting/whitespace', () => {
   assert.equal(normalizeTopic('  帮我研究 X  '), '帮我研究 X');
   assert.equal(normalizeTopic('"帮我研究 X"'), '帮我研究 X');

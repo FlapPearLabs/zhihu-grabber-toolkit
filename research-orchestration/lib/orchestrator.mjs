@@ -66,6 +66,18 @@ function firstLine(text) {
   return s.split('\n')[0] ?? '';
 }
 
+/** Extract a useful diagnostic from pretty-printed JSON stdout (warnings/issues/error). */
+function jsonDetail(stdout) {
+  try {
+    const j = JSON.parse(stdout);
+    const d = j?.warnings ?? j?.issues ?? j?.error?.message ?? null;
+    if (d != null) return JSON.stringify(d).slice(0, 500);
+  } catch {
+    /* fall through to first line */
+  }
+  return firstLine(stdout);
+}
+
 export function createOrchestrator({
   workDir,
   topic,
@@ -247,7 +259,7 @@ export function createOrchestrator({
       reportedAnswerCount: v?.reportedAnswerCount ?? null,
     };
     if (!valid) {
-      fail(new OrchestrationError('verification_failed', 'verify-output valid=false（FAIL_CLOSED；captured != verified）', { stage: STAGE_VERIFY, details: firstLine(res.stdout) || firstLine(res.stderr) }));
+      fail(new OrchestrationError('verification_failed', 'verify-output valid=false（FAIL_CLOSED；captured != verified）', { stage: STAGE_VERIFY, details: jsonDetail(res.stdout) || firstLine(res.stderr) }));
     }
     state.artifacts[STAGE_VERIFY] = state.artifacts[STAGE_CAPTURE];
     state.hashes[STAGE_VERIFY] = state.hashes[STAGE_CAPTURE];
@@ -263,12 +275,12 @@ export function createOrchestrator({
     }
     const cv = runner('corpus-verify-handoff', [handoffFile, '--source-root', captureDir()]);
     if (cv.status !== 0) {
-      fail(new OrchestrationError('handoff_invalid', 'corpus handoff verify rejected the handoff', { stage: STAGE_HANDOFF, details: firstLine(cv.stdout) || firstLine(cv.stderr) }));
+      fail(new OrchestrationError('handoff_invalid', 'corpus handoff verify rejected the handoff', { stage: STAGE_HANDOFF, details: jsonDetail(cv.stdout) || firstLine(cv.stderr) }));
     }
     try {
       const cvp = JSON.parse(cv.stdout);
       if (cvp.valid !== true) {
-        fail(new OrchestrationError('handoff_invalid', 'corpus handoff verify valid=false', { stage: STAGE_HANDOFF, details: firstLine(cv.stdout) }));
+        fail(new OrchestrationError('handoff_invalid', 'corpus handoff verify valid=false', { stage: STAGE_HANDOFF, details: jsonDetail(cv.stdout) }));
       }
     } catch {
       fail(new OrchestrationError('handoff_invalid', 'corpus handoff verify output unparseable', { stage: STAGE_HANDOFF }));
@@ -354,11 +366,11 @@ export function createOrchestrator({
 
     const vw = runner('corpus-verify-work', [cw]);
     if (vw.status !== 0) {
-      fail(new OrchestrationError('coverage_failed', 'corpus verify --work failed（coverage gate）', { stage: STAGE_ANALYZE, details: firstLine(vw.stdout) || firstLine(vw.stderr) }));
+      fail(new OrchestrationError('coverage_failed', 'corpus verify --work failed（coverage gate）', { stage: STAGE_ANALYZE, details: jsonDetail(vw.stdout) || firstLine(vw.stderr) }));
     }
     try {
       if (JSON.parse(vw.stdout).valid !== true) {
-        fail(new OrchestrationError('coverage_failed', 'corpus coverage valid=false（FAIL_CLOSED；不得绕过 sourceCoverage）', { stage: STAGE_ANALYZE, details: firstLine(vw.stdout) }));
+        fail(new OrchestrationError('coverage_failed', 'corpus coverage valid=false（FAIL_CLOSED；不得绕过 sourceCoverage）', { stage: STAGE_ANALYZE, details: jsonDetail(vw.stdout) }));
       }
     } catch {
       fail(new OrchestrationError('coverage_failed', 'corpus verify --work output unparseable', { stage: STAGE_ANALYZE }));
@@ -374,7 +386,7 @@ export function createOrchestrator({
     }
     const fv = runner('corpus-verify-final', [cw, '--final', finalFile]);
     if (fv.status !== 0) {
-      fail(new OrchestrationError('coverage_failed', 'corpus verify --final failed', { stage: STAGE_ANALYZE, details: firstLine(fv.stdout) || firstLine(fv.stderr) }));
+      fail(new OrchestrationError('coverage_failed', 'corpus verify --final failed', { stage: STAGE_ANALYZE, details: jsonDetail(fv.stdout) || firstLine(fv.stderr) }));
     }
     try {
       if (JSON.parse(fv.stdout).valid !== true) {
