@@ -28,12 +28,12 @@ const SAMPLED_ACTION_FRAMES = [
   /quick\s+(look|view|preview)/i,
   /只看高赞(回答)?/i,
   // 采样/抽样 trigger sampled ONLY when the wording unambiguously requests a SUBSET VIEW of
-  // answers/corpus (采样视图 / 采样版摘要 / 只采样… / 抽样分析). Generic SUBJECT uses of 采样
-  // (采样定理 / 采样率 / 采样数据 / 采样实验) are ordinary research topics → FULL-COVERAGE.
-  // Conservative rule: when uncertain → FULL-COVERAGE (R4 §6.3).
-  /采样\s*(视图|版|摘要|样本|子集)/i,
-  /只采样/i,
-  /抽样分析/i,
+  // answers/corpus (采样视图 / 采样版… / 只采样部分… / 对…回答…抽样分析). Generic SUBJECT uses
+  // (采样定理 / 采样率 / 采样数据 / 采样实验 / 采样子集 / 采样样本 / 采样摘要 / 抽样分析方法 /
+  // 只采样数据…) stay FULL-COVERAGE. Conservative rule: when uncertain → FULL-COVERAGE (R4 §6.3).
+  /采样\s*(视图|版)/i,
+  /只采样(部分|一些|前|top|少量|其中)/i,
+  /对.{0,8}(回答|答案|内容|语料|评论|高赞).{0,8}抽样分析/i,
   /sampled?\s*(view|look|digest)/i,
   // Explicit refusal-of-full idioms only — bare 无/非 (Chinese subject prefixes like 无监督/非监督)
   // must NOT trigger sampled (they are ordinary research subjects, not sampling requests).
@@ -46,7 +46,7 @@ const SAMPLED_ACTION_FRAMES = [
  * "我要20%的年化收益" / "选择20%的股票" are NOT sampled (percent is a subject, not a corpus subset).
  */
 const PERCENT_SAMPLE_FRAME = new RegExp(
-  `(?:只看|只取|看|取|选|要|前|top)\\s*(\\d{1,3})\\s*%\\s*(?:的)?(?:高赞\\s*)?${ANSWER_FRAME}`,
+  `(?:只看|只取|看|取|选|要|前|top)\\s*(\\d{1,3})\\s*%\\s*(?:的)?(?:高赞\\s*)?${ANSWER_FRAME}(?!(?:率|数|量|比|差|度|值|额|价|本|据|均|总))`,
   'i',
 );
 
