@@ -5,7 +5,6 @@
 > **IMPLEMENTATION_AUTHORIZATION: NONE**
 > **ORIGIN: Issue #5**（`[Dogfood][F4] End-to-end research requires too many manual orchestration steps`）
 > **PRODUCT_STAGE: FUTURE_SCOPE**
-> **Branch:** `docs/research-orchestration-future-scope`
 > **Author handle:** FlapPearLabs
 > **Date:** 2026-08-24
 
@@ -18,6 +17,16 @@ This Spec does not change current product behavior. // 不修改 Approved Specs 
 ```
 
 本文件是 **PROPOSED FUTURE-SCOPE SPEC**，不是 APPROVED Spec。除非 product owner 后续明确批准并经过所需 independent review，本文件不获得任何 repository authority（`AGENTS.md` §1 / RULES.md §6）。本文件不构成对 `docs/specs/v2-rich-content-fidelity.md` 或 `docs/specs/v0.3-product-scope.md` 的任何 amendment，也不与它们争抢 authority。
+
+> **NORMATIVE LANGUAGE RULE**
+>
+> Unless and until this Spec is explicitly approved, all MUST / MUST NOT / REQUIRED /
+> acceptance / non-goal language in this document describes the **proposed future contract only**.
+> It is **non-binding** and does not override current repository authority
+> （RULES.md / Applicable Approved Specs / product-behavior-contract / AGENTS.md）。
+>
+> 在本 Spec 被显式批准之前，文中所有 MUST / MUST NOT / REQUIRED / acceptance / non-goal 措辞
+> 仅描述 **proposed future contract**；不具约束力，不覆盖当前 repository authority。
 
 ---
 
@@ -58,7 +67,11 @@ ORCHESTRATE_EXISTING_PRIMITIVES        // 编排既有 primitives，不重建
 DO_NOT_REIMPLEMENT_EXISTING_AUTHORITIES // 不重实现既有确定性权威（verifier / make-handoff / 验证 gate）
 ```
 
-### 1.4 已核验的 CURRENT primitives（2026-08-24 现场核对 master 实现，非凭文件名）
+### 1.4 BASELINE SNAPSHOT AT SPEC CREATION（2026-08-24）
+
+> This is historical baseline evidence, not a dynamic current-state authority.
+> Any future implementation must re-observe repository truth before execution.
+> （以下为 Spec 创建时的历史基线快照，非动态当前状态权威；未来任何实现执行前必须重新核对仓库真相。）
 
 **Zhihu 侧（zhihu-answer-grabber）：**
 
@@ -165,7 +178,7 @@ make-handoff remains deterministic handoff authority   // make-handoff 是唯一
 canonical source identity remains controller-owned     // canonical 源身份归 controller（runtime-strategy §2）
 evidence lineage remains mechanically verifiable       // 证据 lineage 保持机械可验证（R10 / T9 hybrid lineage）
 SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST               // 采样分析 ≠ 全量 digest（pipeline identity 分离，T7 APPROVED）
-MODEL_QUALITY != RUNTIME_SECURITY                      // 模型质量限制不否定能力隔离（RULES §11.1）
+MODEL_QUALITY != RUNTIME_SECURITY                      // 模型质量限制不否定能力隔离（AGENTS.md §11.1）
 unsupported/unqualified runtime must not be silently enabled // NO/UNKNOWN runtime 不得静默启用（V0.3 决策 C）
 ```
 
@@ -227,9 +240,9 @@ SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST
 
 ### 7.1 引用既有 runtime strategy
 
-- `docs/architecture/runtime-strategy.md`（ACCEPTED ARCHITECTURE RECORD）：**Runtime is replaceable infrastructure, not product identity**。
-- `RULES.md §11.1`：capable-runtime first；本地推理仅在已批准 / 实测约束（隐私 / 离线 / 成本 / 时延 / 可用性）下作为阻断性要求。
-- `AGENTS.md §11.1` / V0.3 决策 C：capability isolation 逐 runtime 独立门控，NO / UNKNOWN → fail closed，禁止跨 runtime 推导。
+- `docs/architecture/runtime-strategy.md`（ACCEPTED ARCHITECTURE RECORD）：**Runtime is replaceable infrastructure, not product identity**；§6 Runtime-selection engineering rule：capable-runtime first for product validation，本地优化仅在实测 / 批准约束之后。
+- `AGENTS.md §11.1`（MODEL / RUNTIME SELECTION）：capable-runtime first；本地推理仅在已批准 / 实测约束（隐私 / 离线 / 成本 / 时延 / 可用性）下作为阻断性要求；持久原则含 `MODEL_QUALITY != RUNTIME_SECURITY`（模型质量限制不否定能力隔离）。
+- V0.3 Spec §5（决策 C）：capability isolation 逐 runtime 独立门控，NO / UNKNOWN → fail closed，禁止跨 runtime 推导。
 
 ### 7.2 未来 orchestrator 不得未经授权
 
@@ -341,7 +354,9 @@ public Zhihu cloud egress precedent ≠ private corpus authorization
 
 ## 12. Non-goals
 
-本 Spec 明确排除（长期约束，非临时建议；RULES §6.4）：
+本 Spec 明确排除以下范围（**PROPOSED future-scope boundaries**；本文件当前非绑定，见顶部 NORMATIVE LANGUAGE RULE）：
+
+其中部分排除项同时受既有 Approved authority 约束（例如 RULES.md §6.4「Spec Non-goals 是长期约束，不是临时建议」适用于已批准 Spec 的 non-goals；V2 / V0.3 的既有 Non-goals 继续有效）。这些约束之所以有约束力，是因为**既有 authority 本身存在**，**不是因为**本 PROPOSED Spec 复述了它们。
 
 - 不重写 grabber；
 - 不重写 verifier；
@@ -358,7 +373,9 @@ public Zhihu cloud egress precedent ≠ private corpus authorization
 
 ## 13. Acceptance Direction for Future Implementation
 
-> 以下为 **FUTURE IMPLEMENTATION ACCEPTANCE**（未来实现 ticket 的验收方向），**不是**当前 Spec ticket 的 DONE 证明。未来声称「#5 描述的产品问题已解决」之前，实现必须满足以下全部方向：
+> 以下为 **FUTURE IMPLEMENTATION ACCEPTANCE DIRECTION**（未来实现 ticket 的验收方向），**不是**当前 Spec ticket 的 DONE 证明。
+> **If/when this Spec is explicitly approved**, future implementation must satisfy the following direction
+> （若 / 当本 Spec 被显式批准时，未来实现必须满足以下方向；批准前全部不具约束力，见顶部 NORMATIVE LANGUAGE RULE）。
 
 - **A.** 用户无需理解内部 8–10 个 primitive steps（编排细节对用户透明）。
 - **B.** 普通 happy path 目标为：`topic input → at most one necessary candidate-selection gate → final research result`。
@@ -390,16 +407,18 @@ OPEN-R7: progress / cancellation UX                   // 进度 / 取消交互
 ## 15. Relationship to Issue #5
 
 - **Issue #5 是最早的 loose product-problem record**：`[Dogfood][F4] End-to-end research requires too many manual orchestration steps`（OPEN，label: enhancement，P3 — workflow ergonomics）。
-- **本 Spec 是其规范化 successor**：把 #5 描述的 ORCHESTRATION_COMPLEXITY 问题正式化为可审查、未授权实现的 future-scope Spec。
-- **Spec merge 后**，#5 **MAY be closed as**：
-
-```text
-NOT_PLANNED / SUPERSEDED_BY_SPEC
-```
-
-**而不是 `COMPLETED`**。理由：需求没有被实现；只是从 loose Issue 迁移到正式 future-scope Spec。
-
-- **Future implementation ticket(s) must reference this Spec** 并在声称 feature 存在前满足 §13 的 acceptance direction。
+- **本 Spec 是其规范化 successor（规划性 successor，不具权威替代语义）**：把 #5 描述的 ORCHESTRATION_COMPLEXITY 问题正式化为可审查、未授权实现的 future-scope Spec。
+- **未来经 reviewed merge 后**，#5 可能的关闭分类为 GitHub `state_reason = not_planned`。
+  本 PROPOSED Spec **不具有 authoritative supersession semantics**：不得暗示本 Spec 已权威「取代」#5
+  或其问题记录；不使用 `SUPERSEDED_BY_SPEC` 等暗示权威替代的表述。
+- 推荐 close comment 措辞（不得使用 `COMPLETED` / `FIXED`）：
+  > "Loose enhancement issue closed as not planned for the current product stage.
+  > Its product problem and proposed future scope are preserved in
+  > docs/specs/research-orchestration-scope.md.
+  > Feature remains NOT_IMPLEMENTED.
+  > The proposed Spec does not authorize future implementation."
+- **If this Spec is later approved, implementation tickets must reference it** and satisfy §13 acceptance direction.
+  **While PROPOSED it is planning input only and is not repository authority.**
 - 在当前阶段：#5 **保持 OPEN**，直到本 Spec 的 review / merge 决策完成。
 
 ---
