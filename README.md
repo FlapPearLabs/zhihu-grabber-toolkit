@@ -2,36 +2,88 @@
 
 简体中文 | [English](./README_EN.md)
 
-让 Agent 稳定完成：**搜知乎 → 抓全回答 → 验证 → 处理长回答列表**。
+让 Agent 稳定完成：**搜知乎 → 抓取可访问回答 → 验证 → 处理长语料 → 生成可追溯研究结果**。
 
-当前里程碑：**v0.2.0**，已经完成真实使用验证的最小可用版本。（v0.2.0 是整个仓库当前的功能里程碑，不是 npm 软件包版本号。）
+当前功能里程碑：**v0.3.0**。v0.3 已完成并经过真实 dogfood；当前 `master` 还包含已完成的 **Research Orchestration MVP**（#30）。Research Orchestration 尚未单独分配新的版本号，**这不等于创建了 v0.4**。
+
+> 这是一个 **CLI + Skills 工具链**，不是绑定某个 Agent 或某个模型的应用。只要 Agent 能执行本地命令、读取仓库文档并具备所需本机凭据，就可以调用这些 CLI。`deepseek-api-tool-less` 只是当前公开知乎 Research Orchestration 的默认已验证语义分析 runtime，不是搜索、抓取、验证等 CLI 的前置依赖，也不是唯一可用 runtime。
 
 | 模块 | 作用 |
 |---|---|
-| [`zhihu-answer-grabber`](./zhihu-answer-grabber) | 知乎命令行工具 + 技能包：搜索、单题/批量抓取、分页抓全、断点续传、JSON/Markdown 输出、结果验证。 |
-| [`corpus-anthology`](./corpus-anthology) | 回答很多、内容特别长时使用的技能包：分块处理、检查有没有漏、全量摘要/高赞样本/原文归档，避免一次性塞满上下文。 |
+| [`zhihu-answer-grabber`](./zhihu-answer-grabber) | 知乎 CLI + Skill：搜索、单题/批量抓取、分页抓全、断点续传、JSON/Markdown 输出、丰富内容提取、结果验证。 |
+| [`corpus-anthology`](./corpus-anthology) | 大语料处理：分块、覆盖验证、全量摘要、top-percent 分析、层级全量摘要、原文归档。 |
+| [`research-orchestration`](./research-orchestration) | 薄编排层：自然语言问题 → 搜索 → 选题 → 抓取 → 验证 → handoff → 分析 → 渲染，可恢复、fail-closed。 |
+
+---
+
+## v0.3.0 更新
+
+相较 v0.2，v0.3 的主要变化：
+
+- **更完整的内容保真**：问题描述 / topics、图片、外链、引用 / 脚注、代码块等进入结构化输出；
+- **可选评论 enrichment**：显式 `--comments` 时，对最多 10 条高赞回答各补充最多 3 条一级热门评论；
+- **搜索结果回答数 enrichment**：候选问题尽量附带回答数；缺失时保持 `unknown`，不影响搜索；
+- **countMismatch 降级为诊断字段**：回答数不一致不再单独破坏 `valid`，真正有效性仍由 verifier 决定；
+- **Agent 安全链路硬化**：canonical source identity / coverage / evidence lineage 由 controller 掌握，模型只负责语义生成；
+- **top-percent-analysis**：显式要求只看高赞或前 X% 回答时，确定性选择并强制披露覆盖比例；
+- **hierarchical full digest**：大 corpus 不再把全部 reduce input 一次塞给模型，使用层级聚合保持 100% canonical source coverage；
+- **qualified tool-less runtimes**：`lmstudio-local-tool-less` 与 `deepseek-api-tool-less` 均完成能力隔离资格验证；
+- **真实 dogfood**：完成约 79 / 183 / 318 回答带及补充语料的多模式验证。
+
+当前 master 另外已加入 **Research Orchestration MVP**：用户可以直接输入自然语言研究问题，让系统自动完成一个问题级的完整研究流程。
+
+---
+
+## 这是不是绑定 DeepSeek？
+
+**不是。**
+
+底层能力都是 CLI。WorkBuddy、Codex、Claude Code、Hermes 或其他能执行 shell / Node.js 的 Agent，都可以直接调用：
+
+```text
+search / grab / batch / status / verify-output / make-handoff /
+corpus select / chunk / map / verify / reduce / render
+```
+
+Research Orchestration 只是把这些既有 primitive 串起来。
+
+- 搜索、抓取、验证：**不需要 DeepSeek API**；
+- 大模型语义分析阶段：需要一个已支持的 runtime；
+- 当前公开知乎 Research Orchestration 的默认 runtime：`deepseek-api-tool-less`；
+- 已验证的本地 runtime：`lmstudio-local-tool-less`；
+- runtime 失败时不会静默切到别的 provider。
+
+因此更准确的产品结构是：
+
+```text
+任意可执行 CLI 的 Agent
+        ↓
+zhihu-grabber-toolkit CLI / Skills
+        ↓
+确定性抓取、验证、coverage / evidence gates
+        ↓
+需要语义归纳时才调用已资格验证的 model runtime
+```
 
 ---
 
 ## 最简单：把仓库直接交给 Agent
 
-把仓库链接发给 WorkBuddy、Codex、Claude Code 等编程 Agent，然后给它这句话：
+把仓库链接发给 WorkBuddy、Codex、Claude Code 等 Agent，然后给它这句话：
 
 ```text
-读取本仓库 README.md、AGENTS.md、RULES.md 和
-zhihu-answer-grabber/SKILL.md，自主完成安装、配置检查和知乎任务。
+读取本仓库 README.md、AGENTS.md、RULES.md、
+zhihu-answer-grabber/SKILL.md 和 corpus-anthology/SKILL.md，
+自主完成安装、配置检查和知乎研究任务。
 
-不要读取、展示或要求我把 Cookie / Secret 粘贴到聊天里；
+不要读取、展示或要求我把 Cookie / Secret / API Key 粘贴到聊天里；
 如果缺凭据，只告诉我应该在本机放哪个文件。
-抓取后必须先运行 verify-output 检查结果，只有 valid=true 才能继续；
-回答很多时按照技能包规则使用 corpus-anthology，不要一次性把全文塞进上下文。
+抓取后必须先运行 verify-output，只有 valid=true 才能继续；
+回答很多时使用 corpus-anthology，不要一次性把全文塞进上下文。
+如果用户给的是一个自然语言研究问题，优先考虑 research-orchestration。
 ```
 
-Agent 应该能自己完成：
-
-**读文档 → 安装依赖 → 检查本地配置 → 搜索/抓取/批量 → 验证结果 → 回答很多时分块处理。**
-
-> Windows 当前优先使用 PowerShell。
+CLI 本身不关心是哪一个 Agent 在调用；Skill 主要用于告诉 Agent 正确的调用顺序、验证门和安全边界。
 
 ---
 
@@ -46,155 +98,123 @@ npm ci --registry=https://registry.npmjs.org
 node scripts/preflight.mjs --json
 ```
 
-安装和检查可以由 Agent 自动完成。
-
-登录凭据仍需要用户在本机配置，Agent 不会要求你把 Cookie 或 Secret 发到聊天里：
+登录凭据需要用户在本机配置，Agent 不应要求你把它们发到聊天里：
 
 - `zhihu_cookie.txt`：抓回答需要；
-- `zhihu_secret.txt`：搜索问题需要。
-
-最简单的方式是把这两个文件放在当前 `zhihu-answer-grabber/` 目录，然后重新运行配置检查。
+- `zhihu_secret.txt`：搜索问题需要；
+- DeepSeek API credential：**仅在使用默认 DeepSeek 语义分析 runtime 时需要**，不是基础 CLI 的必需项。
 
 `preflight.mjs` 只报告“是否可用”和错误类型，不输出凭据内容。
 
 ---
 
+## 一句话研究：Research Orchestration
+
+在仓库根目录：
+
+```bash
+node research-orchestration/bin/research.mjs "人工智能会如何影响教育？"
+```
+
+默认流程：
+
+```text
+SEARCH
+→ SELECT
+→ CAPTURE
+→ VERIFY
+→ HANDOFF
+→ ANALYZE
+→ RENDER
+→ COMPLETE
+```
+
+行为约束：
+
+- 搜索多个知乎候选问题；
+- 最相关候选足够明确时自动选择；
+- 候选存在实质歧义时最多要求一次 clarification，可用 `--select <QUESTION_ID>` 恢复；
+- 默认走 **FULL-COVERAGE digest**；
+- 大语料自动使用 hierarchical full digest；
+- 只有明确提出“快速看看 / 只看高赞 / 前 X% 的回答 / sampled view / 不需要全量”等意图时，才进入 `top-percent-analysis`；
+- sampled 结果必须披露 total / selected / requestedPercent / actualCoveragePercent / `isFullCoverage`；
+- runtime / verifier / coverage gate 失败时 fail-closed，不静默降级；
+- state 用于恢复编排进度，不是 canonical 数据源，也不保存凭据。
+
+### 当前边界：还不是“跨多个问题的全站综合研究”
+
+当前 MVP 会：
+
+```text
+搜索多个候选问题
+→ 选择其中 1 个最相关问题
+→ 抓取并分析这个问题的回答
+```
+
+它**还不会**自动同时抓 Q1 + Q2 + Q3 后把多个问题合并成一个 verified corpus。跨问题聚合属于后续独立 scope。
+
+---
+
 ## 现在能做什么
 
-- **搜索问题**：关键词 → 知乎问题 ID；搜索结果会尽量附带每个候选问题的回答数（回答数无法获取时显示为「未知」，不影响搜索本身）；
-- **全量抓取**：不是只抓第一页，会继续分页抓取全部当前可访问回答。正常情况下会一直分页到知乎明确返回结束；为避免异常分页无限循环，单个问题当前设有 300 页安全上限；
-- **批量抓取**：一次抓多个问题，其中一个失败不会影响其他问题继续处理；
-- **断点续传**：中断后继续，不必从头再抓；
-- **输出文件**：抓取完成后主要会得到两个文件——
-  - `answers.json`：保存原始抓取结果的数据文件，适合程序继续处理；
-  - `answers.md`：整理成更适合人直接阅读的版本。
-- **严格验收**：“抓到了”不等于“确认有效”，只有 `verify-output` 返回 `valid=true` 才算真正完成；
-- **回答很多时**：长回答列表先看看规模、分块处理、检查有没有漏，再做全量摘要 / 高赞样本 / 原文归档；
-- **更多内容**：问题附加信息，以及图片、外链、引用、代码块等丰富内容；评论补充抓取可选。
+- **搜索问题**：关键词 → 知乎问题 ID，并尽量附带回答数；
+- **单题全量抓取**：持续分页抓取全部当前可访问回答，异常分页有 300 页安全上限；
+- **批量抓取**：多个问题独立执行，一个失败不影响其他项；
+- **断点续传**：中断后继续；
+- **严格验收**：`captured != verified`，只有 `verify-output` 的 `valid=true` 才算可继续；
+- **结构化输出**：`answers.json` + 适合人阅读的 `answers.md`；
+- **问题 metadata**：标题、描述、topics、回答总数等；
+- **回答 rich content**：图片、外链、引用 / 脚注、代码块；
+- **可选评论**：最多 10 条高赞回答 × 每条最多 3 条一级热门评论；
+- **大语料全量摘要**：flat / hierarchical digest；
+- **高赞子集分析**：top-percent-analysis，严格披露不是全量；
+- **原文归档**：不改写 canonical 原文；
+- **Evidence lineage / coverage verification**：检查是否漏来源、重复映射、stale map 等；
+- **自然语言 Research Orchestration**：自动串联搜索到最终研究结果。
 
-真实使用验证已处理过 **538 条回答 / 29 页** 的问题。
+真实使用验证曾处理 **538 条回答 / 29 页** 的问题，并完成多档真实 corpus dogfood。
 
 ---
 
 ## 到底会抓下来什么？
 
-抓取一个问题时，会保存**问题本身的信息**和**每条回答的信息**，而不是把知乎页面整个复制下来。
+抓取一个问题时，会保存**问题本身的信息**和**每条回答的信息**，而不是把整个网页复制下来。
 
 ### 问题本身
 
-问题 ID 和链接属于基础信息；在问题信息获取成功时，还会保存问题标题、问题描述、话题以及知乎显示的回答总数。问题信息获取失败不会阻止回答正文继续抓取。
+问题 ID 和链接属于基础信息；问题 metadata 获取成功时，还会保存问题标题、问题描述、topics 和知乎显示的回答总数。metadata 获取失败不会阻止回答正文继续抓取。
 
 ### 每条回答
 
 每条回答会保存：
 
-- 回答 ID、回答链接、完整回答正文、回答摘要；
+- 回答 ID、回答链接、完整回答正文、摘要；
 - 点赞数、评论数、创建时间、更新时间；
-- 从正文中整理出的附加信息：图片、外链、引用 / 脚注、代码块。
+- 图片、外链、引用 / 脚注、代码块等结构化附加信息。
 
-目前作者部分只保存作者名称，不抓完整个人主页和粉丝等资料。
+目前作者部分只保存作者名称，不抓完整作者档案。
 
 ### 评论
 
-评论默认不抓。开启评论补充（抓取命令加 `--comments`）后，会从最多 10 条高赞回答中，每条补充最多 3 条一级热门评论——它不是全量评论抓取，也不抓子评论 / 回复楼。评论会保存：评论正文、评论作者名称（如果有）、评论时间（如果有）。
+评论默认关闭。显式 `--comments` 后，从最多 10 条高赞回答中，每条补充最多 3 条一级热门评论；不是全量评论抓取，也不抓子评论 / 回复楼。
 
-### 图片、链接、引用和代码块
+### 明确不抓 / 不做
 
-- **图片**：保存图片地址、说明、尺寸等可用信息；不会把图片文件下载到本地。
-- **外链**：记录回答正文中的外链及其基本信息。
-- **引用 / 脚注**：回答里的引用或脚注会额外整理成结构化信息。
-- **代码块**：代码正文仍保留在回答正文中，同时会记录代码语言和行数等信息。
-- **视频**：不支持，也没有计划支持；JSON 中的 `videos: []` 仅作为兼容保留字段。
-
-### 不抓什么
-
-当前不是把知乎整个页面全部复制下来。明确不抓：完整作者档案、完整评论区、所有子评论；不会自动下载全部图片文件；视频不支持（也不会支持）。
-
-### 抓下来的文件长什么样
-
-`answers.json` 是结构化的数据文件，大致结构如下（字段已简化）：
-
-```json
-{
-  "questionId": "123456",
-  "questionTitle": "问题标题",
-  "answerCount": 538,
-
-  "question": {
-    "id": "123456",
-    "title": "问题标题",
-    "descriptionMarkdown": "问题描述……",
-    "topics": [
-      {
-        "id": "19550517",
-        "name": "人工智能"
-      }
-    ]
-  },
-
-  "answers": [
-    {
-      "id": "987654",
-      "author": "作者名称",
-      "url": "https://www.zhihu.com/question/123456/answer/987654",
-      "content": "<p>回答完整正文……</p>",
-      "excerpt": "回答摘要……",
-      "voteupCount": 1234,
-      "commentCount": 56,
-      "createdTime": 1234567890,
-      "updatedTime": 1234567890,
-
-      "assets": {
-        "images": [],
-        "links": [],
-        "references": [],
-        "codeBlocks": [],
-        "videos": []
-      },
-
-      "comments": [
-        {
-          "authorName": "评论作者",
-          "contentHtml": "<p>评论内容……</p>",
-          "contentMarkdown": "评论内容……",
-          "createdTime": 1234567890
-        }
-      ]
-    }
-  ]
-}
-```
-
-这是为了说明结构而简化的示例。`comments` 只有显式开启 `--comments` 后才可能出现；默认抓取不会新增评论字段，实际字段以当前版本输出为准。
-
-`answers.md` 是适合人阅读的版本，主要包含：
-
-- 问题标题；
-- 问题链接；
-- 抓取时间；
-- 知乎显示的回答总数；
-- 本次实际抓到的回答数；
-- 回答按点赞数从高到低排列；
-- 每条回答的作者名称；
-- 点赞数；
-- 评论数；
-- 回答链接；
-- 创建时间；
-- 回答正文。
-
-两个当前边界：
-
-1. 用 `--comments` 补抓到的评论保存在对应回答的 `comments` 字段中，也就是 `answers[].comments`；当前不会自动插进 `answers.md`。
-2. 获取成功的问题描述会保存在 `answers.json` 的 `question` 信息中，当前 `answers.md` 阅读版不会单独展示。
+- 完整作者档案；
+- 完整评论区和所有子评论；
+- 自动下载全部图片文件；
+- 视频（不支持，也没有计划支持）；
+- 点赞、评论、关注等写操作；
+- 验证码 / 权限控制绕过、代理池、高频抓取或规避检测。
 
 ---
 
-## 常用命令
+## 常用底层命令
 
 在 `zhihu-answer-grabber/` 目录执行：
 
 ```bash
-# 检查凭据
+# 检查知乎凭据
 node scripts/preflight.mjs --json
 
 # 搜索问题
@@ -203,16 +223,19 @@ node scripts/zhigrab.mjs search "关键词" --json
 # 单题全量抓取
 node scripts/zhigrab.mjs grab <QUESTION_ID> --json
 
-# 批量抓取（batch.txt 每行一个问题 ID）
+# 可选：评论 enrichment
+node scripts/zhigrab.mjs grab <QUESTION_ID> --comments --json
+
+# 批量抓取
 node scripts/zhigrab.mjs batch batch.txt --json
 
 # 查看状态
 node scripts/zhigrab.mjs status --json
 
-# 验证结果：唯一验收门
+# 验证结果：权威验收门
 node scripts/verify-output.mjs out/<QUESTION_ID>
 
-# 验证后交给回答很多时使用的技能包
+# 验证后生成 handoff
 node scripts/make-handoff.mjs out/<QUESTION_ID> --task digest
 ```
 
@@ -220,78 +243,49 @@ node scripts/make-handoff.mjs out/<QUESTION_ID> --task digest
 
 ## 回答特别多怎么办？
 
-如果一个问题有几百条回答，不会直接把所有内容一次性塞给大模型。
+不会直接把数百条回答一次性塞给模型。
 
-系统会：
+系统会先分块，再逐块 map，检查 source coverage / evidence lineage，最后 reduce；大 corpus 可以走 hierarchical full digest，把顶层 reduce 输入压缩，同时保持 canonical source coverage。
 
-1. 先看看内容有多大；
-2. 把很长的内容分成较小的部分；
-3. 一部分一部分处理；
-4. 检查有没有哪部分漏掉；
-5. 最后再统一汇总。
+主要模式：
 
-这样可以减少因为上下文太长造成的漏读、截断或只总结前半部分。
+- **Full digest**：覆盖全部 canonical sources；
+- **Hierarchical full digest**：大语料的全量摘要；
+- **Top-percent analysis**：确定性选择前 X% 高赞回答，强制披露覆盖率；
+- **Archive**：整理原文，不改写正文。
 
-针对不同需求有三种处理方式：
-
-- **全量摘要**：尽量覆盖全部回答；
-- **高赞样本**：只看点赞较高的一部分回答，不冒充完整总结；
-- **原文归档**：把原文整理到一起，不改写正文。
-
-内部实现细节见 [`corpus-anthology/SKILL.md`](./corpus-anthology/SKILL.md)。
+内部实现见 [`corpus-anthology/SKILL.md`](./corpus-anthology/SKILL.md)。
 
 ---
 
-## 抓下来的网页内容安全吗？
+## 安全模型
 
-知乎回答、链接和代码都只会被当作外部资料处理。
+知乎回答、链接和代码始终视为**不可信外部资料**，不是给 Agent 的操作命令。
 
-例如某条回答里写着：
+当前关键约束：
 
-“执行这个命令”
-“打开这个网站”
-“读取电脑里的文件”
+- 抓取数据与后续模型语义生成分离；
+- canonical source identity / coverage / evidence mapping 由 controller 管理；
+- 模型不拥有 verifier 权威；
+- 危险链接受限制；
+- 不自动执行正文代码；
+- 不自动打开正文外链；
+- `captured` 不等于 `verified`；
+- runtime 失败不静默 fallback；
+- 凭据不进入 repo / state / log / chat。
 
-这些文字本身不能直接让工具去执行这些操作。
-
-当前已经做了：
-
-- 网页内容转成更安全的 Markdown；
-- 危险链接受到限制；
-- 不会自动打开正文里的链接；
-- 不会自动执行正文里的代码；
-- 原始抓取数据不会因为后续整理而被改写。
-
-但是要明确：**当前版本不宣称已经彻底解决所有自然语言提示词注入问题。**
-
-更严格的大模型安全隔离仍在继续完善。
-
-因此本项目一直把知乎内容看作：
-
-**不可信的外部资料**，
-
-而不是：
-
-**给 Agent 的操作命令**。
+项目不宣称已经解决所有自然语言 prompt-injection 风险，因此仍坚持 fail-closed 和 capability isolation。
 
 ---
 
 ## 更多文档
 
-需要技术细节、边界和高级用法时再看：
-
 - [`zhihu-answer-grabber/SKILL.md`](./zhihu-answer-grabber/SKILL.md)
 - [`zhihu-answer-grabber/references/`](./zhihu-answer-grabber/references/)
 - [`corpus-anthology/SKILL.md`](./corpus-anthology/SKILL.md)
+- [`research-orchestration/`](./research-orchestration)
+- [`docs/project-memory/decision-boundary-matrix.md`](./docs/project-memory/decision-boundary-matrix.md)
 - [`AGENTS.md`](./AGENTS.md) / [`RULES.md`](./RULES.md)
-
----
-
-## 边界
-
-只做**读取、整理和验证**：不点赞、不评论、不关注；不绕过验证码/权限控制；不做代理池、高频抓取或规避检测；不自动执行正文代码或自动访问正文外链。
-
-请遵守知乎平台服务条款与当地法律法规，仅用于合法的个人学习、研究和自动化工作流。
 
 ## 许可证
 
