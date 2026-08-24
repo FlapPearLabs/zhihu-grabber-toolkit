@@ -28,12 +28,12 @@ const SAMPLED_ACTION_FRAMES = [
   /quick\s+(look|view|preview)/i,
   /只看高赞(回答)?/i,
   // 采样/抽样 trigger sampled ONLY when the wording unambiguously requests a SUBSET VIEW of
-  // answers/corpus (采样视图 / 采样版… / 只采样部分… / 对…回答…抽样分析). Generic SUBJECT uses
-  // (采样定理 / 采样率 / 采样数据 / 采样实验 / 采样子集 / 采样样本 / 采样摘要 / 抽样分析方法 /
-  // 只采样数据…) stay FULL-COVERAGE. Conservative rule: when uncertain → FULL-COVERAGE (R4 §6.3).
-  /采样\s*(视图|版)/i,
-  /只采样(部分|一些|前|top|少量|其中)/i,
-  /对.{0,8}(回答|答案|内容|语料|评论|高赞).{0,8}抽样分析/i,
+  // answers/corpus. All frames REQUIRE an answer/corpus noun (回答/答案/内容/语料/评论) and
+  // reject attribute/metric compounds (数据/客户/样本/特征/质量/数量/版本…). Generic SUBJECT
+  // uses stay FULL-COVERAGE. Conservative rule: when uncertain → FULL-COVERAGE (R4 §6.3).
+  /采样\s*(视图|版\s*摘要)/i,
+  /只采样(?:部分|一些|前|top|少量|其中)\s*(?:的)?(?:高赞\s*)?(?:回答|答案|内容|语料|评论)/i,
+  /对.{0,8}(?:回答|答案|内容|语料|评论|高赞)\s*(?:做|进行|来|去)\s*抽样分析/i,
   /sampled?\s*(view|look|digest)/i,
   // Explicit refusal-of-full idioms only — bare 无/非 (Chinese subject prefixes like 无监督/非监督)
   // must NOT trigger sampled (they are ordinary research subjects, not sampling requests).
