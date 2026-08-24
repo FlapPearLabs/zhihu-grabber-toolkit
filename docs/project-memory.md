@@ -64,7 +64,7 @@
   **Tracker #6 / Git history** 保存，本文件不再把 T1→T11 作为当前 active execution state。
   历史 checkpoint（非 current master）：V0.3 Draft-review baseline `22b8ed3`；Approved authority effective
   T0 DOCUMENT NORMALIZATION `234a315`（独立 DOCUMENT review PASS 并 ff-only merge master）。
-  **NEXT_STAGE / V0.4 未经授权不得自动开始。**
+  **NEXT_STAGE（Research Orchestration）已显式批准（2026-08-24，见下文 Research Orchestration 段）；V0.4 versioning 仍需单独授权，不得自动开始。**
 - **V0.3 已批准产品决策（durable，见 `docs/specs/v0.3-product-scope.md`）**：
   - **A. Search Answer Count（T1/T2 已进入 accepted implementation baseline）**：目标——搜索候选应尽可能提供来自可信上游的回答数量；缺失 / null 优于虚构。
     - T1 discovery 结论（独立 review PASS 后 merge）：官方 `zhihu_search` Item schema 采样结论
@@ -196,10 +196,11 @@
   各 T 遵循 Spec gate，不无条件并行。
 - **DEFERRED（长期，未经批准不得开始）**：
   - browser-smoke 高级 matcher 硬化（provenance / 折叠形态 / link-card 归一化）
-  - 研究流程自动化（research pipeline automation）：NEXT_STAGE，非当前 V0.3 范围
   - 旧 cross-shell Architecture Grill 设计线：不恢复
   - 注：Phase 5 实现 / Agent projection（原 DEFERRED 项）已转为 V0.3 当前工作进行（决策 C）；
-    video（原 DEFERRED 项）已转为 V0.3 决策 B 永久 DO_NOT_SUPPORT，不再属于 DEFERRED。
+    video（原 DEFERRED 项）已转为 V0.3 决策 B 永久 DO_NOT_SUPPORT，不再属于 DEFERRED；
+    **研究流程自动化（research pipeline automation）已由 Research Orchestration Approved Spec
+    显式授权 MVP（2026-08-24，见下文 Research Orchestration 段）**，不再属于 DEFERRED。
 - **BROWSER_SMOKE_ROLE（持久）**：`browser-smoke` = **尽力而为的外部一致性诊断**
   （best-effort external diagnostic），**不是产物有效性权威**；verify-output 才是
   确定性产物有效性权威（RULES §4）。其 PASS / FAIL / INCONCLUSIVE 不影响
@@ -208,6 +209,21 @@
   语义有足够的结构性浏览器证据（扁平 innerText 无法确定性恢复 body-vs-card-title
   provenance——不重开该类纯文本 heuristic 工作）。
 - 后续阶段开始前：从**届时最新的 remote master** 创建（或重建）其 feature 分支；不依赖任何历史临时分支 ref 作为长期事实。
+
+## Research Orchestration（APPROVED，2026-08-24）
+
+- **Spec**：`docs/specs/research-orchestration-scope.md`（Approved implementation contract，原 Issue #5 的规范化 successor）。
+- **当前状态（durable）**：`STATUS: APPROVED` · `IMPLEMENTATION_STATUS: NOT_IMPLEMENTED` ·
+  `IMPLEMENTATION_AUTHORIZATION: MVP_AUTHORIZED` · `VERSION_ASSIGNMENT: UNASSIGNED` ·
+  `PRODUCT_STAGE: NEXT_STAGE / RESEARCH_ORCHESTRATION`。
+- **产品决策（R1–R5 APPROVED；R6–R7 DELEGATED_IMPLEMENTATION_DESIGN）**：自然语言研究意图 +
+  概念 `research <topic>`（exact CLI 属 implementation detail）；自动选择最相关问题（MATERIAL AMBIGUITY →
+  最多一次 clarification）；默认 FULL-COVERAGE RESEARCH（大 corpus 用 hierarchical full digest，sampled 仅显式意图）；
+  公开知乎研究默认 runtime = `deepseek-api-tool-less`（NO_SILENT_RUNTIME_FALLBACK；public egress ≠ private/sensitive egress）；
+  最小可恢复 orchestration state 与 stage progress / graceful stop-resume 由实现设计。
+- **#5（HISTORICAL）**：CLOSED / `state_reason = not_planned` 是获批**前**记录的历史 close 分类，
+  **不构成**当前实现禁止；未来实现走**新的 implementation ticket**，须引用上述 Spec 并满足其 Acceptance A–L。
+- **不创建 V0.4**：VERSION_ASSIGNMENT 保持 UNASSIGNED 直至另行单独授权；V0.4 versioning 与 Research Orchestration MVP 分离。
 
 ## 历史 review 结论（沉淀）
 
