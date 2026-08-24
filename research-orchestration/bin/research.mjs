@@ -32,10 +32,8 @@ import { defaultRunner } from '../lib/runner.mjs';
 import {
   normalizeTopic,
   resolveAnalysisIntent,
-  normalizeExplicitMode,
-  MODE_DIGEST,
+  resolveRequestedMode,
   MODE_TOP_PERCENT,
-  QUICK_PERCENT,
 } from '../lib/intent.mjs';
 import { readState } from '../lib/state.mjs';
 
@@ -124,30 +122,13 @@ async function main() {
     usageError(`runtime must be one of: ${APPROVED_RUNTIMES.join(', ')}`, opts.json);
   }
 
-  // Approved analysis-mode policy (R4): explicit --mode wins; else intent-driven.
+  // Approved analysis-mode policy (R4): explicit --mode wins; 'auto'/absent → intent-driven.
   const intent = resolveAnalysisIntent(opts.topic);
-  let mode = intent.mode;
-  let percent = intent.percent;
-  if (opts.mode) {
-    const m = normalizeExplicitMode(opts.mode);
-    if (!m) usageError(`--mode must be digest | top-percent | auto`, opts.json);
-    if (m === 'auto') {
-      mode = intent.mode;
-      percent = intent.percent;
-    } else {
-      mode = m;
-      percent = mode === MODE_TOP_PERCENT ? (opts.percent ?? intent.percent ?? QUICK_PERCENT) : null;
-    }
-  } else if (opts.percent) {
-    // explicit percent implies sampled intent
-    mode = MODE_TOP_PERCENT;
+  const resolved = resolveRequestedMode({ explicitMode: opts.mode, explicitPercent: opts.percent, intent });
+  if (!resolved.valid) {
+    usageError(resolved.mode === MODE_TOP_PERCENT ? '--percent must be an integer 1..100' : '--mode must be digest | top-percent | auto', opts.json);
   }
-  if (mode === MODE_TOP_PERCENT) {
-    const p = opts.percent ?? percent ?? QUICK_PERCENT;
-    const n = Number.parseInt(p, 10);
-    if (!Number.isInteger(n) || n < 1 || n > 100) usageError('--percent must be an integer 1..100', opts.json);
-    percent = n;
-  }
+  const { mode, percent } = resolved;
 
   const workDir = opts.workDir;
   fs.mkdirSync(workDir, { recursive: true });

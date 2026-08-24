@@ -84,10 +84,11 @@ export function createOrchestrator({
   const run = (name, args, opts) => {
     const res = runner(name, args, opts);
     if (res.status !== 0) {
-      throw new OrchestrationError(stageErrorCode(name), `${name} failed (exit ${res.status})`, {
+      // route through fail() so stage=FAILED, state.error and a failed event are observable (§10)
+      fail(new OrchestrationError(stageErrorCode(name), `${name} failed (exit ${res.status})`, {
         stage: state.stage,
         details: firstLine(res.stderr) || firstLine(res.stdout),
-      });
+      }));
     }
     return res;
   };

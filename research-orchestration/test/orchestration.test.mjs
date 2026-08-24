@@ -25,6 +25,7 @@ import crypto from 'node:crypto';
 import {
   normalizeTopic,
   resolveAnalysisIntent,
+  resolveRequestedMode,
   extractPercent,
   normalizeExplicitMode,
   MODE_DIGEST,
@@ -300,6 +301,29 @@ test('intent: normalizeExplicitMode accepts approved modes only', () => {
   assert.equal(normalizeExplicitMode('top-percent'), MODE_TOP_PERCENT);
   assert.equal(normalizeExplicitMode('sampled'), MODE_TOP_PERCENT);
   assert.equal(normalizeExplicitMode('bogus'), null);
+});
+
+test('intent: resolveRequestedMode — auto/absent → intent-driven; explicit wins; percent-only implies sampled', () => {
+  const sampledIntent = resolveAnalysisIntent('快速看看新能源汽车');
+  assert.equal(sampledIntent.mode, MODE_TOP_PERCENT);
+  const genericIntent = resolveAnalysisIntent('帮我研究人工智能');
+  assert.equal(genericIntent.mode, MODE_DIGEST);
+
+  // absent / auto → intent-driven
+  assert.deepEqual(resolveRequestedMode({ intent: genericIntent }), { valid: true, mode: MODE_DIGEST, percent: null });
+  assert.deepEqual(resolveRequestedMode({ explicitMode: 'auto', intent: sampledIntent }), { valid: true, mode: MODE_TOP_PERCENT, percent: QUICK_PERCENT });
+  // explicit digest overrides sampled intent
+  assert.deepEqual(resolveRequestedMode({ explicitMode: 'digest', intent: sampledIntent }), { valid: true, mode: MODE_DIGEST, percent: null });
+  // explicit top-percent overrides generic intent, percent = explicit
+  assert.deepEqual(resolveRequestedMode({ explicitMode: 'top-percent', explicitPercent: '30', intent: genericIntent }), { valid: true, mode: MODE_TOP_PERCENT, percent: 30 });
+  // explicit top-percent without percent → intent-extracted or QUICK_PERCENT
+  assert.equal(resolveRequestedMode({ explicitMode: 'top-percent', intent: genericIntent }).percent, QUICK_PERCENT);
+  // percent-only implies sampled
+  assert.deepEqual(resolveRequestedMode({ explicitPercent: '10', intent: genericIntent }), { valid: true, mode: MODE_TOP_PERCENT, percent: 10 });
+  // invalid mode / percent
+  assert.equal(resolveRequestedMode({ explicitMode: 'bogus', intent: genericIntent }).valid, false);
+  assert.equal(resolveRequestedMode({ explicitMode: 'top-percent', explicitPercent: '200', intent: genericIntent }).valid, false);
+  assert.equal(resolveRequestedMode({ explicitPercent: '0', intent: genericIntent }).valid, false);
 });
 
 // ---------------------------------------------------------------------------
@@ -597,6 +621,20 @@ test('no-valid-candidate path fails closed with structured error (Acceptance I)'
   await assert.rejects(() => orch.runOrchestration(), (err) => err.code === 'no_valid_candidate');
   const names = fake.calls.map((c) => c.name);
   assert.ok(!names.includes('zhihu-grab'), 'no capture on no-valid-candidate');
+});
+
+test('primitive subprocess failure records stage=FAILED + state.error + failed event (observability)', async () => {
+  const topic = '人工智能对教育的影响';
+  const fake = makeFakeRunner({ searchCandidates: [cand('1', '人工智能对教育的影响', 50)], failOn: { 'zhihu-grab': true } });
+  const workDir = tmpDir('caseFailObs');
+  const orch = createOrchestrator({ workDir, topic, mode: MODE_DIGEST, percent: null, runtime: RUNTIME_DEEPSEEK, runner: fake.runner });
+  await assert.rejects(() => orch.runOrchestration(), (err) => err.code === 'capture_failed');
+  const state = readState(workDir);
+  assert.equal(state.stage, 'FAILED');
+  assert.equal(state.error.code, 'capture_failed');
+  const events = fs.readFileSync(path.join(workDir, 'events.jsonl'), 'utf8');
+  assert.ok(events.includes('"status":"failed"'), 'failed event must be recorded');
+  assert.ok(events.includes('capture_failed'), 'failure identity must be observable');
 });
 
 test('state: completion records stage COMPLETE; rerun on complete returns result (no re-execution)', async () => {

@@ -76,3 +76,34 @@ export function normalizeExplicitMode(value) {
   if (v === 'top-percent' || v === 'top-percent-analysis' || v === 'sampled' || v === 'sample') return MODE_TOP_PERCENT;
   return null;
 }
+
+/**
+ * Resolve the effective (mode, percent) from CLI options + Approved R4 intent policy.
+ * - explicitMode 'auto' (or absent) → intent-driven;
+ * - explicitMode digest/top-percent → explicit mode wins;
+ * - explicitPercent alone implies sampled (top-percent);
+ * - top-percent percent: explicit > intent-extracted > QUICK_PERCENT; must be integer 1..100.
+ * Returns { valid, mode, percent } (valid=false for invalid mode/percent).
+ */
+export function resolveRequestedMode({ explicitMode = null, explicitPercent = null, intent = null } = {}) {
+  const effIntent = intent ?? resolveAnalysisIntent('');
+  let mode = effIntent.mode;
+  let percent = effIntent.percent;
+
+  if (explicitMode && explicitMode !== 'auto') {
+    const m = normalizeExplicitMode(explicitMode);
+    if (!m) return { valid: false, mode: null, percent: null };
+    mode = m;
+    percent = mode === MODE_TOP_PERCENT ? (explicitPercent ?? effIntent.percent ?? QUICK_PERCENT) : null;
+  } else if (explicitPercent != null) {
+    mode = MODE_TOP_PERCENT;
+    percent = explicitPercent;
+  }
+
+  if (mode === MODE_TOP_PERCENT) {
+    const n = Number.parseInt(percent, 10);
+    if (!Number.isInteger(n) || n < 1 || n > 100) return { valid: false, mode, percent: null };
+    percent = n;
+  }
+  return { valid: true, mode, percent };
+}
