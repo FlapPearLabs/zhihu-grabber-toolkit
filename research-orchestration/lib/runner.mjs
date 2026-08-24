@@ -30,6 +30,9 @@ export function defaultRunner() {
       cwd: opts.cwd || REPO,
       env: { ...process.env, ...(opts.env || {}) },
       timeout: opts.timeout || 600_000,
+      // Large corpora can emit multi-MB JSON on stdout (e.g. grab answers.json);
+      // default 1MB maxBuffer would truncate → false capture failure.
+      maxBuffer: 64 * 1024 * 1024,
     });
     if (res.error) {
       return { status: -1, stdout: '', stderr: String(res.error.message) };

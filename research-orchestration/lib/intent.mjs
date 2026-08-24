@@ -29,15 +29,19 @@ const ANSWER_FRAME = '(?:回答|答案|观点|高赞|看法|意见|评论|内容
  */
 const HOWTO_METHOD_GUARD = /(?:如何|怎么|怎样)[^。！？!?；;\n]*(?:抽样分析|只采样)/i;
 
-/**
- * How-to / methodology markers in SUFFIX position after a sampling phrase (镜像语序:
- * 对回答做抽样分析怎么做 / 只采样部分回答怎么做 / …有什么意义) are methodology
- * questions → FULL-COVERAGE.
- */
-const METHODOLOGY_SUFFIX_GUARD = /(?:抽样分析|只采样)[^。！？!?；;\n]{0,8}(?:怎么做|怎么|有什么|应该|如何|吗|什么)/i;
-
 /** Feasibility / uncertainty markers — method questions, not subset-view requests (uncertain → FULL). */
 const FEASIBILITY_MARKERS = '是否|能不能|有没有|可不可以|可不可|行不行|好不好|该不该|好还是|值不值得|合理';
+
+/**
+ * How-to / methodology markers in SUFFIX position after a sampling phrase (镜像语序:
+ * 对回答做抽样分析怎么做 / 只采样部分回答怎么做 / …有什么意义 / …是否可行) are methodology
+ * questions → FULL-COVERAGE. Marker set includes FEASIBILITY_MARKERS so that a comma before
+ * the feasibility marker (只看前20%的回答，可以吗) cannot defeat the guard.
+ */
+const METHODOLOGY_SUFFIX_GUARD = new RegExp(
+  `(?:抽样分析|只采样)[^。！？!?；;\\n]{0,8}(?:怎么做|怎么|有什么|应该|如何|吗|什么|可以|${FEASIBILITY_MARKERS})`,
+  'i',
+);
 
 /** Explicit non-percent sampled action frames (must clearly request a subset view). */
 const SAMPLED_ACTION_FRAMES = [
@@ -71,7 +75,7 @@ const SAMPLED_ACTION_FRAMES = [
  * "我要20%的年化收益" / "选择20%的股票" are NOT sampled (percent is a subject, not a corpus subset).
  */
 const PERCENT_SAMPLE_FRAME = new RegExp(
-  `(?:只看|只取|看|取|选|要|前|top)\\s*(\\d{1,3})\\s*%\\s*(?:的)?(?:高赞\\s*)?${ANSWER_FRAME}(?!(?:率|数|量|比|差|度|值|额|价|本|据|均|总))(?![^，。！？!?；;\n]{0,6}(?:是否|可以|吗|${FEASIBILITY_MARKERS}))`,
+  `(?:只看|只取|看|取|选|要|前|top)\\s*(\\d{1,3})\\s*%\\s*(?:的)?(?:高赞\\s*)?${ANSWER_FRAME}(?!(?:率|数|量|比|差|度|值|额|价|本|据|均|总))(?![^。！？!?；;\\n]{0,8}(?:怎么做|怎么|有什么|应该|如何|吗|什么|可以|${FEASIBILITY_MARKERS}))`,
   'i',
 );
 
