@@ -745,6 +745,10 @@ test('P1: percentage as SUBJECT (not corpus subset) MUST stay FULL-COVERAGE (R4,
     '高赞回答有什么特点',
     '帮我研究人工智能对教育的影响',
     '量子计算',
+    // 无/非 as Chinese subject prefixes (无监督/非监督) are NOT sampling requests
+    '研究无监督学习需要全量标注吗',
+    '无监督学习需要全量数据吗',
+    '非监督方法需要全量样本吗',
   ]) {
     const r = resolveAnalysisIntent(t);
     assert.equal(r.mode, MODE_DIGEST, `generic intent with %/采样 subject must stay full-coverage: ${t}`);

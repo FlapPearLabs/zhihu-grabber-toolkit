@@ -30,8 +30,9 @@ const SAMPLED_ACTION_FRAMES = [
   // 采样 counts only as an explicit analysis-action request (做/给/来/要/取/出 …采样…)
   /(?:做|给|来|要|取|出).{0,4}采样/i,
   /sampled?\s*(view|look|digest)/i,
-  /(不|无|非|不是).{0,4}(需要|要求|要).{0,4}(全量|全貌|全部|full)/i,
-  /(不需要|不用|无需|不要).{0,4}(全量|全貌|全部)/i,
+  // Explicit refusal-of-full idioms only — bare 无/非 (Chinese subject prefixes like 无监督/非监督)
+  // must NOT trigger sampled (they are ordinary research subjects, not sampling requests).
+  /(不需要|不用|无需|不要|无须).{0,4}(全量|全貌|全部|full)/i,
 ];
 
 /**
