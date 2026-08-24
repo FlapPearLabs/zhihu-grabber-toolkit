@@ -27,8 +27,13 @@ const SAMPLED_ACTION_FRAMES = [
   /快速(看看|预览|看一下)/i,
   /quick\s+(look|view|preview)/i,
   /只看高赞(回答)?/i,
-  // 采样 counts only as an explicit analysis-action request (做/给/来/要/取/出 …采样…)
-  /(?:做|给|来|要|取|出).{0,4}采样/i,
+  // 采样/抽样 trigger sampled ONLY when the wording unambiguously requests a SUBSET VIEW of
+  // answers/corpus (采样视图 / 采样版摘要 / 只采样… / 抽样分析). Generic SUBJECT uses of 采样
+  // (采样定理 / 采样率 / 采样数据 / 采样实验) are ordinary research topics → FULL-COVERAGE.
+  // Conservative rule: when uncertain → FULL-COVERAGE (R4 §6.3).
+  /采样\s*(视图|版|摘要|样本|子集)/i,
+  /只采样/i,
+  /抽样分析/i,
   /sampled?\s*(view|look|digest)/i,
   // Explicit refusal-of-full idioms only — bare 无/非 (Chinese subject prefixes like 无监督/非监督)
   // must NOT trigger sampled (they are ordinary research subjects, not sampling requests).
