@@ -22,6 +22,13 @@ export const QUICK_PERCENT = 20;
 /** Answer/corpus/opinion nouns that make an X% mention an explicit sampling request. */
 const ANSWER_FRAME = '(?:回答|答案|观点|高赞|看法|意见|评论|内容|样本|语料|answers?|replies?|comments?|opinions?)';
 
+/**
+ * How-to / feasibility methodology questions (如何/怎么/怎样 …抽样分析…) are ordinary
+ * research subjects → FULL-COVERAGE, even when they contain an 抽样分析 sub-phrase.
+ * (Conservative rule: uncertain → FULL.)
+ */
+const HOWTO_METHOD_GUARD = /(?:如何|怎么|怎样).{0,16}抽样分析/i;
+
 /** Explicit non-percent sampled action frames (must clearly request a subset view). */
 const SAMPLED_ACTION_FRAMES = [
   /快速(看看|预览|看一下)/i,
@@ -32,8 +39,8 @@ const SAMPLED_ACTION_FRAMES = [
   // reject attribute/metric compounds (数据/客户/样本/特征/质量/数量/版本…). Generic SUBJECT
   // uses stay FULL-COVERAGE. Conservative rule: when uncertain → FULL-COVERAGE (R4 §6.3).
   /采样\s*(视图|版\s*摘要)/i,
-  /只采样(?:部分|一些|前|top|少量|其中)\s*(?:的)?(?:高赞\s*)?(?:回答|答案|内容|语料|评论)/i,
-  /对.{0,8}(?:回答|答案|内容|语料|评论|高赞)\s*(?:做|进行|来|去)\s*抽样分析/i,
+  /只采样(?:部分|一些|前|top|少量|其中)\s*(?:的)?(?:高赞\s*)?(?:回答|答案|内容|语料|评论)(?!\s*(?:的|可以|会|需要|时|吗))/i,
+  /(?!如何|怎么|怎样)对.{0,8}(?:回答|答案|内容|语料|评论|高赞)\s*(?:做|进行|来|去)\s*抽样分析(?!\s*(?:的|需要|时|可以|会|什么|吗))/i,
   /sampled?\s*(view|look|digest)/i,
   // Explicit refusal-of-full idioms only — bare 无/非 (Chinese subject prefixes like 无监督/非监督)
   // must NOT trigger sampled (they are ordinary research subjects, not sampling requests).
@@ -77,6 +84,11 @@ export function extractPercent(text) {
 /** Decide the analysis mode + percent from the topic text (Approved R4 policy, conservative). */
 export function resolveAnalysisIntent(topic) {
   const t = String(topic ?? '');
+
+  // 0. How-to / feasibility methodology questions (如何/怎么/怎样 …抽样分析) → FULL-COVERAGE.
+  if (HOWTO_METHOD_GUARD.test(t)) {
+    return { mode: MODE_DIGEST, percent: null, sampledIntent: false };
+  }
 
   // 1. Explicit non-percent sampled action frames.
   if (SAMPLED_ACTION_FRAMES.some((re) => re.test(t))) {
