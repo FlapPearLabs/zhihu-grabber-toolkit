@@ -1,32 +1,42 @@
-# Research Orchestration — Future-Scope Spec（研究编排未来范围）
+# Research Orchestration — Approved Implementation Contract（研究编排批准实现合同）
 
-> **STATUS: PROPOSED / NOT_IMPLEMENTED**
-> **VERSION_ASSIGNMENT: UNASSIGNED**
-> **IMPLEMENTATION_AUTHORIZATION: NONE**
+> **STATUS: APPROVED**（产品合同已批准；2026-08-24 product-owner 决策 + CONTRACT/CONSISTENCY 双 independent review）
+> **IMPLEMENTATION_STATUS: NOT_IMPLEMENTED**（功能尚未实现，不得宣传 feature 已存在）
+> **VERSION_ASSIGNMENT: UNASSIGNED**（未分配版本号）
+> **IMPLEMENTATION_AUTHORIZATION: MVP_AUTHORIZED**（仅授权 Research Orchestration MVP 实现；不自动创建 V0.4）
 > **ORIGIN: Issue #5**（`[Dogfood][F4] End-to-end research requires too many manual orchestration steps`）
-> **PRODUCT_STAGE: FUTURE_SCOPE**
+> **PRODUCT_STAGE: NEXT_STAGE / RESEARCH_ORCHESTRATION**
 > **Author handle:** FlapPearLabs
 > **Date:** 2026-08-24
 
 本 Spec 明确声明：
 
 ```text
-This Spec does not start a new milestone.       // 不是 V0.4；不创建任何 V0.4 产物
-This Spec does not authorize implementation.    // IMPLEMENTATION_AUTHORIZATION: NONE
-This Spec does not change current product behavior. // 不修改 Approved Specs / RULES.md / 产品代码 / 运行时 / 测试
+PRODUCT CONTRACT APPROVED      // 产品合同已批准：可作为后续 Research Orchestration 实现 authority
+FEATURE NOT IMPLEMENTED        // 功能未实现：不得宣传 feature 已存在（IMPLEMENTATION_STATUS: NOT_IMPLEMENTED）
+IMPLEMENTATION AUTHORIZED      // 未来 MVP 实现已被授权（IMPLEMENTATION_AUTHORIZATION: MVP_AUTHORIZED）
+NO VERSION NUMBER ASSIGNED     // VERSION_ASSIGNMENT: UNASSIGNED
+THIS DOES NOT AUTOMATICALLY CREATE V0.4  // 不自动创建 V0.4 / 不启动新 milestone
 ```
 
-本文件是 **PROPOSED FUTURE-SCOPE SPEC**，不是 APPROVED Spec。除非 product owner 后续明确批准并经过所需 independent review，本文件不获得任何 repository authority（`AGENTS.md` §1 / RULES.md §6）。本文件不构成对 `docs/specs/v2-rich-content-fidelity.md` 或 `docs/specs/v0.3-product-scope.md` 的任何 amendment，也不与它们争抢 authority。
+本文件是 **APPROVED implementation contract**（按 `AGENTS.md` §1 / RULES.md §6 语义成为 repository authority 的一部分，
+覆盖本 Spec 定义的 Research Orchestration 范围）。它对未来 Research Orchestration MVP 实现**具有约束力**；
+**不影响** `docs/specs/v2-rich-content-fidelity.md` / `docs/specs/v0.3-product-scope.md` 的既有合同
+（未被本 Spec amendment 的条款继续有效），本 Spec **不构成**对它们的 amendment。
 
-> **NORMATIVE LANGUAGE RULE**
+> **APPROVED SPEC != IMPLEMENTED FEATURE**
 >
-> Unless and until this Spec is explicitly approved, all MUST / MUST NOT / REQUIRED /
-> acceptance / non-goal language in this document describes the **proposed future contract only**.
-> It is **non-binding** and does not override current repository authority
-> （RULES.md / Applicable Approved Specs / product-behavior-contract / AGENTS.md）。
+> 本 Spec 现在**可以约束未来实现**（Approved implementation contract），
+> 但**不能宣传功能已经存在**（IMPLEMENTATION_STATUS: NOT_IMPLEMENTED）。
 >
-> 在本 Spec 被显式批准之前，文中所有 MUST / MUST NOT / REQUIRED / acceptance / non-goal 措辞
-> 仅描述 **proposed future contract**；不具约束力，不覆盖当前 repository authority。
+> 文中 MUST / MUST NOT / REQUIRED / acceptance / non-goal 措辞描述的是
+> **已批准的 implementation contract**（对未来实现 ticket 有约束力），
+> 不是「该功能已实现」的声明。实现 ticket 完成并验收前，任何对外声称
+> 「research orchestration 可用」都是不成立的。
+>
+> 本 Spec 覆盖的范围内，它以 Approved Spec 身份约束实现；
+> 与更高 authority（RULES.md / 既有 Approved Specs / product-behavior-contract）冲突时，
+> 以更高 authority 为准（`AGENTS.md` §1 裁决原则）。
 
 ---
 
@@ -110,7 +120,7 @@ DO_NOT_REIMPLEMENT_EXISTING_AUTHORITIES // 不重实现既有确定性权威（v
 
 ## 2. Desired User Experience
 
-### 2.1 概念上的未来目标体验（PRODUCT INTENT，非已批准实现）
+### 2.1 概念上的目标体验（PRODUCT INTENT，已批准；exact 实现形态为 IMPLEMENTATION DETAIL）
 
 ```text
 research <topic>
@@ -131,8 +141,7 @@ research <topic>
 
 ### 2.3 边界：PRODUCT INTENT vs IMPLEMENTATION DETAIL
 
-- 本节描述的是**产品意图**（用户应最少做什么），不是已批准的 CLI syntax / 命令名 / 参数契约。
-- 具体用户面命令、参数、输出格式属于 **IMPLEMENTATION DETAIL**，未经 product-owner 批准不得在本 Spec 中武断确定（见 OPEN-R1）。
+- 本节描述的是**产品意图**（用户应最少做什么）；概念上的 `research <topic>` entrypoint 已批准（R1），但 **exact CLI syntax / 函数名 / 文件名属 IMPLEMENTATION DETAIL**，不由本 Spec 锁死。
 - 任何 orchestration 都必须保持「重要决策与失败对用户可见」（#5 Desired behavior 原文），不得把编排变成黑盒。
 
 ---
@@ -186,26 +195,23 @@ unsupported/unqualified runtime must not be silently enabled // NO/UNKNOWN runti
 
 ## 5. Candidate Selection Gate
 
-> **标记：OPEN PRODUCT DECISION**（本 Spec 不假装已批准一种唯一算法；下列内容为需产品决策的清单与 PROPOSED 方向，不是 APPROVED 合同）
+> **决策状态：APPROVED**（R2 + R3，2026-08-24 product-owner 批准；selection 属 orchestration decision，不是 verification fact）
 
-### 5.1 未来需要解决的问题
+### 5.1 APPROVED 合同（R2 + R3）
 
-- search 返回多个 questions 时，**谁选择**（用户 / orchestrator / 模型推荐 / 组合）？
-- **human confirmation 是否默认存在**？
-- **auto-selection 是否可选**（作为显式 opt-in，而非默认）？
-- `answerCount` 如何作为 **scale metadata** 使用（仅展示 / 参与排序 / 参与成本预估）？
-- **relevance 与 scale 如何权衡**（搜索 relevance 与回答规模哪个优先）？
-- **model recommendation 是否 non-authoritative**（模型只提供建议，不做最终选择）？
-- **candidate selection 如何被记录**（selection 决策是否进入可验证状态 / 可回放）？
+系统**允许自动选择最相关的知乎问题**。默认行为：
 
-### 5.2 PROPOSED 方向（非 APPROVED）
+- 候选问题与用户研究意图之间存在**足够明确的最佳匹配** → **自动选择**；selection 决策必须对用户可见 / 可记录；**不为形式强制用户确认**。
+- 存在 **MATERIAL AMBIGUITY**（多个候选分别代表明显不同的研究问题，且自动选一个可能改变用户原始研究意图）→ **最多进行一次**用户 clarification / confirmation；用户确认后继续。
 
-```text
-PROPOSED: 默认应允许 human-visible candidate selection（用户可见、可确认的候选选择）
-PROPOSED: 未来 auto-select 必须是显式 approved behavior（默认不存在自动选择）
-```
+禁止：
 
-上述方向为 **PROPOSED / RECOMMENDED**，必须标记 **OPEN PRODUCT DECISION**，不得冒充 APPROVED。
+- **每次**都强制用户手工选题；
+- 模型低置信度时**静默猜测**；
+- 为追求自动化而**改变用户研究问题**。
+
+Agent / model 可以参与 relevance 判断，但**不得取得 canonical data / verification authority**。
+Candidate selection 属 orchestration decision，不是 verification fact。
 
 ---
 
@@ -222,7 +228,7 @@ SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST
 - pipeline identity 保持分离：`mode` 是分析模式身份（`digest` / `top-percent-analysis`），覆盖事实（`isFullCoverage`）不得覆盖模式身份（T7 APPROVED 合同）。
 - full-coverage 请求必须保持 **100% coverage** + evidence lineage，不得降级为 sample。
 
-### 6.2 Spec 应定义（future implementation contract direction）
+### 6.2 Spec 定义（Approved implementation contract）
 
 - **explicit user mode 优先**：用户显式选择的模式（full digest / top-percent / popular-sample）优先于任何默认路由；
 - **full-coverage request 必须保持 100% coverage**：请求全量 digest 时不得静默改用采样路径；
@@ -230,9 +236,17 @@ SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST
 - **top-percent 不得静默替代 full digest**：除非用户显式选择 top-percent；
 - **runtime failure 不得自动改变分析语义**：分析模式选择不得因运行时失败被自动降级。
 
-### 6.3 默认 routing policy
+### 6.3 默认 routing policy（APPROVED，R4）
 
-若未来需要「默认自动选择分析模式」，该 routing policy **尚未批准** → 标记 **OPEN PRODUCT DECISION**（见 OPEN-R4），不得在本 Spec 中预先批准。
+默认研究语义 = **FULL-COVERAGE RESEARCH**：
+
+- 用户仅表达「帮我研究 / 看看大家怎么讨论 / 综合分析这个问题」→ **默认保留 full coverage 语义**；
+- 大 corpus **优先复用现有 hierarchical full digest**，不静默降级为 sample；
+- 仅当用户**明确表达 sampled 意图**（「快速看看 / 只看高赞 / 看前 X% / 给我一个 sampled view / 不需要全量」）→ 才可进入 top-percent / popular-sample 等 sampled path；
+- full coverage 无法完成 → **fail closed / report reason**，不得冒充完成。
+
+硬不变量保持：`SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST`。
+禁止：full digest 因成本 / runtime failure / corpus size → silent sampled downgrade。
 
 ---
 
@@ -244,28 +258,60 @@ SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST
 - `AGENTS.md §11.1`（MODEL / RUNTIME SELECTION）：capable-runtime first；本地推理仅在已批准 / 实测约束（隐私 / 离线 / 成本 / 时延 / 可用性）下作为阻断性要求；持久原则含 `MODEL_QUALITY != RUNTIME_SECURITY`（模型质量限制不否定能力隔离）。
 - V0.3 Spec §5（决策 C）：capability isolation 逐 runtime 独立门控，NO / UNKNOWN → fail closed，禁止跨 runtime 推导。
 
-### 7.2 未来 orchestrator 不得未经授权
+### 7.2 MVP runtime policy（APPROVED，R5）
+
+对于 **PUBLIC ZHIHU RESEARCH**，初始默认已资格通过的语义 runtime 为：
 
 ```text
-DeepSeek fail → silent LM Studio fallback   // 云失败 → 静默切本地：禁止（未经批准）
-local fail    → silent cloud egress         // 本地失败 → 静默云出网：禁止（未经批准）
+deepseek-api-tool-less
 ```
 
-Runtime routing / fallback 是**独立的产品 / 安全决策**，不在本 Spec 内批准。
+原因（不是把 DeepSeek 写成 product identity）：
 
-### 7.3 当前 Spec 默认
+- 已取得 runtime-scoped capability isolation qualification（`CAPABILITY_ISOLATION_AVAILABLE[deepseek-api-tool-less] = YES`）；
+- V0.3 real dogfood 已验证该 workload 可用（79 / 183 / 318 回答带全验证通过）；
+- 当前目标是先验证产品 workflow，而不是重新优化 runtime。
+
+保持：
 
 ```text
+Runtime is replaceable infrastructure, not product identity.
+MODEL_QUALITY != RUNTIME_SECURITY
 NO_SILENT_RUNTIME_FALLBACK
 ```
 
-除非未来另有明确批准。私密 / 敏感 corpus 的云出网尤其**不能**从 V0.3 公共知乎 dogfood 推导授权（runtime-strategy §5 / #28 STOP conditions；`docs/project-memory.md` V0.3 Runtime Closeout：云出网批准仅限 V0.3 T11 公开知乎语料，不得推广到私密 / 敏感语料）。
+明确禁止：
+
+```text
+DeepSeek failure   → silent LM Studio fallback   // 禁止（未经批准）
+LM Studio failure  → silent cloud fallback       // 禁止（未经批准）
+```
+
+runtime / provider 切换未来必须经过**明确批准的 routing policy**。
+
+### 7.3 Egress 边界（APPROVED，R5 限定）
+
+```text
+PUBLIC ZHIHU cloud egress approval != PRIVATE / SENSITIVE CORPUS cloud egress approval
+```
+
+本批准**仅适用**于公开知乎研究语料。**不得推广**到：
+
+- 用户私有文档；
+- 私密知识库；
+- 敏感 corpus；
+- 未经授权的第三方数据。
+
+（runtime-strategy §5 / #28 STOP conditions / `docs/project-memory.md` V0.3 Runtime Closeout：V0.3 T11 公开知乎语料云出网批准不得推广到私密 / 敏感语料。）
 
 ---
 
 ## 8. Resumable State Machine
 
-未来 orchestration 至少需要**可恢复的 checkpoint** 能力（中断后可继续，不重复已完成的确定性阶段）。
+> **决策状态：DELEGATED_IMPLEMENTATION_DESIGN**（R6，2026-08-24 委派；不是 OPEN PRODUCT DECISION）
+> 产品要求已足够明确（见 §8.2 约束）；最小 schema / 文件布局由工程实现自行决定，本轮不设计具体 JSON schema。
+
+未来 orchestration **必须**具有**最小可恢复 orchestration state**（中断后可继续，不重复已完成的确定性阶段）。
 
 ### 8.1 概念状态（可能的状态集；具体 schema / version 留 implementation design）
 
@@ -280,13 +326,14 @@ RENDERED
 COMPLETE
 ```
 
-### 8.2 持久约束（未来实现必须满足）
+### 8.2 约束（未来实现必须满足；Approved implementation contract）
 
 - **resume 只能从可验证 checkpoint 恢复**（例如 hash 校验的 stage artifact；`FILE EXISTS != VALID CACHE`，参照 T9 / T10 的 inputHash / childHashes 语义）；
 - **stale artifact / incompatible hash 不得静默复用**（参照 T9 resume/stale 向上传播语义）；
 - **credentials 不进入 orchestration state**（Cookie / Secret / API key 一律不进状态文件；RULES §1）；
 - **machine-private path 不进入 portable public state**（无本机绝对路径 / 用户名；RULES §11 路径脱敏）；
-- **state 不得成为新的 canonical source of truth**（canonical 事实仍归 `answers.json` / `selection.json` / final.json 等既有 authority；orchestration state 只是执行进度）。
+- **state 不得成为新的 canonical source of truth**（canonical 事实仍归 `answers.json` / `selection.json` / final.json 等既有 authority；orchestration state 只是执行进度）；
+- **canonical artifact / hash authority 继续属于既有 primitives**。
 
 ---
 
@@ -321,7 +368,9 @@ runtime failure     → silently change provider/security boundary // 禁止：�
 
 ## 10. Artifact / Observability Contract
 
-未来 orchestration 至少需要让用户 / Agent 知道（**TARGET / OPEN DESIGN**，本 Spec 不无证据硬编码具体 JSON schema）：
+> **决策状态：DELEGATED_IMPLEMENTATION_DESIGN**（R7；具体 UX / stdout / JSON event schema 留实现设计，不是 product-owner blocker）
+
+未来 orchestration 至少需要让用户 / Agent 知道（Approved requirement；具体 schema 不硬编码）：
 
 - current stage（当前阶段）；
 - selected question（所选问题）；
@@ -332,7 +381,11 @@ runtime failure     → silently change provider/security boundary // 禁止：�
 - completion / failure reason（完成 / 失败原因）；
 - final artifact references（最终产物引用，relative path / artifact id，无绝对路径）。
 
-具体字段结构、schema version、机器契约属于 OPEN DESIGN（见 OPEN-R6），未经批准不得写死。
+MVP 产品要求：至少暴露当前 stage / progress（SEARCH / SELECT / CAPTURE / VERIFY / ANALYZE / RENDER）；
+支持 graceful stop 与后续 resume。
+MVP **不要求**：GUI progress bar / rich dashboard / streaming animation / complex cancellation UI / background job platform。
+
+具体字段结构、schema version、机器契约属于 **IMPLEMENTATION DETAIL / OPEN DESIGN**（R6 / R7 DELEGATED），不由本 Spec 锁死。
 
 ---
 
@@ -354,87 +407,124 @@ public Zhihu cloud egress precedent ≠ private corpus authorization
 
 ## 12. Non-goals
 
-本 Spec 明确排除以下范围（**PROPOSED future-scope boundaries**；本文件当前非绑定，见顶部 NORMATIVE LANGUAGE RULE）：
+本 Spec 明确排除以下范围（**Approved MVP 实现范围之外**；本文件现在具约束力，见顶部 APPROVED SPEC != IMPLEMENTED FEATURE）：
 
-其中部分排除项同时受既有 Approved authority 约束（例如 RULES.md §6.4「Spec Non-goals 是长期约束，不是临时建议」适用于已批准 Spec 的 non-goals；V2 / V0.3 的既有 Non-goals 继续有效）。这些约束之所以有约束力，是因为**既有 authority 本身存在**，**不是因为**本 PROPOSED Spec 复述了它们。
+其中部分排除项同时受既有 Approved authority 约束（例如 RULES.md §6.4「Spec Non-goals 是长期约束，不是临时建议」适用于已批准 Spec 的 non-goals；V2 / V0.3 的既有 Non-goals 继续有效）。这些约束具有约束力，是因为**既有 authority 本身存在**，且本 Approved Spec 的 non-goals 作为已批准合同继续生效。
+
+**Approved MVP 实现范围**限定为：
+
+```text
+Natural-language research intent
+→ search
+→ candidate selection
+→ capture
+→ verify
+→ handoff
+→ full/sampled analysis according to approved semantics（R4）
+→ final rendered research result
+```
+
+允许：thin orchestration layer / minimal resumable state / stage progress / graceful stop-resume。
+
+**不包含**：
 
 - 不重写 grabber；
 - 不重写 verifier；
 - 不重写 corpus pipeline；
 - 不新增 canonical corpus source；
 - 不新增 model / provider qualification（runtime 资格走独立 evidence / qualification ticket，V0.3 决策 C 门控不变）；
-- 不做 arbitrary runtime routing（未授权不得自动路由 / fallback）；
+- 不做 arbitrary runtime routing（未授权不得自动路由 / fallback；R5 仅批准公开知乎研究默认 runtime）；
 - 不重新打开 video（`VIDEO_SUPPORT = DO_NOT_SUPPORT`，V0.3 决策 B 不变）；
 - 不实现 browser scraping（V2 / V0.3 既有立场不变）；
-- 不启动 V0.4（本 Spec 不创建 V0.4，V0.3 Spec §9 / #6 Tracker 均锁定 NEXT_STAGE 未经授权不得开始）；
-- 不在本 ticket 写 production code（本 Spec 是纯 DOCUMENT / FUTURE-SCOPE 产物）。
+- 不做 OCR / image understanding；
+- 不做 private / sensitive cloud workflow（R5 egress 边界）；
+- 不做 GUI / web app / background queue platform / multi-user system / account system / database migration / recommender system / autonomous daily topic discovery / social-media publishing；
+- 不启动 V0.4（本 Spec **不自动创建** V0.4；`VERSION_ASSIGNMENT: UNASSIGNED`；V0.3 Spec §9 / #6 Tracker 锁定 NEXT_STAGE 需显式授权）；
+- 本 normalization ticket 不写 production code（Spec approval 不扩大产品；实现另行 implementation ticket）。
 
 ---
 
-## 13. Acceptance Direction for Future Implementation
+## 13. Acceptance Contract（Approved Implementation Acceptance）
 
-> 以下为 **FUTURE IMPLEMENTATION ACCEPTANCE DIRECTION**（未来实现 ticket 的验收方向），**不是**当前 Spec ticket 的 DONE 证明。
-> **If/when this Spec is explicitly approved**, future implementation must satisfy the following direction
-> （若 / 当本 Spec 被显式批准时，未来实现必须满足以下方向；批准前全部不具约束力，见顶部 NORMATIVE LANGUAGE RULE）。
+> 以下为 **APPROVED IMPLEMENTATION ACCEPTANCE**（已批准的实现验收合同）：未来实现 ticket 声称「#5 描述的产品问题已解决」之前，
+> 必须满足以下全部方向（A–L）。**Approved ≠ Implemented**：本 Spec 批准不改变 `IMPLEMENTATION_STATUS: NOT_IMPLEMENTED`。
 
 - **A.** 用户无需理解内部 8–10 个 primitive steps（编排细节对用户透明）。
-- **B.** 普通 happy path 目标为：`topic input → at most one necessary candidate-selection gate → final research result`。
+- **B.** 普通 happy path 目标为：`natural-language topic → zero or at most one necessary clarification → final research result`。
 - **C.** existing deterministic authorities remain unchanged（verify-output / make-handoff / corpus verify gates 权威不变）。
 - **D.** failure / resume semantics mechanically testable（失败与恢复语义可机械测试，不是口头声明）。
 - **E.** no hidden sampled/full semantic downgrade（无隐藏的 sample/full 语义降级）。
 - **F.** full digest retains 100% canonical source coverage + evidence lineage（全量 digest 保持 100% 覆盖与证据链）。
 - **G.** real dogfood demonstrates meaningful reduction in manual orchestration（真实 dogfood 证明人工编排步骤实质性减少）。
 - **H.** credentials / security boundaries preserved（凭据 / 安全边界保持）。
+- **I.** **AUTO-SELECTION correctness / ambiguity handling 必须有 focused tests**：
+  - clear best candidate → auto-select；
+  - material ambiguity → clarification required；
+  - no valid candidate → fail / report（不能乱选）。
+- **J.** **default full-coverage semantics 必须有 regression**：generic research request 不得默认进入 sampled mode（R4）。
+- **K.** **runtime policy test**：public Zhihu 默认使用 approved runtime policy（R5 = deepseek-api-tool-less）；runtime failure 不得 silent fallback。
+- **L.** **orchestration state 必须证明**：interruption + resume 不会重复合法完成阶段，也不会复用 stale artifact（R6）。
 
 ---
 
-## 14. Open Product Decisions
+## 14. Product Decision Ledger（R1–R7）
 
-以下行为**尚未批准**，本 Spec 不偷偷解决；product owner 后续须显式决策（经相应 independent review）后方可成为合同：
+以下决策已由 product owner **明确批准或委派**（2026-08-24）；**不再作为 OPEN PRODUCT DECISION / USER_DECISION_REQUIRED**：
 
 ```text
-OPEN-R1: exact user-facing command / interface        // 用户面命令 / 接口形态
-OPEN-R2: default candidate-selection behavior         // 默认候选选择行为（human 默认？）
-OPEN-R3: auto-select policy                           // 自动选择策略（是否允许 / 何时允许）
-OPEN-R4: default analysis mode                        // 默认分析模式 / routing policy
-OPEN-R5: runtime selection / fallback policy          // 运行时选择 / 回退策略
-OPEN-R6: persistent run-state schema                  // 持久化 run-state schema / version
-OPEN-R7: progress / cancellation UX                   // 进度 / 取消交互
+R1: APPROVED                            // 自然语言研究意图 + 概念 research <topic> entrypoint；
+                                        //   exact CLI syntax / 函数名 / 文件名 = IMPLEMENTATION DETAIL（不锁死）
+R2: APPROVED                            // 允许自动选择最相关问题；selection 可见 / 可记录；
+                                        //   MATERIAL AMBIGUITY → 最多一次 clarification
+R3: APPROVED                            // auto-select 默认允许（非强制人工选题）；
+                                        //   模型低置信度不得静默猜测；模型不拥有 canonical / verification authority
+R4: APPROVED                            // 默认 FULL-COVERAGE RESEARCH（大 corpus 用 hierarchical full digest）；
+                                        //   sampled 仅当用户显式表达 sampled 意图；full 失败 fail closed
+R5: APPROVED                            // 公开知乎研究默认 runtime = deepseek-api-tool-less（资格已过）；
+                                        //   无静默 fallback；PUBLIC Zhihu egress != PRIVATE corpus egress
+R6: DELEGATED_IMPLEMENTATION_DESIGN     // 最小可恢复 orchestration state；schema / 文件布局由实现决定，
+                                        //   约束见 §8.2（可验证 checkpoint / FILE EXISTS != VALID CACHE / 凭据不入 state 等）
+R7: DELEGATED_IMPLEMENTATION_DESIGN     // 至少暴露 stage / progress + graceful stop + resume；
+                                        //   GUI / dashboard / streaming / 复杂 cancel UI 不要求；
+                                        //   具体 UX / stdout / JSON event schema 留实现设计
 ```
+
+以下仍属 **IMPLEMENTATION DETAIL**（不是 product-owner blocker / 不是 `USER_DECISION_REQUIRED`）：
+
+- exact CLI filename / 函数名 / 命令参数（R1）；
+- persistent run-state JSON schema（R6）；
+- progress event schema / stdout 格式（R7）。
 
 ---
 
 ## 15. Relationship to Issue #5
 
-- **Issue #5 是最早的 loose product-problem record**：`[Dogfood][F4] End-to-end research requires too many manual orchestration steps`（OPEN，label: enhancement，P3 — workflow ergonomics）。
-- **本 Spec 是其规范化 successor（规划性 successor，不具权威替代语义）**：把 #5 描述的 ORCHESTRATION_COMPLEXITY 问题正式化为可审查、未授权实现的 future-scope Spec。
-- **未来经 reviewed merge 后**，#5 可能的关闭分类为 GitHub `state_reason = not_planned`。
-  本 PROPOSED Spec **不具有 authoritative supersession semantics**：不得暗示本 Spec 已权威「取代」#5
-  或其问题记录；不使用 `SUPERSEDED_BY_SPEC` 等暗示权威替代的表述。
-- 推荐 close comment 措辞（不得使用 `COMPLETED` / `FIXED`）：
-  > "Loose enhancement issue closed as not planned for the current product stage.
-  > Its product problem and proposed future scope are preserved in
-  > docs/specs/research-orchestration-scope.md.
-  > Feature remains NOT_IMPLEMENTED.
-  > The proposed Spec does not authorize future implementation."
-- **If this Spec is later approved, implementation tickets must reference it** and satisfy §13 acceptance direction.
-  **While PROPOSED it is planning input only and is not repository authority.**
-- 在当前阶段：#5 **保持 OPEN**，直到本 Spec 的 review / merge 决策完成。
+- **Issue #5 是最早的 loose product-problem record**：`[Dogfood][F4] End-to-end research requires too many manual orchestration steps`。
+- **#5 当前状态（2026-08-24）：CLOSED / state_reason = not_planned**（产品问题在 current product stage 不计划实现；其问题与 proposed future scope 已由本 Spec 保留）。关闭分类为 `not_planned`，**不是** `COMPLETED` / `FIXED` / `implemented`——需求当时未被实现。
+- **本 Spec 是其规范化 successor**：把 #5 描述的 ORCHESTRATION_COMPLEXITY 问题正式化为可审查、已批准的 implementation contract。
+- **本 Spec 批准后**：未来实现 ticket **必须引用本 Spec** 并满足 §13 acceptance contract（A–L），才能声称「research orchestration feature 存在」。本 Spec 是 feature 尚未实现的 Approved 合同。
+- 本 Spec 的批准不改变 #5 的关闭分类（`not_planned`），也不重新打开 #5。
 
 ---
 
-## 附录 A：本 Spec 的 authority 边界（PHASE 4）
+## 附录 A：本 Spec 的 authority 边界
 
-本文件当前仅为：
+本文件当前状态：
 
 ```text
-PROPOSED FUTURE-SCOPE SPEC
+STATUS: APPROVED
+IMPLEMENTATION_STATUS: NOT_IMPLEMENTED
+VERSION_ASSIGNMENT: UNASSIGNED
+IMPLEMENTATION_AUTHORIZATION: MVP_AUTHORIZED
+PRODUCT_STAGE: NEXT_STAGE / RESEARCH_ORCHESTRATION
 ```
 
-- **不是 APPROVED**；不携带任何 repository authority；
-- 不修改 existing Approved Specs（V2 / V0.3）；
-- 不修改 RULES.md；
-- 不修改 product behavior implementation / runtime code / source / tests；
-- 不修改 `docs/project-memory.md`（其中 #5 / NEXT_STAGE 相关记录当前准确：`研究流程自动化（research pipeline automation）：NEXT_STAGE，非当前 V0.3 范围`；无 stale / conflicting durable state 需要修复）。
+- 本文件是 **Approved implementation contract**（覆盖 Research Orchestration 范围，对未来实现有约束力）；
+- **不修改** existing Approved Specs（V2 / V0.3）；
+- **不修改** RULES.md / AGENTS.md（现有通用治理已足够，本轮 NO CHANGE）；
+- **不修改** product behavior implementation / runtime code / source / tests（本 normalization ticket 不写 production code）；
+- **不修改** `docs/project-memory.md`（如有 durable 知识沉淀，走 post-gate memory follow-up 独立 review，不混入本 candidate commit）。
 
-若 product owner 后续明确批准，并经过所需 independent review（Approved Spec / governance authority change 需 `CONTRACT_REVIEWER + CONSISTENCY_REVIEWER` 同 exact HEAD PASS，AGENTS.md §5.1），本文件才可升级为 APPROVED 并进入未来实现 ticket 分解。
+产品行为合同（`docs/product-behavior-contract.md`）当前只记录**已实现行为**；本 Spec 的 Research Orchestration 能力
+仍为 NOT_IMPLEMENTED，**不得**被写成 current product behavior。实现落地并通过验收后，再按既有流程评估是否需要
+product-behavior-contract 同步。
