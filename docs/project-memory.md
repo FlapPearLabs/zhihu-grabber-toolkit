@@ -210,10 +210,10 @@
   provenance——不重开该类纯文本 heuristic 工作）。
 - 后续阶段开始前：从**届时最新的 remote master** 创建（或重建）其 feature 分支；不依赖任何历史临时分支 ref 作为长期事实。
 
-## Research Orchestration（APPROVED，2026-08-24）
+## Research Orchestration（APPROVED + IMPLEMENTED（MVP），2026-08-24）
 
 - **Spec**：`docs/specs/research-orchestration-scope.md`（Approved implementation contract，原 Issue #5 的规范化 successor）。
-- **当前状态（durable）**：`STATUS: APPROVED` · `IMPLEMENTATION_STATUS: NOT_IMPLEMENTED` ·
+- **当前状态（durable）**：`STATUS: APPROVED` · `IMPLEMENTATION_STATUS: IMPLEMENTED (MVP, #30)` ·
   `IMPLEMENTATION_AUTHORIZATION: MVP_AUTHORIZED` · `VERSION_ASSIGNMENT: UNASSIGNED` ·
   `PRODUCT_STAGE: NEXT_STAGE / RESEARCH_ORCHESTRATION`。
 - **产品决策（R1–R5 APPROVED；R6–R7 DELEGATED_IMPLEMENTATION_DESIGN）**：自然语言研究意图 +
@@ -221,8 +221,16 @@
   最多一次 clarification）；默认 FULL-COVERAGE RESEARCH（大 corpus 用 hierarchical full digest，sampled 仅显式意图）；
   公开知乎研究默认 runtime = `deepseek-api-tool-less`（NO_SILENT_RUNTIME_FALLBACK；public egress ≠ private/sensitive egress）；
   最小可恢复 orchestration state 与 stage progress / graceful stop-resume 由实现设计。
+- **实现事实（durable，#30 merged @ a9dcd4f，2026-08-24）**：
+  - 入口：`node research-orchestration/bin/research.mjs "<topic>"`（thin controller，仅 spawn 既有 zhihu/corpus primitives，零 reimplementation）；
+  - 编排阶段：SEARCH → SELECT → CAPTURE → VERIFY → HANDOFF → ANALYZE → RENDER → COMPLETE（+ FAILED）；退出码 0/1/2/3（3 = CLARIFICATION_REQUIRED，`--select <qid>` 恢复）；
+  - 候选选择：确定性词法相关性（CJK char+bigram），clear best → auto-select（决策写入 selection-decision.json）；歧义 → 结构化 clarification；无候选 → `no_valid_candidate` fail-closed；
+  - 分析路由：generic → full-coverage digest（>32K chars 自动 hierarchical full digest）；显式 sampled 意图（快速看看/只看高赞/前X%的回答/sampled view/不需要全量 等）→ top-percent-analysis + 完整披露（isFullCoverage=false）；
+  - 意图分类采用 **decision-boundary matrix 工程法**（见 `docs/project-memory/decision-boundary-matrix.md`）：保守默认 FULL-COVERAGE，全矩阵回归；
+  - runtime：默认 `deepseek-api-tool-less`（preflight 失败 → `runtime_unavailable` fail-closed，无静默 fallback）；state 无凭据、work-relative 路径、非 canonical；
+  - Acceptance A–L 已满足（focused 36/36 + zhihu 507/507 + corpus 185/185 + agent-pipeline 6/6；真实 dogfood：全量 digest / hierarchy 198 答 23 claims / sampled 40@20% 披露 / 自然歧义澄清）。
 - **#5（HISTORICAL）**：CLOSED / `state_reason = not_planned` 是获批**前**记录的历史 close 分类，
-  **不构成**当前实现禁止；未来实现走**新的 implementation ticket**，须引用上述 Spec 并满足其 Acceptance A–L。
+  **不构成**实现禁止；#30 已作为其后继实现 ticket 完成（CLOSED / completed）。
 - **不创建 V0.4**：VERSION_ASSIGNMENT 保持 UNASSIGNED 直至另行单独授权；V0.4 versioning 与 Research Orchestration MVP 分离。
 
 ## 历史 review 结论（沉淀）
