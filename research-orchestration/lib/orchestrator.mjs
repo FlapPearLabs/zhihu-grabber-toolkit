@@ -144,6 +144,38 @@ export function createOrchestrator({
     throw err;
   };
 
+  /**
+   * Deterministic gate validation with correct FAILURE IDENTITY:
+   *   VALID FALSE  !=  UNPARSEABLE OUTPUT  !=  SUBPROCESS EXIT FAILURE  (all FAIL_CLOSED).
+   * parse first → evaluate valid → fail() OUTSIDE the parsing try/catch,
+   * so valid=false is never misreported as unparseable.
+   * Returns parsed gate report when valid (status 0 + valid===true); otherwise throws via fail().
+   */
+  function assertGateValid(res, { code, stage, validFalseMessage, gateLabel }) {
+    let parsed = null;
+    let parseError = false;
+    try {
+      parsed = JSON.parse(res.stdout);
+    } catch {
+      parseError = true;
+    }
+    if (res.status === 0 && parsed && parsed.valid === true) return parsed;
+    let reason;
+    if (parsed && parsed.valid === false) {
+      reason = validFalseMessage;
+    } else if (res.status === 2) {
+      reason = `${gateLabel} subprocess failed (exit 2)`;
+    } else if (parseError) {
+      reason = String(res.stdout ?? '').trim()
+        ? `${gateLabel} output unparseable`
+        : `${gateLabel} subprocess failed (exit ${res.status})`;
+    } else {
+      reason = `${gateLabel} subprocess failed (exit ${res.status})`;
+    }
+    fail(new OrchestrationError(code, reason, { stage, details: jsonDetail(res.stdout) || firstLine(res.stderr) }));
+    return null;
+  }
+
   // ---------- stage implementations (each idempotent; resume skips validated stages) ----------
 
   async function stageSearch() {
@@ -160,7 +192,12 @@ export function createOrchestrator({
       fail(new OrchestrationError('configuration_error', 'zhihu search secret is not usable（zhihu_secret.txt 或 ZHIHU_SECRET）', { stage: STAGE_SEARCH }));
     }
     const res = run('zhihu-search', [topic, '--json']);
-    const data = parseJson(res.stdout, 'search');
+    let data;
+    try {
+      data = JSON.parse(res.stdout);
+    } catch {
+      fail(new OrchestrationError('search_failed', 'search output unparseable', { stage: STAGE_SEARCH, details: firstLine(res.stdout) }));
+    }
     if (data.ok !== true) {
       fail(new OrchestrationError('search_failed', 'search returned ok=false', { stage: STAGE_SEARCH, details: data.error?.message }));
     }
@@ -229,7 +266,12 @@ export function createOrchestrator({
     fs.mkdirSync(captureParentDir(), { recursive: true });
     // zhigrab treats --out-dir as the PARENT: it writes <out-dir>/<questionId>/answers.json
     const res = run('zhihu-grab', [String(state.selectedQuestionId), '--out-dir', captureParentDir(), '--json']);
-    const data = parseJson(res.stdout, 'grab');
+    let data;
+    try {
+      data = JSON.parse(res.stdout);
+    } catch {
+      fail(new OrchestrationError('capture_failed', 'grab output unparseable', { stage: STAGE_CAPTURE, details: firstLine(res.stdout) }));
+    }
     if (data.ok !== true) {
       fail(new OrchestrationError('capture_failed', 'grab returned ok=false', { stage: STAGE_CAPTURE, details: data.error?.message }));
     }
@@ -245,22 +287,18 @@ export function createOrchestrator({
   function stageVerify() {
     stageStart(STAGE_VERIFY);
     const res = runner('zhihu-verify', [captureDir()], {});
-    let v = null;
-    try {
-      v = JSON.parse(res.stdout);
-    } catch {
-      /* invalid JSON → invalid */
-    }
-    const valid = res.status === 0 && v?.valid === true;
+    const v = assertGateValid(res, {
+      code: 'verification_failed',
+      stage: STAGE_VERIFY,
+      validFalseMessage: 'verify-output valid=false（FAIL_CLOSED；captured != verified）',
+      gateLabel: 'verify-output',
+    });
     state.verification = {
-      valid,
+      valid: true,
       questionId: v?.questionId ?? null,
       capturedAnswerCount: v?.capturedAnswerCount ?? null,
       reportedAnswerCount: v?.reportedAnswerCount ?? null,
     };
-    if (!valid) {
-      fail(new OrchestrationError('verification_failed', 'verify-output valid=false（FAIL_CLOSED；captured != verified）', { stage: STAGE_VERIFY, details: jsonDetail(res.stdout) || firstLine(res.stderr) }));
-    }
     state.artifacts[STAGE_VERIFY] = state.artifacts[STAGE_CAPTURE];
     state.hashes[STAGE_VERIFY] = state.hashes[STAGE_CAPTURE];
     stageDone(STAGE_VERIFY);
@@ -274,17 +312,12 @@ export function createOrchestrator({
       fail(new OrchestrationError('handoff_invalid', 'handoff.json missing after make-handoff', { stage: STAGE_HANDOFF }));
     }
     const cv = runner('corpus-verify-handoff', [handoffFile, '--source-root', captureDir()]);
-    if (cv.status !== 0) {
-      fail(new OrchestrationError('handoff_invalid', 'corpus handoff verify rejected the handoff', { stage: STAGE_HANDOFF, details: jsonDetail(cv.stdout) || firstLine(cv.stderr) }));
-    }
-    try {
-      const cvp = JSON.parse(cv.stdout);
-      if (cvp.valid !== true) {
-        fail(new OrchestrationError('handoff_invalid', 'corpus handoff verify valid=false', { stage: STAGE_HANDOFF, details: jsonDetail(cv.stdout) }));
-      }
-    } catch {
-      fail(new OrchestrationError('handoff_invalid', 'corpus handoff verify output unparseable', { stage: STAGE_HANDOFF }));
-    }
+    assertGateValid(cv, {
+      code: 'handoff_invalid',
+      stage: STAGE_HANDOFF,
+      validFalseMessage: 'corpus handoff verify valid=false',
+      gateLabel: 'corpus handoff verify',
+    });
     state.artifacts[STAGE_HANDOFF] = toWorkRelative(workDir, handoffFile);
     state.hashes[STAGE_HANDOFF] = sha256(fs.readFileSync(handoffFile, 'utf8'));
     stageDone(STAGE_HANDOFF);
@@ -365,16 +398,12 @@ export function createOrchestrator({
     run('corpus-map', mapArgs);
 
     const vw = runner('corpus-verify-work', [cw]);
-    if (vw.status !== 0) {
-      fail(new OrchestrationError('coverage_failed', 'corpus verify --work failed（coverage gate）', { stage: STAGE_ANALYZE, details: jsonDetail(vw.stdout) || firstLine(vw.stderr) }));
-    }
-    try {
-      if (JSON.parse(vw.stdout).valid !== true) {
-        fail(new OrchestrationError('coverage_failed', 'corpus coverage valid=false（FAIL_CLOSED；不得绕过 sourceCoverage）', { stage: STAGE_ANALYZE, details: jsonDetail(vw.stdout) }));
-      }
-    } catch {
-      fail(new OrchestrationError('coverage_failed', 'corpus verify --work output unparseable', { stage: STAGE_ANALYZE }));
-    }
+    assertGateValid(vw, {
+      code: 'coverage_failed',
+      stage: STAGE_ANALYZE,
+      validFalseMessage: 'corpus coverage valid=false（FAIL_CLOSED；不得绕过 sourceCoverage）',
+      gateLabel: 'corpus verify --work',
+    });
 
     const finalDir = path.join(cw, 'final');
     fs.mkdirSync(finalDir, { recursive: true });
@@ -385,16 +414,12 @@ export function createOrchestrator({
       fail(new OrchestrationError('analysis_failed', 'final.json missing after reduce', { stage: STAGE_ANALYZE }));
     }
     const fv = runner('corpus-verify-final', [cw, '--final', finalFile]);
-    if (fv.status !== 0) {
-      fail(new OrchestrationError('coverage_failed', 'corpus verify --final failed', { stage: STAGE_ANALYZE, details: jsonDetail(fv.stdout) || firstLine(fv.stderr) }));
-    }
-    try {
-      if (JSON.parse(fv.stdout).valid !== true) {
-        fail(new OrchestrationError('coverage_failed', 'corpus verify --final valid=false', { stage: STAGE_ANALYZE, details: jsonDetail(fv.stdout) }));
-      }
-    } catch {
-      fail(new OrchestrationError('coverage_failed', 'corpus verify --final output unparseable', { stage: STAGE_ANALYZE, details: firstLine(fv.stdout) || firstLine(fv.stderr) }));
-    }
+    assertGateValid(fv, {
+      code: 'coverage_failed',
+      stage: STAGE_ANALYZE,
+      validFalseMessage: 'corpus verify --final valid=false',
+      gateLabel: 'corpus verify --final',
+    });
 
     state.coverage = readCoverage();
     state.analysisResult = {

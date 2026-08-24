@@ -73,7 +73,7 @@ function sha(text) {
  * Fake runner: deterministic, records invocations, materializes the files the
  * real primitives would create (capture fixture, handoff, corpus artifacts).
  */
-function makeFakeRunner({ searchCandidates, deepseekUsable = true, failOn = {} } = {}) {
+function makeFakeRunner({ searchCandidates, deepseekUsable = true, failOn = {}, outputs = {} } = {}) {
   const calls = [];
   const fixtureAnswers = {
     questionId: '123',
@@ -97,10 +97,23 @@ function makeFakeRunner({ searchCandidates, deepseekUsable = true, failOn = {} }
     return null;
   }
 
+  /** Injected gate output: outputs[name] = { status, stdout } where stdout may be object or raw string. */
+  function maybeOutput(name) {
+    const o = outputs[name];
+    if (o === undefined) return null;
+    return {
+      status: o.status ?? 0,
+      stdout: typeof o.stdout === 'string' ? o.stdout : JSON.stringify(o.stdout),
+      stderr: '',
+    };
+  }
+
   const runner = (name, args, _opts) => {
     record(name, args);
     const injected = maybeFail(name);
     if (injected) return injected;
+    const out = maybeOutput(name);
+    if (out) return out;
 
     switch (name) {
       case 'zhihu-preflight':
@@ -681,4 +694,158 @@ test('state: completion records stage COMPLETE; rerun on complete returns result
   const out2 = await o2.runOrchestration();
   assert.equal(out2.stage, STAGE_COMPLETE);
   assert.equal(f2.calls.length, 0, 'complete run must not re-execute primitives');
+});
+
+// ---------------------------------------------------------------------------
+// ChatGPT Final Review P1: conservative sampled-intent regression matrix
+// (generic/default → FULL-COVERAGE; sampled only on explicit answer/corpus frame)
+// ---------------------------------------------------------------------------
+
+test('P1: explicit answer/corpus-frame sampled requests MUST route to top-percent (R4)', () => {
+  for (const t of [
+    '前20%的回答',
+    '只看前20%的回答',
+    '看前20%的高赞回答',
+    '取前20%的答案',
+    '选20%的回答做分析',
+    'top 20% answers',
+    'sampled view',
+    '给我一个采样视图',
+    '不需要全量',
+    '快速看看新能源汽车',
+    '只看高赞回答 新能源汽车',
+  ]) {
+    const r = resolveAnalysisIntent(t);
+    assert.equal(r.mode, MODE_TOP_PERCENT, `explicit sampled frame must be sampled: ${t}`);
+    assert.equal(r.sampledIntent, true);
+  }
+  // percent extraction from the frame
+  assert.equal(resolveAnalysisIntent('前20%的回答').percent, 20);
+  assert.equal(resolveAnalysisIntent('只看前20%的回答').percent, 20);
+  assert.equal(resolveAnalysisIntent('看前20%的高赞回答').percent, 20);
+  assert.equal(resolveAnalysisIntent('取前20%的答案').percent, 20);
+  assert.equal(resolveAnalysisIntent('选20%的回答做分析').percent, 20);
+  assert.equal(resolveAnalysisIntent('top 20% answers').percent, 20);
+});
+
+test('P1: percentage as SUBJECT (not corpus subset) MUST stay FULL-COVERAGE (R4, no silent downgrade)', () => {
+  for (const t of [
+    '我要20%的年化收益',
+    '我想要20%的投资回报',
+    '研究一下如何提取20%的收益',
+    '选择20%的股票是否合理',
+    '20%收益率意味着什么',
+    '收益率20%的投资策略',
+    '研究一下采样定理',
+    '用采样数据训练模型有什么问题',
+    '采样率20%的信号处理方法',
+    '如何选20%的员工进入试点',
+    '研究一下快速排序算法',
+    '如何快速提升写作能力',
+    '高赞回答有什么特点',
+    '帮我研究人工智能对教育的影响',
+    '量子计算',
+  ]) {
+    const r = resolveAnalysisIntent(t);
+    assert.equal(r.mode, MODE_DIGEST, `generic intent with %/采样 subject must stay full-coverage: ${t}`);
+    assert.equal(r.sampledIntent, false);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// ChatGPT Final Review P2: failure identity
+// VALID FALSE != UNPARSEABLE OUTPUT != SUBPROCESS EXIT FAILURE (all FAIL_CLOSED, FAILED state)
+// ---------------------------------------------------------------------------
+
+async function expectFailureIdentity({ failOn, outputs, topic = '人工智能对教育的影响', expectCode, expectReasonPart }) {
+  const fake = makeFakeRunner({ searchCandidates: [cand('1', '人工智能对教育的影响', 50)], failOn, outputs });
+  const workDir = tmpDir('fid');
+  const orch = createOrchestrator({ workDir, topic, mode: MODE_DIGEST, percent: null, runtime: RUNTIME_DEEPSEEK, runner: fake.runner });
+  await assert.rejects(
+    () => orch.runOrchestration(),
+    (err) => {
+      assert.equal(err.code, expectCode, `code must be ${expectCode}, got ${err.code}`);
+      assert.ok(err.message.includes(expectReasonPart), `message must mention "${expectReasonPart}", got: ${err.message}`);
+      return true;
+    },
+  );
+  const state = readState(workDir);
+  assert.equal(state.stage, 'FAILED', 'state.stage must be FAILED');
+  assert.equal(state.error.code, expectCode);
+  assert.ok(state.error.message.includes(expectReasonPart));
+  const events = fs.readFileSync(path.join(workDir, 'events.jsonl'), 'utf8');
+  assert.ok(events.includes('"status":"failed"'), 'failed event must be recorded');
+  assert.ok(events.includes(expectCode), 'failure identity must be observable in events');
+}
+
+test('P2: verify valid=false → verification_failed (NOT unparseable), FAILED state', async () => {
+  await expectFailureIdentity({
+    outputs: { 'zhihu-verify': { status: 1, stdout: { valid: false, warnings: ['gate'] } } },
+    expectCode: 'verification_failed',
+    expectReasonPart: 'valid=false',
+  });
+});
+
+test('P2: verify malformed JSON → verification_failed with unparseable reason, FAILED state', async () => {
+  await expectFailureIdentity({
+    outputs: { 'zhihu-verify': { status: 1, stdout: '{broken json!!' } },
+    expectCode: 'verification_failed',
+    expectReasonPart: 'unparseable',
+  });
+});
+
+test('P2: verify child exit != 0 (empty stdout) → subprocess failure reason, FAILED state', async () => {
+  await expectFailureIdentity({
+    failOn: { 'zhihu-verify': true },
+    expectCode: 'verification_failed',
+    expectReasonPart: 'subprocess failed',
+  });
+});
+
+test('P2: corpus-verify-handoff valid=false → handoff_invalid valid=false (NOT unparseable)', async () => {
+  await expectFailureIdentity({
+    outputs: { 'corpus-verify-handoff': { status: 1, stdout: { valid: false, issues: ['bad'] } } },
+    expectCode: 'handoff_invalid',
+    expectReasonPart: 'valid=false',
+  });
+});
+
+test('P2: corpus-verify-handoff malformed JSON → handoff_invalid unparseable', async () => {
+  await expectFailureIdentity({
+    outputs: { 'corpus-verify-handoff': { status: 1, stdout: 'oops' } },
+    expectCode: 'handoff_invalid',
+    expectReasonPart: 'unparseable',
+  });
+});
+
+test('P2: corpus-verify-work valid=false → coverage_failed valid=false (NOT unparseable)', async () => {
+  await expectFailureIdentity({
+    outputs: { 'corpus-verify-work': { status: 1, stdout: { valid: false, missingMappedSources: 2 } } },
+    expectCode: 'coverage_failed',
+    expectReasonPart: 'valid=false',
+  });
+});
+
+test('P2: corpus-verify-work malformed JSON → coverage_failed unparseable', async () => {
+  await expectFailureIdentity({
+    outputs: { 'corpus-verify-work': { status: 1, stdout: 'not json' } },
+    expectCode: 'coverage_failed',
+    expectReasonPart: 'unparseable',
+  });
+});
+
+test('P2: corpus-verify-final valid=false → coverage_failed valid=false', async () => {
+  await expectFailureIdentity({
+    outputs: { 'corpus-verify-final': { status: 1, stdout: { valid: false, invalidRefs: 3 } } },
+    expectCode: 'coverage_failed',
+    expectReasonPart: 'valid=false',
+  });
+});
+
+test('P2: search malformed JSON → search_failed unparseable, FAILED state', async () => {
+  await expectFailureIdentity({
+    outputs: { 'zhihu-search': { status: 0, stdout: 'not json at all' } },
+    expectCode: 'search_failed',
+    expectReasonPart: 'unparseable',
+  });
 });

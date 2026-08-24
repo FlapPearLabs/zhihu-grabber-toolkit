@@ -6,9 +6,11 @@
  *
  * Approved policy (docs/specs/research-orchestration-scope.md §6.3 / R4):
  * - Generic intent ("帮我研究 X" / "看看大家怎么讨论 X" / "综合分析 X") → FULL-COVERAGE digest.
- * - Explicit sampled intent (快速看看 / 只看高赞 / 前X% / top X% / sampled / 不需要全量 …)
- *   → top-percent-analysis with parsed X (default QUICK_PERCENT when no explicit number).
- * - No silent downgrade; mode is decided by intent, not by corpus size / cost / runtime failure.
+ * - Explicit sampled intent (快速看看 / 只看高赞 / 看前X%的回答 / top X% answers / sampled view /
+ *   不需要全量 …) → top-percent-analysis with parsed X (default QUICK_PERCENT when no explicit number).
+ * - CONSERVATIVE RULE: percentage/采样 only count as sampled intent when tied to an explicit
+ *   ANSWER / OPINION / CORPUS frame (回答/答案/观点/高赞/看法/评论/answers…). When uncertain →
+ *   FULL-COVERAGE (generic/default → full). No silent downgrade.
  */
 
 export const MODE_DIGEST = 'digest';
@@ -17,18 +19,30 @@ export const MODE_TOP_PERCENT = 'top-percent-analysis';
 /** Default percent when user expresses sampled intent without an explicit number. */
 export const QUICK_PERCENT = 20;
 
-const SAMPLED_HINTS = [
+/** Answer/corpus/opinion nouns that make an X% mention an explicit sampling request. */
+const ANSWER_FRAME = '(?:回答|答案|观点|高赞|看法|意见|评论|内容|样本|语料|answers?|replies?|comments?|opinions?)';
+
+/** Explicit non-percent sampled action frames (must clearly request a subset view). */
+const SAMPLED_ACTION_FRAMES = [
   /快速(看看|预览|看一下)/i,
   /quick\s+(look|view|preview)/i,
   /只看高赞(回答)?/i,
-  // X% only counts as sampled intent when framed by an explicit sampling verb/frame
-  /(?:只看|只取|看|取|选|要|前|top)\s*(\d{1,3})\s*%/i,
-  // 采样 only counts as sampled intent when explicitly requested as an action
-  /(?:做|给|来|要|用|取).{0,4}采样/i,
+  // 采样 counts only as an explicit analysis-action request (做/给/来/要/取/出 …采样…)
+  /(?:做|给|来|要|取|出).{0,4}采样/i,
   /sampled?\s*(view|look|digest)/i,
   /(不|无|非|不是).{0,4}(需要|要求|要).{0,4}(全量|全貌|全部|full)/i,
   /(不需要|不用|无需|不要).{0,4}(全量|全貌|全部)/i,
 ];
+
+/**
+ * Percentage-based sampled intent: X% must be tied to an explicit ANSWER/OPINION/CORPUS frame,
+ * e.g. 前20%的回答 / 只看前20%的高赞回答 / 取前20%的答案 / top 20% answers.
+ * "我要20%的年化收益" / "选择20%的股票" are NOT sampled (percent is a subject, not a corpus subset).
+ */
+const PERCENT_SAMPLE_FRAME = new RegExp(
+  `(?:只看|只取|看|取|选|要|前|top)\\s*(\\d{1,3})\\s*%\\s*(?:的)?(?:高赞\\s*)?${ANSWER_FRAME}`,
+  'i',
+);
 
 const PERCENT_PATTERNS = [
   /(?:前|top)\s*(\d{1,3})\s*%/i,
@@ -54,13 +68,27 @@ export function extractPercent(text) {
   return null;
 }
 
-/** Decide the analysis mode + percent from the topic text (Approved R4 policy). */
+/** Decide the analysis mode + percent from the topic text (Approved R4 policy, conservative). */
 export function resolveAnalysisIntent(topic) {
   const t = String(topic ?? '');
-  if (SAMPLED_HINTS.some((re) => re.test(t))) {
+
+  // 1. Explicit non-percent sampled action frames.
+  if (SAMPLED_ACTION_FRAMES.some((re) => re.test(t))) {
     const percent = extractPercent(t) ?? QUICK_PERCENT;
     return { mode: MODE_TOP_PERCENT, percent, sampledIntent: true };
   }
+
+  // 2. Percentage tied to an explicit answer/opinion/corpus frame.
+  const m = PERCENT_SAMPLE_FRAME.exec(t);
+  if (m) {
+    const n = Number.parseInt(m[1], 10);
+    if (Number.isInteger(n) && n >= 1 && n <= 100) {
+      return { mode: MODE_TOP_PERCENT, percent: n, sampledIntent: true };
+    }
+    // out-of-range / meaningless percent → uncertain → FULL-COVERAGE
+  }
+
+  // 3. Conservative default: generic / uncertain → FULL-COVERAGE digest.
   return { mode: MODE_DIGEST, percent: null, sampledIntent: false };
 }
 
