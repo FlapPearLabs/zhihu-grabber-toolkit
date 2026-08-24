@@ -59,12 +59,12 @@
 
 - **V2 Phase 2 — Rich Content Assets 已纳入 accepted project baseline**：additive `answers[].assets`（images / links / references / codeBlocks / videos）、canonical `content` 不可变、脚注重建（renderer 生成 `a<answerId>-r<index>`）、1px placeholder 确定性合同（Spec §10.1）均为长期合同，保持不变（见上文已批准决策与 Spec）。
 - **V2 Phase 3 — Question Metadata 已纳入 accepted project baseline**：additive `question` metadata（description/topics）、NETWORK_REQUEST_DELTA=0、failure/empty semantics（Spec §20.2.1）、resume preservation 与 identity gate 均为长期合同（见上文 PHASE3_SCHEMA_DISCOVERY 与已批准决策）。
-- **当前产品阶段（CURRENT PRODUCT STAGE）**：**V0.3 gated execution**
-  ——V0.3 Draft-review 的历史 baseline 为 `22b8ed3`；Approved authority effective 的历史 checkpoint 为 T0 DOCUMENT NORMALIZATION `234a315`（独立 DOCUMENT review PASS 并 ff-only merge master）；
-  T0 DOCUMENT NORMALIZATION 已 PASS + merge；T1（search schema discovery）与 T2（search answer count
-  implementation）已完成并进入 accepted implementation baseline；
-  各 ticket 状态以 **Tracker #6** 为执行事实源，严格按 T1→T11 顺序 gate 推进；
-  gate conclusion（PASS / merge / close）不在此文件预写，由 Git history 与 Tracker 保存。
+- **V0.3 execution state（HISTORICAL / COMPLETED）**：V0.3 已完成 T0→T11 gated execution，并达到
+  **V0_3_EXECUTION_COMPLETE**（见下文 V0.3 Runtime Closeout）。历史 ticket 顺序与 gate 事实由
+  **Tracker #6 / Git history** 保存，本文件不再把 T1→T11 作为当前 active execution state。
+  历史 checkpoint（非 current master）：V0.3 Draft-review baseline `22b8ed3`；Approved authority effective
+  T0 DOCUMENT NORMALIZATION `234a315`（独立 DOCUMENT review PASS 并 ff-only merge master）。
+  **NEXT_STAGE / V0.4 未经授权不得自动开始。**
 - **V0.3 已批准产品决策（durable，见 `docs/specs/v0.3-product-scope.md`）**：
   - **A. Search Answer Count（T1/T2 已进入 accepted implementation baseline）**：目标——搜索候选应尽可能提供来自可信上游的回答数量；缺失 / null 优于虚构。
     - T1 discovery 结论（独立 review PASS 后 merge）：官方 `zhihu_search` Item schema 采样结论
@@ -162,7 +162,10 @@
     （MAX_CHILDREN_PER_NODE / MAX_PROJECTED_INPUT_BUDGET 为 reviewed runtime/execution profile
     parameters，T10 从 qualified runtime 推导）；HYBRID lineage（child refs + controller materialized
     union；每层递归覆盖不变量 union(children)==parent；COVERAGE ≠ CLAIM EVIDENCE）；fail-closed 验证；
-    stale 向上传播（依赖祖先失效、无关 sibling 可复用）；仅 lmstudio-local-tool-less；无静默 fallback；
+    stale 向上传播（依赖祖先失效、无关 sibling 可复用）；T9 原始批准合同 runtime 限定：
+    **仅 lmstudio-local-tool-less**；无静默 fallback；
+    （历史限定：该原始 runtime 限定在 T11-R2 由独立资格通过的 `deepseek-api-tool-less` **加性扩展**，
+      hierarchy 节点/manifest runtime 身份已线程化真实传输；见下文 V0.3 Runtime Closeout。）
     final.json 消费合同不变（mode="digest" flat/hierarchical 一致）。
     实测证据：reduce-input 线性增长（38→9.6K chars；538→134.7K chars，ESTIMATED 52-95K token），
     顶层撰写阶段是压力点。
