@@ -25,9 +25,19 @@ const ANSWER_FRAME = '(?:回答|答案|观点|高赞|看法|意见|评论|内容
 /**
  * How-to / feasibility methodology questions (如何/怎么/怎样 …抽样分析/只采样…) are ordinary
  * research subjects → FULL-COVERAGE, even when they contain a sampling sub-phrase.
- * Clause-bounded (no fixed char window); when uncertain → FULL.
+ * Clause-bounded via the clause char class (NO fixed char window); when uncertain → FULL.
  */
-const HOWTO_METHOD_GUARD = /(?:如何|怎么|怎样)[^。！？!?；;\n]{0,40}(?:抽样分析|只采样)/i;
+const HOWTO_METHOD_GUARD = /(?:如何|怎么|怎样)[^。！？!?；;\n]*(?:抽样分析|只采样)/i;
+
+/**
+ * How-to / methodology markers in SUFFIX position after a sampling phrase (镜像语序:
+ * 对回答做抽样分析怎么做 / 只采样部分回答怎么做 / …有什么意义) are methodology
+ * questions → FULL-COVERAGE.
+ */
+const METHODOLOGY_SUFFIX_GUARD = /(?:抽样分析|只采样)[^。！？!?；;\n]{0,8}(?:怎么做|怎么|有什么|应该|如何|吗|什么)/i;
+
+/** Feasibility / uncertainty markers — method questions, not subset-view requests (uncertain → FULL). */
+const FEASIBILITY_MARKERS = '是否|能不能|有没有|可不可以|可不可|行不行|好不好|该不该|好还是|值不值得|合理';
 
 /** Explicit non-percent sampled action frames (must clearly request a subset view). */
 const SAMPLED_ACTION_FRAMES = [
@@ -38,9 +48,17 @@ const SAMPLED_ACTION_FRAMES = [
   // answers/corpus. All frames REQUIRE an answer/corpus noun (回答/答案/内容/语料/评论) and
   // reject attribute/metric compounds (数据/客户/样本/特征/质量/数量/版本…). Generic SUBJECT
   // uses stay FULL-COVERAGE. Conservative rule: when uncertain → FULL-COVERAGE (R4 §6.3).
+  // NOTE: frames embedding FEASIBILITY_MARKERS must be built with new RegExp (template
+  // interpolation does not work inside regex literals).
   /采样\s*(视图|版\s*摘要)/i,
-  /只采样(?:部分|一些|前|top|少量|其中)\s*(?:的)?(?:高赞\s*)?(?:回答|答案|内容|语料|评论)(?!\s*(?:的|可以|会|需要|时|吗))/i,
-  /对.{0,8}(?:回答|答案|内容|语料|评论|高赞)\s*(?:做|进行|来|去)\s*抽样分析(?!\s*(?:的|需要|时|可以|会|什么|吗))/i,
+  new RegExp(
+    `只采样(?:部分|一些|前|top|少量|其中)\\s*(?:的)?(?:高赞\\s*)?(?:回答|答案|内容|语料|评论)(?!\\s*(?:的|可以|会|需要|时|吗|${FEASIBILITY_MARKERS}))`,
+    'i',
+  ),
+  new RegExp(
+    `对.{0,8}(?:回答|答案|内容|语料|评论|高赞)\\s*(?:做|进行|来|去)\\s*抽样分析(?!\\s*(?:的|需要|时|可以|会|什么|吗|${FEASIBILITY_MARKERS}))`,
+    'i',
+  ),
   /sampled?\s*(view|look|digest)/i,
   // Explicit refusal-of-full idioms only — bare 无/非 (Chinese subject prefixes like 无监督/非监督)
   // must NOT trigger sampled (they are ordinary research subjects, not sampling requests).
@@ -53,7 +71,7 @@ const SAMPLED_ACTION_FRAMES = [
  * "我要20%的年化收益" / "选择20%的股票" are NOT sampled (percent is a subject, not a corpus subset).
  */
 const PERCENT_SAMPLE_FRAME = new RegExp(
-  `(?:只看|只取|看|取|选|要|前|top)\\s*(\\d{1,3})\\s*%\\s*(?:的)?(?:高赞\\s*)?${ANSWER_FRAME}(?!(?:率|数|量|比|差|度|值|额|价|本|据|均|总))`,
+  `(?:只看|只取|看|取|选|要|前|top)\\s*(\\d{1,3})\\s*%\\s*(?:的)?(?:高赞\\s*)?${ANSWER_FRAME}(?!(?:率|数|量|比|差|度|值|额|价|本|据|均|总))(?![^，。！？!?；;\n]{0,6}(?:是否|可以|吗|${FEASIBILITY_MARKERS}))`,
   'i',
 );
 
@@ -85,8 +103,9 @@ export function extractPercent(text) {
 export function resolveAnalysisIntent(topic) {
   const t = String(topic ?? '');
 
-  // 0. How-to / feasibility methodology questions (如何/怎么/怎样 …抽样分析) → FULL-COVERAGE.
-  if (HOWTO_METHOD_GUARD.test(t)) {
+  // 0. How-to / feasibility methodology questions (如何/怎么/怎样 …抽样分析/只采样…,
+  //    or 抽样分析/只采样 …怎么做/有什么意义…) → FULL-COVERAGE.
+  if (HOWTO_METHOD_GUARD.test(t) || METHODOLOGY_SUFFIX_GUARD.test(t)) {
     return { mode: MODE_DIGEST, percent: null, sampledIntent: false };
   }
 
