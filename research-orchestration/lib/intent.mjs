@@ -23,23 +23,27 @@ export const QUICK_PERCENT = 20;
 const ANSWER_FRAME = '(?:回答|答案|观点|高赞|看法|意见|评论|内容|样本|语料|answers?|replies?|comments?|opinions?)';
 
 /**
- * How-to / feasibility methodology questions (如何/怎么/怎样 …抽样分析/只采样…) are ordinary
- * research subjects → FULL-COVERAGE, even when they contain a sampling sub-phrase.
+ * How-to / methodology questions (如何/怎么/怎样 …sampling-frame…) are ordinary research
+ * subjects → FULL-COVERAGE, even when they contain a sampling sub-phrase (prefix position).
  * Clause-bounded via the clause char class (NO fixed char window); when uncertain → FULL.
  */
-const HOWTO_METHOD_GUARD = /(?:如何|怎么|怎样)[^。！？!?；;\n]*(?:抽样分析|只采样)/i;
+const HOWTO_METHOD_GUARD = new RegExp(
+  `(?:如何|怎么|怎样)[^。！？!?；;\\n]*(?:抽样分析|只采样|快速(?:看看|预览|看一下)|quick\\s+(?:look|view|preview)|只看高赞(?:回答)?|采样\\s*(?:视图|版\\s*摘要)|只看|只取|看|取|选|前\\s*\\d{1,3}\\s*%|top\\s*\\d{1,3}\\s*%)`,
+  'i',
+);
 
 /** Feasibility / uncertainty markers — method questions, not subset-view requests (uncertain → FULL). */
-const FEASIBILITY_MARKERS = '是否|能不能|有没有|可不可以|可不可|行不行|好不好|该不该|好还是|值不值得|合理';
+const FEASIBILITY_MARKERS = '是否|能不能|有没有|可不可以|可不可|行不行|好不好|该不该|好还是|值不值得|合理|对不对|好吧|行吧|对吧';
 
 /**
- * How-to / methodology markers in SUFFIX position after a sampling phrase (镜像语序:
- * 对回答做抽样分析怎么做 / 只采样部分回答怎么做 / …有什么意义 / …是否可行) are methodology
- * questions → FULL-COVERAGE. Marker set includes FEASIBILITY_MARKERS so that a comma before
- * the feasibility marker (只看前20%的回答，可以吗) cannot defeat the guard.
+ * How-to / methodology / feasibility markers in SUFFIX position after a sampling phrase
+ * (镜像语序: 对回答做抽样分析怎么做 / 只看高赞回答，可以吗 / 不需要全量，可以吗 / …是否可行).
+ * Marker set includes FEASIBILITY_MARKERS so a comma before the marker cannot defeat the guard.
+ * Applies to EVERY sampled frame (只看高赞 / 快速看看 / 采样视图 / 不需要全量 …), not just
+ * 只采样/抽样分析 — feasibility variants of any sampled frame → FULL-COVERAGE.
  */
 const METHODOLOGY_SUFFIX_GUARD = new RegExp(
-  `(?:抽样分析|只采样)[^。！？!?；;\\n]{0,8}(?:怎么做|怎么|有什么|应该|如何|吗|什么|可以|${FEASIBILITY_MARKERS})`,
+  `(?:抽样分析|只采样|快速(?:看看|预览|看一下)|quick\\s+(?:look|view|preview)|只看高赞(?:回答)?|采样\\s*(?:视图|版\\s*摘要)|sampled?\\s*(?:view|look|digest)|不需要|不用|无需|不要|无须|只看|只取|取|选|前\\s*\\d{1,3}\\s*%|top\\s*\\d{1,3}\\s*%)[^。！？!?；;\\n]{0,8}(?:怎么做|怎么|有什么|应该|如何|吗|什么|可以|${FEASIBILITY_MARKERS})`,
   'i',
 );
 
