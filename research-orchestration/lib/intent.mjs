@@ -23,11 +23,11 @@ export const QUICK_PERCENT = 20;
 const ANSWER_FRAME = '(?:回答|答案|观点|高赞|看法|意见|评论|内容|样本|语料|answers?|replies?|comments?|opinions?)';
 
 /**
- * How-to / feasibility methodology questions (如何/怎么/怎样 …抽样分析…) are ordinary
- * research subjects → FULL-COVERAGE, even when they contain an 抽样分析 sub-phrase.
- * (Conservative rule: uncertain → FULL.)
+ * How-to / feasibility methodology questions (如何/怎么/怎样 …抽样分析/只采样…) are ordinary
+ * research subjects → FULL-COVERAGE, even when they contain a sampling sub-phrase.
+ * Clause-bounded (no fixed char window); when uncertain → FULL.
  */
-const HOWTO_METHOD_GUARD = /(?:如何|怎么|怎样).{0,16}抽样分析/i;
+const HOWTO_METHOD_GUARD = /(?:如何|怎么|怎样)[^。！？!?；;\n]{0,40}(?:抽样分析|只采样)/i;
 
 /** Explicit non-percent sampled action frames (must clearly request a subset view). */
 const SAMPLED_ACTION_FRAMES = [
@@ -40,7 +40,7 @@ const SAMPLED_ACTION_FRAMES = [
   // uses stay FULL-COVERAGE. Conservative rule: when uncertain → FULL-COVERAGE (R4 §6.3).
   /采样\s*(视图|版\s*摘要)/i,
   /只采样(?:部分|一些|前|top|少量|其中)\s*(?:的)?(?:高赞\s*)?(?:回答|答案|内容|语料|评论)(?!\s*(?:的|可以|会|需要|时|吗))/i,
-  /(?!如何|怎么|怎样)对.{0,8}(?:回答|答案|内容|语料|评论|高赞)\s*(?:做|进行|来|去)\s*抽样分析(?!\s*(?:的|需要|时|可以|会|什么|吗))/i,
+  /对.{0,8}(?:回答|答案|内容|语料|评论|高赞)\s*(?:做|进行|来|去)\s*抽样分析(?!\s*(?:的|需要|时|可以|会|什么|吗))/i,
   /sampled?\s*(view|look|digest)/i,
   // Explicit refusal-of-full idioms only — bare 无/非 (Chinese subject prefixes like 无监督/非监督)
   // must NOT trigger sampled (they are ordinary research subjects, not sampling requests).
