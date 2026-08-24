@@ -21,11 +21,11 @@ const SAMPLED_HINTS = [
   /快速(看看|预览|看一下)/i,
   /quick\s+(look|view|preview)/i,
   /只看高赞(回答)?/i,
-  /前\s*\d+\s*%/,
-  /top\s*\d+\s*%/i,
-  /(\d{1,3})\s*%/,
+  // X% only counts as sampled intent when framed by an explicit sampling verb/frame
+  /(?:只看|只取|看|取|选|要|前|top)\s*(\d{1,3})\s*%/i,
+  // 采样 only counts as sampled intent when explicitly requested as an action
+  /(?:做|给|来|要|用|取).{0,4}采样/i,
   /sampled?\s*(view|look|digest)/i,
-  /采样/i,
   /(不|无|非|不是).{0,4}(需要|要求|要).{0,4}(全量|全貌|全部|full)/i,
   /(不需要|不用|无需|不要).{0,4}(全量|全貌|全部)/i,
 ];

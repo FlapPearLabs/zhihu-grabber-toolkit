@@ -299,13 +299,19 @@ test('intent: subject words containing 快速/高赞 must NOT trigger silent sam
     '高赞率的营销技巧',
     '量子计算',
     '帮我研究人工智能对教育的影响',
+    // percentage/采样 as SUBJECT words (not an explicit sampling request) must stay full-coverage
+    '研究一下收益率20%的投资策略',
+    '如何提高30%的工作效率',
+    '2024年增长50%的行业分析',
+    '研究一下采样定理',
+    '帮我分析采样数据的特点',
   ]) {
     const r = resolveAnalysisIntent(t);
     assert.equal(r.mode, MODE_DIGEST, `generic intent with subject word must stay full-coverage: ${t}`);
     assert.equal(r.sampledIntent, false);
   }
   // explicit sampled phrasings still route to sampled
-  for (const t of ['快速看看新能源汽车', '只看高赞回答 新能源汽车', '前20%的回答', 'sampled view', '不需要全量']) {
+  for (const t of ['快速看看新能源汽车', '只看高赞回答 新能源汽车', '前20%的回答', '只看前20%的回答', 'top 30% 的观点', 'sampled view', '不要全量', '给我一个采样视图']) {
     assert.equal(resolveAnalysisIntent(t).mode, MODE_TOP_PERCENT, `explicit sampled phrasing must be sampled: ${t}`);
   }
 });
@@ -344,6 +350,10 @@ test('intent: resolveRequestedMode — auto/absent → intent-driven; explicit w
   assert.equal(resolveRequestedMode({ explicitMode: 'bogus', intent: genericIntent }).valid, false);
   assert.equal(resolveRequestedMode({ explicitMode: 'top-percent', explicitPercent: '200', intent: genericIntent }).valid, false);
   assert.equal(resolveRequestedMode({ explicitPercent: '0', intent: genericIntent }).valid, false);
+  // strict full-string percent validation (no silent truncation)
+  assert.equal(resolveRequestedMode({ explicitPercent: '20.5', intent: genericIntent }).valid, false);
+  assert.equal(resolveRequestedMode({ explicitPercent: '20abc', intent: genericIntent }).valid, false);
+  assert.equal(resolveRequestedMode({ explicitPercent: '', intent: genericIntent }).valid, false);
 });
 
 // ---------------------------------------------------------------------------

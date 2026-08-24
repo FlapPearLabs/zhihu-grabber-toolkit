@@ -390,10 +390,10 @@ export function createOrchestrator({
     }
     try {
       if (JSON.parse(fv.stdout).valid !== true) {
-        fail(new OrchestrationError('coverage_failed', 'corpus verify --final valid=false', { stage: STAGE_ANALYZE }));
+        fail(new OrchestrationError('coverage_failed', 'corpus verify --final valid=false', { stage: STAGE_ANALYZE, details: jsonDetail(fv.stdout) }));
       }
     } catch {
-      fail(new OrchestrationError('coverage_failed', 'corpus verify --final output unparseable', { stage: STAGE_ANALYZE }));
+      fail(new OrchestrationError('coverage_failed', 'corpus verify --final output unparseable', { stage: STAGE_ANALYZE, details: firstLine(fv.stdout) || firstLine(fv.stderr) }));
     }
 
     state.coverage = readCoverage();
