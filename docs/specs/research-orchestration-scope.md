@@ -510,7 +510,22 @@ R7: DELEGATED_IMPLEMENTATION_DESIGN     // 至少暴露 stage / progress + grace
 ## 15. Relationship to Issue #5
 
 - **Issue #5 是最早的 loose product-problem record**：`[Dogfood][F4] End-to-end research requires too many manual orchestration steps`。
-- **#5 当前状态（2026-08-24）：CLOSED / state_reason = not_planned**（产品问题在 current product stage 不计划实现；其问题与 proposed future scope 已由本 Spec 保留）。关闭分类为 `not_planned`，**不是** `COMPLETED` / `FIXED` / `implemented`——需求当时未被实现。
+- **#5 GitHub 状态（HISTORICAL，保持不变）：CLOSED / state_reason = not_planned**。
+  这是在本 Spec 获得批准**之前**记录的**历史 issue-close 分类**；`not_planned` **不得被解释为当前实现禁止**。
+  （历史 closeout 时刻，需求仅作为「proposed future scope」保留——该表述在 closeout 时刻为真，现为历史事实。）
+- **当前 authority（CURRENT，2026-08-24 本 Spec 获批后）：**
+
+  ```text
+  STATUS: APPROVED
+  IMPLEMENTATION_STATUS: NOT_IMPLEMENTED
+  IMPLEMENTATION_AUTHORIZATION: MVP_AUTHORIZED
+  PRODUCT_STAGE: NEXT_STAGE / RESEARCH_ORCHESTRATION
+  ```
+
+  本 Spec 已获显式批准，**现授权 Research Orchestration MVP 实现**；因此 #5 的 `not_planned` 关闭
+  **不构成**当前实现禁令，#5 也**不需要**因实现现已授权而重新打开。
+  未来实现通过**新的 implementation ticket** 进行，该 ticket 必须引用本 Approved Spec 并满足 §13 acceptance（A–L）。
+  #5 的关闭分类（`not_planned`）保持不变；**不得**声称 #5 为 `COMPLETED` / `FIXED` / `implemented`——需求当时未被实现。
 - **本 Spec 是其规范化 successor**：把 #5 描述的 ORCHESTRATION_COMPLEXITY 问题正式化为可审查、已批准的 implementation contract。
 - **本 Spec 批准后**：未来实现 ticket **必须引用本 Spec** 并满足 §13 acceptance contract（A–L），才能声称「research orchestration feature 存在」。本 Spec 是 feature 尚未实现的 Approved 合同。
 - 本 Spec 的批准不改变 #5 的关闭分类（`not_planned`），也不重新打开 #5。
