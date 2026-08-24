@@ -34,9 +34,19 @@ THIS DOES NOT AUTOMATICALLY CREATE V0.4  // 不自动创建 V0.4 / 不启动新 
 > 不是「该功能已实现」的声明。实现 ticket 完成并验收前，任何对外声称
 > 「research orchestration 可用」都是不成立的。
 >
-> 本 Spec 覆盖的范围内，它以 Approved Spec 身份约束实现；
-> 与更高 authority（RULES.md / 既有 Approved Specs / product-behavior-contract）冲突时，
-> 以更高 authority 为准（`AGENTS.md` §1 裁决原则）。
+> 本 Spec 覆盖的范围内，它以 Approved Spec 身份约束实现。
+>
+> **Authority model**（按 `AGENTS.md` §1 / RULES.md §6 的真实模型，不发明新层级）：
+>
+> 1. `RULES.md` **hard invariants** 保持 binding（本 Spec 不得覆盖）。
+> 2. 本 Spec 一旦 APPROVED，即作为 **Applicable Approved Spec** 参与产品需求 authority，
+>    覆盖其**明确的 Research Orchestration scope**。
+> 3. Applicable Approved Specs（V2 / V0.3 / 本 Spec）按**明确的 scope / amendment 关系共同解析**；
+>    **不存在**「既有 / 更旧的 Approved Spec 自动压过本 Approved Spec」的规则。
+> 4. `docs/product-behavior-contract.md` 是已批准产品行为的**归一化视图**，
+>    **不得覆盖** Applicable Approved Specs。
+> 5. 若真实 authority 冲突无法按明确 scope / amendment 关系解决 → **STOP：`CONTRACT_CONFLICT`**
+>    （`SPEC_CONFLICT` / `GOVERNANCE_CONFLICT` 仅作 finding / reason category，不得静默选方便一方）。
 
 ---
 
@@ -161,7 +171,7 @@ research <topic>
 
 - reimplement capture（不重实现抓取）；
 - independently redefine valid/verified（不独立重定义 valid / verified 语义）；
-- hand-build verified handoff（不手工构造 verified handoff；RULES §14）；
+- hand-build verified handoff（不手工构造 verified handoff；AGENTS.md §14）；
 - bypass corpus verification（不绕过 corpus 验证 gate）；
 - fabricate source coverage（不伪造 source coverage）；
 - silently mutate canonical data（不静默修改 canonical 数据）；
@@ -439,8 +449,8 @@ Natural-language research intent
 - 不做 OCR / image understanding；
 - 不做 private / sensitive cloud workflow（R5 egress 边界）；
 - 不做 GUI / web app / background queue platform / multi-user system / account system / database migration / recommender system / autonomous daily topic discovery / social-media publishing；
-- 不启动 V0.4（本 Spec **不自动创建** V0.4；`VERSION_ASSIGNMENT: UNASSIGNED`；V0.3 Spec §9 / #6 Tracker 锁定 NEXT_STAGE 需显式授权）；
-- 本 normalization ticket 不写 production code（Spec approval 不扩大产品；实现另行 implementation ticket）。
+- VERSION_ASSIGNMENT / milestone creation 属**本 Spec 之外**：本 Spec 本身**不创建、不命名 V0.4**，也不分配任何版本号；
+  `VERSION_ASSIGNMENT` 保持 `UNASSIGNED`，直至**另行单独授权**。
 
 ---
 
@@ -522,7 +532,7 @@ PRODUCT_STAGE: NEXT_STAGE / RESEARCH_ORCHESTRATION
 - 本文件是 **Approved implementation contract**（覆盖 Research Orchestration 范围，对未来实现有约束力）；
 - **不修改** existing Approved Specs（V2 / V0.3）；
 - **不修改** RULES.md / AGENTS.md（现有通用治理已足够，本轮 NO CHANGE）；
-- **不修改** product behavior implementation / runtime code / source / tests（本 normalization ticket 不写 production code）；
+- **不修改** product behavior implementation / runtime code / source / tests（历史执行事实：本批准归一化 candidate 本身不含 production code——**The approval-normalization candidate itself contained no production code; implementation proceeds through a separate implementation ticket**）。
 - **不修改** `docs/project-memory.md`（如有 durable 知识沉淀，走 post-gate memory follow-up 独立 review，不混入本 candidate commit）。
 
 产品行为合同（`docs/product-behavior-contract.md`）当前只记录**已实现行为**；本 Spec 的 Research Orchestration 能力
