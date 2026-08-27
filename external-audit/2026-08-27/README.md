@@ -21,7 +21,9 @@ external-audit/2026-08-27/
 └── review/
     ├── PROMPT_AUTHORITY.md
     ├── CLAUDE_AUDITOR_PROMPT_V3.md
-    └── FILES_SHA256.txt
+    ├── INTEGRITY_MANIFEST_AUTHORITY.md
+    ├── FILES_SHA256.txt
+    └── FILES_SHA256_V3_PATCH.txt
 ```
 
 ## Required reading order
@@ -41,8 +43,9 @@ external-audit/2026-08-27/
 13. `workbuddy-evidence/10_CORRECTED_D2_RESULTS.md`
 14. `workbuddy-evidence/11_OPEN_QUESTIONS.md`
 15. executable benchmark cases, selectors, metrics, value-units and tests
-16. `review/PROMPT_AUTHORITY.md`
-17. `review/CLAUDE_AUDITOR_PROMPT_V3.md`
+16. `review/INTEGRITY_MANIFEST_AUTHORITY.md`
+17. `review/PROMPT_AUTHORITY.md`
+18. `review/CLAUDE_AUDITOR_PROMPT_V3.md`
 
 ## Critical status
 
@@ -66,6 +69,16 @@ CORRECTED_D2                  = CURRENT_FINAL_PILOT_RESULT
 - `RECOVERED_PRIMARY_EXCERPT` is historical primary evidence but weaker than a byte-complete recovered file.
 - WorkBuddy `MISSING_ON_DISK` statements describe its assembly environment, not project-global nonexistence.
 - Track-B D2 empirically tests only part of P1 and does not empirically validate P2/P3.
+
+## Integrity-manifest rule
+
+The original WorkBuddy snapshot manifest is preserved as `review/FILES_SHA256.txt`.
+
+The final-history patch is an explicit overlay in `review/FILES_SHA256_V3_PATCH.txt`.
+
+For paths present in the V3 patch, the V3 hash wins. For all other pre-existing paths, the original manifest remains authoritative. New V3 files exist only in the overlay.
+
+See `review/INTEGRITY_MANIFEST_AUTHORITY.md`.
 
 ## Explicit residual gaps
 
