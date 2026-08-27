@@ -1,29 +1,28 @@
 # Integrity manifest authority — final history patch
 
-The audit snapshot was originally published with:
+The WorkBuddy-published audit snapshot originally contained:
 
 `review/FILES_SHA256.txt`
 
-That file is preserved as the immutable manifest of the WorkBuddy-published snapshot before the final historical-completeness patch.
+That 523-entry file is preserved as the integrity record for the snapshot that existed at commit `c3f5e9c26e1a330f63fbbd85ede9a96a2db824b0` before the final historical-completeness patch.
 
-The final patch added/updated a small set of audit-only files. Their authoritative hashes are stored in:
+After that snapshot, ChatGPT added/updated audit-only historical/context/reviewer files. Those post-snapshot files are identified by Git history rather than by pretending the old manifest still covers them.
 
-`review/FILES_SHA256_V3_PATCH.txt`
+## Final snapshot identity
 
-## Verification rule
+The authoritative identity for the complete current audit tree is the **audit branch commit SHA** reported by GitHub for:
 
-Construct the effective manifest as follows:
+`audit/claude-external-review-2026-08-27`
 
-1. Start with every path/hash from `FILES_SHA256.txt`.
-2. For any path also present in `FILES_SHA256_V3_PATCH.txt`, replace the old hash with the V3 hash.
-3. Add V3-only paths from the patch file.
-4. `FILES_SHA256_V3_PATCH.txt` itself is excluded from its own listing.
+The reviewer should record the exact commit SHA actually reviewed.
 
-Therefore:
+## Verification semantics
 
-- original snapshot paths not touched by the patch → verify against `FILES_SHA256.txt`;
-- patched or newly added paths → verify against `FILES_SHA256_V3_PATCH.txt`.
+- For an original file that was not modified after `c3f5e9c`, `FILES_SHA256.txt` remains a useful per-file integrity record.
+- For files added or changed by the final historical-completeness patch, use Git commit/tree identity and inspect the file content directly.
+- `FILES_SHA256.txt` must not be misrepresented as covering files added after its creation.
+- No unverified V3 per-file SHA256 overlay is provided.
 
-This overlay approach deliberately preserves the original WorkBuddy integrity record instead of rewriting history.
+This is intentional: an incomplete but accurately scoped integrity statement is preferable to an apparently precise hash table that was not independently recomputed from the remote final tree.
 
-The final-history patch is audit material only and does not modify production code, benchmark Gold, selectors, metrics, corpus, or corrected D2 results.
+The final-history patch modifies audit material only. It does not modify production code, Semantic Gold, selectors, metrics, corpus, benchmark behavior, or corrected D2 results.
