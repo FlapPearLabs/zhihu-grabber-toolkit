@@ -1,0 +1,288 @@
+{
+  "case_id": "case-466695857",
+  "gold_version": "g2-chatgpt-adjudicated",
+  "label_status_policy": {
+    "semantic": "HUMAN_ADJUDICATED",
+    "mechanical": "MECHANICAL_CONFIRMED",
+    "unresolved": "EXCLUDED_FROM_NUMERATOR_AND_DENOMINATOR",
+    "note": "ChatGPT source-level adjudication is the FINAL semantic gold for real cases; D1 provisional labels superseded"
+  },
+  "families": {
+    "relevance": {
+      "label_status": "HUMAN_ADJUDICATED",
+      "sources": [
+        "466695857:3244238577",
+        "466695857:2044730598",
+        "466695857:3466479387",
+        "466695857:1958779750",
+        "466695857:3279920257",
+        "466695857:2401915395",
+        "466695857:3386875412",
+        "466695857:2140398007",
+        "466695857:2140488947",
+        "466695857:2099716352",
+        "466695857:1957526887",
+        "466695857:2043119425",
+        "466695857:1982005809",
+        "466695857:2007801020",
+        "466695857:2011434031"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "per_question": {
+        "466695857": [
+          "466695857:3244238577",
+          "466695857:2044730598",
+          "466695857:3466479387",
+          "466695857:1958779750",
+          "466695857:3279920257",
+          "466695857:2401915395",
+          "466695857:3386875412",
+          "466695857:2140398007",
+          "466695857:2140488947",
+          "466695857:2099716352",
+          "466695857:1957526887",
+          "466695857:2043119425",
+          "466695857:1982005809",
+          "466695857:2007801020",
+          "466695857:2011434031"
+        ]
+      },
+      "adjudication": "CONFIRMED"
+    },
+    "must_see": {
+      "label_status": "HUMAN_ADJUDICATED",
+      "sources": [
+        "466695857:3244238577",
+        "466695857:1958779750",
+        "466695857:2140488947"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "relevance-gated; adjudicated"
+    },
+    "aspect_membership": {
+      "label_status": "HUMAN_ADJUDICATED",
+      "aspects": [
+        {
+          "aspect_id": "asp-pro-source",
+          "name": "源码交付的价值主张（二次开发/自主可控）",
+          "definition": "源码交付的价值主张（二次开发/自主可控）",
+          "primary_sources": [
+            "466695857:3244238577",
+            "466695857:2044730598",
+            "466695857:3466479387",
+            "466695857:3279920257",
+            "466695857:2401915395",
+            "466695857:3386875412",
+            "466695857:2140398007",
+            "466695857:2140488947",
+            "466695857:2099716352",
+            "466695857:1957526887",
+            "466695857:2043119425",
+            "466695857:1982005809",
+            "466695857:2007801020"
+          ],
+          "sources": [
+            "466695857:3244238577",
+            "466695857:2044730598",
+            "466695857:3466479387",
+            "466695857:3279920257",
+            "466695857:2401915395",
+            "466695857:3386875412",
+            "466695857:2140398007",
+            "466695857:2140488947",
+            "466695857:2099716352",
+            "466695857:1957526887",
+            "466695857:2043119425",
+            "466695857:1982005809",
+            "466695857:2007801020"
+          ],
+          "unresolved_sources": [],
+          "disputed_sources": []
+        },
+        {
+          "aspect_id": "case-466695857:asp-critique",
+          "name": "源码意义有限/非必需（反方）",
+          "definition": "源码意义有限/非必需（反方）",
+          "primary_sources": [
+            "466695857:1958779750",
+            "466695857:2011434031"
+          ],
+          "sources": [
+            "466695857:1958779750",
+            "466695857:2011434031"
+          ],
+          "unresolved_sources": [],
+          "disputed_sources": []
+        },
+        {
+          "aspect_id": "asp-technical",
+          "name": "技术视角（可逆性/锁定/扩展机制）",
+          "definition": "技术视角（可逆性/锁定/扩展机制）",
+          "primary_sources": [
+            "466695857:3244238577",
+            "466695857:2044730598",
+            "466695857:2140488947"
+          ],
+          "sources": [
+            "466695857:3244238577",
+            "466695857:2044730598",
+            "466695857:2140488947"
+          ],
+          "unresolved_sources": [],
+          "disputed_sources": []
+        }
+      ]
+    },
+    "expertise_topic_match": {
+      "label_status": "HUMAN_ADJUDICATED",
+      "sources": [
+        "466695857:2044730598",
+        "466695857:3466479387",
+        "466695857:1958779750",
+        "466695857:3279920257",
+        "466695857:2401915395",
+        "466695857:3386875412",
+        "466695857:1957526887"
+      ],
+      "unresolved_sources": [
+        "466695857:3244238577",
+        "466695857:2140398007",
+        "466695857:2140488947",
+        "466695857:2099716352",
+        "466695857:2043119425",
+        "466695857:1982005809",
+        "466695857:2007801020",
+        "466695857:2011434031"
+      ],
+      "disputed_sources": [],
+      "note": "relevance-gated SUPPORTED = scorable; UNRESOLVED excluded from numerator/denominator; FINAL semantics belong to ChatGPT adjudication"
+    },
+    "evidence_quality": {
+      "label_status": "HUMAN_ADJUDICATED",
+      "sources": [
+        "466695857:3244238577",
+        "466695857:2044730598",
+        "466695857:1958779750",
+        "466695857:2140488947"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "relevance-gated; UNRESOLVED excluded; FINAL only per adjudication"
+    },
+    "evidence_presence": {
+      "label_status": "MECHANICAL_CONFIRMED",
+      "note": "computed by harness from frozen corpus evidence markers"
+    },
+    "freshness": {
+      "label_status": "MECHANICAL_WINDOW_AND_FINAL_RELEVANCE",
+      "fresh_relevant_sources": [],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "window": {
+        "policy_id": "fresh-365d-before-fetch",
+        "window_sec": 31536000,
+        "reference_epoch_sec": 1786628391,
+        "reference_note": "fetchedAt 2026-08-13T13:39:51Z; PILOT_CANDIDATE_WINDOW; all captured answers predate window (none fresh)",
+        "note": "frozen BEFORE strategy execution; must not be adjusted post-hoc by results"
+      },
+      "note": "fresh window membership (mechanical) ∩ FINAL relevance (adjudicated); off-topic fresh source never FINAL fresh relevant"
+    },
+    "unique_long_tail_contribution": {
+      "label_status": "HUMAN_ADJUDICATED",
+      "sources": [
+        "466695857:1957526887",
+        "466695857:2011434031"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "relevance-gated; adjudicated"
+    },
+    "contradiction": {
+      "label_status": "HUMAN_ADJUDICATED",
+      "claim_clusters": [
+        {
+          "claim_id": "c1-source-value",
+          "canonical_claim": "低代码平台提供源码是否有实际意义",
+          "stances": {
+            "for": [
+              "466695857:3244238577",
+              "466695857:2044730598",
+              "466695857:3466479387",
+              "466695857:3279920257",
+              "466695857:2401915395",
+              "466695857:3386875412",
+              "466695857:2140398007",
+              "466695857:2099716352",
+              "466695857:1957526887",
+              "466695857:2043119425",
+              "466695857:1982005809",
+              "466695857:2007801020"
+            ],
+            "against": [
+              "466695857:1958779750",
+              "466695857:2011434031"
+            ]
+          },
+          "source_ids": [
+            "466695857:3244238577",
+            "466695857:2044730598",
+            "466695857:3466479387",
+            "466695857:3279920257",
+            "466695857:2401915395",
+            "466695857:3386875412",
+            "466695857:2140398007",
+            "466695857:2099716352",
+            "466695857:1957526887",
+            "466695857:2043119425",
+            "466695857:1982005809",
+            "466695857:2007801020",
+            "466695857:1958779750",
+            "466695857:2011434031"
+          ],
+          "disputed": false,
+          "adjudication_note": "clear substantive pro/against positions on practical value of source delivery"
+        }
+      ],
+      "note": "schema KEEP only; stances from ChatGPT final claim_stances; no provenance-derived stances"
+    },
+    "required_provenance_groups": {
+      "label_status": "HUMAN_ADJUDICATED",
+      "claim_groups": [],
+      "note": "required_provenance_final is D2 authority"
+    },
+    "historical_authority": {
+      "label_status": "UNRESOLVED",
+      "sources": [],
+      "unresolved_sources": [
+        "466695857:3244238577",
+        "466695857:2044730598",
+        "466695857:3466479387",
+        "466695857:1958779750",
+        "466695857:3279920257",
+        "466695857:2401915395",
+        "466695857:3386875412",
+        "466695857:2140398007",
+        "466695857:2140488947",
+        "466695857:2099716352",
+        "466695857:1957526887",
+        "466695857:2043119425",
+        "466695857:1982005809",
+        "466695857:2007801020",
+        "466695857:2011434031"
+      ],
+      "disputed_sources": [],
+      "note": "adjudicated UNRESOLVED for all real case labels (packet omits timestamp/age evidence for long-established status); excluded from numerator and denominator; unresolved stats are relevance-gated"
+    }
+  },
+  "provenance": {
+    "proposed_by": "ChatGPT",
+    "proposed_method": "independent source-level adjudication of adjudication-packet-v2.2",
+    "adjudicated_by": "ChatGPT",
+    "adjudication_status": "COMPLETE",
+    "label_status": "HUMAN_ADJUDICATED",
+    "source_file": "TRACK_B_SEMANTIC_GOLD_ADJUDICATION_V1.json",
+    "d1_status": "SUPERSEDED"
+  }
+}

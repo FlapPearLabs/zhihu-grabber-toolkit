@@ -1,0 +1,23 @@
+{
+  "case_id": "case-466695857",
+  "category": ["D"],
+  "research_question": "低代码开发平台提供源码有什么意义？",
+  "question_ids": ["466695857"],
+  "reference_questions": ["466695857"],
+  "budgets": { "K_SMALL": 3, "K_MEDIUM": 5, "K_LARGE": 8 },
+  "freshness_window_policy": {
+    "policy_id": "fresh-365d-before-fetch",
+    "window_sec": 31536000,
+    "reference_epoch_sec": 1786628391,
+    "reference_note": "fetchedAt 2026-08-13T13:39:51Z; PILOT_CANDIDATE_WINDOW; all captured answers predate window (none fresh)",
+    "note": "frozen BEFORE strategy execution; must not be adjusted post-hoc by results"
+  },
+  "long_tail_min_chars": 80,
+  "mmr_lambda": 0.5,
+  "mmr_lambda_note": "pilot configuration parameter, NOT a production default",
+  "lane_weights": { "mainstream": 1, "expert": 1, "evidence_rich": 1, "fresh": 1, "long_tail": 1, "contradictory": 1 },
+  "author_identity": "name_only",
+  "author_identity_confidence": "WEAK",
+  "expert_author_keys": ["元宇宙开发者", "云程智能体开发平台", "天翎MyApps低代码平台", "引迈小六", "百数"],
+  "notes": "captured corpus (handoff absent, NOT verified; captured != verified). Low-vote long-tail topic: strong contradiction between 'source code delivery is essential' (vendors) and 'meaning is limited' (practitioners)."
+}

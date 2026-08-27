@@ -1,0 +1,43 @@
+[
+  {
+    "unit_id": "must_see:487214224:2124048604",
+    "question_id": "487214224",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "487214224:2124048604"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-business-lines",
+    "question_id": "487214224",
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-business-lines",
+    "supporting_source_ids": [
+      "487214224:2124048604"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "expert_source_group",
+    "question_id": null,
+    "unit_type": "expert_source_group",
+    "supporting_source_ids": [
+      "487214224:2124048604"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "evidence_source_group",
+    "question_id": null,
+    "unit_type": "evidence_source_group",
+    "supporting_source_ids": [
+      "487214224:2124048604"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  }
+]

@@ -1,0 +1,2059 @@
+{
+  "schema": "zhihu-research-benchmark/adjudication-packet-v2",
+  "schema_version": "2.0.0",
+  "generated_at": "2026-08-27T03:22:22.775Z",
+  "purpose": "source-level semantic gold adjudication for ChatGPT/human. Proposed labels are PROVISIONAL proposals; adjudicator confirms/revises/rejects. Popularity fields intentionally omitted to reduce popularity bias; see separate mechanical metadata.",
+  "source_count": 75,
+  "sources": [
+    {
+      "source_id": "439521858:1918690313431659010",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p data-pid=\"bT-03zqz\"><b>【对比宜搭、简道云、氚云等主流10款低代码开发平台】</b></p><p data-pid=\"TSW5Q0B0\">在数字化转型的浪潮下，越来越多的企业开始寻求高效、灵活的开发工具，以加速业务创新和流程自动化。低代码开发平台（Low-code Development Platform，简称LCDP）应运而生，成为了企业技术团队的重要武器。</p><p data-pid=\"nI34Yt9k\">我们将对比<b>10款热门的低代码开发平台</b>，从功能、易用性、定制化能力到性价比，全方位为您呈现各平台的特点，帮助您选择最适合自己企业的解决方案。</…",
+      "author_display": "效率工具指北",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-compare"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "practitioner_or_independent",
+        "long_tail_unique": true,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "439521858:1968643478662644597",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p data-pid=\"lQgqjpdK\">宜搭和简道云、氚云都是比较出色的低代码平台</p><p data-pid=\"0ELllSI5\">简道云：95%功能通过拖拽式操作去实现，一款零代码平台，复杂业务场景支持有限，难以满足高度定制化需求。</p><p data-pid=\"mf8jRzqT\">宜搭：提供大量预置模板和组件，支持多类型页面创建与组件化布局，能满足企业多样化开发需求，标准版流程功能较简单，复杂多分支流程需依赖代码实现</p><p data-pid=\"7TUvu-hd\">氚云：支持可视化表单、自动化流程、智能报表等功能，主要聚焦表单流程类应用，只支持发布到钉钉工作台，依赖钉钉生态…",
+      "author_display": "leek",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-compare"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": true,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "439521858:3376976033",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p data-pid=\"02K2TDc1\">宜搭和简道云、氚云比起来有什么优劣之处？</p><p data-pid=\"SDjAYBRh\">这个问题，作为同行（我们的产品是表单大师）,来回答一波。</p><p data-pid=\"8d-Yjo5w\">首先宜搭和氚云，本质上是一家，一个是阿里的亲儿子，一个是阿里的干儿子。</p><p data-pid=\"-d9abEwx\">目前宜搭与钉钉完全集成，任何钉钉都用户都可以很快的找到和使用。</p><p data-pid=\"o7B9PVYW\">个人觉得氚云 跟简道云、宜搭，以及 表单大师本质上不属于同一类产品。</p><p data-pid=\"Vvu4…",
+      "author_display": "表单大师",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [
+          "asp-compare",
+          "asp-vendor"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "practitioner_or_independent",
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c1-yida-verdict",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"02K2TDc1\">宜搭和简道云、氚云比起来有什么优劣之处？</p><p data-pid=\"SDjAYBRh\">这个问题，作为同行（我们的产品是表单大师）,来回答一波。</p><p data-pid=\"8d-Yj…"
+          }
+        ],
+        "historical_authority": true,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "439521858:3450414501",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p data-pid=\"xHQkhmv7\">每个低代码产品都有自己的特点和优势，没有一个绝对的好或者不好，要根据你的需求去选择。</p><p data-pid=\"SPAwh60V\">1、简道云是帆软旗下的产品，定位是无代码平台，它的数据处理和报表能力很强。</p><p data-pid=\"sKOhpyXh\">2、宜搭是阿里系产品，主要跟钉钉生态绑定，消息推送、移动端功能是它的强项。</p><p data-pid=\"KT8fLJ38\">3、氚云起家钉钉生态，重点是表单和工作流，沉淀了大量的业务应用模块，可以开箱即用。</p><p data-pid=\"VAOeMqSH\"><b>关注一下可交付源代…",
+      "author_display": "云程智能体开发平台",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-compare"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "vendor_or_official_account",
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "439521858:1780646730",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p data-pid=\"gNhGDb1P\">客观讲宜搭在所有这类软件里面目前是相对比较差的一个。主要是设计思想相对比较乱。相对来讲简道云、明道、轻流、氚云、伙伴云等比宜搭要好得多。</p><p data-pid=\"1oB83ISI\">另外，宜搭、简道云、明道、轻流、氚云、伙伴云等属于使于小团队使用，比如50人以下。如果公司级使用，建议还是云表、活字格、魔方网表、jnpfsoft等。</p><p data-pid=\"d3k_SBtn\">如果再大一点的公司，建议还是使用私有化部署的系统，毕竟数据是企业核心资产。</p><a href=\"https://zhuanlan.zhihu.com/p/3…",
+      "author_display": "领悟杂谈",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [
+          "asp-critique"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c1-yida-verdict",
+            "stance": "against",
+            "relevant_excerpt": "<p data-pid=\"gNhGDb1P\">客观讲宜搭在所有这类软件里面目前是相对比较差的一个。主要是设计思想相对比较乱。相对来讲简道云、明道、轻流、氚云、伙伴云等比宜搭要好得多。</p><p data-pid=\"1oB83ISI\">另外…"
+          }
+        ],
+        "historical_authority": true,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "439521858:1976466205",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p data-pid=\"07BGFknm\"><b>宜搭、简道云、氚云都是现在市场上有名的低代码开发平台。除此之外，不妨使用下<span class=\"nolink\">百数</span>，再来比较一下。</b></p><p data-pid=\"50j9uCm6\"><b><span class=\"nolink\">“百数”</span></b>是国内首家专注于打造真正的<b><span class=\"nolink\">低代码开发</span></b>的<b><span class=\"nolink\">低代码开发平台</span></b>，至今立足办公领域近十年。主要通过可视化、拖拽式、低代码的方式快速…",
+      "author_display": "百数",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [
+          "asp-compare",
+          "asp-vendor"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "vendor_or_official_account",
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c1-yida-verdict",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"07BGFknm\"><b>宜搭、简道云、氚云都是现在市场上有名的低代码开发平台。除此之外，不妨使用下<span class=\"nolink\">百数</span>，再来比较一下。</b></p><p data-pid…"
+          }
+        ],
+        "historical_authority": true,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "439521858:1775773370",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p data-pid=\"pbBpq_tA\">宜搭、简道云和氚云三者都是表单驱动的低代码开发平台，功能定位很接近。从厂商专注的领域看，如果希望做数据填报，选择帆软出品的简道云；如果重点是审批工作流，奥哲家的氚云更有竞争力；如果要跟钉钉深度集成，阿里自家的宜搭更有保障。</p><p data-pid=\"B0xg53Fv\">当然，如果你要做的是高复杂度的大型系统，下面三家模型驱动的低代码开发平台选一个：outsystems、活字格、clickpaas</p>",
+      "author_display": "永安坊的大蚂蚁",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [
+          "asp-compare"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": true,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "439521858:2550630306",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p data-pid=\"D_MKBq_N\">在今年的6月，1个头部云制造商SaaS架构设计师为某零售企业演示了如何用低代码30分钟搭建招聘管理系统，充分的展现了低代码开发设计在现阶段的优势。</p><p data-pid=\"cM5wSqIg\">“低代码开发设计”指客户可以把早就产生模块的图型代码，运用拖拉拽的方式快速拼成软件。一类常用的评价是，低代码减少了设计开发从业门槛，不清楚代码的人能上手做设计开发，专业的软件工程师会降低工作量。</p><p data-pid=\"h9XjiD7u\">这种技术应用看起来会解放许多企业和很多人，也让不少设计开发企业嗅到了无穷创业商机，对于许多急于数字化转型中…",
+      "author_display": "赵大多数",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": true,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "439521858:2091701747",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p data-pid=\"ajcFP6Ec\">优势：1.服务以租赁形式按需付费使用，成本低、投入小 2.无需自己维护服务器和机房，极大降低使用门槛，提升效率 3.可视化搭建，极大降低用户理解和搭建成本，快速迭代更新系统以满足不断变 化的业务需求 4.海量数据高效存储查询，租户隔离，分库分表，多引擎适配自动优化保证最优 性能 5.数据安全可靠，阿里云存储数据可靠性高达 99.9999999% 6.服务高可用，同城双备，异地多活，保证 99.9% 不中断 7.高安全，共享阿里集团安全等级，为您的企业应用保驾护航。</p><p data-pid=\"SnTRzNPo\">缺点：宜搭是带审批的流程彻底不支…",
+      "author_display": "本草姑娘",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-cost"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": true,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "439521858:1698674167",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p data-pid=\"soYCXuYM\">就目前体验的结果，宜搭比简道云难用太多了，远没有第三方体验好，而且官方的文档做的太low了，也没有什么支持</p>",
+      "author_display": "风君子",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-critique"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c1-yida-verdict",
+            "stance": "against",
+            "relevant_excerpt": "<p data-pid=\"soYCXuYM\">就目前体验的结果，宜搭比简道云难用太多了，远没有第三方体验好，而且官方的文档做的太low了，也没有什么支持</p>"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "439521858:1806634616",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p data-pid=\"oiNlR_7P\">宜搭尊享版和钉钉审批高级版，总不能两个都买吧。搞不懂两个的边界，宜搭界面好，功能多，使用也复杂。钉钉应该早点把这两个的边界清晰一点。</p><p data-pid=\"D-K0U_9L\">问了两个服务商，一个让我买高级版，因为有用友U8 连接器，方便对接。一个让我买宜搭，说U8连接器功能少，而且宜搭流程更好。</p><p data-pid=\"xi-RQdjR\">扯淡的玩意……宜搭和钉钉审批没点技术，又不可能做到互通。</p><p data-pid=\"hgW_Mbjq\">搞啥么这是。</p>",
+      "author_display": "金克荣",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-cost"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c2-yida-ecosystem",
+            "stance": "against",
+            "relevant_excerpt": "<p data-pid=\"oiNlR_7P\">宜搭尊享版和钉钉审批高级版，总不能两个都买吧。搞不懂两个的边界，宜搭界面好，功能多，使用也复杂。钉钉应该早点把这两个的边界清晰一点。</p><p data-pid=\"D-K0U_9L\">问了两个…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "439521858:3306973514",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p></p><a href=\"https://zhuanlan.zhihu.com/p/667399838\" data-draft-node=\"block\" data-draft-type=\"link-card\" class=\"internal\">易水寒：低代码平台，宜搭、氚云、简道云对比，怎么选</a><p></p>",
+      "author_display": "易水寒",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "439521858:2009238931",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p data-pid=\"kiN-2n5z\">各有各自的特点吧！如果要我用体验来说，我推荐使用百数,界面目前交互差点,但是功能实现比较全面,不容易让业务断层,或者无法往后迭代更新</p>",
+      "author_display": "阿莞",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-critique"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c1-yida-verdict",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"kiN-2n5z\">各有各自的特点吧！如果要我用体验来说，我推荐使用百数,界面目前交互差点,但是功能实现比较全面,不容易让业务断层,或者无法往后迭代更新</p>"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "439521858:1746716534",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p data-pid=\"UNLQLzbV\">宜搭就是垃圾</p>",
+      "author_display": "白纸红扇",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-critique"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c1-yida-verdict",
+            "stance": "against",
+            "relevant_excerpt": "<p data-pid=\"UNLQLzbV\">宜搭就是垃圾</p>"
+          },
+          {
+            "claim_id": "c2-yida-ecosystem",
+            "stance": "against",
+            "relevant_excerpt": "<p data-pid=\"UNLQLzbV\">宜搭就是垃圾</p>"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "439521858:1682235591",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p data-pid=\"2HUNPAVm\">宜搭与钉钉兼容性更高，可以直接在钉钉上发布应用，个人感觉运行速度更快，应该是因为与钉钉后台兼容性更好。劣势是现阶段还不如简道云使用简便清晰明了，程序员思维过重。</p>",
+      "author_display": "Alex",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-cost"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": true,
+        "claim_stances": [
+          {
+            "claim_id": "c2-yida-ecosystem",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"2HUNPAVm\">宜搭与钉钉兼容性更高，可以直接在钉钉上发布应用，个人感觉运行速度更快，应该是因为与钉钉后台兼容性更好。劣势是现阶段还不如简道云使用简便清晰明了，程序员思维过重。</p>"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "439521858:1682718413",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p data-pid=\"-esIRjdB\">刚推出估计需要一段时间才能比较谁优谁劣，目前有两个问题：</p><ol><li data-pid=\"zdDzy2BI\">宜搭现在免费吗？以后免费吗？</li><li data-pid=\"dPFQs0fo\">宜搭和氚云是竞争关系吗？阿里如何对待亲儿子和干儿子？</li></ol>",
+      "author_display": "JOHN",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-vendor"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c2-yida-ecosystem",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"-esIRjdB\">刚推出估计需要一段时间才能比较谁优谁劣，目前有两个问题：</p><ol><li data-pid=\"zdDzy2BI\">宜搭现在免费吗？以后免费吗？</li><li data-pid=\"dPFQ…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "439521858:2226898798",
+      "question_id": "439521858",
+      "question_title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "content_excerpt": "<p data-pid=\"UEi92EdL\">在10月20日的云栖大会低代码峰会上，宜搭联合简道云、氚云还有其他5家低代码厂商，成立了一个“低代码联盟”，共享钉钉底座能力和平台资源。从这个消息便可以看出，宜搭和简道云、氚云在功能上互补的地方还是比较多的。</p><p data-pid=\"1HjsBMCP\"><b>宜搭和简道云、氚云有哪些差别？</b></p><p data-pid=\"kBHks8yi\">第一个差别就是简道云是零代码开发平台，而宜搭和氚云是低代码开发平台。低代码和零代码的区别简单来说就是：</p><figure data-size=\"normal\"><noscript><img …",
+      "author_display": "基石协作科技",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-compare",
+          "asp-vendor"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c2-yida-ecosystem",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"UEi92EdL\">在10月20日的云栖大会低代码峰会上，宜搭联合简道云、氚云还有其他5家低代码厂商，成立了一个“低代码联盟”，共享钉钉底座能力和平台资源。从这个消息便可以看出，宜搭和简道云、氚云在功能上互补的地方…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "477427067:3050814230",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "content_excerpt": "<p data-pid=\"FGgv6Fqk\"><b>零代码、低代码、APaaS系统应从哪些指标考察选型？</b></p><p data-pid=\"giXYnaQo\">零代码、低代码、apaas的概念在行业内已经流行了很长一段时间。那这3个概念分别指的是什么？企业如果要用该如何选？又有哪些好用的低代码平台推荐？让我们一次讲清楚！</p><p data-pid=\"qFLjuVnY\"><b>点击进入&gt;&gt;&gt;</b></p><a href=\"https://link.zhihu.com/?target=https%3A//www.jiandaoyun.com/index/solutio…",
+      "author_display": "简道云",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [
+          "asp-criteria",
+          "asp-concept",
+          "asp-vendor"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "vendor_or_official_account",
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": true,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "477427067:1908569584690258620",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "content_excerpt": "<p data-pid=\"GXYz8SdT\">今天我准备跟大家分享一下，在云原生和微服务架构下企业级低代码平台的选型思考。因为在2023年我跟很多客户和朋友沟通的比较多，大家都在谈论企业怎么样选择一个适合的低代码开发平台？</p><p data-pid=\"q3IJb7TA\">一个企业的需求如果仅仅是你现在有一个小的新应用要开发，或者是说你的一个部门小团队想去选择一个低代码开发平台，那这个事情就相对来说比较简单。但是如果是你企业整个it部门，你在做整个企业的IT应用架构规划，希望引入一个平台级的低代码开发平台工具，希望以后企业新的应用和组件模块都基于这个平台去做开发，那这个时候你要考虑的问题就会…",
+      "author_display": "人月聊IT",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-decision"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "practitioner_or_independent",
+        "long_tail_unique": true,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "477427067:2040315771",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "content_excerpt": "<p data-pid=\"_F3fxaIs\">软件选型对企业影响很大，初步拟定以下指标供参考。后续进一步更新。</p><p data-pid=\"8B4Hvt6N\">零代码、低代码、aPaas系统选型不同于传统软件选型，区别如下：</p><p data-pid=\"nZSylvdG\">1、传统软件选型</p><p data-pid=\"GOp3Jv8S\"> （1）更注重软件业务支撑能力，支撑业务的在熟度；业务标准化程度相对比较高；</p><p data-pid=\"7H2sQLvA\"> （2）供应商的服务能力。如果软件有部分业务不支持，供应商的二次开发能力作为重点考核点。</p><p data-pid…",
+      "author_display": "领悟杂谈",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [
+          "asp-criteria",
+          "asp-decision"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c1-criteria-vs-business-first",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"_F3fxaIs\">软件选型对企业影响很大，初步拟定以下指标供参考。后续进一步更新。</p><p data-pid=\"8B4Hvt6N\">零代码、低代码、aPaas系统选型不同于传统软件选型，区别如下：</p><p…"
+          },
+          {
+            "claim_id": "c2-vendor-neutrality",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"_F3fxaIs\">软件选型对企业影响很大，初步拟定以下指标供参考。后续进一步更新。</p><p data-pid=\"8B4Hvt6N\">零代码、低代码、aPaas系统选型不同于传统软件选型，区别如下：</p><p…"
+          }
+        ],
+        "historical_authority": true,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "477427067:2042300823099667870",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "content_excerpt": "<p data-pid=\"dGHIy8ml\">先别管什么高大上指标，最核心就三条：<b>你们团队谁用？用来做什么？将来谁维护？</b></p><p data-pid=\"YWKkeXyI\"><b>还有就是——</b></p><p data-pid=\"x_2ZhtWz\"><b>1. 业务人员能不能上手</b><br/>有的平台号称“零代码”，结果业务同事打开还是一脸懵，还是要找IT。<br/>真正好用的，业务自己拖拖拽拽就能搭个表单、流程。业务那边做订单录入、审批流，基本不用找开发。</p><p data-pid=\"Pz9pK8Ko\"><b>2. 复杂场景别卡死</b><br/>很多平台简单的一堆…",
+      "author_display": "JVS低代码BI",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-criteria",
+          "asp-vendor"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c1-criteria-vs-business-first",
+            "stance": "against",
+            "relevant_excerpt": "<p data-pid=\"dGHIy8ml\">先别管什么高大上指标，最核心就三条：<b>你们团队谁用？用来做什么？将来谁维护？</b></p><p data-pid=\"YWKkeXyI\"><b>还有就是——</b></p><p data-p…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "477427067:2141034490",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "content_excerpt": "<h2>对于一个企业来说，软件选型要看两个方面，一个是自身的状况、第二个是软件是否适合自身。</h2><h2>对于零代码、低代码、APaaS系统首先第一个指标就是自身有没有程序人员，如果自身是没有程序人员的，那么你的选择就只有零代码了。低代码和APaaS系统都是需要有一定程序员基础才能进行操作的。</h2><h2>第二个指标就是表单的处理：流程引擎如何，表单是否能实现复杂的逻辑功能，能否进行跨表单操作等都是基本的功能要仔细了解。<br/>第三个就是源码时候交付：毕竟是在使用别人的产品，在底层灯下黑的情况下，后续应用测试极易出现扯皮与推卸情况。因此源码能否部分交付或全部交付很有必要性。<br/>…",
+      "author_display": "人间不值得",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-decision"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c1-criteria-vs-business-first",
+            "stance": "against",
+            "relevant_excerpt": "<h2>对于一个企业来说，软件选型要看两个方面，一个是自身的状况、第二个是软件是否适合自身。</h2><h2>对于零代码、低代码、APaaS系统首先第一个指标就是自身有没有程序人员，如果自身是没有程序人员的，那么你的选择就只有零代码了。低代…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "477427067:2179827948",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "author_display": "全管软件",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-concept"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": true,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "477427067:2140439894",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "content_excerpt": "<p data-pid=\"s_EKot6G\">企业考察选型零代码、低代码、APaaS等系统时，从哪些指标考虑选型，才能确保目前产品符合本企业、本团队需求？</p><p data-pid=\"iFpkkzWm\">1、公司的源码开放程度</p><p data-pid=\"V5LQlM3p\">2、团队协同服务程度</p><p data-pid=\"luRgH-DJ\">3、适配国产化程度</p><p data-pid=\"O1FBWhFY\">4、产品的适配物联网程度</p><p data-pid=\"2gioRKfJ\">5、其他接口程度（标准接口）</p><p data-pid=\"lsiAh5yQ\">6、售后运…",
+      "author_display": "田小姐",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-criteria",
+          "asp-decision"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": true,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "477427067:2884408759",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "content_excerpt": "<p data-pid=\"lmzo7IdW\">近些年来，低代码平台的热度在逐渐上升，可以看出企业数字化转型得速度也在逐渐加快。企业的数字开发需求越来越强，市场之间的竞争也愈演愈烈。特别是对于中小型企业，既要考虑到产品功能需求，又要考虑成本压力，所以低代码开平台就成为一个非常合适的选择。<b>对于市场上涌现的大批低代码开发平台，企业应该如何抉择？</b></p><p data-pid=\"LtyufpSI\">企业选择低代码开发平台时，要从三个方面进行考量：<b>产品能力、品牌、生态</b>。从<b>产品能力</b>考量产品的<b>功能是否能够满足企业需求</b>，并且给企业带来良好的发展。从<b>…",
+      "author_display": "Zoho Creator低代码开发",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-vendor"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c2-vendor-neutrality",
+            "stance": "against",
+            "relevant_excerpt": "<p data-pid=\"lmzo7IdW\">近些年来，低代码平台的热度在逐渐上升，可以看出企业数字化转型得速度也在逐渐加快。企业的数字开发需求越来越强，市场之间的竞争也愈演愈烈。特别是对于中小型企业，既要考虑到产品功能需求，又要考虑成本压…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "477427067:3547824796",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "content_excerpt": "<p data-pid=\"dfMvfAwk\">关于低代码平台的指标考察选型，我们总结了10点关键的考察指标，可供大家参考：</p><p data-pid=\"-xoVmKe4\"><b>1、易用性和开发效率</b>：</p><ul><ul><li data-pid=\"h2Rb1klV\">平台是否提供直观易用的界面和工具，降低学习成本。</li><li data-pid=\"1ifP79IM\">平台是否支持快速开发，能够显著提高应用程序的开发效率。</li></ul></ul><p data-pid=\"mHJSlxfN\"><b>2、技术架构先进性</b>：</p><ul><ul><li data-pi…",
+      "author_display": "低代码Helms",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-criteria",
+          "asp-vendor"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c1-criteria-vs-business-first",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"dfMvfAwk\">关于低代码平台的指标考察选型，我们总结了10点关键的考察指标，可供大家参考：</p><p data-pid=\"-xoVmKe4\"><b>1、易用性和开发效率</b>：</p><ul><ul><l…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "477427067:1963909107758106013",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "content_excerpt": "<p data-pid=\"2DJeyYKQ\">我们建议从以下<b>五个维度</b>进行系统性考察，这些指标也恰恰凸显了星云低代码作为一款<b>企业级低代码中间件</b>的核心优势：</p><p data-pid=\"K6pZFBNJ\"><b>一、核心定位与商业模式</b><br/>这是选型的“方向盘”，决定了平台是否与你的根本目标一致。</p><table data-draft-node=\"block\" data-draft-type=\"table\" data-size=\"normal\" data-row-style=\"normal\"><tbody><tr><th>考察指标</th><th>零代…",
+      "author_display": "星云低代码中间件",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-criteria",
+          "asp-vendor"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": true,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "477427067:2238312306",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "content_excerpt": "<p data-pid=\"6YmYh0CF\">目前低代码技术正处在风口，低代码平台产品不断涌现，乱花渐欲迷人眼。作为软件公司或企业IT部门的负责人，在做低代码平台选型时需要关注哪些方面，才能顺利“上车”，让低代码为自己的团队赋能？</p><p data-pid=\"zR_V1ck0\">除了产品功能是否满足当前项目需求，价格是否在预算范围内之外，以下几个问题的答案同样重要。</p><p data-pid=\"sCPosO29\">Q1：是否支持协同开发和版本管理？</p><p data-pid=\"aaLCOxYR\">项目开发过程中，我们难免遇到客户反馈某个新开发的功能没有用，但是过一段时间以后反悔，又…",
+      "author_display": "葡萄城",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [
+          "asp-criteria",
+          "asp-vendor"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "vendor_or_official_account",
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": true,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "477427067:110295980268",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "content_excerpt": "<p data-pid=\"wcjxaQHF\">大概在2017年前后，国际知名信息技术研究和分析企业Gartner，开始稳定、持续跟进低代码领域。低代码的称呼方式从HPAPaaS逐步过渡到Low-Code/aPaaS。</p><p data-pid=\"qR8aFB9k\">2019年，Gartner发布《Magic Quadrant for Enterprise Low-Code Application Platforms》报告。从这个报告起，Gartner对低代码在全球范围内的应用前景越发乐观和积极。报告原文提到：</p><ul><li data-pid=\"IJTBgHy4\">到2024年，<b…",
+      "author_display": "徐翔轩",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-criteria",
+          "asp-concept",
+          "asp-decision"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "practitioner_or_independent",
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": true,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "477427067:3136586716",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "author_display": "汉得信息数字化平台",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-vendor"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c2-vendor-neutrality",
+            "stance": "against",
+            "relevant_excerpt": "<p></p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-37c9c3fbaaad3917850d7b3dc6d2e910_720w…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "477427067:2967551519",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "content_excerpt": "<p data-pid=\"ftk7CaH9\">云计算、SaaS、数据分析、人工智能等的发展推着全球企业数字化转型的前进，根据IDC发布的数据，中国数字化转型市场规模年均增长率约为31%，在降本增效、改善客户体验、促进业务模式创新等成效都已经被看见。</p><p class=\"ztext-empty-paragraph\"><br/></p><p class=\"ztext-empty-paragraph\"><br/></p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-af66e36a995e…",
+      "author_display": "易搭云",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-vendor"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c2-vendor-neutrality",
+            "stance": "against",
+            "relevant_excerpt": "<p data-pid=\"ftk7CaH9\">云计算、SaaS、数据分析、人工智能等的发展推着全球企业数字化转型的前进，根据IDC发布的数据，中国数字化转型市场规模年均增长率约为31%，在降本增效、改善客户体验、促进业务模式创新等成效都已经…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "477427067:2166915646",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "content_excerpt": "<p data-pid=\"WrF03zKD\">系统的适配，使用的方便快捷等。</p>",
+      "author_display": "周星星",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "477427067:1930584287444469456",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "content_excerpt": "<p></p><p data-pid=\"70om4UMW\">本文作者：得帆低代码解决方案专家陈小波</p><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"PhqyQjan\">很多CIO在会议室初见低代码厂商展示Demo时， 常常被低代码绚丽直观的可视化界面吸引，加上“三天上线”的诱人承诺，很难不心动。然而触达过大量选型失败的真实事例后，众多CIO深刻领悟到：<b>真正决定低代码平台价值的，绝非演示时的短暂惊艳，而是隐藏在背后的底层架构逻辑。</b></p><p data-pid=\"oF5bOoBQ\">基于此，得帆整理出一份<b>“灵…",
+      "author_display": "得帆云",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [
+          "asp-vendor"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "vendor_or_official_account",
+        "long_tail_unique": true,
+        "claim_stances": [
+          {
+            "claim_id": "c2-vendor-neutrality",
+            "stance": "for",
+            "relevant_excerpt": "<p></p><p data-pid=\"70om4UMW\">本文作者：得帆低代码解决方案专家陈小波</p><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"PhqyQjan\">很多…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "477427067:2450810640",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "content_excerpt": "<p data-pid=\"SY4Yxteu\">零代码、低代码、apaas的概念在整个全球行业内已经流行了很长一段时间。</p><p data-pid=\"D8zKy_wo\">那这3个概念分别指的是什么？他们具备何种能力？企业如果要用该如何选？下面本人一文全部给你讲清楚！</p><p data-pid=\"_SM26gBl\">关注答主，不迷路~</p><p class=\"ztext-empty-paragraph\"><br/></p><h2><b>一、零代码、低代码、apaas的概念</b></h2><p data-pid=\"4mAvWqY9\"><b>1、什么是零代码？</b></p><p data…",
+      "author_display": "基石协作成都",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-concept"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "477427067:2407150303",
+      "question_id": "477427067",
+      "question_title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "content_excerpt": "<p data-pid=\"jdmaP-Of\"><b>不妨参照一下百数，入坑不亏。</b></p><p data-pid=\"CcgJ7pRc\">作为国内初代开发低代码概念工具的厂商，百数已经在办公领域沉淀十年时间，包含了市面上所有无代码平台能实现的所有功能，已助力10000+企业打造安全、稳定的数字化办公环境。</p><a href=\"https://www.zhihu.com/zvideo/1352621950288691200\" data-draft-node=\"block\" data-draft-type=\"link-card\"></a><h3><b>百数功能布局</b></h3><p d…",
+      "author_display": "百数",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-concept",
+          "asp-vendor"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c2-vendor-neutrality",
+            "stance": "against",
+            "relevant_excerpt": "<p data-pid=\"jdmaP-Of\"><b>不妨参照一下百数，入坑不亏。</b></p><p data-pid=\"CcgJ7pRc\">作为国内初代开发低代码概念工具的厂商，百数已经在办公领域沉淀十年时间，包含了市面上所有无代码平台能…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "466695857:3244238577",
+      "question_id": "466695857",
+      "question_title": "低代码开发平台提供源码有什么意义？",
+      "content_excerpt": "<p data-pid=\"x_kHo3GX\">可逆 vs. 锁定</p><p data-pid=\"Nv6jicPt\">生成代码代表“从技术上可以选择会退”，将来也许有一天需要接着用代码开发，或者说从技术上可以更好和现在所有“代码编程”范式直接使用或对接。</p><p data-pid=\"eFvbTdRQ\">而绝大多数“低代码平台”，包括国外Mendix Outsystems PowerApps等无一例外，都是给客户（企业）安装一个运行时（aPaaS），所有配置出来的应用，都必须在这个“运行时”内部“运行”。就算能导出文件（例如Mendix导出mpk文件），还是只能在Mendix系统环境内运行，…",
+      "author_display": "元宇宙开发者",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [
+          "asp-technical"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "practitioner_or_independent",
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": true,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "466695857:2044730598",
+      "question_id": "466695857",
+      "question_title": "低代码开发平台提供源码有什么意义？",
+      "content_excerpt": "<p data-pid=\"COUwb6mw\">越是靠近需求端，比不确定性越大，变化也越大。</p><p data-pid=\"ueQTtT_1\">这就意味着，在低代码领域，很难出一个平台，一统天下。</p><p data-pid=\"uOc8R8id\">比如伟大的前端，有react,vue,ng三家垄断。低代码领域，如果出现三个类似平台，意味着这三个平台大概提供一些类似office，打卡签到之类的功能。无法涵盖太多业务。</p><p data-pid=\"j8sJOXJf\">但是，低代码确实可以提升效率，节约成本。垂直到某个领域，低代码能给这个领域软件带来极大的扩展性和灵活性。</p><p data…",
+      "author_display": "悠闲的水",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-technical"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "466695857:3466479387",
+      "question_id": "466695857",
+      "question_title": "低代码开发平台提供源码有什么意义？",
+      "content_excerpt": "<h3>不管什么平台，100%交付源代码才是硬道理。</h3><h3> 门户首页</h3><p data-pid=\"QJYaKO2d\">平台提供了多角色门户功能，支持一人多门户页展示，以及个性化配置，实现“千人千面”门户效果。门户首页无需编码开发，基于门户设计器高保真渲染门户页，提供顶部导航、侧边导航两种导航模式，八种常用色系主题。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-845f8e5f48a73a184fed38b174b8434e_720w.jpg?source=1def…",
+      "author_display": "云程智能体开发平台",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [
+          "asp-pro-source"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "vendor_or_official_account",
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c1-source-value",
+            "stance": "for",
+            "relevant_excerpt": "<h3>不管什么平台，100%交付源代码才是硬道理。</h3><h3> 门户首页</h3><p data-pid=\"QJYaKO2d\">平台提供了多角色门户功能，支持一人多门户页展示，以及个性化配置，实现“千人千面”门户效果。门户首页无需编…"
+          },
+          {
+            "claim_id": "c3-source-value",
+            "stance": "for",
+            "relevant_excerpt": "<h3>不管什么平台，100%交付源代码才是硬道理。</h3><h3> 门户首页</h3><p data-pid=\"QJYaKO2d\">平台提供了多角色门户功能，支持一人多门户页展示，以及个性化配置，实现“千人千面”门户效果。门户首页无需编…"
+          }
+        ],
+        "historical_authority": true,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "466695857:1958779750",
+      "question_id": "466695857",
+      "question_title": "低代码开发平台提供源码有什么意义？",
+      "content_excerpt": "<p data-pid=\"qeymgcmb\">低代码开发平台提供源码实际上意义有限。</p><p data-pid=\"ix0bcLfz\">1、对于企业来讲，提供代码可以给企业心理上安全“安慰&#34;。</p><p data-pid=\"mYPT6YTX\">2、实际执行效力来説，这个对企业来说帮助有限。主要由于低码这东西不是普通的东西，且看下面分解：</p><p data-pid=\"RpCEr1-n\"> （1）代码使用，需要企业有程序人员，如果没有程序人员。拿到代码也没用。</p><p data-pid=\"aNOv5cYm\"> （2）代码阅读和使用实际上会成为很大的难题。这决定于，代码的质量如何…",
+      "author_display": "领悟杂谈",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [
+          "asp-critique"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c1-source-value",
+            "stance": "against",
+            "relevant_excerpt": "<p data-pid=\"qeymgcmb\">低代码开发平台提供源码实际上意义有限。</p><p data-pid=\"ix0bcLfz\">1、对于企业来讲，提供代码可以给企业心理上安全“安慰&#34;。</p><p data-pid=\"mY…"
+          },
+          {
+            "claim_id": "c3-source-value",
+            "stance": "against",
+            "relevant_excerpt": "<p data-pid=\"qeymgcmb\">低代码开发平台提供源码实际上意义有限。</p><p data-pid=\"ix0bcLfz\">1、对于企业来讲，提供代码可以给企业心理上安全“安慰&#34;。</p><p data-pid=\"mY…"
+          }
+        ],
+        "historical_authority": true,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "466695857:3279920257",
+      "question_id": "466695857",
+      "question_title": "低代码开发平台提供源码有什么意义？",
+      "content_excerpt": "<p data-pid=\"L2ajy5zl\">对于低代码开发产品来讲，全源码交付是它最大优势之一。全源码意味着开发者可以获得完整的应用程序源代码，这对于任何软件项目都是至关重要的。</p><p data-pid=\"kHC20PaK\">就以 JNPF 来举例说明吧，作为一款基于低代码开发理念的全源码交付式开发工具。以简化开发流程、降低技术门槛和提高生产力为目标，为开发者提供了一个高效的开发环境。</p><p data-pid=\"oxbfzFVO\">JNPF 提供完整的应用程序源代码，使开发者具备定制化能力和独立部署选项。让其可以根据特定需求自由调整和扩展应用程序，完全掌握开发进程。</p><fi…",
+      "author_display": "引迈小六",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-pro-source"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "vendor_or_official_account",
+        "long_tail_unique": true,
+        "claim_stances": [
+          {
+            "claim_id": "c1-source-value",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"L2ajy5zl\">对于低代码开发产品来讲，全源码交付是它最大优势之一。全源码意味着开发者可以获得完整的应用程序源代码，这对于任何软件项目都是至关重要的。</p><p data-pid=\"kHC20PaK\">就以 …"
+          },
+          {
+            "claim_id": "c3-source-value",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"L2ajy5zl\">对于低代码开发产品来讲，全源码交付是它最大优势之一。全源码意味着开发者可以获得完整的应用程序源代码，这对于任何软件项目都是至关重要的。</p><p data-pid=\"kHC20PaK\">就以 …"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "466695857:2401915395",
+      "question_id": "466695857",
+      "question_title": "低代码开发平台提供源码有什么意义？",
+      "content_excerpt": "<p data-pid=\"hVu9dtUj\"><b>源码</b>就是指编写的最原始程序的代码。运行的软件是要经过编写的，程序员编写程序的过程中需要他们的“语言”。音乐家用五线谱，建筑师用图纸，那程序员的工作的语言就是“源码”了。</p><p data-pid=\"gQzktRYp\">因此，在很多的时候,我们在建设各种各样的平台的时候如果能直接拿到源码，就可以按照源码提供的教程,很顺利的完成一个平台的建设或者更改。对于企业或者开发者而言，使用起来将会更加的方便快捷。</p><p data-pid=\"bQkppi-4\">然而人们平时使用软件时不是直接操作源码，而是程序把“源码”翻译成我们可直观的形式…",
+      "author_display": "百数",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [
+          "asp-pro-source"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "vendor_or_official_account",
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c1-source-value",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"hVu9dtUj\"><b>源码</b>就是指编写的最原始程序的代码。运行的软件是要经过编写的，程序员编写程序的过程中需要他们的“语言”。音乐家用五线谱，建筑师用图纸，那程序员的工作的语言就是“源码”了。</p><p…"
+          },
+          {
+            "claim_id": "c3-source-value",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"hVu9dtUj\"><b>源码</b>就是指编写的最原始程序的代码。运行的软件是要经过编写的，程序员编写程序的过程中需要他们的“语言”。音乐家用五线谱，建筑师用图纸，那程序员的工作的语言就是“源码”了。</p><p…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "466695857:3386875412",
+      "question_id": "466695857",
+      "question_title": "低代码开发平台提供源码有什么意义？",
+      "content_excerpt": "<p data-pid=\"onYhGWAv\">随着低代码开发平台的日益普及，越来越多的企业开始采用这种方式来加速应用开发。低代码平台通过提供图形化界面和预构建模块，降低了应用开发的复杂性，使得非专业开发者也能参与到应用开发中。然而，对于一些企业，特别是中小型企业或者初创企业而言，部分商用低代码平台云端部署和源码不开放的特性会带来一些不可忽视的劣势。<br/><br/><b>一、定制化和灵活性受限</b><br/>尽管低代码平台提供了丰富的预定义模板和模块，使得企业可以根据需求进行配置和扩展，但在面对特殊的业务需求时，由于源码不开放，无法进行深度的定制开发。这需要企业寻找其他解决方案或与供应商进…",
+      "author_display": "天翎MyApps低代码平台",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-pro-source"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "vendor_or_official_account",
+        "long_tail_unique": true,
+        "claim_stances": [
+          {
+            "claim_id": "c1-source-value",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"onYhGWAv\">随着低代码开发平台的日益普及，越来越多的企业开始采用这种方式来加速应用开发。低代码平台通过提供图形化界面和预构建模块，降低了应用开发的复杂性，使得非专业开发者也能参与到应用开发中。然而，对于一些…"
+          },
+          {
+            "claim_id": "c3-source-value",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"onYhGWAv\">随着低代码开发平台的日益普及，越来越多的企业开始采用这种方式来加速应用开发。低代码平台通过提供图形化界面和预构建模块，降低了应用开发的复杂性，使得非专业开发者也能参与到应用开发中。然而，对于一些…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "466695857:2140398007",
+      "question_id": "466695857",
+      "question_title": "低代码开发平台提供源码有什么意义？",
+      "content_excerpt": "<p data-pid=\"fS3w38sp\">这样企业就可进行二次开发，在有了源码的前提下重新更改要求，满足新的项目需求，不需要重新购买，能节省一些开支。</p><p data-pid=\"Fggdhxd6\">有了源码相对来说是拥有了开发的主导权，不再受限于开发人员。而一旦有了新的需求，就能快速便捷的解决问题，满足需求。</p>",
+      "author_display": "Fourv",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-pro-source"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c1-source-value",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"fS3w38sp\">这样企业就可进行二次开发，在有了源码的前提下重新更改要求，满足新的项目需求，不需要重新购买，能节省一些开支。</p><p data-pid=\"Fggdhxd6\">有了源码相对来说是拥有了开发的主…"
+          },
+          {
+            "claim_id": "c3-source-value",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"fS3w38sp\">这样企业就可进行二次开发，在有了源码的前提下重新更改要求，满足新的项目需求，不需要重新购买，能节省一些开支。</p><p data-pid=\"Fggdhxd6\">有了源码相对来说是拥有了开发的主…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "466695857:2140488947",
+      "question_id": "466695857",
+      "question_title": "低代码开发平台提供源码有什么意义？",
+      "content_excerpt": "<p data-pid=\"yAFvtrsP\">低代码中的“代码”两个字意味着编程扩展能力。目前，低代码开发平台的编程扩展方式主要有两种：</p><ul><li data-pid=\"zIwunRno\">A. 平台的成果物即源代码，开发者直接对成果物进行二次开发</li><li data-pid=\"VDdsea8X\">B. 平台提供编程API，开发者对平台而不是项目进行二次开发</li></ul><p data-pid=\"WUYD6mU3\">A的好处很明显，那就是完全没有任何的限制，包括开发平台本身的商业授权；缺点是一旦自己修改过代码，以后就不能再使用平台进行可视化开发了。而B的好处则主要体现在后…",
+      "author_display": "开发工具爱好者",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-pro-source",
+          "asp-technical"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "466695857:2099716352",
+      "question_id": "466695857",
+      "question_title": "低代码开发平台提供源码有什么意义？",
+      "content_excerpt": "<p data-pid=\"Nzh7k8-L\">有了源码，企业可以二次开发，对新的业务和新的开发需求，不需要再次购买，可以降低成本，提高开发效率，体现了低代码的灵活性。因此低码星球选择了做低代码的服务平台，也是看着低代码的市场发展。</p>",
+      "author_display": "本草姑娘",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-pro-source"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": true,
+        "claim_stances": [
+          {
+            "claim_id": "c1-source-value",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"Nzh7k8-L\">有了源码，企业可以二次开发，对新的业务和新的开发需求，不需要再次购买，可以降低成本，提高开发效率，体现了低代码的灵活性。因此低码星球选择了做低代码的服务平台，也是看着低代码的市场发展。</p>"
+          },
+          {
+            "claim_id": "c3-source-value",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"Nzh7k8-L\">有了源码，企业可以二次开发，对新的业务和新的开发需求，不需要再次购买，可以降低成本，提高开发效率，体现了低代码的灵活性。因此低码星球选择了做低代码的服务平台，也是看着低代码的市场发展。</p>"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "466695857:1957526887",
+      "question_id": "466695857",
+      "question_title": "低代码开发平台提供源码有什么意义？",
+      "content_excerpt": "<p data-pid=\"-oLjwjye\">目前国内能提供源代码的低代码平台确实非常少，而广州天翎低代码平台确实其中一家。</p><p data-pid=\"ILCBhyQF\">有了产品源码可以进行功能的二次开发，使得产品更加贴近你们自己的业务需求。</p><p data-pid=\"MpGbppId\">并且可以针对特定的数据安全要求，对产品的底层进行安全性修改。</p>",
+      "author_display": "bruce",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-pro-source"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": true,
+        "claim_stances": [
+          {
+            "claim_id": "c1-source-value",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"-oLjwjye\">目前国内能提供源代码的低代码平台确实非常少，而广州天翎低代码平台确实其中一家。</p><p data-pid=\"ILCBhyQF\">有了产品源码可以进行功能的二次开发，使得产品更加贴近你们自己的…"
+          },
+          {
+            "claim_id": "c3-source-value",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"-oLjwjye\">目前国内能提供源代码的低代码平台确实非常少，而广州天翎低代码平台确实其中一家。</p><p data-pid=\"ILCBhyQF\">有了产品源码可以进行功能的二次开发，使得产品更加贴近你们自己的…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "466695857:2043119425",
+      "question_id": "466695857",
+      "question_title": "低代码开发平台提供源码有什么意义？",
+      "content_excerpt": "<p data-pid=\"cyaVyzyl\">可以让企业自己定制特定的业务需求，做属于自己的系统产品呀，而且这样更能突出低代码平台灵活度高</p>",
+      "author_display": "吾日三省吾身",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": true,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "466695857:1982005809",
+      "question_id": "466695857",
+      "question_title": "低代码开发平台提供源码有什么意义？",
+      "content_excerpt": "<p data-pid=\"VkDnj00K\">不同的产品有不同的功能需求，有源码方便客户根据自己的需求开发适合自己的产品</p>",
+      "author_display": "鹿晗",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "466695857:2007801020",
+      "question_id": "466695857",
+      "question_title": "低代码开发平台提供源码有什么意义？",
+      "content_excerpt": "<p data-pid=\"cLCRwTiJ\">可以二次开发啊</p>",
+      "author_display": "我是小间谍",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "466695857:2011434031",
+      "question_id": "466695857",
+      "question_title": "低代码开发平台提供源码有什么意义？",
+      "content_excerpt": "<p data-pid=\"BopZIzex\">对于个别企业而言便于做二次开发，完善或丰富现有系统功能。但也不是所有的企业都需要这个功能，我们公司用的百数同样也可以灵活的进行二次开发，不需要这个源码功能。</p>",
+      "author_display": "深海白刺",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-critique"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": true,
+        "claim_stances": [
+          {
+            "claim_id": "c1-source-value",
+            "stance": "against",
+            "relevant_excerpt": "<p data-pid=\"BopZIzex\">对于个别企业而言便于做二次开发，完善或丰富现有系统功能。但也不是所有的企业都需要这个功能，我们公司用的百数同样也可以灵活的进行二次开发，不需要这个源码功能。</p>"
+          },
+          {
+            "claim_id": "c3-source-value",
+            "stance": "against",
+            "relevant_excerpt": "<p data-pid=\"BopZIzex\">对于个别企业而言便于做二次开发，完善或丰富现有系统功能。但也不是所有的企业都需要这个功能，我们公司用的百数同样也可以灵活的进行二次开发，不需要这个源码功能。</p>"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "485463474:2109090852",
+      "question_id": "485463474",
+      "question_title": "入坑零代码、低代码、APaas系统，你需要了解权限控制上有哪些坑？",
+      "content_excerpt": "<p data-pid=\"4uPNey5y\">当前零代码、低代码、APaas系统话题热度不断提高，随之其是否能实现复杂业务一直是业内争吵的焦点。很多公司准备入坑，但不知道这坑到底有多深，本人根据切身经验加以探讨。</p><p data-pid=\"-EBOHNAJ\">整体上从对权限的支撑能力，将权限支撑能力划分为：仅适合权限要求弱小团体使用；仅适合单部门体系使用；能适用于公司网状或矩阵化权限管理使用；能适用于集团型公司复杂权限使用。</p><p data-pid=\"XaD3KTn5\">相对于EXCEL，权限控制解决EXCEL文件权限控制不足问题。如多人收集汇总数据、多级部门汇总数据，避免人员看到…",
+      "author_display": "领悟杂谈",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [
+          "asp-permission"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "practitioner_or_independent",
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": true,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "485463474:2180915039",
+      "question_id": "485463474",
+      "question_title": "入坑零代码、低代码、APaas系统，你需要了解权限控制上有哪些坑？",
+      "content_excerpt": "<p data-pid=\"ixAz2-jU\">目前正处于信息发展时期，讲求效率快，走慢一步就很容易被落下了。正因为如此，传统的开发系统已经跟不上时代的脚步，也无法适应新时期企业信息化的需求。在这种情况之下，企业选择了低代码和无代码平台，试图借助工具来使企业走向科学化发展，好让企业在竞争中具备优势。</p><p data-pid=\"dpsyU5-R\">那么今天，我们就来讲讲低代码和无代码的区别，究竟企业应该如何选择适合自身的系统开发平台呢？</p><p data-pid=\"vEYtkS4z\">一、低代码和无代码的区别</p><p data-pid=\"Q_WBwF8j\"><b>低代码：</b>通过…",
+      "author_display": "自由",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-permission"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c1-innovation-vs-repackaging",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"ixAz2-jU\">目前正处于信息发展时期，讲求效率快，走慢一步就很容易被落下了。正因为如此，传统的开发系统已经跟不上时代的脚步，也无法适应新时期企业信息化的需求。在这种情况之下，企业选择了低代码和无代码平台，试图…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "485463474:2406068294",
+      "question_id": "485463474",
+      "question_title": "入坑零代码、低代码、APaas系统，你需要了解权限控制上有哪些坑？",
+      "content_excerpt": "<p data-pid=\"hhuQWxki\">太阳低下没有新鲜事，低代码或者零代码也不是新事务，只不过用一种新概念来包装加工一些旧的工具或系统，比如Dreamweaver、在线建站系统等，透过拖拽就可以完成一些网站页面的开发，比如一些PASS平台，通过成熟的中间件或组件，快速搭建一个分布式系统等等。至于低代码、零代码或无代码的差别，从名称上大概也可以猜出一二来。</p><p data-pid=\"oKItzAuW\">听惯了PaaS、IaaS、SaaS、BaaS，这里再提及一个：aPaaS，是PaaS的一个分支，全称为应用程序平台即服务。在国外也都有比较成功的案例，国内也有一些厂商在从事这块业务，…",
+      "author_display": "两眼忧郁的大叔",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-critique"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": true,
+        "claim_stances": [
+          {
+            "claim_id": "c1-innovation-vs-repackaging",
+            "stance": "against",
+            "relevant_excerpt": "<p data-pid=\"hhuQWxki\">太阳低下没有新鲜事，低代码或者零代码也不是新事务，只不过用一种新概念来包装加工一些旧的工具或系统，比如Dreamweaver、在线建站系统等，透过拖拽就可以完成一些网站页面的开发，比如一些PAS…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "485463474:2189029739",
+      "question_id": "485463474",
+      "question_title": "入坑零代码、低代码、APaas系统，你需要了解权限控制上有哪些坑？",
+      "content_excerpt": "<p data-pid=\"7re1r9jG\">低代码：用<b>少量代码</b>就可以开发程序，适合有技术但想<b>节省时间</b>的<b>技术人员</b>。</p><p data-pid=\"sFxBbX65\">目前天翎低代码平台采用的是低代码➕无代码双结合的模式。</p><p data-pid=\"4Sykgb2c\">对于非技术人员在设计表单系统时采用常规模式，仅需通过拖拉拽方式完成<a href=\"https://www.zhihu.com/search?q=%E8%A1%A8%E5%8D%95&amp;search_source=Entity&amp;hybrid_search_source…",
+      "author_display": "bruce",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-concept"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": true,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "485463474:2940558097",
+      "question_id": "485463474",
+      "question_title": "入坑零代码、低代码、APaas系统，你需要了解权限控制上有哪些坑？",
+      "content_excerpt": "<h2>可能会遇到的坑</h2><p data-pid=\"3WVOCcCQ\">在零代码、低代码、APaaS系统中，权限控制是一个非常关键的问题，以下是一些可能会遇到的坑：<br/></p><ol><li data-pid=\"x1nfGBFg\">默认权限过于宽松：某些零代码、低代码、APaaS系统可能会在创建应用程序时自动为所有用户授予默认权限。这可能会导致权限泄露和安全漏洞。因此，必须确保在创建应用程序时对权限进行明确的控制和分配。</li><li data-pid=\"j4PoECoU\">非一致性的权限控制：在零代码、低代码、APaaS系统中，通常会有多种方式和位置来定义和管理权限。如果不进行…",
+      "author_display": "枚达零低代码",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [
+          "asp-permission"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "vendor_or_official_account",
+        "long_tail_unique": true,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "485463474:2706684256",
+      "question_id": "485463474",
+      "question_title": "入坑零代码、低代码、APaas系统，你需要了解权限控制上有哪些坑？",
+      "content_excerpt": "<p data-pid=\"QUd8_1t4\">曾经如何编写代码来构建软件的时代已经结束。如今，计算机科学已经发展得如此之快，以至于我们可以部署零代码工具来创建软件、Web应用程序和移动应用程序，而无需使用或知道任何代码。在本文中，<a href=\"https://link.zhihu.com/?target=https%3A//lancode.com/\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">蓝库云</a>将和大家探讨什么是零代码、如何使用这种方法及其优势。</p><p data-pid=\"5Xk7mU…",
+      "author_display": "蓝库云",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [],
+        "expert_topic_match": true,
+        "expertise_evidence": "vendor_or_official_account",
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c1-innovation-vs-repackaging",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"QUd8_1t4\">曾经如何编写代码来构建软件的时代已经结束。如今，计算机科学已经发展得如此之快，以至于我们可以部署零代码工具来创建软件、Web应用程序和移动应用程序，而无需使用或知道任何代码。在本文中，<a hr…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "485463474:2688629921",
+      "question_id": "485463474",
+      "question_title": "入坑零代码、低代码、APaas系统，你需要了解权限控制上有哪些坑？",
+      "content_excerpt": "<p data-pid=\"De4Mn3hP\">零代码、低代码、APaaS系统产生的目的都是为了高效的建立应用系统。但三者之间还有很大的差别。</p><p data-pid=\"J0Q__P1x\">零代码平台通常采用拖、拉、拽等可视化方法就可以直接实现应用系统的搭建，在此过程中无需进行代码的开发。大多数零代码开发平台都基于表单驱动的方法，这种表单驱动的低代码，源于广泛应用于ERP、OA等软件中对表单、流程等元素的可配置技术。借助这些能力，成品软件可以在不做二次开发的前提下，满足大部分的个性化需求。可配置技术有效降低了开发需求，缩短了软件实施周期，已经成为行业软件的“标准”。部分企业软件厂商和互联网…",
+      "author_display": "葡萄城",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-concept"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "vendor_or_official_account",
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": true,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "487214224:2124048604",
+      "question_id": "487214224",
+      "question_title": "入坑零代码、低代码、APaas系统，你需要了解系统支持业务线和业务数量是否与本团队相匹配有哪些坑？",
+      "content_excerpt": "<p data-pid=\"n7T8_UAV\"> 当前零代码、低代码、APaas系统话题热度不断提高，随之其是否能实现复杂业务一直是业内争吵的焦点。很多公司准备入坑，但不知道这坑到底有多深，本人根据切身经验加以探讨。</p><p data-pid=\"jxT9AvO-\">整体上从对数据量和业务量的支撑能力，将能力划分为：适合小团队使用；适合公司级团队使用；集团化公司使用。这三类团队特点：</p><p data-pid=\"mMKjsfQk\">（1）小团队：组织比较扁平，成员之间关系平等；数据组织比较随意、业务相对简单、数据量不是太大。</p><p data-pid=\"d1J12g0N\">（2）公司级…",
+      "author_display": "领悟杂谈",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [
+          "asp-business-lines"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "practitioner_or_independent",
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": true,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "487214224:2027722356278215762",
+      "question_id": "487214224",
+      "question_title": "入坑零代码、低代码、APaas系统，你需要了解系统支持业务线和业务数量是否与本团队相匹配有哪些坑？",
+      "author_display": "石勒为民除道",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": false,
+        "must_see": false,
+        "aspect_ids": [],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "487214224:2146329149",
+      "question_id": "487214224",
+      "question_title": "入坑零代码、低代码、APaas系统，你需要了解系统支持业务线和业务数量是否与本团队相匹配有哪些坑？",
+      "content_excerpt": "<p data-pid=\"aIYaGEcL\">目前正处于信息发展时期，讲求效率快，走慢一步就很容易被落下了。正因为如此，传统的开发系统已经跟不上时代的脚步，也无法适应新时期企业信息化的需求。在这种情况之下，企业选择了低代码和无代码平台，试图借助工具来使企业走向科学化发展，好让企业在竞争中具备优势。</p><p data-pid=\"xdh0hEYH\">那么今天，我们就来讲讲低代码和无代码的区别，究竟企业应该如何选择适合自身的系统开发平台呢？</p><p data-pid=\"klTd_fly\">一、低代码和无代码的区别</p><p data-pid=\"rmGab2d0\"><b>低代码：</b>通过…",
+      "author_display": "匿名用户",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-business-lines"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": true,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "462973596:1950703418",
+      "question_id": "462973596",
+      "question_title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+      "content_excerpt": "<p data-pid=\"yRntAyaj\">作为一个在零代码探索过多年的经验来说，渴望零代码工具是原生的愿望，但是实践中基本不可能</p><p data-pid=\"jZHpnero\"><a href=\"https://link.zhihu.com/?target=https%3A//pub.baishuyun.com/user/spread/130267%3Fkey%3D%25E4%25BD%258E%25E4%25BB%25A3%25E7%25A0%2581%26title%3D%25E9%259B%25B6%25E4%25BB%25A3%25E7%25A0%2581%25E5%2592%…",
+      "author_display": "产品的自我修养",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "462973596:1941438029",
+      "question_id": "462973596",
+      "question_title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+      "content_excerpt": "<p data-pid=\"5d6JqBNH\">低代码和无代码这两个一眼看过去很像的名词，很多人都会讲它们混淆，其实它们之间的区别还是挺大的。在低代码开发平台上开发应用程序需要技术人员才能够完成，这是因为低代码开发平台只是减少了编写代码的数量，并不是完全不需要编写代码，而无代码开发平台是完全不需要编写任何代码只需要拖拽平台上的功能组件就能够完成应用程序的开发。你知道低代码和无代码的主要区别是什么吗？下面一起来了解一下相关的知识吧！</p><p data-pid=\"pfdjfu5n\"><b>看起来很相似</b></p><p data-pid=\"JtVoxxVt\">面对绝大多数应用场景，两者都不需要…",
+      "author_display": "简搭AI低代码",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-concept"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "462973596:1928502944",
+      "question_id": "462973596",
+      "question_title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+      "content_excerpt": "<p data-pid=\"JHKNjbm-\">低代码：用<b>少量代码</b>就可以开发程序，适合有技术但想<b>节省时间</b>的<b>技术人员</b>。</p><p data-pid=\"Anx0c7nc\">无代码：没基础也可以，<b>不需要编程</b>，调一下参数就能生成程序，适合<b>没有技术</b>但想弄程序的<b>业务人员</b>。</p><p data-pid=\"_UM_nirS\">目前天翎低代码平台采用的是低代码➕无代码双结合的模式。</p><p data-pid=\"AlkOqfgc\">对于非技术人员在设计表单系统时采用常规模式，仅需通过拖拉拽方式完成表单设计，无需任何代码量。<…",
+      "author_display": "bruce",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-concept"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "462973596:1946530886",
+      "question_id": "462973596",
+      "question_title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+      "content_excerpt": "<p data-pid=\"zsnyZleg\">从企业的角度来看，零代码如果处理的好，零代码后期发展会更好。</p><p data-pid=\"zYDA0o6T\">从两方面看问题</p><p data-pid=\"QaZMlr3i\">一、企业角度</p><p data-pid=\"akas0udb\">这与一个矛盾点相关：</p><p data-pid=\"-9sOM0B5\">企业选择零代码和低代码是为解决传统软件开发周期长（8个月以上），开发人员对业务不熟和不专业（跨行这种问题突破很难），导致企业系统失败率比较高，投入和产出不成比例，企业信息化不能适应快速发展变化的业务需求这一问题。</p><p dat…",
+      "author_display": "领悟杂谈",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-zero-vs-low"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c2-zero-vs-low-future",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"zsnyZleg\">从企业的角度来看，零代码如果处理的好，零代码后期发展会更好。</p><p data-pid=\"zYDA0o6T\">从两方面看问题</p><p data-pid=\"QaZMlr3i\">一、企业角度…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "462973596:2052511352",
+      "question_id": "462973596",
+      "question_title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+      "content_excerpt": "<p data-pid=\"99Qdwh0s\">无论是低代码开发平台，还是0代码开发平台，都具备开发大型企业管理系统的能力。只是选择0代码平台比低代码平台更优化资源配置和节约人力、物力成本。</p>",
+      "author_display": "liuzewei",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c2-zero-vs-low-future",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"99Qdwh0s\">无论是低代码开发平台，还是0代码开发平台，都具备开发大型企业管理系统的能力。只是选择0代码平台比低代码平台更优化资源配置和节约人力、物力成本。</p>"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "462973596:2070640394",
+      "question_id": "462973596",
+      "question_title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+      "content_excerpt": "<p data-pid=\"dBTETeth\">感觉问题没有意义，零代码平台，现在市面上真正的零代码平台好像还没有吧，涉及到特定的系统业务逻辑都是需要一定量的代码或者脚本编写，这是无法避免的。这两个对于公司来说可以减少系统的开发投入成本，都对公司的发展较为友好。</p>",
+      "author_display": "幽蓝梦星",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-zero-vs-low"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "462973596:1953772075",
+      "question_id": "462973596",
+      "question_title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+      "content_excerpt": "<p data-pid=\"FCodkN_H\">低代码有零代码无法替代的优势</p><p data-pid=\"RwetqEcG\"><b>零代码工具</b>，早期，对技术人员来说，显得繁琐，且不够灵活；对非技术人员，虽然不用写代码，但充满技术用语的界面和对象抽象的难度，也让他们望而却步。所以首先吸引的用户是非技术出身的企业极客，他们脑中有构思和概念，可以利用零代码工具将管理流程快速数字化。</p><p data-pid=\"4Qe0dSHm\"><b>低代码开发平台</b>是指围绕企业数据和业务管理需求，通过可视化方式设计数据结构，用户交互形式、设置访问权限和定义工作流程的平台。</p><p data…",
+      "author_display": "捷得Joget",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-zero-vs-low"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c2-zero-vs-low-future",
+            "stance": "against",
+            "relevant_excerpt": "<p data-pid=\"FCodkN_H\">低代码有零代码无法替代的优势</p><p data-pid=\"RwetqEcG\"><b>零代码工具</b>，早期，对技术人员来说，显得繁琐，且不够灵活；对非技术人员，虽然不用写代码，但充满技术用…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "462973596:1963312102",
+      "question_id": "462973596",
+      "question_title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+      "content_excerpt": "<p data-pid=\"-6zADNBZ\">没有绝对的零代码，简单需求拖拉拽实现，复杂的需要肯定要辅助代码实现的，所以说零代码和低代码对企业都有用。</p>",
+      "author_display": "大龄码农有梦想",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-zero-vs-low"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "462973596:2721876544",
+      "question_id": "462973596",
+      "question_title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+      "content_excerpt": "<p data-pid=\"3W3nrkJI\">如今在企业数智化转型中缺乏编程语言知识和资金紧张不再是障碍，因为零代码应用工具的出现，每个人都可以做到这一点。零代码解决方案已经存在了一段时间，但它们已经成为可行且可靠的解决方案，可帮助企业起步并成功运营。</p><p data-pid=\"ogrteTFh\">今天蓝库云和大家一起来探讨研究低代码和零代码各自的优缺点，这些工具旨在为初创公司奠定坚实的基础，以启动他们的企业并迈向他们的主要营销和品牌目标。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/5…",
+      "author_display": "蓝库云",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c2-zero-vs-low-future",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"3W3nrkJI\">如今在企业数智化转型中缺乏编程语言知识和资金紧张不再是障碍，因为零代码应用工具的出现，每个人都可以做到这一点。零代码解决方案已经存在了一段时间，但它们已经成为可行且可靠的解决方案，可帮助企业起步…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "462973596:1970717782",
+      "question_id": "462973596",
+      "question_title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+      "content_excerpt": "<p data-pid=\"hjCTImlS\">这个一般看公司规模以及对软件的使用情况，很多公司把软件只是辅助定位，提升效率的一种方法，并没打算在这边做优化业务流程等操作。这样零代码平台还是比较适合的，毕竟低代码平台需要有人来开发，低代码平台对比的都是以前养一个团队来开发项目，现在可以有一两个懂的人就可以了搞定系统了，一些服务的开发工作交给了平台是完成和实现。</p><p data-pid=\"w4wC7EBj\">你这个问题里边有一个对公司后期的发展后，这个后期一般也是有时间范围的。</p><p data-pid=\"ozqi5s8Y\">一般的软件周期也就两三年就要更新升级，再不升级基本就是这个业务…",
+      "author_display": "快跑",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c2-zero-vs-low-future",
+            "stance": "for",
+            "relevant_excerpt": "<p data-pid=\"hjCTImlS\">这个一般看公司规模以及对软件的使用情况，很多公司把软件只是辅助定位，提升效率的一种方法，并没打算在这边做优化业务流程等操作。这样零代码平台还是比较适合的，毕竟低代码平台需要有人来开发，低代码平台…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "462973596:1928406979",
+      "question_id": "462973596",
+      "question_title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+      "content_excerpt": "<p data-pid=\"BY1vbgXm\">个人觉得是低代码平台对后期发展较好。</p><p data-pid=\"IQ2PL_EG\">低代码开发平台是无需编码（0代码或无代码）或通过少量代码就可以快速生成应用程序的开发平台。它的强大之处在于，允许终端用户使用易于理解的可视化工具开发自己的应用程序，而不是传统的编写代码方式。构建业务流程、逻辑和数据模型等所需的功能，必要时还可以添加自己的代码。完成业务逻辑、功能构建后，即可一键交付应用并进行更新，自动跟踪所有更改并处理数据库脚本和部署流程，实现在 IOS，Android，Web 等多个平台上的部署。 </p><p data-pid=\"THGp5…",
+      "author_display": "匿名用户",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-zero-vs-low"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [
+          {
+            "claim_id": "c2-zero-vs-low-future",
+            "stance": "against",
+            "relevant_excerpt": "<p data-pid=\"BY1vbgXm\">个人觉得是低代码平台对后期发展较好。</p><p data-pid=\"IQ2PL_EG\">低代码开发平台是无需编码（0代码或无代码）或通过少量代码就可以快速生成应用程序的开发平台。它的强大之处在…"
+          }
+        ],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "462973596:1922742675",
+      "question_id": "462973596",
+      "question_title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+      "content_excerpt": "<p data-pid=\"1mFNRy7v\">低代码平台</p>",
+      "author_display": "氚云实施中心",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": false
+      }
+    },
+    {
+      "source_id": "462973596:1959121448",
+      "question_id": "462973596",
+      "question_title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+      "content_excerpt": "<p data-pid=\"J8VJC5tt\">随着企业个性化、多样化的需求不断增多，传统软件开发的速度已然有些跟不上了。在这种背景和需求的驱动下，低代码和零代码开始进入人们的视野。</p><p data-pid=\"lVGeOzhF\">低代码、零代码究竟能干什么？二者有什么区别？哪个更适合公司发展？</p><p data-pid=\"3IJ34IVX\">……</p><p data-pid=\"cxSN6LQ9\">这些问题，恐怕连技术开发者们都很难说清。</p><p data-pid=\"fKT6Qjyc\">下面，本人就给大家好好讲讲这二者之间究竟有合不同？希望对大家有所帮助！</p><p class=…",
+      "author_display": "有颜有货",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": true,
+        "aspect_ids": [
+          "asp-zero-vs-low"
+        ],
+        "expert_topic_match": true,
+        "expertise_evidence": "unknown_author_class",
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "462973596:1960753087",
+      "question_id": "462973596",
+      "question_title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+      "content_excerpt": "<p data-pid=\"8Z6NRkf_\"><b>零代码和<span class=\"nolink\">低代码平台</span>这两个平台那个对公司后期的发展好？</b></p><p data-pid=\"dzOe4_Pn\">信息技术的发展如火如荼，低代码，零代码开始进入人们视野。随着越来越多的企业意识到它们重要性，它们的身价也逐渐在“水涨船高”。那么，究竟哪种平台对于企业后期的发展更好？</p><p data-pid=\"5mLL9G2Z\"><b>要想回答这个问题，首先得找一下这二者的不同。</b></p><p data-pid=\"g1Ba0U06\">1、概念</p><p data-pid=\"T2…",
+      "author_display": "百数",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-vendor-compare"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    },
+    {
+      "source_id": "462973596:2300277407",
+      "question_id": "462973596",
+      "question_title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+      "content_excerpt": "<p data-pid=\"fzLb3MTQ\">在同客户和业界人士探讨“更高效率的软件开发方式”时，我发现大多数人并不清楚“<a href=\"https://link.zhihu.com/?target=https%3A//www.grapecity.com.cn/lowcode\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">低代码</a>”和“无代码”之间的区别。低代码和无代码开发平台都提供了无需编写代码即可开发软件应用程序的能力，而且厂商都在突出“高<a href=\"https://www.zhihu.co…",
+      "author_display": "葡萄城",
+      "author_identity_confidence": "WEAK",
+      "proposed_semantic_labels": {
+        "relevance": true,
+        "must_see": false,
+        "aspect_ids": [
+          "asp-criteria"
+        ],
+        "expert_topic_match": false,
+        "expertise_evidence": null,
+        "long_tail_unique": false,
+        "claim_stances": [],
+        "historical_authority": false,
+        "evidence_quality": true
+      }
+    }
+  ],
+  "cross_question_provenance": [
+    {
+      "claim_id": "xq1-framework-over-vendor",
+      "claim": "选型应基于业务/指标框架而非单一厂商宣传",
+      "required_provenance_groups": [
+        {
+          "group": "question",
+          "question_ids": [
+            "477427067"
+          ],
+          "sources": [
+            {
+              "source_id": "477427067:2040315771",
+              "author_display": "领悟杂谈",
+              "content_excerpt": "<p data-pid=\"_F3fxaIs\">软件选型对企业影响很大，初步拟定以下指标供参考。后续进一步更新。</p><p data-pid=\"8B4Hvt6N\">零代码、低代码、aPaas系统选型不同于传统软件选型，区别如下：</p><p…"
+            },
+            {
+              "source_id": "477427067:3547824796",
+              "author_display": "低代码Helms",
+              "content_excerpt": "<p data-pid=\"dfMvfAwk\">关于低代码平台的指标考察选型，我们总结了10点关键的考察指标，可供大家参考：</p><p data-pid=\"-xoVmKe4\"><b>1、易用性和开发效率</b>：</p><ul><ul><l…"
+            },
+            {
+              "source_id": "477427067:2238312306",
+              "author_display": "葡萄城",
+              "content_excerpt": "<p data-pid=\"6YmYh0CF\">目前低代码技术正处在风口，低代码平台产品不断涌现，乱花渐欲迷人眼。作为软件公司或企业IT部门的负责人，在做低代码平台选型时需要关注哪些方面，才能顺利“上车”，让低代码为自己的团队赋能？</p><…"
+            }
+          ]
+        },
+        {
+          "group": "question",
+          "question_ids": [
+            "439521858"
+          ],
+          "sources": [
+            {
+              "source_id": "439521858:3376976033",
+              "author_display": "表单大师",
+              "content_excerpt": "<p data-pid=\"02K2TDc1\">宜搭和简道云、氚云比起来有什么优劣之处？</p><p data-pid=\"SDjAYBRh\">这个问题，作为同行（我们的产品是表单大师）,来回答一波。</p><p data-pid=\"8d-Yj…"
+            },
+            {
+              "source_id": "439521858:3450414501",
+              "author_display": "云程智能体开发平台",
+              "content_excerpt": "<p data-pid=\"xHQkhmv7\">每个低代码产品都有自己的特点和优势，没有一个绝对的好或者不好，要根据你的需求去选择。</p><p data-pid=\"SPAwh60V\">1、简道云是帆软旗下的产品，定位是无代码平台，它的数据处…"
+            }
+          ]
+        },
+        {
+          "group": "question",
+          "question_ids": [
+            "485463474"
+          ],
+          "sources": [
+            {
+              "source_id": "485463474:2109090852",
+              "author_display": "领悟杂谈",
+              "content_excerpt": "<p data-pid=\"4uPNey5y\">当前零代码、低代码、APaas系统话题热度不断提高，随之其是否能实现复杂业务一直是业内争吵的焦点。很多公司准备入坑，但不知道这坑到底有多深，本人根据切身经验加以探讨。</p><p data-pi…"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "xq2-zero-vs-low-debate",
+      "claim": "零代码 vs 低代码的后期发展存在真实争议",
+      "required_provenance_groups": [
+        {
+          "group": "question",
+          "question_ids": [
+            "462973596"
+          ],
+          "sources": [
+            {
+              "source_id": "462973596:1953772075",
+              "author_display": "捷得Joget",
+              "content_excerpt": "<p data-pid=\"FCodkN_H\">低代码有零代码无法替代的优势</p><p data-pid=\"RwetqEcG\"><b>零代码工具</b>，早期，对技术人员来说，显得繁琐，且不够灵活；对非技术人员，虽然不用写代码，但充满技术用…"
+            },
+            {
+              "source_id": "462973596:1959121448",
+              "author_display": "有颜有货",
+              "content_excerpt": "<p data-pid=\"J8VJC5tt\">随着企业个性化、多样化的需求不断增多，传统软件开发的速度已然有些跟不上了。在这种背景和需求的驱动下，低代码和零代码开始进入人们的视野。</p><p data-pid=\"lVGeOzhF\">低代码…"
+            },
+            {
+              "source_id": "462973596:1946530886",
+              "author_display": "领悟杂谈",
+              "content_excerpt": "<p data-pid=\"zsnyZleg\">从企业的角度来看，零代码如果处理的好，零代码后期发展会更好。</p><p data-pid=\"zYDA0o6T\">从两方面看问题</p><p data-pid=\"QaZMlr3i\">一、企业角度…"
+            }
+          ]
+        },
+        {
+          "group": "question",
+          "question_ids": [
+            "477427067"
+          ],
+          "sources": [
+            {
+              "source_id": "477427067:3050814230",
+              "author_display": "简道云",
+              "content_excerpt": "<p data-pid=\"FGgv6Fqk\"><b>零代码、低代码、APaaS系统应从哪些指标考察选型？</b></p><p data-pid=\"giXYnaQo\">零代码、低代码、apaas的概念在行业内已经流行了很长一段时间。那这3个概…"
+            },
+            {
+              "source_id": "477427067:110295980268",
+              "author_display": "徐翔轩",
+              "content_excerpt": "<p data-pid=\"wcjxaQHF\">大概在2017年前后，国际知名信息技术研究和分析企业Gartner，开始稳定、持续跟进低代码领域。低代码的称呼方式从HPAPaaS逐步过渡到Low-Code/aPaaS。</p><p data-…"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "xq3-pitfalls",
+      "claim": "权限控制与业务线匹配是低代码入坑的关键风险点",
+      "required_provenance_groups": [
+        {
+          "group": "question",
+          "question_ids": [
+            "485463474"
+          ],
+          "sources": [
+            {
+              "source_id": "485463474:2109090852",
+              "author_display": "领悟杂谈",
+              "content_excerpt": "<p data-pid=\"4uPNey5y\">当前零代码、低代码、APaas系统话题热度不断提高，随之其是否能实现复杂业务一直是业内争吵的焦点。很多公司准备入坑，但不知道这坑到底有多深，本人根据切身经验加以探讨。</p><p data-pi…"
+            },
+            {
+              "source_id": "485463474:2940558097",
+              "author_display": "枚达零低代码",
+              "content_excerpt": "<h2>可能会遇到的坑</h2><p data-pid=\"3WVOCcCQ\">在零代码、低代码、APaaS系统中，权限控制是一个非常关键的问题，以下是一些可能会遇到的坑：<br/></p><ol><li data-pid=\"x1nfGBFg…"
+            }
+          ]
+        },
+        {
+          "group": "question",
+          "question_ids": [
+            "487214224"
+          ],
+          "sources": [
+            {
+              "source_id": "487214224:2124048604",
+              "author_display": "领悟杂谈",
+              "content_excerpt": "<p data-pid=\"n7T8_UAV\"> 当前零代码、低代码、APaas系统话题热度不断提高，随之其是否能实现复杂业务一直是业内争吵的焦点。很多公司准备入坑，但不知道这坑到底有多深，本人根据切身经验加以探讨。</p><p data-p…"
+            },
+            {
+              "source_id": "487214224:2146329149",
+              "author_display": "匿名用户",
+              "content_excerpt": "<p data-pid=\"aIYaGEcL\">目前正处于信息发展时期，讲求效率快，走慢一步就很容易被落下了。正因为如此，传统的开发系统已经跟不上时代的脚步，也无法适应新时期企业信息化的需求。在这种情况之下，企业选择了低代码和无代码平台，试图…"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "xq4-vendor-tension",
+      "claim": "低代码信息生态中存在厂商自我宣传与客观评估的张力",
+      "required_provenance_groups": [
+        {
+          "group": "question",
+          "question_ids": [
+            "477427067"
+          ],
+          "sources": [
+            {
+              "source_id": "477427067:3050814230",
+              "author_display": "简道云",
+              "content_excerpt": "<p data-pid=\"FGgv6Fqk\"><b>零代码、低代码、APaaS系统应从哪些指标考察选型？</b></p><p data-pid=\"giXYnaQo\">零代码、低代码、apaas的概念在行业内已经流行了很长一段时间。那这3个概…"
+            },
+            {
+              "source_id": "477427067:1930584287444469456",
+              "author_display": "得帆云",
+              "content_excerpt": "<p></p><p data-pid=\"70om4UMW\">本文作者：得帆低代码解决方案专家陈小波</p><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"PhqyQjan\">很多…"
+            }
+          ]
+        },
+        {
+          "group": "question",
+          "question_ids": [
+            "466695857"
+          ],
+          "sources": [
+            {
+              "source_id": "466695857:3466479387",
+              "author_display": "云程智能体开发平台",
+              "content_excerpt": "<h3>不管什么平台，100%交付源代码才是硬道理。</h3><h3> 门户首页</h3><p data-pid=\"QJYaKO2d\">平台提供了多角色门户功能，支持一人多门户页展示，以及个性化配置，实现“千人千面”门户效果。门户首页无需编…"
+            },
+            {
+              "source_id": "466695857:3386875412",
+              "author_display": "天翎MyApps低代码平台",
+              "content_excerpt": "<p data-pid=\"onYhGWAv\">随着低代码开发平台的日益普及，越来越多的企业开始采用这种方式来加速应用开发。低代码平台通过提供图形化界面和预构建模块，降低了应用开发的复杂性，使得非专业开发者也能参与到应用开发中。然而，对于一些…"
+            }
+          ]
+        },
+        {
+          "group": "question",
+          "question_ids": [
+            "439521858"
+          ],
+          "sources": [
+            {
+              "source_id": "439521858:1976466205",
+              "author_display": "百数",
+              "content_excerpt": "<p data-pid=\"07BGFknm\"><b>宜搭、简道云、氚云都是现在市场上有名的低代码开发平台。除此之外，不妨使用下<span class=\"nolink\">百数</span>，再来比较一下。</b></p><p data-pid…"
+            },
+            {
+              "source_id": "439521858:3376976033",
+              "author_display": "表单大师",
+              "content_excerpt": "<p data-pid=\"02K2TDc1\">宜搭和简道云、氚云比起来有什么优劣之处？</p><p data-pid=\"SDjAYBRh\">这个问题，作为同行（我们的产品是表单大师）,来回答一波。</p><p data-pid=\"8d-Yj…"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mechanical_metadata_ref": "adjudication-mechanical-metadata.json"
+}

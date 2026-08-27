@@ -1,0 +1,354 @@
+{
+  "schema": "zhihu-research-benchmark/result",
+  "schema_version": "1.0.0-pilot",
+  "generated_at": "2026-08-27T02:50:52.796Z",
+  "dataset_version": "d1-113028b0bca1c952",
+  "dataset_version_status": "D1_FROZEN",
+  "case_id": "case-477427067",
+  "case_meta": {
+    "category": [
+      "A",
+      "F"
+    ],
+    "question_count": 1,
+    "source_count": 18,
+    "verified_source_count": 18,
+    "gold_label_status": "PROVISIONAL",
+    "scoring_status": "PROVISIONAL_OR_FIXTURE_SANITY"
+  },
+  "strategy_id": "B1_SEMANTIC_TOP_K",
+  "strategy_config": {
+    "strategy_id": "B1_SEMANTIC_TOP_K",
+    "budget_key": "K_LARGE",
+    "K": 8,
+    "tie_break": "source_id_asc",
+    "query_text_source": "case.research_question + question titles",
+    "mmr_lambda": null,
+    "lane_weights": null,
+    "embedding_runtime": {
+      "id": "benchmark-local-deterministic-ngram",
+      "version": "1.0.0",
+      "kind": "deterministic-lexical-similarity-proxy",
+      "note": "NOT a neural embedding model. Pilot-only deterministic similarity proxy (char n-gram TF vectors + cosine) so B1/B2 are runnable offline, cheap and stable. Swap point for a real embedding runtime in a later round."
+    }
+  },
+  "candidate_pool_id": "pool-477427067",
+  "budget": {
+    "key": "K_LARGE",
+    "K": 8
+  },
+  "selected_source_ids": [
+    "477427067:2140439894",
+    "477427067:2040315771",
+    "477427067:1963909107758106013",
+    "477427067:3050814230",
+    "477427067:2141034490",
+    "477427067:2450810640",
+    "477427067:3547824796",
+    "477427067:2884408759"
+  ],
+  "provenance": [
+    {
+      "source_id": "477427067:2140439894",
+      "question_id": "477427067",
+      "author_key": "田小姐",
+      "voteupCount": 0,
+      "createdTime": 1632623852
+    },
+    {
+      "source_id": "477427067:2040315771",
+      "question_id": "477427067",
+      "author_key": "领悟杂谈",
+      "voteupCount": 22,
+      "createdTime": 1628135136
+    },
+    {
+      "source_id": "477427067:1963909107758106013",
+      "question_id": "477427067",
+      "author_key": "星云低代码中间件",
+      "voteupCount": 1,
+      "createdTime": 1761012418
+    },
+    {
+      "source_id": "477427067:3050814230",
+      "question_id": "477427067",
+      "author_key": "简道云",
+      "voteupCount": 6,
+      "createdTime": 1685412223
+    },
+    {
+      "source_id": "477427067:2141034490",
+      "question_id": "477427067",
+      "author_key": "人间不值得",
+      "voteupCount": 0,
+      "createdTime": 1632643370
+    },
+    {
+      "source_id": "477427067:2450810640",
+      "question_id": "477427067",
+      "author_key": "基石协作成都",
+      "voteupCount": 3,
+      "createdTime": 1650538345
+    },
+    {
+      "source_id": "477427067:3547824796",
+      "question_id": "477427067",
+      "author_key": "低代码helms",
+      "voteupCount": 1,
+      "createdTime": 1719810145
+    },
+    {
+      "source_id": "477427067:2884408759",
+      "question_id": "477427067",
+      "author_key": "zoho creator低代码开发",
+      "voteupCount": 0,
+      "createdTime": 1675922133
+    }
+  ],
+  "metric_results": {
+    "must_see_recall": {
+      "value": 0.5,
+      "hit": 2,
+      "scorable": 4
+    },
+    "aspect_recall": {
+      "value": 0.50625,
+      "aspects": 4,
+      "per_aspect": [
+        0.625,
+        0.4,
+        0.4,
+        0.6
+      ]
+    },
+    "expert_recall": {
+      "value": 0.2,
+      "hit": 1,
+      "scorable": 5
+    },
+    "long_tail_recall": {
+      "value": 0.4,
+      "hit": 2,
+      "scorable": 5
+    },
+    "fresh_content_recall": {
+      "value": 0,
+      "hit": 0,
+      "scorable": 1
+    },
+    "historical_authority_retention": {
+      "value": 0.5,
+      "hit": 2,
+      "scorable": 4
+    },
+    "evidence_rich_recall": {
+      "value": 0.36363636363636365,
+      "hit": 4,
+      "scorable": 11
+    },
+    "contradiction_claim_recall": {
+      "value": 1,
+      "covered": 2,
+      "scorable": 2,
+      "both_stances_covered": 2
+    },
+    "cross_question_claim_recall": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "no_cross_question_claim_gold"
+    },
+    "semantic_redundancy": {
+      "value": 0.35689556795372496,
+      "pairs": 28
+    },
+    "semantic_diversity": {
+      "value": 0.6431044320462751
+    },
+    "claim_redundancy": {
+      "value": 0.14285714285714285,
+      "sharing": 4,
+      "total": 28
+    },
+    "analysis_coverage": {
+      "value": 0.4444444444444444,
+      "hit": 8,
+      "scorable": 18
+    },
+    "normalized_question_diversity": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "Q<=1"
+    },
+    "source_concentration": {
+      "selected_question_count": 1,
+      "selected_content_by_question": {
+        "477427067": 8
+      },
+      "largest_question_share": 1,
+      "selected_author_concentration": 0.125,
+      "selected_content_type_distribution": {
+        "answer": 8
+      },
+      "claim_source_diversity": 1
+    },
+    "per_question_coverage_preservation": {
+      "per_question": {
+        "477427067": {
+          "value": 0.4444444444444444,
+          "hit": 8,
+          "scorable": 18
+        }
+      },
+      "scorable_question_count": 1
+    },
+    "minority_question_recall_macro": {
+      "value": 0.4444444444444444,
+      "questions": 1
+    },
+    "minority_question_recall_min": {
+      "value": 0.4444444444444444
+    },
+    "minority_question_recall_micro_diagnostic": {
+      "value": 0.4444444444444444
+    },
+    "independent_source_diversity": {
+      "value": 1,
+      "unique_pairs": 8,
+      "n": 8
+    },
+    "cost": {
+      "cost_units": 37,
+      "embedding_calls": 19,
+      "embedding_cache_hits": 0,
+      "pairwise_similarity_calls": 18,
+      "selection_ops": 0,
+      "wall_ms": 1,
+      "note": "relative cost units within same machine; wall_ms informational only"
+    },
+    "false_stop_rate": {
+      "value": "NOT_RUN",
+      "reason": "no Tier-3 batch fixture in this pilot; would require adaptive stopping harness"
+    }
+  },
+  "gold_stats_by_family": {
+    "relevance": {
+      "label_status": "PROVISIONAL",
+      "total": 18,
+      "scorable": 18,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "must_see": {
+      "label_status": "PROVISIONAL",
+      "total": 4,
+      "scorable": 4,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "aspect_membership": {
+      "label_status": "PROVISIONAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0,
+      "aspect_count": 4
+    },
+    "expertise_topic_match": {
+      "label_status": "PROVISIONAL",
+      "total": 5,
+      "scorable": 5,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "evidence_quality": {
+      "label_status": "MECHANICAL_CONFIRMED",
+      "total": 11,
+      "scorable": 11,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "freshness": {
+      "label_status": "MECHANICAL_CONFIRMED",
+      "total": 1,
+      "scorable": 1,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "unique_long_tail_contribution": {
+      "label_status": "PROVISIONAL",
+      "total": 5,
+      "scorable": 5,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "contradiction": {
+      "label_status": "PROVISIONAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0,
+      "claim_cluster_count": 2
+    },
+    "required_provenance_groups": {
+      "label_status": "PROVISIONAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0,
+      "claim_group_count": 0
+    },
+    "historical_authority": {
+      "label_status": "PROVISIONAL",
+      "total": 4,
+      "scorable": 4,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    }
+  },
+  "cost": {
+    "embedding_calls": 19,
+    "embedding_cache_hits": 0,
+    "pairwise_similarity_calls": 18,
+    "selection_ops": 0,
+    "wall_ms": 1,
+    "cache_hits": 19
+  },
+  "stability": {
+    "value": 1,
+    "min": 1,
+    "pairs": 3,
+    "per_pair": [
+      1,
+      1,
+      1
+    ]
+  },
+  "warnings": [],
+  "notes": "PILOT RUN. Semantic gold = PROVISIONAL (agent proposals) or FIXTURE_MECHANICAL (synthetic). No FINAL benchmark winner claims.",
+  "runtime_identity": {
+    "node": "v22.22.2",
+    "platform": "node",
+    "benchmark_harness_version": "0.1.0-pilot",
+    "embedding_runtime": {
+      "id": "benchmark-local-deterministic-ngram",
+      "version": "1.0.0",
+      "kind": "deterministic-lexical-similarity-proxy",
+      "note": "NOT a neural embedding model. Pilot-only deterministic similarity proxy (char n-gram TF vectors + cosine) so B1/B2 are runnable offline, cheap and stable. Swap point for a real embedding runtime in a later round."
+    },
+    "selectors": {
+      "B0_POPULARITY_TOP_K": "1.0.0",
+      "B1_SEMANTIC_TOP_K": "1.0.0",
+      "B2_MMR_MULTI_LANE": "1.0.0"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "case_id": "case-cross-lowcode",
+  "category": ["G", "A", "F"],
+  "research_question": "低代码、零代码与 APaaS 平台选型：如何系统评估、有哪些入坑注意事项、主流平台（宜搭/简道云/氚云/明道云等）如何对比与选择？",
+  "question_ids": ["439521858", "477427067", "462973596", "466695857", "485463474", "487214224"],
+  "reference_questions": ["439521858", "477427067", "462973596", "466695857", "485463474", "487214224"],
+  "budgets": { "K_SMALL": 5, "K_MEDIUM": 10, "K_LARGE": 20 },
+  "freshness_window_policy": {
+    "policy_id": "fresh-365d-before-max-fetch",
+    "window_sec": 31536000,
+    "reference_epoch_sec": 1786628392,
+    "reference_note": "max fetchedAt across the 6 questions (2026-08-13T13:39:52Z); PILOT_CANDIDATE_WINDOW (case-specific, event-relative)",
+    "note": "frozen BEFORE strategy execution; must not be adjusted post-hoc by results"
+  },
+  "long_tail_min_chars": 80,
+  "mmr_lambda": 0.5,
+  "mmr_lambda_note": "pilot configuration parameter, NOT a production default",
+  "lane_weights": { "mainstream": 1, "expert": 1, "evidence_rich": 1, "fresh": 1, "long_tail": 1, "contradictory": 1 },
+  "author_identity": "name_only",
+  "author_identity_confidence": "WEAK",
+  "expert_author_keys": ["简道云", "人月聊IT", "葡萄城", "得帆云", "徐翔轩", "元宇宙开发者", "领悟杂谈"],
+  "notes": "CROSS-QUESTION case (REQUIRED). 6 questions / 75 sources; question sizes 17/18/15/15/7/3 — deliberately includes the big-vs-small dominance shape (smallest 3-answer question must not be crushed). Verified status: 439521858+477427067 verified; 462973596+466695857+485463474+487214224 captured-only. 487214224 contains 1 off-topic noise source. Some authors repeat across questions (vendor accounts), which tests cross-question claim/author concentration."
+}

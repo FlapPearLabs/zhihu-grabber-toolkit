@@ -1,0 +1,65 @@
+[
+  {
+    "unit_id": "must_see:485463474:2109090852",
+    "question_id": "485463474",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "485463474:2109090852"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:485463474:2940558097",
+    "question_id": "485463474",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "485463474:2940558097"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-permission",
+    "question_id": "485463474",
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-permission",
+    "supporting_source_ids": [
+      "485463474:2109090852",
+      "485463474:2940558097"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:485463474:2940558097",
+    "question_id": "485463474",
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "485463474:2940558097"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "expert_source_group",
+    "question_id": null,
+    "unit_type": "expert_source_group",
+    "supporting_source_ids": [
+      "485463474:2109090852",
+      "485463474:2940558097"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "evidence_source_group",
+    "question_id": null,
+    "unit_type": "evidence_source_group",
+    "supporting_source_ids": [
+      "485463474:2109090852"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  }
+]

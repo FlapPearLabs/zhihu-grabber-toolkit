@@ -1,6 +1,6 @@
 # Zhihu CLI Pro — Independent External Audit Snapshot
 
-Status: **ASSEMBLY_BRANCH_CREATED — FULL_EXPANDED_PAYLOAD_PENDING_LOCAL_PUSH**
+Status: **READY_FOR_CLAUDE_EXTERNAL_AUDIT_WITH_DISCLOSED_RESIDUAL_GAPS**
 
 This branch is an audit-only snapshot based on `master@84534f539a03937b031a962b828f2e2d44c102fa`. It does **not** authorize production implementation.
 

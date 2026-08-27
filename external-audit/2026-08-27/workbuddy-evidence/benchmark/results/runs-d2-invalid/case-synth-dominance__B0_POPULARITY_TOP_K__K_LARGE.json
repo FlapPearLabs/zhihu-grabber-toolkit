@@ -1,0 +1,705 @@
+{
+  "schema": "zhihu-research-benchmark/result",
+  "schema_version": "1.0.0-pilot",
+  "generated_at": "2026-08-27T04:42:14.493Z",
+  "dataset_version": "d1-57f90be47f7440c2",
+  "dataset_version_status": "D2",
+  "case_id": "case-synth-dominance",
+  "case_meta": {
+    "category": [
+      "G",
+      "F"
+    ],
+    "question_count": 3,
+    "source_count": 1080,
+    "verified_source_count": 1080,
+    "gold_label_status": "FIXTURE_MECHANICAL",
+    "gold_adjudication_status": "NOT_REQUIRED",
+    "scoring_status": "FIXTURE_MECHANICAL"
+  },
+  "strategy_id": "B0_POPULARITY_TOP_K",
+  "strategy_config": {
+    "strategy_id": "B0_POPULARITY_TOP_K",
+    "budget_key": "K_LARGE",
+    "K": 40,
+    "tie_break": "source_id_asc",
+    "query_text_source": "case.research_question + question titles",
+    "mmr_lambda": null,
+    "lane_weights": null,
+    "lane_kinds": null,
+    "embedding_runtime": null,
+    "strategy_class": "FAIR_COMPARISON",
+    "excluded_from_fair_comparison": false,
+    "result_status": "HARNESS_SANITY_ONLY",
+    "result_status_note": "B1/B2 use deterministic lexical n-gram proxy (NOT frozen Dense Embedding); real semantic gold = HUMAN_ADJUDICATED (ChatGPT); ngram results remain harness evidence only"
+  },
+  "candidate_pool_id": "pool-Q-SYN-D1+Q-SYN-D2+Q-SYN-D3",
+  "budget": {
+    "key": "K_LARGE",
+    "K": 40
+  },
+  "selected_source_ids": [
+    "Q-SYN-D1:100744",
+    "Q-SYN-D1:100843",
+    "Q-SYN-D1:100899",
+    "Q-SYN-D1:100386",
+    "Q-SYN-D1:100619",
+    "Q-SYN-D1:100861",
+    "Q-SYN-D1:100315",
+    "Q-SYN-D1:100536",
+    "Q-SYN-D1:100939",
+    "Q-SYN-D1:100488",
+    "Q-SYN-D1:100531",
+    "Q-SYN-D1:100567",
+    "Q-SYN-D1:100943",
+    "Q-SYN-D1:100821",
+    "Q-SYN-D1:100233",
+    "Q-SYN-D1:100571",
+    "Q-SYN-D1:100209",
+    "Q-SYN-D1:100376",
+    "Q-SYN-D1:100284",
+    "Q-SYN-D1:100211",
+    "Q-SYN-D1:100145",
+    "Q-SYN-D1:100942",
+    "Q-SYN-D1:100908",
+    "Q-SYN-D1:100753",
+    "Q-SYN-D1:100248",
+    "Q-SYN-D1:100366",
+    "Q-SYN-D1:100953",
+    "Q-SYN-D1:100450",
+    "Q-SYN-D1:100949",
+    "Q-SYN-D1:100252",
+    "Q-SYN-D1:100673",
+    "Q-SYN-D1:100771",
+    "Q-SYN-D1:100175",
+    "Q-SYN-D1:100882",
+    "Q-SYN-D1:100542",
+    "Q-SYN-D1:100368",
+    "Q-SYN-D1:100587",
+    "Q-SYN-D1:100357",
+    "Q-SYN-D1:100229",
+    "Q-SYN-D1:100332"
+  ],
+  "provenance": [
+    {
+      "source_id": "Q-SYN-D1:100744",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_145",
+      "voteupCount": 5000,
+      "createdTime": 1601927287
+    },
+    {
+      "source_id": "Q-SYN-D1:100843",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_044",
+      "voteupCount": 4996,
+      "createdTime": 1606210271
+    },
+    {
+      "source_id": "Q-SYN-D1:100899",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_100",
+      "voteupCount": 4991,
+      "createdTime": 1600249625
+    },
+    {
+      "source_id": "Q-SYN-D1:100386",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_187",
+      "voteupCount": 4985,
+      "createdTime": 1664097063
+    },
+    {
+      "source_id": "Q-SYN-D1:100619",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_020",
+      "voteupCount": 4981,
+      "createdTime": 1623065194
+    },
+    {
+      "source_id": "Q-SYN-D1:100861",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_062",
+      "voteupCount": 4978,
+      "createdTime": 1654937737
+    },
+    {
+      "source_id": "Q-SYN-D1:100315",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_116",
+      "voteupCount": 4975,
+      "createdTime": 1672185395
+    },
+    {
+      "source_id": "Q-SYN-D1:100536",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_137",
+      "voteupCount": 4970,
+      "createdTime": 1676669658
+    },
+    {
+      "source_id": "Q-SYN-D1:100939",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_140",
+      "voteupCount": 4965,
+      "createdTime": 1642542519
+    },
+    {
+      "source_id": "Q-SYN-D1:100488",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_089",
+      "voteupCount": 4962,
+      "createdTime": 1651373214
+    },
+    {
+      "source_id": "Q-SYN-D1:100531",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_132",
+      "voteupCount": 4959,
+      "createdTime": 1664504605
+    },
+    {
+      "source_id": "Q-SYN-D1:100567",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_168",
+      "voteupCount": 4954,
+      "createdTime": 1662996687
+    },
+    {
+      "source_id": "Q-SYN-D1:100943",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_144",
+      "voteupCount": 4950,
+      "createdTime": 1632617752
+    },
+    {
+      "source_id": "Q-SYN-D1:100821",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_022",
+      "voteupCount": 4949,
+      "createdTime": 1605451970
+    },
+    {
+      "source_id": "Q-SYN-D1:100233",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_034",
+      "voteupCount": 4944,
+      "createdTime": 1685147916
+    },
+    {
+      "source_id": "Q-SYN-D1:100571",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_172",
+      "voteupCount": 4944,
+      "createdTime": 1603204069
+    },
+    {
+      "source_id": "Q-SYN-D1:100209",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_010",
+      "voteupCount": 4943,
+      "createdTime": 1608999919
+    },
+    {
+      "source_id": "Q-SYN-D1:100376",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_177",
+      "voteupCount": 4937,
+      "createdTime": 1630680356
+    },
+    {
+      "source_id": "Q-SYN-D1:100284",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_085",
+      "voteupCount": 4925,
+      "createdTime": 1683204067
+    },
+    {
+      "source_id": "Q-SYN-D1:100211",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_012",
+      "voteupCount": 4916,
+      "createdTime": 1609184152
+    },
+    {
+      "source_id": "Q-SYN-D1:100145",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_146",
+      "voteupCount": 4911,
+      "createdTime": 1618018495
+    },
+    {
+      "source_id": "Q-SYN-D1:100942",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_143",
+      "voteupCount": 4891,
+      "createdTime": 1629223036
+    },
+    {
+      "source_id": "Q-SYN-D1:100908",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_109",
+      "voteupCount": 4888,
+      "createdTime": 1649179785
+    },
+    {
+      "source_id": "Q-SYN-D1:100753",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_154",
+      "voteupCount": 4882,
+      "createdTime": 1674911942
+    },
+    {
+      "source_id": "Q-SYN-D1:100248",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_049",
+      "voteupCount": 4881,
+      "createdTime": 1657148328
+    },
+    {
+      "source_id": "Q-SYN-D1:100366",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_167",
+      "voteupCount": 4874,
+      "createdTime": 1611508574
+    },
+    {
+      "source_id": "Q-SYN-D1:100953",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_154",
+      "voteupCount": 4873,
+      "createdTime": 1635237150
+    },
+    {
+      "source_id": "Q-SYN-D1:100450",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_051",
+      "voteupCount": 4869,
+      "createdTime": 1603262390
+    },
+    {
+      "source_id": "Q-SYN-D1:100949",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_150",
+      "voteupCount": 4868,
+      "createdTime": 1604113367
+    },
+    {
+      "source_id": "Q-SYN-D1:100252",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_053",
+      "voteupCount": 4866,
+      "createdTime": 1665947670
+    },
+    {
+      "source_id": "Q-SYN-D1:100673",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_074",
+      "voteupCount": 4863,
+      "createdTime": 1601948661
+    },
+    {
+      "source_id": "Q-SYN-D1:100771",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_172",
+      "voteupCount": 4854,
+      "createdTime": 1610372311
+    },
+    {
+      "source_id": "Q-SYN-D1:100175",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_176",
+      "voteupCount": 4845,
+      "createdTime": 1642556544
+    },
+    {
+      "source_id": "Q-SYN-D1:100882",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_083",
+      "voteupCount": 4845,
+      "createdTime": 1662958290
+    },
+    {
+      "source_id": "Q-SYN-D1:100542",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_143",
+      "voteupCount": 4835,
+      "createdTime": 1655180948
+    },
+    {
+      "source_id": "Q-SYN-D1:100368",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_169",
+      "voteupCount": 4827,
+      "createdTime": 1641657268
+    },
+    {
+      "source_id": "Q-SYN-D1:100587",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_188",
+      "voteupCount": 4824,
+      "createdTime": 1610460784
+    },
+    {
+      "source_id": "Q-SYN-D1:100357",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_158",
+      "voteupCount": 4818,
+      "createdTime": 1605274676
+    },
+    {
+      "source_id": "Q-SYN-D1:100229",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_030",
+      "voteupCount": 4816,
+      "createdTime": 1647244786
+    },
+    {
+      "source_id": "Q-SYN-D1:100332",
+      "question_id": "Q-SYN-D1",
+      "author_key": "mainstream_133",
+      "voteupCount": 4813,
+      "createdTime": 1640651064
+    }
+  ],
+  "metric_results": {
+    "must_see_recall": {
+      "value": 0,
+      "hit": 0,
+      "scorable": 12,
+      "scoring_status": "PROVISIONAL"
+    },
+    "aspect_recall": {
+      "value": 0,
+      "covered_aspects": 0,
+      "scorable_aspects": 3,
+      "increments": "1/3",
+      "scoring_status": "PROVISIONAL"
+    },
+    "aspect_source_recall_diagnostic": {
+      "value": 0,
+      "aspects": 3,
+      "per_aspect": [
+        0,
+        0,
+        0
+      ],
+      "note": "diagnostic only; not the approved aspect_recall"
+    },
+    "expert_recall": {
+      "value": 0,
+      "hit": 0,
+      "scorable": 5,
+      "scoring_status": "PROVISIONAL"
+    },
+    "long_tail_recall": {
+      "value": 0,
+      "hit": 0,
+      "scorable": 1,
+      "scoring_status": "PROVISIONAL"
+    },
+    "fresh_window_membership_recall": {
+      "value": 0,
+      "hit": 0,
+      "scorable": 30,
+      "scoring_status": "MECHANICAL_CONFIRMED"
+    },
+    "fresh_content_recall": {
+      "value": 0,
+      "hit": 0,
+      "scorable": 30,
+      "scoring_status": "PROVISIONAL",
+      "note": "PROVISIONAL until relevance adjudicated; fresh-but-off-topic sources are never FINAL fresh relevant gold"
+    },
+    "historical_authority_retention": {
+      "value": 0,
+      "hit": 0,
+      "scorable": 11,
+      "scoring_status": "PROVISIONAL"
+    },
+    "evidence_presence_recall": {
+      "value": 0.01951219512195122,
+      "hit": 4,
+      "scorable": 205,
+      "scoring_status": "MECHANICAL_CONFIRMED"
+    },
+    "evidence_rich_recall": {
+      "value": 0,
+      "hit": 0,
+      "scorable": 5,
+      "scoring_status": "PROVISIONAL",
+      "note": "FINAL only after evidence_quality is human-adjudicated"
+    },
+    "contradiction_claim_recall": {
+      "value": 0,
+      "covered": 0,
+      "scorable": 1,
+      "both_stances_covered": 0,
+      "scoring_status": "PROVISIONAL"
+    },
+    "cross_question_claim_recall": {
+      "value": 0,
+      "covered": 0,
+      "scorable": 1,
+      "per_claim": [
+        {
+          "claim_id": "syn-xq1-triple-view",
+          "covered": false
+        }
+      ],
+      "scoring_status": "PROVISIONAL"
+    },
+    "semantic_redundancy": {
+      "value": 0.5009087387164741,
+      "pairs": 780,
+      "scoring_status": "HARNESS_SANITY_ONLY"
+    },
+    "semantic_diversity": {
+      "value": 0.4990912612835259
+    },
+    "claim_redundancy": {
+      "value": 0,
+      "sharing": 0,
+      "total": 780,
+      "scoring_status": "PROVISIONAL"
+    },
+    "analysis_coverage": {
+      "value": 0.037037037037037035,
+      "hit": 40,
+      "scorable": 1080,
+      "scoring_status": "MECHANICAL_CONFIRMED"
+    },
+    "normalized_question_diversity": {
+      "value": 0,
+      "Q": 3,
+      "per_question": {
+        "Q-SYN-D1": 40
+      },
+      "scoring_status": "MECHANICAL_CONFIRMED"
+    },
+    "source_concentration": {
+      "selected_question_count": 1,
+      "selected_content_by_question": {
+        "Q-SYN-D1": 40
+      },
+      "largest_question_share": 1,
+      "selected_author_concentration": 0.02875000000000002,
+      "selected_content_type_distribution": {
+        "answer": 40
+      },
+      "claim_source_diversity": 0
+    },
+    "per_question_coverage_preservation": {
+      "per_question": {
+        "Q-SYN-D1": {
+          "value": 0,
+          "covered_units": 0,
+          "scorable_units": 12
+        },
+        "Q-SYN-D2": {
+          "value": 0,
+          "covered_units": 0,
+          "scorable_units": 3
+        },
+        "Q-SYN-D3": {
+          "value": 0,
+          "covered_units": 0,
+          "scorable_units": 3
+        }
+      },
+      "scorable_question_count": 3,
+      "unit_basis": "value_units"
+    },
+    "minority_question_recall_macro": {
+      "value": 0,
+      "questions": 2,
+      "excluded_largest": true,
+      "basis": "non-largest scorable reference questions by frozen pool size"
+    },
+    "minority_question_recall_min": {
+      "value": 0,
+      "basis": "non-largest scorable reference questions"
+    },
+    "minority_question_recall_micro_diagnostic": {
+      "value": 0,
+      "note": "diagnostic only"
+    },
+    "independent_source_diversity": {
+      "value": 0.925,
+      "unique_pairs": 37,
+      "n": 40
+    },
+    "cost": {
+      "relative_compute_ops": 7544.493163050345,
+      "embedding_calls": 0,
+      "embedding_cache_hits": 0,
+      "pairwise_similarity_calls": 0,
+      "selection_ops": 7544.493163050345,
+      "wall_clock_ms": 0,
+      "note": "relative_compute_ops = local relative compute (embedding_calls + pairwise_similarity_calls + selection_ops) within same machine; NOT a production cost estimate. Provider/model cost must be measured separately."
+    },
+    "false_stop_rate": {
+      "value": "NOT_RUN",
+      "reason": "no Tier-3 batch fixture in this pilot; would require adaptive stopping harness"
+    }
+  },
+  "gold_stats_by_family": {
+    "relevance": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 1080,
+      "scorable": 1080,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "must_see": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 12,
+      "scorable": 12,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "aspect_membership": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0,
+      "aspect_count": 3
+    },
+    "expertise_topic_match": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 5,
+      "scorable": 5,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "evidence_quality": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 5,
+      "scorable": 5,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "evidence_presence": {
+      "label_status": "MECHANICAL_CONFIRMED",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "freshness": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 30,
+      "scorable": 30,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "unique_long_tail_contribution": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 1,
+      "scorable": 1,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "contradiction": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0,
+      "claim_cluster_count": 1
+    },
+    "required_provenance_groups": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0,
+      "claim_group_count": 1
+    },
+    "historical_authority": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 11,
+      "scorable": 11,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "_value_units": {
+      "total": 20,
+      "scorable": 20,
+      "by_type": {
+        "must_see": {
+          "total": 12,
+          "scorable": 12
+        },
+        "critical_aspect": {
+          "total": 3,
+          "scorable": 3
+        },
+        "unique_claim": {
+          "total": 1,
+          "scorable": 1
+        },
+        "required_contradiction_side": {
+          "total": 2,
+          "scorable": 2
+        },
+        "expert_source_group": {
+          "total": 1,
+          "scorable": 1
+        },
+        "evidence_source_group": {
+          "total": 1,
+          "scorable": 1
+        }
+      }
+    }
+  },
+  "cost": {
+    "embedding_calls": 0,
+    "embedding_cache_hits": 0,
+    "pairwise_similarity_calls": 0,
+    "selection_ops": 7544.493163050345,
+    "wall_ms": 0
+  },
+  "stability": {
+    "value": 1,
+    "min": 1,
+    "pairs": 3,
+    "per_pair": [
+      1,
+      1,
+      1
+    ]
+  },
+  "warnings": [],
+  "notes": "D2 run. Real semantic gold = HUMAN_ADJUDICATED (ChatGPT, TRACK_B_SEMANTIC_GOLD_ADJUDICATION_V1.json); synthetic = FIXTURE_MECHANICAL. HARNESS_SANITY_ONLY: ngram proxy, not production embedding. No FINAL benchmark winner claims.",
+  "runtime_identity": {
+    "node": "v22.22.2",
+    "platform": "node",
+    "benchmark_harness_version": "0.1.0-pilot",
+    "embedding_runtime": {
+      "id": "benchmark-local-deterministic-ngram",
+      "version": "1.0.0",
+      "kind": "deterministic-lexical-similarity-proxy",
+      "note": "NOT a neural embedding model. Pilot-only deterministic similarity proxy (char n-gram TF vectors + cosine) so B1/B2 are runnable offline, cheap and stable. Swap point for a real embedding runtime in a later round."
+    },
+    "selectors": {
+      "B0_POPULARITY_TOP_K": "1.0.0",
+      "B1_LEXICAL_NGRAM_PROXY": "1.0.0",
+      "B2_MMR_NGRAM_PROXY": "1.0.0",
+      "B2_ORACLE_LANES": "1.0.0"
+    }
+  }
+}

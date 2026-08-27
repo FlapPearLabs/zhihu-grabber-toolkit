@@ -1,0 +1,267 @@
+[
+  {
+    "unit_id": "must_see:Q-SYN-D1:100001",
+    "question_id": "Q-SYN-D1",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-D1:100001"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-D1:100002",
+    "question_id": "Q-SYN-D1",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-D1:100002"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-D1:100003",
+    "question_id": "Q-SYN-D1",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-D1:100003"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-D1:100004",
+    "question_id": "Q-SYN-D1",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-D1:100004"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-D1:100005",
+    "question_id": "Q-SYN-D1",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-D1:100005"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-D1:100006",
+    "question_id": "Q-SYN-D1",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-D1:100006"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-D1:100007",
+    "question_id": "Q-SYN-D1",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-D1:100007"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-D1:100008",
+    "question_id": "Q-SYN-D1",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-D1:100008"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-D1:100009",
+    "question_id": "Q-SYN-D1",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-D1:100009"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-D1:100010",
+    "question_id": "Q-SYN-D1",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-D1:100010"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-D2:200001",
+    "question_id": "Q-SYN-D2",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-D2:200001"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-D3:300051",
+    "question_id": "Q-SYN-D3",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-D3:300051"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-mainstream",
+    "question_id": "Q-SYN-D1",
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-mainstream",
+    "supporting_source_ids": [
+      "Q-SYN-D1:100001",
+      "Q-SYN-D1:100002",
+      "Q-SYN-D1:100003",
+      "Q-SYN-D1:100004",
+      "Q-SYN-D1:100005",
+      "Q-SYN-D1:100006",
+      "Q-SYN-D1:100007",
+      "Q-SYN-D1:100008",
+      "Q-SYN-D1:100009",
+      "Q-SYN-D1:100010"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-defects",
+    "question_id": "Q-SYN-D2",
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-defects",
+    "supporting_source_ids": [
+      "Q-SYN-D2:200001",
+      "Q-SYN-D2:200002",
+      "Q-SYN-D2:200003",
+      "Q-SYN-D2:200004",
+      "Q-SYN-D2:200005"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-compliance",
+    "question_id": "Q-SYN-D3",
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-compliance",
+    "supporting_source_ids": [
+      "Q-SYN-D3:300001",
+      "Q-SYN-D3:300002",
+      "Q-SYN-D3:300003",
+      "Q-SYN-D3:300004",
+      "Q-SYN-D3:300005",
+      "Q-SYN-D3:300006",
+      "Q-SYN-D3:300007",
+      "Q-SYN-D3:300008",
+      "Q-SYN-D3:300009",
+      "Q-SYN-D3:300010",
+      "Q-SYN-D3:300011",
+      "Q-SYN-D3:300012",
+      "Q-SYN-D3:300013",
+      "Q-SYN-D3:300014",
+      "Q-SYN-D3:300015",
+      "Q-SYN-D3:300016",
+      "Q-SYN-D3:300017",
+      "Q-SYN-D3:300018",
+      "Q-SYN-D3:300019",
+      "Q-SYN-D3:300020",
+      "Q-SYN-D3:300021",
+      "Q-SYN-D3:300022",
+      "Q-SYN-D3:300023",
+      "Q-SYN-D3:300024",
+      "Q-SYN-D3:300025",
+      "Q-SYN-D3:300026",
+      "Q-SYN-D3:300027",
+      "Q-SYN-D3:300028",
+      "Q-SYN-D3:300029",
+      "Q-SYN-D3:300030"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:Q-SYN-D3:300051",
+    "question_id": "Q-SYN-D3",
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "Q-SYN-D3:300051"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "contra_side:syn-c1-platform-a-verdict:for",
+    "question_id": "Q-SYN-D1",
+    "unit_type": "required_contradiction_side",
+    "claim_id": "syn-c1-platform-a-verdict",
+    "stance": "for",
+    "supporting_source_ids": [
+      "Q-SYN-D1:100001",
+      "Q-SYN-D1:100002",
+      "Q-SYN-D1:100003",
+      "Q-SYN-D1:100004",
+      "Q-SYN-D1:100005"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "contra_side:syn-c1-platform-a-verdict:against",
+    "question_id": "Q-SYN-D2",
+    "unit_type": "required_contradiction_side",
+    "claim_id": "syn-c1-platform-a-verdict",
+    "stance": "against",
+    "supporting_source_ids": [
+      "Q-SYN-D2:200001",
+      "Q-SYN-D2:200002",
+      "Q-SYN-D2:200003",
+      "Q-SYN-D2:200004",
+      "Q-SYN-D2:200005"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "expert_source_group",
+    "question_id": null,
+    "unit_type": "expert_source_group",
+    "supporting_source_ids": [
+      "Q-SYN-D2:200001",
+      "Q-SYN-D2:200002",
+      "Q-SYN-D2:200003",
+      "Q-SYN-D2:200004",
+      "Q-SYN-D2:200005"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "evidence_source_group",
+    "question_id": null,
+    "unit_type": "evidence_source_group",
+    "supporting_source_ids": [
+      "Q-SYN-D2:200001",
+      "Q-SYN-D2:200002",
+      "Q-SYN-D2:200003",
+      "Q-SYN-D2:200004",
+      "Q-SYN-D2:200005"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  }
+]

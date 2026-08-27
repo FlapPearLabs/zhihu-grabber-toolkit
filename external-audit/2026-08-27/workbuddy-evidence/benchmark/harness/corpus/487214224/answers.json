@@ -1,0 +1,444 @@
+{
+  "questionId": "487214224",
+  "questionTitle": "入坑零代码、低代码、APaas系统，你需要了解系统支持业务线和业务数量是否与本团队相匹配有哪些坑？",
+  "answerCount": 3,
+  "url": "https://www.zhihu.com/question/487214224",
+  "question": {
+    "id": "487214224",
+    "title": "入坑零代码、低代码、APaas系统，你需要了解系统支持业务线和业务数量是否与本团队相匹配有哪些坑？",
+    "descriptionHtml": "<p>零代码、低代码、APaas系统热度日高，争论不断。系统是否支持大一点团队，业务线多一点团队、业务数量多团队使用？</p>",
+    "descriptionMarkdown": "零代码、低代码、APaas系统热度日高，争论不断。系统是否支持大一点团队，业务线多一点团队、业务数量多团队使用？",
+    "topics": [
+      {
+        "id": "19557683",
+        "name": "ERP"
+      },
+      {
+        "id": "19575317",
+        "name": "数字化"
+      },
+      {
+        "id": "20920983",
+        "name": "aPaaS"
+      },
+      {
+        "id": "21217894",
+        "name": "低代码"
+      },
+      {
+        "id": "21334942",
+        "name": "零代码"
+      }
+    ]
+  },
+  "fetchedAt": "2026-08-13T13:39:52.359Z",
+  "answers": [
+    {
+      "id": "2124048604",
+      "author": "领悟杂谈",
+      "url": "https://www.zhihu.com/question/487214224/answer/2124048604",
+      "content": "<p data-pid=\"n7T8_UAV\">   当前零代码、低代码、APaas系统话题热度不断提高，随之其是否能实现复杂业务一直是业内争吵的焦点。很多公司准备入坑，但不知道这坑到底有多深，本人根据切身经验加以探讨。</p><p data-pid=\"jxT9AvO-\">整体上从对数据量和业务量的支撑能力，将能力划分为：适合小团队使用；适合公司级团队使用；集团化公司使用。这三类团队特点：</p><p data-pid=\"mMKjsfQk\">（1）小团队：组织比较扁平，成员之间关系平等；数据组织比较随意、业务相对简单、数据量不是太大。</p><p data-pid=\"d1J12g0N\">（2）公司级团队：公司具有多部门组织，成员之间上下极关系明确；有一些基本管理规范，对于数据规范性有一定要求；业务涉及环节比较多，业务数据量比较大；</p><p data-pid=\"jsOAXgKI\">（3）集团化公司：公司体系比较完善，需对多级公司进行管理，有典型体线化管理；对于管理规范性要求比较高，对于数据规范性要求高；业务多元化、多态化；业务数量极大。</p><p data-pid=\"04NwowAj\">一、组织机构</p><p data-pid=\"DjpeZaWg\">  公司组织机构是企业业务重要管控单位，在管理过程中是重要管理主体，具要重要管理意义。组织机构在企业管理中不仅仅只是一个树形结构，其体建了企业的治理结构。从组织机构功能设计，我们可以识别出，该软件对于使用团队规模支撑能力。先以集团公司为例，说明其重要性：</p><p data-pid=\"_qxDiZwp\">  （1）公司机构中：办公室、人力资源部、财务部等机构设置体现了企业权力制衡、相互监督、相互制约结构设计，从一定层面体现企业管理能力。公司组织机构根据企业业务、战略布局进行规划设计。最终要体现出定编、定员、定岗管理要求。</p><p data-pid=\"2U1JHcQG\">（2）组织机构对于集团公司管理相对比较复杂。组织机构上涉及集团、公司、事业部、部门、小组等属性。同时，组织机构在实际使用时，存在根据选择部门找所在公司的需求、或所在集团的需求。组织机构上的公司，并不完全是该公司管理小的所有公司，主要原因为公司部门化管理、或仅用于融资等操作，在实际企业管理中，并不实际作为一级组织机构进行管理。</p><p data-pid=\"LXixhaZY\">（3）对于集团公司，实行条线化管理，如人力资源、财务、风控等体系，因此，每个公司下都可能会有人力资源部、财务部、风控部等部门。集团公司同名部门需要区分所在集团、公司、事业部等。</p><p data-pid=\"oXK9EDE8\">（4）组织机构会定义调整，可能新设、变更、撤消。涉及历史管理要求。</p><p data-pid=\"rhOcGSFA\">（5）归入组织机构员工，在后续使用中，选择人员后，需要根据人员获取所在部门、所在事业部、所在公司、所在集团等信息。以便减少信息录入，以及对人员进行区分（大公司同名人员众多）。</p><p data-pid=\"lc2nCGCR\">从以上说明，组织承载了大量管控要求，属于系统基本功能。</p><p data-pid=\"mJRfo3_B\">  目前，市场上涉及组织机构大体有三种类型：</p><p data-pid=\"PGLGBUfe\">  1、软件中没有预置组织机构维护类</p><p data-pid=\"nIe3ApMq\"> 市场上部分软件没有预置组织机构维据，或者没有通自定义模板表实现组织机构功能（需要支持树形控件）。</p><p data-pid=\"F0gEp3KC\">  此类软件由于缺乏大量组织机构特性，更无法实现复杂权限管理，很难适用于企业级应用、集团级应用。</p><p data-pid=\"KiyBdoIp\">  2、提供简单组织机构维护和使用类</p><p data-pid=\"6a4BvS6l\">  此类软件一般提供简单部门名称和上下级关系维护，没有提供组织推展信息。由于没有定义组织机构编码，无法对同名组织机构进行区分。这决定义其很难适用集团公司使用。</p><p data-pid=\"saQ9kBQO\">分析该功能，需要分别从定义和使用进行分析。</p><p data-pid=\"ZjS9Vcpz\">（1）定义</p><p data-pid=\"53ho9eJY\">  典型定义见下图：              </p><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-ef2afbfa2d7e6a072f0d86a9cbda3308_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"252\" data-rawheight=\"276\" data-original-token=\"v2-6e71d081467e7059e2ab84c4477fbd76\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-399aa7aaf921fcca8e7b271c1641c77e_720w.jpg?source=1def8aca\" class=\"content_image\" width=\"252\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;252&#39; height=&#39;276&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"252\" data-rawheight=\"276\" data-original-token=\"v2-6e71d081467e7059e2ab84c4477fbd76\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-399aa7aaf921fcca8e7b271c1641c77e_720w.jpg?source=1def8aca\" class=\"content_image lazy\" width=\"252\" data-actualsrc=\"https://pica.zhimg.com/50/v2-ef2afbfa2d7e6a072f0d86a9cbda3308_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"T82SHLTh\">      （图1、某1软件组织机构定义）  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-54b9f79122d3713a6d92ac75eb0b82f5_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"565\" data-rawheight=\"386\" data-original-token=\"v2-eb7b4f803c9a68d6c5d957d0213474f7\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-1c8b85d8a239e361ca4fb130b71b1b8e_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"565\" data-original=\"https://pic1.zhimg.com/v2-54b9f79122d3713a6d92ac75eb0b82f5_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;565&#39; height=&#39;386&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"565\" data-rawheight=\"386\" data-original-token=\"v2-eb7b4f803c9a68d6c5d957d0213474f7\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-1c8b85d8a239e361ca4fb130b71b1b8e_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"565\" data-original=\"https://pic1.zhimg.com/v2-54b9f79122d3713a6d92ac75eb0b82f5_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-54b9f79122d3713a6d92ac75eb0b82f5_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"a3SlTvuJ\">（图2、某2软件组织机构及岗位定义）</p><p data-pid=\"MSOGEvXg\">  本图定义，对于大组织机构定义，如数千组织机构，可能出现崩溃的情况。  </p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-0adfdf6bc6a50db33d0eb501e9aa6e00_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1138\" data-rawheight=\"485\" data-original-token=\"v2-9c1f888169c869932b68fed414f8c869\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-5820d9f72e06d62484ff63e57b3e0fa8_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1138\" data-original=\"https://picx.zhimg.com/v2-0adfdf6bc6a50db33d0eb501e9aa6e00_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1138&#39; height=&#39;485&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1138\" data-rawheight=\"485\" data-original-token=\"v2-9c1f888169c869932b68fed414f8c869\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-5820d9f72e06d62484ff63e57b3e0fa8_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1138\" data-original=\"https://picx.zhimg.com/v2-0adfdf6bc6a50db33d0eb501e9aa6e00_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-0adfdf6bc6a50db33d0eb501e9aa6e00_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"UWVrOtav\">（图3、某3软件组织机构定义）  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-0344eb89d1dded1b195e1d59b78767c4_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"382\" data-rawheight=\"297\" data-original-token=\"v2-726f15556077d7278a20432773eecf0a\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-58c7818e592b97edea8f4a2425529f7c_720w.jpg?source=1def8aca\" class=\"content_image\" width=\"382\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;382&#39; height=&#39;297&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"382\" data-rawheight=\"297\" data-original-token=\"v2-726f15556077d7278a20432773eecf0a\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-58c7818e592b97edea8f4a2425529f7c_720w.jpg?source=1def8aca\" class=\"content_image lazy\" width=\"382\" data-actualsrc=\"https://picx.zhimg.com/50/v2-0344eb89d1dded1b195e1d59b78767c4_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"zS10s6mT\">（图4、某4软件添加组织机构定义）  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-a821a628d99c38a932b9d478684f44b1_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"484\" data-rawheight=\"313\" data-original-token=\"v2-cccf3e81e9227b173295cd4f296e5359\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-512cc6c3c90fbdf178e32bb133d565fa_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"484\" data-original=\"https://picx.zhimg.com/v2-a821a628d99c38a932b9d478684f44b1_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;484&#39; height=&#39;313&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"484\" data-rawheight=\"313\" data-original-token=\"v2-cccf3e81e9227b173295cd4f296e5359\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-512cc6c3c90fbdf178e32bb133d565fa_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"484\" data-original=\"https://picx.zhimg.com/v2-a821a628d99c38a932b9d478684f44b1_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-a821a628d99c38a932b9d478684f44b1_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"wrlS6xn0\">（图5、某5软件添加组织机构定义）</p><p data-pid=\"60wc4dCH\"> 本图定义，难区分同名组织机构。难承载组织机构更多信息。</p><p data-pid=\"MSBq4DMg\">注：总结，一般将组织机构、人员定义为通讯录的，往往仅适用于小规模公司。</p><p data-pid=\"8lGwzPbW\">（2）组织机构和人员选择</p><p data-pid=\"5PZzL0V6\">组织机构使用，往往与人员相关。  </p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-2cdb86350db6ba6533f789b9c3d82870_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"862\" data-rawheight=\"269\" data-original-token=\"v2-5526547ac5ea08d46895247da39411a3\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-46582bbfcf94a99096a42c099d930759_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"862\" data-original=\"https://picx.zhimg.com/v2-2cdb86350db6ba6533f789b9c3d82870_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;862&#39; height=&#39;269&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"862\" data-rawheight=\"269\" data-original-token=\"v2-5526547ac5ea08d46895247da39411a3\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-46582bbfcf94a99096a42c099d930759_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"862\" data-original=\"https://picx.zhimg.com/v2-2cdb86350db6ba6533f789b9c3d82870_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-2cdb86350db6ba6533f789b9c3d82870_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"iGrOgNnQ\">（图6、某软件选择人员）  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-24b339fb5c52f8c724cb8a7e489e9586_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"472\" data-rawheight=\"296\" data-original-token=\"v2-be55364044f9712e713720c64f564fd0\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-447321c6d073d0bfbe91897c8ac468f1_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"472\" data-original=\"https://picx.zhimg.com/v2-24b339fb5c52f8c724cb8a7e489e9586_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;472&#39; height=&#39;296&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"472\" data-rawheight=\"296\" data-original-token=\"v2-be55364044f9712e713720c64f564fd0\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-447321c6d073d0bfbe91897c8ac468f1_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"472\" data-original=\"https://picx.zhimg.com/v2-24b339fb5c52f8c724cb8a7e489e9586_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-24b339fb5c52f8c724cb8a7e489e9586_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"eJCzCi_Y\">（图7，某软件选择人员）</p><p data-pid=\"cZVbAwHk\">上图选择人员，未对人员进行分类选择，在人员数量比较多时，如数千、数万，则加载速度会比较慢。网络传输数据量比较大。  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-ed70211f730e10199d65b87c9069054c_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"474\" data-rawheight=\"498\" data-original-token=\"v2-5407fd0a7b5748c00b4e16b4d6afb86a\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-57b6e6e74f82689f11b5fcaaccdfa685_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"474\" data-original=\"https://picx.zhimg.com/v2-ed70211f730e10199d65b87c9069054c_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;474&#39; height=&#39;498&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"474\" data-rawheight=\"498\" data-original-token=\"v2-5407fd0a7b5748c00b4e16b4d6afb86a\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-57b6e6e74f82689f11b5fcaaccdfa685_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"474\" data-original=\"https://picx.zhimg.com/v2-ed70211f730e10199d65b87c9069054c_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-ed70211f730e10199d65b87c9069054c_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"oWL8n8zg\">（图8，某软件选择人员）</p><p data-pid=\"lWVgNMDE\">上图选择人员，按组织机构分类筛选人员，将组织机构和人员加载在一棵树控件件。这一界面设计，如果组织机构数千、人员数千和数万，则加载效率比较低下，同时，网络传输数据量比较大。相对来说图9相对合理。  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-5c75b51374e6390e249151365547cec6_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"592\" data-rawheight=\"571\" data-original-token=\"v2-874720b005f4cac8faa4dce8617382e9\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-f60d71c6c87a42594e89d3664630a98a_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"592\" data-original=\"https://picx.zhimg.com/v2-5c75b51374e6390e249151365547cec6_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;592&#39; height=&#39;571&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"592\" data-rawheight=\"571\" data-original-token=\"v2-874720b005f4cac8faa4dce8617382e9\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-f60d71c6c87a42594e89d3664630a98a_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"592\" data-original=\"https://picx.zhimg.com/v2-5c75b51374e6390e249151365547cec6_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-5c75b51374e6390e249151365547cec6_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"DOhysF6V\">（图9，某软件按组织机权分类选择人员）</p><p data-pid=\"qBzumDvO\">（3）组织机构和人员在数据上展示</p><p data-pid=\"bJwdVP5y\">对于小组织团队组织机构或人员重名概念比较低，但对于较大团队组织机构、人员为普遍现象。对于单公司，致少应支持同名人员区分。目前，大多数软件设计界面暂无法进行此类数据区分。如下图：  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-aad0de110be4c3adfaeaedea62bec236_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"821\" data-rawheight=\"402\" data-original-token=\"v2-5820de13362fd08b82bb08949e6f06fe\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-ba574a312119e0a9db3145133f8ba6d5_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"821\" data-original=\"https://picx.zhimg.com/v2-aad0de110be4c3adfaeaedea62bec236_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;821&#39; height=&#39;402&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"821\" data-rawheight=\"402\" data-original-token=\"v2-5820de13362fd08b82bb08949e6f06fe\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-ba574a312119e0a9db3145133f8ba6d5_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"821\" data-original=\"https://picx.zhimg.com/v2-aad0de110be4c3adfaeaedea62bec236_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-aad0de110be4c3adfaeaedea62bec236_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"2xKcFUDT\">（图10，某软件部门选择结果）  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-a7beadebfceeaef329e1d80944417e3e_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"998\" data-rawheight=\"210\" data-original-token=\"v2-f613c4186614521e0ed6a32640a945b2\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-7bddb8b18f5d5ca2ff59aae1665699d7_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"998\" data-original=\"https://pica.zhimg.com/v2-a7beadebfceeaef329e1d80944417e3e_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;998&#39; height=&#39;210&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"998\" data-rawheight=\"210\" data-original-token=\"v2-f613c4186614521e0ed6a32640a945b2\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-7bddb8b18f5d5ca2ff59aae1665699d7_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"998\" data-original=\"https://pica.zhimg.com/v2-a7beadebfceeaef329e1d80944417e3e_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-a7beadebfceeaef329e1d80944417e3e_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"SDe3HboE\">（图11，某软件部门选择结果）</p><p data-pid=\"b24bDtAh\">以类设计缺陷是，部门与人员单独选择录入，无法根据选择人员自动补录人员所在部门信息，输入工作量比较大。对于集团公司，需要同时录入所在集团、公司、事业部等信息时，输出工作量更大。因此，此类设计仅适用于单公司使用。</p><p data-pid=\"ECCPiZXW\">（3）权限分配时</p><p data-pid=\"fNvk3-fO\">模板表权限分配时，同上。主要区分是否支持多用户量权限分配，以及人员是否能区分公司、部门、员工编号（或员工账户）。这里不再重复。</p><p data-pid=\"pqSd5HcE\">3、提供可扩展组织机构类</p><p data-pid=\"6DziFB6e\">提供可扩展织机构类系统，一般在组织机构上提供字段扩展能力，或者，在表模板中提供更新组织机构表能力设计（即通过自定义模板扩展组织机构信息，将组织机构定义同步更新的系统组织机构表）。目前市场上此类软件较少。</p><p data-pid=\"0yc37pDv\">另外，在组织机构等信息选择时，支持将人员、组织机构信息多列一次性返回表列表。相关界面例示如下：  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-ce8f2de5870f5b7537e739f40cadc30b_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1141\" data-rawheight=\"627\" data-original-token=\"v2-f9ef06459f2171293060e29ba5c747e4\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-cf2cdd1f6ac82ef1c2ad20dcfa35ece9_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1141\" data-original=\"https://pica.zhimg.com/v2-ce8f2de5870f5b7537e739f40cadc30b_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1141&#39; height=&#39;627&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1141\" data-rawheight=\"627\" data-original-token=\"v2-f9ef06459f2171293060e29ba5c747e4\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-cf2cdd1f6ac82ef1c2ad20dcfa35ece9_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1141\" data-original=\"https://pica.zhimg.com/v2-ce8f2de5870f5b7537e739f40cadc30b_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-ce8f2de5870f5b7537e739f40cadc30b_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"mJ3vuCG1\">（图12，某软件选择部门、人员等返回多列信息）</p><p data-pid=\"xb0xAW5v\">通过以上论述，可明确，组织机构信息可扩展，可同时返回多列信息是集团类团队业务所必备功能。否则开发工作量将比较大。</p><p data-pid=\"dKGcJ3P4\">二、业务量支持能力</p><p data-pid=\"1a6OCmEL\">业务量支持主要从两个角色进行评估：模板表支持数量、数据加载方式。</p><p data-pid=\"QZxrQOX7\">1、模板表</p><p data-pid=\"j5cdIGx_\">模板表从零代码、低代码、APaas系统来看，决定了支持多大数量的业务。重点考察模板表的排列显示方式，是否能对模板表进行分类管理。</p><p data-pid=\"rujkszPT\">从市场上来看，模板表管理分为两类：</p><p data-pid=\"y96CEcO2\">（1）以项端多页签形式管理模板表</p><p data-pid=\"7qeNKqqe\">此类软件主要模仿Airtable软件样式，如下图：  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-a38106e90725432f9c059bbcb8bdcc6e_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1606\" data-rawheight=\"1180\" data-original-token=\"v2-fb526b385c85e58ce2a3e51be745fc9e\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-2a6e68f22512936e21bd7f841a79a42f_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1606\" data-original=\"https://picx.zhimg.com/v2-a38106e90725432f9c059bbcb8bdcc6e_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1606&#39; height=&#39;1180&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1606\" data-rawheight=\"1180\" data-original-token=\"v2-fb526b385c85e58ce2a3e51be745fc9e\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-2a6e68f22512936e21bd7f841a79a42f_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1606\" data-original=\"https://picx.zhimg.com/v2-a38106e90725432f9c059bbcb8bdcc6e_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-a38106e90725432f9c059bbcb8bdcc6e_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"n6fcSz-z\">（图13，Airtable模板页签管理）  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-074721dd4c850e9a390011fadde89b97_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1267\" data-rawheight=\"297\" data-original-token=\"v2-970656b7ae0a81f23b8ca2e6578a776e\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-584e7558029c9c84573c3ec0d6f43798_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1267\" data-original=\"https://picx.zhimg.com/v2-074721dd4c850e9a390011fadde89b97_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1267&#39; height=&#39;297&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1267\" data-rawheight=\"297\" data-original-token=\"v2-970656b7ae0a81f23b8ca2e6578a776e\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-584e7558029c9c84573c3ec0d6f43798_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1267\" data-original=\"https://picx.zhimg.com/v2-074721dd4c850e9a390011fadde89b97_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-074721dd4c850e9a390011fadde89b97_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"hDAGBr9R\">（图14、某软件模板页签管理界面）  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-d549c919deabea6f8d08f650d0f19af5_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"690\" data-rawheight=\"356\" data-original-token=\"v2-09bdbec8aa71d3c43a3b18f15d3497c5\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-87bc5212762dff5d7c1399c54a5e73f9_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"690\" data-original=\"https://pic1.zhimg.com/v2-d549c919deabea6f8d08f650d0f19af5_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;690&#39; height=&#39;356&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"690\" data-rawheight=\"356\" data-original-token=\"v2-09bdbec8aa71d3c43a3b18f15d3497c5\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-87bc5212762dff5d7c1399c54a5e73f9_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"690\" data-original=\"https://pic1.zhimg.com/v2-d549c919deabea6f8d08f650d0f19af5_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-d549c919deabea6f8d08f650d0f19af5_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"lgHp123v\">（图15、某软件模板页签管理界面）</p><p data-pid=\"GaSp4CML\">以上模板表管理缺陷是，业务表数量比较多时，页签平铺展开，可支持页签数量受到限制；无法对模板表进行分类管理。</p><p data-pid=\"m9HI_Cpr\">（2）提供左边功能分类栏进行管理</p><p data-pid=\"NbjxWOBL\">对模板表进行分类管理，有利于对模板表进行有效组织。通过折叠分类树，可以增加对模板表数量的管理能力。  </p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-bea686a5d27d9a1aeaa0c6471f91df20_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"954\" data-rawheight=\"827\" data-original-token=\"v2-b5492836e9856290ab418297d489a9cc\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-3fbd7f214dab99938c8afcd8db41ad89_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"954\" data-original=\"https://picx.zhimg.com/v2-bea686a5d27d9a1aeaa0c6471f91df20_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;954&#39; height=&#39;827&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"954\" data-rawheight=\"827\" data-original-token=\"v2-b5492836e9856290ab418297d489a9cc\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-3fbd7f214dab99938c8afcd8db41ad89_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"954\" data-original=\"https://picx.zhimg.com/v2-bea686a5d27d9a1aeaa0c6471f91df20_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-bea686a5d27d9a1aeaa0c6471f91df20_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"zYomK76Y\">（图16、某软件功能分类管理界面）  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-1decbb270c7aaf1b5195b9611585e73b_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1176\" data-rawheight=\"531\" data-original-token=\"v2-0336e76d469b1b79f442b874c4ffce57\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-d3c4edadf4d5100e4bd6d45ce038bcda_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1176\" data-original=\"https://pic1.zhimg.com/v2-1decbb270c7aaf1b5195b9611585e73b_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1176&#39; height=&#39;531&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1176\" data-rawheight=\"531\" data-original-token=\"v2-0336e76d469b1b79f442b874c4ffce57\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-d3c4edadf4d5100e4bd6d45ce038bcda_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1176\" data-original=\"https://pic1.zhimg.com/v2-1decbb270c7aaf1b5195b9611585e73b_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-1decbb270c7aaf1b5195b9611585e73b_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"B__egTq2\">（图17、某软件功能分类管理界面）</p><p data-pid=\"aqfBOhg_\">综上所述，项端页签模板表管理形式，仅适用于业务流程和功能简单业务。对于业务环节众多业务不适应。</p><p data-pid=\"Lq_5lw1O\">2、数据加载方式</p><p data-pid=\"2Shz0Ww2\">EXCEL数据量最大支持65万条，数据库应用无此限制，但系统通过网络实现数据加载，因此，需要重点考察是否有进行分类加载处理、以及减少默认加载数量设计。</p><p data-pid=\"Nnmos0_c\">此类设计主要从默认过滤查询条件和左栏分类管理树解决。</p><p data-pid=\"iGEFeap4\">（1）默认查询条件</p><p data-pid=\"TLWYvu4G\">默认查询条件，可以缺少数据加载数量。如下图：  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-be3e20087806a7dba66f19a8776706f0_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1117\" data-rawheight=\"200\" data-original-token=\"v2-2805820a9b62fde8917ffa7950776e2e\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-a90110956794c1d0f11cba05a1302d3b_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1117\" data-original=\"https://pic1.zhimg.com/v2-be3e20087806a7dba66f19a8776706f0_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1117&#39; height=&#39;200&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1117\" data-rawheight=\"200\" data-original-token=\"v2-2805820a9b62fde8917ffa7950776e2e\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-a90110956794c1d0f11cba05a1302d3b_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1117\" data-original=\"https://pic1.zhimg.com/v2-be3e20087806a7dba66f19a8776706f0_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-be3e20087806a7dba66f19a8776706f0_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"mQ4r3Ulx\">（图18、默认筛选体件参数界面）</p><p data-pid=\"AN4wHDbD\">（2）在栏分类管理树</p><p data-pid=\"HHT3oUPt\">在数据左边提供组织机构树控件，对右边数据进行快速过滤。如下图，通过点先组织机构对数据进行快速筛选。  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-c9cf471c098e989ddeb3f6f8172aaf4a_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"720\" data-rawheight=\"289\" data-original-token=\"v2-936cafdad478175c25a360d3f31a5248\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-20ecd1a0df0d96162d3db18098d9990a_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"720\" data-original=\"https://picx.zhimg.com/v2-c9cf471c098e989ddeb3f6f8172aaf4a_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;720&#39; height=&#39;289&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"720\" data-rawheight=\"289\" data-original-token=\"v2-936cafdad478175c25a360d3f31a5248\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-20ecd1a0df0d96162d3db18098d9990a_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"720\" data-original=\"https://picx.zhimg.com/v2-c9cf471c098e989ddeb3f6f8172aaf4a_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-c9cf471c098e989ddeb3f6f8172aaf4a_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"Tc9XKND8\">（图19、默认筛选体件参数界面）</p><p data-pid=\"P0CsKNDL\">注：组织机构使用下拉树控件时，操作步骤过多（每次切换必须点击下选，并且重新打开组织机构树），不利于简化操作步聚。  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-583e7e1e870f84076904c0b88d1ee6ad_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"343\" data-rawheight=\"208\" data-original-token=\"v2-08ba7e1029a0bac853155a166c2bbf24\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-790cff50ae353fbc89649f46e7135603_720w.jpg?source=1def8aca\" class=\"content_image\" width=\"343\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;343&#39; height=&#39;208&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"343\" data-rawheight=\"208\" data-original-token=\"v2-08ba7e1029a0bac853155a166c2bbf24\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-790cff50ae353fbc89649f46e7135603_720w.jpg?source=1def8aca\" class=\"content_image lazy\" width=\"343\" data-actualsrc=\"https://picx.zhimg.com/50/v2-583e7e1e870f84076904c0b88d1ee6ad_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"4zUSazQN\">（图20、下拉选择组织机构界面）</p><p data-pid=\"0Wn_C1H7\">注：部分软件对于树形分类控件支持不足，从而弱化了对数据的分类管理能力。这意味着，如果想要对多级仓库、销售大区等管理时，很难直观显示层次结构。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-299b9fb57316fba8e71131e26a9fd6e2_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"275\" data-rawheight=\"607\" data-original-token=\"v2-55c44fd9d8a4da019be079fe5a7ccc5e\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-ce31f162137b4f47795d38493ee6fdf0_720w.jpg?source=1def8aca\" class=\"content_image\" width=\"275\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;275&#39; height=&#39;607&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"275\" data-rawheight=\"607\" data-original-token=\"v2-55c44fd9d8a4da019be079fe5a7ccc5e\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-ce31f162137b4f47795d38493ee6fdf0_720w.jpg?source=1def8aca\" class=\"content_image lazy\" width=\"275\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-299b9fb57316fba8e71131e26a9fd6e2_720w.jpg?source=1def8aca\"/></figure><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-4f8e8297b240e6abed4e4dc15f1bdb5b_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"295\" data-rawheight=\"922\" data-original-token=\"v2-3f973e4ac2560daea797af1d32eed02b\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-e789ad8c214c5e1ea32c8b73dfef6119_720w.jpg?source=1def8aca\" class=\"content_image\" width=\"295\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;295&#39; height=&#39;922&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"295\" data-rawheight=\"922\" data-original-token=\"v2-3f973e4ac2560daea797af1d32eed02b\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-e789ad8c214c5e1ea32c8b73dfef6119_720w.jpg?source=1def8aca\" class=\"content_image lazy\" width=\"295\" data-actualsrc=\"https://picx.zhimg.com/50/v2-4f8e8297b240e6abed4e4dc15f1bdb5b_720w.jpg?source=1def8aca\"/></figure><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-537b7c1d4d8d7e6d74b66009dfe20edb_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"252\" data-rawheight=\"703\" data-original-token=\"v2-69ddcadda8f767fb552a0d824d7977b0\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-8869802591b666eda7678540e645a4fa_720w.jpg?source=1def8aca\" class=\"content_image\" width=\"252\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;252&#39; height=&#39;703&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"252\" data-rawheight=\"703\" data-original-token=\"v2-69ddcadda8f767fb552a0d824d7977b0\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-8869802591b666eda7678540e645a4fa_720w.jpg?source=1def8aca\" class=\"content_image lazy\" width=\"252\" data-actualsrc=\"https://picx.zhimg.com/50/v2-537b7c1d4d8d7e6d74b66009dfe20edb_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"e9DFtfsq\">（图21，摘取3个主流软件无树形字段）</p><p data-pid=\"NuF6dvML\">三、数据规范化管理</p><p data-pid=\"5odwfmKZ\">数据规范化对于企业管理是重中之重，曾有经历多个部门拿来的数据对不上，并且不知道哪个数据是正确数据。而数据夫范化对不同规模企业重要小相差比较大，对于小团队要求相对弱，团队越大、跨部分越多，要求越高。</p><p data-pid=\"7YuRXd9U\">数据规范化中一个重要的概念和功能是数据字典。存传统ERP中，数据字典为系统必备公司，其主要解决相同类型的字段，引用相同字典，在系统修改时，通过修改字典一次性修改所有功能模块。同时，对于字典进行权限控制，避免数据字典被任意修改，导致数据差异情况出现。</p><p data-pid=\"8MWAUQgc\">数据字典示例如下图：  </p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-9a759b4bdc57929933a4a31414df1fcf_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"705\" data-rawheight=\"365\" data-original-token=\"v2-24e97f8d63d7a4e13edde03d2e5768c2\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-941f81e812a2bffaa208b9e0d964f9c7_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"705\" data-original=\"https://picx.zhimg.com/v2-9a759b4bdc57929933a4a31414df1fcf_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;705&#39; height=&#39;365&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"705\" data-rawheight=\"365\" data-original-token=\"v2-24e97f8d63d7a4e13edde03d2e5768c2\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-941f81e812a2bffaa208b9e0d964f9c7_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"705\" data-original=\"https://picx.zhimg.com/v2-9a759b4bdc57929933a4a31414df1fcf_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-9a759b4bdc57929933a4a31414df1fcf_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"nj5nhlBY\">（图22，数据字典图）</p><p data-pid=\"CFi7Sdzs\">  目前，市场上软件大多数系统数据字典概念比较弱。分为：仅仅提供单表单定义、跨表单引用、集中提供数据字典三大类。</p><p data-pid=\"KGb3-D1-\">1、单表单定义</p><p data-pid=\"qS6P5ftf\">单表单定义，仅支持在一个表单中定义，可以任意修改。如下图：  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-51f8ac7a00dcd863be0d4b4852273a65_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"409\" data-rawheight=\"444\" data-original-token=\"v2-c06bc0bb3370689faeff61c75224647c\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-c7d4582a1d0b265cb3b0b103e1682f9e_720w.jpg?source=1def8aca\" class=\"content_image\" width=\"409\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;409&#39; height=&#39;444&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"409\" data-rawheight=\"444\" data-original-token=\"v2-c06bc0bb3370689faeff61c75224647c\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-c7d4582a1d0b265cb3b0b103e1682f9e_720w.jpg?source=1def8aca\" class=\"content_image lazy\" width=\"409\" data-actualsrc=\"https://picx.zhimg.com/50/v2-51f8ac7a00dcd863be0d4b4852273a65_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"Dbjk4qQg\">（图23，airbable字段下选定义）</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-45a7f01a816fc2d5b10dec2855ee08b3_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"422\" data-rawheight=\"248\" data-original-token=\"v2-817b6fcf3864167ef1b011292aa5442f\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-751c763d20ff70395e5f6ffc190e03e1_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"422\" data-original=\"https://picx.zhimg.com/v2-45a7f01a816fc2d5b10dec2855ee08b3_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;422&#39; height=&#39;248&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"422\" data-rawheight=\"248\" data-original-token=\"v2-817b6fcf3864167ef1b011292aa5442f\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-751c763d20ff70395e5f6ffc190e03e1_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"422\" data-original=\"https://picx.zhimg.com/v2-45a7f01a816fc2d5b10dec2855ee08b3_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-45a7f01a816fc2d5b10dec2855ee08b3_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"_reO1ewU\">（图24、某软件下选定义）  </p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-38db9f1cc54aa249502b075dce6bb2e1_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"554\" data-rawheight=\"1022\" data-original-token=\"v2-3fc5d0716bc45a9b4ef8b6a5735bb0f5\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-579e2e6f68de389ce685b6f685c5c495_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"554\" data-original=\"https://picx.zhimg.com/v2-38db9f1cc54aa249502b075dce6bb2e1_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;554&#39; height=&#39;1022&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"554\" data-rawheight=\"1022\" data-original-token=\"v2-3fc5d0716bc45a9b4ef8b6a5735bb0f5\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-579e2e6f68de389ce685b6f685c5c495_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"554\" data-original=\"https://picx.zhimg.com/v2-38db9f1cc54aa249502b075dce6bb2e1_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-38db9f1cc54aa249502b075dce6bb2e1_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"0mamtG9S\">（图25、某软件下选定义）</p><p data-pid=\"Roo-oqql\">以上定义主要缺点是，对规范输入没有权限控制，任何人员、随时可以修改。因此，该类软件仅适用于小团队、对规范化要求不高团队。</p><p data-pid=\"dMLbbgkb\">  2、本表单定义、跨表单引用</p><p data-pid=\"Gl7G0l29\">  此类软件支持在本表单上定义选择项、以及从其它表单引用项。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-6572acc0fc5c5b9c20bf6ea600ff6f11_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"295\" data-rawheight=\"634\" data-original-token=\"v2-fc98cad0e5df9c4e513811e111d4c349\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-b2393159aa64e6ae86921d79ecffe6be_720w.jpg?source=1def8aca\" class=\"content_image\" width=\"295\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;295&#39; height=&#39;634&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"295\" data-rawheight=\"634\" data-original-token=\"v2-fc98cad0e5df9c4e513811e111d4c349\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-b2393159aa64e6ae86921d79ecffe6be_720w.jpg?source=1def8aca\" class=\"content_image lazy\" width=\"295\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-6572acc0fc5c5b9c20bf6ea600ff6f11_720w.jpg?source=1def8aca\"/></figure><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-c46b60c50ae6c2fb4d67f4fbb6190010_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"300\" data-rawheight=\"627\" data-original-token=\"v2-5e7c4adc2b5245b87b6da63f53caaae6\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-e383d8a6aa92c5469bca6040a12306e1_720w.jpg?source=1def8aca\" class=\"content_image\" width=\"300\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;300&#39; height=&#39;627&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"300\" data-rawheight=\"627\" data-original-token=\"v2-5e7c4adc2b5245b87b6da63f53caaae6\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-e383d8a6aa92c5469bca6040a12306e1_720w.jpg?source=1def8aca\" class=\"content_image lazy\" width=\"300\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-c46b60c50ae6c2fb4d67f4fbb6190010_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"fUEUQVdH\">（图26、某软件自定义和跨表引用下选）</p><p data-pid=\"yTtEXj-5\">该类定义无法支持对关联表数据进行权限限制。</p><p data-pid=\"YL1kX4HN\">3、本表单定义、跨表单引用并支持权限控制</p><p data-pid=\"XHeGC7q8\">除以上一条具备功能位，提供权限控制功能。即根据权限提供供选择内容。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-f674bec4d5a453232b0e9bc547831a91_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"855\" data-rawheight=\"642\" data-original-token=\"v2-dad49897084635d41a68c0d783dd93c2\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-e043f2d129c02a390e979fba8a276783_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"855\" data-original=\"https://pic1.zhimg.com/v2-f674bec4d5a453232b0e9bc547831a91_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;855&#39; height=&#39;642&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"855\" data-rawheight=\"642\" data-original-token=\"v2-dad49897084635d41a68c0d783dd93c2\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-e043f2d129c02a390e979fba8a276783_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"855\" data-original=\"https://pic1.zhimg.com/v2-f674bec4d5a453232b0e9bc547831a91_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-f674bec4d5a453232b0e9bc547831a91_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"4npiroqr\">（图27、某软件弹出定义）  </p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-170a639d22c40eba2e262adbcdfd4291_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"850\" data-rawheight=\"639\" data-original-token=\"v2-a414899b51ff3a8923475286155f48d0\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-9cdb3509756d6e34a96da5f5811513a1_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"850\" data-original=\"https://pic1.zhimg.com/v2-170a639d22c40eba2e262adbcdfd4291_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;850&#39; height=&#39;639&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"850\" data-rawheight=\"639\" data-original-token=\"v2-a414899b51ff3a8923475286155f48d0\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-9cdb3509756d6e34a96da5f5811513a1_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"850\" data-original=\"https://pic1.zhimg.com/v2-170a639d22c40eba2e262adbcdfd4291_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-170a639d22c40eba2e262adbcdfd4291_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"qRxGf7tT\">（图28、某软件定义权限控制和过滤条件）</p><p data-pid=\"mSZq9QSG\">    4、数据字典功能</p><p data-pid=\"iTaeGXlc\">少数软件单独提供数据字典功能。如图22。</p><p data-pid=\"Rge6p7TG\">从功能上建议选用支持权限控制、可提供集中数据字典管理（避免多处修改，可能出现遗漏）、支持跨表单具筛选功能数据字典。</p><p data-pid=\"HtnUEjzA\">综上所述，结合本团队规模、业务特性，针对性选择与本团队和业务数量和规模相适应用软，避免入坑适应较小团队能，可有效减小项目失败风险。</p><table data-draft-node=\"block\" data-draft-type=\"table\" data-size=\"normal\" data-row-style=\"normal\"><tbody><tr><th>适用团队规模</th><th>团队特点</th><th>功能特点</th><th>备注</th></tr><tr><td>小团队</td><td>组织比较扁平，成员之间关系平等；数据组织比较随意、业务相对简单、数据量不是太大<br/>表格未分类</td><td>无组织机构定义；人员未实现分类选择；<br/>模板表以页面顶端页签展示；默认数据全量加裁；无数据字典功能；</td><td></td></tr><tr><td>公司级团队使用</td><td>公司具有多部门组织，成员之间上下极关系明确；有一些基本管理规范，对于数据规范性有一定要求；业务涉及环节比较多，业务数据量比较大；</td><td>有简单组织机构定义，未对组织机构信息进行扩展；<br/>模板表提供分类管理；默认数据按筛选条件加裁；弱数据字典，可实现跨表引用；</td><td>目前方案中对于树形分类控制支持均不足。</td></tr><tr><td>集团化公司使用</td><td>公司体系比较完善，需对多级公司进行管理，有典型体线化管理；对于管理规范性要求比较高，对于数据规范性要求高；业务多元化、多态化；业务数量极大。</td><td>提供可扩展组织机构信息管理；对人员进行分类选择；<br/>模板表提供分类管理；默认数据按筛选条件加裁；可实现数据更多层次分类；提供数据字典功能，规范数据管理；提供跨表引用；数据字典、跨表引用支持权限控制。</td><td>集团化公司使用需提供更精细管理；要求更严格权限控制</td></tr></tbody></table><p></p>",
+      "excerpt": "当前零代码、低代码、APaas系统话题热度不断提高，随之其是否能实现复杂业务一直是业内争吵的焦点。很多公司准备入坑，但不知道这坑到底有多深，本人根据切身经验加以探讨。 整体上从对数据量和业务量的支撑能力，将能力划分为：适合小团队使用；适合公司级团队使用；集团化公司使用。这三类团队特点： （1）小团队：组织比较扁平，成员之间关系平等；数据组织比较随意、业务相对简单、数据量不是太大。 （2）公司级团队：公司具…",
+      "voteupCount": 5,
+      "commentCount": 2,
+      "createdTime": 1631776611,
+      "updatedTime": 1631778773,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/50/v2-ef2afbfa2d7e6a072f0d86a9cbda3308_720w.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/50/v2-ef2afbfa2d7e6a072f0d86a9cbda3308_720w.jpg?source=1def8aca",
+            "width": 252,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-54b9f79122d3713a6d92ac75eb0b82f5_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-54b9f79122d3713a6d92ac75eb0b82f5_r.jpg?source=1def8aca",
+            "width": 565,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-0adfdf6bc6a50db33d0eb501e9aa6e00_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-0adfdf6bc6a50db33d0eb501e9aa6e00_r.jpg?source=1def8aca",
+            "width": 1138,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/50/v2-0344eb89d1dded1b195e1d59b78767c4_720w.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/50/v2-0344eb89d1dded1b195e1d59b78767c4_720w.jpg?source=1def8aca",
+            "width": 382,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-a821a628d99c38a932b9d478684f44b1_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-a821a628d99c38a932b9d478684f44b1_r.jpg?source=1def8aca",
+            "width": 484,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-2cdb86350db6ba6533f789b9c3d82870_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-2cdb86350db6ba6533f789b9c3d82870_r.jpg?source=1def8aca",
+            "width": 862,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-24b339fb5c52f8c724cb8a7e489e9586_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-24b339fb5c52f8c724cb8a7e489e9586_r.jpg?source=1def8aca",
+            "width": 472,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-ed70211f730e10199d65b87c9069054c_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-ed70211f730e10199d65b87c9069054c_r.jpg?source=1def8aca",
+            "width": 474,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-5c75b51374e6390e249151365547cec6_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-5c75b51374e6390e249151365547cec6_r.jpg?source=1def8aca",
+            "width": 592,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-aad0de110be4c3adfaeaedea62bec236_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-aad0de110be4c3adfaeaedea62bec236_r.jpg?source=1def8aca",
+            "width": 821,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/v2-a7beadebfceeaef329e1d80944417e3e_r.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/v2-a7beadebfceeaef329e1d80944417e3e_r.jpg?source=1def8aca",
+            "width": 998,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/v2-ce8f2de5870f5b7537e739f40cadc30b_r.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/v2-ce8f2de5870f5b7537e739f40cadc30b_r.jpg?source=1def8aca",
+            "width": 1141,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-a38106e90725432f9c059bbcb8bdcc6e_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-a38106e90725432f9c059bbcb8bdcc6e_r.jpg?source=1def8aca",
+            "width": 1606,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-074721dd4c850e9a390011fadde89b97_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-074721dd4c850e9a390011fadde89b97_r.jpg?source=1def8aca",
+            "width": 1267,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-d549c919deabea6f8d08f650d0f19af5_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-d549c919deabea6f8d08f650d0f19af5_r.jpg?source=1def8aca",
+            "width": 690,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-bea686a5d27d9a1aeaa0c6471f91df20_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-bea686a5d27d9a1aeaa0c6471f91df20_r.jpg?source=1def8aca",
+            "width": 954,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-1decbb270c7aaf1b5195b9611585e73b_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-1decbb270c7aaf1b5195b9611585e73b_r.jpg?source=1def8aca",
+            "width": 1176,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-be3e20087806a7dba66f19a8776706f0_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-be3e20087806a7dba66f19a8776706f0_r.jpg?source=1def8aca",
+            "width": 1117,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-c9cf471c098e989ddeb3f6f8172aaf4a_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-c9cf471c098e989ddeb3f6f8172aaf4a_r.jpg?source=1def8aca",
+            "width": 720,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/50/v2-583e7e1e870f84076904c0b88d1ee6ad_720w.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/50/v2-583e7e1e870f84076904c0b88d1ee6ad_720w.jpg?source=1def8aca",
+            "width": 343,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/50/v2-299b9fb57316fba8e71131e26a9fd6e2_720w.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/50/v2-299b9fb57316fba8e71131e26a9fd6e2_720w.jpg?source=1def8aca",
+            "width": 275,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/50/v2-4f8e8297b240e6abed4e4dc15f1bdb5b_720w.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/50/v2-4f8e8297b240e6abed4e4dc15f1bdb5b_720w.jpg?source=1def8aca",
+            "width": 295,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/50/v2-537b7c1d4d8d7e6d74b66009dfe20edb_720w.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/50/v2-537b7c1d4d8d7e6d74b66009dfe20edb_720w.jpg?source=1def8aca",
+            "width": 252,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-9a759b4bdc57929933a4a31414df1fcf_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-9a759b4bdc57929933a4a31414df1fcf_r.jpg?source=1def8aca",
+            "width": 705,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/50/v2-51f8ac7a00dcd863be0d4b4852273a65_720w.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/50/v2-51f8ac7a00dcd863be0d4b4852273a65_720w.jpg?source=1def8aca",
+            "width": 409,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-45a7f01a816fc2d5b10dec2855ee08b3_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-45a7f01a816fc2d5b10dec2855ee08b3_r.jpg?source=1def8aca",
+            "width": 422,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-38db9f1cc54aa249502b075dce6bb2e1_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-38db9f1cc54aa249502b075dce6bb2e1_r.jpg?source=1def8aca",
+            "width": 554,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/50/v2-6572acc0fc5c5b9c20bf6ea600ff6f11_720w.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/50/v2-6572acc0fc5c5b9c20bf6ea600ff6f11_720w.jpg?source=1def8aca",
+            "width": 295,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/50/v2-c46b60c50ae6c2fb4d67f4fbb6190010_720w.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/50/v2-c46b60c50ae6c2fb4d67f4fbb6190010_720w.jpg?source=1def8aca",
+            "width": 300,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-f674bec4d5a453232b0e9bc547831a91_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-f674bec4d5a453232b0e9bc547831a91_r.jpg?source=1def8aca",
+            "width": 855,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-170a639d22c40eba2e262adbcdfd4291_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-170a639d22c40eba2e262adbcdfd4291_r.jpg?source=1def8aca",
+            "width": 850,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2027722356278215762",
+      "author": "石勒为民除道",
+      "url": "https://www.zhihu.com/question/487214224/answer/2027722356278215762",
+      "content": "<p></p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-f642778b82ee6d7d55f612e4ab331ffb_720w.jpg?source=1def8aca\" data-rawwidth=\"1125\" data-rawheight=\"603\" data-size=\"normal\" data-original-token=\"v2-a879d85cf44d95b62e69efa702e52686\" class=\"origin_image zh-lightbox-thumb\" width=\"1125\" data-original=\"https://pica.zhimg.com/v2-f642778b82ee6d7d55f612e4ab331ffb_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1125&#39; height=&#39;603&#39;&gt;&lt;/svg&gt;\" data-rawwidth=\"1125\" data-rawheight=\"603\" data-size=\"normal\" data-original-token=\"v2-a879d85cf44d95b62e69efa702e52686\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1125\" data-original=\"https://pica.zhimg.com/v2-f642778b82ee6d7d55f612e4ab331ffb_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-f642778b82ee6d7d55f612e4ab331ffb_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"S6otAXVW\">你既然不懂道家怎么变道教的，这就给你好好上上课，来，看好了：</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-d1563c1a337cef9005abcf657dc19453_720w.jpg?source=1def8aca\" data-rawwidth=\"1284\" data-rawheight=\"1954\" data-size=\"normal\" data-original-token=\"v2-970410d7d63883183a97768026c807b0\" class=\"origin_image zh-lightbox-thumb\" width=\"1284\" data-original=\"https://pic1.zhimg.com/v2-d1563c1a337cef9005abcf657dc19453_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1284&#39; height=&#39;1954&#39;&gt;&lt;/svg&gt;\" data-rawwidth=\"1284\" data-rawheight=\"1954\" data-size=\"normal\" data-original-token=\"v2-970410d7d63883183a97768026c807b0\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1284\" data-original=\"https://pic1.zhimg.com/v2-d1563c1a337cef9005abcf657dc19453_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-d1563c1a337cef9005abcf657dc19453_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"w9IooiDe\">道教一开始就是你们道家觊觎儒家显学地位，抄袭儒家谶纬神学，把老庄思想神学化的产物，你问什么时候是吧？我告诉你，就是西汉汉成帝年间。</p><p data-pid=\"Sbus0lcl\">这本《天官历·包元太平经》，流传到东汉末年，就成了黄巾贼拿来篡汉的那本《太平清领书》。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-b4af2ff442f3559a0ed2ad3a5c3c6c10_720w.jpg?source=1def8aca\" data-rawwidth=\"1284\" data-rawheight=\"2459\" data-size=\"normal\" data-original-token=\"v2-6b78797e4c1b226214246eb57ebf09ff\" class=\"origin_image zh-lightbox-thumb\" width=\"1284\" data-original=\"https://pica.zhimg.com/v2-b4af2ff442f3559a0ed2ad3a5c3c6c10_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1284&#39; height=&#39;2459&#39;&gt;&lt;/svg&gt;\" data-rawwidth=\"1284\" data-rawheight=\"2459\" data-size=\"normal\" data-original-token=\"v2-6b78797e4c1b226214246eb57ebf09ff\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1284\" data-original=\"https://pica.zhimg.com/v2-b4af2ff442f3559a0ed2ad3a5c3c6c10_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-b4af2ff442f3559a0ed2ad3a5c3c6c10_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"xWJM8Nno\">还有，玄学也是你们道家的创造，洗不掉的，别白费劲了，你自己看看正史怎么写你们道家清谈误国的。老子本身就是玄学的鼻祖，玄之又玄，这是你们道德经的原话。</p>",
+      "excerpt": "[图片] 你既然不懂道家怎么变道教的，这就给你好好上上课，来，看好了： [图片] 道教一开始就是你们道家觊觎儒家显学地位，抄袭儒家谶纬神学，把老庄思想神学化的产物，你问什么时候是吧？我告诉你，就是西汉汉成帝年间。 这本《天官历·包元太平经》，流传到东汉末年，就成了黄巾贼拿来篡汉的那本《太平清领书》。 [图片] 还有，玄学也是你们道家的创造，洗不掉的，别白费劲了，你自己看看正史怎么写你们道家清谈误国的。老子本身就是玄学的鼻祖，玄…",
+      "voteupCount": 1,
+      "commentCount": 0,
+      "createdTime": 1776226683,
+      "updatedTime": 1776229148,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/v2-f642778b82ee6d7d55f612e4ab331ffb_r.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/v2-f642778b82ee6d7d55f612e4ab331ffb_r.jpg?source=1def8aca",
+            "width": 1125,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-d1563c1a337cef9005abcf657dc19453_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-d1563c1a337cef9005abcf657dc19453_r.jpg?source=1def8aca",
+            "width": 1284,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/v2-b4af2ff442f3559a0ed2ad3a5c3c6c10_r.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/v2-b4af2ff442f3559a0ed2ad3a5c3c6c10_r.jpg?source=1def8aca",
+            "width": 1284,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2146329149",
+      "author": "匿名用户",
+      "url": "https://www.zhihu.com/question/487214224/answer/2146329149",
+      "content": "<p data-pid=\"aIYaGEcL\">目前正处于信息发展时期，讲求效率快，走慢一步就很容易被落下了。正因为如此，传统的开发系统已经跟不上时代的脚步，也无法适应新时期企业信息化的需求。在这种情况之下，企业选择了低代码和无代码平台，试图借助工具来使企业走向科学化发展，好让企业在竞争中具备优势。</p><p data-pid=\"xdh0hEYH\">那么今天，我们就来讲讲低代码和无代码的区别，究竟企业应该如何选择适合自身的系统开发平台呢？</p><p data-pid=\"klTd_fly\">一、低代码和无代码的区别</p><p data-pid=\"rmGab2d0\"><b>低代码：</b>通过少量代码就可以快速生成应用程序的开发平台。通过可视化进行应用程序开发的方法，使具有不同经验水平的开发人员可以通过图形化的用户界面，使用拖拽组件和模型驱动的逻辑来创建网页和移动应用程序。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-2989c63988e6abc3e048399cfdfdd244_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1349\" data-rawheight=\"754\" data-original-token=\"v2-f6a46adad22857e3b250e64ecfcb1617\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-2989c63988e6abc3e048399cfdfdd244_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1349\" data-original=\"https://picx.zhimg.com/v2-2989c63988e6abc3e048399cfdfdd244_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1349&#39; height=&#39;754&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1349\" data-rawheight=\"754\" data-original-token=\"v2-f6a46adad22857e3b250e64ecfcb1617\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-2989c63988e6abc3e048399cfdfdd244_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1349\" data-original=\"https://picx.zhimg.com/v2-2989c63988e6abc3e048399cfdfdd244_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-2989c63988e6abc3e048399cfdfdd244_720w.jpg?source=1def8aca\"/></figure><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-7ee39c957176e5369b13312a5f624d11_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1337\" data-rawheight=\"744\" data-original-token=\"v2-09e508d0536e63d50328dddfb0e43e46\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-7ee39c957176e5369b13312a5f624d11_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1337\" data-original=\"https://pic1.zhimg.com/v2-7ee39c957176e5369b13312a5f624d11_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1337&#39; height=&#39;744&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1337\" data-rawheight=\"744\" data-original-token=\"v2-09e508d0536e63d50328dddfb0e43e46\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-7ee39c957176e5369b13312a5f624d11_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1337\" data-original=\"https://pic1.zhimg.com/v2-7ee39c957176e5369b13312a5f624d11_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-7ee39c957176e5369b13312a5f624d11_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"1BuUnFyT\"><b>无代码：</b>也叫零代码，从字面上就很容易理解，开发软件过程中，不需要编写代码，只需通过拖拽的方式就可以实现各种软件的构建，这就是无代码。</p><p data-pid=\"ktf2RzCH\">就这么一看是不是会觉得零代码会更好呢？其实不然，无代码平台的弊端是不容忽视的：</p><p data-pid=\"GMBTFwqQ\">1、无代码开发平台封装的组件限制了专业程序员的使用；</p><p data-pid=\"NzwPMfOA\">2、业务流程只能随着组件改变。组件的功能和种类，限制了应用程序的开发；</p><p data-pid=\"O_66peWP\">3、可靠性和安全性存在一定风险。如果无代码开发平台的组件存在质量或安全漏洞问题，开发出的应用程序的稳定性和安全性就会受到影响。</p><p data-pid=\"349Sqfiy\">了解清楚了两者的区别之后，接下来再来讲讲企业该如何选择适合自身的系统开发平台，才能使企业的办公效率得到提速呢？</p><p data-pid=\"vkI9tOLc\">二、企业应如何选适合自身的系统开发平台？</p><p data-pid=\"JidFIYU2\">如果企业是做软件开发的，有专业的开发人员，这种情况下的企业不管是使用低代码平台，还是使用无代码平台做软件开发，都可以大幅度地实现开发效率的提高。</p><p data-pid=\"xSDtd9TZ\">而低代码开发平台不仅适用于特定的小型应用程序，对于大型企业的复杂的应用程序都是可以轻松驾驭的。从以下（图）<b>低代码开发平台</b>的功能特征中，可以体现出低代码开发平台的优势所在：</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-d8bf2fffb8c3a39161bc131bff826145_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1339\" data-rawheight=\"769\" data-original-token=\"v2-00f4bc491b63ee9fe29537ab85371eca\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-d8bf2fffb8c3a39161bc131bff826145_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1339\" data-original=\"https://picx.zhimg.com/v2-d8bf2fffb8c3a39161bc131bff826145_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1339&#39; height=&#39;769&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1339\" data-rawheight=\"769\" data-original-token=\"v2-00f4bc491b63ee9fe29537ab85371eca\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-d8bf2fffb8c3a39161bc131bff826145_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1339\" data-original=\"https://picx.zhimg.com/v2-d8bf2fffb8c3a39161bc131bff826145_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-d8bf2fffb8c3a39161bc131bff826145_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"LpZsGVfr\"><b>1、配置即开发、所见即所得：</b>平台提供全可视化的开发环境、丰富的开发组件及多种案例模板，降低了应用软件的开发难度，用户无需从零开始，节省80%以上开发工作量；</p><p data-pid=\"1U5WMVgX\"><b>2、全浏览器操作，随时修改随时生效：</b>平台采用纯Web开发模式，用户无需安装特定的开发环境，所有的开发工作都在Web页面通过可视化配置方式完成，用户可以在线轻松的完成OA、CRM、HER和SCM等任何行业的流程管理软件搭建，随时修改随时生效，无需打包编译和发布，是真正意义上的中文PasS开发平台；</p><p data-pid=\"Q4T9gspH\"><b>3、支持服务器端宏语言，轻松满足复杂业务逻辑需求：</b>平台为开发者提供了基于JavaScript的服务器端宏语言Iscript，并提供在线调试工具集，用户在短时间内即可完成一个复杂的业务管理系统；</p><p data-pid=\"rkedsOxc\"><b>4、<a href=\"https://link.zhihu.com/?target=http%3A//www.teemlink.com/tag/%25e6%25b5%2581%25e7%25a8%258b%25e5%25bc%2595%25e6%2593%258e/\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">流程引擎</a>强大，特适应中国式流程管理：</b>平台内置天翎自主研发的流程引擎，符合BPMN2.0标准的同时比Activity等开源技术更适应中国式流程管理业务模式和操作习惯；</p><p data-pid=\"jVfkdsl2\"><b>5、支持多租户模式，满足集团型企业灵活管控：</b>平台充分考虑集团型企业的业务场景，支持独立配置企业域的组织架构模型，通过多租户模式的灵活授权，使得用户单一账号能够在多子公司灵活应用又不妨碍子公司间业务数据隔离；</p><p data-pid=\"dlYD8xnt\"><b>6、独创查询微语言DQL，检索更加方便灵活：</b>平台自定义查询微语言DQL，描述用户的查询需求，简化数据查询操作，节约用户学习成本的同时又能更好的满足用户的查询和检索需求；</p><p data-pid=\"GVj_ozxv\"><b>7、提供丰富完整的开发接口，方便系统集成和拓展：</b>平台内置Webservice、RestFul、SAP、速达、用友、金蝶和MS Office等接口，提供详细的API接口说明，通过这些接口平台可以快速友好的同其他系统或智能硬件进行整合，实现系统间业务数据的双向交换、共享业务处理流程等功能；</p><p data-pid=\"UrWJt_5Z\"><b>8、强大的自我进化能力，满足用户日益变化的业务需求：</b>平台拥有稳健、易拓展的设计架构和丰富的开发接口，同时支持支持版本管理，使得平台具备优秀的自我进化能力，用户通过平台配置的应用可直接在web页面进行维护和修改，并根据自身不断变化的业务需求灵活的配置相关功能；</p><p data-pid=\"1Gcuz69g\"><b>9、学习曲线平缓、上手迅速：</b>平台封装了大量的可视化开发组件和业务模板，同时提供完善的培训课程及多种技术支持渠道，有Java基础的开发人员经过一周的培训即可快速掌握并能熟练配置出复杂的应用；</p><p data-pid=\"Cks4vc0k\"><b>10、提供全源码交付机制，解决后顾之忧：</b>平台可以提供全部源码，保障用户在不同的应用阶段、不同层次和不同规模的服务需求都能得到满足，确保选用我司产品后没有任何后顾之忧。</p><p data-pid=\"0YTHf6mu\">以上10大功能特点，正是</p><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-5f0206dcd4dd2b0ae99051f0a29e18e9_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1342\" data-rawheight=\"756\" data-original-token=\"v2-25bea3040ce35b05df2f963acbd5e314\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-5f0206dcd4dd2b0ae99051f0a29e18e9_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1342\" data-original=\"https://pica.zhimg.com/v2-5f0206dcd4dd2b0ae99051f0a29e18e9_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1342&#39; height=&#39;756&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1342\" data-rawheight=\"756\" data-original-token=\"v2-25bea3040ce35b05df2f963acbd5e314\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-5f0206dcd4dd2b0ae99051f0a29e18e9_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1342\" data-original=\"https://pica.zhimg.com/v2-5f0206dcd4dd2b0ae99051f0a29e18e9_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-5f0206dcd4dd2b0ae99051f0a29e18e9_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"T-R_1WtU\"><b>低代码开发平台</b>不可替代无代码的重要原因，也是企业在软件开发时必要考虑的重点，而以上10点无代码并不能完全做到，这也就成为了无代码的限制性。</p><p data-pid=\"Uve-_xov\">因此，企业在选择适合自身的系统开发平台上，切不可只为了一时的操作便利，而选择了并不符合自身企业发展的系统，而应该将目光放远，分析真正适合企业使用的系统！</p><p></p>",
+      "excerpt": "目前正处于信息发展时期，讲求效率快，走慢一步就很容易被落下了。正因为如此，传统的开发系统已经跟不上时代的脚步，也无法适应新时期企业信息化的需求。在这种情况之下，企业选择了低代码和无代码平台，试图借助工具来使企业走向科学化发展，好让企业在竞争中具备优势。 那么今天，我们就来讲讲低代码和无代码的区别，究竟企业应该如何选择适合自身的系统开发平台呢？ 一、低代码和无代码的区别 低代码：通过少量代码就可以快…",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1632895065,
+      "updatedTime": 1632895065,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-2989c63988e6abc3e048399cfdfdd244_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-2989c63988e6abc3e048399cfdfdd244_r.jpg?source=1def8aca",
+            "width": 1349,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-7ee39c957176e5369b13312a5f624d11_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-7ee39c957176e5369b13312a5f624d11_r.jpg?source=1def8aca",
+            "width": 1337,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-d8bf2fffb8c3a39161bc131bff826145_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-d8bf2fffb8c3a39161bc131bff826145_r.jpg?source=1def8aca",
+            "width": 1339,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/v2-5f0206dcd4dd2b0ae99051f0a29e18e9_r.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/v2-5f0206dcd4dd2b0ae99051f0a29e18e9_r.jpg?source=1def8aca",
+            "width": 1342,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://link.zhihu.com/?target=http%3A//www.teemlink.com/tag/%25e6%25b5%2581%25e7%25a8%258b%25e5%25bc%2595%25e6%2593%258e/",
+            "canonicalUrl": null,
+            "domain": null,
+            "clickable": false,
+            "securityClass": "rejected"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    }
+  ]
+}

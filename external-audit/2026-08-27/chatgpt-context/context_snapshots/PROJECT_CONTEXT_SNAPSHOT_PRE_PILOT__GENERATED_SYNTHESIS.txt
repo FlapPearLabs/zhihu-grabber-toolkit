@@ -1,0 +1,1197 @@
+GENERATED_SYNTHESIS / NOT VERBATIM / NOT AUTHORITY
+
+This file is a ChatGPT-generated project-context snapshot used for continuity. It may synthesize multiple earlier turns and must never be cited as a verbatim user message or normative product source. Primary files and explicit conversation excerpts outrank it.
+
+---
+
+你现在继续协助我推进「Zhihu CLI Pro / Zhihu Grabber Toolkit」项目。
+
+这是一个已经进行了较长时间设计、研究和工程建设的项目。
+
+请不要从零开始重新设计。
+请先读取本项目现有 Project Sources，并把它们作为当前上下文。
+
+==================================================
+0. SOURCE AUTHORITY — 先理解资料权威关系
+==================================================
+
+当前 Project Sources 共 9 份：
+
+00_SOURCE_AUTHORITY_AND_STATUS.md
+
+01_PRODUCT_DIRECTION_FINAL.md
+02_RESEARCH_COVERAGE_ENGINE_FINAL.md
+03_TEMPORAL_INTELLIGENCE_ENGINE_FINAL.md
+04_ALGORITHM_EVIDENCE_AND_DECISIONS_FINAL.md
+
+05_OFFICIAL_AND_OSS_DISCOVERY_NOTES.md
+06_DESIGN_HISTORY_AND_OPEN_QUESTIONS.md
+
+07_RESEARCH_SECURITY_AND_CROSS_SOURCE_SYNTHESIS_GUARDRAILS.md
+08_DISCOVERY_EVIDENCE_APPENDIX.md
+
+
+必须按照 00 中的 Authority Order 理解：
+
+Level 0：
+仓库真实 Governance / Approved Specs
+
+包括但不限于：
+
+AGENTS.md
+RULES.md
+Applicable Approved Specs
+仓库中其他当前权威合同
+
+Project Sources 不能覆盖这些内容。
+
+--------------------------------------------------
+
+Level 1 — Current Frozen Design：
+
+01_PRODUCT_DIRECTION_FINAL.md
+02_RESEARCH_COVERAGE_ENGINE_FINAL.md
+03_TEMPORAL_INTELLIGENCE_ENGINE_FINAL.md
+04_ALGORITHM_EVIDENCE_AND_DECISIONS_FINAL.md
+07_RESEARCH_SECURITY_AND_CROSS_SOURCE_SYNTHESIS_GUARDRAILS.md
+
+这些是当前设计基线。
+
+--------------------------------------------------
+
+Level 2 — Evidence / Discovery：
+
+05_OFFICIAL_AND_OSS_DISCOVERY_NOTES.md
+08_DISCOVERY_EVIDENCE_APPENDIX.md
+
+它们保存：
+
+官方平台调查
+官方 CLI / Skill / MCP
+OAuth
+Access Secret
+Session / Web
+OSS
+endpoint / command / CDN 等线索
+
+但这些都是：
+
+EVIDENCE_ONLY
+
+外部事实可能变化。
+
+实施前必须重新验证：
+
+当前官方文档
+当前官方 CLI / Skill
+真实 read-only smoke
+当前 OSS 状态
+
+不能把旧观察直接当永久 contract。
+
+--------------------------------------------------
+
+Level 3 — Historical：
+
+06_DESIGN_HISTORY_AND_OPEN_QUESTIONS.md
+
+只用于理解：
+
+我们为什么最终做出现在这些选择。
+
+历史中出现过的：
+
+v0.4
+v0.5
+复杂算法优先路线
+“全站完整”
+“Webhook 即可”
+Universal CLI 重造路线
+
+均不能覆盖 Current Frozen Design。
+
+
+==================================================
+1. 当前项目已经做过什么
+==================================================
+
+项目当前不是一个从零开始的知乎爬虫。
+
+我们已经有一个成熟的 v0.3 Research Kernel。
+
+当前已经验证过的核心能力包括：
+
+- Zhihu search
+- single-question research orchestration
+- answer capture
+- pagination / resume
+- output verification
+- provenance
+- evidence lineage
+- rich-content preservation
+- hierarchical corpus analysis
+- sampled/full distinction
+- controller/model authority separation
+- deterministic state / resume semantics
+- evidence-backed synthesis
+
+已有核心经验是：
+
+Controller owns：
+
+identity
+provenance
+coverage
+verification
+state transition
+tool authority
+
+Model owns：
+
+semantic interpretation
+claim extraction
+aspect mapping
+stance interpretation
+summarization
+synthesis
+
+也就是说：
+
+我们不让 LLM 决定
+“数据到底来自哪里、抓全没有、是不是 verified”。
+
+这些属于 deterministic controller / verifier。
+
+
+==================================================
+2. 产品方向已经发生过一次重要收敛
+==================================================
+
+早期我们讨论过很多基础能力：
+
+QR 登录
+Cookie
+Access Secret
+官方 API
+CLI
+Skill
+MCP
+OAuth
+Pin
+Article
+Comment
+Topic
+User History
+Browser Session
+等等。
+
+后来的重要判断是：
+
+这些很多都属于：
+
+DATA ACCESS / PROVIDER / AUTH
+
+而不是我们真正应该投入最多资源重造的产品核心。
+
+
+最终产品定位已经收敛成：
+
+Zhihu CLI Pro
+
+=
+
+知乎官方能力
++
+Web / Session 能力
++
+成熟 OSS 能力
+
+统一接入 / canonicalize / verify
+
+然后在上面构建：
+
+1. Cross-Question Deep Research
+2. Author / Personal Intelligence
+3. Continuous Intelligence
+
+
+核心原则：
+
+THIN_DATA_LAYER
+REUSE_FIRST
+ADAPTER_FIRST
+
+能复用官方就不重造官方。
+
+成熟 OSS 已经把基础读取能力做好的，
+先审：
+
+license
+stability
+security
+maintenance
+output contract
+
+然后 adapter / wrapper / reuse。
+
+真正做厚的是：
+
+Research
+Coverage
+Verification
+Evidence
+Long-tail
+Expertise
+Temporal Intelligence
+
+
+==================================================
+3. 当前真正的核心产品问题
+==================================================
+
+我们现在最关心的不是：
+
+“怎么多抓几个知乎接口”。
+
+而是：
+
+给用户一个自然语言研究问题以后，
+
+如何从知乎大量：
+
+Question
+Answer
+Article
+Pin
+User
+Topic
+Collection
+Evidence Source
+
+中构造一个：
+
+相关
+全面
+多样
+低冗余
+包含主流观点
+包含专家
+包含证据
+包含新内容
+包含低赞长尾高价值内容
+包含反方观点
+
+的可信研究 Corpus。
+
+
+核心问题已经被重新定义为：
+
+Research Coverage Engine
+
+而不是：
+
+Ranking Engine。
+
+
+也就是说：
+
+我们不是给所有回答一个 QualityScore 然后 Top-K。
+
+真正的问题是：
+
+SUBSET SELECTION UNDER CONSTRAINTS
+
+
+==================================================
+4. Research Coverage Engine 当前冻结的第一 baseline
+==================================================
+
+第一版刻意追求：
+
+工程实用
+克制
+低参数
+可解释
+可测试
+高确定性
+收益最大化
+
+当前 baseline 只采用：
+
+1. LLM Query / Aspect Expansion
+2. RRF
+3. Dense Embedding + Cosine
+4. Deterministic Expertise Features
+5. Deterministic Evidence Features
+6. Freshness + Weak Popularity Signals
+7. MMR
+8. Multi-lane Exploration
+9. Simple Claim Clustering
+10. Simple Saturation Heuristics
+
+
+基本流程：
+
+Natural Language Question
+        ↓
+Query / Aspect Expansion
+        ↓
+Multi-query / Multi-provider Retrieval
+        ↓
+RRF
+        ↓
+Embedding + Cosine
+        ↓
+Deterministic Metadata Features
+        ↓
+MMR
++
+Multi-lane Exploration
+        ↓
+Selected Batch
+        ↓
+Claim / Aspect Clustering
+        ↓
+Saturation Check
+        ↓
+如果还有明显 gap
+继续 search
+        ↓
+Verified Research Corpus
+        ↓
+现有 v0.3 Research Kernel
+
+
+==================================================
+5. 我们为什么没有直接上复杂算法
+==================================================
+
+我们系统研究过：
+
+Matrix Factorization
+trained Learning-to-Rank
+xQuAD
+DPP
+Submodular Optimization
+Facility Location
+Active Learning
+PCA / SVD
+Chao
+Quant / QuantCI
+InfoGain-RAG
+Search-R1
+Stop-RAG
+Graph algorithms
+JS Divergence
+Change-point Detection
+Permutation Test
+FDR
+Persistent Homology / TDA
+
+但是当前明确选择：
+
+不要因为算法高级就实现。
+
+很多算法会引入：
+
+标注集
+train / validation
+参数调优
+复杂 benchmark
+trajectory
+reward
+RL
+稀疏数据
+cold start
+长期维护成本
+
+很容易把产品工程变成研究项目。
+
+
+所以当前：
+
+Matrix Factorization
+trained LTR
+DPP
+xQuAD
+复杂 Submodular
+Full Active Learning
+PCA/SVD
+Chao production stopping
+Quant/QuantCI production stopping
+InfoGain-RAG online scoring
+Search-R1
+Stop-RAG
+TDA
+advanced graph algorithms
+advanced temporal statistics
+
+全部保持：
+
+FUTURE_CANDIDATE
+DEFERRED
+BENCHMARK_CANDIDATE
+
+不要在第一版自动施工。
+
+
+我们的原则：
+
+Preserve the contract,
+simplify the implementation.
+
+也就是：
+
+不删除 Expertise / Evidence / Freshness / Long-tail /
+Contradiction / Coverage 这些信息维度。
+
+只是第一版用更简单、可解释的方法计算它们。
+
+
+==================================================
+6. Research Coverage 里的重要思想
+==================================================
+
+Popularity != Quality
+
+点赞、评论、粉丝只能作为：
+
+social validation / discussion-volume signal
+
+不能直接当：
+
+quality
+expertise
+truth
+
+
+尤其必须保护：
+
+新回答
+低赞回答
+未分发内容
+专业用户
+Evidence-rich 内容
+反方观点
+长尾独特观点
+
+
+所以当前使用 Multi-lane：
+
+Mainstream
+Expert
+Evidence-rich
+Fresh
+Long-tail / Novel
+Contradictory
+
+
+作者专业度也不是：
+
+Global Authority Score
+
+而必须是：
+
+Topic-conditioned Expertise
+
+例如：
+
+NVIDIA engineer × GPU
+可以有较强 expertise prior
+
+NVIDIA engineer × oncology
+不能自动有专业加成。
+
+
+第一版作者专业度采用 deterministic features：
+
+credential-topic match
+employment-topic match
+education-topic match
+historical topic similarity
+historical evidence density
+historical topic consistency
+
+MF / learned expertise 暂时不做。
+
+
+==================================================
+7. Semantic Compilation Principle
+==================================================
+
+这是当前非常重要的工程原则。
+
+不要让昂贵、随机的 LLM 对所有语料反复做 pairwise 判断。
+
+目标架构：
+
+Raw Corpus
+        ↓
+少量高价值 Semantic Processing
+        ↓
+Embedding
+Aspect
+Claim
+Stance
+Metadata
+        ↓
+Deterministic Numeric Layer
+        ↓
+matrix
+ranking
+clustering
+statistics
+constraints
+        ↓
+Selected Verified Evidence
+        ↓
+LLM Final Synthesis
+
+
+目标：
+
+降低重复 LLM 调用
+降低成本
+提高速度
+提高 run-to-run stability
+可 cache
+可 regression
+可 audit
+
+
+==================================================
+8. 跨问题研究绝对不能 flat reduce
+==================================================
+
+跨问题研究禁止：
+
+all answers
+from all questions
+→ one huge flat corpus
+→ one reduce
+
+
+例如：
+
+Q1 = 1200 answers
+Q2 = 80 answers
+Q3 = 30 answers
+
+不能因为 Q1 数量大就自动支配最终结论。
+
+
+当前冻结结构：
+
+Content / Answer
+        ↓
+Question / Source-group
+        ↓
+Claim / Aspect
+        ↓
+Cross-question / Cross-source synthesis
+
+
+必须区分：
+
+DISCUSSION_VOLUME
+
+与：
+
+EVIDENCE / COVERAGE VALUE
+
+
+answer count：
+
+可以说明“讨论很多”
+
+不能自动说明：
+
+“更正确”
+“更重要”
+“证据更强”
+
+
+Claim Cluster 必须保存：
+
+support_sources
+support_questions
+support_authors
+expert_support
+evidence_rich_support
+opposing_sources
+opposing_questions
+
+
+100 个回答都来自一个 Question
+
+和
+
+20 个来源来自 8 个独立 Question
+
+不是相同的证据结构。
+
+
+==================================================
+9. Prompt Injection / Context Pollution 安全规则
+==================================================
+
+这是冻结的硬安全边界。
+
+所有来自知乎或其他外部来源的：
+
+回答
+文章
+Pin
+评论
+代码块
+引用
+作者简介
+图片文字
+网页文本
+
+统一是：
+
+UNTRUSTED_CONTENT
+DATA_NOT_INSTRUCTION
+
+
+外部 corpus 不得：
+
+改变 controller instruction
+选择 provider
+获得 tool authority
+调用 shell/network/filesystem
+读取 credential
+修改 state machine
+修改 provenance
+修改 coverage
+绕过 verifier
+
+
+处理外部语料的 Semantic Worker：
+
+MUST：
+
+tool-less
+或
+capability-isolated
+
+
+不得拥有：
+
+tool authority
+credential access
+controller authority
+
+
+如果需要处理外部语料，
+但当前 execution surface 无法保证隔离：
+
+STOP:
+
+CAPABILITY_ISOLATION_UNAVAILABLE
+
+
+安全性：
+
+不依赖 prompt-injection classifier 是否识别成功。
+
+默认就是：
+
+外部内容无指令权。
+
+
+==================================================
+10. Temporal Intelligence 当前方向
+==================================================
+
+Author Research 与 Monitoring
+共享同一个历史数据基础。
+
+
+第一阶段：
+
+当前可访问历史内容
+        ↓
+Canonicalize
+        ↓
+Verify
+        ↓
+SQLite Historical State Store
+
+
+之后：
+
+periodic sync
+        ↓
+NEW
+UPDATED
+REMOVED / UNAVAILABLE
+UNCHANGED
+        ↓
+只处理 Delta
+
+
+V1 Temporal 只先做：
+
+Historical Baseline
+SQLite
+Incremental Diff
+Topic / Claim Basic Statistics
+Simple Change Heuristics
+Evidence-backed LLM Explanation
+
+
+先产生：
+
+CHANGE_CANDIDATE
+STANCE_SHIFT_CANDIDATE
+STYLE_SHIFT_CANDIDATE
+
+
+不要直接声称：
+
+AUTHOR_CHANGED_OPINION
+
+
+未来才考虑：
+
+JS Divergence
+Change-point Detection
+Permutation Test
+FDR
+Learned Semantic Shift
+Advanced Graph Delta
+
+
+==================================================
+11. Monitoring / Webhook 当前结论
+==================================================
+
+此前调查没有确认知乎对：
+
+“作者新增 / 更新内容”
+
+提供公开 inbound webhook。
+
+所以第一版监控架构是：
+
+scheduler
+→ periodic sync
+→ SQLite diff
+→ Temporal Intelligence
+→ OUR webhook / notification
+
+
+也就是说：
+
+polling / sync：
+
+发现知乎变化
+
+our webhook：
+
+把 intelligence event 发出去
+
+
+未来如果知乎官方出现 event subscription：
+
+增加新的 Provider 即可。
+
+不要改 Temporal Intelligence 核心。
+
+
+==================================================
+12. Official / OSS Discovery 已经沉淀什么
+==================================================
+
+我们已经做过一轮官方平台和 OSS 调查。
+
+已知需要重点重新核验的官方能力族包括：
+
+Authentication
+Zhihu CLI
+
+Zhihu Search
+Global Search
+Direct Answer / Zhida
+Hot List
+
+API
+Skill
+MCP
+
+Knowledge Base
+PDF parse
+PPT generation
+
+OAuth
+user contents
+followees
+favorites
+favorite collections
+
+
+还保留了一些精确调查线索：
+
+Bearer Access Secret
+X-Request-Timestamp
+
+官方 Search HTTP endpoint lead
+
+官方 Search MCP SSE / message endpoint lead
+
+官方 Zhihu CLI Skill CDN lead
+
+以及一些 CLI command 二手观察：
+
+auth status --verify
+search zhihu
+search global
+hot
+answer
+me contents
+me followees
+me favorites
+
+
+但是：
+
+这些全部需要重新验证。
+
+05 / 08 只是 Evidence。
+
+不要把旧 endpoint / CLI command / OSS README 当正式 contract。
+
+
+==================================================
+13. 重要 OSS 调查方向
+==================================================
+
+此前研究过并保存设计价值的项目包括：
+
+dawnswwwww/zhihu-cli
+klarkxy/zhihu-search
+Xiaofan629/zhihu-cli
+BAIGUANGMEI/zhihu-cli
+OpenCLI
+zhurl
+zhihu-plus-plus
+
+它们的价值分别涉及：
+
+official API wrapper architecture
+CLI / MCP / Skill / OpenAPI multi-surface
+QR login
+Session/Web capability
+Question
+Answer
+Article
+Pin
+User
+Comments
+Topic
+Collection
+History
+Browser Session reuse
+structured output envelope
+API debugging
+
+
+但原则仍然是：
+
+OSS_SOURCE != CURRENT_PRODUCT_CONTRACT
+
+真正采用前重新审：
+
+license
+current maintenance
+security
+API stability
+tests
+output schema
+failure behavior
+
+
+==================================================
+14. Coverage 术语已经冻结
+==================================================
+
+禁止未经证明使用：
+
+“全站完整研究”
+“100% 找到所有知乎相关内容”
+
+
+必须区分：
+
+Retrieval Coverage
+
+在当前 query / search / provider 策略下，
+研究空间覆盖程度。
+
+一般无法证明 100%。
+
+
+Source Completeness
+
+对于明确可枚举 source，
+当前 Provider 是否机械抓取完整。
+
+
+Analysis Coverage
+
+Verified Corpus 中多少真正进入分析。
+
+这个可以做到：
+
+100% of verified selected corpus
+
+
+==================================================
+15. 当前版本与施工状态
+==================================================
+
+非常重要：
+
+VERSION_ASSIGNMENT = UNASSIGNED
+
+IMPLEMENTATION_AUTHORIZATION = NONE
+
+
+当前 Project Sources 不是 v0.4 Spec。
+
+不要：
+
+自动创建 v0.4
+自动建 milestone
+自动写生产代码
+自动实现所有 Future algorithms
+自动修改 Approved Specs
+
+
+==================================================
+16. 下一步真正应该做什么
+==================================================
+
+当前立即允许的下一阶段只有两件事：
+
+A. Discovery / Capability Audit
+
+B. Research Coverage Benchmark Design
+
+
+只有完成这两项并产生：
+
+足够
+真实
+当前
+可审计
+
+的新证据以后，
+
+才能进入：
+
+Architecture / Spec Preparation
+
+
+顺序：
+
+Discovery / Capability Audit
++
+Research Coverage Benchmark Design
+        ↓
+Evidence Gate
+        ↓
+Architecture / Spec Preparation
+        ↓
+未来再由我明确决定是否授权 implementation
+
+
+==================================================
+17. 下一轮对话优先讨论方向
+==================================================
+
+这次新的对话不要继续泛泛讨论产品愿景。
+
+优先把下面两个问题做深。
+
+
+----------------------------------------------
+TRACK A — ZHCLI PRO CAPABILITY DISCOVERY
+----------------------------------------------
+
+需要最终搞清楚：
+
+1. 当前官方 Zhihu CLI 到底有什么真实命令？
+2. 官方 API / CLI / Skill / MCP 各自真实 capability parity 是什么？
+3. Access Secret 当前真实能做什么？
+4. OAuth 到底覆盖什么？
+5. Public / own-user / delegated-user 数据边界是什么？
+6. QR / Cookie / Browser Session 应该怎么安全统一？
+7. Pin / Article / Video / Comment / Topic / Collection / User History 当前分别由哪个 Provider 最靠谱？
+8. Poll / Voting Result 到底能不能可靠读取？
+9. 官方和 Session/Web 的 pagination / completeness 有什么差异？
+10. 哪些 OSS 应该：
+   REUSE
+   WRAP
+   ADAPT
+   REFERENCE_ONLY
+   REJECT
+
+最终希望产出：
+
+ZHCLIPRO_CAPABILITY_MATRIX
+ZHCLIPRO_PROVIDER_MATRIX
+ZHCLIPRO_AUTH_MATRIX
+ZHCLIPRO_CANONICAL_MODEL
+ZHCLIPRO_OUTPUT_CONTRACT
+ZHCLIPRO_COMPLETENESS_SEMANTICS
+ZHCLIPRO_TARGET_ARCHITECTURE
+ZHCLIPRO_IMPLEMENTATION_ROADMAP
+
+
+但注意：
+
+这些输出目前仍然属于：
+
+DISCOVERY / ARCHITECTURE INPUT
+
+不是 implementation authorization。
+
+
+----------------------------------------------
+TRACK B — RESEARCH COVERAGE BENCHMARK
+----------------------------------------------
+
+目标不是：
+
+给复杂算法找机会。
+
+而是先回答：
+
+当前简单 baseline 到底够不够好？
+
+
+Baseline：
+
+Popularity Top-K
+
+vs
+
+Semantic Top-K
+
+vs
+
+MMR + Multi-lane
+
+
+重点评估：
+
+Must-See Recall
+Aspect Recall
+Expert Recall
+Long-tail Recall
+Fresh-content Recall
+Evidence-rich Recall
+Contradiction Recall
+Redundancy
+Analysis Coverage
+Cost
+Run-to-run Stability
+Jaccard Stability
+
+跨问题额外评估：
+
+Question Diversity
+Source Concentration
+Cross-question Claim Recall
+Minority-question Recall
+Per-question Coverage Preservation
+
+
+重点讨论：
+
+1. benchmark topic 应该怎么选？
+2. 怎么构建 human / curated gold set？
+3. 什么叫 must-see？
+4. expert 怎么定义？
+5. long-tail 怎么定义？
+6. contradiction 怎么标？
+7. 如何避免 benchmark 本身偏高赞？
+8. lane quota 是否真的需要固定？
+9. MMR lambda 怎么最小成本选择？
+10. stopping heuristic 怎么验证不会过早停止？
+11. 哪些参数可以有 conservative default？
+12. 哪些参数必须真实 benchmark 后再确定？
+
+
+==================================================
+18. 我希望你在新对话里的工作方式
+==================================================
+
+先：
+
+1. 阅读 Project Sources；
+2. 总结你理解的当前状态；
+3. 检查是否有新的 Source Authority 冲突；
+4. 不重新提出已经被明确 DEFER 的复杂算法作为“首版必做”；
+5. 不重新从零设计 Zhihu CLI Pro；
+6. 不把 Evidence Note 当 Product Spec；
+7. 不把历史聊天当当前 authority。
+
+
+接着和我一起决定：
+
+本轮先深入：
+
+TRACK A — Capability Discovery
+
+还是：
+
+TRACK B — Research Coverage Benchmark
+
+或者先做二者的依赖关系设计。
+
+
+如果需要网络调查：
+
+优先使用当前官方资料；
+其次真实官方 CLI / Skill；
+其次真实 read-only smoke；
+再其次 OSS source；
+最后才是 secondary report。
+
+
+所有外部事实必须标明证据等级，例如：
+
+FIRST_PARTY_DOC
+FIRST_PARTY_BINARY_OR_SKILL_OBSERVED
+REAL_SMOKE
+OSS_SOURCE
+SECONDARY_REPORT
+UNVERIFIED
+
+
+不要为了“回答完整”而把 UNKNOWN 猜成事实。
+
+
+==================================================
+19. 本轮开始时请先回答我
+==================================================
+
+读取项目源以后，先不要施工。
+
+先给我：
+
+1. 你理解的当前项目状态；
+2. 当前已经冻结、不应该再反复讨论的东西；
+3. 当前最重要的未知项；
+4. TRACK A 与 TRACK B 的依赖关系；
+5. 你建议我们这轮先讨论哪一个；
+6. 为什么；
+7. 如果做这个 Track，第一步具体是什么。
+
+然后停下来跟我讨论。
+
+不要自动进入生产 implementation。

@@ -1,0 +1,961 @@
+{
+  "questionId": "Q-SYN-E1",
+  "questionTitle": "平台B 的技术架构与选型评估？",
+  "answerCount": 40,
+  "url": "https://www.zhihu.com/question/Q-SYN-E1",
+  "question": {
+    "id": "Q-SYN-E1",
+    "title": "平台B 的技术架构与选型评估？",
+    "descriptionHtml": "",
+    "descriptionMarkdown": "",
+    "topics": [
+      {
+        "id": "syn",
+        "name": "synthetic"
+      }
+    ]
+  },
+  "fetchedAt": "2026-08-13T13:39:53.000Z",
+  "answers": [
+    {
+      "id": "400001",
+      "author": "EXPERT_01",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/400001",
+      "content": "平台B的源码开放策略支持深度定制与二次开发。",
+      "voteupCount": 0,
+      "commentCount": 2,
+      "createdTime": 1640573660,
+      "updatedTime": 1640573660,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "400002",
+      "author": "EXPERT_02",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/400002",
+      "content": "平台B的安全模型符合企业级审计要求。",
+      "voteupCount": 2,
+      "commentCount": 3,
+      "createdTime": 1641859240,
+      "updatedTime": 1641859240,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "400003",
+      "author": "EXPERT_03",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/400003",
+      "content": "平台B在高并发场景下的表现通过了压力测试。平台B的架构演进路线清晰，长期维护成本可控。",
+      "voteupCount": 0,
+      "commentCount": 4,
+      "createdTime": 1655327719,
+      "updatedTime": 1655327719,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "400004",
+      "author": "EXPERT_04",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/400004",
+      "content": "平台B在高并发场景下的表现通过了压力测试。平台B的架构演进路线清晰，长期维护成本可控。",
+      "voteupCount": 2,
+      "commentCount": 2,
+      "createdTime": 1640432816,
+      "updatedTime": 1640432816,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "400005",
+      "author": "EXPERT_05",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/400005",
+      "content": "平台B的安全模型符合企业级审计要求。平台B的源码开放策略支持深度定制与二次开发。",
+      "voteupCount": 1,
+      "commentCount": 1,
+      "createdTime": 1639254429,
+      "updatedTime": 1639254429,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "400006",
+      "author": "EXPERT_06",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/400006",
+      "content": "平台B基于微服务架构设计，性能与可观测性经过严格验证。",
+      "voteupCount": 0,
+      "commentCount": 4,
+      "createdTime": 1658043074,
+      "updatedTime": 1658043074,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "400007",
+      "author": "EXPERT_07",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/400007",
+      "content": "平台B基于微服务架构设计，性能与可观测性经过严格验证。平台B的源码开放策略支持深度定制与二次开发。",
+      "voteupCount": 2,
+      "commentCount": 0,
+      "createdTime": 1640225993,
+      "updatedTime": 1640225993,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "400008",
+      "author": "EXPERT_08",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/400008",
+      "content": "平台B在高并发场景下的表现通过了压力测试。平台B的安全模型符合企业级审计要求。",
+      "voteupCount": 0,
+      "commentCount": 3,
+      "createdTime": 1641217132,
+      "updatedTime": 1641217132,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "400009",
+      "author": "EXPERT_09",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/400009",
+      "content": "平台B的源码开放策略支持深度定制与二次开发。",
+      "voteupCount": 1,
+      "commentCount": 2,
+      "createdTime": 1657461209,
+      "updatedTime": 1657461209,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "400010",
+      "author": "EXPERT_10",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/400010",
+      "content": "平台B基于微服务架构设计，性能与可观测性经过严格验证。",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1631563219,
+      "updatedTime": 1631563219,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410001",
+      "author": "USER_01",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410001",
+      "content": "平台B界面友好，操作简单，团队上手快。平台B的模板丰富，搭建业务应用很方便。",
+      "voteupCount": 99,
+      "commentCount": 4,
+      "createdTime": 1621561312,
+      "updatedTime": 1621561312,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410002",
+      "author": "USER_02",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410002",
+      "content": "平台B的客服响应及时，服务体验好。",
+      "voteupCount": 93,
+      "commentCount": 2,
+      "createdTime": 1612916021,
+      "updatedTime": 1612916021,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410003",
+      "author": "USER_03",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410003",
+      "content": "平台B界面友好，操作简单，团队上手快。",
+      "voteupCount": 48,
+      "commentCount": 5,
+      "createdTime": 1646387393,
+      "updatedTime": 1646387393,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410004",
+      "author": "USER_04",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410004",
+      "content": "平台B的模板丰富，搭建业务应用很方便。",
+      "voteupCount": 75,
+      "commentCount": 0,
+      "createdTime": 1680466536,
+      "updatedTime": 1680466536,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410005",
+      "author": "USER_05",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410005",
+      "content": "平台B性价比不错，适合中小团队。",
+      "voteupCount": 69,
+      "commentCount": 0,
+      "createdTime": 1649005676,
+      "updatedTime": 1649005676,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410006",
+      "author": "USER_06",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410006",
+      "content": "平台B的模板丰富，搭建业务应用很方便。平台B的文档示例较多，学习曲线平缓。",
+      "voteupCount": 74,
+      "commentCount": 5,
+      "createdTime": 1688466003,
+      "updatedTime": 1688466003,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410007",
+      "author": "USER_07",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410007",
+      "content": "平台B性价比不错，适合中小团队。",
+      "voteupCount": 33,
+      "commentCount": 3,
+      "createdTime": 1660754343,
+      "updatedTime": 1660754343,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410008",
+      "author": "USER_08",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410008",
+      "content": "平台B界面友好，操作简单，团队上手快。平台B性价比不错，适合中小团队。",
+      "voteupCount": 41,
+      "commentCount": 5,
+      "createdTime": 1613464347,
+      "updatedTime": 1613464347,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410009",
+      "author": "USER_09",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410009",
+      "content": "平台B性价比不错，适合中小团队。",
+      "voteupCount": 89,
+      "commentCount": 1,
+      "createdTime": 1629847934,
+      "updatedTime": 1629847934,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410010",
+      "author": "USER_10",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410010",
+      "content": "平台B的客服响应及时，服务体验好。",
+      "voteupCount": 94,
+      "commentCount": 1,
+      "createdTime": 1672883448,
+      "updatedTime": 1672883448,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410011",
+      "author": "USER_11",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410011",
+      "content": "平台B界面友好，操作简单，团队上手快。平台B的模板丰富，搭建业务应用很方便。",
+      "voteupCount": 40,
+      "commentCount": 0,
+      "createdTime": 1604533747,
+      "updatedTime": 1604533747,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410012",
+      "author": "USER_12",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410012",
+      "content": "平台B性价比不错，适合中小团队。平台B的客服响应及时，服务体验好。",
+      "voteupCount": 48,
+      "commentCount": 0,
+      "createdTime": 1643167583,
+      "updatedTime": 1643167583,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410013",
+      "author": "USER_13",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410013",
+      "content": "平台B界面友好，操作简单，团队上手快。",
+      "voteupCount": 24,
+      "commentCount": 4,
+      "createdTime": 1679317803,
+      "updatedTime": 1679317803,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410014",
+      "author": "USER_14",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410014",
+      "content": "平台B的模板丰富，搭建业务应用很方便。平台B性价比不错，适合中小团队。",
+      "voteupCount": 28,
+      "commentCount": 2,
+      "createdTime": 1632689781,
+      "updatedTime": 1632689781,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410015",
+      "author": "USER_15",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410015",
+      "content": "平台B界面友好，操作简单，团队上手快。",
+      "voteupCount": 86,
+      "commentCount": 1,
+      "createdTime": 1630184385,
+      "updatedTime": 1630184385,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410016",
+      "author": "USER_16",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410016",
+      "content": "平台B的客服响应及时，服务体验好。平台B界面友好，操作简单，团队上手快。",
+      "voteupCount": 41,
+      "commentCount": 3,
+      "createdTime": 1625516223,
+      "updatedTime": 1625516223,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410017",
+      "author": "USER_17",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410017",
+      "content": "平台B的模板丰富，搭建业务应用很方便。",
+      "voteupCount": 46,
+      "commentCount": 1,
+      "createdTime": 1611386433,
+      "updatedTime": 1611386433,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410018",
+      "author": "USER_18",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410018",
+      "content": "平台B的客服响应及时，服务体验好。平台B界面友好，操作简单，团队上手快。",
+      "voteupCount": 29,
+      "commentCount": 3,
+      "createdTime": 1645064447,
+      "updatedTime": 1645064447,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410019",
+      "author": "USER_19",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410019",
+      "content": "平台B的客服响应及时，服务体验好。平台B的文档示例较多，学习曲线平缓。",
+      "voteupCount": 76,
+      "commentCount": 2,
+      "createdTime": 1627470136,
+      "updatedTime": 1627470136,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410020",
+      "author": "USER_20",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410020",
+      "content": "平台B的客服响应及时，服务体验好。",
+      "voteupCount": 98,
+      "commentCount": 2,
+      "createdTime": 1677471551,
+      "updatedTime": 1677471551,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410021",
+      "author": "USER_21",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410021",
+      "content": "平台B性价比不错，适合中小团队。平台B的模板丰富，搭建业务应用很方便。",
+      "voteupCount": 24,
+      "commentCount": 5,
+      "createdTime": 1630880988,
+      "updatedTime": 1630880988,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410022",
+      "author": "USER_22",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410022",
+      "content": "平台B的模板丰富，搭建业务应用很方便。平台B性价比不错，适合中小团队。",
+      "voteupCount": 37,
+      "commentCount": 1,
+      "createdTime": 1623540942,
+      "updatedTime": 1623540942,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410023",
+      "author": "USER_23",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410023",
+      "content": "平台B性价比不错，适合中小团队。",
+      "voteupCount": 62,
+      "commentCount": 1,
+      "createdTime": 1684870148,
+      "updatedTime": 1684870148,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410024",
+      "author": "USER_24",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410024",
+      "content": "平台B性价比不错，适合中小团队。",
+      "voteupCount": 25,
+      "commentCount": 5,
+      "createdTime": 1663359366,
+      "updatedTime": 1663359366,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410025",
+      "author": "USER_25",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410025",
+      "content": "平台B性价比不错，适合中小团队。",
+      "voteupCount": 54,
+      "commentCount": 0,
+      "createdTime": 1633961515,
+      "updatedTime": 1633961515,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410026",
+      "author": "USER_26",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410026",
+      "content": "平台B界面友好，操作简单，团队上手快。平台B性价比不错，适合中小团队。",
+      "voteupCount": 94,
+      "commentCount": 1,
+      "createdTime": 1651861592,
+      "updatedTime": 1651861592,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410027",
+      "author": "USER_27",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410027",
+      "content": "平台B的客服响应及时，服务体验好。平台B的文档示例较多，学习曲线平缓。",
+      "voteupCount": 76,
+      "commentCount": 4,
+      "createdTime": 1659873566,
+      "updatedTime": 1659873566,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410028",
+      "author": "USER_28",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410028",
+      "content": "平台B的模板丰富，搭建业务应用很方便。",
+      "voteupCount": 33,
+      "commentCount": 5,
+      "createdTime": 1689402787,
+      "updatedTime": 1689402787,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410029",
+      "author": "USER_29",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410029",
+      "content": "平台B性价比不错，适合中小团队。平台B的客服响应及时，服务体验好。",
+      "voteupCount": 52,
+      "commentCount": 0,
+      "createdTime": 1655362942,
+      "updatedTime": 1655362942,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "410030",
+      "author": "USER_30",
+      "url": "https://www.zhihu.com/question/Q-SYN-E1/answer/410030",
+      "content": "平台B的文档示例较多，学习曲线平缓。",
+      "voteupCount": 40,
+      "commentCount": 1,
+      "createdTime": 1603274647,
+      "updatedTime": 1603274647,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    }
+  ]
+}

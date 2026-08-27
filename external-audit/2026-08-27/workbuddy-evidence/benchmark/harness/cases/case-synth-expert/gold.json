@@ -1,0 +1,246 @@
+{
+  "case_id": "case-synth-expert",
+  "gold_version": "g1-fixture-mechanical",
+  "label_status_policy": {
+    "semantic": "FIXTURE_MECHANICAL",
+    "mechanical": "FIXTURE_MECHANICAL",
+    "note": "fixture-defined deterministic ground truth; NOT human-adjudicated; scoring = FIXTURE_SANITY only"
+  },
+  "families": {
+    "relevance": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "sources": [
+        "Q-SYN-E1:400001",
+        "Q-SYN-E1:400002",
+        "Q-SYN-E1:400003",
+        "Q-SYN-E1:400004",
+        "Q-SYN-E1:400005",
+        "Q-SYN-E1:400006",
+        "Q-SYN-E1:400007",
+        "Q-SYN-E1:400008",
+        "Q-SYN-E1:400009",
+        "Q-SYN-E1:400010",
+        "Q-SYN-E1:410001",
+        "Q-SYN-E1:410002",
+        "Q-SYN-E1:410003",
+        "Q-SYN-E1:410004",
+        "Q-SYN-E1:410005",
+        "Q-SYN-E1:410006",
+        "Q-SYN-E1:410007",
+        "Q-SYN-E1:410008",
+        "Q-SYN-E1:410009",
+        "Q-SYN-E1:410010",
+        "Q-SYN-E1:410011",
+        "Q-SYN-E1:410012",
+        "Q-SYN-E1:410013",
+        "Q-SYN-E1:410014",
+        "Q-SYN-E1:410015",
+        "Q-SYN-E1:410016",
+        "Q-SYN-E1:410017",
+        "Q-SYN-E1:410018",
+        "Q-SYN-E1:410019",
+        "Q-SYN-E1:410020",
+        "Q-SYN-E1:410021",
+        "Q-SYN-E1:410022",
+        "Q-SYN-E1:410023",
+        "Q-SYN-E1:410024",
+        "Q-SYN-E1:410025",
+        "Q-SYN-E1:410026",
+        "Q-SYN-E1:410027",
+        "Q-SYN-E1:410028",
+        "Q-SYN-E1:410029",
+        "Q-SYN-E1:410030"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "per_question": {
+        "Q-SYN-E1": [
+          "Q-SYN-E1:400001",
+          "Q-SYN-E1:400002",
+          "Q-SYN-E1:400003",
+          "Q-SYN-E1:400004",
+          "Q-SYN-E1:400005",
+          "Q-SYN-E1:400006",
+          "Q-SYN-E1:400007",
+          "Q-SYN-E1:400008",
+          "Q-SYN-E1:400009",
+          "Q-SYN-E1:400010",
+          "Q-SYN-E1:410001",
+          "Q-SYN-E1:410002",
+          "Q-SYN-E1:410003",
+          "Q-SYN-E1:410004",
+          "Q-SYN-E1:410005",
+          "Q-SYN-E1:410006",
+          "Q-SYN-E1:410007",
+          "Q-SYN-E1:410008",
+          "Q-SYN-E1:410009",
+          "Q-SYN-E1:410010",
+          "Q-SYN-E1:410011",
+          "Q-SYN-E1:410012",
+          "Q-SYN-E1:410013",
+          "Q-SYN-E1:410014",
+          "Q-SYN-E1:410015",
+          "Q-SYN-E1:410016",
+          "Q-SYN-E1:410017",
+          "Q-SYN-E1:410018",
+          "Q-SYN-E1:410019",
+          "Q-SYN-E1:410020",
+          "Q-SYN-E1:410021",
+          "Q-SYN-E1:410022",
+          "Q-SYN-E1:410023",
+          "Q-SYN-E1:410024",
+          "Q-SYN-E1:410025",
+          "Q-SYN-E1:410026",
+          "Q-SYN-E1:410027",
+          "Q-SYN-E1:410028",
+          "Q-SYN-E1:410029",
+          "Q-SYN-E1:410030"
+        ]
+      }
+    },
+    "must_see": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "sources": [
+        "Q-SYN-E1:400001",
+        "Q-SYN-E1:400002",
+        "Q-SYN-E1:400003",
+        "Q-SYN-E1:400004",
+        "Q-SYN-E1:400005",
+        "Q-SYN-E1:410001",
+        "Q-SYN-E1:410002",
+        "Q-SYN-E1:410003"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": []
+    },
+    "aspect_membership": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "aspects": [
+        {
+          "aspect_id": "asp-architecture",
+          "name": "技术架构与性能",
+          "sources": [
+            "Q-SYN-E1:400001",
+            "Q-SYN-E1:400002",
+            "Q-SYN-E1:400003",
+            "Q-SYN-E1:400004",
+            "Q-SYN-E1:400005",
+            "Q-SYN-E1:400006",
+            "Q-SYN-E1:400007",
+            "Q-SYN-E1:400008",
+            "Q-SYN-E1:400009",
+            "Q-SYN-E1:400010"
+          ]
+        },
+        {
+          "aspect_id": "asp-ux",
+          "name": "易用性与上手",
+          "sources": [
+            "Q-SYN-E1:410001",
+            "Q-SYN-E1:410002",
+            "Q-SYN-E1:410003"
+          ]
+        }
+      ]
+    },
+    "expertise_topic_match": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "sources": [
+        "Q-SYN-E1:400001",
+        "Q-SYN-E1:400002",
+        "Q-SYN-E1:400003",
+        "Q-SYN-E1:400004",
+        "Q-SYN-E1:400005",
+        "Q-SYN-E1:400006",
+        "Q-SYN-E1:400007",
+        "Q-SYN-E1:400008",
+        "Q-SYN-E1:400009",
+        "Q-SYN-E1:400010"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": []
+    },
+    "evidence_quality": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "sources": [
+        "Q-SYN-E1:400001",
+        "Q-SYN-E1:400002",
+        "Q-SYN-E1:400003",
+        "Q-SYN-E1:400004",
+        "Q-SYN-E1:400005",
+        "Q-SYN-E1:400006",
+        "Q-SYN-E1:400007",
+        "Q-SYN-E1:400008",
+        "Q-SYN-E1:400009",
+        "Q-SYN-E1:400010",
+        "Q-SYN-E1:410003",
+        "Q-SYN-E1:410006",
+        "Q-SYN-E1:410009",
+        "Q-SYN-E1:410012",
+        "Q-SYN-E1:410015",
+        "Q-SYN-E1:410018",
+        "Q-SYN-E1:410021",
+        "Q-SYN-E1:410024",
+        "Q-SYN-E1:410027",
+        "Q-SYN-E1:410030"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": []
+    },
+    "evidence_presence": {
+      "label_status": "MECHANICAL_CONFIRMED",
+      "note": "computed by harness from fixture evidence markers"
+    },
+    "freshness": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "fresh_relevant_sources": [],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "window": {
+        "policy_id": "fresh-365d-before-fetch",
+        "reference_epoch_sec": 1786628392,
+        "window_sec": 31536000
+      }
+    },
+    "unique_long_tail_contribution": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "sources": [
+        "Q-SYN-E1:400006",
+        "Q-SYN-E1:400007",
+        "Q-SYN-E1:400008",
+        "Q-SYN-E1:400009",
+        "Q-SYN-E1:400010"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": []
+    },
+    "contradiction": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "claim_clusters": []
+    },
+    "required_provenance_groups": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "claim_groups": []
+    },
+    "historical_authority": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "sources": [
+        "Q-SYN-E1:400001",
+        "Q-SYN-E1:400002",
+        "Q-SYN-E1:400003",
+        "Q-SYN-E1:410001",
+        "Q-SYN-E1:410002",
+        "Q-SYN-E1:410003"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": []
+    }
+  },
+  "provenance": {
+    "proposed_by": "fixture-generator",
+    "proposal_method": "deterministic fixture spec",
+    "adjudicated_by": null,
+    "adjudication_status": "NOT_REQUIRED",
+    "label_status": "FIXTURE_MECHANICAL"
+  }
+}

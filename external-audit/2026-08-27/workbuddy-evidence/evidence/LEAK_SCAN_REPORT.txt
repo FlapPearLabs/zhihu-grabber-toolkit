@@ -1,0 +1,98 @@
+AUDIT PACK LEAK SCAN
+2026-08-27T05:19:42.656Z
+
+files=470 bytes=7900655
+private_path_hits=0
+sensitive_pattern_hits=91 (triage)
+
+00_READ_ME_FIRST.md:34 | IMPLEMENTATION_AUTHORIZATION   = NONE
+02_CURRENT_PRODUCT_DIRECTION.md:22 | | RCE 本质 | Subset selection under constraints（预算 K / token / 覆盖要求） |
+03_CURRENT_RCE_DESIGN.md:11 | input:  (research_question, budget {K | max_tokens, ...})
+04_SECURITY_AND_AUTHORITY_BOUNDARIES.md:38 | | 凭据 | 产物禁止含 cookie/secret/token/password/credential/api-key/bearer | benchmark 已实施（leak-check） |
+04_SECURITY_AND_AUTHORITY_BOUNDARIES.md:48 | - `benchmark/lib/results.mjs` sanitize：输出时剥离敏感字段；`data-original-token` 误杀事件见 08（failure #9），已改为 sanitized plain text + 显式 `content_excerpt_status`。
+05_DESIGN_EVOLUTION.md:15 | | 3 | Weighted quality score（加权质量分） | 无法客观定义权重；权重=拍脑袋；评审反复质疑 | 被评审（ChatGPT）指为无依据的 heuristic | Subset selection under constraints（budget 约束下选择） | HIGH | budget 语
+06_DISCOVERY_AND_PROVIDER_EVIDENCE.md:10 | 平台已正式开放（邀测）。鉴权：Bearer Access Secret + X-Request-Timestamp。
+06_DISCOVERY_AND_PROVIDER_EVIDENCE.md:24 | OAuth 2.0 Authorization Code Flow         openapi.zhihu.com/authorize + POST /access_token
+06_DISCOVERY_AND_PROVIDER_EVIDENCE.md:30 | - 凭证存 Keychain/Credential Manager；
+06_DISCOVERY_AND_PROVIDER_EVIDENCE.md:31 | - **只查询 Access Secret 所属账号，不接受 OAuth Token / 代查参数**；
+06_DISCOVERY_AND_PROVIDER_EVIDENCE.md:39 | 官方 zhihu_search          src/official.js（匹配官方 contract：Bearer + ts + Query + Count/limit）
+06_DISCOVERY_AND_PROVIDER_EVIDENCE.md:42 | ~/.zhihu-cli/config.json   仅 Cookie 兼容读取（不调用官方 CLI，不是官方 CLI 依赖）
+06_DISCOVERY_AND_PROVIDER_EVIDENCE.md:55 | | OpenCLI | Apache-2.0 | browser-session 架构；cookie browser-owned 不复制；read/write access 显式隔离 + `--execute` 门；network capture 有 sanitizeCapturedRequest/Url（Author
+06_DISCOVERY_AND_PROVIDER_EVIDENCE.md:56 | | Xiaofan629/zhihu-cli | Apache-2.0 | browser-cookie3 直接读浏览器 DB + credential 落盘 `~/.zhihu-cli/credential.json` + best-effort fallback | 不符合 Level 0 安全；仅 structu
+06_DISCOVERY_AND_PROVIDER_EVIDENCE.md:57 | | dawnswwwww/zhihu-cli | MIT | 纯官方 OpenAPI HTTP 直连；`set-secret` 走 argv 有泄漏风险 | 官方 HTTP adapter 架构参考 |
+06_DISCOVERY_AND_PROVIDER_EVIDENCE.md:70 | Browser session     = NOT_HAVE（当前是 COOKIE_INJECTED_PLAYWRIGHT_VERIFICATION，非 browser-owned session）
+06_DISCOVERY_AND_PROVIDER_EVIDENCE.md:84 | **author identity 缺口**：canonical answers schema **无 author_id / url_token（只有 author name string）**
+06_DISCOVERY_AND_PROVIDER_EVIDENCE.md:91 | - Track A 发现是**只读审计**结论，未接入任何新 provider（IMPLEMENTATION_AUTHORIZATION = NONE）。
+07_BENCHMARK_DESIGN.md:37 |   - OBJECTIVE / MECHANICAL（vote / time / credential metadata / URL / evidence markers / content type / code block / images）→ `MECHANICAL_CONFIRMED`
+08_PILOT_FAILURE_AND_CORRECTION_HISTORY.md:63 | - **root cause**：知乎图文回答 raw HTML 含 `data-original-token="v2-..."` 图片属性 → sanitizer 的 `token` 敏感词正则误杀整字段。
+benchmark\harness\corpus\439521858\answers.json:40 |       "content": "<p data-pid=\"bT-03zqz\"><b>【对比宜搭、简道云、氚云等主流10款低代码开发平台】</b></p><p data-pid=\"TSW5Q0B0\">在数字化转型的浪潮下，越来越多的企业开始寻求高效、灵活的开发工具，以加速业务创新和流程自动化。低代码开发平台（
+benchmark\harness\corpus\439521858\answers.json:174 |       "content": "<p data-pid=\"lQgqjpdK\">宜搭和简道云、氚云都是比较出色的低代码平台</p><p data-pid=\"0ELllSI5\">简道云：95%功能通过拖拽式操作去实现，一款零代码平台，复杂业务场景支持有限，难以满足高度定制化需求。</p><p data-pid=
+benchmark\harness\corpus\439521858\answers.json:441 |       "content": "<p data-pid=\"xHQkhmv7\">每个低代码产品都有自己的特点和优势，没有一个绝对的好或者不好，要根据你的需求去选择。</p><p data-pid=\"SPAwh60V\">1、简道云是帆软旗下的产品，定位是无代码平台，它的数据处理和报表能力很强。</p><p da
+benchmark\harness\corpus\439521858\answers.json:619 |       "content": "<p data-pid=\"07BGFknm\"><b>宜搭、简道云、氚云都是现在市场上有名的低代码开发平台。除此之外，不妨使用下<span class=\"nolink\">百数</span>，再来比较一下。</b></p><p data-pid=\"50j9uCm6\"><b><
+benchmark\harness\corpus\439521858\answers.json:903 |       "content": "<p data-pid=\"D_MKBq_N\">在今年的6月，1个头部云制造商SaaS架构设计师为某零售企业演示了如何用低代码30分钟搭建招聘管理系统，充分的展现了低代码开发设计在现阶段的优势。</p><p data-pid=\"cM5wSqIg\">“低代码开发设计”指客户可以把
+benchmark\harness\corpus\439521858\answers.json:1152 |       "content": "<p data-pid=\"UEi92EdL\">在10月20日的云栖大会低代码峰会上，宜搭联合简道云、氚云还有其他5家低代码厂商，成立了一个“低代码联盟”，共享钉钉底座能力和平台资源。从这个消息便可以看出，宜搭和简道云、氚云在功能上互补的地方还是比较多的。</p><p data-p
+benchmark\harness\corpus\462973596\answers.json:98 |       "content": "<p data-pid=\"zsnyZleg\">从企业的角度来看，零代码如果处理的好，零代码后期发展会更好。</p><p data-pid=\"zYDA0o6T\">从两方面看问题</p><p data-pid=\"QaZMlr3i\">一、企业角度</p><p data-pid=
+benchmark\harness\corpus\462973596\answers.json:216 |       "content": "<p data-pid=\"3W3nrkJI\">如今在企业数智化转型中缺乏编程语言知识和资金紧张不再是障碍，因为零代码应用工具的出现，每个人都可以做到这一点。零代码解决方案已经存在了一段时间，但它们已经成为可行且可靠的解决方案，可帮助企业起步并成功运营。</p><p data-pi
+benchmark\harness\corpus\462973596\answers.json:265 |       "content": "<p data-pid=\"hjCTImlS\">这个一般看公司规模以及对软件的使用情况，很多公司把软件只是辅助定位，提升效率的一种方法，并没打算在这边做优化业务流程等操作。这样零代码平台还是比较适合的，毕竟低代码平台需要有人来开发，低代码平台对比的都是以前养一个团队来开发项目，现在
+benchmark\harness\corpus\462973596\answers.json:293 |       "content": "<p data-pid=\"BY1vbgXm\">个人觉得是低代码平台对后期发展较好。</p><p data-pid=\"IQ2PL_EG\">低代码开发平台是无需编码（0代码或无代码）或通过少量代码就可以快速生成应用程序的开发平台。它的强大之处在于，允许终端用户使用易于理解的可视化
+benchmark\harness\corpus\462973596\answers.json:339 |       "content": "<p data-pid=\"J8VJC5tt\">随着企业个性化、多样化的需求不断增多，传统软件开发的速度已然有些跟不上了。在这种背景和需求的驱动下，低代码和零代码开始进入人们的视野。</p><p data-pid=\"lVGeOzhF\">低代码、零代码究竟能干什么？二者有什么区别
+benchmark\harness\corpus\462973596\answers.json:399 |       "content": "<p data-pid=\"8Z6NRkf_\"><b>零代码和<span class=\"nolink\">低代码平台</span>这两个平台那个对公司后期的发展好？</b></p><p data-pid=\"dzOe4_Pn\">信息技术的发展如火如荼，低代码，零代码开始进入人们
+benchmark\harness\corpus\462973596\answers.json:446 |       "content": "<p data-pid=\"fzLb3MTQ\">在同客户和业界人士探讨“更高效率的软件开发方式”时，我发现大多数人并不清楚“<a href=\"https://link.zhihu.com/?target=https%3A//www.grapecity.com.cn/lowcode
+benchmark\harness\corpus\466695857\answers.json:28 |       "content": "<p data-pid=\"x_kHo3GX\">可逆 vs. 锁定</p><p data-pid=\"Nv6jicPt\">生成代码代表“从技术上可以选择会退”，将来也许有一天需要接着用代码开发，或者说从技术上可以更好和现在所有“代码编程”范式直接使用或对接。</p><p data
+benchmark\harness\corpus\466695857\answers.json:91 |       "content": "<h3>不管什么平台，100%交付源代码才是硬道理。</h3><h3> 门户首页</h3><p data-pid=\"QJYaKO2d\">平台提供了多角色门户功能，支持一人多门户页展示，以及个性化配置，实现“千人千面”门户效果。门户首页无需编码开发，基于门户设计器高保真渲染门户页，
+benchmark\harness\corpus\466695857\answers.json:233 |       "content": "<p data-pid=\"L2ajy5zl\">对于低代码开发产品来讲，全源码交付是它最大优势之一。全源码意味着开发者可以获得完整的应用程序源代码，这对于任何软件项目都是至关重要的。</p><p data-pid=\"kHC20PaK\">就以 JNPF 来举例说明吧，作为一款基于
+benchmark\harness\corpus\466695857\answers.json:273 |       "content": "<p data-pid=\"hVu9dtUj\"><b>源码</b>就是指编写的最原始程序的代码。运行的软件是要经过编写的，程序员编写程序的过程中需要他们的“语言”。音乐家用五线谱，建筑师用图纸，那程序员的工作的语言就是“源码”了。</p><p data-pid=\"gQzktRYp
+benchmark\harness\corpus\477427067\answers.json:40 |       "content": "<p data-pid=\"FGgv6Fqk\"><b>零代码、低代码、APaaS系统应从哪些指标考察选型？</b></p><p data-pid=\"giXYnaQo\">零代码、低代码、apaas的概念在行业内已经流行了很长一段时间。那这3个概念分别指的是什么？企业如果要用该如何
+benchmark\harness\corpus\477427067\answers.json:118 |       "content": "<p data-pid=\"GXYz8SdT\">今天我准备跟大家分享一下，在云原生和微服务架构下企业级低代码平台的选型思考。因为在2023年我跟很多客户和朋友沟通的比较多，大家都在谈论企业怎么样选择一个适合的低代码开发平台？</p><p data-pid=\"q3IJb7TA\">
+benchmark\harness\corpus\477427067\answers.json:272 |       "content": "<p data-pid=\"_F3fxaIs\">软件选型对企业影响很大，初步拟定以下指标供参考。后续进一步更新。</p><p data-pid=\"8B4Hvt6N\">零代码、低代码、aPaas系统选型不同于传统软件选型，区别如下：</p><p data-pid=\"nZSylv
+benchmark\harness\corpus\477427067\answers.json:373 |       "content": "<p data-pid=\"dGHIy8ml\">先别管什么高大上指标，最核心就三条：<b>你们团队谁用？用来做什么？将来谁维护？</b></p><p data-pid=\"YWKkeXyI\"><b>还有就是——</b></p><p data-pid=\"x_2ZhtWz\"><b
+benchmark\harness\corpus\477427067\answers.json:431 |       "content": "<p data-pid=\"6hTNpTeC\">一图说清：零代码平台与低代码平台的区别</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-fc1104744ee3f26
+benchmark\harness\corpus\477427067\answers.json:477 |       "content": "<p data-pid=\"lmzo7IdW\">近些年来，低代码平台的热度在逐渐上升，可以看出企业数字化转型得速度也在逐渐加快。企业的数字开发需求越来越强，市场之间的竞争也愈演愈烈。特别是对于中小型企业，既要考虑到产品功能需求，又要考虑成本压力，所以低代码开平台就成为一个非常合适的
+benchmark\harness\corpus\477427067\answers.json:514 |       "content": "<p data-pid=\"dfMvfAwk\">关于低代码平台的指标考察选型，我们总结了10点关键的考察指标，可供大家参考：</p><p data-pid=\"-xoVmKe4\"><b>1、易用性和开发效率</b>：</p><ul><ul><li data-pid=\"h2Rb1
+benchmark\harness\corpus\477427067\answers.json:709 |       "content": "<p data-pid=\"6YmYh0CF\">目前低代码技术正处在风口，低代码平台产品不断涌现，乱花渐欲迷人眼。作为软件公司或企业IT部门的负责人，在做低代码平台选型时需要关注哪些方面，才能顺利“上车”，让低代码为自己的团队赋能？</p><p data-pid=\"zR_V1ck
+benchmark\harness\corpus\477427067\answers.json:810 |       "content": "<p data-pid=\"wcjxaQHF\">大概在2017年前后，国际知名信息技术研究和分析企业Gartner，开始稳定、持续跟进低代码领域。低代码的称呼方式从HPAPaaS逐步过渡到Low-Code/aPaaS。</p><p data-pid=\"qR8aFB9k\">201
+benchmark\harness\corpus\477427067\answers.json:855 |       "content": "<p></p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-37c9c3fbaaad3917850d7b3dc6d2e910_720w.gif?source=1def8ac
+benchmark\harness\corpus\477427067\answers.json:1081 |       "content": "<p data-pid=\"ftk7CaH9\">云计算、SaaS、数据分析、人工智能等的发展推着全球企业数字化转型的前进，根据IDC发布的数据，中国数字化转型市场规模年均增长率约为31%，在降本增效、改善客户体验、促进业务模式创新等成效都已经被看见。</p><p class=\"z
+benchmark\harness\corpus\477427067\answers.json:1175 |       "content": "<p></p><p data-pid=\"70om4UMW\">本文作者：得帆低代码解决方案专家陈小波</p><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"PhqyQjan\">很多CIO在会议室初见低代码厂商展示
+benchmark\harness\corpus\477427067\answers.json:1257 |       "content": "<p data-pid=\"SY4Yxteu\">零代码、低代码、apaas的概念在整个全球行业内已经流行了很长一段时间。</p><p data-pid=\"D8zKy_wo\">那这3个概念分别指的是什么？他们具备何种能力？企业如果要用该如何选？下面本人一文全部给你讲清楚！</p>
+benchmark\harness\corpus\477427067\answers.json:1333 |       "content": "<p data-pid=\"jdmaP-Of\"><b>不妨参照一下百数，入坑不亏。</b></p><p data-pid=\"CcgJ7pRc\">作为国内初代开发低代码概念工具的厂商，百数已经在办公领域沉淀十年时间，包含了市面上所有无代码平台能实现的所有功能，已助力10000+企
+benchmark\harness\corpus\485463474\answers.json:40 |       "content": "<p data-pid=\"4uPNey5y\">当前零代码、低代码、APaas系统话题热度不断提高，随之其是否能实现复杂业务一直是业内争吵的焦点。很多公司准备入坑，但不知道这坑到底有多深，本人根据切身经验加以探讨。</p><p data-pid=\"-EBOHNAJ\">整体上从对
+benchmark\harness\corpus\485463474\answers.json:164 |       "content": "<p data-pid=\"ixAz2-jU\">目前正处于信息发展时期，讲求效率快，走慢一步就很容易被落下了。正因为如此，传统的开发系统已经跟不上时代的脚步，也无法适应新时期企业信息化的需求。在这种情况之下，企业选择了低代码和无代码平台，试图借助工具来使企业走向科学化发展，好让企业
+benchmark\harness\corpus\485463474\answers.json:278 |       "content": "<h2>可能会遇到的坑</h2><p data-pid=\"3WVOCcCQ\">在零代码、低代码、APaaS系统中，权限控制是一个非常关键的问题，以下是一些可能会遇到的坑：<br/></p><ol><li data-pid=\"x1nfGBFg\">默认权限过于宽松：某些零代码、低
+benchmark\harness\corpus\485463474\answers.json:336 |       "content": "<p data-pid=\"QUd8_1t4\">曾经如何编写代码来构建软件的时代已经结束。如今，计算机科学已经发展得如此之快，以至于我们可以部署零代码工具来创建软件、Web应用程序和移动应用程序，而无需使用或知道任何代码。在本文中，<a href=\"https://link.zh
+benchmark\harness\corpus\485463474\answers.json:407 |       "content": "<p data-pid=\"De4Mn3hP\">零代码、低代码、APaaS系统产生的目的都是为了高效的建立应用系统。但三者之间还有很大的差别。</p><p data-pid=\"J0Q__P1x\">零代码平台通常采用拖、拉、拽等可视化方法就可以直接实现应用系统的搭建，在此过程中无
+benchmark\harness\corpus\487214224\answers.json:40 |       "content": "<p data-pid=\"n7T8_UAV\">   当前零代码、低代码、APaas系统话题热度不断提高，随之其是否能实现复杂业务一直是业内争吵的焦点。很多公司准备入坑，但不知道这坑到底有多深，本人根据切身经验加以探讨。</p><p data-pid=\"jxT9AvO-\">整体
+benchmark\harness\corpus\487214224\answers.json:338 |       "content": "<p></p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-f642778b82ee6d7d55f612e4ab331ffb_720w.jpg?source=1def8ac
+benchmark\harness\corpus\487214224\answers.json:384 |       "content": "<p data-pid=\"aIYaGEcL\">目前正处于信息发展时期，讲求效率快，走慢一步就很容易被落下了。正因为如此，传统的开发系统已经跟不上时代的脚步，也无法适应新时期企业信息化的需求。在这种情况之下，企业选择了低代码和无代码平台，试图借助工具来使企业走向科学化发展，好让企业
+benchmark\harness\lib\adjudication-v2-1.mjs:7 | //         (verified_credential | employment | profile | historical_topic_content
+benchmark\harness\lib\embeddings.mjs:2 | // Character n-gram TF vectors + cosine. Deterministic, offline, no credentials.
+benchmark\harness\lib\results.mjs:3 | //   - NO credentials / cookies / secrets / tokens in any output
+benchmark\harness\lib\runtime.mjs:1 | // Runtime identity — deterministic, machine-auditable, credential-free.
+benchmark\harness\scripts\leak-check.mjs:10 | const SENSITIVE = /cookie|secret|token|password|credential|api[_-]?key|authorization|bearer/i;
+benchmark\harness\tests\benchmark.test.mjs:420 |   const dirty = { ok: 1, zhihu_cookie: 'abc', apiKey: 'x', note: 'token=123', nested: { secret: 's' }, fine: 'path' };
+benchmark\packets\TRACK_B_ADJUDICATION_PACKET_V2_1_REVIEW_PACKET.md:23 | **Root cause found**: the 3 sources are image-heavy answers whose raw HTML contains `data-original-token="v2-..."` (a Zhihu image attribute). The result-writer 
+benchmark\packets\TRACK_B_ADJUDICATION_PACKET_V2_2_REVIEW_PACKET.md:103 | leak check (credentials/private paths) = PASS (149 artifact files)
+benchmark\packets\TRACK_B_PILOT_CORRECTION_PACKET_FOR_CHATGPT.md:153 | Proposed next step (NOT executed): ChatGPT reviews this packet; if accepted, proceed to **source-level adjudication** on `adjudication-packet-v2.json`; after ad
+benchmark\packets\TRACK_B_PILOT_REVIEW_PACKET_FOR_CHATGPT.md:7 | > THIS TURN AUTHORIZATION: **BENCHMARK PILOT IMPLEMENTATION ONLY**
+benchmark\README.md:4 | > **VERSION_ASSIGNMENT: UNASSIGNED.** **IMPLEMENTATION_AUTHORIZATION: BENCHMARK_PILOT_ONLY.**
+evidence\AGENTS.md:224 | - 无 credential / schema / Spec scope 偷扩。
+evidence\LEAK_SCAN_REPORT.txt:8 | 00_READ_ME_FIRST.md:34 | IMPLEMENTATION_AUTHORIZATION   = NONE
+evidence\README.md:79 | 不要读取、展示或要求我把 Cookie / Secret / API Key 粘贴到聊天里；
+evidence\README_EN.md:9 | > This is a **CLI + Skills toolchain**, not an app locked to one agent or one model. Any agent that can execute local commands, read the repository docs, and ac
+evidence\repo-docs\docs\architecture\runtime-strategy.md:37 | The model must not be treated as authority for canonical identity, evidence lineage, coverage, credentials, filesystem/network access, or product-mode semantics
+evidence\repo-docs\docs\product-behavior-contract.md:112 |     需要解析 Access Secret（resolveSecret）；机器/人类行为与当前
+evidence\repo-docs\docs\project-memory\decision-boundary-matrix.md:63 | - substring and token-boundary collisions;
+evidence\repo-docs\docs\project-memory.md:17 |   - `src/markdown-security.js`：`escapeUntrustedMarkdownText`（Markdown control 字符全转义 + 行级结构中和[每行含首行 + leading whitespace 首字符 NBSP 化，防跨 text-node 与 split-whitespa
+evidence\repo-docs\docs\specs\research-orchestration-scope.md:6 | > **IMPLEMENTATION_AUTHORIZATION: MVP_AUTHORIZED**（仅授权 Research Orchestration MVP 实现；不自动创建 V0.4）
+evidence\repo-docs\docs\specs\v0.3-product-scope.md:35 | 5. **大型语料的 token / 成本压力**：corpus-anthology 已有 `popular-sample`（高赞样本）与 `digest`（100% 覆盖）。但介于「仅看高赞」与「全量摘要」之间的**按覆盖率降序取前 X% 用完整正文**这一常见产品形态缺失；且全量 digest 在超大语料下的成本需
+evidence\repo-docs\docs\specs\v2-rich-content-fidelity.md:14 | V1 已可靠完成：自然语言触发 → preflight → 知乎真实 API 抓取 → 多页 pagination → `answers.json` / `answers.md` → `verify-output` → `make-handoff` → corpus handoff verify，并通过真实网络 smo
+evidence\repo-docs\docs\t1-search-answer-count-schema-discovery.md:24 | 1. **preflight**：`node zhihu-answer-grabber/scripts/preflight.mjs --json` → `cookie.usable: true`（local_file）、`secret.usable: true`。仅记录布尔可用性，不输出/不读取任何凭据值。
+evidence\repo-docs\docs\t4-agent-consumer-audit.md:119 |   credential gate; the second documents corpus Skill activation for local corpus
+evidence\repo-docs\docs\t5c-codex-chatgpt-runtime-qualification.md:11 | AUTH_METHOD: ChatGPT login (supported non-secret client status)
+evidence\repo-docs\docs\t5l-llamacpp-runtime-qualification.md:34 | started, no request was made, and no credentials or private configuration were
+evidence\repo-docs\docs\t5lm-lmstudio-local-runtime-qualification.md:145 | ticket writes no map files (T6 scope). No credential is used or stored — the
+evidence\repo-docs\docs\t5r-openai-responses-runtime-qualification.md:69 | model. This is a constructive, fail-closed text boundary: any RFC scheme token
+evidence\repo-docs\docs\t7-top-percent-contract-decision.md:26 | | 成本计量 | 无 token/货币计量；仅 chunk `estimatedTokens` 启发式 |
+evidence\repo-docs\docs\t9-hierarchical-digest-contract.md:37 | - **map 是 per-source**（T6）：`lmstudio-map-executor.mjs runChunkMap` 逐来源调用 tool-less runtime，短 token 回显 + controller 映射回真实 sourceId；空正文/纯占位符来源由 controller 确定性合成（不
+evidence\repo-docs\docs\v0.3-real-dogfood-report.md:14 | 原报告 §5 将生产失败归因于「长 canonical sourceId 截断回显」并建议「改为短不透明 token」。
+evidence\RULES.md:7 | - **Cookie / Secret / Token / 登录凭证绝不进入 repo、log、聊天、JSON 产物、Markdown 产物、长期记忆、临时报告。**

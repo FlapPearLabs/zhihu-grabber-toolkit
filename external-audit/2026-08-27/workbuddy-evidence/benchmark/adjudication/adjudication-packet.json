@@ -1,0 +1,1500 @@
+{
+  "schema": "zhihu-research-benchmark/adjudication-packet",
+  "schema_version": "1.0.0-pilot",
+  "generated_at": "2026-08-27T02:50:55.496Z",
+  "purpose": "Human/ChatGPT adjudication of PROVISIONAL semantic gold. Agent proposed labels below; adjudicator may CONFIRM / REVISE / REJECT each. Only adjudicated labels become FINAL human gold. FIXTURE_MECHANICAL cases (synthetic) need no adjudication.",
+  "cases": [
+    {
+      "case_id": "case-439521858",
+      "dataset_version": "d1-5d5ce59ec01af6cd",
+      "label_status": "PROVISIONAL",
+      "needs_adjudication": true,
+      "category": [
+        "C",
+        "A"
+      ],
+      "gold_stats_by_family": {
+        "relevance": {
+          "label_status": "PROVISIONAL",
+          "total": 17,
+          "scorable": 17,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "must_see": {
+          "label_status": "PROVISIONAL",
+          "total": 4,
+          "scorable": 4,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "aspect_membership": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "aspect_count": 4
+        },
+        "expertise_topic_match": {
+          "label_status": "PROVISIONAL",
+          "total": 4,
+          "scorable": 4,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "evidence_quality": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "total": 9,
+          "scorable": 9,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "freshness": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "total": 1,
+          "scorable": 1,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "unique_long_tail_contribution": {
+          "label_status": "PROVISIONAL",
+          "total": 5,
+          "scorable": 5,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "contradiction": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "claim_cluster_count": 2
+        },
+        "required_provenance_groups": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "claim_group_count": 0
+        },
+        "historical_authority": {
+          "label_status": "PROVISIONAL",
+          "total": 4,
+          "scorable": 4,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        }
+      },
+      "per_family_labels": {
+        "relevance": {
+          "label_status": "PROVISIONAL",
+          "source_count": 17
+        },
+        "must_see": {
+          "label_status": "PROVISIONAL",
+          "source_count": 4
+        },
+        "aspect_membership": {
+          "label_status": "PROVISIONAL",
+          "aspects": [
+            {
+              "aspect_id": "asp-compare",
+              "name": "平台功能/定位对比",
+              "sources": 7
+            },
+            {
+              "aspect_id": "asp-vendor",
+              "name": "厂商背景/阵营（阿里系/帆软/奥哲）",
+              "sources": 4
+            },
+            {
+              "aspect_id": "asp-cost",
+              "name": "成本/定制/边界问题",
+              "sources": 3
+            },
+            {
+              "aspect_id": "asp-critique",
+              "name": "负面评价/使用争议",
+              "sources": 4
+            }
+          ]
+        },
+        "expertise_topic_match": {
+          "label_status": "PROVISIONAL",
+          "source_count": 4
+        },
+        "evidence_quality": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "source_count": 9
+        },
+        "freshness": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "source_count": 1,
+          "window": {
+            "policy_id": "fresh-365d-before-fetch",
+            "reference_epoch_sec": 1786387106,
+            "window_sec": 31536000
+          }
+        },
+        "unique_long_tail_contribution": {
+          "label_status": "PROVISIONAL",
+          "source_count": 5
+        },
+        "contradiction": {
+          "label_status": "PROVISIONAL",
+          "claim_clusters": [
+            {
+              "claim_id": "c1-yida-verdict",
+              "canonical_claim": "宜搭在同类低代码平台中的整体表现评价（正面 vs 负面）",
+              "stances": {
+                "for": 3,
+                "against": 3
+              },
+              "disputed": false
+            },
+            {
+              "claim_id": "c2-yida-ecosystem",
+              "canonical_claim": "是否应选择宜搭/钉钉生态（生态兼容优势 vs 边界模糊/成本问题）",
+              "stances": {
+                "for": 3,
+                "against": 2
+              },
+              "disputed": false
+            }
+          ]
+        },
+        "required_provenance_groups": {
+          "label_status": "PROVISIONAL",
+          "claim_groups": []
+        },
+        "historical_authority": {
+          "label_status": "PROVISIONAL",
+          "source_count": 4
+        }
+      }
+    },
+    {
+      "case_id": "case-477427067",
+      "dataset_version": "d1-113028b0bca1c952",
+      "label_status": "PROVISIONAL",
+      "needs_adjudication": true,
+      "category": [
+        "A",
+        "F"
+      ],
+      "gold_stats_by_family": {
+        "relevance": {
+          "label_status": "PROVISIONAL",
+          "total": 18,
+          "scorable": 18,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "must_see": {
+          "label_status": "PROVISIONAL",
+          "total": 4,
+          "scorable": 4,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "aspect_membership": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "aspect_count": 4
+        },
+        "expertise_topic_match": {
+          "label_status": "PROVISIONAL",
+          "total": 5,
+          "scorable": 5,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "evidence_quality": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "total": 11,
+          "scorable": 11,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "freshness": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "total": 1,
+          "scorable": 1,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "unique_long_tail_contribution": {
+          "label_status": "PROVISIONAL",
+          "total": 5,
+          "scorable": 5,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "contradiction": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "claim_cluster_count": 2
+        },
+        "required_provenance_groups": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "claim_group_count": 0
+        },
+        "historical_authority": {
+          "label_status": "PROVISIONAL",
+          "total": 4,
+          "scorable": 4,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        }
+      },
+      "per_family_labels": {
+        "relevance": {
+          "label_status": "PROVISIONAL",
+          "source_count": 18
+        },
+        "must_see": {
+          "label_status": "PROVISIONAL",
+          "source_count": 4
+        },
+        "aspect_membership": {
+          "label_status": "PROVISIONAL",
+          "aspects": [
+            {
+              "aspect_id": "asp-criteria",
+              "name": "选型指标维度（易用性/扩展性/成本/权限/服务）",
+              "sources": 8
+            },
+            {
+              "aspect_id": "asp-concept",
+              "name": "零代码/低代码/APaaS 概念区分",
+              "sources": 5
+            },
+            {
+              "aspect_id": "asp-vendor",
+              "name": "厂商能力视角（各厂商自述）",
+              "sources": 10
+            },
+            {
+              "aspect_id": "asp-decision",
+              "name": "选型决策路径（自身条件匹配）",
+              "sources": 5
+            }
+          ]
+        },
+        "expertise_topic_match": {
+          "label_status": "PROVISIONAL",
+          "source_count": 5
+        },
+        "evidence_quality": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "source_count": 11
+        },
+        "freshness": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "source_count": 1,
+          "window": {
+            "policy_id": "fresh-365d-before-fetch",
+            "reference_epoch_sec": 1786330595,
+            "window_sec": 31536000
+          }
+        },
+        "unique_long_tail_contribution": {
+          "label_status": "PROVISIONAL",
+          "source_count": 5
+        },
+        "contradiction": {
+          "label_status": "PROVISIONAL",
+          "claim_clusters": [
+            {
+              "claim_id": "c1-criteria-vs-business-first",
+              "canonical_claim": "选型应基于系统化指标框架 vs 应回归业务第一性（先别管高大上指标）",
+              "stances": {
+                "for": 2,
+                "against": 2
+              },
+              "disputed": false
+            },
+            {
+              "claim_id": "c2-vendor-neutrality",
+              "canonical_claim": "低代码选型信息中的厂商宣传 vs 客观中立视角",
+              "stances": {
+                "for": 2,
+                "against": 4
+              },
+              "disputed": false
+            }
+          ]
+        },
+        "required_provenance_groups": {
+          "label_status": "PROVISIONAL",
+          "claim_groups": []
+        },
+        "historical_authority": {
+          "label_status": "PROVISIONAL",
+          "source_count": 4
+        }
+      }
+    },
+    {
+      "case_id": "case-466695857",
+      "dataset_version": "d1-4e0177ae65c33056",
+      "label_status": "PROVISIONAL",
+      "needs_adjudication": true,
+      "category": [
+        "D"
+      ],
+      "gold_stats_by_family": {
+        "relevance": {
+          "label_status": "PROVISIONAL",
+          "total": 15,
+          "scorable": 15,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "must_see": {
+          "label_status": "PROVISIONAL",
+          "total": 4,
+          "scorable": 4,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "aspect_membership": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "aspect_count": 3
+        },
+        "expertise_topic_match": {
+          "label_status": "PROVISIONAL",
+          "total": 5,
+          "scorable": 5,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "evidence_quality": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "total": 4,
+          "scorable": 4,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "freshness": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "unique_long_tail_contribution": {
+          "label_status": "PROVISIONAL",
+          "total": 6,
+          "scorable": 6,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "contradiction": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "claim_cluster_count": 1
+        },
+        "required_provenance_groups": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "claim_group_count": 0
+        },
+        "historical_authority": {
+          "label_status": "PROVISIONAL",
+          "total": 3,
+          "scorable": 3,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        }
+      },
+      "per_family_labels": {
+        "relevance": {
+          "label_status": "PROVISIONAL",
+          "source_count": 15
+        },
+        "must_see": {
+          "label_status": "PROVISIONAL",
+          "source_count": 4
+        },
+        "aspect_membership": {
+          "label_status": "PROVISIONAL",
+          "aspects": [
+            {
+              "aspect_id": "asp-pro-source",
+              "name": "源码交付的价值主张（二次开发/自主可控）",
+              "sources": 8
+            },
+            {
+              "aspect_id": "asp-critique",
+              "name": "源码意义有限/非必需（反方）",
+              "sources": 2
+            },
+            {
+              "aspect_id": "asp-technical",
+              "name": "技术视角（可逆性/锁定/扩展机制）",
+              "sources": 3
+            }
+          ]
+        },
+        "expertise_topic_match": {
+          "label_status": "PROVISIONAL",
+          "source_count": 5
+        },
+        "evidence_quality": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "source_count": 4
+        },
+        "freshness": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "source_count": 0,
+          "window": {
+            "policy_id": "fresh-365d-before-fetch",
+            "reference_epoch_sec": 1786628391,
+            "window_sec": 31536000
+          }
+        },
+        "unique_long_tail_contribution": {
+          "label_status": "PROVISIONAL",
+          "source_count": 6
+        },
+        "contradiction": {
+          "label_status": "PROVISIONAL",
+          "claim_clusters": [
+            {
+              "claim_id": "c1-source-value",
+              "canonical_claim": "低代码平台提供源码是否有实际意义",
+              "stances": {
+                "for": 7,
+                "against": 2
+              },
+              "disputed": false
+            }
+          ]
+        },
+        "required_provenance_groups": {
+          "label_status": "PROVISIONAL",
+          "claim_groups": []
+        },
+        "historical_authority": {
+          "label_status": "PROVISIONAL",
+          "source_count": 3
+        }
+      }
+    },
+    {
+      "case_id": "case-485463474",
+      "dataset_version": "d1-fc3eb2fcb0771d0c",
+      "label_status": "PROVISIONAL",
+      "needs_adjudication": true,
+      "category": [
+        "D"
+      ],
+      "gold_stats_by_family": {
+        "relevance": {
+          "label_status": "PROVISIONAL",
+          "total": 7,
+          "scorable": 7,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "must_see": {
+          "label_status": "PROVISIONAL",
+          "total": 3,
+          "scorable": 3,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "aspect_membership": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "aspect_count": 3
+        },
+        "expertise_topic_match": {
+          "label_status": "PROVISIONAL",
+          "total": 4,
+          "scorable": 4,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "evidence_quality": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "total": 6,
+          "scorable": 6,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "freshness": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "unique_long_tail_contribution": {
+          "label_status": "PROVISIONAL",
+          "total": 3,
+          "scorable": 3,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "contradiction": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "claim_cluster_count": 1
+        },
+        "required_provenance_groups": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "claim_group_count": 0
+        },
+        "historical_authority": {
+          "label_status": "PROVISIONAL",
+          "total": 2,
+          "scorable": 2,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        }
+      },
+      "per_family_labels": {
+        "relevance": {
+          "label_status": "PROVISIONAL",
+          "source_count": 7
+        },
+        "must_see": {
+          "label_status": "PROVISIONAL",
+          "source_count": 3
+        },
+        "aspect_membership": {
+          "label_status": "PROVISIONAL",
+          "aspects": [
+            {
+              "aspect_id": "asp-permission",
+              "name": "权限控制坑点（默认权限/复杂业务权限）",
+              "sources": 3
+            },
+            {
+              "aspect_id": "asp-concept",
+              "name": "零代码/低代码/APaaS 概念与能力差异",
+              "sources": 2
+            },
+            {
+              "aspect_id": "asp-critique",
+              "name": "低代码本质批判（旧概念包装）",
+              "sources": 1
+            }
+          ]
+        },
+        "expertise_topic_match": {
+          "label_status": "PROVISIONAL",
+          "source_count": 4
+        },
+        "evidence_quality": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "source_count": 6
+        },
+        "freshness": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "source_count": 0,
+          "window": {
+            "policy_id": "fresh-365d-before-fetch",
+            "reference_epoch_sec": 1786628391,
+            "window_sec": 31536000
+          }
+        },
+        "unique_long_tail_contribution": {
+          "label_status": "PROVISIONAL",
+          "source_count": 3
+        },
+        "contradiction": {
+          "label_status": "PROVISIONAL",
+          "claim_clusters": [
+            {
+              "claim_id": "c1-innovation-vs-repackaging",
+              "canonical_claim": "零代码/低代码是数字化新工具 vs 只是旧概念包装",
+              "stances": {
+                "for": 2,
+                "against": 1
+              },
+              "disputed": false
+            }
+          ]
+        },
+        "required_provenance_groups": {
+          "label_status": "PROVISIONAL",
+          "claim_groups": []
+        },
+        "historical_authority": {
+          "label_status": "PROVISIONAL",
+          "source_count": 2
+        }
+      }
+    },
+    {
+      "case_id": "case-487214224",
+      "dataset_version": "d1-b12cc16da1a7c158",
+      "label_status": "PROVISIONAL",
+      "needs_adjudication": true,
+      "category": [
+        "D",
+        "F"
+      ],
+      "gold_stats_by_family": {
+        "relevance": {
+          "label_status": "PROVISIONAL",
+          "total": 2,
+          "scorable": 2,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "must_see": {
+          "label_status": "PROVISIONAL",
+          "total": 1,
+          "scorable": 1,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "aspect_membership": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "aspect_count": 1
+        },
+        "expertise_topic_match": {
+          "label_status": "PROVISIONAL",
+          "total": 1,
+          "scorable": 1,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "evidence_quality": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "total": 2,
+          "scorable": 2,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "freshness": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "total": 1,
+          "scorable": 1,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "unique_long_tail_contribution": {
+          "label_status": "PROVISIONAL",
+          "total": 1,
+          "scorable": 1,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "contradiction": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "claim_cluster_count": 0
+        },
+        "required_provenance_groups": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "claim_group_count": 0
+        },
+        "historical_authority": {
+          "label_status": "PROVISIONAL",
+          "total": 1,
+          "scorable": 1,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        }
+      },
+      "per_family_labels": {
+        "relevance": {
+          "label_status": "PROVISIONAL",
+          "source_count": 2
+        },
+        "must_see": {
+          "label_status": "PROVISIONAL",
+          "source_count": 1
+        },
+        "aspect_membership": {
+          "label_status": "PROVISIONAL",
+          "aspects": [
+            {
+              "aspect_id": "asp-business-lines",
+              "name": "业务线/业务数量与团队匹配评估",
+              "sources": 2
+            }
+          ]
+        },
+        "expertise_topic_match": {
+          "label_status": "PROVISIONAL",
+          "source_count": 1
+        },
+        "evidence_quality": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "source_count": 2
+        },
+        "freshness": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "source_count": 1,
+          "window": {
+            "policy_id": "fresh-365d-before-fetch",
+            "reference_epoch_sec": 1786628392,
+            "window_sec": 31536000
+          }
+        },
+        "unique_long_tail_contribution": {
+          "label_status": "PROVISIONAL",
+          "source_count": 1
+        },
+        "contradiction": {
+          "label_status": "PROVISIONAL",
+          "claim_clusters": []
+        },
+        "required_provenance_groups": {
+          "label_status": "PROVISIONAL",
+          "claim_groups": []
+        },
+        "historical_authority": {
+          "label_status": "PROVISIONAL",
+          "source_count": 1
+        }
+      }
+    },
+    {
+      "case_id": "case-cross-lowcode",
+      "dataset_version": "d1-9b478b370461315c",
+      "label_status": "PROVISIONAL",
+      "needs_adjudication": true,
+      "category": [
+        "G",
+        "A",
+        "F"
+      ],
+      "gold_stats_by_family": {
+        "relevance": {
+          "label_status": "PROVISIONAL",
+          "total": 74,
+          "scorable": 74,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "must_see": {
+          "label_status": "PROVISIONAL",
+          "total": 9,
+          "scorable": 9,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "aspect_membership": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "aspect_count": 6
+        },
+        "expertise_topic_match": {
+          "label_status": "PROVISIONAL",
+          "total": 12,
+          "scorable": 12,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "evidence_quality": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "total": 39,
+          "scorable": 39,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "freshness": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "total": 3,
+          "scorable": 3,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "unique_long_tail_contribution": {
+          "label_status": "PROVISIONAL",
+          "total": 19,
+          "scorable": 19,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "contradiction": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "claim_cluster_count": 3
+        },
+        "required_provenance_groups": {
+          "label_status": "PROVISIONAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "claim_group_count": 4
+        },
+        "historical_authority": {
+          "label_status": "PROVISIONAL",
+          "total": 7,
+          "scorable": 7,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        }
+      },
+      "per_family_labels": {
+        "relevance": {
+          "label_status": "PROVISIONAL",
+          "source_count": 74
+        },
+        "must_see": {
+          "label_status": "PROVISIONAL",
+          "source_count": 9
+        },
+        "aspect_membership": {
+          "label_status": "PROVISIONAL",
+          "aspects": [
+            {
+              "aspect_id": "asp-criteria",
+              "name": "选型指标框架（跨问题）",
+              "sources": 9
+            },
+            {
+              "aspect_id": "asp-vendor-compare",
+              "name": "主流平台对比（宜搭/简道云/氚云等）",
+              "sources": 8
+            },
+            {
+              "aspect_id": "asp-concept",
+              "name": "零代码/低代码/APaaS 概念区分",
+              "sources": 8
+            },
+            {
+              "aspect_id": "asp-pitfalls",
+              "name": "入坑坑点（权限/业务线匹配）",
+              "sources": 5
+            },
+            {
+              "aspect_id": "asp-zero-vs-low",
+              "name": "零代码 vs 低代码 后期发展争议",
+              "sources": 6
+            },
+            {
+              "aspect_id": "asp-source-code",
+              "name": "源码交付意义",
+              "sources": 7
+            }
+          ]
+        },
+        "expertise_topic_match": {
+          "label_status": "PROVISIONAL",
+          "source_count": 12
+        },
+        "evidence_quality": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "source_count": 39
+        },
+        "freshness": {
+          "label_status": "MECHANICAL_CONFIRMED",
+          "source_count": 3,
+          "window": {
+            "policy_id": "fresh-365d-before-max-fetch",
+            "reference_epoch_sec": 1786628392,
+            "window_sec": 31536000
+          }
+        },
+        "unique_long_tail_contribution": {
+          "label_status": "PROVISIONAL",
+          "source_count": 19
+        },
+        "contradiction": {
+          "label_status": "PROVISIONAL",
+          "claim_clusters": [
+            {
+              "claim_id": "c1-yida-verdict",
+              "canonical_claim": "宜搭整体表现评价（正面 vs 负面）",
+              "stances": {
+                "for": 3,
+                "against": 3
+              },
+              "disputed": false
+            },
+            {
+              "claim_id": "c2-zero-vs-low-future",
+              "canonical_claim": "零代码 vs 低代码：哪个对公司后期发展更好",
+              "stances": {
+                "for": 4,
+                "against": 2
+              },
+              "disputed": false
+            },
+            {
+              "claim_id": "c3-source-value",
+              "canonical_claim": "低代码平台提供源码是否有实际意义",
+              "stances": {
+                "for": 7,
+                "against": 2
+              },
+              "disputed": false
+            }
+          ]
+        },
+        "required_provenance_groups": {
+          "label_status": "PROVISIONAL",
+          "claim_groups": [
+            {
+              "claim_id": "xq1-framework-over-vendor",
+              "claim": "选型应基于业务/指标框架而非单一厂商宣传",
+              "required_provenance_groups": [
+                {
+                  "group": "question",
+                  "question_ids": [
+                    "477427067"
+                  ],
+                  "sources": 3
+                },
+                {
+                  "group": "question",
+                  "question_ids": [
+                    "439521858"
+                  ],
+                  "sources": 2
+                },
+                {
+                  "group": "question",
+                  "question_ids": [
+                    "485463474"
+                  ],
+                  "sources": 1
+                }
+              ]
+            },
+            {
+              "claim_id": "xq2-zero-vs-low-debate",
+              "claim": "零代码 vs 低代码的后期发展存在真实争议",
+              "required_provenance_groups": [
+                {
+                  "group": "question",
+                  "question_ids": [
+                    "462973596"
+                  ],
+                  "sources": 3
+                },
+                {
+                  "group": "question",
+                  "question_ids": [
+                    "477427067"
+                  ],
+                  "sources": 2
+                }
+              ]
+            },
+            {
+              "claim_id": "xq3-pitfalls",
+              "claim": "权限控制与业务线匹配是低代码入坑的关键风险点",
+              "required_provenance_groups": [
+                {
+                  "group": "question",
+                  "question_ids": [
+                    "485463474"
+                  ],
+                  "sources": 2
+                },
+                {
+                  "group": "question",
+                  "question_ids": [
+                    "487214224"
+                  ],
+                  "sources": 2
+                }
+              ]
+            },
+            {
+              "claim_id": "xq4-vendor-tension",
+              "claim": "低代码信息生态中存在厂商自我宣传与客观评估的张力",
+              "required_provenance_groups": [
+                {
+                  "group": "question",
+                  "question_ids": [
+                    "477427067"
+                  ],
+                  "sources": 2
+                },
+                {
+                  "group": "question",
+                  "question_ids": [
+                    "466695857"
+                  ],
+                  "sources": 2
+                },
+                {
+                  "group": "question",
+                  "question_ids": [
+                    "439521858"
+                  ],
+                  "sources": 2
+                }
+              ]
+            }
+          ]
+        },
+        "historical_authority": {
+          "label_status": "PROVISIONAL",
+          "source_count": 7
+        }
+      }
+    },
+    {
+      "case_id": "case-synth-dominance",
+      "dataset_version": "d1-003830a03f10e482",
+      "label_status": "FIXTURE_MECHANICAL",
+      "needs_adjudication": false,
+      "category": [
+        "G",
+        "F"
+      ],
+      "gold_stats_by_family": {
+        "relevance": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 1080,
+          "scorable": 1080,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "must_see": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 12,
+          "scorable": 12,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "aspect_membership": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "aspect_count": 3
+        },
+        "expertise_topic_match": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 5,
+          "scorable": 5,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "evidence_quality": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 5,
+          "scorable": 5,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "freshness": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 30,
+          "scorable": 30,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "unique_long_tail_contribution": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 1,
+          "scorable": 1,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "contradiction": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "claim_cluster_count": 1
+        },
+        "required_provenance_groups": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "claim_group_count": 1
+        },
+        "historical_authority": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 11,
+          "scorable": 11,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        }
+      },
+      "per_family_labels": {
+        "relevance": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "source_count": 1080
+        },
+        "must_see": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "source_count": 12
+        },
+        "aspect_membership": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "aspects": [
+            {
+              "aspect_id": "asp-mainstream",
+              "name": "主流生态与能力",
+              "sources": 10
+            },
+            {
+              "aspect_id": "asp-defects",
+              "name": "专家指出的缺陷",
+              "sources": 5
+            },
+            {
+              "aspect_id": "asp-compliance",
+              "name": "2026 新规合规",
+              "sources": 30
+            }
+          ]
+        },
+        "expertise_topic_match": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "source_count": 5
+        },
+        "evidence_quality": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "source_count": 5
+        },
+        "freshness": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "source_count": 30,
+          "window": {
+            "policy_id": "fresh-90d-before-max-fetch",
+            "reference_epoch_sec": 1786628392,
+            "window_sec": 7776000
+          }
+        },
+        "unique_long_tail_contribution": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "source_count": 1
+        },
+        "contradiction": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "claim_clusters": [
+            {
+              "claim_id": "syn-c1-platform-a-verdict",
+              "canonical_claim": "平台A 是否值得长期选择（主流正面 vs 专家负面）",
+              "stances": {
+                "for": 5,
+                "against": 5
+              },
+              "disputed": false
+            }
+          ]
+        },
+        "required_provenance_groups": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "claim_groups": [
+            {
+              "claim_id": "syn-xq1-triple-view",
+              "claim": "平台A 长期选择需综合主流生态、专家缺陷与合规新规三方面",
+              "required_provenance_groups": [
+                {
+                  "group": "question",
+                  "question_ids": [
+                    "Q-SYN-D1"
+                  ],
+                  "sources": 5
+                },
+                {
+                  "group": "question",
+                  "question_ids": [
+                    "Q-SYN-D2"
+                  ],
+                  "sources": 5
+                },
+                {
+                  "group": "question",
+                  "question_ids": [
+                    "Q-SYN-D3"
+                  ],
+                  "sources": 3
+                }
+              ]
+            }
+          ]
+        },
+        "historical_authority": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "source_count": 11
+        }
+      }
+    },
+    {
+      "case_id": "case-synth-expert",
+      "dataset_version": "d1-964c0a07718a7e77",
+      "label_status": "FIXTURE_MECHANICAL",
+      "needs_adjudication": false,
+      "category": [
+        "H",
+        "D"
+      ],
+      "gold_stats_by_family": {
+        "relevance": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 40,
+          "scorable": 40,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "must_see": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 8,
+          "scorable": 8,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "aspect_membership": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "aspect_count": 2
+        },
+        "expertise_topic_match": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 10,
+          "scorable": 10,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "evidence_quality": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 20,
+          "scorable": 20,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "freshness": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "unique_long_tail_contribution": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 5,
+          "scorable": 5,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        },
+        "contradiction": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "claim_cluster_count": 0
+        },
+        "required_provenance_groups": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 0,
+          "scorable": 0,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0,
+          "claim_group_count": 0
+        },
+        "historical_authority": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "total": 6,
+          "scorable": 6,
+          "unresolved": 0,
+          "disputed": 0,
+          "gold_dispute_rate": 0
+        }
+      },
+      "per_family_labels": {
+        "relevance": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "source_count": 40
+        },
+        "must_see": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "source_count": 8
+        },
+        "aspect_membership": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "aspects": [
+            {
+              "aspect_id": "asp-architecture",
+              "name": "技术架构与性能",
+              "sources": 10
+            },
+            {
+              "aspect_id": "asp-ux",
+              "name": "易用性与上手",
+              "sources": 3
+            }
+          ]
+        },
+        "expertise_topic_match": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "source_count": 10
+        },
+        "evidence_quality": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "source_count": 20
+        },
+        "freshness": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "source_count": 0,
+          "window": {
+            "policy_id": "fresh-365d-before-fetch",
+            "reference_epoch_sec": 1786628392,
+            "window_sec": 31536000
+          }
+        },
+        "unique_long_tail_contribution": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "source_count": 5
+        },
+        "contradiction": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "claim_clusters": []
+        },
+        "required_provenance_groups": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "claim_groups": []
+        },
+        "historical_authority": {
+          "label_status": "FIXTURE_MECHANICAL",
+          "source_count": 6
+        }
+      }
+    }
+  ]
+}

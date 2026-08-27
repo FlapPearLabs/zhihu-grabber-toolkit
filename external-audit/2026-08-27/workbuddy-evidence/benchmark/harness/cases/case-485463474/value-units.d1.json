@@ -1,0 +1,151 @@
+[
+  {
+    "unit_id": "must_see:485463474:2109090852",
+    "question_id": "485463474",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "485463474:2109090852"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:485463474:2940558097",
+    "question_id": "485463474",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "485463474:2940558097"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:485463474:2706684256",
+    "question_id": "485463474",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "485463474:2706684256"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-permission",
+    "question_id": "485463474",
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-permission",
+    "supporting_source_ids": [
+      "485463474:2109090852",
+      "485463474:2940558097",
+      "485463474:2180915039"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-concept",
+    "question_id": "485463474",
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-concept",
+    "supporting_source_ids": [
+      "485463474:2688629921",
+      "485463474:2189029739"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-critique",
+    "question_id": "485463474",
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-critique",
+    "supporting_source_ids": [
+      "485463474:2406068294"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:485463474:2940558097",
+    "question_id": "485463474",
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "485463474:2940558097"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:485463474:2406068294",
+    "question_id": "485463474",
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "485463474:2406068294"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:485463474:2189029739",
+    "question_id": "485463474",
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "485463474:2189029739"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "contra_side:c1-innovation-vs-repackaging:for",
+    "question_id": "485463474",
+    "unit_type": "required_contradiction_side",
+    "claim_id": "c1-innovation-vs-repackaging",
+    "stance": "for",
+    "supporting_source_ids": [
+      "485463474:2180915039",
+      "485463474:2706684256"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "contra_side:c1-innovation-vs-repackaging:against",
+    "question_id": "485463474",
+    "unit_type": "required_contradiction_side",
+    "claim_id": "c1-innovation-vs-repackaging",
+    "stance": "against",
+    "supporting_source_ids": [
+      "485463474:2406068294"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "expert_source_group",
+    "question_id": null,
+    "unit_type": "expert_source_group",
+    "supporting_source_ids": [
+      "485463474:2109090852",
+      "485463474:2688629921",
+      "485463474:2706684256",
+      "485463474:2940558097"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "evidence_source_group",
+    "question_id": null,
+    "unit_type": "evidence_source_group",
+    "supporting_source_ids": [
+      "485463474:2109090852",
+      "485463474:2180915039",
+      "485463474:2189029739",
+      "485463474:2940558097",
+      "485463474:2706684256",
+      "485463474:2688629921"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  }
+]

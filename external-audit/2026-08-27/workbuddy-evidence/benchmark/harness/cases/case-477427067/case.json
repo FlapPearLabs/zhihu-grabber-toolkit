@@ -1,0 +1,23 @@
+{
+  "case_id": "case-477427067",
+  "category": ["A", "F"],
+  "research_question": "企业考察零代码、低代码、APaaS 系统时应从哪些指标进行选型？",
+  "question_ids": ["477427067"],
+  "reference_questions": ["477427067"],
+  "budgets": { "K_SMALL": 3, "K_MEDIUM": 5, "K_LARGE": 8 },
+  "freshness_window_policy": {
+    "policy_id": "fresh-365d-before-fetch",
+    "window_sec": 31536000,
+    "reference_epoch_sec": 1786330595,
+    "reference_note": "fetchedAt 2026-08-10T02:56:35Z; PILOT_CANDIDATE_WINDOW (case-specific, event-relative)",
+    "note": "frozen BEFORE strategy execution; must not be adjusted post-hoc by results"
+  },
+  "long_tail_min_chars": 80,
+  "mmr_lambda": 0.5,
+  "mmr_lambda_note": "pilot configuration parameter, NOT a production default",
+  "lane_weights": { "mainstream": 1, "expert": 1, "evidence_rich": 1, "fresh": 1, "long_tail": 1, "contradictory": 1 },
+  "author_identity": "name_only",
+  "author_identity_confidence": "WEAK",
+  "expert_author_keys": ["简道云", "人月聊IT", "葡萄城", "得帆云", "徐翔轩"],
+  "notes": "verified corpus (handoff verified=true). Contains official vendor account 简道云 answering its own product category (expert-with-bias); contradiction between 'indicator-framework' approach and 'business-first' approach."
+}

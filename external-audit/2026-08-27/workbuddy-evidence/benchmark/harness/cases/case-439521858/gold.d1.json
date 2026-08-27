@@ -1,0 +1,126 @@
+{
+  "case_id": "case-439521858",
+  "gold_version": "g1-agent-proposal",
+  "label_status_policy": {
+    "semantic": "PROVISIONAL",
+    "mechanical": "MECHANICAL_CONFIRMED",
+    "note": "Semantic labels are AGENT PROPOSALS, not FINAL human gold. Adjudication pending (see adjudication packet). Mechanical labels derived from canonical metadata."
+  },
+  "families": {
+    "relevance": {
+      "label_status": "PROVISIONAL",
+      "sources": [
+        "439521858:1918690313431659010", "439521858:1968643478662644597", "439521858:3376976033",
+        "439521858:3450414501", "439521858:1780646730", "439521858:1976466205", "439521858:1775773370",
+        "439521858:2550630306", "439521858:2091701747", "439521858:1698674167", "439521858:1806634616",
+        "439521858:3306973514", "439521858:2009238931", "439521858:1746716534", "439521858:1682235591",
+        "439521858:1682718413", "439521858:2226898798"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "per_question": {
+        "439521858": [
+          "439521858:1918690313431659010", "439521858:1968643478662644597", "439521858:3376976033",
+          "439521858:3450414501", "439521858:1780646730", "439521858:1976466205", "439521858:1775773370",
+          "439521858:2550630306", "439521858:2091701747", "439521858:1698674167", "439521858:1806634616",
+          "439521858:3306973514", "439521858:2009238931", "439521858:1746716534", "439521858:1682235591",
+          "439521858:1682718413", "439521858:2226898798"
+        ]
+      }
+    },
+    "must_see": {
+      "label_status": "PROVISIONAL",
+      "sources": [
+        "439521858:3376976033",
+        "439521858:1976466205",
+        "439521858:1775773370",
+        "439521858:1780646730"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "top-vote substantive comparative answers (vendor-neutral + vendor), incl. the critical 领悟杂谈 view"
+    },
+    "aspect_membership": {
+      "label_status": "PROVISIONAL",
+      "aspects": [
+        { "aspect_id": "asp-compare", "name": "平台功能/定位对比", "sources": ["439521858:3376976033", "439521858:3450414501", "439521858:1968643478662644597", "439521858:1918690313431659010", "439521858:1775773370", "439521858:1976466205", "439521858:2226898798"] },
+        { "aspect_id": "asp-vendor", "name": "厂商背景/阵营（阿里系/帆软/奥哲）", "sources": ["439521858:3376976033", "439521858:1682718413", "439521858:2226898798", "439521858:1976466205"] },
+        { "aspect_id": "asp-cost", "name": "成本/定制/边界问题", "sources": ["439521858:2091701747", "439521858:1806634616", "439521858:1682235591"] },
+        { "aspect_id": "asp-critique", "name": "负面评价/使用争议", "sources": ["439521858:1780646730", "439521858:1698674167", "439521858:1746716534", "439521858:2009238931"] }
+      ]
+    },
+    "expertise_topic_match": {
+      "label_status": "PROVISIONAL",
+      "sources": ["439521858:3376976033", "439521858:1976466205", "439521858:3450414501", "439521858:1918690313431659010"],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "vendor accounts / independent reviewer with domain track record; name-only identity (WEAK)"
+    },
+    "evidence_quality": {
+      "label_status": "PROVISIONAL",
+      "sources": ["439521858:1918690313431659010", "439521858:1968643478662644597", "439521858:3376976033", "439521858:3450414501", "439521858:1780646730", "439521858:1976466205", "439521858:2550630306", "439521858:3306973514", "439521858:2226898798"],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "SEMANTIC evidence quality (agent proposal, PROVISIONAL). Evidence PRESENCE (mechanical markers) is computed separately by the harness (evidence_presence family) and is MECHANICAL_CONFIRMED."
+    },
+    "freshness": {
+      "label_status": "PROVISIONAL",
+      "fresh_relevant_sources": ["439521858:1968643478662644597"],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "window": { "policy_id": "fresh-365d-before-fetch", "reference_epoch_sec": 1786387106, "window_sec": 31536000 },
+      "note": "fresh AND relevant (PROVISIONAL until relevance adjudicated). Window membership itself (mechanical) is computed by the harness."
+    },
+    "unique_long_tail_contribution": {
+      "label_status": "PROVISIONAL",
+      "sources": ["439521858:1968643478662644597", "439521858:1918690313431659010", "439521858:2550630306", "439521858:2091701747", "439521858:1682235591"],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "zero/low-vote + substantive unique contribution (fresh comparative / comprehensive evaluation / case study / cost angle / practical experience)"
+    },
+    "contradiction": {
+      "label_status": "PROVISIONAL",
+      "claim_clusters": [
+        {
+          "claim_id": "c1-yida-verdict",
+          "canonical_claim": "宜搭在同类低代码平台中的整体表现评价（正面 vs 负面）",
+          "stances": {
+            "for": ["439521858:3376976033", "439521858:1976466205", "439521858:2009238931"],
+            "against": ["439521858:1780646730", "439521858:1698674167", "439521858:1746716534"]
+          },
+          "source_ids": ["439521858:3376976033", "439521858:1976466205", "439521858:2009238931", "439521858:1780646730", "439521858:1698674167", "439521858:1746716534"],
+          "disputed": false
+        },
+        {
+          "claim_id": "c2-yida-ecosystem",
+          "canonical_claim": "是否应选择宜搭/钉钉生态（生态兼容优势 vs 边界模糊/成本问题）",
+          "stances": {
+            "for": ["439521858:1682235591", "439521858:1682718413", "439521858:2226898798"],
+            "against": ["439521858:1806634616", "439521858:1746716534"]
+          },
+          "source_ids": ["439521858:1682235591", "439521858:1682718413", "439521858:2226898798", "439521858:1806634616", "439521858:1746716534"],
+          "disputed": false
+        }
+      ]
+    },
+    "required_provenance_groups": {
+      "label_status": "PROVISIONAL",
+      "claim_groups": [],
+      "note": "single-question case: no cross-question claims (N/A)"
+    },
+    "historical_authority": {
+      "label_status": "PROVISIONAL",
+      "sources": ["439521858:3376976033", "439521858:1976466205", "439521858:1775773370", "439521858:1780646730"],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "top-vote historical anchor answers"
+    }
+  },
+  "provenance": {
+    "proposed_by": "agent",
+    "proposal_method": "blind content scan of canonical answers (no strategy outputs visible)",
+    "adjudicated_by": null,
+    "adjudication_status": "PENDING",
+    "label_status": "PROVISIONAL"
+  }
+}

@@ -1,0 +1,406 @@
+{
+  "schema": "zhihu-research-benchmark/result",
+  "schema_version": "1.0.0-pilot",
+  "generated_at": "2026-08-27T04:54:27.237Z",
+  "dataset_version": "d1-dd176f851ce0cef3",
+  "dataset_version_status": "D2",
+  "case_id": "case-synth-expert",
+  "case_meta": {
+    "category": [
+      "H",
+      "D"
+    ],
+    "question_count": 1,
+    "source_count": 40,
+    "verified_source_count": 40,
+    "gold_label_status": "FIXTURE_MECHANICAL",
+    "gold_adjudication_status": "NOT_REQUIRED",
+    "scoring_status": "FIXTURE_MECHANICAL"
+  },
+  "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+  "strategy_config": {
+    "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+    "budget_key": "K_MEDIUM",
+    "K": 5,
+    "tie_break": "source_id_asc",
+    "query_text_source": "case.research_question + question titles",
+    "mmr_lambda": null,
+    "lane_weights": null,
+    "lane_kinds": null,
+    "embedding_runtime": {
+      "id": "benchmark-local-deterministic-ngram",
+      "version": "1.0.0",
+      "kind": "deterministic-lexical-similarity-proxy",
+      "note": "NOT a neural embedding model. Pilot-only deterministic similarity proxy (char n-gram TF vectors + cosine) so B1/B2 are runnable offline, cheap and stable. Swap point for a real embedding runtime in a later round."
+    },
+    "strategy_class": "FAIR_COMPARISON",
+    "excluded_from_fair_comparison": false,
+    "result_status": "HARNESS_SANITY_ONLY",
+    "result_status_note": "B1/B2 use deterministic lexical n-gram proxy (NOT frozen Dense Embedding); real semantic gold = HUMAN_ADJUDICATED (ChatGPT); ngram results remain harness evidence only"
+  },
+  "candidate_pool_id": "pool-Q-SYN-E1",
+  "budget": {
+    "key": "K_MEDIUM",
+    "K": 5
+  },
+  "selected_source_ids": [
+    "Q-SYN-E1:400005",
+    "Q-SYN-E1:400002",
+    "Q-SYN-E1:400001",
+    "Q-SYN-E1:400009",
+    "Q-SYN-E1:400007"
+  ],
+  "provenance": [
+    {
+      "source_id": "Q-SYN-E1:400005",
+      "question_id": "Q-SYN-E1",
+      "author_key": "expert_05",
+      "voteupCount": 1,
+      "createdTime": 1639254429
+    },
+    {
+      "source_id": "Q-SYN-E1:400002",
+      "question_id": "Q-SYN-E1",
+      "author_key": "expert_02",
+      "voteupCount": 2,
+      "createdTime": 1641859240
+    },
+    {
+      "source_id": "Q-SYN-E1:400001",
+      "question_id": "Q-SYN-E1",
+      "author_key": "expert_01",
+      "voteupCount": 0,
+      "createdTime": 1640573660
+    },
+    {
+      "source_id": "Q-SYN-E1:400009",
+      "question_id": "Q-SYN-E1",
+      "author_key": "expert_09",
+      "voteupCount": 1,
+      "createdTime": 1657461209
+    },
+    {
+      "source_id": "Q-SYN-E1:400007",
+      "question_id": "Q-SYN-E1",
+      "author_key": "expert_07",
+      "voteupCount": 2,
+      "createdTime": 1640225993
+    }
+  ],
+  "metric_results": {
+    "must_see_recall": {
+      "value": 0.375,
+      "hit": 3,
+      "scorable": 8,
+      "scoring_status": "PROVISIONAL"
+    },
+    "aspect_recall": {
+      "value": 0.5,
+      "covered_aspects": 1,
+      "scorable_aspects": 2,
+      "increments": "1/2",
+      "scoring_status": "PROVISIONAL"
+    },
+    "aspect_source_recall_diagnostic": {
+      "value": 0.25,
+      "aspects": 2,
+      "per_aspect": [
+        0.5,
+        0
+      ],
+      "note": "diagnostic only; not the approved aspect_recall"
+    },
+    "expert_recall": {
+      "value": 0.5,
+      "hit": 5,
+      "scorable": 10,
+      "scoring_status": "PROVISIONAL"
+    },
+    "long_tail_recall": {
+      "value": 0.4,
+      "hit": 2,
+      "scorable": 5,
+      "scoring_status": "PROVISIONAL"
+    },
+    "fresh_window_membership_recall": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "no_fresh_window_members",
+      "scoring_status": "MECHANICAL_CONFIRMED"
+    },
+    "fresh_content_recall": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "no_scorable_fresh_relevant_gold",
+      "scoring_status": "PROVISIONAL",
+      "note": "PROVISIONAL until relevance adjudicated; fresh-but-off-topic sources are never FINAL fresh relevant gold"
+    },
+    "historical_authority_retention": {
+      "value": 0.3333333333333333,
+      "hit": 2,
+      "scorable": 6,
+      "scoring_status": "PROVISIONAL"
+    },
+    "evidence_presence_recall": {
+      "value": 0.25,
+      "hit": 5,
+      "scorable": 20,
+      "scoring_status": "MECHANICAL_CONFIRMED"
+    },
+    "evidence_rich_recall": {
+      "value": 0.25,
+      "hit": 5,
+      "scorable": 20,
+      "scoring_status": "PROVISIONAL",
+      "note": "FINAL only after evidence_quality is human-adjudicated"
+    },
+    "contradiction_claim_recall": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "no_scorable_contradiction_clusters",
+      "scoring_status": "PROVISIONAL"
+    },
+    "cross_question_claim_recall": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "no_cross_question_claim_gold"
+    },
+    "semantic_redundancy": {
+      "value": 0.565839794291209,
+      "pairs": 10,
+      "scoring_status": "HARNESS_SANITY_ONLY"
+    },
+    "semantic_diversity": {
+      "value": 0.434160205708791
+    },
+    "claim_redundancy": {
+      "value": 0,
+      "sharing": 0,
+      "total": 10,
+      "scoring_status": "PROVISIONAL"
+    },
+    "analysis_coverage": {
+      "value": 0.125,
+      "hit": 5,
+      "scorable": 40,
+      "scoring_status": "MECHANICAL_CONFIRMED"
+    },
+    "normalized_question_diversity": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "Q<=1"
+    },
+    "source_concentration": {
+      "selected_question_count": 1,
+      "selected_content_by_question": {
+        "Q-SYN-E1": 5
+      },
+      "largest_question_share": 1,
+      "selected_author_concentration": 0.20000000000000004,
+      "selected_content_type_distribution": {
+        "answer": 5
+      },
+      "claim_source_diversity": null
+    },
+    "per_question_coverage_preservation": {
+      "per_question": {
+        "Q-SYN-E1": {
+          "value": 0.4,
+          "covered_units": 6,
+          "scorable_units": 15
+        }
+      },
+      "scorable_question_count": 1,
+      "unit_basis": "value_units"
+    },
+    "minority_question_recall_macro": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "fewer_than_two_scorable_reference_questions"
+    },
+    "minority_question_recall_min": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "fewer_than_two_scorable_reference_questions"
+    },
+    "minority_question_recall_micro_diagnostic": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "fewer_than_two_scorable_reference_questions"
+    },
+    "independent_source_diversity": {
+      "value": 1,
+      "unique_pairs": 5,
+      "n": 5
+    },
+    "cost": {
+      "relative_compute_ops": 81,
+      "embedding_calls": 41,
+      "embedding_cache_hits": 0,
+      "pairwise_similarity_calls": 40,
+      "selection_ops": 0,
+      "wall_clock_ms": 1,
+      "note": "relative_compute_ops = local relative compute (embedding_calls + pairwise_similarity_calls + selection_ops) within same machine; NOT a production cost estimate. Provider/model cost must be measured separately."
+    },
+    "false_stop_rate": {
+      "value": "NOT_RUN",
+      "reason": "no Tier-3 batch fixture in this pilot; would require adaptive stopping harness"
+    }
+  },
+  "gold_stats_by_family": {
+    "relevance": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 40,
+      "scorable": 40,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "must_see": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 8,
+      "scorable": 8,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "aspect_membership": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0,
+      "aspect_count": 2
+    },
+    "expertise_topic_match": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 10,
+      "scorable": 10,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "evidence_quality": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 20,
+      "scorable": 20,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "evidence_presence": {
+      "label_status": "MECHANICAL_CONFIRMED",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "freshness": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "unique_long_tail_contribution": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 5,
+      "scorable": 5,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "contradiction": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0,
+      "claim_cluster_count": 0
+    },
+    "required_provenance_groups": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0,
+      "claim_group_count": 0
+    },
+    "historical_authority": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 6,
+      "scorable": 6,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "_value_units": {
+      "total": 17,
+      "scorable": 17,
+      "by_type": {
+        "must_see": {
+          "total": 8,
+          "scorable": 8
+        },
+        "critical_aspect": {
+          "total": 2,
+          "scorable": 2
+        },
+        "unique_claim": {
+          "total": 5,
+          "scorable": 5
+        },
+        "expert_source_group": {
+          "total": 1,
+          "scorable": 1
+        },
+        "evidence_source_group": {
+          "total": 1,
+          "scorable": 1
+        }
+      }
+    }
+  },
+  "cost": {
+    "embedding_calls": 41,
+    "embedding_cache_hits": 0,
+    "pairwise_similarity_calls": 40,
+    "selection_ops": 0,
+    "wall_ms": 1,
+    "cache_hits": 41
+  },
+  "stability": {
+    "value": 1,
+    "min": 1,
+    "pairs": 3,
+    "per_pair": [
+      1,
+      1,
+      1
+    ]
+  },
+  "warnings": [],
+  "notes": "D2 run. Real semantic gold = HUMAN_ADJUDICATED (ChatGPT, TRACK_B_SEMANTIC_GOLD_ADJUDICATION_V1.json); synthetic = FIXTURE_MECHANICAL. HARNESS_SANITY_ONLY: ngram proxy, not production embedding. No FINAL benchmark winner claims.",
+  "runtime_identity": {
+    "node": "v22.22.2",
+    "platform": "node",
+    "benchmark_harness_version": "0.1.0-pilot",
+    "embedding_runtime": {
+      "id": "benchmark-local-deterministic-ngram",
+      "version": "1.0.0",
+      "kind": "deterministic-lexical-similarity-proxy",
+      "note": "NOT a neural embedding model. Pilot-only deterministic similarity proxy (char n-gram TF vectors + cosine) so B1/B2 are runnable offline, cheap and stable. Swap point for a real embedding runtime in a later round."
+    },
+    "selectors": {
+      "B0_POPULARITY_TOP_K": "1.0.0",
+      "B1_LEXICAL_NGRAM_PROXY": "1.0.0",
+      "B2_MMR_NGRAM_PROXY": "1.0.0",
+      "B2_ORACLE_LANES": "1.0.0"
+    }
+  }
+}

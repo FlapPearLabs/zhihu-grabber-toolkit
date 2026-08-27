@@ -1,0 +1,207 @@
+[
+  {
+    "unit_id": "must_see:439521858:3376976033",
+    "question_id": "439521858",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "439521858:3376976033"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:439521858:1780646730",
+    "question_id": "439521858",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "439521858:1780646730"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:439521858:1775773370",
+    "question_id": "439521858",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "439521858:1775773370"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:439521858:2226898798",
+    "question_id": "439521858",
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "439521858:2226898798"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-compare",
+    "question_id": "439521858",
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-compare",
+    "supporting_source_ids": [
+      "439521858:1918690313431659010",
+      "439521858:1968643478662644597",
+      "439521858:3376976033",
+      "439521858:3450414501",
+      "439521858:1780646730",
+      "439521858:1976466205",
+      "439521858:1775773370",
+      "439521858:2550630306",
+      "439521858:1682235591",
+      "439521858:2226898798"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-vendor",
+    "question_id": "439521858",
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-vendor",
+    "supporting_source_ids": [
+      "439521858:3376976033",
+      "439521858:3450414501",
+      "439521858:2226898798"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-cost",
+    "question_id": "439521858",
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-cost",
+    "supporting_source_ids": [
+      "439521858:2091701747",
+      "439521858:1806634616"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-critique",
+    "question_id": "439521858",
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-critique",
+    "supporting_source_ids": [
+      "439521858:1780646730",
+      "439521858:2091701747",
+      "439521858:1698674167",
+      "439521858:1806634616",
+      "439521858:1682235591"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:439521858:2550630306",
+    "question_id": "439521858",
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "439521858:2550630306"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:439521858:2091701747",
+    "question_id": "439521858",
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "439521858:2091701747"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:439521858:1682235591",
+    "question_id": "439521858",
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "439521858:1682235591"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "contra_side:c1-yida-verdict:for",
+    "question_id": "439521858",
+    "unit_type": "required_contradiction_side",
+    "claim_id": "c1-yida-verdict",
+    "stance": "for",
+    "supporting_source_ids": [
+      "439521858:1968643478662644597",
+      "439521858:1775773370"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "contra_side:c1-yida-verdict:against",
+    "question_id": "439521858",
+    "unit_type": "required_contradiction_side",
+    "claim_id": "c1-yida-verdict",
+    "stance": "against",
+    "supporting_source_ids": [
+      "439521858:1780646730",
+      "439521858:1698674167"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "contra_side:c2-yida-ecosystem:for",
+    "question_id": "439521858",
+    "unit_type": "required_contradiction_side",
+    "claim_id": "c2-yida-ecosystem",
+    "stance": "for",
+    "supporting_source_ids": [
+      "439521858:3376976033",
+      "439521858:1682235591",
+      "439521858:2226898798"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "contra_side:c2-yida-ecosystem:against",
+    "question_id": "439521858",
+    "unit_type": "required_contradiction_side",
+    "claim_id": "c2-yida-ecosystem",
+    "stance": "against",
+    "supporting_source_ids": [
+      "439521858:1806634616"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "expert_source_group",
+    "question_id": null,
+    "unit_type": "expert_source_group",
+    "supporting_source_ids": [
+      "439521858:3376976033",
+      "439521858:3450414501",
+      "439521858:1780646730",
+      "439521858:1976466205"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "evidence_source_group",
+    "question_id": null,
+    "unit_type": "evidence_source_group",
+    "supporting_source_ids": [
+      "439521858:2226898798"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  }
+]
