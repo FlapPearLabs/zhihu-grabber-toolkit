@@ -22,8 +22,7 @@ external-audit/2026-08-27/
     ├── PROMPT_AUTHORITY.md
     ├── CLAUDE_AUDITOR_PROMPT_V3.md
     ├── INTEGRITY_MANIFEST_AUTHORITY.md
-    ├── FILES_SHA256.txt
-    └── FILES_SHA256_V3_PATCH.txt
+    └── FILES_SHA256.txt
 ```
 
 ## Required reading order
@@ -70,13 +69,11 @@ CORRECTED_D2                  = CURRENT_FINAL_PILOT_RESULT
 - WorkBuddy `MISSING_ON_DISK` statements describe its assembly environment, not project-global nonexistence.
 - Track-B D2 empirically tests only part of P1 and does not empirically validate P2/P3.
 
-## Integrity-manifest rule
+## Integrity rule
 
-The original WorkBuddy snapshot manifest is preserved as `review/FILES_SHA256.txt`.
+`review/FILES_SHA256.txt` is the original 523-entry per-file manifest for the WorkBuddy-published snapshot at commit `c3f5e9c26e1a330f63fbbd85ede9a96a2db824b0`.
 
-The final-history patch is an explicit overlay in `review/FILES_SHA256_V3_PATCH.txt`.
-
-For paths present in the V3 patch, the V3 hash wins. For all other pre-existing paths, the original manifest remains authoritative. New V3 files exist only in the overlay.
+The later historical-completeness patch added/changed audit-only files. The complete final audit snapshot is therefore identified by the **current audit-branch commit SHA**, which the reviewer must record. The old hash manifest must not be treated as covering files added after it was created.
 
 See `review/INTEGRITY_MANIFEST_AUTHORITY.md`.
 
