@@ -2,12 +2,20 @@
 
 ```text
 DOCUMENT_STATUS = APPROVED_SPEC_CANDIDATE
-STATUS = REVIEW_PENDING
+PRE_EFFECTIVE_STATUS = REVIEW_PENDING
+POST_EFFECTIVE_STATUS = APPROVED
+APPROVAL_EFFECTIVE_ON =
+  1. CONTRACT_REVIEWER PASS on this exact candidate HEAD
+  2. CONSISTENCY_REVIEWER PASS on the same exact candidate HEAD
+  3. candidate still has a legal current-master ancestry;
+     if master drift requires re-form, old PASS does not transfer
+  4. the exact reviewed HEAD is ff-only merged to remote master
+  5. remote master is re-fetched and verified to contain the exact reviewed commit
 TARGET_STATUS = NOT_IMPLEMENTED
 IMPLEMENTATION_AUTHORIZATION = NONE
 VERSION_ASSIGNMENT = UNASSIGNED
 DOCUMENT_ID = P1_CROSS_QUESTION_DEEP_RESEARCH
-NEXT_GATE = APPROVED_SPEC_CONTRACT_AND_CONSISTENCY_REVIEW
+NEXT_GATE = FRESH_CONTRACT_PLUS_INDEPENDENT_CONSISTENCY_REVIEW
 Author handle: FlapPearLabs
 Date: 2026-08-28
 ```
@@ -20,11 +28,20 @@ Date: 2026-08-28
 > 不复制 review packet、不复制 benchmark artifact、不复制 external-audit 树、不复制历史审查评论。
 > 冻结的 P1 设计权威（00/01/02/04/07/09，位于 external-audit 审查树）的**实质**已在本文档内
 > repository-native 表达（§3 selector baseline、§5.1 provider policy 等）；09 的 selector baseline
-> 修订在此作为设计溯源保留（§3），但**只有本文件通过独立 review quorum 后**才成为实现合同。
+> 修订在此作为设计溯源保留（§3）。本文件在 **APPROVAL_EFFECTIVE_ON 五条件（见 header）全部满足之前
+> 是 NON_AUTHORITATIVE_CANDIDATE**；五条件全部满足（含 review quorum PASS on the exact reviewed HEAD
+> + 该 exact HEAD ff-only merge 到 remote master + 重新 fetch 验证）后才成为 Applicable Approved Spec /
+> 实现合同。**review PASS 本身不激活 authority**，且整个 lifecycle **不需要**对本文件做任何 post-review
+> STATUS edit（`PRE_EFFECTIVE_STATUS` 保持 `REVIEW_PENDING` 原样，approval 由外部 gate 序列生效）。
 
 本文件是 **APPROVED_SPEC_CANDIDATE**，**不是** production implementation、ticket decomposition、
-版本分配，也不是 self-approved Spec。它只有在 required independent review quorum
-（CONTRACT + CONSISTENCY 双 reviewer，同一 exact HEAD）全部 PASS 后，才成为 Applicable Approved Spec。
+版本分配，也不是 self-approved Spec。它的 authority activation 由 conditional approval contract 决定
+（见 header `APPROVAL_EFFECTIVE_ON`）：**review PASS 不能单独激活 authority**；只有五条件全部满足
+（双 reviewer 对同一 exact HEAD PASS、candidate 仍有合法 current-master ancestry、exact reviewed HEAD
+被 ff-only merge 到 remote master、remote master 重新 fetch 并验证包含该 exact commit）后，
+本文件才成为 **APPLICABLE_APPROVED_SPEC**。整个过程中本文件**不需要任何 post-review STATUS edit**
+——`PRE_EFFECTIVE_STATUS = REVIEW_PENDING` 字段保持不变，approval 由外部 gate 序列生效，
+**不产生使旧 PASS 失效的新 commit**。
 
 ---
 
@@ -58,10 +75,31 @@ Date: 2026-08-28
 ```text
 P1_EVIDENCE_GATE = PASS_WITH_CAVEATS
 ARCHITECTURE_REVIEW = PASS @ 68db44c（external-audit）
-THIS_SPEC = APPROVED_SPEC_CANDIDATE / REVIEW_PENDING
+THIS_SPEC = APPROVED_SPEC_CANDIDATE
+PRE_EFFECTIVE_STATUS = REVIEW_PENDING
+POST_EFFECTIVE_STATUS = APPROVED（conditional；approval 五条件见 header APPROVAL_EFFECTIVE_ON）
+BEFORE APPROVAL_EFFECTIVE_ON = NON_AUTHORITATIVE_CANDIDATE
+AFTER APPROVAL_EFFECTIVE_ON  = APPLICABLE_APPROVED_SPEC
 IMPLEMENTATION_AUTHORIZATION = NONE
 VERSION_ASSIGNMENT = UNASSIGNED
 ```
+
+### 0.1 Parent Amendment Map（parent = `research-orchestration-scope.md`）
+
+本文件对父级合同的 amendment 关系只限下表；表中未列出的父级条款继续有效。本表**不发明新产品合同**。
+
+| Parent contract element | P1 relationship |
+|---|---|
+| single-question selected object（`selectedQuestionId` / `selectedQuestion`） | **AMENDED**：`SelectedSourceGroups[]`（§7.2） |
+| single linear execution state | **ADDITIVE AMENDMENT**：per-group state / composition（§6） |
+| per-question verify / handoff authority | **INHERITED**（§2.2 / §6.3） |
+| sampled/full identity（`SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST`） | **INHERITED**（§1.1） |
+| public-Zhihu semantic runtime policy（默认 `deepseek-api-tool-less`） | **INHERITED**（§5.2） |
+| fail-closed / no semantic downgrade | **INHERITED**（§10.2） |
+| browser scraping non-goal | **NOT AMENDED**（§5.1 Browser/Session authority boundary） |
+| credential / capability-isolation boundary | **INHERITED**（§10 / §5.3） |
+| version assignment | **UNASSIGNED** |
+| P1 implementation authorization | **NONE** |
 
 ---
 
@@ -321,6 +359,17 @@ CLI command 或 Session/Web pagination。
 
 exact per-capability provider routing / priority 仍为 `OPEN / DISCOVERY_REQUIRED`（见 §14 D-2），
 但这**不是**重新打开上面的高层 provider 偏好顺序；该顺序保持冻结。
+
+**Browser / Session authority boundary（与父级 non-goal 的显式 reconcile）**：
+
+- 父级 Applicable Approved Spec `docs/specs/research-orchestration-scope.md` 明确
+  browser scraping = **NON-GOAL**；本 Spec **不** amend 该 non-goal。
+- 已存在 / 已批准的 Session / Cookie 单问题 capture primitive（v0.3 现状）可以被 provider seam
+  包装复用，**不重新定义其 authority**。
+- 任何超出既有 Approved behavior 的**新** browser-scraping 或 Browser-Session data-access 实现，
+  必须**先**取得单独的 explicit Approved Spec amendment / capability contract，才能实现。
+- Browser Session reuse 在长期 provider 偏好顺序中的位置**保持**（不删除），但**当前没有
+  implementation authority**——它只是 future provider position，不是被本 Spec 授权的实现。
 
 ### 5.2 SemanticRuntime
 
@@ -600,6 +649,8 @@ REQUIRES_EXPLICIT_SPEC_AUTHORITY
 - no second canonical content store；research manifest 只做 derived composition。
 - no provider endpoint / auth behavior speculation；adapter qualification 独立进行。
 - no new benchmark / Gold / experiment in this Spec。
+- browser scraping non-goal 不变（§5.1）：本 Spec **不授权**任何新的 browser-scraping /
+  Browser-Session data-access 实现；既有 Session/Cookie primitive 只能经 provider seam 包装复用。
 
 明确不进入 P1：Matrix Factorization、trained LTR、xQuAD、DPP、complex submodular、full active
 learning、PCA/SVD、Chao/Quant production authority、InfoGain-RAG online scoring、Search-R1 / Stop-RAG、
@@ -671,17 +722,35 @@ history、incremental sync、watcher、delta detector 或 alerting。任何此�
 - multi-group execution/state/handoff/resume 已明确定义为 additive work；
 - user request / model plan / external corpus 安全类型已拆分；
 - exact schema / filename / threshold / provider endpoint 未被越权冻结；
-- 高层 provider 偏好顺序保持冻结，D-2 仅作 wording 澄清。
+- 高层 provider 偏好顺序保持冻结，D-2 仅作 wording 澄清；
+- conditional approval lifecycle 已显式表达：review PASS 不单独激活 authority；无 post-review
+  STATUS edit 设计；master drift 时旧 PASS 不转移；
+- browser scraping non-goal 未被本 Spec amend；Browser Session reuse 保留为无 implementation
+  authority 的 future provider position。
 
 ```text
 DOCUMENT_STATUS = APPROVED_SPEC_CANDIDATE
-STATUS = REVIEW_PENDING
+PRE_EFFECTIVE_STATUS = REVIEW_PENDING
+POST_EFFECTIVE_STATUS = APPROVED
+APPROVAL_EFFECTIVE_ON =
+  1. CONTRACT_REVIEWER PASS on this exact candidate HEAD
+  2. CONSISTENCY_REVIEWER PASS on the same exact candidate HEAD
+  3. candidate still has a legal current-master ancestry;
+     if master drift requires re-form, old PASS does not transfer
+  4. the exact reviewed HEAD is ff-only merged to remote master
+  5. remote master is re-fetched and verified to contain the exact reviewed commit
 TARGET_STATUS = NOT_IMPLEMENTED
 IMPLEMENTATION_AUTHORIZATION = NONE
 VERSION_ASSIGNMENT = UNASSIGNED
-NEXT_GATE = APPROVED_SPEC_CONTRACT_AND_CONSISTENCY_REVIEW
+NEXT_GATE = FRESH_CONTRACT_PLUS_INDEPENDENT_CONSISTENCY_REVIEW
 ```
 
-本 Spec 通过 required independent review quorum（CONTRACT + CONSISTENCY，同一 exact HEAD）之前，
-不授权 production implementation；通过后，本 Spec 成为实现合同，但**仍不**改变
+本文件在 **APPROVAL_EFFECTIVE_ON 五条件全部满足之前**是 **NON_AUTHORITATIVE_CANDIDATE**：
+不授权 production implementation，`TARGET_STATUS = NOT_IMPLEMENTED` 不变。五条件全部满足后，
+本文件成为 **APPLICABLE_APPROVED_SPEC**（实现合同），但**仍不**改变
 `TARGET_STATUS = NOT_IMPLEMENTED`（实现须经独立 implementation ticket）。
+
+**本文件永不要求 post-review STATUS edit**：`PRE_EFFECTIVE_STATUS = REVIEW_PENDING` 字段在合并到
+master 后保持原样；approval 由外部 gate 序列（review PASS on exact reviewed HEAD → ff-only merge →
+remote master re-fetch verify）生效，**不会**产生"review PASS → 编辑 STATUS → 新 commit"这种使旧
+PASS 失效的流程。review PASS alone 不激活 authority；master drift 导致 re-form 时，旧 PASS 不转移。
