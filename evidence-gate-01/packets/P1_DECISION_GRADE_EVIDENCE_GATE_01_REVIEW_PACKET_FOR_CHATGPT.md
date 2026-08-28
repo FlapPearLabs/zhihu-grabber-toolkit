@@ -16,9 +16,11 @@
 
 ```text
 branch : dg01-decision-grade-gate
-HEAD   : 1e0f7bfd1e36bfcf0136ad623a5a0888eec84ec2
-          (experiment: P1 decision-grade evidence gate 01 — D2.1 evaluator
-           correction + four-strategy race; this packet is part of that HEAD)
+HEAD   : 73b958437ed3438cfcffedd05f33b77e0ac5c580
+          (tip; contains this packet text verbatim)
+content: 1e0f7bfd1e36bfcf0136ad623a5a0888eec84ec2
+          (gate content commit: D2.1 evaluator correction + race + packets)
+base   : c3f5e9c26e1a330f63fbbd85ede9a96a2db824b0 (audit snapshot, §B)
 ```
 
 ## B. base commit
