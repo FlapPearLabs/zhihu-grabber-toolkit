@@ -15,8 +15,10 @@
 ## A. exact branch / commit
 
 ```text
-branch : experiment/p1-decision-grade-evidence-gate-01
-HEAD   : 见 commit 时写入（本包随 commit 一起提交；冒号，未变）
+branch : dg01-decision-grade-gate
+HEAD   : 1e0f7bfd1e36bfcf0136ad623a5a0888eec84ec2
+          (experiment: P1 decision-grade evidence gate 01 — D2.1 evaluator
+           correction + four-strategy race; this packet is part of that HEAD)
 ```
 
 ## B. base commit
