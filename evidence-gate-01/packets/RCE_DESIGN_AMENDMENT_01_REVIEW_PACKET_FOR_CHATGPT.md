@@ -5,13 +5,13 @@
 ```text
 REMOTE_BRANCH : dg01-decision-grade-gate           (pushed to origin)
 CONTENT_COMMIT: caec4b0fbedc5811b98361e107e9b3cd4a5954dc
-TIP_COMMIT    : fb44ce0c44a1372931819d3a809abc91b4fa00b6
+TIP_COMMIT    : de599cb76932a141b38641d3b45e2d5b2e3f205e
 BASE_SHA      : c3f5e9c26e1a330f63fbbd85ede9a96a2db824b0
-AMENDMENT_COMMIT: <this packet's commit SHA>
+AMENDMENT_COMMIT: de599cb76932a141b38641d3b45e2d5b2e3f205e
 
 远端验证:
   git ls-remote origin dg01-decision-grade-gate
-  -> fb44ce0c44a1372931819d3a809abc91b4fa00b6  refs/heads/dg01-decision-grade-gate
+  -> de599cb76932a141b38641d3b45e2d5b2e3f205e  refs/heads/dg01-decision-grade-gate
 ```
 
 ---
