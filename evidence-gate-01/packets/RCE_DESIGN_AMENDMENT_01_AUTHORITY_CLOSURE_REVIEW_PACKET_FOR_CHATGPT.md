@@ -15,18 +15,16 @@ BASE_SHA: c3f5e9c26e1a330f63fbbd85ede9a96a2db824b0 (audit snapshot)
 ## C. Authority-Fix Content Commit
 
 ```text
-AUTHORITY_FIX_CONTENT_COMMIT: <this packet's commit SHA>
+AUTHORITY_FIX_CONTENT_COMMIT: c6955c61fa837541029c5106f1462ef4d4577eaa
 ```
-
-（本轮 authority closure 产生的 commit）
 
 ## D. Actual Remote Tip
 
 ```text
-REMOTE_TIP_AT_REPORT_TIME: <git ls-remote after push>
+REMOTE_TIP_AT_REPORT_TIME: c6955c61fa837541029c5106f1462ef4d4577eaa
 ```
 
-（push 完成后填写真实 SHA）
+（ls-remote verified: c6955c61fa837541029c5106f1462ef4d4577eaa refs/heads/dg01-decision-grade-gate）
 
 ---
 
