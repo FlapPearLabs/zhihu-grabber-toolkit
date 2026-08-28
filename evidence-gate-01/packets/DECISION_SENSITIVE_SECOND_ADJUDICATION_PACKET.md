@@ -18,14 +18,24 @@ Blinding guarantees implemented in the packet:
 - NO popularity-derived fields; only source_id + question title + sanitized
   excerpt + the exact judgment question
 
-## 2. Label inventory (47)
+## 2. Label inventory — CORRECTED (per machine JSON; previous Markdown was wrong)
 
-| kind | count | judgment question |
+The machine packet (`adjudication/decision-sensitive-packet.json`) is the
+authority. Its actual inventory is:
+
+| kind | count (machine JSON) | judgment question |
 |---|---|---|
-| must_see | 22 | Must a high-quality 15-item research corpus include this answer? (YES/NO) |
-| must_see_candidate | 10 | same question, for sources ≥2 strategies selected but NOT in gold must_see |
-| contradiction_stance | 15 | does this source take the stated for/against stance on the claim? (YES/NO/UNSURE) |
-| cross_question_aspect | up to 12 (dedup to fit 47) | is this source the question-level primary representative of the aspect? (YES/NO) |
+| must_see | **22** | Must a high-quality 15-item research corpus include this answer? (YES/NO) |
+| must_see_candidate | **10** | same question, for sources ≥2 strategies selected but NOT in gold must_see |
+| contradiction_stance | **11** | does this source take the stated for/against stance on the claim? (YES/NO/UNSURE) |
+| cross_question_aspect | **4** | is this source the question-level primary representative of the aspect? (YES/NO) |
+| **TOTAL** | **47** | (label_id 全部唯一；µ verify 脚本统计) |
+
+> Erratum: an earlier version of this Markdown claimed
+> `contradiction_stance = 15` and `cross_question_aspect = up to 12`.
+> That was a **documentation error** — the machine packet deduplicates by
+> source (first kind wins), yielding 11 stance + 4 aspect labels. The machine
+> JSON was never edited; only this Markdown is corrected.
 
 All 47 label items come from the **new real cross-domain case**
 `case-hpylori-treatment` (PROVISIONAL gold `g2-gate01-provisional-hpylori`,

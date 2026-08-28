@@ -1,6 +1,8 @@
 {
   "3376603186:28820202588": {
     "votes": 5,
+    "author": "凡尘",
+    "in_must_see": true,
     "selected_by": [
       "B1_DENSE_SEMANTIC_TOP_K@K_LARGE",
       "B1_DENSE_SEMANTIC_TOP_K@K_MEDIUM",
@@ -12,62 +14,86 @@
       "B3_DENSE_MMR_MULTI_LANE@K_MEDIUM",
       "B3_DENSE_MMR_MULTI_LANE@K_SMALL"
     ],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:3376603186:28820202588"
   },
   "52215270:1466037599": {
     "votes": 22,
+    "author": "阿泰在日本",
+    "in_must_see": true,
     "selected_by": [
       "B0_POPULARITY_TOP_K@K_LARGE"
     ],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:52215270:1466037599"
   },
   "52215270:1515402768": {
     "votes": 2,
+    "author": "老谢",
+    "in_must_see": true,
     "selected_by": [
       "B3_DENSE_MMR_MULTI_LANE@K_LARGE"
     ],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:52215270:1515402768"
   },
   "52215270:1829396577": {
     "votes": 358,
+    "author": "孙小白",
+    "in_must_see": true,
     "selected_by": [
       "B0_POPULARITY_TOP_K@K_LARGE",
       "B0_POPULARITY_TOP_K@K_MEDIUM",
       "B0_POPULARITY_TOP_K@K_SMALL"
     ],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:52215270:1829396577"
   },
   "52215270:1909462572": {
     "votes": 241,
+    "author": "逍遥散人",
+    "in_must_see": true,
     "selected_by": [
       "B0_POPULARITY_TOP_K@K_LARGE",
       "B0_POPULARITY_TOP_K@K_MEDIUM",
       "B0_POPULARITY_TOP_K@K_SMALL"
     ],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:52215270:1909462572"
   },
   "52215270:2071906039922963690": {
     "votes": 0,
+    "author": "方糖医生",
+    "in_must_see": true,
     "selected_by": [
       "B3_DENSE_MMR_MULTI_LANE@K_LARGE"
     ],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:52215270:2071906039922963690"
   },
   "52215270:2240620369": {
     "votes": 1,
+    "author": "尘埃中的哲学圣人",
+    "in_must_see": true,
     "selected_by": [],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:52215270:2240620369"
   },
   "52215270:2297169997": {
     "votes": 1,
+    "author": "药理学博士",
+    "in_must_see": true,
     "selected_by": [
       "B3_DENSE_MMR_MULTI_LANE@K_LARGE",
       "B3_DENSE_MMR_MULTI_LANE@K_MEDIUM"
     ],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:52215270:2297169997"
   },
   "52215270:2326510132": {
     "votes": 191,
+    "author": "四川大学华西医院",
+    "in_must_see": true,
     "selected_by": [
       "B0_POPULARITY_TOP_K@K_LARGE",
       "B0_POPULARITY_TOP_K@K_MEDIUM",
@@ -78,20 +104,26 @@
       "B3_DENSE_MMR_MULTI_LANE@K_MEDIUM",
       "B3_DENSE_MMR_MULTI_LANE@K_SMALL"
     ],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:52215270:2326510132"
   },
   "52215270:2874637547": {
     "votes": 0,
+    "author": "石家庄健胃中医院",
+    "in_must_see": true,
     "selected_by": [
       "B1_DENSE_SEMANTIC_TOP_K@K_LARGE",
       "B2_QUESTION_STRATIFIED_SIMPLE@K_LARGE",
       "B2_QUESTION_STRATIFIED_SIMPLE@K_MEDIUM",
       "B3_DENSE_MMR_MULTI_LANE@K_LARGE"
     ],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:52215270:2874637547"
   },
   "52215270:3156697298": {
     "votes": 0,
+    "author": "超医生",
+    "in_must_see": true,
     "selected_by": [
       "B1_DENSE_SEMANTIC_TOP_K@K_LARGE",
       "B1_DENSE_SEMANTIC_TOP_K@K_MEDIUM",
@@ -100,84 +132,120 @@
       "B2_QUESTION_STRATIFIED_SIMPLE@K_SMALL",
       "B3_DENSE_MMR_MULTI_LANE@K_LARGE"
     ],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:52215270:3156697298"
   },
   "52215270:3312209969": {
     "votes": 37,
+    "author": "真实姓名",
+    "in_must_see": true,
     "selected_by": [
       "B0_POPULARITY_TOP_K@K_LARGE",
       "B0_POPULARITY_TOP_K@K_MEDIUM"
     ],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:52215270:3312209969"
   },
   "52215270:3611600579": {
     "votes": 6,
+    "author": "余白",
+    "in_must_see": true,
     "selected_by": [],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:52215270:3611600579"
   },
   "52215270:975101683": {
     "votes": 110,
+    "author": "魏玮",
+    "in_must_see": true,
     "selected_by": [
       "B0_POPULARITY_TOP_K@K_LARGE",
       "B0_POPULARITY_TOP_K@K_MEDIUM",
       "B0_POPULARITY_TOP_K@K_SMALL"
     ],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:52215270:975101683"
   },
   "525603218:2444858135": {
     "votes": 0,
+    "author": "无幽小卫士",
+    "in_must_see": true,
     "selected_by": [],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:525603218:2444858135"
   },
   "533032588:2488047450": {
     "votes": 0,
+    "author": "健康之初",
+    "in_must_see": true,
     "selected_by": [],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:533032588:2488047450"
   },
   "533032588:2712153634": {
     "votes": 0,
+    "author": "海云舟",
+    "in_must_see": true,
     "selected_by": [],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:533032588:2712153634"
   },
   "533032588:83325887262": {
     "votes": 0,
+    "author": "无心无得",
+    "in_must_see": true,
     "selected_by": [],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:533032588:83325887262"
   },
   "616791818:105981792797": {
     "votes": 3,
+    "author": "伯伯",
+    "in_must_see": true,
     "selected_by": [
       "B2_QUESTION_STRATIFIED_SIMPLE@K_LARGE",
       "B3_DENSE_MMR_MULTI_LANE@K_LARGE",
       "B3_DENSE_MMR_MULTI_LANE@K_MEDIUM",
       "B3_DENSE_MMR_MULTI_LANE@K_SMALL"
     ],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:616791818:105981792797"
   },
   "616791818:3164788252": {
     "votes": 61,
+    "author": "追逐玉米地",
+    "in_must_see": true,
     "selected_by": [
       "B0_POPULARITY_TOP_K@K_LARGE",
       "B0_POPULARITY_TOP_K@K_MEDIUM",
       "B0_POPULARITY_TOP_K@K_SMALL"
     ],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:616791818:3164788252"
   },
   "616791818:3257696322": {
     "votes": 40,
+    "author": "徐致国",
+    "in_must_see": true,
     "selected_by": [
       "B0_POPULARITY_TOP_K@K_LARGE",
       "B0_POPULARITY_TOP_K@K_MEDIUM"
     ],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:616791818:3257696322"
   },
   "616791818:91125298017": {
     "votes": 2,
+    "author": "无心无得",
+    "in_must_see": true,
     "selected_by": [],
-    "in_must_see": true
+    "label_kind": "must_see",
+    "label_id": "MS:616791818:91125298017"
   },
   "52215270:3599356918": {
     "votes": 35,
+    "author": "Master Qi",
+    "in_must_see": false,
     "selected_by": [
       "B0_POPULARITY_TOP_K@K_LARGE",
       "B0_POPULARITY_TOP_K@K_MEDIUM",
@@ -191,10 +259,13 @@
       "B3_DENSE_MMR_MULTI_LANE@K_MEDIUM",
       "B3_DENSE_MMR_MULTI_LANE@K_SMALL"
     ],
-    "in_must_see": false
+    "label_kind": "must_see_candidate",
+    "label_id": "MS2:52215270:3599356918"
   },
   "52215270:2296865871": {
     "votes": 3,
+    "author": "爱喝咖啡的王医生",
+    "in_must_see": false,
     "selected_by": [
       "B1_DENSE_SEMANTIC_TOP_K@K_LARGE",
       "B1_DENSE_SEMANTIC_TOP_K@K_MEDIUM",
@@ -206,10 +277,13 @@
       "B3_DENSE_MMR_MULTI_LANE@K_MEDIUM",
       "B3_DENSE_MMR_MULTI_LANE@K_SMALL"
     ],
-    "in_must_see": false
+    "label_kind": "must_see_candidate",
+    "label_id": "MS2:52215270:2296865871"
   },
   "52215270:3135772229": {
     "votes": 0,
+    "author": "可欣老师说糖人",
+    "in_must_see": false,
     "selected_by": [
       "B1_DENSE_SEMANTIC_TOP_K@K_LARGE",
       "B1_DENSE_SEMANTIC_TOP_K@K_MEDIUM",
@@ -220,10 +294,13 @@
       "B3_DENSE_MMR_MULTI_LANE@K_LARGE",
       "B3_DENSE_MMR_MULTI_LANE@K_MEDIUM"
     ],
-    "in_must_see": false
+    "label_kind": "must_see_candidate",
+    "label_id": "MS2:52215270:3135772229"
   },
   "616791818:1955368980899402784": {
     "votes": 0,
+    "author": "激水之石",
+    "in_must_see": false,
     "selected_by": [
       "B1_DENSE_SEMANTIC_TOP_K@K_LARGE",
       "B1_DENSE_SEMANTIC_TOP_K@K_MEDIUM",
@@ -234,10 +311,13 @@
       "B3_DENSE_MMR_MULTI_LANE@K_MEDIUM",
       "B3_DENSE_MMR_MULTI_LANE@K_SMALL"
     ],
-    "in_must_see": false
+    "label_kind": "must_see_candidate",
+    "label_id": "MS2:616791818:1955368980899402784"
   },
   "52215270:3041977917": {
     "votes": 1,
+    "author": "知乎用户nUyGbS",
+    "in_must_see": false,
     "selected_by": [
       "B1_DENSE_SEMANTIC_TOP_K@K_LARGE",
       "B1_DENSE_SEMANTIC_TOP_K@K_MEDIUM",
@@ -247,10 +327,13 @@
       "B2_QUESTION_STRATIFIED_SIMPLE@K_SMALL",
       "B3_DENSE_MMR_MULTI_LANE@K_LARGE"
     ],
-    "in_must_see": false
+    "label_kind": "must_see_candidate",
+    "label_id": "MS2:52215270:3041977917"
   },
   "525603218:2452223602": {
     "votes": 0,
+    "author": "瘾i",
+    "in_must_see": false,
     "selected_by": [
       "B1_DENSE_SEMANTIC_TOP_K@K_LARGE",
       "B1_DENSE_SEMANTIC_TOP_K@K_MEDIUM",
@@ -259,10 +342,13 @@
       "B2_QUESTION_STRATIFIED_SIMPLE@K_MEDIUM",
       "B2_QUESTION_STRATIFIED_SIMPLE@K_SMALL"
     ],
-    "in_must_see": false
+    "label_kind": "must_see_candidate",
+    "label_id": "MS2:525603218:2452223602"
   },
   "616791818:3162185276": {
     "votes": 2,
+    "author": "爱吃胡萝卜的喵",
+    "in_must_see": false,
     "selected_by": [
       "B1_DENSE_SEMANTIC_TOP_K@K_LARGE",
       "B1_DENSE_SEMANTIC_TOP_K@K_MEDIUM",
@@ -271,10 +357,13 @@
       "B2_QUESTION_STRATIFIED_SIMPLE@K_MEDIUM",
       "B2_QUESTION_STRATIFIED_SIMPLE@K_SMALL"
     ],
-    "in_must_see": false
+    "label_kind": "must_see_candidate",
+    "label_id": "MS2:616791818:3162185276"
   },
   "533032588:2491991837": {
     "votes": 0,
+    "author": "采薇老师说营养",
+    "in_must_see": false,
     "selected_by": [
       "B1_DENSE_SEMANTIC_TOP_K@K_LARGE",
       "B2_QUESTION_STRATIFIED_SIMPLE@K_LARGE",
@@ -283,10 +372,13 @@
       "B3_DENSE_MMR_MULTI_LANE@K_MEDIUM",
       "B3_DENSE_MMR_MULTI_LANE@K_SMALL"
     ],
-    "in_must_see": false
+    "label_kind": "must_see_candidate",
+    "label_id": "MS2:533032588:2491991837"
   },
   "52215270:1785021055": {
     "votes": 2,
+    "author": "知乎用户rAp8gH",
+    "in_must_see": false,
     "selected_by": [
       "B1_DENSE_SEMANTIC_TOP_K@K_LARGE",
       "B1_DENSE_SEMANTIC_TOP_K@K_MEDIUM",
@@ -294,10 +386,13 @@
       "B3_DENSE_MMR_MULTI_LANE@K_LARGE",
       "B3_DENSE_MMR_MULTI_LANE@K_MEDIUM"
     ],
-    "in_must_see": false
+    "label_kind": "must_see_candidate",
+    "label_id": "MS2:52215270:1785021055"
   },
   "52215270:2723267423": {
     "votes": 0,
+    "author": "运营狗",
+    "in_must_see": false,
     "selected_by": [
       "B1_DENSE_SEMANTIC_TOP_K@K_LARGE",
       "B1_DENSE_SEMANTIC_TOP_K@K_MEDIUM",
@@ -305,6 +400,142 @@
       "B3_DENSE_MMR_MULTI_LANE@K_LARGE",
       "B3_DENSE_MMR_MULTI_LANE@K_MEDIUM"
     ],
-    "in_must_see": false
+    "label_kind": "must_see_candidate",
+    "label_id": "MS2:52215270:2723267423"
+  },
+  "52215270:1876563261": {
+    "votes": 55,
+    "author": "小太阳Nice",
+    "in_must_see": false,
+    "selected_by": [
+      "B0_POPULARITY_TOP_K@K_LARGE",
+      "B0_POPULARITY_TOP_K@K_MEDIUM",
+      "B0_POPULARITY_TOP_K@K_SMALL"
+    ],
+    "label_kind": "contradiction_stance",
+    "label_id": "ST:case-hpylori-treatment:c1-asymptomatic-must-treat:for:52215270:1876563261"
+  },
+  "52215270:1853290758": {
+    "votes": 6,
+    "author": "夜雨",
+    "in_must_see": false,
+    "selected_by": [],
+    "label_kind": "contradiction_stance",
+    "label_id": "ST:case-hpylori-treatment:c1-asymptomatic-must-treat:for:52215270:1853290758"
+  },
+  "52215270:1546721934": {
+    "votes": 40,
+    "author": "小南",
+    "in_must_see": false,
+    "selected_by": [
+      "B0_POPULARITY_TOP_K@K_LARGE",
+      "B0_POPULARITY_TOP_K@K_MEDIUM",
+      "B0_POPULARITY_TOP_K@K_SMALL"
+    ],
+    "label_kind": "contradiction_stance",
+    "label_id": "ST:case-hpylori-treatment:c2-hp-gastric-cancer-certainty:for:52215270:1546721934"
+  },
+  "52215270:2272668883": {
+    "votes": 36,
+    "author": "小萌好同学",
+    "in_must_see": false,
+    "selected_by": [
+      "B0_POPULARITY_TOP_K@K_LARGE",
+      "B0_POPULARITY_TOP_K@K_MEDIUM"
+    ],
+    "label_kind": "contradiction_stance",
+    "label_id": "ST:case-hpylori-treatment:c2-hp-gastric-cancer-certainty:for:52215270:2272668883"
+  },
+  "52215270:1833916290": {
+    "votes": 7,
+    "author": "ishw",
+    "in_must_see": false,
+    "selected_by": [],
+    "label_kind": "contradiction_stance",
+    "label_id": "ST:case-hpylori-treatment:c2-hp-gastric-cancer-certainty:against:52215270:1833916290"
+  },
+  "52215270:1850517467": {
+    "votes": 1,
+    "author": "secorit",
+    "in_must_see": false,
+    "selected_by": [],
+    "label_kind": "contradiction_stance",
+    "label_id": "ST:case-hpylori-treatment:c2-hp-gastric-cancer-certainty:against:52215270:1850517467"
+  },
+  "52215270:2312503952": {
+    "votes": 22,
+    "author": "林晚诚",
+    "in_must_see": false,
+    "selected_by": [
+      "B0_POPULARITY_TOP_K@K_LARGE"
+    ],
+    "label_kind": "contradiction_stance",
+    "label_id": "ST:case-hpylori-treatment:c3-side-effects-vs-benefit:against:52215270:2312503952"
+  },
+  "52215270:2368754859": {
+    "votes": 2,
+    "author": "帅气的乔",
+    "in_must_see": false,
+    "selected_by": [],
+    "label_kind": "contradiction_stance",
+    "label_id": "ST:case-hpylori-treatment:c3-side-effects-vs-benefit:against:52215270:2368754859"
+  },
+  "52215270:2347348694": {
+    "votes": 1,
+    "author": "JoJo宝贝",
+    "in_must_see": false,
+    "selected_by": [],
+    "label_kind": "contradiction_stance",
+    "label_id": "ST:case-hpylori-treatment:c4-self-cure-reality:for:52215270:2347348694"
+  },
+  "52215270:3031497806": {
+    "votes": 0,
+    "author": "知乎用户hBaXqS",
+    "in_must_see": false,
+    "selected_by": [],
+    "label_kind": "contradiction_stance",
+    "label_id": "ST:case-hpylori-treatment:c4-self-cure-reality:for:52215270:3031497806"
+  },
+  "52215270:2529421586": {
+    "votes": 0,
+    "author": "药房小郑",
+    "in_must_see": false,
+    "selected_by": [
+      "B2_QUESTION_STRATIFIED_SIMPLE@K_LARGE"
+    ],
+    "label_kind": "contradiction_stance",
+    "label_id": "ST:case-hpylori-treatment:c4-self-cure-reality:against:52215270:2529421586"
+  },
+  "525603218:2427116849": {
+    "votes": 0,
+    "author": "五洲药物国际",
+    "in_must_see": false,
+    "selected_by": [],
+    "label_kind": "cross_question_aspect",
+    "label_id": "ASP:case-hpylori-treatment:asp-gastric-cancer-risk:525603218"
+  },
+  "533032588:2508198156": {
+    "votes": 6,
+    "author": "白塔科研",
+    "in_must_see": false,
+    "selected_by": [],
+    "label_kind": "cross_question_aspect",
+    "label_id": "ASP:case-hpylori-treatment:asp-gastric-cancer-risk:533032588"
+  },
+  "3376603186:25292976115": {
+    "votes": 4,
+    "author": "春暖花开",
+    "in_must_see": false,
+    "selected_by": [],
+    "label_kind": "cross_question_aspect",
+    "label_id": "ASP:case-hpylori-treatment:asp-treatment-regimens:3376603186"
+  },
+  "533032588:2487596117": {
+    "votes": 1,
+    "author": "号卡侦探",
+    "in_must_see": false,
+    "selected_by": [],
+    "label_kind": "cross_question_aspect",
+    "label_id": "ASP:case-hpylori-treatment:asp-treatment-regimens:533032588"
   }
 }
