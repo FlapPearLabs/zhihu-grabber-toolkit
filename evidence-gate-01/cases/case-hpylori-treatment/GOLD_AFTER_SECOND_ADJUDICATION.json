@@ -1,7 +1,7 @@
 {
   "case_id": "case-hpylori-treatment",
   "gold_version": "g2-gate01-provisional-hpylori",
-  "label_status_policy": "PROVISIONAL",
+  "label_status_policy": "PARTIALLY_SECOND_ADJUDICATED",
   "families": {
     "relevance": {
       "label_status": "PROVISIONAL",
@@ -402,7 +402,7 @@
       "note": "relevance gate: empty/nonsense/off-topic excluded (27 of 216); PROVISIONAL until second adjudication"
     },
     "must_see": {
-      "label_status": "PROVISIONAL",
+      "label_status": "SECOND_ADJUDICATED",
       "sources": [
         "3376603186:28820202588",
         "52215270:2071906039922963690",
@@ -423,7 +423,7 @@
       "note": "relevance-gated; proposed by execution agent BEFORE selector runs; decision-sensitive subset goes to second adjudication packet"
     },
     "aspect_membership": {
-      "label_status": "PROVISIONAL",
+      "label_status": "PARTIALLY_SECOND_ADJUDICATED",
       "aspects": [
         {
           "aspect_id": "case-hpylori-treatment:asp-treatment-decision",
@@ -1032,7 +1032,7 @@
       "note": "relevance-gated; low-vote but genuinely distinct informational value"
     },
     "contradiction": {
-      "label_status": "PROVISIONAL",
+      "label_status": "PARTIALLY_SECOND_ADJUDICATED",
       "claim_clusters": [
         {
           "claim_id": "case-hpylori-treatment:c1-asymptomatic-must-treat",
@@ -1465,8 +1465,8 @@
     "proposed_method": "full-corpus content reading (216 captured sources) before any selector result; labels cross-checked against question-level context",
     "adjudicated_by": "ChatGPT (CHATGPT_SECOND_ADJUDICATION_GATE01_V1)",
     "adjudication_status": "SECOND_ADJUDICATION_APPLIED",
-    "label_status": "SECOND_ADJUDICATED",
-    "label_status_note": "PROVISIONAL Gold frozen BEFORE strategy runs (2026-08-28T05:00Z); second adjudication packet covers ~30-50 decision-sensitive labels; if disagreements change winner -> GOLD_DECISION_SENSITIVITY=HIGH",
+    "label_status": "PARTIALLY_SECOND_ADJUDICATED",
+    "label_status_note": "must_see = SECOND_ADJUDICATED; contradiction = PARTIALLY_SECOND_ADJUDICATED; aspect_membership = PARTIALLY_SECOND_ADJUDICATED; other families = PROVISIONAL / MECHANICAL as applicable; overall = PARTIALLY_SECOND_ADJUDICATED",
     "corpus_frozen": "2026-08-28T04:25Z (5 questions, 216 captured sources; verify-output valid=true)",
     "gold_frozen_before_strategy": true,
     "adjudication_applied_mechanically": "2026-08-28T05:50:17.595Z",

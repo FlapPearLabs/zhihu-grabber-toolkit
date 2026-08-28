@@ -90,9 +90,13 @@ Embedding + Cosine Geometry
         ↓
 Deterministic Metadata Features
         ↓
-MMR
+Question / Source-group Preservation
 +
-Multi-lane Exploration Constraints
+Popularity Anchor
++
+Dense Semantic Relevance / Novelty
++
+Optional Lightweight Redundancy Control
         ↓
 Selected Batch
         ↓
@@ -115,11 +119,13 @@ V1 正式采用的算法/机制只有：
 2. RRF
 3. Dense Embedding + Cosine Similarity
 4. Deterministic Expertise / Evidence / Freshness / Popularity Features
-5. MMR + Multi-lane Exploration Constraints
+5. Question / Source-group Preservation + Popularity Anchor + Dense Semantic Relevance / Novelty + Optional Lightweight Redundancy Control
 6. Simple Claim / Aspect Clustering
 7. Simple Saturation Heuristics
 
 没有训练型模型依赖。
+
+> **Amendment Note (RCE_DESIGN_AMENDMENT_01):** The selector baseline has been revised from `MMR + Multi-lane Exploration Constraints` to the four-component architecture above, based on P1 Decision-Grade Evidence Gate 01 findings. See `09_RCE_DESIGN_AMENDMENT_01.md` for details.
 
 ---
 
@@ -416,6 +422,16 @@ V1 不要求固定比例。
 
 具体 lane quota 必须通过 benchmark 或安全上限约束确定。
 
+> **Amendment Note (RCE_DESIGN_AMENDMENT_01):** Based on P1 Decision-Grade Evidence Gate 01, the six lanes are demoted from hard selector constraints to retrieval/ranking signals. Their new roles are:
+> - Mainstream → retrieval / soft popularity feature
+> - Expert → retrieval signal + topic-conditioned soft feature
+> - Evidence-rich → retrieval signal + soft feature
+> - Fresh → retrieval/time policy + diagnostic
+> - Long-tail → soft marginal-value / novelty feature
+> - Contradictory → opposing-query generation + claim-stage diagnostic
+> 
+> The information dimensions remain part of the product contract; only their hard-quota selector role is removed from the first baseline. See `09_RCE_DESIGN_AMENDMENT_01.md` §4 for details.
+
 ---
 
 ## 13. MMR — V1 Main Selector
@@ -436,6 +452,20 @@ MMR 不负责保护所有长尾。
 因此必须叠加：
 
 > Multi-lane Exploration Constraints
+
+> **Amendment Note (RCE_DESIGN_AMENDMENT_01):** Based on P1 Decision-Grade Evidence Gate 01, MMR is demoted from mandatory core selector to an optional/lightweight redundancy mechanism subject to cost and benefit. The selector baseline is now:
+> 
+> ```text
+> Question / Source-group Preservation
+> +
+> Popularity Anchor
+> +
+> Dense Semantic Relevance / Novelty
+> +
+> Optional Lightweight Redundancy Control
+> ```
+> 
+> MMR remains available as the optional redundancy control component, but is no longer the mandatory core selector. See `09_RCE_DESIGN_AMENDMENT_01.md` §3 for details.
 
 ---
 
@@ -719,11 +749,15 @@ Query/Aspect Expansion
 + RRF
 + Embedding/Cosine
 + Deterministic Features
-+ MMR
-+ Multi-lane Exploration
++ Question/Source-group Preservation
++ Popularity Anchor
++ Dense Semantic Relevance/Novelty
++ Optional Lightweight Redundancy Control
 + Simple Claim Clustering
 + Simple Saturation
 
 ALL_COMPLEX_ALGORITHMS =
 FUTURE_CANDIDATE
 ```
+
+> **Amendment Note (RCE_DESIGN_AMENDMENT_01):** The RCE_V1 formula has been updated to reflect the revised selector baseline. MMR and multi-lane exploration are replaced by the four-component architecture. See `09_RCE_DESIGN_AMENDMENT_01.md` for details.

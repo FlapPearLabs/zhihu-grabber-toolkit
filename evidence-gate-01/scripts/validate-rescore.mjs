@@ -3,8 +3,8 @@
 //      (every rescored run's selected_source_ids == frozen results/race run)
 //   R2 gold before/after diff artifacts exist & consistent with decisions
 //   R3 adjudicated gold passes scope-model checks (re-derive works, units valid)
-//   R4 rescored metric computation deterministic & complete (all 60 hpylori
-//      runs + 27 cross-lowcode fair runs)
+//   R4 rescored metric computation deterministic & complete (all 15 hpylori
+//      runs + 12 cross-lowcode fair runs)
 //   R5 no selector module imported / invoked during rescore (static check:
 //      rescore must only import metrics/value-units/case-loader)
 

@@ -273,7 +273,9 @@ LIMIT:
 
 STATUS:
 
-> V1 CORE
+> OPTIONAL_REDUNDANCY_MECHANISM
+
+> **Amendment Note (RCE_DESIGN_AMENDMENT_01):** Based on P1 Decision-Grade Evidence Gate 01, MMR is demoted from V1 CORE to OPTIONAL_REDUNDANCY_MECHANISM. The selector baseline is now question/source-group preservation + popularity anchor + dense semantic relevance/novelty + optional lightweight redundancy control. MMR remains available as the optional redundancy component. See `09_RCE_DESIGN_AMENDMENT_01.md` §3 for details.
 
 ---
 
@@ -311,7 +313,17 @@ WHY:
 
 STATUS:
 
-> V1 DESIGN MECHANISM
+> RETRIEVAL_SIGNALS
+
+> **Amendment Note (RCE_DESIGN_AMENDMENT_01):** Based on P1 Decision-Grade Evidence Gate 01, the six lanes are demoted from V1 DESIGN MECHANISM (hard selector constraints) to RETRIEVAL_SIGNALS. Their new roles are:
+> - Mainstream → retrieval / soft popularity feature
+> - Expert → retrieval signal + topic-conditioned soft feature
+> - Evidence-rich → retrieval signal + soft feature
+> - Fresh → retrieval/time policy + diagnostic
+> - Long-tail → soft marginal-value / novelty feature
+> - Contradictory → opposing-query generation + claim-stage diagnostic
+> 
+> The information dimensions remain part of the product contract; only their hard-quota selector role is removed from the first baseline. See `09_RCE_DESIGN_AMENDMENT_01.md` §4 for details.
 
 ---
 
@@ -924,8 +936,10 @@ Embedding + Cosine
 Deterministic Expertise Features
 Deterministic Evidence Features
 Freshness / Weak Popularity Signals
-MMR
-Multi-lane Exploration
+Question/Source-group Preservation
+Popularity Anchor
+Dense Semantic Relevance/Novelty
+Optional Lightweight Redundancy Control (MMR available)
 Simple Claim Clustering
 Simple Saturation Heuristics
 SQLite Historical State
@@ -952,6 +966,8 @@ JS Divergence as hard dependency
 Change-point Detection
 Permutation Test + FDR semantic shift
 ```
+
+> **Amendment Note (RCE_DESIGN_AMENDMENT_01):** The V1 implementation list has been updated to reflect the revised selector baseline. MMR is now listed as "Optional Lightweight Redundancy Control (MMR available)" and multi-lane exploration is removed from the mandatory list. See `09_RCE_DESIGN_AMENDMENT_01.md` for details.
 
 ---
 
