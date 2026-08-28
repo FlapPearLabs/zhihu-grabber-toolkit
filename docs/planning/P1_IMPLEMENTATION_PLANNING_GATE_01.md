@@ -5,13 +5,17 @@ DOCUMENT_ID = P1_IMPLEMENTATION_PLANNING_GATE_01
 STATUS = REVIEW_PENDING
 AUTHORITY_CLASS = NON_AUTHORITATIVE_PLANNING_CANDIDATE
 REVIEWER = ChatGPT（外部独立 reviewer；本轮不 spawn 任何内置 reviewer subagent）
-BASE_SHA = 279caf6141c26a38cf4a449b2b4cfbeba4357577（latest remote master，已 fetch 验证）
+REVIEW_CYCLE = R1 REPAIR（BASE_REVIEWED_HEAD = 54a0841b93452cfd5ca37780ee03e70bffc82988；
+              ChatGPT 判定 CHANGES_REQUESTED_NARROW：P0=0 / P1=3 / P2=2；
+              实质性结论获 reviewer 认可：MUST_RESOLVE_BEFORE_TICKETING = empty、
+              TICKETING_READY = YES；本 commit 仅修复 5 项 findings，不重开 Planning Gate）
 BRANCH = planning/p1-implementation-gate-01
-SCOPE = 仅新增本文件与配套 REVIEW PACKET；不修改任何 Approved Spec / 治理文件 / 生产代码
+BASE_SHA = 279caf6141c26a38cf4a449b2b4cfbeba4357577（latest remote master at branch creation，已 fetch 验证）
+SCOPE = 仅修改本文件与配套 REVIEW PACKET；不修改任何 Approved Spec / 治理文件 / 生产代码
 TARGET_STATUS = NOT_IMPLEMENTED
 IMPLEMENTATION_AUTHORIZATION = NONE
 VERSION_ASSIGNMENT = UNASSIGNED
-Date: 2026-08-28
+Date: 2026-08-28（R1 repair）
 ```
 
 本文件是 **planning candidate，不是 authority**。它不授权生产实现、不拆 Ticket、不创建 Issue、
@@ -45,9 +49,8 @@ P1 Approved Spec 生效状态核验：
   "Exact questions for ChatGPT"，请独立 reviewer 一并确认。
 - 本轮**未**为修改该静态字段而 amendment Approved Spec（遵守任务指令与 RULES §6.5）。
 
-远端新出现的其他分支（`audit/claude-external-review-2026-08-27`、`dg01-decision-grade-gate`、
-`spec/p1-architecture-spec-prep-01` 等）均为审查树 / 历史 audit 分支，**不属于本轮 scope**，
-不导入、不清理、不依赖其本地副本。
+远端其他分支（`audit/claude-external-review-2026-08-27`、`dg01-decision-grade-gate`、
+`spec/p1-architecture-spec-prep-01` 等）均为审查树 / 历史 audit 分支，**不属于本轮 scope**。
 
 已读取的 authority 文件（全部完整读取）：
 
@@ -74,11 +77,11 @@ P1 Approved Spec 生效状态核验：
 
 **zhihu-answer-grabber/**：
 
-- `src/official.js`：`searchQuestions(keyword, secret)` —— 官方开放平台唯一已实现 capability
+- `src/official.js`：`searchQuestions(keyword, secret)` —— 官方开放平台唯一已实现 **retrieval** capability
   （源码注释明示"平台无按问题列回答接口"）；Bearer secret（`zhihu_secret.txt`），429/5xx 退避重试。
 - `src/grabber.js grabAll()`：Session/Cookie（`z_c0`/`d_c0`，zhihu-cli login 或 `ZHIHU_COOKIE`）单问题
-  pagination capture；`src/verifier.js` 14 项校验 = 唯一 validity authority；`scripts/make-handoff.mjs`
-  唯一 handoff 权威。
+  pagination **capture primitive**（不是 retrieval ranking channel）；`src/verifier.js` 14 项校验 =
+  唯一 validity authority；`scripts/make-handoff.mjs` 唯一 handoff 权威。
 - `src/search-answer-count.js`：bounded question-info enrichment（V0.3 决策 A）。
 - **全仓库（zhihu/corpus/research 三包）无任何 OAuth 代码** —— OAuth 纯属未来 provider 能力。
 
@@ -95,10 +98,12 @@ P1 Approved Spec 生效状态核验：
 **关键否定性事实**：
 
 1. 全仓库无任何 embedding / dense / vector 代码 —— EmbeddingProvider 是 greenfield；
-2. `bge-small-zh-v1.5` 不出现在任何 tracked authority / 生产文件中（仅存在于未导入 master 的
+2. 全仓库只有 **一个** 已知 retrieval-ranked capability（Official Search）；Session/Cookie 是 capture
+   primitive，不产生 retrieval ranking，不能充当 RRF 的 provider channel；
+3. `bge-small-zh-v1.5` 不出现在任何 tracked authority / 生产文件中（仅存在于未导入 master 的
    external-audit 审查树）—— **Evidence Gate 用过它 != production model approved**；
-3. 无 OAuth；无 browser-scraping 实现新增；无第二个 canonical content store；
-4. SemanticRuntime 公开知乎默认 = `deepseek-api-tool-less`（Approved，R5），不再 OPEN。
+4. 无 OAuth；无 browser-scraping 实现新增；无第二个 canonical content store；
+5. SemanticRuntime 公开知乎默认 = `deepseek-api-tool-less`（Approved，R5），不再 OPEN。
 
 ## C. D-1…D-9 classification table
 
@@ -113,28 +118,32 @@ D = DEFER_FROM_V1
 
 | ID | Decision | PRIMARY_CLASS | Blocking relationship |
 |---|---|---|---|
-| D-1 | production EmbeddingProvider / model | **B**（Discovery/Qualification） | BLOCKS：dense-layer / EmbeddingProvider adapter **实现**；NOT blocking：ticket decomposition |
-| D-2 | ZhihuDataProvider exact capability routing / priority | **C**（第一条 critical path 的 adapter 委派） | additional capabilities → 按需 capability-scoped Discovery（lazy B）；NOT blocking ticketing |
+| D-1 | production EmbeddingProvider / model | **B**（Discovery/Qualification = GATE-1） | BLOCKS：EmbeddingProvider adapter / dense layer **实现**；NOT blocking：ticket decomposition |
+| D-2a | Provider seam + Official Search adapter（唯一已知 retrieval-ranked capability 的首段 adapter） | **C** | 无 blocking；NOT blocking ticketing |
+| D-2b | 额外 retrieval-ranked provider / capability（满足 multi-query / **multi-provider** retrieval 合同所需） | **B**（GATE-3 = ADDITIONAL_RETRIEVAL_PROVIDER_CAPABILITY_DISCOVERY） | BLOCKS：宣称 multi-provider retrieval 能力 complete；仅 Official Search 存在时的 full P1 completion。NOT blocking：ticket decomposition / seam / Official Search adapter / 用确定性 fixtures 的 generic RRF |
 | D-3 | Planner persisted schema / validation bounds | **C**（early interface-definition ticket 委派） | plan-contract ticket 必须位于 DAG 前部（interface ticket）；NOT blocking ticketing |
 | D-4 | selector relevance/novelty weights + optional redundancy params | **C**（+ `DEFAULT_REQUIRES_IMPLEMENTATION_VALIDATION`） | 无 blocking；禁止 planning 阶段拍权重 / 重跑 benchmark |
 | D-5 | group floor / count / quota / anti-starvation numeric boundary | **C**（invariant-first anti-starvation + 实现验证） | 无 blocking；禁止重新引入 six hard quotas |
-| D-6 | saturation thresholds / minimum rounds / budgets | **C**（+ `DEFAULT_REQUIRES_IMPLEMENTATION_VALIDATION`） | 无 blocking；保持 simple deterministic saturation |
-| D-7 | embedding cache/storage profile + public-Zhihu egress route | **C**（cache/storage）+ **B 子门**（egress authority） | egress 子门 BLOCKS **remote** embedding 实现；NOT blocking ticketing |
-| D-8 | global quality-score aggregation | **D**（DEFER_FROM_V1 / CLOSED_FOR_V1） | 无 blocking；消除虚假 active blocker |
-| D-9 | provider-specific OAuth / Session credential behavior | **D**（DEFER_FROM_V1 + lazy 触发 Discovery） | V1 critical path 无依赖；未来依赖该 provider 的 ticket 触发 scoped Discovery |
+| D-6 | saturation thresholds / minimum rounds / budgets | **C**（+ `DEFAULT_REQUIRES_IMPLEMENTATION_VALIDATION`） | 无 blocking；保持 simple deterministic saturation；saturation 为 feedback controller（§F [14]），阈值不冻结 |
+| D-7 | embedding cache/storage profile + public-Zhihu egress route | **C**（cache/storage）+ **B 子门**（egress = GATE-2） | GATE-2 产出须经 security/contract governance + independent review 转化为显式 repository authority/evidence，才可 remote embedding 实现；NOT blocking ticketing |
+| D-8 | global quality-score aggregation | **D**（DEFER_FROM_INITIAL_P1_BASELINE） | NO_TICKET_IN_INITIAL_DAG = YES；APPROVED_SPEC_DECISION_STATUS = REMAINS_OPEN；DEFAULT = DO_NOT_INTRODUCE。本 Gate 不 amend / 不 close Approved Spec |
+| D-9 | provider-specific OAuth / Session credential behavior | **D**（lazy 原则保留） | 既有 Session/Cookie 边界不动；**若 GATE-3 选中的 provider 需要新 OAuth / Session credential 行为，D-9 立即升级为该 provider 的 scoped Discovery / Security prerequisite** |
 
 ```text
 MUST_RESOLVE_BEFORE_TICKETING = （空集）
-PRE_IMPLEMENTATION_DISCOVERY_GATES = GATE-1（D-1）、GATE-2（D-7 egress 子门）
-DELEGATED = D-2（首段）、D-3、D-4、D-5、D-6、D-7（cache/storage）
-DEFERRED = D-8、D-9（+ D-2 非首段 capabilities 的 lazy discovery 触发规则）
+PRE_IMPLEMENTATION_DISCOVERY_GATES =
+  GATE-1（D-1）  = EmbeddingProvider Qualification Discovery
+  GATE-2（D-7b） = remote embedding egress authority（产出须经 governance + review 转为 repo authority）
+  GATE-3（D-2b） = ADDITIONAL_RETRIEVAL_PROVIDER_CAPABILITY_DISCOVERY
+DELEGATED = D-2a、D-3、D-4、D-5、D-6、D-7（cache/storage）
+DEFERRED  = D-8、D-9（lazy，含 GATE-3 触发的 provider-scoped 升级规则）
 ```
 
 ## D. Rationale per decision（六问检验）
 
 六问：①架构形状 ②安全/出网/凭据边界 ③实现 ticket 能否安全自选 ④数值调参 ⑤V1 是否需要 ⑥既有证据是否充分。
 
-### D-1 production EmbeddingProvider / model → B
+### D-1 production EmbeddingProvider / model → B（GATE-1）
 
 - ①：**不影响架构形状**。EmbeddingProvider seam contract 已冻结（Spec §5.3：provider/model/
   embedding version/normalization version/cache key/vector result/failure identity/egress policy identity）。
@@ -154,19 +163,40 @@ DEFERRED = D-8、D-9（+ D-2 非首段 capabilities 的 lazy discovery 触发规
   但按任务 §10 的关键区分：**block implementation，not ticket decomposition** —— DAG 中可先拆
   `EmbeddingProvider Qualification → Adapter → Dense Semantic Layer` 依赖链。
 
-### D-2 ZhihuDataProvider capability routing → C（+ lazy B）
+### D-2 ZhihuDataProvider capability routing → 拆分为 D-2a（C）+ D-2b（B = GATE-3）
 
-- 已冻结不得重开：高层 provider 偏好顺序 official-first / `THIN / ADAPTER_FIRST / REUSE_FIRST`（§5.1）。
-- ①：provider seam 最小 contract 已冻结（provider_id / capability / auth_class / candidate identity /
-  provenance / completeness status / failure identity）。exact per-capability routing 不改变 seam 形状。
-- ⑤：第一条 implementation critical path 真正需要的 capability 只有两个：
-  **Official Search**（已实现）与 **Session capture**（已实现 primitive，可被 adapter 包装复用，
-  不重定义其 authority）。两者均无新 discovery 需求。
-- ③：首段 capability 的 adapter 路由可由实现 ticket 在 seam contract 内安全定义。
-- 其余 capability（OAuth / Browser / OSS 等）：采用 **CAPABILITY-BY-CAPABILITY + lazy discovery** ——
-  只有当某个具体 future ticket 真正依赖该 capability 时，才为该 capability 开 scoped Discovery。
-  不做"一次研究完五类 provider"的大而全 discovery（任务 §7 明确拒绝）。
-- 结论：PRIMARY = C；additional capabilities 触发规则 = lazy scoped B。**不阻塞 ticketing。**
+**R1 修正（对应 reviewer P1-1）**：R0 版本曾把 "Official Search + Session capture" 并列为首条
+multi-provider retrieval 的充分条件——这是**错误的**。Approved Spec 要求的是
+**multi-query / multi-provider retrieval**，且 RRF 的 channel identity = query +
+**ZhihuDataProvider/capability retrieval rankings**（Spec §5.4）。Session/Cookie capture 是 capture
+primitive，不产生 retrieval ranking，**不能**充当 RRF 的 provider channel。当前仓库真实只有
+**一个** retrieval-ranked capability（Official Search）。
+
+**D-2a：Provider seam + Official Search adapter → C**
+
+- ①：provider seam 最小 contract 已冻结（§5.1：provider_id / capability / auth_class / candidate
+  identity / provenance / completeness status / failure identity）；Official Search 是唯一已知
+  retrieval-ranked capability，adapter 属包装既有实现，不改变 seam 形状。
+- ③：seam + Official Search adapter 可由实现 ticket 在冻结 contract 内 TDD 定义。
+- 无 blocking；ticket decomposition / seam / Official Search adapter 均不受 GATE-3 阻塞。
+
+**D-2b：额外 retrieval-ranked provider / capability → B（GATE-3）**
+
+- Approved multi-provider retrieval 合同意味着：仅凭 Official Search 单 channel，无法宣称
+  multi-provider retrieval 能力 complete，也无法完成完整 P1。至少还需一个额外的
+  retrieval-ranked provider/capability，且其选择涉及 provider 路由优先级与 qualification 证据
+  （同 D-1 逻辑：不能由实现 ticket 拍板，需真实 provider evidence）。
+- **GATE-3 = ADDITIONAL_RETRIEVAL_PROVIDER_CAPABILITY_DISCOVERY**：
+  - 目的：识别 / 资格确认至少一个额外 retrieval-ranked provider/capability，
+    以满足 Approved multi-provider retrieval 合同；
+  - 范围约束：只调查与 P1 首个 implementation 真正相关的 capability；**不做全 provider 大而全研究；
+    本 Gate 现在不执行该 discovery**；
+  - **GATE-3 不阻塞**：Ticket Decomposition；generic ZhihuDataProvider seam；Official Search
+    adapter；使用确定性 fixtures 的 generic RRF 实现；
+  - **GATE-3 阻塞**：宣称 multi-provider retrieval capability complete；在只有 Official Search 的
+    情况下宣称 full P1 implementation completion。
+- 冻结不动：高层 provider 偏好顺序 official-first / `THIN / ADAPTER_FIRST / REUSE_FIRST`（§5.1），
+  D-2 的任何部分都不重开该顺序。
 
 ### D-3 Planner persisted schema → C（early interface ticket）
 
@@ -204,9 +234,13 @@ DEFERRED = D-8、D-9（+ D-2 非首段 capabilities 的 lazy discovery 触发规
 
 - ④：数值调参；§9 已冻结 saturation 的语义边界（"只能说明当前检索策略下新信息增益趋缓，
   不是全站 coverage proof"）与 simple deterministic saturation baseline。
-- ③：thresholds / minimum rounds / query-group budgets 由实现 ticket 在 ResearchCoverageState
-  与 retrieval-loop ticket 中以实现验证确定。
-- ①：不改 ResearchCoverageState 形状（§9.1–9.4 已冻结最小字段集，含 §9.4 诊断计数）。
+- **控制流定位（R1 修正，对应 reviewer P1-3）**：saturation 不是流水线末端的一个阶段，而是
+  **feedback controller**：`ResearchCoverageState → saturation decision → 未饱和 → 追加 retrieval
+  round（回到 [3]）；饱和 / budget stop → 继续走向 final synthesis`。该反馈边在 §F 图中显式存在。
+  `ResearchCoverageState` 是 **cross-cutting controller state**，从 retrieval 起持续更新
+  （见 §F [13]）。
+- ③：thresholds / minimum rounds / query-group budgets 仍全部 delegated + implementation validation，
+  本 Gate 不冻结任何阈值。
 
 ### D-7 embedding cache/storage + public-Zhihu egress → C + B 子门（必须拆开）
 
@@ -216,45 +250,70 @@ provider/model + embedding version + normalization version），精确 schema/st
 
 **(b) SECURITY / PUBLIC EGRESS AUTHORITY → B 子门（GATE-2）**：若 D-1 qualification 选出 remote
 embedding provider，则公开知乎语料内容将出网到新第三方。现有 approved egress
-（公开知乎语料 → DeepSeek）是 runtime-scoped 先例，**不得推广**。该新 egress 路由在实现任何
-remote embedding 前必须取得显式 authority（product-owner 批准 + 安全边界记录，参照 R5 egress
-边界的批准形态）。若 D-1 选出 local provider，本子门自动满足（无新出网），仍须在 qualification
-记录中显式声明"无新增 egress"。
+（公开知乎语料 → DeepSeek）是 runtime-scoped 先例，**不得推广**。
+
+**GATE-2 governance 要求（R1 强化，对应 reviewer P2-2）**：GATE-2 的结论（批准或拒绝该出网路由）
+必须通过适用的 security / contract governance 流程与 independent review，**转化为显式的
+repository authority / evidence**（即：落在 repo-tracked authority 载体上，可被独立验证）之后，
+才允许实现任何 remote embedding。**仅有聊天声明或 executor note 不足以构成 authority。**
+本 Gate 不预设 GATE-2 未来采用的具体 ticket / review 类型。
+
+若 D-1 选出 local provider，本子门自动满足（无新出网），仍须在 qualification 记录中显式声明
+"无新增 egress"。
 
 **Blocking relationship：GATE-2 blocks remote-embedding implementation only；不阻塞 ticketing**
 （ticket decomposition 可包含该 authority gate 作为 discovery/decision ticket）。
 
-### D-8 global quality-score aggregation → D（DEFER_FROM_V1 / CLOSED_FOR_V1）
+### D-8 global quality-score aggregation → D（DEFER_FROM_INITIAL_P1_BASELINE）
 
-- ⑤：V1 不需要。Spec §14 自带 minimum-correct default = 不引入；frozen selector baseline 与
-  100% analysis coverage 均不消费 global quality score；§11 已排除 trained LTR / 复杂聚合。
-- 维持 OPEN 只会制造虚假 active blocker。建议在 Ticket Decomposition 中**显式记录**
-  `D-8 = CLOSED_FOR_V1`（reopen 条件：未来明确产品需求 + 独立 Spec authority），而非保留开放状态。
-- ①：推迟无架构代价 —— 它是 additive aggregation 概念，不在任何 critical path 上。
+**R1 修正（对应 reviewer P2-1）**：R0 版本使用 "CLOSED_FOR_V1" 表述不当——本 planning artifact
+**无权关闭** Approved Spec 中的 OPEN decision。修正为：
 
-### D-9 OAuth / Session credential behavior → D（lazy 触发 Discovery）
+```text
+D-8 = DEFER_FROM_INITIAL_P1_BASELINE
+NO_TICKET_IN_INITIAL_DAG = YES
+APPROVED_SPEC_DECISION_STATUS = REMAINS_OPEN
+DEFAULT = DO_NOT_INTRODUCE
+```
 
-- ⑤：P1 第一版 critical path = Official Search + 既有 Session/Cookie capture primitive，
-  **不需要 OAuth**。既有 Session/Cookie 行为已实现且边界冻结（RULES §1、contract §3.14），
-  P1 不修改既有 credential boundary（Spec §14 D-9 明示）。
+- ⑤：初始 P1 baseline 不需要它。Spec §14 自带 minimum-correct default = 不引入；frozen selector
+  baseline 与 100% analysis coverage 均不消费 global quality score；§11 已排除 trained LTR /
+  复杂聚合。初始 ticket DAG 中**不出现**任何消费 D-8 的 ticket。
+- 本 Gate 不 amend、不 close Approved Spec 的 D-8；其未来裁决仍归 Approved Spec 既有流程。
+- ①：defer 无架构代价 —— 它是 additive aggregation 概念，不在任何 critical path 上。
+
+### D-9 OAuth / Session credential behavior → D（lazy 原则保留 + GATE-3 触发规则）
+
+- ⑤：P1 第一版 critical path = Official Search（唯一已知 retrieval capability）+ 既有
+  Session/Cookie capture primitive，**不需要 OAuth**。既有 Session/Cookie 行为已实现且边界冻结
+  （RULES §1、contract §3.14），P1 不修改既有 credential boundary（Spec §14 D-9 明示）。
 - ②：凭据行为属安全关键面 —— 但需要防的是**新增** provider 的凭据设计，不是既有边界。
-  提前设计 OAuth 登录平台 = 为尚不存在的 provider 做超前工程（任务 §7 明确拒绝）。
-- 结论：DEFER_FROM_V1；触发规则：任何真正依赖某个具名 provider OAuth/Session 行为的 future ticket，
-  必须先为该 provider 跑 capability-scoped Discovery/Qualification（同 V0.3 决策 C 逐 runtime 门控
-  先例），才可实现。
+  提前设计 OAuth 登录平台 = 为尚不存在的 provider 做超前工程。
+- **GATE-3 触发规则（R1 修正）**：D-9 的 lazy 原则保留，但若 **GATE-3 选中的额外
+  retrieval-ranked provider 需要新的 OAuth / Session credential 行为**，D-9 **立即升级**为该
+  provider 的 scoped Discovery / Security prerequisite，必须先完成才能实现该 provider。
+  既有 Session/Cookie primitive 的包装复用不触发该升级（边界不重定义）。
+- 结论：PRIMARY = D（lazy）；触发升级规则显式记录如上。**不阻塞 ticketing。**
 
 ## E. Blocking relationships（汇总视图）
 
 ```text
 TICKET DECOMPOSITION 阻塞物：        无（空集）
 
-IMPLEMENTATION 阻塞物（非 ticketing）：
+IMPLEMENTATION / COMPLETION 阻塞物（非 ticketing）：
   GATE-1 (D-1)  EmbeddingProvider Qualification Discovery
                 └─ blocks → EmbeddingProvider adapter + Dense Semantic Layer 实现
-  GATE-2 (D-7b) public-Zhihu → embedding-provider egress authority
+  GATE-2 (D-7b) remote embedding egress authority
+                （产出必须经 security/contract governance + independent review
+                  转化为显式 repository authority/evidence）
                 └─ blocks → 仅 remote embedding 实现（local provider 须显式记录"无新增 egress"）
-  GATE-3 (D-2/D-9 lazy) capability-scoped provider discovery
-                └─ blocks → 对应 future provider capability 的实现（按需触发）
+  GATE-3 (D-2b) ADDITIONAL_RETRIEVAL_PROVIDER_CAPABILITY_DISCOVERY
+                ┌─ NOT blocking：Ticket Decomposition / generic ZhihuDataProvider seam /
+                │             Official Search adapter / 确定性 fixtures 的 generic RRF
+                └─ blocking：宣称 multi-provider retrieval capability complete；
+                             仅 Official Search 存在时的 full P1 implementation completion
+  D-9 升级规则   若 GATE-3 选中 provider 需要新 OAuth/Session credential 行为
+                └─ blocks → 该 provider 的实现（scoped Discovery / Security prerequisite 先行）
 
 DAG 排序约束（非阻塞）：
   D-3 minimum persisted Plan contract ticket 必须先于所有消费 plan 的下游 ticket。
@@ -262,119 +321,199 @@ DAG 排序约束（非阻塞）：
 
 ## F. MINIMUM_IMPLEMENTATION_CRITICAL_PATH（COMPONENT_DEPENDENCY_GRAPH，component level，非 Ticket DAG）
 
-依据真实 repo seams（§B）与 Spec 冻结边界推导；不编号 ticket、不指派 Issue。
+**R1 修正（对应 reviewer P1-2 / P1-3）**：图现在显式区分**两个不同的 selector**——
+(A) Source-group Set Selection（Approved §7 合同，发生在 per-group capture **之前**）与
+(B) RCE Corpus Selector（frozen 四组件 baseline，发生在 per-group capture / verify **之后**）；
+二者不得合并。`ResearchCoverageState` 为 **cross-cutting controller state**（[13]），
+saturation 为 **feedback controller**（[14]，显式反馈边回到 [3]）。
 
 ```text
 [1] Research Plan contract
     persisted plan artifact + structured-output validation + planHash + run identity
     （normalized user request + stable configuration identity；扩展 state.mjs 线性状态机）
       │
-      ├──────────────────────────────┐
-      ▼                              ▼
-[2] ZhihuDataProvider seam     [4] Multi-group execution state
-    （adapter-first：              SelectedSourceGroups[] / PerGroupExecutionState /
-     Official Search adapter       VerifiedGroupRefs[] / ResearchCorpusManifest
-     + Session capture wrapper，   （复用/扩展 validateCheckpoint hash 语义）
-     复用既有 primitives，             │
-     不重定义其 authority）            ▼
-      │                        [5] Per-group capture + verify + handoff composition
-      ▼                            （逐组包装既有 grabAll / verifier / make-handoff；
-[3] Multi-query retrieval +         composition 只引用已验证 group refs）
-    RRF fusion
-    （Candidate / Retrieval Pool；      │
-     channel = query + provider）       │
-      │                                 │
-      └──────────┬──────────────────────┘
-                 ▼
-[GATE-1] EmbeddingProvider Qualification Discovery（D-1；可与 [1]–[5] 并行推进）
-    provider category / quality / identity evidence；[GATE-2] egress authority（若 remote）
-                 │
-                 ▼
-[6] EmbeddingProvider adapter + cache
-    （§5.3 contract；cache identity 组成已冻结，schema delegated；fail-closed）
-                 │
-                 ▼
-[7] Dense semantic layer
-    （relevance / novelty geometry over candidate pool；DENSE unavailable → FAIL_CLOSED）
-                 │
-                 ▼
-[8] RCE selector
-    （Preservation + Popularity Anchor + Dense Relevance/Novelty
-     + optional lightweight redundancy；逐组 eligible/selected/verified/analyzed
-     计量 + exclusion reason；D-4/D-5 不变量在此实现验证）
-                 │
-                 ▼
-[9] Question / Source-group logical representation layer
-    （独立于物理 chunk packing；selected/verified/analyzed accounting、
-     main/minority/contradictory claims、expert/evidence-rich refs、coverage state）
-                 │
-                 ▼
-[10] Claim / Aspect representation + cross-source synthesis
-    （跨 group 聚合 supporting/opposing sources；禁止 flat reduce / naive equal weight；
-     SemanticRuntime = deepseek-api-tool-less，Approved policy 不重开）
-                 │
-                 ▼
-[11] ResearchCoverageState + saturation + retrieval rounds
-    （retrieval coverage / source completeness / analysis coverage 三覆盖账目；
-     simple deterministic saturation；D-6 数值在此实现验证）
-                 │
-                 ▼
-[12] v0.3 final synthesis integration
-    （100% analysis coverage assertion 仅当 selected set == analyzed set 机械相等；
-     render / observability / mode identity 继承 SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST）
+      ▼
+[2] ZhihuDataProvider seam
+    （§5.1 最小 contract；adapter-first；凭据不进 state）
+      │
+      ▼
+[3] Multi-query / multi-provider retrieval + RRF
+    （channel identity = query + provider/capability retrieval rankings，§5.4；
+     首段 = Official Search adapter [D-2a]；额外 retrieval-ranked provider 依赖 [GATE-3]）
+      ▲                                                    │
+      │ [14] saturation feedback                            ▼
+      │ （未饱和 → 追加 retrieval round；            Candidate / Retrieval Pool
+      │   饱和 / budget stop → 继续下游）                    │
+      │                                                     ▼
+      │                                    [4] Source-group Set Selection / Ambiguity Gate
+      │                                        （Approved §7 合同：clear best group set → auto；
+      │                                          material ambiguity → 至多一次 clarification；
+      │                                          no valid group set → fail closed）
+      │                                                     │
+      │                                                     ▼
+      │                                        SelectedSourceGroups[]
+      │                                                     │
+      │                                                     ▼
+      │                                    [5] Multi-group Execution State
+      │                                        （PerGroupExecutionState / VerifiedGroupRefs[] /
+      │                                          ResearchCorpusManifest；复用/扩展
+      │                                          validateCheckpoint hash 语义）
+      │                                                     │
+      │                                                     ▼
+      │                                    [6] Per-group Capture / Verify / Handoff composition
+      │                                        （逐组包装既有 grabAll / verifier / make-handoff；
+      │                                          captured != verified 逐组成立；composition 只引用
+      │                                          已验证 group refs）
+      │                                                     │
+      │                                                     ▼
+      │                                        Verified candidate source pool
+      │                                                     │
+      ├────────────────────────────────────────────────────┤
+      │                                                     │
+[13] ResearchCoverageState（cross-cutting controller state）│
+     从 [3] retrieval 开始持续更新，贯穿：                   │
+     · retrieval / provider routes（planned vs executed、   │
+       failures、unknown completeness）                     │
+     · source-group selection（[4] 输出）                   │
+     · capture / verification（[6] per-group 状态）         │
+     · RCE selection（[10] per-group accounting）           │
+     · claim/aspect analysis（[12] mapped set）             │
+     同时追踪三覆盖：Retrieval Coverage / Source            │
+     Completeness / Analysis Coverage                       │
+      │（[13] → [14] saturation decision）                  │
+      ├────────────── [14] feedback ──────────►（回到 [3]）  │
+                                                            ▼
+                          [GATE-1] EmbeddingProvider Qualification Discovery（D-1）
+                          可与 [1]–[7] 并行推进；输出 provider category / evidence
+                          └─ [GATE-2] egress authority（若 remote；经 governance + review
+                             转为 repo authority/evidence）
+                                                            │
+                                                            ▼
+                          [8] EmbeddingProvider adapter + cache
+                              （§5.3 contract；cache identity 组成已冻结；
+                               凭据不进 cache identity；fail-closed）
+                                                            │
+                                                            ▼
+                          [9] Dense semantic layer
+                              （relevance / novelty geometry over candidate pool；
+                               DENSE unavailable → FAIL_CLOSED）
+                                                            │
+                                                            ▼
+[7] Verified candidate source pool ────────────► [10] RCE Corpus Selector
+    （verified sources/groups                        （frozen baseline：Question/Source-group
+     + metadata + dense geometry）                    Preservation + Popularity Anchor +
+                                                      Dense Relevance/Novelty + optional
+                                                      lightweight redundancy；
+                                                      逐组 eligible/selected/verified/analyzed
+                                                      计量 + exclusion reason；
+                                                      D-4/D-5 不变量在此实现验证）
+                                                            │
+                                                            ▼
+                                        Selected Verified Research Corpus
+                                                            │
+                                                            ▼
+                          [11] Question / Source-group logical representation layer
+                              （独立于物理 chunk packing；selected/verified/analyzed
+                               accounting、main/minority/contradictory claims、
+                               expert/evidence-rich refs、coverage state）
+                                                            │
+                                                            ▼
+                          [12] Claim / Aspect representation + cross-source synthesis
+                              （跨 group 聚合 supporting/opposing sources；禁止 flat reduce /
+                               naive equal weight；SemanticRuntime = deepseek-api-tool-less，
+                               Approved policy 不重开）
+                                                            │
+                                                            ▼
+                          [15] v0.3 final synthesis integration
+                              （100% analysis coverage assertion 仅当 selected set ==
+                               analyzed set 机械相等；render / observability / mode identity
+                               继承 SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST）
 ```
+
+**15 组件终检清单**（对应 review "CRITICAL PATH FINAL CHECK"）：
+
+| # | Component | 图中位置 |
+|---|---|---|
+| 1 | Research Plan | [1] |
+| 2 | ZhihuDataProvider seam | [2] |
+| 3 | multi-query / multi-provider retrieval | [3] |
+| 4 | Source-group Set Selection / Ambiguity Gate | [4]（capture 前，与 [10] 严格分离） |
+| 5 | Multi-group Execution State | [5] |
+| 6 | Per-group Capture / Verify / Handoff | [6] |
+| 7 | Verified candidate source pool | [7] |
+| 8 | EmbeddingProvider | [8]（前置 GATE-1/GATE-2） |
+| 9 | Dense semantic layer | [9] |
+| 10 | RCE Corpus Selector | [10]（capture/verify 后，与 [4] 严格分离） |
+| 11 | Question / Source-group representation | [11] |
+| 12 | Claim / Aspect synthesis | [12] |
+| 13 | ResearchCoverageState as cross-cutting state | [13]（非流水线末端阶段） |
+| 14 | Saturation feedback → retrieval | [14]（显式反馈边 [13]→[3]） |
+| 15 | final v0.3 synthesis integration | [15] |
 
 依赖要点：
 
-- [GATE-1]（及其 egress 子门 [GATE-2]）与 [1]–[5] **可并行**：dense 层 fail-closed 语义允许
-  pipeline 骨架先建，但**完整 P1** 在 dense 可用前不得宣称完成（`DENSE_CAPABILITY_UNAVAILABLE → FAIL_CLOSED`）。
-- [2] 的两个首段 adapter 无需新 discovery（两 capability 均已实现，seam 只是新包装）。
-- [8] 依赖 [3]+[4]+[7]；[9] 依赖 [8] 的 selected corpus + [5] 的 verified refs；
-  [10] 依赖 [9]；[11] 横切 [3]–[8] 的计量并消费于 [8] 的 rounds/stop 与 [12] 的 coverage assertion。
-- D-3 的 plan contract ticket = [1]；D-4/D-5/D-6 的实现验证分别在 [8]/[8]/[11]。
+- [4] 与 [10] 是**两个不同的 selector**，输入/输出/时点/合同均不同，禁止合并（§7 vs §3）。
+- [13] 不是 late linear stage：从 [3] 起始，随每个阶段更新；[14] 的反馈使 [3]–[7] 构成
+  受饱和决策控制的迭代回路；[15] 的 100% analysis assertion 消费 [13] 的 Analysis Coverage 账目。
+- [GATE-1]（及其 [GATE-2] egress 子门）与 [1]–[7] **可并行**：dense 层 fail-closed 语义允许
+  pipeline 骨架先建，但**完整 P1** 在 dense 可用前不得宣称完成
+  （`DENSE_CAPABILITY_UNAVAILABLE → FAIL_CLOSED`）。
+- [GATE-3] 挂接 [3]：Official Search adapter 即刻可用，seam / RRF（fixtures）不受阻；
+  multi-provider completeness 依赖 GATE-3 完成。
+- D-3 的 plan contract ticket = [1]；D-4/D-5 的实现验证在 [10]；D-6 的实现验证在 [13]/[14]。
 
 ## G. Pre-ticket discovery gates
 
-| Gate | 决策来源 | 内容 | 阻塞对象 |
-|---|---|---|---|
-| GATE-1 | D-1 | EmbeddingProvider Qualification Discovery：provider category（local vs remote）、quality/identity/normalization evidence、failure identity 证据；显式声明 `bge-small-zh-v1.5` 证据仅为 harness 方向性参考 | EmbeddingProvider adapter / Dense layer **实现** |
-| GATE-2 | D-7(b) | public-Zhihu corpus → embedding provider egress authority（仅当选 remote）；local 则显式记录"无新增 egress" | remote embedding **实现** |
-| GATE-3（lazy） | D-2 / D-9 | capability-scoped provider discovery，仅当某 future ticket 真正依赖该 provider capability 时触发 | 对应 capability 实现 |
+| Gate | 决策来源 | 内容 | 阻塞对象 | 非阻塞对象 |
+|---|---|---|---|---|
+| GATE-1 | D-1 | EmbeddingProvider Qualification Discovery：provider category（local vs remote）、quality/identity/normalization evidence、failure identity 证据；显式声明 `bge-small-zh-v1.5` 证据仅为 harness 方向性参考 | EmbeddingProvider adapter / Dense layer **实现** | ticket decomposition；[1]–[7] |
+| GATE-2 | D-7(b) | public-Zhihu corpus → embedding provider egress authority（仅当选 remote）。**产出必须经适用的 security / contract governance + independent review 转化为显式 repository authority/evidence；聊天声明或 executor note 单独不足。本 Gate 不预设具体 ticket/review 类型。** | remote embedding **实现** | ticket decomposition；local embedding（须显式记录"无新增 egress"） |
+| GATE-3 | D-2b | ADDITIONAL_RETRIEVAL_PROVIDER_CAPABILITY_DISCOVERY：识别/资格确认至少一个额外 retrieval-ranked provider/capability，满足 multi-provider retrieval 合同；只调查 P1 首个 implementation 真正相关的 capability；本 Gate 现在不执行该 discovery，不做全 provider 研究 | 宣称 multi-provider retrieval complete；仅 Official Search 时的 full P1 completion | ticket decomposition；seam；Official Search adapter；确定性 fixtures 的 generic RRF |
+| D-9 触发 | D-9 | 若 GATE-3 选中 provider 需要新 OAuth/Session credential 行为 → 该 provider 的 scoped Discovery / Security prerequisite | 该 provider 的实现 | 既有 Session/Cookie primitive 的包装复用 |
 
-GATE-1/GATE-2 可作为 discovery ticket **进入** Ticket Decomposition，不要求在拆 DAG 前完成。
+GATE-1/GATE-2/GATE-3 可作为 discovery ticket **进入** Ticket Decomposition，
+不要求在拆 DAG 前完成。
 
 ## H. Delegated implementation decisions（汇总）
 
-- **D-2（首段）**：Official Search adapter + Session capture wrapper 的 exact routing；
+- **D-2a**：Provider seam + Official Search adapter 的 exact routing / adapter 形态；
 - **D-3**：minimum persisted Plan schema / validation bounds / planHash 编码（DAG 前部 interface ticket）；
 - **D-4**：selector relevance/novelty weights + optional redundancy params（implementation validation）；
 - **D-5**：anti-starvation 以可测不变量表达；floor/count/quota 数值（若需要）同上；
-- **D-6**：saturation thresholds / minimum rounds / query-group budgets（implementation validation）；
+- **D-6**：saturation thresholds / minimum rounds / query-group budgets（implementation validation；
+  saturation 控制流定位为 feedback controller，见 §F [14]）；
 - **D-7(a)**：embedding cache/storage 精确 schema（identity 组成已冻结，不得降维）。
 
 委派约束：所有委派 ticket 的 Acceptance Criteria 必须直接引用 Spec 冻结条款
-（§4 / §5 / §6 / §9 / §10），不得通过改写 Spec 语义来"简化"实现；`UNKNOWN != PASS`、
+（§4 / §5 / §6 / §7 / §9 / §10），不得通过改写 Spec 语义来"简化"实现；`UNKNOWN != PASS`、
 `captured != verified`、fail-closed 全套语义逐 ticket 适用。
 
 ## I. V1 deferred decisions（汇总）
 
-- **D-8** global quality-score aggregation → CLOSED_FOR_V1（reopen：未来产品需求 + 独立 Spec authority）；
-- **D-9** 新 provider OAuth / Session 行为设计 → DEFER_FROM_V1（lazy 触发 scoped Discovery）；
-- **D-2** 非首段 provider capabilities（OAuth / Browser / OSS 路由等）→ 不预研，lazy 触发；
+- **D-8** global quality-score aggregation → `DEFER_FROM_INITIAL_P1_BASELINE`；
+  `NO_TICKET_IN_INITIAL_DAG = YES`；`APPROVED_SPEC_DECISION_STATUS = REMAINS_OPEN`；
+  `DEFAULT = DO_NOT_INTRODUCE`。本 Gate 不 amend / 不 close Approved Spec。
+- **D-9** 新 provider OAuth / Session 行为设计 → DEFER（lazy 原则保留；GATE-3 触发的
+  provider-scoped 升级规则见 §D / §G）。
 - 既有 Spec §11 / §13 排除项继续有效（Matrix Factorization、trained LTR、xQuAD、DPP、
   P2/P3 预建 SQLite history 等）——本轮无需重复枚举，仅声明不重开。
 
 ## J. Security-critical gates（不得被偷偷委派）
 
 1. **GATE-2（D-7b）**：公开知乎语料 → 新 embedding provider 的出网 authority。现有 R5 egress 批准
-   仅限 DeepSeek semantic runtime；embedding egress 是独立决定，须显式批准 + 安全边界记录。
+   仅限 DeepSeek semantic runtime；embedding egress 是独立决定。**GATE-2 结论必须经适用的
+   security / contract governance + independent review 转化为显式 repository authority/evidence
+   后才可实现 remote embedding；聊天声明 / executor note 单独不足以构成 authority。**
    **本 Gate 将其显式命名，防止被藏进 cache schema 实现细节里静默通过。**
-2. **D-1 qualification 的隔离要求**：无论 local/remote，EmbeddingProvider 不得持有知乎 provider
+2. **GATE-3（D-2b）**：额外 retrieval-ranked provider 的识别/资格确认涉及 provider 路由与
+   qualification 证据；其结论同样须以可独立验证的 evidence 记录（`UNKNOWN != PASS`）。
+3. **D-1 qualification 的隔离要求**：无论 local/remote，EmbeddingProvider 不得持有知乎 provider
    credential；external corpus 送入 embedding worker 受 UNTRUSTED_CONTENT / capability isolation
    约束（§5.3 / V2 trust boundary）；credential 值不进 cache identity。
-3. **D-9 lazy 触发**：未来任何 OAuth/Session 新行为先 Discovery/Qualification 后实现（V0.3 决策 C 先例）；
-   新 browser-scraping / Browser-Session data-access 仍需独立 Approved Spec amendment（§5.1 冻结）。
-4. 既有不变量全程适用：FAIL_CLOSED / NO_SEMANTIC_DOWNGRADE / NO_SILENT_PROVIDER_FALLBACK /
+4. **D-9 升级规则**：GATE-3 选中 provider 若需新 OAuth/Session credential 行为 → 先 scoped
+   Discovery / Security prerequisite 后实现（V0.3 决策 C 先例）；新 browser-scraping /
+   Browser-Session data-access 仍需独立 Approved Spec amendment（§5.1 冻结）。
+5. 既有不变量全程适用：FAIL_CLOSED / NO_SEMANTIC_DOWNGRADE / NO_SILENT_PROVIDER_FALLBACK /
    NO_SILENT_RUNTIME_FALLBACK；public egress ≠ private/sensitive egress。
 
 ## K. OVERENGINEERING_REJECTION_LIST
@@ -389,7 +528,7 @@ GATE-1/GATE-2 可作为 discovery ticket **进入** Ticket Decomposition，不�
 | microservices / event bus / workflow engine / distributed task queue | 单机 thin controller 架构已验证（#30）；无规模证据 |
 | SQLite history platform for P2/P3 | §13 明确排除（P1 只保留自然可复用事实） |
 | automatic browser platform / 新 browser-scraping | 父级 NON-GOAL 未 amend；新实现需独立 Spec amendment（§5.1） |
-| global quality score（D-8） | CLOSED_FOR_V1（§14 minimum-correct default） |
+| global quality score（D-8） | DEFER_FROM_INITIAL_P1_BASELINE；APPROVED_SPEC_DECISION_STATUS = REMAINS_OPEN；DEFAULT = DO_NOT_INTRODUCE |
 | trained ranking model / complex active learning / advanced stopping theory | §11 明确排除 |
 | hard six-lane quotas | §3.2：six dimensions relocated, not deleted；不得回归 hard quotas |
 | MMR as mandatory selector | §3.2：仅 optional lightweight redundancy control |
@@ -398,6 +537,8 @@ GATE-1/GATE-2 可作为 discovery ticket **进入** Ticket Decomposition，不�
 | 把 `bge-small-zh-v1.5` 冻结为 production model | Evidence Gate 证据 ≠ production approval；走 GATE-1 |
 | runtime/provider routing 扩张 | frozen policy 不重开；`NO_SILENT_*_FALLBACK` 不变 |
 | 为 planning 重跑 selector benchmark | 无证据表明 decomposition 被阻塞；§12 caveats 随行即可 |
+| 把 Source-group Set Selection 与 RCE Corpus Selector 合并 | §7 选择合同与 §3 frozen baseline 是两个不同时点/输入/输出的 selector（R1 P1-2） |
+| 为 planning 执行 GATE-3 全 provider 大而全研究 | GATE-3 只调查 P1 首个 implementation 真正相关的 capability（R1 P1-1） |
 
 ## L. Ticketing Readiness verdict
 
@@ -411,32 +552,35 @@ TICKETING_READY = YES
    reviewer PASS 记录在外部审查会话，已列入待 ChatGPT 确认项）；
 2. **architecture-shaping uncertainty 已解决或有独立 pre-ticket discovery gate** ✓ ——
    三个 seam（ZhihuDataProvider / SemanticRuntime / EmbeddingProvider）contract 均已冻结；
-   multi-group 状态概念、logical hierarchy、coverage 三覆盖、saturation 语义均已冻结；
-   剩余不确定性全部为 qualification/discovery 形态，已具名为 GATE-1/GATE-2；
-3. **security-critical unknown 未被偷偷委派** ✓ —— D-7 egress 子门显式命名（GATE-2）；
-   D-9 lazy 触发规则显式记录；UNTRUSTED_CONTENT / isolation 约束随 D-1 资格门走；
+   multi-group 状态概念、两个 selector 的分离定位、logical hierarchy、coverage 三覆盖、
+   saturation feedback controller 语义均已冻结/显式化；剩余不确定性全部为
+   qualification/discovery 形态，已具名为 GATE-1/GATE-2/GATE-3；
+3. **security-critical unknown 未被偷偷委派** ✓ —— D-7 egress 子门显式命名（GATE-2）并强化了
+   "结论须转为 repo authority/evidence"的 governance 要求；D-9 lazy + GATE-3 触发升级规则显式记录；
+   UNTRUSTED_CONTENT / isolation 约束随 D-1 资格门走；
 4. **numeric tuning 未被误升为 architecture blocker** ✓ —— D-4/D-5/D-6 全部 C 类 +
    `DEFAULT_REQUIRES_IMPLEMENTATION_VALIDATION`；
-5. **V1 non-essential complexity 已显式 deferred** ✓ —— D-8 CLOSED_FOR_V1；D-9 与非首段
-   provider capabilities lazy/deferred；
-6. **minimum implementation critical path 可画出** ✓ —— §F 十二组件依赖图，基于实测 seams；
+5. **V1 non-essential complexity 已显式 deferred** ✓ —— D-8 DEFER_FROM_INITIAL_P1_BASELINE
+   （Spec 侧 REMAINS_OPEN）；D-9 与额外 retrieval provider discovery（GATE-3）显式定位；
+6. **minimum implementation critical path 可画出** ✓ —— §F 15 组件依赖图（含 cross-cutting
+   coverage state 与 saturation feedback 边），基于实测 seams；
 7. **implementation ticket 可在不修改 Approved Spec 前提下定义 Acceptance Criteria** ✓ ——
    每类 ticket 的 AC 均可引用已冻结条款（§4 Plan authority / §5 seam contracts / §6 execution
-   semantics / §9 coverage / §10 failure semantics / §3 preservation）。
+   semantics / §7 selection contract / §9 coverage / §10 failure semantics / §3 preservation）。
 
-结论：**MUST_RESOLVE_BEFORE_TICKETING = 空集**。所有 OPEN_DECISION 要么已有足够冻结边界可委派，
-要么是 discovery/qualification 形态（可进入 DAG），要么 V1 不需要（显式 defer）。
-无任何 decision 处于"不知道该归哪类"或"被错误当作 ticketing 阻塞"的状态。
+结论：**MUST_RESOLVE_BEFORE_TICKETING = 空集**。R1 repair 修复了 reviewer 指出的 D-2 拆分、
+双 selector 分离、coverage/saturation 控制流与两处表述问题，**不改变** readiness 实质结论。
 
 ## M. Exact next legal stage
 
 ```text
 NEXT_LEGAL_STAGE = P1_TICKET_DECOMPOSITION
+生效前提：本 R1 repair 通过 ChatGPT delta re-review PASS。
 
-前提（由本 Gate 提出、待 ChatGPT independent review 确认）：
-  1. 本文件（planning candidate）通过独立 review；
-  2. Ticket Decomposition 产物必须包含：GATE-1 / GATE-2 作为 discovery/decision ticket、
+前提（由本 Gate 提出）：
+  1. Ticket Decomposition 产物必须包含：GATE-1 / GATE-2 / GATE-3 作为 discovery/decision ticket、
      D-3 plan contract 作为 DAG 前部 interface ticket；
+  2. 初始 DAG 不得包含消费 D-8 的 ticket（NO_TICKET_IN_INITIAL_DAG = YES）；
   3. 委派类 ticket 的 AC 引用 Spec 冻结条款，不重写语义。
 
 持续保持：
@@ -449,6 +593,22 @@ NEXT_LEGAL_STAGE = P1_TICKET_DECOMPOSITION
   embedding integration / provider integration / 新 benchmark / 新 Gold / P2/P3 design /
   version assignment / merge master / 自动 reviewer loop
 ```
+
+---
+
+## 附：R1 REPAIR RECORD（响应 ChatGPT CHANGES_REQUESTED_NARROW，P0=0 / P1=3 / P2=2）
+
+| Finding | 修复位置 | 内容 |
+|---|---|---|
+| P1-1 | §C / §D-D2 / §E / §F[3] / §G / §K | D-2 拆分 D-2a（C：seam + Official Search adapter）/ D-2b（B = GATE-3）；显式更正 R0 错误（Session capture ≠ retrieval ranking channel；RRF channel = query + provider retrieval rankings）；GATE-3 重定义为 ADDITIONAL_RETRIEVAL_PROVIDER_CAPABILITY_DISCOVERY，含完整 blocking / non-blocking 语义；D-9 增加 GATE-3 触发升级规则 |
+| P1-2 | §F / §B / §K | 图重画为 15 组件链：显式加入 [4] Source-group Set Selection / Ambiguity Gate（Approved §7 合同，capture 前）并与 [10] RCE Corpus Selector（§3 baseline，capture/verify 后）严格分离，禁止合并 |
+| P1-3 | §F[13][14] / §D-D6 | ResearchCoverageState 改为 cross-cutting controller state（自 [3] 起持续更新，贯穿 retrieval / provider routes / group selection / capture-verify / RCE / claim-aspect，追踪三覆盖）；saturation 表达为显式 feedback controller（[13]→[14]→[3] 迭代回路 / budget stop → 下游）；阈值不冻结，D-6 分类不变 |
+| P2-1 | §C / §D-D8 / §I / §K | D-8 表述改为 DEFER_FROM_INITIAL_P1_BASELINE / NO_TICKET_IN_INITIAL_DAG=YES / APPROVED_SPEC_DECISION_STATUS=REMAINS_OPEN / DEFAULT=DO_NOT_INTRODUCE；删除 R0 的 "CLOSED_FOR_V1"（planning artifact 无权关闭 Approved Spec decision） |
+| P2-2 | §D-D7(b) / §G / §J | GATE-2 增加 governance 要求：结论必须经 security/contract governance + independent review 转化为显式 repository authority/evidence；聊天声明 / executor note 单独不足；不预设具体 ticket/review 类型 |
+
+PRESERVE 确认：D-1 / D-3 / D-4 / D-5 / D-6 / D-7 cache-egress 拆分 / D-9 lazy 原则 / 四组件
+selector baseline / six-dimension relocation / 安全模型 / overengineering rejection list /
+TICKETING_READY = YES / MUST_RESOLVE_BEFORE_TICKETING = empty 全部保持不变。
 
 ---
 
