@@ -15,12 +15,12 @@
 ## A. exact branch / commit
 
 ```text
-branch : dg01-decision-grade-gate
-HEAD   : 73b958437ed3438cfcffedd05f33b77e0ac5c580
-          (tip; contains this packet text verbatim)
-content: 1e0f7bfd1e36bfcf0136ad623a5a0888eec84ec2
-          (gate content commit: D2.1 evaluator correction + race + packets)
-base   : c3f5e9c26e1a330f63fbbd85ede9a96a2db824b0 (audit snapshot, §B)
+branch        : dg01-decision-grade-gate
+content commit: 1e0f7bfd1e36bfcf0136ad623a5a0888eec84ec2
+                (authoritative copy of this packet + all gate artifacts)
+tip           : 以当前分支 `git rev-parse HEAD` 为准（本包后的纯 bookkeeping
+                commits 不改变任何证据内容；逐 SHA 核验请用 git log）
+base          : c3f5e9c26e1a330f63fbbd85ede9a96a2db824b0 (audit snapshot, §B)
 ```
 
 ## B. base commit
