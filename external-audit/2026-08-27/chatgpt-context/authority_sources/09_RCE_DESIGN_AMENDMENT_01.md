@@ -214,10 +214,11 @@ This amendment overrides the following sections in the frozen RCE documents:
 ```text
 TARGET_STATUS = NOT_IMPLEMENTED
 IMPLEMENTATION_AUTHORIZATION = NONE
-SPEC_PREPARATION_GATE = NOT_READY_PENDING_CHATGPT_FINAL_REVIEW
+SPEC_PREPARATION_GATE = READY_FOR_ARCHITECTURE_SPEC_PREPARATION
 ```
 
-This amendment updates the design authority only. No production code has been written or authorized.
+This authorization permits Architecture / Spec Preparation only.
+It does NOT authorize production implementation or product version assignment.
 
 ---
 
