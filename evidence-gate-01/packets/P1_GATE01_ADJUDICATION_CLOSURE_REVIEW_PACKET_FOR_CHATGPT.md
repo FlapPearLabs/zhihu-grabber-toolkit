@@ -16,13 +16,15 @@ SPEC_PREPARATION_GATE = NOT_READY_PENDING_CHATGPT_FINAL_REVIEW
 
 ```text
 REMOTE_BRANCH : dg01-decision-grade-gate           (pushed to origin)
-FINAL_COMMIT  : <git rev-parse HEAD 最终值>         (见 §O 复验)
+FINAL_COMMIT  : caec4b0fbedc5811b98361e107e9b3cd4a5954dc
+                 (closure commit; verified via git ls-remote origin)
 BASE_SHA      : c3f5e9c26e1a330f63fbbd85ede9a96a2db824b0
-远端验证      : git ls-remote origin dg01-decision-grade-gate（§O）
+远端验证（§O）:
+  git ls-remote origin dg01-decision-grade-gate
+  -> caec4b0fbedc5811b98361e107e9b3cd4a5954dc  refs/heads/dg01-decision-grade-gate
 ```
 
-（pushing 完成后填写实际 SHA；旧的 content commit 1e0f7bf 不变，本轮新增
-closure commits 在其之上。）
+（旧的 content commit 1e0f7bf + prep commit 7c23e57 均在该分支历史中。）
 
 ## B. second adjudication input validation
 
