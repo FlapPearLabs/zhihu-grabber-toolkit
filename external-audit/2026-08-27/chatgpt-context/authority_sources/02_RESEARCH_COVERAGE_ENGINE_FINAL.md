@@ -61,7 +61,7 @@ Research Coverage Engine 不是 Ranking Engine。
 - 多 Provider；
 - 多 Query；
 - 多文体；
-- 多 lane；
+- 六个 information dimensions（Mainstream / Expert / Evidence-rich / Fresh / Long-tail / Contradictory）；
 - expertise；
 - evidence；
 - freshness；
@@ -70,6 +70,8 @@ Research Coverage Engine 不是 Ranking Engine。
 - coverage；
 - provenance；
 - benchmark hooks。
+
+> **Note:** The six information dimensions are preserved as system capabilities, but they are NOT hard selector quotas in the first baseline. Their roles are relocated per `09_RCE_DESIGN_AMENDMENT_01.md` §4.
 
 未来复杂算法可以替换内部 selector，而不改变外部数据模型和证据合同。
 
@@ -162,15 +164,17 @@ V1 不要求 PCA/SVD。
 V1 使用：
 
 - RRF
-- MMR
+- Optional lightweight redundancy control (MMR available as a mechanism)
+
+> **Note:** MMR is no longer the mandatory core selector. The first baseline uses question/source-group preservation + popularity anchor + dense semantic relevance/novelty + optional redundancy control. See `09_RCE_DESIGN_AMENDMENT_01.md` §3.
 
 ---
 
 ### 4.3 Discrete Mathematics / Greedy Selection
 
-MMR 本质上逐步选择：
+Greedy lightweight redundancy control:
 
-> 当前最相关、同时最不重复的候选。
+> 逐步选择当前最相关、同时最不重复的候选。
 
 V1 暂不实现复杂 Submodular / DPP。
 
@@ -399,11 +403,9 @@ IMPLEMENT_NOW = NO
 
 ---
 
-## 12. Multi-lane Inclusion
+## 12. Information Dimensions
 
-Discovery / Inclusion 与最终排序分离。
-
-必须保留：
+Six information dimensions must remain preserved in the system:
 
 - Mainstream
 - Expert
@@ -418,25 +420,20 @@ Discovery / Inclusion 与最终排序分离。
 
 > Popularity feedback loop
 
-V1 不要求固定比例。
+These dimensions are NOT hard selector quotas in the first baseline. Their roles are relocated per `09_RCE_DESIGN_AMENDMENT_01.md` §4:
 
-具体 lane quota 必须通过 benchmark 或安全上限约束确定。
-
-> **Amendment Note (RCE_DESIGN_AMENDMENT_01):** Based on P1 Decision-Grade Evidence Gate 01, the six lanes are demoted from hard selector constraints to retrieval/ranking signals. Their new roles are:
-> - Mainstream → retrieval / soft popularity feature
-> - Expert → retrieval signal + topic-conditioned soft feature
-> - Evidence-rich → retrieval signal + soft feature
-> - Fresh → retrieval/time policy + diagnostic
-> - Long-tail → soft marginal-value / novelty feature
-> - Contradictory → opposing-query generation + claim-stage diagnostic
-> 
-> The information dimensions remain part of the product contract; only their hard-quota selector role is removed from the first baseline. See `09_RCE_DESIGN_AMENDMENT_01.md` §4 for details.
+- Mainstream → retrieval / soft popularity feature
+- Expert → retrieval signal + topic-conditioned soft feature
+- Evidence-rich → retrieval signal + soft feature
+- Fresh → retrieval/time policy + diagnostic
+- Long-tail → soft marginal-value / novelty feature
+- Contradictory → opposing-query generation + claim-stage diagnostic
 
 ---
 
-## 13. MMR — V1 Main Selector
+## 13. Optional Lightweight Redundancy Control
 
-V1 用 MMR 作为核心选择基线。
+MMR is available as an optional lightweight redundancy mechanism.
 
 原因：
 
@@ -447,25 +444,19 @@ V1 用 MMR 作为核心选择基线。
 - 易 regression；
 - 容易与 future selector A/B。
 
-MMR 不负责保护所有长尾。
+MMR is NOT the mandatory core selector. The first baseline uses:
 
-因此必须叠加：
+```text
+Question / Source-group Preservation
++
+Popularity Anchor
++
+Dense Semantic Relevance / Novelty
++
+Optional Lightweight Redundancy Control
+```
 
-> Multi-lane Exploration Constraints
-
-> **Amendment Note (RCE_DESIGN_AMENDMENT_01):** Based on P1 Decision-Grade Evidence Gate 01, MMR is demoted from mandatory core selector to an optional/lightweight redundancy mechanism subject to cost and benefit. The selector baseline is now:
-> 
-> ```text
-> Question / Source-group Preservation
-> +
-> Popularity Anchor
-> +
-> Dense Semantic Relevance / Novelty
-> +
-> Optional Lightweight Redundancy Control
-> ```
-> 
-> MMR remains available as the optional redundancy control component, but is no longer the mandatory core selector. See `09_RCE_DESIGN_AMENDMENT_01.md` §3 for details.
+MMR remains available as the optional redundancy control component, but is no longer the mandatory core selector. See `09_RCE_DESIGN_AMENDMENT_01.md` §3 for details.
 
 ---
 
@@ -490,7 +481,7 @@ Deferred because:
 
 - 强依赖稳定 Aspect Map；
 - 需要 aspect probability / coverage model；
-- V1 的 MMR + lanes 已能覆盖大量收益。
+- 当前 simplified baseline 尚未证明需要更复杂 diversification；只有 future benchmark 显示稳定增益后才晋级。
 
 ### Complex Submodular Optimization
 
@@ -674,15 +665,15 @@ Mitigation:
 Mitigation:
 
 - historical topic evidence；
-- evidence-rich lane；
-- long-tail lane；
+- evidence-rich signal；
+- long-tail / novelty signal；
 - credential only as prior。
 
-### Risk D — MMR over-diversifies
+### Risk D — Redundancy control over-diversifies
 
 Mitigation:
 
-- preserve Mainstream lane；
+- preserve popularity anchor / Mainstream signal；
 - allow multiple strong sources for same key claim；
 - measure Must-See Recall。
 
@@ -728,7 +719,7 @@ Zhihu Research Retrieval Benchmark 至少测：
 ```text
 Baseline 0: Popularity Top-K
 Baseline 1: Semantic Top-K
-Baseline 2: MMR + lanes
+Baseline 2: Question/source-group preservation + popularity anchor + dense semantic relevance/novelty + optional redundancy control
 
 Future Candidate:
 xQuAD

@@ -1,6 +1,6 @@
 # RCE Design Amendment 01 — Selector Baseline Revision
 
-STATUS: AMENDMENT_APPROVED  
+STATUS: REVIEW_PENDING  
 VERSION_ASSIGNMENT: UNASSIGNED  
 IMPLEMENTATION_AUTHORIZATION: NONE  
 AMENDMENT_DATE: 2026-08-28  
@@ -10,20 +10,20 @@ AMENDMENT_BASIS: P1_DECISION_GRADE_EVIDENCE_GATE_01 (PASS_WITH_CAVEATS)
 
 ## 1. Amendment Authority
 
-This amendment is authorized by:
+This amendment is based on:
 
 ```text
 P1_DECISION_GRADE_EVIDENCE_GATE_01 = PASS_WITH_CAVEATS
 EVIDENCE_SUPPORTED_OUTCOME = PROCEED_WITH_SIMPLIFICATION
-CHATGPT_FORMAL_REVIEW_V2 = ACCEPTED
+P1_GATE01_CHATGPT_FORMAL_REVIEW_V2 = approved the evidence outcome and requested this amendment
+RCE_DESIGN_AMENDMENT_01_CHATGPT_REVIEW_V1 = CHANGES_REQUESTED_NARROW (authority integration fixes)
 ```
 
 It modifies the selector baseline authority in:
 
+- `00_SOURCE_AUTHORITY_AND_STATUS.md` (authority hierarchy update)
 - `02_RESEARCH_COVERAGE_ENGINE_FINAL.md` (§3, §12, §13, §21)
 - `04_ALGORITHM_EVIDENCE_AND_DECISIONS_FINAL.md` (§3 A06, A07; §8)
-
-No other authority documents are affected.
 
 ---
 
@@ -200,7 +200,6 @@ This amendment overrides the following sections in the frozen RCE documents:
 
 ### 7.3 Documents NOT Affected
 
-- `00_SOURCE_AUTHORITY_AND_STATUS.md` — unchanged
 - `01_PRODUCT_DIRECTION_FINAL.md` — unchanged
 - `03_TEMPORAL_INTELLIGENCE_ENGINE_FINAL.md` — unchanged
 - `05_OFFICIAL_AND_OSS_DISCOVERY_NOTES.md` — unchanged
@@ -239,10 +238,11 @@ The architecture spec may now proceed against the revised selector baseline.
 ```text
 amendment_id: RCE_DESIGN_AMENDMENT_01
 amendment_date: 2026-08-28
-authorized_by: P1_DECISION_GRADE_EVIDENCE_GATE_01 (PASS_WITH_CAVEATS)
-reviewed_by: ChatGPT (P1_GATE01_CHATGPT_FORMAL_REVIEW_V2)
+basis: P1_DECISION_GRADE_EVIDENCE_GATE_01 (PASS_WITH_CAVEATS)
+review_request: P1_GATE01_CHATGPT_FORMAL_REVIEW_V2 (approved evidence, requested amendment)
+review_status: RCE_DESIGN_AMENDMENT_01_CHATGPT_REVIEW_V1 = CHANGES_REQUESTED_NARROW (authority integration fixes)
 scope: selector baseline + lane relocation
-documents_modified: 02_RESEARCH_COVERAGE_ENGINE_FINAL.md, 04_ALGORITHM_EVIDENCE_AND_DECISIONS_FINAL.md
-documents_unaffected: all other authority documents
+documents_modified: 00_SOURCE_AUTHORITY_AND_STATUS.md, 02_RESEARCH_COVERAGE_ENGINE_FINAL.md, 04_ALGORITHM_EVIDENCE_AND_DECISIONS_FINAL.md
+documents_unaffected: 01, 03, 05, 06, 07, 08
 implementation_status: NOT_IMPLEMENTED
 ```

@@ -35,7 +35,7 @@ IMPLEMENTATION_AUTHORIZATION: NONE
 | 数学/研究领域 | 对产品的作用 | V1 使用程度 |
 |---|---|---|
 | 线性代数 | Embedding、Cosine、相似度矩阵 | CORE |
-| 信息检索 IR | Query expansion、RRF、MMR | CORE |
+| 信息检索 IR | Query expansion、RRF、optional redundancy control | CORE |
 | 离散数学 / 组合优化 | Subset selection、去重、多样性 | LIGHT IN V1 |
 | 图论 | Claim clusters / relations | LIGHT IN V1 |
 | 概率统计 | 饱和度、变化检测、显著性 | SIMPLE IN V1 |
@@ -265,17 +265,20 @@ WHY NOW:
 
 LIMIT:
 
-不能单独保证 expert / fresh / long-tail。
+不能单独保证 expert / fresh / long-tail.
 
-因此必须：
+Therefore, the first baseline does NOT use MMR as the sole selector. The selector baseline is:
 
-> MMR + Multi-lane Exploration Constraints
+- Question/source-group preservation
+- Popularity anchor
+- Dense semantic relevance/novelty
+- Optional lightweight redundancy control (MMR available)
 
 STATUS:
 
 > OPTIONAL_REDUNDANCY_MECHANISM
 
-> **Amendment Note (RCE_DESIGN_AMENDMENT_01):** Based on P1 Decision-Grade Evidence Gate 01, MMR is demoted from V1 CORE to OPTIONAL_REDUNDANCY_MECHANISM. The selector baseline is now question/source-group preservation + popularity anchor + dense semantic relevance/novelty + optional lightweight redundancy control. MMR remains available as the optional redundancy component. See `09_RCE_DESIGN_AMENDMENT_01.md` §3 for details.
+> **Note:** MMR is available as an optional redundancy mechanism, but does not define the first selector architecture by itself. See `09_RCE_DESIGN_AMENDMENT_01.md` §3 for details.
 
 ---
 
@@ -431,7 +434,7 @@ WHY DEFER:
 
 - requires stable Aspect Map；
 - requires aspect probability / satisfaction model；
-- V1 MMR + lanes already gives strong baseline。
+- current simplified baseline must first be evaluated in architecture/implementation; advanced diversification only promoted by future evidence.
 
 STATUS:
 
@@ -495,7 +498,7 @@ WHY DEFER FROM V1:
 - many constraints；
 - continuous benchmark tuning。
 
-V1 先建立 strong MMR baseline。
+Current simplified baseline must first be evaluated in architecture/implementation; advanced diversification only promoted by future evidence.
 
 STATUS:
 
@@ -848,12 +851,16 @@ MF / learned model
 ```
 
 ```text
-V1 Diversity:
-MMR + lanes
+V1 Selection / Diversity:
+Question/source-group preservation
++ dense novelty
++ optional redundancy control
 
 Future Diversity:
 DPP / xQuAD / Submodular
 ```
+
+Note: Six information dimensions (Mainstream, Expert, Evidence-rich, Fresh, Long-tail, Contradictory) remain available as retrieval / soft ranking signals, but are NOT hard selector quotas.
 
 ```text
 V1 Stopping:
@@ -887,9 +894,9 @@ JS / change-point / statistical significance
 |---|---|---|
 | Planner 漏 aspect | Retrieval coverage 不足 | multi-query + gap search |
 | Embedding 偏差 | 长尾语义未命中 | lexical retrieval + multi-provider RRF |
-| Expertise heuristic 偏认证用户 | 无认证专家被漏 | history/evidence/long-tail lanes |
-| MMR 过度去重 | 主流关键观点证据不足 | mainstream lane + must-see recall |
-| Lane quota 拍脑袋 | 资源分配失衡 | benchmark / no fixed permanent quota |
+| Expertise heuristic 偏认证用户 | 无认证专家被漏 | history/evidence/long-tail signal |
+| Redundancy control 过度去重 | 主流关键观点证据不足 | popularity anchor + must-see recall |
+| No hard quotas | 资源分配失衡 | benchmark / soft features only |
 | Saturation 过早 | 研究停止太早 | minimum rounds + expert/contradiction checks |
 | Simple claim clustering | 合并/拆分错误 | provenance preserved + re-clusterable |
 | Temporal heuristic noise | 假变化提醒 | candidate vs confirmed distinction |

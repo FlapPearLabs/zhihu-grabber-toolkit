@@ -1,7 +1,7 @@
 # Source Authority and Status
 
 STATUS: CURRENT_AUTHORITY_INDEX  
-DATE: 2026-08-25  
+DATE: 2026-08-28  
 SCOPE: ZHIHU CLI PRO DESIGN SOURCES  
 IMPLEMENTATION_AUTHORIZATION: NONE  
 VERSION_ASSIGNMENT: UNASSIGNED
@@ -20,7 +20,7 @@ VERSION_ASSIGNMENT: UNASSIGNED
 
 ## 2. Current Source Set
 
-当前推荐 Project Sources 共 9 份：
+当前推荐 Project Sources 共 10 份：
 
 ```text
 00_SOURCE_AUTHORITY_AND_STATUS.md
@@ -35,6 +35,8 @@ VERSION_ASSIGNMENT: UNASSIGNED
 
 07_RESEARCH_SECURITY_AND_CROSS_SOURCE_SYNTHESIS_GUARDRAILS.md
 08_DISCOVERY_EVIDENCE_APPENDIX.md
+
+09_RCE_DESIGN_AMENDMENT_01.md (SCOPED FROZEN DESIGN AMENDMENT)
 ```
 
 ---
@@ -66,13 +68,14 @@ STOP: CONTRACT_CONFLICT
 
 ### Level 1 — Current Frozen Design
 
-以下五份共同构成当前 Zhihu CLI Pro 冻结设计：
+以下六份共同构成当前 Zhihu CLI Pro 冻结设计：
 
 1. `01_PRODUCT_DIRECTION_FINAL.md`
 2. `02_RESEARCH_COVERAGE_ENGINE_FINAL.md`
 3. `03_TEMPORAL_INTELLIGENCE_ENGINE_FINAL.md`
 4. `04_ALGORITHM_EVIDENCE_AND_DECISIONS_FINAL.md`
 5. `07_RESEARCH_SECURITY_AND_CROSS_SOURCE_SYNTHESIS_GUARDRAILS.md`
+6. `09_RCE_DESIGN_AMENDMENT_01.md` (SCOPED FROZEN DESIGN AMENDMENT)
 
 解释：
 
@@ -80,7 +83,8 @@ STOP: CONTRACT_CONFLICT
 - 02：Research Coverage Engine 当前 baseline；
 - 03：Temporal Intelligence Engine 当前 baseline；
 - 04：算法证据、采用/延期状态、工程取舍；
-- 07：RCE 的安全边界与跨问题/跨来源分层综合补充约束。
+- 07：RCE 的安全边界与跨问题/跨来源分层综合补充约束；
+- 09：RCE selector baseline 修订（基于 P1 Decision-Grade Evidence Gate 01 证据）。
 
 #### 07 的优先级范围
 
@@ -98,6 +102,31 @@ LARGE_QUESTION_DOMINANCE
 ```
 
 其他 RCE 设计仍以 02 为准。
+
+#### 09 的优先级范围
+
+09 是 SCOPED FROZEN DESIGN AMENDMENT，基于 P1 Decision-Grade Evidence Gate 01 证据。
+
+**在以下 scope 内，09 覆盖 02/04 中冲突的 selector/lane 相关表述：**
+
+- RCE selector baseline
+- Question / Source-group preservation
+- Popularity role
+- Dense semantic role
+- Redundancy-control role
+- Six-lane role relocation
+
+**在 scope 外，02/04 保持原有 Level 1 authority。**
+
+09 不允许覆盖：
+
+- 01 Product Direction
+- 03 Temporal Intelligence
+- 07 Security / synthesis guardrails
+- Provider / Auth
+- P2 / P3
+- Version assignment
+- Implementation authorization
 
 ---
 
@@ -278,9 +307,9 @@ LEAD_TO_REVERIFY
 ```text
 PRODUCT_DIRECTION = DESIGN_FROZEN
 
-RESEARCH_COVERAGE_ENGINE = DESIGN_FROZEN
+RESEARCH_COVERAGE_ENGINE = DESIGN_FROZEN_WITH_AMENDMENT
 TEMPORAL_INTELLIGENCE_ENGINE = DESIGN_FROZEN
-ALGORITHM_DECISIONS = DESIGN_FROZEN
+ALGORITHM_DECISIONS = DESIGN_FROZEN_WITH_AMENDMENT
 
 RESEARCH_SECURITY_GUARDRAILS = DESIGN_FROZEN_ADDENDUM
 CROSS_SOURCE_SYNTHESIS_GUARDRAILS = DESIGN_FROZEN_ADDENDUM
@@ -288,6 +317,9 @@ CROSS_SOURCE_SYNTHESIS_GUARDRAILS = DESIGN_FROZEN_ADDENDUM
 DISCOVERY_NOTES = EVIDENCE_ONLY
 DISCOVERY_EVIDENCE_APPENDIX = EVIDENCE_ONLY
 DESIGN_HISTORY = HISTORICAL_NON_AUTHORITATIVE
+
+P1_EVIDENCE_GATE = PASS_WITH_CAVEATS
+RCE_DESIGN_AMENDMENT_01 = REVIEW_PENDING
 
 VERSION_ASSIGNMENT = UNASSIGNED
 IMPLEMENTATION_AUTHORIZATION = NONE
@@ -345,10 +377,21 @@ Query/Aspect Expansion
 + RRF
 + Embedding/Cosine
 + deterministic features
-+ MMR
-+ multi-lane exploration
++ Question/Source-group Preservation
++ Popularity Anchor
++ Dense Semantic Relevance/Novelty
++ Optional Lightweight Redundancy Control
 + simple claim clustering
 + simple saturation
+
+Six information dimensions remain preserved,
+but they are NOT hard selector quotas in the first baseline:
+Mainstream → retrieval / soft popularity feature
+Expert → retrieval signal + topic-conditioned soft feature
+Evidence-rich → retrieval signal + soft feature
+Fresh → retrieval/time policy + diagnostic
+Long-tail → soft marginal-value / novelty feature
+Contradictory → opposing-query generation + claim-stage diagnostic
 
 Cross-question synthesis:
 hierarchical, not flat
@@ -426,19 +469,16 @@ STOP: SOURCE_AUTHORITY_CONFLICT
 
 ```text
 IMMEDIATE_NEXT_STAGE =
-Discovery / Capability Audit
-+
-Research Coverage Benchmark Design
+ARCHITECTURE_SPEC_PREPARATION
 ```
 
-只有在上述阶段产生足够、可审计的新证据后，才允许进入：
+因为：
 
-```text
-FOLLOWING_STAGE_AFTER_EVIDENCE_GATE =
-Architecture / Spec Preparation
-```
+- P1_EVIDENCE_GATE = PASS_WITH_CAVEATS
+- RCE_DESIGN_AMENDMENT_01 修订了 selector baseline
+- Authority hierarchy 已更新
 
-`Architecture / Spec Preparation` 不与 Discovery 平级，也不得跳过 evidence gate 提前启动。
+Discovery / Capability Audit 可以继续作为 provider track，但它不再阻塞 P1 Architecture / Spec Preparation。
 
 在没有新的明确授权前：
 
