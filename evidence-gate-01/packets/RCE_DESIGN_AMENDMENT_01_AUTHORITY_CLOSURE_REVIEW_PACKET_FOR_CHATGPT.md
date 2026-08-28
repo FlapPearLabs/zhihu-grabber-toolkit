@@ -21,10 +21,12 @@ AUTHORITY_FIX_CONTENT_COMMIT: c6955c61fa837541029c5106f1462ef4d4577eaa
 ## D. Actual Remote Tip
 
 ```text
-REMOTE_TIP_AT_REPORT_TIME: c6955c61fa837541029c5106f1462ef4d4577eaa
+REMOTE_TIP_AT_REPORT_TIME: 8890572ed5beafffca4aa38512afa6089a16eaa3
 ```
 
-（ls-remote verified: c6955c61fa837541029c5106f1462ef4d4577eaa refs/heads/dg01-decision-grade-gate）
+（ls-remote verified: 8890572ed5beafffca4aa38512afa6089a16eaa3 refs/heads/dg01-decision-grade-gate）
+
+注：CONTENT_COMMIT = c6955c6（authority closure 内容），REPORTING_TIP = 8890572（含 bookkeeping commit）。
 
 ---
 
