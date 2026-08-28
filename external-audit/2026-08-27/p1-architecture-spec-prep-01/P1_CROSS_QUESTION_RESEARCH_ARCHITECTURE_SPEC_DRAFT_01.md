@@ -3,335 +3,588 @@
 ```text
 DOCUMENT_STATUS = DRAFT
 REVIEW_STATUS = REVIEW_PENDING
+REPAIR_ROUND = P1_ARCHITECTURE_SPEC_DRAFT_01_REPAIR_R1
 TARGET_STATUS = NOT_IMPLEMENTED
 IMPLEMENTATION_AUTHORIZATION = NONE
 VERSION_ASSIGNMENT = UNASSIGNED
 DOCUMENT_ID = P1_CROSS_QUESTION_RESEARCH_ARCHITECTURE_SPEC_DRAFT_01
-BASE_SHA = 196db3d9775e33ff8cd6bf4e218ba4313630a923 (dg01-decision-grade-gate)
+ARCHITECTURE_BASE_SHA = 196db3d9775e33ff8cd6bf4e218ba4313630a923 (dg01-decision-grade-gate)
+BASE_REVIEWED_HEAD = 82ec5981b2403a3b8c2c6b966991d49767584eba
 BRANCH = spec/p1-architecture-spec-prep-01
 ```
 
-**Authority chain**（本 Draft 的每一条架构决策都必须能回溯到以下 authority；无法回溯的一律进入 §10 OPEN_DECISIONS，不得自行拍板）：
+本文件只准备 P1 架构合同，不是 production implementation、ticket decomposition、版本分配或 Approved Spec promotion。
 
-| Level | Source | Role |
+## 0. Authority Chain and Amendment Discipline
+
+本 Draft 必须同时服从以下 authority；不能只读 00–09 的设计摘要而忽略既有 Approved contracts。
+
+| Level | Source | Binding role in this Draft |
 |---|---|---|
-| 0 | `RULES.md` / `AGENTS.md` | hard invariants + workflow |
-| 1 | `external-audit/2026-08-27/chatgpt-context/authority_sources/00…09` | current frozen design（09 在其 amendment 范围内覆盖 02/04） |
-| 1 | `docs/specs/v2-rich-content-fidelity.md`（Approved） | 三层内容模型 / trust boundaries |
-| 1 | `docs/specs/v0.3-product-scope.md`（Approved additive amendment） | v0.3 产品范围 |
-| 1 | `docs/product-behavior-contract.md` | 可执行行为归一化视图 |
-| 2 | `05…08` authority sources、evidence-gate-01 产物 | evidence only |
-| 3 | `06` authority source | 历史背景 |
+| 0 | `RULES.md`、`AGENTS.md` | hard invariants、scope、review / merge workflow |
+| 1 | `docs/specs/v2-rich-content-fidelity.md` | canonical / Agent projection / capability-isolation / trust boundary baseline |
+| 1 | `docs/specs/v0.3-product-scope.md` | sampled/full identity、hierarchical digest、runtime qualification amendments |
+| 1 | `docs/specs/research-orchestration-scope.md` | **Applicable Approved Spec**：selection、full coverage、public-Zhihu semantic runtime、resume、failure semantics |
+| 1 | `docs/product-behavior-contract.md` | 已实现行为的归一化视图；不得覆盖 Approved Specs |
+| 1 | `docs/architecture/runtime-strategy.md` | accepted controller/runtime boundary；不得覆盖 Approved Specs |
+| 1 | `external-audit/2026-08-27/chatgpt-context/authority_sources/00/01/02/03/04/07/09` | frozen design；09 只在 selector/lane scope 覆盖 02/04 |
+| 2 | `05_OFFICIAL_AND_OSS_DISCOVERY_NOTES.md`、`08_DISCOVERY_EVIDENCE_APPENDIX.md`、P1 Evidence Gate 01 | evidence / discovery only；外部能力真正施工前必须 re-verify |
+| 3 | `06_DESIGN_HISTORY_AND_OPEN_QUESTIONS.md` | historical / non-authoritative |
 
-**Evidence base**：P1 Evidence Gate 01（PASS_WITH_CAVEATS）+ RCE_DESIGN_AMENDMENT_01（DESIGN_FROZEN_AMENDMENT）。两个 real-domain cases、216 captured sources、四个 fair strategies（B0/B1/B2/B3）、47 labels 第二 adjudication。
+解释规则：
 
----
+1. P1 是对 single-question Research Orchestration 的 **additive architecture amendment candidate**；未在本文件明确 amendment 的现有合同继续生效。
+2. 09 冻结四组件 selector 方向，但不授权从 benchmark strategy 直接复制实现细节。
+3. 05/08 只能证明 capability lead；精确 endpoint、OAuth scope、CLI command、Session/Web pagination 或 completeness 均不得由本 Draft 冻结。
+4. `UNKNOWN != PASS`；无法按 authority hierarchy 机械解决的冲突必须 `STOP: CONTRACT_CONFLICT`。
 
-## 1. Problem Statement（P1 是什么）
-
-P1 = Cross-Question Deep Research：用户给出一个自然语言研究主题（topic），系统产出一份**有证据支撑的跨问题综合研究结论**，全链路为：
-
-```text
-natural-language topic
-→ multi-query search（搜索规划）
-→ 多个 Zhihu question / 多种文体候选（answers + comments）
-→ Research Coverage Engine（选择 + 覆盖 + 合成）
-→ Verified Research Corpus（captured + verified）
-→ evidence-backed cross-source synthesis
-```
-
-与 v0.3 现状的本质差异只有两点：
-
-1. **Question-level**：v0.3 research-orchestration 已实现 topic → search → select → capture → verify → handoff → analyze → render 全链，但 `selectCandidate` 是**单问题**确定性词面选择（auto / ambiguous / none 三 verdict，至多一次 clarification）。P1 需要**多问题**输入（Question/Source-group Preservation）。
-2. **Selector-level**：v0.3 corpus-anthology 的 `select.mjs` 是 top-percent 确定性采样（voteupCount DESC 单键）。P1 需要四组件 selector（见 §3）。
-
-其余能力——capture / verify / handoff / chunk / map / reduce / hierarchy / tool-less runtime / capability isolation / fail-closed 语义——**全部已存在且必须复用**（ADAPTER_FIRST / STRANGLER_FIRST / NO_REWRITE）。
-
----
-
-## 2. CURRENT_V0_3_SEAM_MAP
-
-> 本节是对现有 production code 的实际阅读结果（非设计想象）。Architecture 必须从这些 seam 长出来。
-
-### 2.1 九个 seam 问题的回答
-
-**Q1 — CLI / orchestration 从哪里进入？**
-
-- 单问题工具链入口：`zhihu-answer-grabber/src/cli.js`（`zhigrab grab|batch|search|status`）。
-- 研究编排入口：`research-orchestration/bin/research.mjs` → `lib/orchestrator.mjs` `createOrchestrator({workDir, topic, mode, percent, runtime, forceQuestionId, runner})`。orchestrator 是 thin deterministic controller：通过 `runner(name, args, opts)` 子进程调用既有 primitives（`zhihu-search` / `zhihu-grab` / `zhihu-verify` / `zhihu-handoff` / `corpus-chunk` / `corpus-select` / `corpus-map` / `corpus-verify-work` / `corpus-verify-final` / `corpus-reduce` / `corpus-render` / `deepseek-preflight` / `zhihu-preflight`），**从不重新实现** capture/verify/handoff/corpus 逻辑，从不让 LLM 决定 validity。
-
-**Q2 — Search / capture / verify 在哪里？**
-
-- Search：`zhihu-answer-grabber/src/official.js` `searchQuestions()`（developer.zhihu.com 官方 API，Bearer secret）+ `src/search-answer-count.js` bounded question-info enrichment（OPEN-D1 合同：每候选 ≤1 次 HTTP、失败降级 null、search 本身不失败）。
-- Capture：`src/grber.js`（文件名 `grabber.js`）`grabAll()`：分页循环 + `MAX_PAGES=300` 安全阈值 + 页面指纹防重复分页 + `is_end===true` 完成合同 + atomic write（tmp+rename）+ `QuestionMetadataIdentityError` 身份门。
-- Verify：`src/verifier.js` `verifyOutput()`：14 项校验的**单一事实来源**（目录=JSON=handoff 三方一致、fence-aware 帧计数等）；`captured != verified`，只有 verify-output 可授予 verified。
-
-**Q3 — canonical / source identity 当前如何表示？**
-
-- Capture 层：`questionId`（1-20 位数字，`validateQuestionId` 白名单）+ answer `id`（string）；产物目录 `<outDir>/<qid>/answers.json`，JSON 内 `questionId` 必须与目录名一致（三方一致 invariant）。
-- Corpus 层：`sourceId = question-<qid>-answer-<answerId>`（`chunk.mjs` / `select.mjs` 一致规则）；`claim.evidenceSourceIds ⊆ chunk.sourceIds`（禁止跨 chunk 引用）；hierarchy 节点 `canonicalSourceIds` 是 controller-owned deterministic union（LLM 不得发明/修改）。
-- **关键既有事实**：source identity 已经是 controller-owned（T11-R1 起 model 不输出 sourceId）——P1 的 Question/Source-group Preservation 直接继承这一 invariant，只需把 group 概念从「单 question 隐式分组」升级为「显式 question→answers 分组」。
-
-**Q4 — resume / checkpoint 如何工作？**
-
-- Capture 层：`ProgressStore`（`.progress.json`，offset+done，损坏→改名备份并抛错）+ `loadExistingAnswers`（seen-set 去重续传）。
-- Corpus 层：chunk 幂等（输入 sha256 + chunkConfig 未变则复用；变化则整个 digest cache 全失效）；map 幂等（chunkHash 匹配才复用）；hierarchy 幂等（inputHash+childHashes+版本+runtime 全匹配才复用；FILE EXISTS != VALID CACHE；stale 向上传播）。
-- Orchestration 层：`state.mjs` `orchestration-state.json` + `events.jsonl`；run identity = hash(topic, mode, percent, runtime)；resume 只从 validated checkpoint；stale/不兼容 artifact 从 resume 点起全部丢弃重跑。
-
-**Q5 — corpus analysis 如何进入？**
-
-- 人工链路：`make-handoff.mjs`（verify-output valid=true 门）→ `corpus-anthology/scripts/chunk.mjs`（manifest + chunks；digest / top-percent-analysis 两 mode）→ `map.mjs`（flat 或 --hierarchy；runtime 路由 `lmstudio-local-tool-less` / `deepseek-api-tool-less`，unsupported → `capability_isolation_unavailable` fail-closed）→ `verify.mjs`（coverage / final 引用 / handoff 三种验证）→ `reduce.mjs` → `render-final.mjs`。
-- 编排链路：orchestrator `stageAnalyze()` 以子进程按上述顺序驱动，gate 结果经 `assertGateValid`（parse first → evaluate valid → fail outside try/catch，区分 VALID_FALSE / UNPARSEABLE / EXIT_FAILURE 三种失败身份）。
-
-**Q6 — evidence lineage 如何维护？**
-
-- `manifest.json`（输入身份）→ `chunk.chunkHash`（map 必须回传相同 hash 才通过 verify）→ `map.sourceIds` / `claim.evidenceSourceIds`（⊆ chunk.sourceIds）→ hierarchy `canonicalSourceIds`（deterministic union，逐层不变量 union(children)==parent，L1 union == manifest set）→ `coverage.json`（manifestHash + mapSetHash，reduce 启动时重校验，不信任旧 coverage）→ final digest（保留来源 ID、少数观点、反对意见；不生成来源中不存在的结论）。
-- COVERAGE ≠ CLAIM EVIDENCE（hierarchy 合同显式区分）。
-
-**Q7 — 哪些模块可直接复用（P1 零改动）？**
-
-- `grabber.js` / `http.js` / `signer.js` / `config.js` / `official.js` / `search-answer-count.js`（multi-question capture 只是**多次调用** grabAll，每次单 question 合同不变）。
-- `verifier.js` / `machine-paths.js`（per-question 验证合同不变）。
-- `render.js` / `rich-renderer.js` / `markdown-security.js` / `asset-extractor.js`（per-question 渲染合同不变）。
-- `corpus-anthology` 的 chunk/verify/reduce/render-final（多问题输入 = 多份 answers.json，**现有目录递归收集已天然支持多 question**：`collectJsonFiles` 递归收集所有 `answers.json`，sourceId 已含 qid 维度）。
-- `lmstudio-tool-less.mjs` / `deepseek-tool-less.mjs` / `lmstudio-projection.mjs` / `hierarchy.mjs`（tool-less runtime 与 hierarchical synthesis 合同与 question 数量正交）。
-- `intent.mjs` / `state.mjs`（模式判定与 checkpoint 机制正交）。
-
-**Q8 — 哪些只需要 adapter（改接入方式不改本体）？**
-
-- `orchestrator.mjs`：`stageSelect()` 从「选 1 个 question」改为「选 K 个 question」（选择策略由 §3 selector 取代词面单选）；`stageCapture()` 从 1 次 grab 循环为 K 次；`stageRender()` 的 research-result 投影增加 question-group 维度。stage 机 / gate 校验 / resume / fail-closed 语义不动。
-- `select.mjs` + `top-percent-selector.mjs`：新增 selector 模式（四组件），现有 top-percent 逻辑作为 Popularity Anchor 的确定性基础保留（不删除，strangler 共存）。
-- `map.mjs` runtime 路由：如需新 embedding runtime，走既有 `resolveMapRuntime` 模式（additive runtime id，unsupported → fail-closed）。
-
-**Q9 — 哪些确实是 P1 新增能力（v0.3 不存在）？**
-
-1. **Research Planner / 多路搜索规划**（A01 已批准方向：LLM query/aspect expansion，tool-less 语义 worker 执行）：topic → 多 query 集 + 方面框架。v0.3 只有单 keyword 直传 `searchQuestions`。
-2. **候选融合（RRF）**：多 query 的 search 结果 + 多问题的 answers 候选合流。v0.3 无跨 query 融合。
-3. **Dense Semantic Layer**：embedding + cosine 的 relevance / novelty / redundancy / clustering / aspect matching。v0.3 完全无 embedding 代码（evidence-gate-01 的 benchmark 脚本是 evidence，不是 production）。
-4. **四组件 Selector**（§3）：Question/Source-group Preservation、Popularity Anchor、Dense Semantic Relevance/Novelty、Optional Lightweight Redundancy Control。
-5. **Coverage State / Saturation**（跨问题研究级）：v0.3 的 coverage 是 corpus 完整性（map 覆盖 chunk），不是研究维度的 coverage state。
-6. **跨问题 Claim/Aspect 层**：v0.3 hierarchy 的 claim/minorityViews/uncertainties 已存在，但 aspect 框架（研究问题分解）与跨 question 的 claim 归并是新层。
-
-### 2.2 现有分层与 P1 生长点（strangler 视图）
+当前 authority state：
 
 ```text
-┌─ research-orchestration (thin controller)  ← P1 主要生长点 A/B/C
-│    topic → [SEARCH] → [SELECT] → [CAPTURE] → [VERIFY] → [HANDOFF] → [ANALYZE] → [RENDER]
-│                              ↑ 单问题词面选择 → P1 多问题 + 四组件 selector
-├─ zhihu-answer-grabber (v0.3 Research Kernel) ← 零改动复用
-│    grab/search/verify/handoff/render + security + credentials
-├─ corpus-anthology (corpus pipeline)  ← adapter 级改动
-│    select / chunk / map / verify / reduce / render-final
-│    + tool-less runtimes + hierarchy + projection sanitization
-└─ (P1 新增) Dense Semantic Layer / Research Planner / RRF / Coverage State ← 全新模块
+P1_EVIDENCE_GATE = PASS_WITH_CAVEATS
+RCE_DESIGN_AMENDMENT_01 = DESIGN_FROZEN_AMENDMENT
+ARCHITECTURE_SPEC_PREPARATION = AUTHORIZED
+IMPLEMENTATION_AUTHORIZATION = NONE
+VERSION_ASSIGNMENT = UNASSIGNED
 ```
 
 ---
 
-## 3. Frozen P1 Selector Authority
+## 1. Product and Coverage Contract
 
-来自 `09_RCE_DESIGN_AMENDMENT_01.md`（EVIDENCE_SUPPORTED_ARCHITECTURE_OUTCOME = OUTCOME A，PROCEED_WITH_SIMPLIFICATION）。此为**冻结决策**，本 Spec 只做架构落位，不做重新设计：
+P1 = **Cross-Question Deep Research**：用户提交自然语言研究请求，系统在明确检索边界下建立跨多个 Question / Source-group 的 Verified Research Corpus，并对该选中 corpus 做可验证的 100% Analysis Coverage，再产出 evidence-backed cross-source synthesis。
 
 ```text
-SELECTOR_BASELINE (P1, frozen)
-= Question/Source-group Preservation
+USER_REQUEST
+→ persisted Research Plan
+→ multi-query / multi-provider retrieval
+→ fused Candidate / Retrieval Pool
+→ SelectedSourceGroups[]
+→ per-group capture + verify
+→ RCE-selected Verified Research Corpus
+→ 100% Analysis Coverage of that selected corpus
+→ Question/Source-group → Claim/Aspect → Cross-source synthesis
+```
+
+必须区分三种覆盖：
+
+- **Retrieval Coverage**：在当前 plan / query / provider 条件下探索了多少研究空间；通常不能声称全站 100%。
+- **Source Completeness**：对每个已选、可枚举 source group 的 capture / pagination / verify 完整性。
+- **Analysis Coverage**：Verified Research Corpus 中有多少 selected canonical sources 真正进入分析；P1 默认必须为 100%。
+
+### 1.1 Corpus construction selection != sampled analysis
+
+以下两件事不是同一产品语义：
+
+1. RCE 从 candidate/retrieval pool 构造 **selected Verified Research Corpus**；
+2. downstream 对一个 canonical corpus 只分析 top X% 的 **explicit sampled analysis**。
+
+P1 默认路径属于 1，并对其 selected corpus 保持 100% Analysis Coverage。`top-percent-analysis` / `popular-sample` 只允许在用户明确请求 sampled view 时进入；不得因为候选多、成本高、runtime 失败或规模控制而把它当 P1 默认路径。
+
+```text
+P1 default:
+candidate pool
+→ RCE corpus selection
+→ selected verified corpus
+→ analyze every selected source
+
+Explicit sampled request only:
+canonical corpus
+→ top-percent-analysis / popular-sample
+→ sampled disclosure + distinct mode identity
+```
+
+`isFullCoverage` 只是覆盖事实；`mode` 才是 pipeline identity。现有 `SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST` 合同完整继承。
+
+---
+
+## 2. Current v0.3 Seam Map — What Exists and What Does Not
+
+### 2.1 Existing single-question orchestration
+
+真实入口为 `research-orchestration/bin/research.mjs` → `lib/orchestrator.mjs`。controller 通过 runner 顺序调用既有 primitives，当前状态模型明确是单问题：
+
+- `selectedQuestionId` / `selectedQuestion`；
+- 一份 CAPTURE artifact/hash；
+- 一份 VERIFY result；
+- 一份 `handoff.json`；
+- `stageAnalyze()` 只把一个 `answers.json` 交给 corpus pipeline；
+- run identity 当前是 `topic + mode + percent + runtime` 的 hash；
+- `orchestration-state.json` 按单一线性 stage checkpoint 恢复。
+
+因此 P1 **不能**被描述为“把 capture 调 K 次，其余 state/resume/handoff 不变”。P1 需要 additive multi-group execution contract，见 §6。
+
+### 2.2 Existing capture / verify / handoff authority
+
+- Search：当前 `official.js searchQuestions()` 是已知、已实现的 Official Search capability；bounded `answerCount` enrichment 失败时为 `null`，不是 completeness proof。
+- Capture：`grabber.js grabAll()` 维持单 Question pagination / progress / identity / atomic-write 合同。
+- Verify：`verifier.js verifyOutput()` 仍是 per-question 唯一 validity authority；`captured != verified`。
+- Handoff：`make-handoff.mjs` 只从一个 verified question directory 生成一个 handoff；Agent 不手工构造 verified handoff。
+
+P1 复用这些 per-group primitives，但必须在其上增加可验证的 group composition；不修改单问题 canonical schema。
+
+### 2.3 Existing corpus hierarchy is physical aggregation infrastructure
+
+`corpus-anthology` 已能递归收集多个 `answers.json`，sourceId 也包含 questionId；现有 hierarchy 提供 chunk/node packing、canonical source union、hash/cache/stale propagation。
+
+但是它当前不是显式的 Question / Source-group representation layer。物理 chunk 可能只是 transport / token packing，不自动满足：
+
+```text
+Content
+→ Question / Source-group representation
+→ Claim / Aspect
+→ Cross-source synthesis
+```
+
+因此：
+
+```text
+existing hierarchy = REUSABLE_AGGREGATION_INFRASTRUCTURE
+P1 new requirement = EXPLICIT_QUESTION_SOURCE_GROUP_REPRESENTATION_LAYER
+```
+
+### 2.4 Reuse / adapter / new-capability boundary
+
+**Reuse without changing authority semantics**：单问题 capture、verify、make-handoff、canonical `answers.json`、safe projection、tool-less map runtimes、source identity / evidence lineage、existing chunk/hash/hierarchy primitives。
+
+**Adapter work required**：multi-group controller/state、provider routing seam、group composition/handoff aggregation、logical group representation、RCE selector integration、research-level render/observability。
+
+**New P1 capabilities**：Research Planner、multi-query/provider RRF、EmbeddingProvider / dense geometry、four-component selector、ResearchCoverageState、explicit Question/Source-group → Claim/Aspect synthesis layer。
+
+任何“v0.3 零改动即可完成 P1”的表述都不成立。
+
+---
+
+## 3. Frozen Selector Direction and Preservation Semantics
+
+09 冻结的第一 baseline：
+
+```text
+Question / Source-group Preservation
 + Popularity Anchor
 + Dense Semantic Relevance / Novelty
 + Optional Lightweight Redundancy Control
 ```
 
-各组件的架构落位：
+### 3.1 Preservation contract
 
-| 组件 | 架构位置 | 确定性归属 | 说明 |
-|---|---|---|---|
-| Question/Source-group Preservation | Controller（Selector Contract 层） | deterministic | 每个入选 question 的回答**整组**进入 corpus（不逐 answer 跨组裁剪）；组身份 = questionId；group 内 provenance 不可拆散。继承「source identity is controller-owned」invariant。 |
-| Popularity Anchor | Controller | deterministic | 以 voteupCount 为锚的高赞保留通道（top-percent 逻辑的推广），保证主流可见观点进入 corpus；防 dense 单一维度失衡。 |
-| Dense Semantic Relevance / Novelty | Dense Semantic Layer | deterministic 数值计算（embedding 推理本身是模型调用，但**选择决策是确定性数值规则**） | relevance = 与研究 topic/aspect 的 cosine；novelty = 与已选集合的语义距离。 |
-| Optional Lightweight Redundancy Control | Controller | deterministic | MMR 或等价轻量机制，**OPTIONAL**（02 的 MMR 已被 04 A06 降级为 OPTIONAL_REDUNDANCY_MECHANISM，09 维持）。可关闭，不作为硬约束。 |
+Question / Source-group Preservation 只冻结以下语义：
 
-**禁止项**（frozen）：
+- group identity preserved；
+- group provenance preserved；
+- relevant or minority group cannot be silently starved；
+- per-group selection and coverage must be measurable；
+- answer count 可报告 discussion volume，但不能自动成为 truth weight。
 
-- 禁止 six hard selector quotas（六维度硬配额 lane）；
-- 禁止 ship B2 as-is（B2 是 evidence baseline 不是产品架构）；
-- 禁止把 B3（medical must-see 4/13、K24 XQ 优势、relative ops 8445）当作否定 dense embedding 的依据。
+它**不**冻结：
 
-## 4. Six Information Dimensions（relocated, not deleted）
+- “所有入选 Question 的回答永远是不可分割 selector atom”；
+- “入组即必须保留该组每一条 captured source”；
+- 固定 floor / count / quota；
+- group 内 top-percent 作为 P1 默认规模控制。
 
-按 09 的 lane relocation 表，六维度从 selector hard quota 重新定位为**检索信号 / 软特征 / 诊断**：
+RCE 可以在保留 group representation 的同时选择组内 sources，但必须记录每组 eligible / selected / verified / analyzed 数量及 exclusion reason category；不得让一个大 Question 静默吞掉小组，也不得把 corpus construction 伪装为 `top-percent-analysis`。精确 floor、count、quota 属 `OPEN_DECISION D-5`。
 
-| Dimension | 新位置 |
+### 3.2 Other frozen components
+
+- Popularity 是 anchor / soft feature，不是真理权威。
+- Dense embedding 是 relevance / novelty / redundancy / clustering / aspect matching 的核心 semantic geometry。
+- Dense Top-K 单独表现弱，不等于 dense embedding 弱。
+- MMR 仅是 optional lightweight redundancy control，不是 mandatory selector。
+- Six dimensions relocated, not deleted：Mainstream、Expert、Evidence-rich、Fresh、Long-tail、Contradictory 进入 retrieval / soft features / diagnostics / opposing-query / claim-stage，而非 hard selector quotas。
+
+---
+
+## 4. Research Plan and Identity
+
+### 4.1 Minimum planner output
+
+Research Planner 的最小概念输出必须保留：
+
+- query variants；
+- aspects；
+- entities；
+- opposing framings；
+- terminology variants；
+- source-group intent / constraints（where applicable）。
+
+精确字段名、JSON schema、文件名可以 delegated，但不能把这些概念压缩回仅 `{queries[], aspects[]}`。
+
+### 4.2 Plan authority
+
+- Planner 只拥有 semantic proposal，不拥有 provider IO、canonical identity、selection authority 或 verification authority。
+- Planner output 必须 persisted、structured-output validated、hashed。
+- Controller owns the plan artifact identity and `planHash`。
+- invalid / unparseable plan fail closed；不得把自然语言自由文本当已验证 plan。
+
+### 4.3 Stable run identity vs plan artifact identity
+
+禁止把 stochastic planner output 直接揉进 run identity。
+
+```text
+run identity
+= normalized user request
++ stable configuration identity
+
+research-plan artifact identity
+= planHash
+```
+
+stable configuration identity 至少概念上覆盖 product mode、approved semantic-runtime policy identity、provider-route configuration identity、selector/config version；不含 credential value。
+
+下游 PLAN 之后的 retrieval / selection / capture composition / analysis 都依赖 `planHash`。持久化且有效的 plan 可复用；若 plan 被重新生成且 hash 改变，则必须从 PLAN/RETRIEVAL 边界使 downstream artifact 失效，不能静默沿用旧候选、旧 group set 或旧 corpus。
+
+---
+
+## 5. Three Independent Provider / Runtime Seams
+
+以下三个 seam 必须分开建模，禁止再使用一个笼统 `provider/runtime D-2`：
+
+### 5.1 ZhihuDataProvider / CapabilityProvider
+
+职责：访问知乎 capability、产生 candidate / source-group identity 与 retrieval/capture provenance。最小概念 contract：
+
+| Field / result | Required meaning |
 |---|---|
-| Mainstream | retrieval / soft popularity feature |
-| Expert | retrieval signal + topic-conditioned soft feature |
-| Evidence-rich | retrieval signal + soft feature |
-| Fresh | retrieval / time policy + diagnostic |
-| Long-tail | soft marginal-value / novelty feature |
-| Contradictory | opposing-query generation + claim-stage diagnostic |
+| `provider_id` | 稳定 provider identity |
+| `capability` | 本次使用的 capability identity |
+| `auth_class` | official-secret / oauth / session 等分类；不含 credential value |
+| candidate / source-group identity | controller 可验证的 canonical candidate/group reference |
+| `provenance` | provider + retrieval route / rank origin |
+| `source_url` | 经过边界校验的来源 URL |
+| `retrieved_at` | retrieval time |
+| pagination / completeness status | complete / partial / unknown 及其 provider evidence；不得猜测 |
+| failure identity | machine-readable failure code / class |
 
-架构含义：六维度**不出现**在 Selector Contract 的硬性接口里；它们体现在 Research Planner 的 query 生成（opposing-query、expert-oriented query）、检索策略与 claim-stage 诊断中。Selector 只见四个组件（§3）。
+精确函数名可以 delegated；任何 adapter 至少必须让 controller 判断“使用了哪个 provider/capability、拿到哪个 candidate/group、是否分页完成、失败是什么”。
 
----
+硬规则：
 
-## 5. Architecture Boundaries（A–M）
+```text
+NO_SILENT_PROVIDER_FALLBACK
+UNKNOWN_PROVIDER_CONTRACT != PASS
+```
 
-### A. Research Request / Planner
+当前 `searchQuestions()` / Official Search 是 **first adapter / current known capability**，不是 architecture 本身。当前 Session/Cookie 单问题 capture primitive 可被 adapter 包装复用，但长期 provider identity、官方 CLI parity、OAuth scope、Session/Web pagination 与 completeness 均保持 `OPEN / DISCOVERY_REQUIRED`，施工前重新验证。不得在本 Draft 冻结 exact endpoint、OAuth scope、CLI command 或 Session/Web pagination。
 
-- 输入：natural-language topic（`intent.mjs` `normalizeTopic` 复用）。
-- Research Planner 是**语义工作**（A01：LLM query/aspect expansion），必须走 tool-less semantic worker（与 map 相同的 capability isolation 合同）；产出的 query 集与 aspect 框架是**结构化建议**，经 controller 确定性校验（非空、去重、长度上限）后进入检索编排。
-- Planner 不拥有：question 选择决定权、任何 IO、任何 identity。
-- **边界**：Planner 输出 = {queries[], aspects[]}（schema 待 T6 式合同化，OPEN_DECISION D-3）。
+### 5.2 SemanticRuntime
 
-### B. Retrieval Orchestration
+职责：Planner、claim extraction、aspect mapping、map/reduce/synthesis 等语义生成。它不读取知乎 provider credential，不拥有 canonical identity / IO / validity authority。
 
-- 多 query → 每 query 调用现有 `searchQuestions`（官方 API）+ 可选的 opposing-query / expert-oriented query 变体（六维度 relocation 的落点）。
-- 跨 query 候选融合用 **RRF**（A02 已批准）；融合产物 = question-level 候选集（questionId + title + answerCount + 检索信号）。
-- 每个 candidate question 的 capture 走现有 `grabAll`（整组捕获），humanDelay / retries / MAX_PAGES 合同逐 question 不变。
-- **边界**：Retrieval Orchestration 是 controller-owned 确定性编排；不调用 LLM。
+**CURRENT APPROVED POLICY**：对 public Zhihu research，`docs/specs/research-orchestration-scope.md` 已批准默认 semantic runtime 为 `deepseek-api-tool-less`；`NO_SILENT_RUNTIME_FALLBACK`、runtime-scoped qualification、public egress ≠ private/sensitive egress 全部继承。该 policy 不能在 P1 中被无条件重新标 OPEN。
 
-### C. Provider / Capability Seam
+未来替换 / routing 仍可经独立 authority 扩展；当前本地 `lmstudio-local-tool-less` 的资格事实继续存在，但不会自动改变 public-Zhihu 默认 policy。
 
-- 沿用 v0.3 已验证的 runtime 架构（`docs/architecture/runtime-strategy.md`）：`lmstudio-local-tool-less` / `deepseek-api-tool-less` 为 Approved qualified runtimes；controller 唯一 IO；`MODEL_VISIBLE_TOOL_COUNT = 0`；fail-closed，无静默 fallback。
-- Dense Semantic Layer 需要的 embedding runtime 是**新的 runtime 候选**，必须走与 T5 系列相同的 qualification 流程（capability isolation 证明 + structured output 合同 + evidence），**不得 self-declared**；qualification 未通过前该能力 UNRESOLVED / 不可用 → 对应 selector 组件降级语义见 M。
-- **边界**：provider 优先级、production embedding model 选择 = OPEN_DECISION（D-1/D-2），本 Spec 不拍板。
+### 5.3 EmbeddingProvider
 
-### D. Canonical Research Input
+职责：text-in → vector-out 的 dense geometry provider。它既不等于 SemanticRuntime，也不通过 `map.mjs` runtime routing 绑定。
 
-- 研究级输入身份 = {topic, runIdentity}（复用 `runIdentityHash` 模式，扩为含 planner query 集 hash）。
-- Question 级 canonical input = 现有 per-question 产物合同（`answers.json` + `questionId` 三方一致 + verify-output PASS 后的 `handoff.json`）。**多 question 研究的每个 question 都必须独立通过 verify 门**，才进入 corpus 阶段——这条不变量直接复用，无新设计。
+EmbeddingProvider contract 至少包含：
 
-### E. Candidate / Source-group Model
+- provider identity；
+- model identity；
+- embedding version；
+- input normalization version；
+- cache key / reuse semantics；
+- vector result（dimension / numeric validity 由 controller 校验）；
+- machine-readable failure identity；
+- data-egress / security policy identity。
 
-- 候选模型两层：question-level 候选（search 产物 + enrichment）→ source-group（每 question 的全部 answers，`grabAll` 产物）。
-- Source-group 的组身份 = questionId；组内成员 = `question-<qid>-answer-<aid>` sourceId（现有格式，零改动）。
-- **Question/Source-group Preservation 的最小实现形态**：selector 在 question 粒度做「整组保留/整组不保留」决定，组内不再跨组裁剪单条 answer；组内如需 top-percent 型裁剪（规模控制），沿用组内确定性规则并显式记录为 sampled（不冒充全量）。
+建议的 cache identity 由 canonical input hash + provider/model + embedding version + normalization version 构成；精确 schema delegated。production embedding provider/model 仍为 `OPEN_DECISION D-1`，不得在本 Draft 冻结。
 
-### F. Selector Contract
+外部 corpus 送入 embedding provider 时仍受 UNTRUSTED_CONTENT、capability isolation 和 egress authority 约束。Embedding unavailable 对完整 P1 的默认语义见 §10：fail closed。
 
-- 输入：question-level 候选（含检索信号、answerCount）+ source-group 元数据（voteupCount 分布等）+ dense 特征（如可用）。
-- 输出：入选 question 集 + 每组的组内选择披露（full / sampled + 规则）+ 决策审计记录（deterministic，可重放）。
-- 组件顺序（架构上的管道序，非优先级声明）：Preservation 判定 → Popularity Anchor → Dense Relevance/Novelty → Optional Redundancy Control。组件参数（MMR lambda 等）= OPEN_DECISION（D-4/D-5）。
-- 现有 `selectCandidate`（auto/ambiguous/none + 至多一次 clarification）的**人机合同保留**：material ambiguity 时停下要 clarification，不静默选择。
+### 5.4 RRF boundary
 
-### G. Dense Semantic Layer
-
-- 职责：embedding 推理 + cosine 数值计算（relevance / novelty / redundancy / clustering / aspect matching 的几何部分）。
-- 形态：独立模块（新增），接口 = text-in → vector-out（thin，provider-neutral），调用方式对齐现有 tool-less runtime 的 controller 模式。
-- 既有证据：evidence-gate-01 benchmark 已验证 dense 方向（含 Dense Top-K 单独使用的弱点 caveat）；**benchmark 脚本不等于 production 实现**，production 化需 qualification（C）。
-- 不可用时：见 M 的 fail-closed/降级语义。
-
-### H. Claim / Aspect Layer
-
-- 沿用 corpus-anthology 现有 map 产物 schema（claims / minorityViews / uncertainties + evidenceSourceIds）。
-- Aspect 框架（来自 Planner）作为 claim 归并的**组织维度**注入 reduce/hierarchy 阶段：claim 聚类到 aspect，aspect 覆盖情况进入 Coverage State。
-- Hierarchical synthesis 合同（07 Part B）不变：Content → Question/Source-group → Claim/Aspect → Cross-source；禁止 flat reduce；claim cluster 保留 group provenance；no naive equal weight。
-
-### I. Coverage State
-
-- 三分语言（01 authority）：Retrieval Coverage（检索覆盖了多少候选问题/查询路径）、Source Completeness（入选组的 capture/verify 完整性）、Analysis Coverage（map/claim 层对 corpus 的覆盖）。
-- v0.3 已有 Source Completeness（verify-output + coverage.json）与 Analysis Coverage（map 覆盖 chunk）；P1 新增 Retrieval Coverage 的状态记录（query 集 → 命中 → 融合 → 入选的漏斗计数，纯确定性审计数据）。
-- **边界**：Coverage State 是诊断/审计，不自动触发新的检索轮次（adaptive depth 属 V1 stopping heuristic 范畴，见 02，其产品化 = OPEN_DECISION D-6）。
-
-### J. Saturation
-
-- 02 的 V1 Stopping Heuristic（simple saturation heuristics，A08）在 P1 的架构位置：Research Planner 的 query 预算与 Retrieval Orchestration 的停止条件。
-- 最小正确实现：静态预算（query 数上限、question 数上限）+ 启发式饱和信号（新 query 的候选增量低于阈值 → 停）。参数 = 实验参数，`DEFAULT_REQUIRES_IMPLEMENTATION_VALIDATION`，不进产品合同（OPEN_DECISION D-6）。
-
-### K. Security Boundary
-
-全量继承，零弱化：
-
-- UNTRUSTED_CONTENT / DATA_NOT_INSTRUCTION（07 Part A）：外部语料一律数据；SUSPICIOUS_DIRECTIVE_CONTENT 只做诊断不做安全边界。
-- Controller / Semantic Worker 边界：controller 拥有 identity / provenance / coverage / verification / state transition / tool authority / IO；semantic worker（Planner、map、embedding）TOOL-LESS OR CAPABILITY-ISOLATED，否则 STOP: `CAPABILITY_ISOLATION_UNAVAILABLE`。
-- No Credential Contamination：凭据只在 `config.js`/`http.js` 边界内；orchestration state 永不含凭据；Dense Semantic Layer 不得接触凭据。
-- 投影消毒：`sanitizeProjectionText` 合同（URL/路径/协议/source-tag 中和）适用于**一切**进入 semantic worker 的不可信文本——包括 Planner 的 topic 侧输入（topic 本身可信度高于语料，但 aspect 框架生成后回注 corpus 的路径必须走同一消毒）。
-- Evidence/Identity Validation Remains Deterministic：LLM 输出永远不作为 validity 依据。
-
-### L. Failure Semantics
-
-- 既有 fail-closed 语义全量保留：`captured != verified`、`capability_isolation_unavailable`（无静默 runtime fallback）、`QUESTION_METADATA_IDENTITY_CONFLICT`（身份冲突不降级）、corrupt 文件不静默当空、`hierarchy_input_too_large` 等。
-- P1 新增失败身份（架构级定义，具体 error code 实现时合同化）：
-  - `planner_unavailable`：Planner semantic worker 不可用 → 停（不静默降级为单 keyword——降级会静默改变研究范围）。
-  - `dense_layer_unavailable`：见 M。
-  - `no_question_selected`：selector 空结果 → 报告并停（复用 no_valid_candidate 语义）。
-- VALID FALSE ≠ UNPARSEABLE ≠ EXIT FAILURE 的三身份区分（orchestrator `assertGateValid` 模式）适用于一切新 gate。
-
-### M. v0.3 Compatibility（STRANGLER_FIRST）
-
-- v0.3 单问题研究链路（`research.mjs` 现行为）**不迁移不破坏**：P1 是 additive 新路径（新 mode / 新入口），旧路径与产物合同零变更。
-- per-question 产物（answers.json/answers.md/handoff.json）schema 零变更；corpus 层多 question 输入已被现有递归收集支持。
-- **Dense Layer 不可用时的语义**（关键设计点）：四组件中 Dense Semantic Relevance/Novelty 不可用时，**不得静默把 selector 降级为 popularity-only 还声称同一产品语义**。两个合法选项：
-  1. FAIL-CLOSED：研究请求失败，报 `dense_layer_unavailable`；
-  2. 显式降级模式：selector 以「popularity-anchor-only（明示 degraded）」运行，输出产物显式标注 selector 组件缺失（如同 top-percent 的 disclosure 块）。
-  选择哪个 = 产品决策，**OPEN_DECISION（D-7）**，本 Spec 不拍板；但「静默降级 + 不披露」被禁止。
+RRF 融合的是 **query/provider retrieval rankings**。它的 channel identity 来自 query + ZhihuDataProvider/capability，不包含 SemanticRuntime 或 EmbeddingProvider。RRF 负责 Candidate Fusion，不负责最终 corpus selection。
 
 ---
 
-## 6. Minimum-Correct Architecture（拒绝过度设计）
+## 6. Multi-group Execution, Handoff and Resume
 
-本 Spec 只包含 P1 必需构件。以下明确**不进入** P1 架构（来自 04 D01-D17 deferred + 05 rejected + 09 caveats）：
+P1 在现有线性 single-question state 上增加最小概念结构；不在本 Draft 锁具体 JSON filename / exact schema。
 
-- Matrix Factorization / trained LTR / xQuAD / DPP / submodular / active learning（D01-D05）
-- PCA/SVD 降维、Chao 估计、quant 采样族、InfoGain-RAG、Search-R1、Stop-RAG、TDA、advanced graph、JS divergence、change-point、permutation test（D07-D17）
-- Six hard selector lanes（09 明确废除）
-- B2 as-is shipping（09 明确禁止）
-- 任何「全局质量分数」聚合（新聚合维度 = OPEN_DECISION D-8）
-- Temporal Intelligence Engine（03 是 P1 边界外的能力，架构上仅预留 seam：sourceId 已含时间可溯的 canonical 数据，无新增耦合）
+### 6.1 Required logical state
 
----
+```text
+SelectedSourceGroups[]
+PerGroupExecutionState
+VerifiedGroupRefs[]
+ResearchCorpusManifest (or equivalent derived composition)
+```
 
-## 7. Evidence Caveats（必须随 Spec 存活）
+`SelectedSourceGroups[]` 由 controller-owned selection artifact 确定；每项保留 group identity、provider/capability provenance、selection rationale reference 与 planHash dependency。
 
-以下 7 条来自 09，**任何后续实现/宣传不得弱化**：
+`PerGroupExecutionState` 至少可表达每组 capture / verify / handoff 的状态、artifact reference、hash/version、failure identity 和 resume boundary。
 
-1. **Two real-domain cases**：证据只覆盖两个真实领域 case，不是跨领域普遍结论。
-2. **Partial blinding contamination**：evaluation 存在 partial blinding 污染，数字解读需保守。
-3. **relative_compute_ops 不是生产成本**：B2 380 vs B3 8445 是相对操作数，不是生产成本度量。
-4. **B3 medical must-see / K24 XQ advantages**：B3 在 medical must-see（4/13）与 K24 XQ 上有优势，dense 路线不能宣称全面胜出。
-5. **Dense Top-K weakness 不否定 dense embeddings**：Top-K 单独使用的弱点 ≠ dense 特征本身无效。
-6. **Six dimensions relocated, not deleted**：六维度重新定位，不是被删除或证伪。
-7. **P2/P3 remain design-only**：P2（Temporal）/P3 超范围，仅设计存在，无实现承诺。
+`VerifiedGroupRefs[]` 只能引用 per-group verify authority 已判 valid 的 artifacts；captured group 不能进入该集合。
 
----
+`ResearchCorpusManifest` 只从 valid `VerifiedGroupRefs[]` + selector output 确定性派生，记录 selected source composition / group provenance / dependent hashes。它是 execution/composition artifact，**不得成为第二 canonical source of truth**；canonical content 仍在各组 `answers.json`，verified 状态仍归 verifier / handoff authority。
 
-## 8. P2 / P3 Future Seams（OUT_OF_SCOPE 声明）
+### 6.2 Required execution semantics
 
-- P2 Temporal：与 P1 的唯一架构接缝 = canonical source identity 稳定（sourceId + capture 时间戳已在 canonical 数据中）。P1 不为 P2 预建任何机制。
-- P3（更远期）：无接缝声明。
-- 本 Spec 中任何为 P2/P3 预建的机制 = scope violation。
+- 每组独立 capture；一组完成不把其他组标 completed。
+- 每组独立 verify；`captured != verified` 逐组成立。
+- 现有 per-question handoff authority 保持；研究级 composition 只能引用已验证的 per-group handoff/artifact，不能手工升级 validity。
+- 每组 checkpoint 必须由 artifact hash/version 验证；`FILE EXISTS != VALID CACHE`。
+- 中断发生在部分组完成后，resume 必须复用仍 valid 的完成组并继续未完成组。
+- 某组 artifact stale / identity changed 时，只能复用无依赖且仍 valid 的 sibling；该组及所有依赖它的 corpus/analysis artifact 必须失效。
+- planHash 或 SelectedSourceGroups[] identity 改变时，从 PLAN/RETRIEVAL/selection 的适当边界失效 downstream；不得静默把旧 group artifact 拼进新 research run。
+- credentials / secret-bearing header / credential path contents 永不进入 state、event、manifest、plan 或 embedding cache identity。
+- partial state 可以被报告和恢复，但不得渲染成“P1 research complete”。
 
----
+### 6.3 Handoff compatibility
 
-## 9. OPEN_DECISIONS（未经 authority 解决，禁止自行拍板）
-
-| ID | 决策点 | 状态 | 备注 |
-|---|---|---|---|
-| D-1 | production embedding model / provider | OPEN | 证据只到方向（dense 有效），未到具体模型；需 qualification 流程 |
-| D-2 | runtime/provider priority（local vs API 优先序） | OPEN | v0.3 runtime-strategy 只确立了 provider-neutral 原则 |
-| D-3 | Planner 输出 schema 合同（queries/aspects 的精确字段） | OPEN | 需 T6 式合同审查 |
-| D-4 | selector 组件参数（MMR lambda、relevance/novelty 权重） | OPEN | 实验参数，DEFAULT_REQUIRES_IMPLEMENTATION_VALIDATION |
-| D-5 | question floor（最少入选问题数）等 selector 数值边界 | OPEN | 同上 |
-| D-6 | adaptive depth / saturation 参数产品化 | OPEN | V1 heuristic 是工程默认不是产品合同 |
-| D-7 | Dense Layer 不可用时 fail-closed vs 显式降级模式 | OPEN | §5-M 两个合法选项，产品决策 |
-| D-8 | 是否引入全局质量分数聚合维度 | OPEN | 默认不引入（minimum-correct） |
-| D-9 | OAuth / 凭据行为变更 | OPEN | P1 不动凭据体系（K 已冻结），任何变更需新 authority |
+不修改现有单 handoff schema。P1 采用 additive composition：多个 per-group verified handoff/reference → controller-derived research composition → corpus input。是否最终需要一个新的 research-level public handoff schema，必须另行合同化；本 Draft 不以手工数组替代既有 validator。
 
 ---
 
-## 10. Overengineering Audit（本 Spec 自审）
+## 7. Selection and Candidate Ambiguity Contract
 
-| 检查项 | 结论 |
+现有 Approved single-question selection 合同继续生效，但 P1 明确 amendment 其 selection **scope**：
+
+### 7.1 Inherited behavior
+
+- clear best → auto-select；
+- material ambiguity → at most one clarification；
+- no valid candidate → fail / report；
+- selection 对用户可见 / 可记录；
+- model 不拥有 canonical / verification authority。
+
+### 7.2 P1 additive amendment
+
+P1 的选择结果不再是单个 `selectedQuestionId`，而是满足 Research Plan 的 `SelectedSourceGroups[]`。
+
+- **clear best**：存在一个可解释的最佳 group set / research-scope interpretation，controller 可自动选择多个 source groups；“auto”不再等于“只能选一个问题”。
+- **material ambiguity**：候选 group sets 对应明显不同的研究意图，自动选其中一组会改变 normalized user request 时，最多进行一次 clarification。
+- **no valid**：没有任何 group set 满足 provider contract、plan constraints 或 minimum validity 时 fail closed。
+
+P1 不强制每个 query 选一个 group，也不把所有检索命中全部纳入。exact set construction algorithm、minimum group floor / quotas 与 numeric boundary 属 OPEN decisions；不得用“selectCandidate contract unchanged”掩盖 scope amendment。
+
+---
+
+## 8. Logical Hierarchy and Cross-source Synthesis
+
+P1 的逻辑表示必须独立于物理 chunk packing：
+
+```text
+Canonical Content
+→ Question / Source-group Representation
+→ Claim / Aspect Representation
+→ Cross-question / Cross-source Synthesis
+```
+
+### 8.1 Question / Source-group representation
+
+每个 group 在进入跨源综合前形成可验证 representation，至少保留：
+
+- canonical group identity / provider provenance；
+- selected / verified / analyzed source accounting；
+- main / minority / contradictory claims；
+- expert / evidence-rich source references；
+- completeness and coverage state；
+- discussion volume as a separate signal。
+
+现有 chunk/hierarchy 可承担 transport 和聚合计算，但不能用 `canonicalSourceIds` union 代替这一逻辑层。
+
+### 8.2 Claim / Aspect representation
+
+跨 group 聚合相同/相反 claims，并保留 supporting/opposing sources、questions/groups、authors、expert/evidence-rich support。禁止只保留 `support_count`。
+
+### 8.3 Cross-source synthesis
+
+最终报告区分 widely shared、group-specific、minority/long-tail、conflicting claims、source-group differences、evidence strength 与 discussion-volume differences。禁止 flat reduce，也禁止 naive equal weight；answer count 不自动成为 epistemic weight。
+
+---
+
+## 9. ResearchCoverageState and Saturation
+
+最小 `ResearchCoverageState` 必须同时表达：
+
+### 9.1 Retrieval Coverage
+
+- planHash；
+- planned vs executed query variants / provider-capability routes；
+- fused unique candidate/group counts；
+- provider failures / unknown completeness；
+- retrieval rounds and stop reason。
+
+### 9.2 Source Completeness
+
+- per-group captured / verified / partial / failed status；
+- pagination / completeness status and evidence；
+- selected / verified source counts by group；
+- `captured != verified` diagnostics。
+
+### 9.3 Analysis Coverage
+
+- selected Verified Research Corpus source set identity；
+- mapped/analyzed source set identity；
+- missing / duplicate / stale / invalid evidence refs；
+- 100% analysis assertion only when the two sets are mechanically equal。
+
+### 9.4 Simple diagnostics
+
+至少保留：
+
+```text
+new_aspect_rate
+new_claim_rate
+new_expert_rate
+new_contradiction_rate
+novelty_gain
+```
+
+以及 source-group representation / concentration diagnostics：
+
+```text
+selected_source_group_count
+selected_content_by_group
+largest_group_share
+selected_author_concentration
+selected_content_type_distribution
+claim_source_diversity
+per_group_selection_coverage
+```
+
+第一 baseline 可用 simple deterministic saturation；threshold、minimum rounds、default budgets 不在本 Draft 冻结：
+
+```text
+DEFAULT_REQUIRES_IMPLEMENTATION_VALIDATION
+```
+
+阈值与默认值属于 `OPEN_DECISION D-6`。saturation 只能说明当前检索策略下的新信息增益趋缓，不是全站 coverage proof。
+
+---
+
+## 10. Security and Failure Semantics
+
+### 10.1 Input classes
+
+安全处理必须区分：
+
+| Input class | Required handling |
 |---|---|
-| 是否引入 v0.3 已有机制的第二套实现？ | 否——检索/捕获/验证/分析/合成全部复用现有 primitives，仅 additive 新增 Planner/RRF/Dense/Selector 四模块 |
-| 是否为未来能力预建机制？ | 否——P2/P3 零预建（§8）；六维度只在现有层内 relocation |
-| 是否把实验参数写成产品合同？ | 否——D-4/D-5/D-6 全部 OPEN_DECISION + DEFAULT_REQUIRES_IMPLEMENTATION_VALIDATION |
-| 是否超出 frozen selector authority？ | 否——四组件逐字对齐 09；六维度 relocation 逐字对齐 |
-| 是否重新引入 six hard lanes / B2 as-is？ | 否（§3 禁止项 + §6 排除清单） |
-| 是否破坏 v0.3 行为？ | 否——§5-M strangler 声明：旧路径零变更 |
-| 是否静默降级？ | 否——§5-L/M 全部 fail-closed 或显式披露降级 |
+| `USER_REQUEST` | normal input validation：length / encoding / schema / normalized identity boundaries；不是 `UNTRUSTED_CORPUS`，不机械套 `sanitizeProjectionText` |
+| `MODEL_GENERATED_PLAN` | structured-output schema validation、bounds、dedupe、controller-owned hashing；无 IO/identity authority |
+| `EXTERNAL_CORPUS` | `UNTRUSTED_CONTENT` / `DATA_NOT_INSTRUCTION`；projection sanitization；tool-less or capability-isolated worker；no credential access |
+
+User request 可能包含任意文本，但它的身份是用户请求，不是外部知乎语料；Planner 结果也不是 canonical fact。只有外部 corpus 进入 semantic/embedding worker 时适用 V2 projection isolation / sanitization contract。
+
+### 10.2 Default failure contract
+
+```text
+FAIL_CLOSED
+NO_SEMANTIC_DOWNGRADE
+NO_SILENT_PROVIDER_FALLBACK
+NO_SILENT_RUNTIME_FALLBACK
+```
+
+至少包括：
+
+- invalid/unparseable plan → `planner_invalid` / fail；
+- provider contract unknown → fail for that required route；
+- no valid group set → fail；
+- any required group unverified → research corpus cannot be declared complete；
+- stale group/manifest/plan dependency → invalidate and resume/re-run；
+- semantic runtime unavailable → fail，不能 silent provider/runtime switch；
+- embedding provider unavailable / invalid vector → `dense_layer_unavailable` / fail；
+- corpus coverage / hierarchy / evidence lineage invalid → fail；
+- VALID_FALSE、UNPARSEABLE、EXIT_FAILURE 保持不同 machine-readable identity。
+
+Dense embedding 是完整 P1 baseline 的 core geometry。因此当前合同默认：
+
+```text
+DENSE_CAPABILITY_UNAVAILABLE
+→ FAIL_CLOSED
+```
+
+`popularity-anchor-only` 不是已经合法的 peer option。未来若产品需要 degraded mode，必须满足：
+
+```text
+REQUIRES_EXPLICIT_SPEC_AUTHORITY
++ DISTINCT_MODE_IDENTITY
++ explicit disclosure / acceptance contract
+```
+
+在该 authority 出现前，旧 `D-7 fail-closed vs degraded` 不再是本 Draft 的开放二选一。
 
 ---
 
-## 11. Final State
+## 11. Compatibility and Minimum-correct Architecture
+
+- P1 是 additive path；v0.3 single-question orchestration 行为不被静默迁移。
+- per-question `answers.json` / `answers.md` / `handoff.json` schema 不变。
+- verify-output、make-handoff、corpus verification、controller-owned identity/lineage 权威不变。
+- existing physical hierarchy 复用，但 P1 logical group representation 必须新增。
+- no second canonical content store；research manifest 只做 derived composition。
+- no provider endpoint / auth behavior speculation；adapter qualification 独立进行。
+- no new benchmark / Gold / experiment in this Draft。
+
+明确不进入 P1：Matrix Factorization、trained LTR、xQuAD、DPP、complex submodular、full active learning、PCA/SVD、Chao/Quant production authority、InfoGain-RAG online scoring、Search-R1 / Stop-RAG、TDA、large KG、advanced graph/statistical stopping。
+
+---
+
+## 12. Evidence Caveats
+
+以下必须随任何后续 Spec / implementation / product claim 存活：
+
+1. selector evidence 仅来自 two real-domain cases；不是跨领域普遍证明。
+2. medical second adjudication 存在 partial blinding contamination。
+3. `relative_compute_ops` 是 harness-relative proxy，不是 production cost。
+4. B3 在 medical must-see 与 K24 cross-question 上仍有优势。
+5. Dense Top-K weakness 不否定 dense embeddings。
+6. Six dimensions relocated, not deleted。
+7. P2 **Author / Personal Intelligence** 与 P3 **Continuous Intelligence** 仍为 design-only；P1 gate 不授权其实现。
+
+---
+
+## 13. P2 / P3 Boundary and Temporal Intelligence
+
+- P1 = Cross-Question Deep Research。
+- P2 = Author / Personal Intelligence。
+- P3 = Continuous Intelligence。
+- Temporal Intelligence 是服务 P2/P3 的 shared engine/design，不是 P2 的同义词。
+
+P1 只保留 canonical identity / retrievedAt / provenance 等自然可复用事实，不为 P2/P3 预建 SQLite history、incremental sync、watcher、delta detector 或 alerting。任何此类实现均超出本 Draft。
+
+---
+
+## 14. OPEN_DECISIONS
+
+| ID | Decision | Current status / boundary |
+|---|---|---|
+| D-1 | production EmbeddingProvider / model | OPEN；需 identity、quality、egress、failure qualification |
+| D-2 | ZhihuDataProvider capability routing / priority | OPEN / DISCOVERY_REQUIRED；Official Search 只是 first known adapter；禁止 silent fallback |
+| D-3 | Planner 精确 persisted schema / validation bounds | OPEN；§4 概念字段已冻结，exact names delegated |
+| D-4 | selector relevance/novelty weights、optional redundancy params | OPEN；`DEFAULT_REQUIRES_IMPLEMENTATION_VALIDATION` |
+| D-5 | group floor / count / quota / anti-starvation numeric boundary | OPEN；preservation semantics 已冻结，数值未冻结 |
+| D-6 | saturation thresholds、minimum rounds、query/group budgets | OPEN；`DEFAULT_REQUIRES_IMPLEMENTATION_VALIDATION` |
+| D-7 | embedding cache/storage profile and public-Zhihu egress route | OPEN；不得弱化 §5.3 contract / current egress authority |
+| D-8 | 是否引入 global quality-score aggregation | OPEN；minimum-correct default = 不引入 |
+| D-9 | provider-specific OAuth / session credential behavior | OPEN / DISCOVERY_REQUIRED；P1 不修改现有 credential boundary |
+
+不再 OPEN：
+
+- public-Zhihu `SEMANTIC_RUNTIME_POLICY`：已由 Approved Research Orchestration 规定默认 `deepseek-api-tool-less`；
+- Dense unavailable 的默认失败语义：`FAIL_CLOSED`；degraded mode 需未来 explicit Spec authority + distinct identity；
+- sampled/full identity：现有 Approved contract 已冻结。
+
+---
+
+## 15. Self-check and Final State
+
+本 Draft 已逐项审计关键词：`provider`、`runtime`、`embedding`、`sample`、`full`、`top-percent`、`source-group`、`questionId`、`hierarchy`、`handoff`、`resume`、`P2`、`P3`、`Temporal`、`OPEN_DECISION`。
+
+结论：
+
+- ZhihuDataProvider / SemanticRuntime / EmbeddingProvider 已拆分；
+- RCE corpus selection / explicit sampled analysis 已拆分；
+- current Approved semantic-runtime policy 未重新 OPEN；
+- Question/source-group logical hierarchy 已真实进入 architecture；
+- multi-group execution/state/handoff/resume 已明确定义为 additive work；
+- user request / model plan / external corpus 安全类型已拆分；
+- exact schema / filename / threshold / provider endpoint 未被越权冻结。
 
 ```text
 TARGET_STATUS = NOT_IMPLEMENTED
@@ -340,4 +593,4 @@ VERSION_ASSIGNMENT = UNASSIGNED
 P1_ARCHITECTURE_SPEC_DRAFT_01 = REVIEW_PENDING
 ```
 
-本 Draft 通过独立审查（ChatGPT）并被正式提升为 Approved Spec 之前，不授权任何实现工作。实现 ticket 分解、benchmark、Gold 扩充均不在本文件授权范围内。
+本 Draft 通过独立审查并经后续正式 Approved Spec promotion 之前，不授权 production implementation。

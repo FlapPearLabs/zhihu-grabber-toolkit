@@ -1,177 +1,321 @@
-# P1 Architecture Spec Preparation — Review Packet for ChatGPT
+# P1 Architecture Spec Draft 01 Repair R1 — Review Packet for ChatGPT
 
 ```text
 DOCUMENT_ID = P1_ARCHITECTURE_SPEC_PREPARATION_REVIEW_PACKET_FOR_CHATGPT
-TASK_ID = P1_ARCHITECTURE_SPEC_PREPARATION_01
+TASK_ID = P1_ARCHITECTURE_SPEC_DRAFT_01_REPAIR_R1
 BRANCH = spec/p1-architecture-spec-prep-01
-BASE_SHA = 196db3d9775e33ff8cd6bf4e218ba4313630a923 (dg01-decision-grade-gate, frozen)
+ARCHITECTURE_BASE_SHA = 196db3d9775e33ff8cd6bf4e218ba4313630a923
+BASE_REVIEWED_HEAD = 82ec5981b2403a3b8c2c6b966991d49767584eba
+REVIEW_STATUS = REVIEW_PENDING
+TARGET_STATUS = NOT_IMPLEMENTED
+IMPLEMENTATION_AUTHORIZATION = NONE
+VERSION_ASSIGNMENT = UNASSIGNED
 ```
 
-> 本 packet 是给独立 reviewer（ChatGPT）的完整审查交接材料。审查对象是
-> `P1_CROSS_QUESTION_RESEARCH_ARCHITECTURE_SPEC_DRAFT_01.md`（同目录）。审查通过前的状态：
-> `P1_ARCHITECTURE_SPEC_DRAFT_01 = REVIEW_PENDING`。
+本 packet 交接对 `P1_CROSS_QUESTION_RESEARCH_ARCHITECTURE_SPEC_DRAFT_01.md` 的 Repair R1。审查对象只有同目录两个 Markdown；无 production implementation、无新 experiment / Gold / benchmark、无 P2/P3 implementation、无 ticket decomposition、无 Approved Spec promotion。
 
 ---
 
 ## A. Review Request
 
-请对 P1 Architecture Spec Draft 01 做正式架构审查。审查问题（按优先级）：
+请对 Repair R1 做正式 architecture / contract review，重点判断：
 
-1. **Authority 一致性**：Draft 的每个架构决策是否可回溯到 frozen authority（00/01/02/04/07/09 + Approved Specs）？有无越权拍板？
-2. **Seam map 真实性**：§2 CURRENT_V0_3_SEAM_MAP 对 v0.3 代码的描述是否与实际代码一致（reviewer 可对照仓库源码核验）？
-3. **Frozen selector 落位正确性**：§3 四组件 + §4 六维度 relocation 是否忠实于 09 amendment，无重新引入 six hard lanes / B2 as-is？
-4. **边界完整性**：§5 A–M 十三个边界是否覆盖了 P1 架构的全部必要面？有无缺失或越界？
-5. **Caveats 存活**：§7 七条 evidence caveats 是否完整、无弱化？
-6. **OPEN_DECISION 纪律**：§9 九个 OPEN 决策是否恰当——有无本应 OPEN 却被拍板的？有无已被 authority 解决却仍标 OPEN 的？
-7. **过度设计审计**：§6 排除清单与 §10 自审是否成立？
+1. Applicable Approved `research-orchestration-scope.md` 是否完整继承；
+2. single-question selection 行为与 P1 multi-group scope amendment 是否同时成立；
+3. candidate pool → selected corpus → 100% analysis 与 explicit sampled analysis 是否无混淆；
+4. ZhihuDataProvider / SemanticRuntime / EmbeddingProvider 是否真正解耦；
+5. multi-group execution/state/handoff/resume 是否足以纠正旧“循环 K 次即可”的过度复用主张；
+6. logical Question/Source-group hierarchy 是否独立于 existing physical chunk/node hierarchy；
+7. preservation、planner identity、coverage、security、failure semantics 与 OPEN decisions 是否符合 authority；
+8. promotion workflow 是否避免把 external-audit ancestry 合并进 production master。
 
-## B. Scope of This Review
-
-**In scope**：架构 Draft 的正确性、authority 一致性、v0.3 seam 真实性、边界完整性、caveats 完整性、OPEN_DECISION 纪律、过度设计审计。
-
-**Out of scope**（审查中请勿展开，也不构成授权）：
-
-- production implementation（TARGET_STATUS = NOT_IMPLEMENTED）；
-- selector 具体实现 / 参数选择；
-- 新 benchmark / 新 Gold / 新实验设计；
-- P2（Temporal）/ P3 的设计或实现；
-- Ticket decomposition;
-- PR merge / 版本号分配 / Approved Spec promotion。
-
-## C. Authority Chain（审查时的事实基准）
-
-| Level | Source（relative to repo root） | Role |
-|---|---|---|
-| 0 | `RULES.md`、`AGENTS.md` | hard invariants + workflow |
-| 1 | `external-audit/2026-08-27/chatgpt-context/authority_sources/00_SOURCE_AUTHORITY_AND_STATUS.md` | authority 状态源 |
-| 1 | 同目录 `01_PRODUCT_DIRECTION_FINAL.md` | 产品方向 / THIN-ADAPTER-REUSE / Controller-Model 分离 / Coverage 三分 |
-| 1 | 同目录 `02_RESEARCH_COVERAGE_ENGINE_FINAL.md` | RCE 设计（selector/六维度部分被 09 覆盖） |
-| 1 | 同目录 `03_TEMPORAL_INTELLIGENCE_ENGINE_FINAL.md` | Temporal（P1 边界外，仅背景） |
-| 1 | 同目录 `04_ALGORITHM_EVIDENCE_AND_DECISIONS_FINAL.md` | 算法决策 A01-A08 / D01-D17（§8 被 09 更新） |
-| 1 | 同目录 `07_RESEARCH_SECURITY_AND_CROSS_SOURCE_SYNTHESIS_GUARDRAILS.md` | 安全与跨源合成 guardrails |
-| 1 | 同目录 `09_RCE_DESIGN_AMENDMENT_01.md` | **P1 selector frozen amendment（本 Draft 的核心 authority）** |
-| 1 | `docs/specs/v2-rich-content-fidelity.md`（Approved） | 三层内容模型 / trust boundaries |
-| 1 | `docs/specs/v0.3-product-scope.md`（Approved additive amendment） | v0.3 范围 |
-| 1 | `docs/product-behavior-contract.md` | 行为归一化视图 |
-| 1 | `docs/architecture/runtime-strategy.md`（Accepted record） | runtime/provider-neutral 架构记录 |
-| 2 | `05`/`08` authority sources、`evidence-gate-01/` | evidence only |
-| 3 | `06` authority source | 历史背景 |
-
-**09 覆盖关系**：09 在 selector baseline / Question-Source-group preservation / Popularity role / Dense semantic role / Redundancy-control role / Six-lane relocation 范围内覆盖 02/04 的对应条款。
-
-## D. Current Authority State（from 00）
-
-```text
-P1_EVIDENCE_GATE = PASS_WITH_CAVEATS
-RCE_DESIGN_AMENDMENT_01 = DESIGN_FROZEN_AMENDMENT
-ARCHITECTURE_SPEC_PREPARATION = AUTHORIZED
-IMPLEMENTATION_AUTHORIZATION = NONE
-VERSION_ASSIGNMENT = UNASSIGNED
-```
-
-## E. Frozen P1 Selector Baseline（from 09）
-
-```text
-Question/Source-group Preservation
-+ Popularity Anchor
-+ Dense Semantic Relevance / Novelty
-+ Optional Lightweight Redundancy Control
-```
-
-禁止：six hard selector quotas；ship B2 as-is。
-
-## F. Six Information Dimensions Relocation（from 09）
-
-Mainstream → retrieval/soft popularity；Expert → retrieval + topic-conditioned soft；Evidence-rich → retrieval + soft；Fresh → retrieval/time policy + diagnostic；Long-tail → soft marginal-value/novelty；Contradictory → opposing-query generation + claim-stage diagnostic。**Relocated, not deleted.**
-
-## G. Evidence Gate Summary（from 09, caveats 全文见 Draft §7）
-
-- 两个 real-domain cases、216 captured sources、B0/B1/B2/B3 四策略、47 labels 第二 adjudication。
-- OUTCOME A（PROCEED_WITH_SIMPLIFICATION）：B2（anchor+preservation 型）相对优势成立——must-see 3/13 vs B3 4/13、aspect .857 vs .714、minority min .050 vs .000、redundancy .852 vs .825、relative ops 380 vs 8445。
-- 但 medical must-see 上 B3 占优、partial blinding 污染、two-case 局限等 caveats 必须存活。
-
-## H. Current v0.3 Execution State（代码事实，reviewer 可核验）
-
-- `zhihu-answer-grabber`：grab/batch/search/status CLI；captured!=verified；verify-output 单一事实门；V2 rich content（render/rich-renderer/markdown-security/asset-extractor）已 merge。
-- `corpus-anthology`：chunk/map/verify/reduce/render-final + top-percent selector + hierarchical digest（T9 合同）+ tool-less runtimes（lmstudio / deepseek）。
-- `research-orchestration`：thin deterministic orchestrator（SEARCH→SELECT→CAPTURE→VERIFY→HANDOFF→ANALYZE→RENDER），单问题词面选择 + checkpoint/resume + fail-closed。
-- V0.3 T0-T11 ticket 治理已完成主体（T7/T9 合同文档在 `docs/`）。
-
-## I. What Was Actually Done in This Preparation Task
-
-1. 从 frozen BASE `196db3d` 创建 `spec/p1-architecture-spec-prep-01` 分支（无代码改动）。
-2. 完整读取 authority 文档（00/01/02/03/04/07/09 + Approved Specs + product-behavior-contract + runtime-strategy）。
-3. 实际阅读 v0.3 production code（zhihu-answer-grabber 13 个 src 文件、corpus-anthology 全部 scripts/lib、research-orchestration 全部 lib/bin），建立 CURRENT_V0_3_SEAM_MAP（Draft §2，九问齐全）。
-4. 撰写 Architecture Spec Draft（A-M 边界、caveats、OPEN_DECISIONS、overengineering audit）。
-5. 本 Review Packet。
-
-**未做**（prohibitions 全部遵守）：无 production implementation、无 selector coding、无新 benchmark/Gold/实验、无 P2/P3 内容、无 ticket 分解、无 PR merge、无版本分配、无 Approved Spec promotion。
-
-## J. Deliverables
-
-| File | 说明 |
-|---|---|
-| `external-audit/2026-08-27/p1-architecture-spec-prep-01/P1_CROSS_QUESTION_RESEARCH_ARCHITECTURE_SPEC_DRAFT_01.md` | 审查对象（Draft） |
-| `external-audit/2026-08-27/p1-architecture-spec-prep-01/P1_ARCHITECTURE_SPEC_PREPARATION_REVIEW_PACKET_FOR_CHATGPT.md` | 本 packet |
-
-## K. Seam Map 摘要（Draft §2 的浓缩，便于审查切入）
-
-- **入口**：`research-orchestration/bin/research.mjs` → orchestrator（thin controller，子进程驱动 primitives，LLM 无 validity 决定权）。
-- **Search**：`official.js`（官方 API）+ bounded enrichment（OPEN-D1）。
-- **Capture**：`grabber.js` `grabAll`（分页/断点/身份门/atomic write）。
-- **Verify**：`verifier.js` 14 项单一事实门。
-- **Identity**：qid + `question-<qid>-answer-<aid>` sourceId，controller-owned（T11-R1 起 model 不输出 sourceId）。
-- **Resume**：三层（ProgressStore / chunk-map-hierarchy 幂等 hash / orchestration run-identity checkpoint）。
-- **Corpus analysis 进入**：make-handoff（verify 门后）→ chunk → map（flat/hierarchy，runtime 路由 fail-closed）→ verify → reduce → render。
-- **直接复用**：grabber/http/signer/config/official/search-answer-count/verifier/machine-paths/render/rich-renderer/markdown-security/asset-extractor + corpus chunk/verify/reduce/render-final + tool-less runtimes + hierarchy + projection + intent/state。
-- **只需 adapter**：orchestrator（多问题循环 + 新 selector 接入）、select.mjs（四组件模式 additive）、map runtime 路由。
-- **P1 新增**：Research Planner / RRF 融合 / Dense Semantic Layer / 四组件 Selector / 研究级 Coverage State / 跨问题 Claim-Aspect 层。
-
-## L. Key Architecture Decisions in the Draft（供审查聚焦）
-
-1. 多问题 = orchestrator 层循环调用现有单问题合同（per-question verify 门不放松）。
-2. Source-group Preservation 落位为 question 粒度整组保留 + 组身份继承 controller-owned identity invariant。
-3. Popularity Anchor 由现有 top-percent 确定性逻辑推广（strangler 共存，不删除）。
-4. Dense Semantic Layer 为独立 thin 模块，需走 T5 式 qualification 才可用于 production。
-5. Planner 输出（queries/aspects）是结构化建议，controller 确定性校验后使用；Planner 无 IO、无选择决定权。
-6. Dense Layer 不可用时：fail-closed 或**显式披露的**降级模式二选一（OPEN_DECISION D-7），静默降级被禁止。
-7. v0.3 单问题路径零变更（additive 新 mode）。
-
-## M. OPEN_DECISIONS Register（Draft §9）
-
-D-1 production embedding model/provider；D-2 runtime priority；D-3 Planner schema 合同；D-4 selector 参数（MMR lambda 等）；D-5 question floor 等数值边界；D-6 adaptive depth/saturation 产品化；D-7 dense 不可用时 fail-closed vs 显式降级；D-8 全局质量分数；D-9 凭据/OAuth 行为。
-
-## N. Known Weak Points（作者自查，请审查时重点关注）
-
-1. Draft §5-F 的「组件管道序」措辞可能被误读为优先级声明——需要 reviewer 判断是否应更明确地声明这只是实现顺序而非权重声明。
-2. §5-E 中「组内 sampled 裁剪沿用组内确定性规则」与 09 的 Question/Source-group Preservation 是否存在张力（ Preservation 是否允许组内裁剪？我们的解读：Preservation 约束的是跨组不拆散 + 组身份不可拆，组内规模控制是另一维度且需披露——**这个解读需要独立确认**）。
-3. §5-I Retrieval Coverage 的最小定义（漏斗计数）是否足够「最小正确」，还是引入了不必要的结构。
-4. Planner topic 侧输入的消毒边界（§5-K 最后一点）描述较简——topic 是用户输入（trusted-ish），但 aspect 回注路径的消毒合同可能需要更精确的表述。
-5. D-7 的两个选项是否真的穷尽了合法空间（是否存在第三种被 authority 允许的形态）。
-
-## O. Verification Commands（reviewer 核验用）
-
-```bash
-git ls-remote origin refs/heads/spec/p1-architecture-spec-prep-01   # REMOTE_TIP
-git ls-remote origin refs/heads/dg01-decision-grade-gate            # BASE_SHA 196db3d...
-git diff --name-only 196db3d9775e33ff8cd6bf4e218ba4313630a923...origin/spec/p1-architecture-spec-prep-01
-# 应只出现本 packet 目录下两个 .md 文件
-```
-
-## P. Review Output Format（期望的审查结论形态）
+期望输出：
 
 ```text
 REVIEW_VERDICT: PASS | CHANGES_REQUESTED
-REVIEWED_HEAD: <exact SHA>
-FINDINGS: <P0/P1/P2 分级，每条附 Draft 章节定位>
+REVIEWED_HEAD: <exact remote branch SHA>
+FINDINGS: <P0/P1/P2, with section locations>
+POST_GATE_MEMORY_UPDATE_REQUIRED: YES | NO
 ```
 
-## Q. Post-Review Path（审查后的合法下一步，均需独立决策，本任务不执行）
+---
 
-- CHANGES_REQUESTED → 修复 → 新 commit → re-review（delta-only）；
-- PASS → 走治理流程决定是否提升为 Approved Spec（本任务不执行 promotion）。
+## B. Authority Reconciliation
 
-## R. Final State
+本轮完整纳入并对照：
+
+- `RULES.md`
+- `AGENTS.md`
+- `docs/project-memory.md`
+- `docs/specs/v2-rich-content-fidelity.md`
+- `docs/specs/v0.3-product-scope.md`
+- `docs/specs/research-orchestration-scope.md`（Applicable Approved Spec；旧 Draft 漏项）
+- `docs/product-behavior-contract.md`
+- `docs/architecture/runtime-strategy.md`
+- authority sources `00/01/02/03/04/07/09`
+- discovery evidence `05/08`（evidence-only，不提升为 contract）
+- current production seams in `research-orchestration`、`zhihu-answer-grabber`、`corpus-anthology`
+
+关键 precedence：
+
+```text
+RULES / AGENTS hard invariants
+→ Applicable Approved Specs
+→ product-behavior current view / accepted runtime record
+→ frozen design 00/01/02/03/04/07/09
+→ evidence-only 05/08
+→ history 06
+```
+
+09 只在 selector/lane scope 覆盖 02/04；不能覆盖 Approved Research Orchestration 的 runtime、selection、full-coverage 与 failure contracts。
+
+---
+
+## C. P0-1 Resolution — Restore Approved Authority Chain
+
+### C1. Candidate selection inheritance + P1 amendment
+
+Repair R1 不再写“selectCandidate unchanged”。Draft §7 现在明确：
+
+- inherited：clear best → auto；material ambiguity → at most one clarification；no valid → fail；
+- amended scope：selection output 从单 `selectedQuestionId` 变为 `SelectedSourceGroups[]`；clear best 可以是最佳 multi-group set；material ambiguity 指 group sets 会改变 normalized research intent。
+
+exact set algorithm / floor / quotas 保持 OPEN，不伪装为已有实现。
+
+### C2. Full vs sampled
+
+Draft §1 明确区分：
+
+```text
+Candidate / Retrieval Pool
+→ RCE-selected Verified Research Corpus
+→ 100% Analysis Coverage of selected corpus
+```
+
+与：
+
+```text
+explicit user-requested sampled analysis
+→ top-percent-analysis / popular-sample
+→ distinct mode + disclosure
+```
+
+`top-percent-analysis` 不再作为普通 P1 scale-control；runtime/cost/corpus size 均不得触发 silent sampled downgrade。
+
+### C3. Runtime policy split
+
+旧 D-2 已拆为：
+
+| Seam | Status in Repair R1 |
+|---|---|
+| `SEMANTIC_RUNTIME_POLICY` | CURRENT APPROVED：public Zhihu 默认 `deepseek-api-tool-less`；NO_SILENT_RUNTIME_FALLBACK |
+| `EMBEDDING_PROVIDER` | OPEN；provider/model/egress/qualification 未冻结 |
+| `ZHIHU_DATA_PROVIDER` | OPEN / DISCOVERY_REQUIRED；Official Search 是 first known adapter，不是 architecture |
+
+### C4. Failure semantics
+
+Draft §10 恢复 Approved default：
+
+```text
+FAIL_CLOSED
+NO_SEMANTIC_DOWNGRADE
+DENSE_CAPABILITY_UNAVAILABLE → FAIL_CLOSED
+```
+
+`popularity-anchor-only` 不再是已合法 peer option。未来 degraded mode 需要 `REQUIRES_EXPLICIT_SPEC_AUTHORITY + DISTINCT_MODE_IDENTITY + disclosure/acceptance contract`。
+
+---
+
+## D. P0-2 Resolution — Real Zhihu Data Provider Seam
+
+Draft §5 把三种能力彻底分开：
+
+1. `ZhihuDataProvider / CapabilityProvider`：知乎 retrieval/capture capability、auth class、candidate/group identity、provenance、source URL、retrievedAt、pagination/completeness、machine-readable failure；
+2. `SemanticRuntime`：Planner / claim / synthesis semantic generation；
+3. `EmbeddingProvider`：dense vector generation + identity/cache/egress/failure contract。
+
+Data Provider hard rules：
+
+```text
+NO_SILENT_PROVIDER_FALLBACK
+UNKNOWN_PROVIDER_CONTRACT != PASS
+```
+
+本轮没有冻结 exact endpoint、OAuth scope、CLI command、Session/Web pagination。RRF 只融合 query/provider retrieval rankings，不再把 model runtime 混进 provider channel identity。
+
+---
+
+## E. P0-3 Resolution — Multi-group Execution / Handoff / Hierarchy
+
+### E1. Corrected current seam
+
+Draft §2 明确当前 production 是 single-question：single selectedQuestion、single stage artifact/hash、single handoff、single `answers.json` analysis。删除“stage/state/resume 零改动”主张。
+
+### E2. Additive execution contract
+
+Draft §6 新增概念结构：
+
+```text
+SelectedSourceGroups[]
+PerGroupExecutionState
+VerifiedGroupRefs[]
+ResearchCorpusManifest (derived composition)
+```
+
+并冻结：
+
+- per-group capture / verify / checkpoint；
+- `captured != verified` per group；
+- partial completion resume；
+- stale group invalidation + unaffected sibling reuse；
+- downstream planHash/group-composition dependency invalidation；
+- credentials excluded from state；
+- research manifest 不成为第二 canonical truth；
+- partial run 不得渲染为 research complete；
+- exact filename/schema delegated。
+
+### E3. Corrected hierarchy claim
+
+Draft §2/§8 现在区分：
+
+```text
+existing hierarchy = reusable physical chunk/node aggregation infrastructure
+P1 requirement = explicit logical Question/Source-group representation layer
+```
+
+目标层级真实存在：
+
+```text
+Content
+→ Question / Source-group
+→ Claim / Aspect
+→ Cross-source synthesis
+```
+
+---
+
+## F. P1 Resolutions
+
+### F1. Preservation semantics
+
+删除“整组不可分割 selector atom”。当前合同只冻结 group identity/provenance、anti-starvation、per-group selection/coverage measurability；组内 exact floor/count/quota 仍 OPEN。P1 corpus construction 不偷用 top-percent sampled identity。
+
+### F2. Planner + identity
+
+Planner 概念输出扩展为 query variants、aspects、entities、opposing framings、terminology variants、source-group intent/constraints。Plan 必须 persisted / validated / hashed；controller owns plan artifact identity。
+
+```text
+run identity = normalized user request + stable configuration identity
+plan artifact identity = planHash
+planHash change → invalidate downstream from PLAN/RETRIEVAL
+```
+
+### F3. EmbeddingProvider
+
+EmbeddingProvider 不再绑定 `map.mjs` runtime routing。最小 contract 已含 provider/model identity、embedding version、normalization version、cache/reuse、vector validation、failure identity、egress/security policy；production provider/model 保持 OPEN。
+
+### F4. Coverage / saturation
+
+Draft §9 定义 Retrieval Coverage、Source Completeness、Analysis Coverage，并保留：
+
+```text
+new_aspect_rate
+new_claim_rate
+new_expert_rate
+new_contradiction_rate
+novelty_gain
+```
+
+以及 group concentration/representation diagnostics。threshold / budgets / minimum rounds：`DEFAULT_REQUIRES_IMPLEMENTATION_VALIDATION`。
+
+### F5. Security typing
+
+Draft §10 区分：
+
+- `USER_REQUEST` → normal length/encoding/schema/identity validation；
+- `MODEL_GENERATED_PLAN` → structured-output validation / controller hash；
+- `EXTERNAL_CORPUS` → UNTRUSTED_CONTENT / DATA_NOT_INSTRUCTION / projection sanitization / isolated worker。
+
+不再把用户研究主题机械当 external corpus 套 `sanitizeProjectionText`。
+
+### F6. Terminology
+
+全篇统一：
+
+```text
+P1 = Cross-Question Deep Research
+P2 = Author / Personal Intelligence
+P3 = Continuous Intelligence
+Temporal Intelligence = shared engine/design for P2/P3
+```
+
+---
+
+## G. OPEN_DECISIONS Before / After
+
+| Topic | Before | Repair R1 |
+|---|---|---|
+| production embedding model/provider | D-1 OPEN | D-1 OPEN，且 contract expanded |
+| all runtime/provider priority | D-2 OPEN（混合） | split：semantic policy RESOLVED；data routing D-2 OPEN；embedding D-1/D-7 OPEN |
+| planner schema | D-3 OPEN，概念仅 queries/aspects | D-3 OPEN exact schema；六类概念输出已冻结 |
+| selector params | D-4 OPEN | D-4 OPEN |
+| question floor | D-5 OPEN | D-5 OPEN，扩为 group floor/count/quota/anti-starvation boundary |
+| saturation | D-6 OPEN | D-6 OPEN，明确 thresholds/min rounds/budgets require validation |
+| dense unavailable | D-7 fail-closed vs degraded OPEN | **RESOLVED default = FAIL_CLOSED**；future degraded requires explicit Spec + distinct identity |
+| global quality score | D-8 OPEN | D-8 OPEN，minimum-correct default none |
+| OAuth/credential behavior | D-9 OPEN | D-9 OPEN / DISCOVERY_REQUIRED；按 provider-specific boundary |
+| embedding cache/egress profile | implicit/missing | D-7 OPEN；architecture contract defined, values not frozen |
+
+---
+
+## H. Evidence Caveats Preserved
+
+仍明确保留：two-case scope、partial blinding contamination、relative ops 非生产成本、B3 medical/K24 优势、Dense Top-K caveat、six dimensions relocated-not-deleted、P2/P3 design-only。
+
+未重新打开：four-component direction、six-dimension relocation、MMR optional status、RRF、dense direction、large KG、xQuAD/DPP/Submodular、P2/P3 implementation、新 experiment / Gold。
+
+---
+
+## I. Promotion Workflow — Mandatory After PASS
+
+当前 branch 具有 evidence / external-audit ancestry。即使本 Draft 获得 PASS，也**禁止直接把当前 branch merge 到 master**，否则会把 external-audit evidence tree 意外带入 production history。
+
+若 product owner 在 PASS 后另行决定 Approved Spec promotion，唯一合法流程：
+
+```text
+latest remote master
+→ create clean spec-promotion branch
+→ copy only approved spec / authority artifacts
+→ independent CONTRACT_REVIEWER + CONSISTENCY_REVIEWER
+→ both PASS on the same exact SHA
+→ re-fetch and verify no master drift
+→ ff-only merge
+→ remote verify
+```
+
+禁止：直接 merge 本 audit-ancestry branch、复制整个 `external-audit/` tree、把 evidence-only 05/08 提升为 contract、在 review 后 amend/rebase/force-push。
+
+---
+
+## J. Scope / Verification
+
+Expected changed files from `BASE_REVIEWED_HEAD`：exactly 2：
+
+```text
+external-audit/2026-08-27/p1-architecture-spec-prep-01/
+  P1_CROSS_QUESTION_RESEARCH_ARCHITECTURE_SPEC_DRAFT_01.md
+  P1_ARCHITECTURE_SPEC_PREPARATION_REVIEW_PACKET_FOR_CHATGPT.md
+```
+
+Reviewer verification：
+
+```bash
+git ls-remote origin refs/heads/spec/p1-architecture-spec-prep-01
+git diff --name-only 82ec5981b2403a3b8c2c6b966991d49767584eba...origin/spec/p1-architecture-spec-prep-01
+git diff --check 82ec5981b2403a3b8c2c6b966991d49767584eba...origin/spec/p1-architecture-spec-prep-01
+```
+
+Final state：
 
 ```text
 TARGET_STATUS = NOT_IMPLEMENTED
