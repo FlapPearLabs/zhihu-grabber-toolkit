@@ -1,0 +1,181 @@
+{
+  "manifest_version": 1,
+  "created_at": "2026-08-27T02:43:34.419Z",
+  "corpus_scope": "lowcode-research-selection",
+  "entries": [
+    {
+      "qid": "439521858",
+      "title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+      "answerCount": 17,
+      "captured": 17,
+      "fetchedAt": "2026-08-10T18:38:26.202Z",
+      "sha256": "ef5400a6db3a962604f9f452dfe7974536b6652330f82f6b65d74cd998bf1b88",
+      "bytes": 180602,
+      "source": "out/439521858/answers.json",
+      "handoffVerified": true
+    },
+    {
+      "qid": "477427067",
+      "title": "零代码、低代码、APaaS系统应从哪些指标考察选型？",
+      "answerCount": 18,
+      "captured": 18,
+      "fetchedAt": "2026-08-10T02:56:35.328Z",
+      "sha256": "9ad08813aafafb2f14422eebb5c2cd561a5f53069ad87529cac2ae8cbfbb8399",
+      "bytes": 292841,
+      "source": "out/smoke-p3/477427067/answers.json",
+      "handoffVerified": true
+    },
+    {
+      "qid": "462973596",
+      "title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+      "answerCount": 17,
+      "captured": 15,
+      "fetchedAt": "2026-08-13T13:39:50.224Z",
+      "sha256": "b4b03f1a9e271723f134d651e69a3c399d0adec84045f98b62bdb37bc43b6172",
+      "bytes": 90591,
+      "source": ".workbuddy/live-batch-smoke-2/run/462973596/answers.json",
+      "handoffVerified": null
+    },
+    {
+      "qid": "466695857",
+      "title": "低代码开发平台提供源码有什么意义？",
+      "answerCount": 15,
+      "captured": 15,
+      "fetchedAt": "2026-08-13T13:39:51.272Z",
+      "sha256": "bc39074b37d171b1fbcb2df7fc05e1471f39e9ce203fd5d1a84710152f2ddbfc",
+      "bytes": 91131,
+      "source": ".workbuddy/live-batch-smoke-2/run/466695857/answers.json",
+      "handoffVerified": null
+    },
+    {
+      "qid": "485463474",
+      "title": "入坑零代码、低代码、APaas系统，你需要了解权限控制上有哪些坑？",
+      "answerCount": 7,
+      "captured": 7,
+      "fetchedAt": "2026-08-13T13:39:51.862Z",
+      "sha256": "f4bfc02300ecf08505ba32e3a02754af6e75f624e5c99d56f447d24b5e2aafab",
+      "bytes": 99463,
+      "source": ".workbuddy/live-batch-smoke-2/run/485463474/answers.json",
+      "handoffVerified": null
+    },
+    {
+      "qid": "487214224",
+      "title": "入坑零代码、低代码、APaas系统，你需要了解系统支持业务线和业务数量是否与本团队相匹配有哪些坑？",
+      "answerCount": 3,
+      "captured": 3,
+      "fetchedAt": "2026-08-13T13:39:52.359Z",
+      "sha256": "372f14d647854ecad011692d2a250e19d10dd0a1410fe60623acc6a88149d9d1",
+      "bytes": 88478,
+      "source": ".workbuddy/live-batch-smoke-2/run/487214224/answers.json",
+      "handoffVerified": null
+    },
+    {
+      "qid": "Q-SYN-D1",
+      "title": "平台A 作为低代码平台值得长期选择吗？",
+      "answerCount": 1000,
+      "captured": 1000,
+      "fetchedAt": "2026-08-13T13:39:50.000Z",
+      "sha256": "c3054a3b3f45de32322ff531a4d135c7b0ceb29b127e25a1585081f6302ae65d",
+      "bytes": 634544,
+      "source": "synthetic-fixture:Q-SYN-D1",
+      "handoffVerified": true
+    },
+    {
+      "qid": "Q-SYN-D2",
+      "title": "平台A 的缺陷与风险有哪些？",
+      "answerCount": 50,
+      "captured": 50,
+      "fetchedAt": "2026-08-13T13:39:51.000Z",
+      "sha256": "f79fe885787443cc8223c172a8e8a18857dd3a46e6bcd575ff798c3cb91f56de",
+      "bytes": 28702,
+      "source": "synthetic-fixture:Q-SYN-D2",
+      "handoffVerified": true
+    },
+    {
+      "qid": "Q-SYN-D3",
+      "title": "2026 新规下平台A 的合规调整如何？",
+      "answerCount": 30,
+      "captured": 30,
+      "fetchedAt": "2026-08-13T13:39:52.000Z",
+      "sha256": "9f6a0fbf0823de0cd0a3f92b1f29252d4464283134370ad2073237ce2033f131",
+      "bytes": 15751,
+      "source": "synthetic-fixture:Q-SYN-D3",
+      "handoffVerified": true
+    },
+    {
+      "qid": "Q-SYN-E1",
+      "title": "平台B 的技术架构与选型评估？",
+      "answerCount": 40,
+      "captured": 40,
+      "fetchedAt": "2026-08-13T13:39:53.000Z",
+      "sha256": "005805d58bfa561871a760bb44ad0580eab011bd6f842baa635426df987c8a3d",
+      "bytes": 28702,
+      "source": "synthetic-fixture:Q-SYN-E1",
+      "handoffVerified": true
+    },
+    {
+      "qid": "52215270",
+      "title": "感染了幽门螺杆菌，一定要治疗吗？",
+      "answerCount": 145,
+      "captured": 136,
+      "fetchedAt": "2026-08-28T04:25:02.380Z",
+      "sha256": "92f4cd2d12fe6c73e35ff24a6076a4ee80224a66f21781a13e618da0cc7e6d0e",
+      "bytes": 792448,
+      "source": "out/52215270/answers.json",
+      "handoffVerified": null,
+      "note": "gate01-hpylori new real cross-question case corpus; captured-only (verify-output valid=true; counts mismatch 136/145, 34/35, 28/32 = captured vs reported; captured pool is the frozen benchmark pool)"
+    },
+    {
+      "qid": "533032588",
+      "title": "相关统计显示超 6 成胃癌与幽门螺杆菌相关，有哪些信息值得关注？幽门螺杆菌是否必须根治？",
+      "answerCount": 35,
+      "captured": 34,
+      "fetchedAt": "2026-08-28T04:25:07.320Z",
+      "sha256": "02ba47a5a7b13508a75b22ecca4f590f66a311c1e6beed05a92eaec117f11848",
+      "bytes": 270604,
+      "source": "out/533032588/answers.json",
+      "handoffVerified": null,
+      "note": "gate01-hpylori new real cross-question case corpus; captured-only (verify-output valid=true; counts mismatch 136/145, 34/35, 28/32 = captured vs reported; captured pool is the frozen benchmark pool)"
+    },
+    {
+      "qid": "616791818",
+      "title": "请问有把幽门螺杆菌根治后胃变好的吗？",
+      "answerCount": 32,
+      "captured": 28,
+      "fetchedAt": "2026-08-28T04:25:12.323Z",
+      "sha256": "4a107d7ddb80968ebe3cea9b1b2f84fbca1ae2ac70da6a9ec27b2baddae6af4a",
+      "bytes": 130242,
+      "source": "out/616791818/answers.json",
+      "handoffVerified": null,
+      "note": "gate01-hpylori new real cross-question case corpus; captured-only (verify-output valid=true; counts mismatch 136/145, 34/35, 28/32 = captured vs reported; captured pool is the frozen benchmark pool)"
+    },
+    {
+      "qid": "3376603186",
+      "title": "幽门螺杆菌不吃四联能不能自愈？",
+      "answerCount": 8,
+      "captured": 8,
+      "fetchedAt": "2026-08-28T04:25:13.850Z",
+      "sha256": "68b8535d7f519efe6e5efe528b26ea913b2052dd7face900095fe942d4282ee8",
+      "bytes": 27768,
+      "source": "out/3376603186/answers.json",
+      "handoffVerified": null,
+      "note": "gate01-hpylori new real cross-question case corpus; captured-only (verify-output valid=true; counts mismatch 136/145, 34/35, 28/32 = captured vs reported; captured pool is the frozen benchmark pool)"
+    },
+    {
+      "qid": "525603218",
+      "title": "幽门螺旋杆菌不治疗会有什么危害？",
+      "answerCount": 10,
+      "captured": 10,
+      "fetchedAt": "2026-08-28T04:25:15.677Z",
+      "sha256": "e2beb6e06293700cccc088ff8be363d07dfde9291468cb804ef2eabf7d6a716a",
+      "bytes": 17593,
+      "source": "out/525603218/answers.json",
+      "handoffVerified": null,
+      "note": "gate01-hpylori new real cross-question case corpus; captured-only (verify-output valid=true; counts mismatch 136/145, 34/35, 28/32 = captured vs reported; captured pool is the frozen benchmark pool)"
+    }
+  ],
+  "gate01_hpylori": {
+    "appended_at": "2026-08-28T04:30:00Z",
+    "note": "new real cross-domain case corpus appended for P1 Decision-Grade Evidence Gate 01; original lowcode entries untouched"
+  }
+}

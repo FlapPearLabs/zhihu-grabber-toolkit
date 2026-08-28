@@ -1,0 +1,936 @@
+{
+  "questionId": "Q-SYN-D2",
+  "questionTitle": "平台A 的缺陷与风险有哪些？",
+  "answerCount": 50,
+  "url": "https://www.zhihu.com/question/Q-SYN-D2",
+  "question": {
+    "id": "Q-SYN-D2",
+    "title": "平台A 的缺陷与风险有哪些？",
+    "descriptionHtml": "",
+    "descriptionMarkdown": "",
+    "topics": [
+      {
+        "id": "syn",
+        "name": "synthetic"
+      }
+    ]
+  },
+  "fetchedAt": "2026-08-13T13:39:51.000Z",
+  "answers": [
+    {
+      "id": "200001",
+      "author": "EXPERT_DEFECT_01",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200001",
+      "content": "平台A的审计与合规能力有待加强。平台A存在供应商锁定风险，迁移成本高。基于多年企业级实施经验。",
+      "voteupCount": 0,
+      "commentCount": 4,
+      "createdTime": 1741890241,
+      "updatedTime": 1741890241,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200002",
+      "author": "EXPERT_DEFECT_01",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200002",
+      "content": "平台A的定制化能力受限，深度二次开发困难。基于多年企业级实施经验。",
+      "voteupCount": 0,
+      "commentCount": 4,
+      "createdTime": 1749083629,
+      "updatedTime": 1749083629,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200003",
+      "author": "EXPERT_DEFECT_01",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200003",
+      "content": "平台A的定制化能力受限，深度二次开发困难。基于多年企业级实施经验。",
+      "voteupCount": 2,
+      "commentCount": 0,
+      "createdTime": 1738058626,
+      "updatedTime": 1738058626,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200004",
+      "author": "EXPERT_DEFECT_01",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200004",
+      "content": "平台A存在供应商锁定风险，迁移成本高。平台A的权限模型在复杂业务下存在缺陷。基于多年企业级实施经验。",
+      "voteupCount": 0,
+      "commentCount": 1,
+      "createdTime": 1752947563,
+      "updatedTime": 1752947563,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200005",
+      "author": "EXPERT_DEFECT_01",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200005",
+      "content": "平台A的定制化能力受限，深度二次开发困难。平台A的审计与合规能力有待加强。基于多年企业级实施经验。",
+      "voteupCount": 2,
+      "commentCount": 1,
+      "createdTime": 1757691976,
+      "updatedTime": 1757691976,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://example.com/ref",
+            "canonicalUrl": "https://example.com/ref",
+            "domain": "example.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://example.com/ref",
+              "clickable": true
+            },
+            "anchorText": "参考"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200006",
+      "author": "Q2_USER_6",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200006",
+      "content": "平台A的定制化能力受限，深度二次开发困难。平台A的权限模型在复杂业务下存在缺陷。客户反馈整理。",
+      "voteupCount": 2,
+      "commentCount": 5,
+      "createdTime": 1753041789,
+      "updatedTime": 1753041789,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200007",
+      "author": "Q2_USER_7",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200007",
+      "content": "平台A在大规模并发场景下性能表现不足。客户反馈整理。",
+      "voteupCount": 5,
+      "commentCount": 0,
+      "createdTime": 1758874581,
+      "updatedTime": 1758874581,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200008",
+      "author": "Q2_USER_8",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200008",
+      "content": "平台A存在供应商锁定风险，迁移成本高。客户反馈整理。",
+      "voteupCount": 5,
+      "commentCount": 2,
+      "createdTime": 1725177151,
+      "updatedTime": 1725177151,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200009",
+      "author": "Q2_USER_9",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200009",
+      "content": "平台A的权限模型在复杂业务下存在缺陷。平台A的审计与合规能力有待加强。客户反馈整理。",
+      "voteupCount": 1,
+      "commentCount": 3,
+      "createdTime": 1736935437,
+      "updatedTime": 1736935437,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200010",
+      "author": "Q2_USER_10",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200010",
+      "content": "平台A的定制化能力受限，深度二次开发困难。客户反馈整理。",
+      "voteupCount": 2,
+      "commentCount": 1,
+      "createdTime": 1733879929,
+      "updatedTime": 1733879929,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200011",
+      "author": "Q2_USER_11",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200011",
+      "content": "平台A的审计与合规能力有待加强。客户反馈整理。",
+      "voteupCount": 4,
+      "commentCount": 5,
+      "createdTime": 1746287490,
+      "updatedTime": 1746287490,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200012",
+      "author": "Q2_USER_12",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200012",
+      "content": "平台A的定制化能力受限，深度二次开发困难。平台A的审计与合规能力有待加强。客户反馈整理。",
+      "voteupCount": 5,
+      "commentCount": 1,
+      "createdTime": 1747525638,
+      "updatedTime": 1747525638,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200013",
+      "author": "Q2_USER_13",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200013",
+      "content": "平台A存在供应商锁定风险，迁移成本高。平台A的权限模型在复杂业务下存在缺陷。客户反馈整理。",
+      "voteupCount": 4,
+      "commentCount": 3,
+      "createdTime": 1731641006,
+      "updatedTime": 1731641006,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200014",
+      "author": "Q2_USER_14",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200014",
+      "content": "平台A的定制化能力受限，深度二次开发困难。客户反馈整理。",
+      "voteupCount": 5,
+      "commentCount": 2,
+      "createdTime": 1755134288,
+      "updatedTime": 1755134288,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200015",
+      "author": "Q2_USER_15",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200015",
+      "content": "平台A在大规模并发场景下性能表现不足。客户反馈整理。",
+      "voteupCount": 0,
+      "commentCount": 5,
+      "createdTime": 1722587520,
+      "updatedTime": 1722587520,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200016",
+      "author": "Q2_USER_16",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200016",
+      "content": "平台A的定制化能力受限，深度二次开发困难。平台A的审计与合规能力有待加强。客户反馈整理。",
+      "voteupCount": 0,
+      "commentCount": 5,
+      "createdTime": 1734073366,
+      "updatedTime": 1734073366,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200017",
+      "author": "Q2_USER_17",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200017",
+      "content": "平台A的权限模型在复杂业务下存在缺陷。客户反馈整理。",
+      "voteupCount": 0,
+      "commentCount": 4,
+      "createdTime": 1733382027,
+      "updatedTime": 1733382027,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200018",
+      "author": "Q2_USER_18",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200018",
+      "content": "平台A的权限模型在复杂业务下存在缺陷。客户反馈整理。",
+      "voteupCount": 2,
+      "commentCount": 4,
+      "createdTime": 1731762690,
+      "updatedTime": 1731762690,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200019",
+      "author": "Q2_USER_19",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200019",
+      "content": "平台A的定制化能力受限，深度二次开发困难。客户反馈整理。",
+      "voteupCount": 1,
+      "commentCount": 0,
+      "createdTime": 1750098711,
+      "updatedTime": 1750098711,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200020",
+      "author": "Q2_USER_20",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200020",
+      "content": "平台A存在供应商锁定风险，迁移成本高。客户反馈整理。",
+      "voteupCount": 0,
+      "commentCount": 2,
+      "createdTime": 1733686904,
+      "updatedTime": 1733686904,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200021",
+      "author": "Q2_USER_21",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200021",
+      "content": "平台A的审计与合规能力有待加强。平台A存在供应商锁定风险，迁移成本高。客户反馈整理。",
+      "voteupCount": 2,
+      "commentCount": 3,
+      "createdTime": 1723456348,
+      "updatedTime": 1723456348,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200022",
+      "author": "Q2_USER_22",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200022",
+      "content": "平台A在大规模并发场景下性能表现不足。平台A存在供应商锁定风险，迁移成本高。客户反馈整理。",
+      "voteupCount": 2,
+      "commentCount": 4,
+      "createdTime": 1735009935,
+      "updatedTime": 1735009935,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200023",
+      "author": "Q2_USER_23",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200023",
+      "content": "平台A的审计与合规能力有待加强。平台A的权限模型在复杂业务下存在缺陷。客户反馈整理。",
+      "voteupCount": 1,
+      "commentCount": 1,
+      "createdTime": 1757572567,
+      "updatedTime": 1757572567,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200024",
+      "author": "Q2_USER_24",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200024",
+      "content": "平台A在大规模并发场景下性能表现不足。平台A存在供应商锁定风险，迁移成本高。客户反馈整理。",
+      "voteupCount": 4,
+      "commentCount": 3,
+      "createdTime": 1731761170,
+      "updatedTime": 1731761170,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200025",
+      "author": "Q2_USER_25",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200025",
+      "content": "平台A的定制化能力受限，深度二次开发困难。平台A的权限模型在复杂业务下存在缺陷。客户反馈整理。",
+      "voteupCount": 5,
+      "commentCount": 3,
+      "createdTime": 1749193853,
+      "updatedTime": 1749193853,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200026",
+      "author": "Q2_USER_26",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200026",
+      "content": "平台A的权限模型在复杂业务下存在缺陷。平台A的定制化能力受限，深度二次开发困难。客户反馈整理。",
+      "voteupCount": 0,
+      "commentCount": 4,
+      "createdTime": 1729425453,
+      "updatedTime": 1729425453,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200027",
+      "author": "Q2_USER_27",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200027",
+      "content": "平台A的权限模型在复杂业务下存在缺陷。平台A存在供应商锁定风险，迁移成本高。客户反馈整理。",
+      "voteupCount": 3,
+      "commentCount": 2,
+      "createdTime": 1731118695,
+      "updatedTime": 1731118695,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200028",
+      "author": "Q2_USER_28",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200028",
+      "content": "平台A在大规模并发场景下性能表现不足。平台A的定制化能力受限，深度二次开发困难。客户反馈整理。",
+      "voteupCount": 3,
+      "commentCount": 3,
+      "createdTime": 1730207360,
+      "updatedTime": 1730207360,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200029",
+      "author": "Q2_USER_29",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200029",
+      "content": "平台A的定制化能力受限，深度二次开发困难。客户反馈整理。",
+      "voteupCount": 5,
+      "commentCount": 5,
+      "createdTime": 1733060729,
+      "updatedTime": 1733060729,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200030",
+      "author": "Q2_USER_30",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200030",
+      "content": "平台A在大规模并发场景下性能表现不足。客户反馈整理。",
+      "voteupCount": 0,
+      "commentCount": 1,
+      "createdTime": 1757591957,
+      "updatedTime": 1757591957,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200031",
+      "author": "Q2_USER_31",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200031",
+      "content": "平台A存在供应商锁定风险，迁移成本高。平台A的审计与合规能力有待加强。客户反馈整理。",
+      "voteupCount": 3,
+      "commentCount": 0,
+      "createdTime": 1736041637,
+      "updatedTime": 1736041637,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200032",
+      "author": "Q2_USER_32",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200032",
+      "content": "平台A在大规模并发场景下性能表现不足。平台A存在供应商锁定风险，迁移成本高。客户反馈整理。",
+      "voteupCount": 0,
+      "commentCount": 2,
+      "createdTime": 1728792813,
+      "updatedTime": 1728792813,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200033",
+      "author": "Q2_USER_33",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200033",
+      "content": "平台A在大规模并发场景下性能表现不足。平台A存在供应商锁定风险，迁移成本高。客户反馈整理。",
+      "voteupCount": 5,
+      "commentCount": 2,
+      "createdTime": 1757272639,
+      "updatedTime": 1757272639,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200034",
+      "author": "Q2_USER_34",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200034",
+      "content": "平台A的审计与合规能力有待加强。平台A的权限模型在复杂业务下存在缺陷。客户反馈整理。",
+      "voteupCount": 2,
+      "commentCount": 0,
+      "createdTime": 1745799814,
+      "updatedTime": 1745799814,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200035",
+      "author": "Q2_USER_35",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200035",
+      "content": "平台A在大规模并发场景下性能表现不足。平台A存在供应商锁定风险，迁移成本高。客户反馈整理。",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1728819870,
+      "updatedTime": 1728819870,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200036",
+      "author": "Q2_USER_36",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200036",
+      "content": "平台A存在供应商锁定风险，迁移成本高。平台A的定制化能力受限，深度二次开发困难。客户反馈整理。",
+      "voteupCount": 5,
+      "commentCount": 1,
+      "createdTime": 1723255844,
+      "updatedTime": 1723255844,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200037",
+      "author": "Q2_USER_37",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200037",
+      "content": "平台A的定制化能力受限，深度二次开发困难。客户反馈整理。",
+      "voteupCount": 4,
+      "commentCount": 0,
+      "createdTime": 1723521336,
+      "updatedTime": 1723521336,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200038",
+      "author": "Q2_USER_38",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200038",
+      "content": "平台A存在供应商锁定风险，迁移成本高。平台A的定制化能力受限，深度二次开发困难。客户反馈整理。",
+      "voteupCount": 5,
+      "commentCount": 1,
+      "createdTime": 1723325142,
+      "updatedTime": 1723325142,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200039",
+      "author": "Q2_USER_39",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200039",
+      "content": "平台A存在供应商锁定风险，迁移成本高。客户反馈整理。",
+      "voteupCount": 3,
+      "commentCount": 2,
+      "createdTime": 1735160138,
+      "updatedTime": 1735160138,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200040",
+      "author": "Q2_USER_40",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200040",
+      "content": "平台A的权限模型在复杂业务下存在缺陷。客户反馈整理。",
+      "voteupCount": 1,
+      "commentCount": 1,
+      "createdTime": 1731183004,
+      "updatedTime": 1731183004,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200041",
+      "author": "Q2_USER_41",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200041",
+      "content": "平台A的定制化能力受限，深度二次开发困难。平台A在大规模并发场景下性能表现不足。客户反馈整理。",
+      "voteupCount": 1,
+      "commentCount": 4,
+      "createdTime": 1731421846,
+      "updatedTime": 1731421846,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200042",
+      "author": "Q2_USER_42",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200042",
+      "content": "平台A的审计与合规能力有待加强。平台A存在供应商锁定风险，迁移成本高。客户反馈整理。",
+      "voteupCount": 5,
+      "commentCount": 1,
+      "createdTime": 1746691413,
+      "updatedTime": 1746691413,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200043",
+      "author": "Q2_USER_43",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200043",
+      "content": "平台A的权限模型在复杂业务下存在缺陷。客户反馈整理。",
+      "voteupCount": 2,
+      "commentCount": 3,
+      "createdTime": 1735061969,
+      "updatedTime": 1735061969,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200044",
+      "author": "Q2_USER_44",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200044",
+      "content": "平台A的审计与合规能力有待加强。客户反馈整理。",
+      "voteupCount": 3,
+      "commentCount": 2,
+      "createdTime": 1735700658,
+      "updatedTime": 1735700658,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200045",
+      "author": "Q2_USER_45",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200045",
+      "content": "平台A的权限模型在复杂业务下存在缺陷。平台A的定制化能力受限，深度二次开发困难。客户反馈整理。",
+      "voteupCount": 2,
+      "commentCount": 2,
+      "createdTime": 1744134555,
+      "updatedTime": 1744134555,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200046",
+      "author": "Q2_USER_46",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200046",
+      "content": "平台A存在供应商锁定风险，迁移成本高。客户反馈整理。",
+      "voteupCount": 3,
+      "commentCount": 1,
+      "createdTime": 1723569951,
+      "updatedTime": 1723569951,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200047",
+      "author": "Q2_USER_47",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200047",
+      "content": "平台A的权限模型在复杂业务下存在缺陷。客户反馈整理。",
+      "voteupCount": 4,
+      "commentCount": 2,
+      "createdTime": 1724414697,
+      "updatedTime": 1724414697,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200048",
+      "author": "Q2_USER_48",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200048",
+      "content": "平台A在大规模并发场景下性能表现不足。客户反馈整理。",
+      "voteupCount": 4,
+      "commentCount": 4,
+      "createdTime": 1729728682,
+      "updatedTime": 1729728682,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200049",
+      "author": "Q2_USER_49",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200049",
+      "content": "平台A的定制化能力受限，深度二次开发困难。平台A的审计与合规能力有待加强。客户反馈整理。",
+      "voteupCount": 5,
+      "commentCount": 2,
+      "createdTime": 1753424402,
+      "updatedTime": 1753424402,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "200050",
+      "author": "Q2_USER_50",
+      "url": "https://www.zhihu.com/question/Q-SYN-D2/answer/200050",
+      "content": "平台A的权限模型在复杂业务下存在缺陷。平台A在大规模并发场景下性能表现不足。客户反馈整理。",
+      "voteupCount": 2,
+      "commentCount": 2,
+      "createdTime": 1740516400,
+      "updatedTime": 1740516400,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    }
+  ]
+}

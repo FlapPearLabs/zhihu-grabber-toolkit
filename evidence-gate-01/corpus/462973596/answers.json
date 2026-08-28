@@ -1,0 +1,567 @@
+{
+  "questionId": "462973596",
+  "questionTitle": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+  "answerCount": 17,
+  "url": "https://www.zhihu.com/question/462973596",
+  "question": {
+    "id": "462973596",
+    "title": "零代码和低代码平台这两个平台那个对公司后期的发展好？",
+    "descriptionHtml": "",
+    "descriptionMarkdown": "",
+    "topics": [
+      {
+        "id": "19559575",
+        "name": "代码"
+      },
+      {
+        "id": "19585332",
+        "name": "代码质量"
+      },
+      {
+        "id": "20185909",
+        "name": "代码规范"
+      }
+    ]
+  },
+  "fetchedAt": "2026-08-13T13:39:50.224Z",
+  "answers": [
+    {
+      "id": "1950703418",
+      "author": "产品的自我修养",
+      "url": "https://www.zhihu.com/question/462973596/answer/1950703418",
+      "content": "<p data-pid=\"yRntAyaj\">作为一个在零代码探索过多年的经验来说，渴望零代码工具是原生的愿望，但是实践中基本不可能</p><p data-pid=\"jZHpnero\"><a href=\"https://link.zhihu.com/?target=https%3A//pub.baishuyun.com/user/spread/130267%3Fkey%3D%25E4%25BD%258E%25E4%25BB%25A3%25E7%25A0%2581%26title%3D%25E9%259B%25B6%25E4%25BB%25A3%25E7%25A0%2581%25E5%2592%258C%25E4%25BD%258E%25E4%25BB%25A3%25E7%25A0%2581%25E5%25B9%25B3%25E5%258F%25B0%25E8%25BF%2599%25E4%25B8%25A4%25E4%25B8%25AA%25E5%25B9%25B3%25E5%258F%25B0%25E9%2582%25A3%25E4%25B8%25AA%25E5%25AF%25B9%25E5%2585%25AC%25E5%258F%25B8%25E5%2590%258E%25E6%259C%259F%25E7%259A%2584%25E5%258F%2591%25E5%25B1%2595%25E5%25A5%25BD%25EF%25BC%259F%26url%3Dhttps%3A//www.zhihu.com/question/462973596/answer/1950703418\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">零代码或低代码本质都是工具</a></p><p data-pid=\"1x2Ec0cg\">首先零代码就是一切皆标准，那办公领域千奇百怪的个性化需求，且不说工具框架方面 要适配各种场合要考虑的各项细节功能能力，开发人员能不能预先到或考虑到后期的兼容性，这个本身就是一个很大的难度，单一个功能如果不断的向后各种场景兼容，本身就会变得很累赘，工具到了后期会反射出各种问题，性能，消耗，稳定性，开发人员最怕就是架构或代码的耦合性，产品团队会告诉你 不能这样干</p><p data-pid=\"r3CO58Y-\">这里最经典的例子就是excel，他是办公领域最经典也是最成功的工具了吧，他的标准功能应该够丰富了，多数人常有的大概只有10%，但是excel成功的一个大的阶段还是引入了vba体系，能用vbs扩展自己的能力，让财务公司或财务部门能实现个性化计算</p><p data-pid=\"k5xYrAKg\">零码工具本身只是一个愿景，至少目前可见的视野里面不现实，只适合一些小片场景或旁枝业务，一段牵涉企业的整体业务落地，零代码基本不可推动，办公领域一个环节实行不了，衔接不上，整个系统就会脱节，无法运作</p><p data-pid=\"0CjREgjq\">大量实践经验告诉我，低代码更加适合企业，它提供了可扩展能力保证功能的顺畅，但是主要是要够低，能快速或轻松的来进行扩展，市面上的很多打着低代码工具的产品，恕我直言，都是乐色，但是低代码工具才是最好的出口，这个无法怀疑，看谁能先到这个能力吧</p>",
+      "excerpt": "作为一个在零代码探索过多年的经验来说，渴望零代码工具是原生的愿望，但是实践中基本不可能 零代码或低代码本质都是工具 首先零代码就是一切皆标准，那办公领域千奇百怪的个性化需求，且不说工具框架方面 要适配各种场合要考虑的各项细节功能能力，开发人员能不能预先到或考虑到后期的兼容性，这个本身就是一个很大的难度，单一个功能如果不断的向后各种场景兼容，本身就会变得很累赘，工具到了后期会反射出各种问题，性能，消耗…",
+      "voteupCount": 1,
+      "commentCount": 3,
+      "createdTime": 1624182460,
+      "updatedTime": 1654071291,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//pub.baishuyun.com/user/spread/130267%3Fkey%3D%25E4%25BD%258E%25E4%25BB%25A3%25E7%25A0%2581%26title%3D%25E9%259B%25B6%25E4%25BB%25A3%25E7%25A0%2581%25E5%2592%258C%25E4%25BD%258E%25E4%25BB%25A3%25E7%25A0%2581%25E5%25B9%25B3%25E5%258F%25B0%25E8%25BF%2599%25E4%25B8%25A4%25E4%25B8%25AA%25E5%25B9%25B3%25E5%258F%25B0%25E9%2582%25A3%25E4%25B8%25AA%25E5%25AF%25B9%25E5%2585%25AC%25E5%258F%25B8%25E5%2590%258E%25E6%259C%259F%25E7%259A%2584%25E5%258F%2591%25E5%25B1%2595%25E5%25A5%25BD%25EF%25BC%259F%26url%3Dhttps%3A//www.zhihu.com/question/462973596/answer/1950703418",
+            "canonicalUrl": "https://pub.baishuyun.com/user/spread/130267?key=%E4%BD%8E%E4%BB%A3%E7%A0%81&title=%E9%9B%B6%E4%BB%A3%E7%A0%81%E5%92%8C%E4%BD%8E%E4%BB%A3%E7%A0%81%E5%B9%B3%E5%8F%B0%E8%BF%99%E4%B8%A4%E4%B8%AA%E5%B9%B3%E5%8F%B0%E9%82%A3%E4%B8%AA%E5%AF%B9%E5%85%AC%E5%8F%B8%E5%90%8E%E6%9C%9F%E7%9A%84%E5%8F%91%E5%B1%95%E5%A5%BD%EF%BC%9F&url=https://www.zhihu.com/question/462973596/answer/1950703418",
+            "domain": "pub.baishuyun.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://pub.baishuyun.com/user/spread/130267?key=%E4%BD%8E%E4%BB%A3%E7%A0%81&title=%E9%9B%B6%E4%BB%A3%E7%A0%81%E5%92%8C%E4%BD%8E%E4%BB%A3%E7%A0%81%E5%B9%B3%E5%8F%B0%E8%BF%99%E4%B8%A4%E4%B8%AA%E5%B9%B3%E5%8F%B0%E9%82%A3%E4%B8%AA%E5%AF%B9%E5%85%AC%E5%8F%B8%E5%90%8E%E6%9C%9F%E7%9A%84%E5%8F%91%E5%B1%95%E5%A5%BD%EF%BC%9F&url=https://www.zhihu.com/question/462973596/answer/1950703418",
+              "clickable": true
+            }
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1941438029",
+      "author": "简搭AI低代码",
+      "url": "https://www.zhihu.com/question/462973596/answer/1941438029",
+      "content": "<p data-pid=\"5d6JqBNH\">低代码和无代码这两个一眼看过去很像的名词，很多人都会讲它们混淆，其实它们之间的区别还是挺大的。在低代码开发平台上开发应用程序需要技术人员才能够完成，这是因为低代码开发平台只是减少了编写代码的数量，并不是完全不需要编写代码，而无代码开发平台是完全不需要编写任何代码只需要拖拽平台上的功能组件就能够完成应用程序的开发。你知道低代码和无代码的主要区别是什么吗？下面一起来了解一下相关的知识吧！</p><p data-pid=\"pfdjfu5n\"><b>看起来很相似</b></p><p data-pid=\"JtVoxxVt\">面对绝大多数应用场景，两者都不需要开发人员掌握传统编程语言的任何知识，而是直接提供了可视化的开发方法。开发者从屏幕上选择所需的功能组件，并将其拖拽到可视化流程里的方式完成应用开发。这种可视化方法大幅拉低了软件开发的技术门槛，让普通IT人员，甚至业务人员都可以成为开发者，直接开发并交付应用程序。这就是他们之间的相同之处。</p><p data-pid=\"SqtPCM2N\"><b>但实际上有很大不同</b></p><p data-pid=\"aaYGh-EG\">　　虽然低代码和无代码都是在可视化的开发应用系统，但是在系统规模和应用行业上有根本的区别。</p><p data-pid=\"9ANDnVi_\">　　对于只希望解决简单功能的业务的用户而言，无代码应用程序开发平台可能非常有用。无代码平台是简单的工具，非常适合构建针对特定场景的小型应用程序，如问卷调查等。如果这能够满足您的需求的话，那也不错。</p><p data-pid=\"Beu1tHLA\">　　大多数无代码工具的问题在于，您在其上开发的应用程序经常无法很好地扩展，并且集成能力非常有限。那是因为相比于低代码，无代码平台为了降低复杂度，没有考虑更广泛的企业体系结构，并且大多数无代码平台上可使用的集成工具往往很有限。因为无代码的这些局限，在您将应用要扩展到企业级，甚至承担企业核心业务场景时，很可能会遭遇下列挑战：</p><p data-pid=\"2apAgCrR\">　　系统架构：由于开发者对企业应用的体系结构缺乏经验，随意追加应用程序会让企业IT体系结构的风险增加。更麻烦的是，大多数无代码平台都需要部署到公共云，不能灵活地部署到私有云或本地，这对于很多企业场景，尤其是中大型企业的核心业务场景来说，是很难被接受的。</p><p data-pid=\"ltobNusi\">　　可扩展性：因为无代码平台倾向于运营效率，所以它们不具备关注用户体验的能力，并且无法连接到已有系统，还有不支持同第三方系统或本地系统集成的问题。</p><p data-pid=\"yemYRwI5\">　　相比之下，低代码平台则可以很好帮你解决这些问题。低代码平台往往可以同主流技术保持同步，它们提供灵活的体系结构，支持外部数据库，提供开放的API扩展平台等技术能力。正是这些特性，让低代码完全具备支撑企业核心业务的能力，同时还能与企业其他系统(如ERP、MES等)深度集成。此外，以活字格为代表的部分低代码开发平台的部署方式更加灵活，同时云端和本地部署，特别适合国内企业对于“系统可控性”的要求。</p><p data-pid=\"LwZI6T-E\">　　所以整体来说低代码开发平台的灵活性比无代码开发平台好，在低代码开发平台上开发应用程序可以对样式等一些东西进行自定义，而在无代码开发平台上就没有办法进行自定义，只能够寻找平台内部提供的样式。</p><p data-pid=\"cBbhAHEf\">要是对低代码平台感兴趣的话，可以关注下简搭低代码平台！</p>",
+      "excerpt": "低代码和无代码这两个一眼看过去很像的名词，很多人都会讲它们混淆，其实它们之间的区别还是挺大的。在低代码开发平台上开发应用程序需要技术人员才能够完成，这是因为低代码开发平台只是减少了编写代码的数量，并不是完全不需要编写代码，而无代码开发平台是完全不需要编写任何代码只需要拖拽平台上的功能组件就能够完成应用程序的开发。你知道低代码和无代码的主要区别是什么吗？下面一起来了解一下相关的知识吧！ 看起来很相似…",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1623741560,
+      "updatedTime": 1623741560,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1928502944",
+      "author": "bruce",
+      "url": "https://www.zhihu.com/question/462973596/answer/1928502944",
+      "content": "<p data-pid=\"JHKNjbm-\">低代码：用<b>少量代码</b>就可以开发程序，适合有技术但想<b>节省时间</b>的<b>技术人员</b>。</p><p data-pid=\"Anx0c7nc\">无代码：没基础也可以，<b>不需要编程</b>，调一下参数就能生成程序，适合<b>没有技术</b>但想弄程序的<b>业务人员</b>。</p><p data-pid=\"_UM_nirS\">目前天翎低代码平台采用的是低代码➕无代码双结合的模式。</p><p data-pid=\"AlkOqfgc\">对于非技术人员在设计表单系统时采用常规模式，仅需通过拖拉拽方式完成表单设计，无需任何代码量。</p><p data-pid=\"r0arjdtt\">对于开发人员可以开发扩展模式，在图形化界面中可以编写各种复杂业务逻辑。</p><p></p>",
+      "excerpt": "低代码：用 少量代码就可以开发程序，适合有技术但想节省时间的技术人员。无代码：没基础也可以， 不需要编程，调一下参数就能生成程序，适合没有技术但想弄程序的业务人员。目前天翎低代码平台采用的是低代码➕无代码双结合的模式。 对于非技术人员在设计表单系统时采用常规模式，仅需通过拖拉拽方式完成表单设计，无需任何代码量。 对于开发人员可以开发扩展模式，在图形化界面中可以编写各种复杂业务逻辑。",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1623112360,
+      "updatedTime": 1623112360,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1946530886",
+      "author": "领悟杂谈",
+      "url": "https://www.zhihu.com/question/462973596/answer/1946530886",
+      "content": "<p data-pid=\"zsnyZleg\">从企业的角度来看，零代码如果处理的好，零代码后期发展会更好。</p><p data-pid=\"zYDA0o6T\">从两方面看问题</p><p data-pid=\"QaZMlr3i\">一、企业角度</p><p data-pid=\"akas0udb\">这与一个矛盾点相关：</p><p data-pid=\"-9sOM0B5\">企业选择零代码和低代码是为解决传统软件开发周期长（8个月以上），开发人员对业务不熟和不专业（跨行这种问题突破很难），导致企业系统失败率比较高，投入和产出不成比例，企业信息化不能适应快速发展变化的业务需求这一问题。</p><p data-pid=\"rjcEvZq_\">企业传统软件采购研发上线过程：</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-72bd147ff7024a948382822d8bef91fd_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"890\" data-rawheight=\"210\" data-original-token=\"v2-4193b154acf29836fa8739d6bd1cbd0d\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-5bebc0dc423f7a748e13d6ffd4aa100b_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"890\" data-original=\"https://picx.zhimg.com/v2-72bd147ff7024a948382822d8bef91fd_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;890&#39; height=&#39;210&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"890\" data-rawheight=\"210\" data-original-token=\"v2-4193b154acf29836fa8739d6bd1cbd0d\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-5bebc0dc423f7a748e13d6ffd4aa100b_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"890\" data-original=\"https://picx.zhimg.com/v2-72bd147ff7024a948382822d8bef91fd_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-72bd147ff7024a948382822d8bef91fd_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"77AzAtJO\">代码码无论如何都需要程序人员开发，对于没有开发人员的公司（大多数公司不具备研发人员），意味首必须请软件供应商提供服务。这就是问题又回到了传统软件开发的模式，即需要需求、设计、研发人中参与项目。</p><p data-pid=\"gunXvAZl\">对于稍大的公司，意味首需要走服务采购流程、外包人员采购流程，这一流程周期长、采购处理复杂。也就意味着，低代码所谓的敏捷性荡然无存。</p><p data-pid=\"yE8pbW6T\">另外，低码公司人力资源始终有限，即使公司执行了采购流程，还需要看供应商有没有人员可派、派出人员质量如何等。更要命的可能供应商受限于项目数据，可能开一个天价，这问题本人已经有经历。</p><p data-pid=\"CCRdProk\">  企业要求快速开发的实际需求与低代码所实际能提供的支撑力形成矛盾，这一矛盾仅仅是少许缓解了传统软件开发的少部分矛盾。</p><p data-pid=\"7UP2So3v\">低代码能节省的时间周期：</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-30324131516b92fe9bbdb55fcef1e0dd_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"890\" data-rawheight=\"322\" data-original-token=\"v2-93f4b4b111389309a5cc623db29c7d84\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-f632a77d41f26e1c94d54a5f197077c0_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"890\" data-original=\"https://picx.zhimg.com/v2-30324131516b92fe9bbdb55fcef1e0dd_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;890&#39; height=&#39;322&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"890\" data-rawheight=\"322\" data-original-token=\"v2-93f4b4b111389309a5cc623db29c7d84\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-f632a77d41f26e1c94d54a5f197077c0_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"890\" data-original=\"https://picx.zhimg.com/v2-30324131516b92fe9bbdb55fcef1e0dd_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-30324131516b92fe9bbdb55fcef1e0dd_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"hs5ymV8D\">二、低代码供应商</p><p data-pid=\"d1rD-iKV\">       目前，国内低代码供应商普遍公司规模都不大，即使公司规模大，如将大量研发人员消耗在项目上，对于一家企业长远发展都不是什么好事。这么限制企业发展。</p><p data-pid=\"PUg_Rq8V\">三、零代码优势    </p><p data-pid=\"c4BccBfW\">     零代码软件，正好解决了这一予盾。企业业务人员参与软件开发，其敏捷性有保障。同时，如需要供就商参与，也仅仅是成本更低的实施人员参与，其经济性更高。</p><p data-pid=\"PWp0uYvB\">零代码对资源的节省情况：</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-2ef9051b82723d501371a5594ab9c07e_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"890\" data-rawheight=\"264\" data-original-token=\"v2-59da7d1fa519db2281c25cf333a605ac\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-d15a80d4e92c1d6c685389b3b2fd0875_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"890\" data-original=\"https://picx.zhimg.com/v2-2ef9051b82723d501371a5594ab9c07e_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;890&#39; height=&#39;264&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"890\" data-rawheight=\"264\" data-original-token=\"v2-59da7d1fa519db2281c25cf333a605ac\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-d15a80d4e92c1d6c685389b3b2fd0875_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"890\" data-original=\"https://picx.zhimg.com/v2-2ef9051b82723d501371a5594ab9c07e_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-2ef9051b82723d501371a5594ab9c07e_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"2_lF5D1s\">     从经营角度讲，目前卖软件、卖用户数、卖空间，这种营收营式已经烂大街。低代码也意味首供应商无力从这种恶性竞争中争脱出来。特别是相靠外包人员长期发展，是一种危险的想法，本人2007年-2009年就在外包公司从事项目管工作，人员无归属感、重复低级工作，不符合人员长发展需求，这意味着员工大量流动，公司在系统功能上无法实现积累和长期发展。</p><p data-pid=\"C3Mm27gK\"><b>    所以凡是产品逻辑实现时，过分依赖代码的软件，均不符合市场预期。无论这种说法多么刺耳，低代码软件公司也需要认清这一形势。</b>但凡功能实现均要写代码，解决不了企业的困境，要求程序员实现功能就不可能解决问题，限制和减少程序人员在项目中的参与度，才是市场所需要的产品。</p>",
+      "excerpt": "从企业的角度来看，零代码如果处理的好，零代码后期发展会更好。 从两方面看问题 一、企业角度 这与一个矛盾点相关： 企业选择零代码和低代码是为解决传统软件开发周期长（8个月以上），开发人员对业务不熟和不专业（跨行这种问题突破很难），导致企业系统失败率比较高，投入和产出不成比例，企业信息化不能适应快速发展变化的业务需求这一问题。 企业传统软件采购研发上线过程： [图片] 代码码无论如何都需要程序人员开发，对于没有开…",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1623982550,
+      "updatedTime": 1628993436,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-72bd147ff7024a948382822d8bef91fd_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-72bd147ff7024a948382822d8bef91fd_r.jpg?source=1def8aca",
+            "width": 890,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-30324131516b92fe9bbdb55fcef1e0dd_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-30324131516b92fe9bbdb55fcef1e0dd_r.jpg?source=1def8aca",
+            "width": 890,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-2ef9051b82723d501371a5594ab9c07e_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-2ef9051b82723d501371a5594ab9c07e_r.jpg?source=1def8aca",
+            "width": 890,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2052511352",
+      "author": "liuzewei",
+      "url": "https://www.zhihu.com/question/462973596/answer/2052511352",
+      "content": "<p data-pid=\"99Qdwh0s\">无论是低代码开发平台，还是0代码开发平台，都具备开发大型企业管理系统的能力。只是选择0代码平台比低代码平台更优化资源配置和节约人力、物力成本。</p>",
+      "excerpt": "无论是低代码开发平台，还是0代码开发平台，都具备开发大型企业管理系统的能力。只是选择0代码平台比低代码平台更优化资源配置和节约人力、物力成本。",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1628644870,
+      "updatedTime": 1628644870,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2070640394",
+      "author": "幽蓝梦星",
+      "url": "https://www.zhihu.com/question/462973596/answer/2070640394",
+      "content": "<p data-pid=\"dBTETeth\">感觉问题没有意义，零代码平台，现在市面上真正的零代码平台好像还没有吧，涉及到特定的系统业务逻辑都是需要一定量的代码或者脚本编写，这是无法避免的。这两个对于公司来说可以减少系统的开发投入成本，都对公司的发展较为友好。</p>",
+      "excerpt": "感觉问题没有意义，零代码平台，现在市面上真正的零代码平台好像还没有吧，涉及到特定的系统业务逻辑都是需要一定量的代码或者脚本编写，这是无法避免的。这两个对于公司来说可以减少系统的开发投入成本，都对公司的发展较为友好。",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1629362716,
+      "updatedTime": 1629362716,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1953772075",
+      "author": "捷得Joget",
+      "url": "https://www.zhihu.com/question/462973596/answer/1953772075",
+      "content": "<p data-pid=\"FCodkN_H\">低代码有零代码无法替代的优势</p><p data-pid=\"RwetqEcG\"><b>零代码工具</b>，早期，对技术人员来说，显得繁琐，且不够灵活；对非技术人员，虽然不用写代码，但充满技术用语的界面和对象抽象的难度，也让他们望而却步。所以首先吸引的用户是非技术出身的企业极客，他们脑中有构思和概念，可以利用零代码工具将管理流程快速数字化。</p><p data-pid=\"4Qe0dSHm\"><b>低代码开发平台</b>是指围绕企业数据和业务管理需求，通过可视化方式设计数据结构，用户交互形式、设置访问权限和定义工作流程的平台。</p><p data-pid=\"r323q7WJ\">是在零代码开发平台的基础上进行不断的探索升级发展而来的，在灵活性上提升了不少，同时可以兼顾企业通用管理流程。</p><p data-pid=\"bh98-BEH\"><b>低代码开发平台具有难以替代的优势</b></p><p data-pid=\"ZUF_bi_B\"><b>1.满足企业的多样化需求</b></p><p data-pid=\"Iky1ge3F\"><b>2.从定制开发中需求沟通的痛苦中解脱</b></p><p data-pid=\"--vHtvbF\"><b>3.在企业内部实现数据互通</b></p><p data-pid=\"MSMkK1MM\"><b>4.突出的成本和效率优势</b></p><p data-pid=\"egf_Z8F-\"><b>5.开箱即用和自己动手的两全（相对于零代码，低代码除了提供了可以开箱即用的预制工具外，也提供了应对复杂场景下，自主快速开发的可能性）</b></p>",
+      "excerpt": "低代码有零代码无法替代的优势 零代码工具，早期，对技术人员来说，显得繁琐，且不够灵活；对非技术人员，虽然不用写代码，但充满技术用语的界面和对象抽象的难度，也让他们望而却步。所以首先吸引的用户是非技术出身的企业极客，他们脑中有构思和概念，可以利用零代码工具将管理流程快速数字化。 低代码开发平台是指围绕企业数据和业务管理需求，通过可视化方式设计数据结构，用户交互形式、设置访问权限和定义工作流程的平台。…",
+      "voteupCount": 2,
+      "commentCount": 0,
+      "createdTime": 1624329484,
+      "updatedTime": 1624329484,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1963312102",
+      "author": "大龄码农有梦想",
+      "url": "https://www.zhihu.com/question/462973596/answer/1963312102",
+      "content": "<p data-pid=\"-6zADNBZ\">没有绝对的零代码，简单需求拖拉拽实现，复杂的需要肯定要辅助代码实现的，所以说零代码和低代码对企业都有用。</p>",
+      "excerpt": "没有绝对的零代码，简单需求拖拉拽实现，复杂的需要肯定要辅助代码实现的，所以说零代码和低代码对企业都有用。",
+      "voteupCount": 1,
+      "commentCount": 0,
+      "createdTime": 1624721064,
+      "updatedTime": 1624721064,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2721876544",
+      "author": "蓝库云",
+      "url": "https://www.zhihu.com/question/462973596/answer/2721876544",
+      "content": "<p data-pid=\"3W3nrkJI\">如今在企业数智化转型中缺乏编程语言知识和资金紧张不再是障碍，因为零代码应用工具的出现，每个人都可以做到这一点。零代码解决方案已经存在了一段时间，但它们已经成为可行且可靠的解决方案，可帮助企业起步并成功运营。</p><p data-pid=\"ogrteTFh\">今天蓝库云和大家一起来探讨研究低代码和零代码各自的优缺点，这些工具旨在为初创公司奠定坚实的基础，以启动他们的企业并迈向他们的主要营销和品牌目标。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-50bbc1d8f097adfa4d08b3c2274b9fc4_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"1080\" data-rawheight=\"624\" data-original-token=\"v2-50bbc1d8f097adfa4d08b3c2274b9fc4\" class=\"origin_image zh-lightbox-thumb\" width=\"1080\" data-original=\"https://pic1.zhimg.com/v2-50bbc1d8f097adfa4d08b3c2274b9fc4_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1080&#39; height=&#39;624&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"1080\" data-rawheight=\"624\" data-original-token=\"v2-50bbc1d8f097adfa4d08b3c2274b9fc4\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1080\" data-original=\"https://pic1.zhimg.com/v2-50bbc1d8f097adfa4d08b3c2274b9fc4_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-50bbc1d8f097adfa4d08b3c2274b9fc4_720w.jpg?source=1def8aca\"/><figcaption>企业数智化</figcaption></figure><p data-pid=\"9zMryH7H\"><b>无代码解决方案的基础本质</b></p><p data-pid=\"on0uR-Cl\">网络有许多零代码代码的解决方案。然而，残酷的事实是，它们中的大多数都是低代码开发工具，需要编程语言的基本知识或至少需要精通技术的技能。<b>低代码平台与零代码解决方案的不同之处在于：</b></p><p data-pid=\"eycYbVlD\">它们针对的是开发人员而不是企业主。</p><p data-pid=\"FcFuipBx\">它们提供了加速技术开发的工具。</p><p data-pid=\"u-JsYZo0\">它们提供了一种手动编辑代码的便捷方式。</p><p data-pid=\"x3IBAEUx\">他们有潜力创建大量的软件解决方案。</p><p data-pid=\"z4FOvpI2\">由于系统的开放性，它们适用于更多的用例。</p><p data-pid=\"-EeWyHHQ\">他们需要额外的测试以确保解决方案与升级的软件版本一起工作。</p><p data-pid=\"YeTqQKXN\">因此，作为一项规则，开发团队会使用它们。这对于没有技术背景且不打算收购技术背景的数字企业家和企业主来说有点棘手。</p><p data-pid=\"uk31OhJU\">那么，您如何定义零代码的好处呢？它们具有某些品质，可以让没有开发经验和适当技术技能的企业能松构建其Web应用程序和工具，以自动化工作流程并简化各种流程。蓝库云和大家重新认识下零代码应用开发工具。</p><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-160d7c9c74fcd4ebb6ddfd1dd8eb3863_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"1758\" data-rawheight=\"986\" data-original-token=\"v2-160d7c9c74fcd4ebb6ddfd1dd8eb3863\" class=\"origin_image zh-lightbox-thumb\" width=\"1758\" data-original=\"https://picx.zhimg.com/v2-160d7c9c74fcd4ebb6ddfd1dd8eb3863_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1758&#39; height=&#39;986&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"1758\" data-rawheight=\"986\" data-original-token=\"v2-160d7c9c74fcd4ebb6ddfd1dd8eb3863\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1758\" data-original=\"https://picx.zhimg.com/v2-160d7c9c74fcd4ebb6ddfd1dd8eb3863_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-160d7c9c74fcd4ebb6ddfd1dd8eb3863_720w.jpg?source=1def8aca\"/><figcaption>零代码应用搭建</figcaption></figure><p data-pid=\"L2igekrM\"><b>使用零代码工具的好处</b></p><p data-pid=\"NtsBRXwX\">零代码解决方案的最佳之处在于，无论您拥有什么知识、服务于什么目标市场以及您处理的财务状况如何，您都可以轻松利用它。尽管如此，它具有巨大而充满希望的潜力，可以提供一系列优势，不仅限于特定的利基市场或行业。让我们考虑一下它的主要好处：</p><p data-pid=\"sDVTbHmp\">它可以节省时间。这是最重要的优势之一，因为时间就是金钱。即使是向开发团队处理一项小任务也可能需要相当长的时间，因为生产过程涉及许多阶段，从规划和批准到QA测试和部署。<b>但是，借助可让您立即开展业务的即用型解决方案，您可以跳过多个步骤并快速实现所需的结果。</b></p><p data-pid=\"oa2pJ5UV\">它可以快速交付一些重要的项目。</p><p data-pid=\"PfKGEPTb\">它放大了整体的营销工作。您实施策略或测试营销活动的速度越快，您定义最能引起受众共鸣的选项的速度就越快。</p><p data-pid=\"nhT-hAU2\">它降低了成本。您不仅可以节省实施项目的资金，还可以避免因招聘、入职和维护开发团队而产生的额外费用。</p><p data-pid=\"abWpcp7s\">它可以帮助企业与市场需求、偏好和期望保持相关，因为大多数零代码解决方案都会定期更新，以满足不断变化的市场需求和要求。</p><p data-pid=\"MwOHltII\">它增强了用户体验。大多数解决方案都遵循最新的规范和指南。这意味着这些工具可以生成符合高标准的产品。</p><p data-pid=\"K2x6T8ca\">它改善了部门之间的协作。由于透明度和便利的环境，零代码平台弥合了沟通差距，并允许所有利益相关者参与开发过程，做出贡献并带来巨大的成果。</p><p data-pid=\"aTcw_EHx\">它鼓励企业主尽情发挥想象力，在相应的利基市场开发复杂或独一无二的产品和应用程序。</p><p data-pid=\"ugsKCLu3\">它在公司的发展、战略和活动中引入了创新。</p><p data-pid=\"DTg-zDO8\">它不仅可以用于构建登录页面或新闻通讯等日常任务。一些复杂的解决方案允许企业主进行宏大的项目，简化工作流程、管理和组织流程，从机器学习模型中受益等。</p><p data-pid=\"CDliHoDx\">从节省时间到降低生产成本，再到构建AI驱动的营销活动，使用零代码解决方案的好处在公司的早期阶段显着提升了公司，并打开了实现收入最大化、加速增长和改善公司发展的真正机会。大踏步前进。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-a01c9779001dbd3cbc02ae8364c12f9e_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"1400\" data-rawheight=\"700\" data-original-token=\"v2-a01c9779001dbd3cbc02ae8364c12f9e\" class=\"origin_image zh-lightbox-thumb\" width=\"1400\" data-original=\"https://picx.zhimg.com/v2-a01c9779001dbd3cbc02ae8364c12f9e_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1400&#39; height=&#39;700&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"1400\" data-rawheight=\"700\" data-original-token=\"v2-a01c9779001dbd3cbc02ae8364c12f9e\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1400\" data-original=\"https://picx.zhimg.com/v2-a01c9779001dbd3cbc02ae8364c12f9e_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-a01c9779001dbd3cbc02ae8364c12f9e_720w.jpg?source=1def8aca\"/><figcaption>企业零代码应用搭建</figcaption></figure><p data-pid=\"vCZZqtaF\"><b>结论</b></p><p data-pid=\"ONqP4s-E\">零代码解决方案听起来好得令人难以置信，然而，这些是真的完全可以实现的。零代码平台带有企业需要解决的某些缺陷。值得注意的是，某些任务需要良好的管理技能和持续的人工干预。此外，大多数独特的解决方案仍应提交给专业的开发团队。</p><p data-pid=\"tgj9MyeP\">除此之外，零代码解决方案允许企业主构建许多端到端的企业应用程序，而无需在开发机构或获得技术技能上花费大量资金。它们具有相对丰富的功能和处理满足目标市场当前需求的任务。最好的部分是它们不断得到增强和改进，每天都在推动这一项目。</p>",
+      "excerpt": "如今在企业数智化转型中缺乏编程语言知识和资金紧张不再是障碍，因为零代码应用工具的出现，每个人都可以做到这一点。零代码解决方案已经存在了一段时间，但它们已经成为可行且可靠的解决方案，可帮助企业起步并成功运营。 今天蓝库云和大家一起来探讨研究低代码和零代码各自的优缺点，这些工具旨在为初创公司奠定坚实的基础，以启动他们的企业并迈向他们的主要营销和品牌目标。 [图片] 无代码解决方案的基础本质网络有许多零代码代码…",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1666172404,
+      "updatedTime": 1666172404,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-50bbc1d8f097adfa4d08b3c2274b9fc4_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-50bbc1d8f097adfa4d08b3c2274b9fc4_r.jpg?source=1def8aca",
+            "width": 1080,
+            "caption": "企业数智化",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-160d7c9c74fcd4ebb6ddfd1dd8eb3863_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-160d7c9c74fcd4ebb6ddfd1dd8eb3863_r.jpg?source=1def8aca",
+            "width": 1758,
+            "caption": "零代码应用搭建",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-a01c9779001dbd3cbc02ae8364c12f9e_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-a01c9779001dbd3cbc02ae8364c12f9e_r.jpg?source=1def8aca",
+            "width": 1400,
+            "caption": "企业零代码应用搭建",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1970717782",
+      "author": "快跑",
+      "url": "https://www.zhihu.com/question/462973596/answer/1970717782",
+      "content": "<p data-pid=\"hjCTImlS\">这个一般看公司规模以及对软件的使用情况，很多公司把软件只是辅助定位，提升效率的一种方法，并没打算在这边做优化业务流程等操作。这样零代码平台还是比较适合的，毕竟低代码平台需要有人来开发，低代码平台对比的都是以前养一个团队来开发项目，现在可以有一两个懂的人就可以了搞定系统了，一些服务的开发工作交给了平台是完成和实现。</p><p data-pid=\"w4wC7EBj\">你这个问题里边有一个对公司后期的发展后，这个后期一般也是有时间范围的。</p><p data-pid=\"ozqi5s8Y\">一般的软件周期也就两三年就要更新升级，再不升级基本就是这个业务不行了，能不动、能不投入就不投入了，这种业务。业务进入到了暮年。</p><p data-pid=\"BQ304bKF\">这个后期的还是要看公司定位，像是银行、电信、医疗、软件公司、互联网这些行业相对对于软件的依赖性强一些，这样的部门就要考虑经常更新升级的问题，这样的话低代码平台就是比较合适的选择。零代码平台搭建出来之后，后续的维护更新成本还是比较大的。</p><p data-pid=\"zlg8WsOc\">特别是考虑到后续项目的维护升级、是需要公司有专门的人处理这些，不懂的话，基本用起来还是比较难的。</p><p data-pid=\"CgpdNJkr\">软件系统很多都用不起来，大部分不会用，有一部分原因是不太懂。当然开发厂商做的不好也是一部分原因。</p><p data-pid=\"MU_2_7ZF\">最后总结一下：零代码平台对于使用更新不频繁的，不需要专业懂计算机编程的人员，低代码需要有专业的开发人员或者团队。具体选择还是看使用情况和更新升级维护的需求程度。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-6a16f79dc4f799aab92394453e9eb277_720w.gif?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"900\" data-rawheight=\"500\" data-original-token=\"v2-6a16f79dc4f799aab92394453e9eb277\" data-thumbnail=\"https://picx.zhimg.com/50/v2-6a16f79dc4f799aab92394453e9eb277_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"900\" data-original=\"https://picx.zhimg.com/v2-6a16f79dc4f799aab92394453e9eb277_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;900&#39; height=&#39;500&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"900\" data-rawheight=\"500\" data-original-token=\"v2-6a16f79dc4f799aab92394453e9eb277\" data-thumbnail=\"https://picx.zhimg.com/50/v2-6a16f79dc4f799aab92394453e9eb277_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"900\" data-original=\"https://picx.zhimg.com/v2-6a16f79dc4f799aab92394453e9eb277_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-6a16f79dc4f799aab92394453e9eb277_720w.gif?source=1def8aca\"/></figure><p data-pid=\"vuif4NjN\">以上回答希望对你有帮助~</p>",
+      "excerpt": "这个一般看公司规模以及对软件的使用情况，很多公司把软件只是辅助定位，提升效率的一种方法，并没打算在这边做优化业务流程等操作。这样零代码平台还是比较适合的，毕竟低代码平台需要有人来开发，低代码平台对比的都是以前养一个团队来开发项目，现在可以有一两个懂的人就可以了搞定系统了，一些服务的开发工作交给了平台是完成和实现。 你这个问题里边有一个对公司后期的发展后，这个后期一般也是有时间范围的。 一般的软件周…",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1625039007,
+      "updatedTime": 1625039784,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-6a16f79dc4f799aab92394453e9eb277_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-6a16f79dc4f799aab92394453e9eb277_r.jpg?source=1def8aca",
+            "width": 900,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1928406979",
+      "author": "匿名用户",
+      "url": "https://www.zhihu.com/question/462973596/answer/1928406979",
+      "content": "<p data-pid=\"BY1vbgXm\">个人觉得是低代码平台对后期发展较好。</p><p data-pid=\"IQ2PL_EG\">低代码开发平台是无需编码（0代码或无代码）或通过少量代码就可以快速生成应用程序的开发平台。它的强大之处在于，允许终端用户使用易于理解的可视化工具开发自己的应用程序，而不是传统的编写代码方式。构建业务流程、逻辑和数据模型等所需的功能，必要时还可以添加自己的代码。完成业务逻辑、功能构建后，即可一键交付应用并进行更新，自动跟踪所有更改并处理数据库脚本和部署流程，实现在 IOS，Android，Web 等多个平台上的部署。 </p><p data-pid=\"THGp5oL8\">低代码开发平台一个显著的特点是，更多的人可以参与到应用程序开发当中，不仅是具有专业编程能力的程序员，非技术背景的业务人员同样可以构建应用；对于大型企业来讲，低代码开发平台还可以降低IT团队培训、技术部署的初始成本。</p><p data-pid=\"7VJpChSQ\">目前国内市场技术成熟的供应厂商参考如有：天翎myapps、普元、炎黄、力软等。</p><p data-pid=\"k9_ldk0X\">如myapps微服务架构、前后端分离、（表单、视图、流程、报表、组织用户、统一门户、接口整合）7大引擎。</p><p class=\"ztext-empty-paragraph\"><br/></p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-7b28356176b0a34a0c690c6815befc03_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"863\" data-rawheight=\"259\" data-original-token=\"v2-0dd2351bc43790c592f105771aa28c42\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-7b28356176b0a34a0c690c6815befc03_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"863\" data-original=\"https://picx.zhimg.com/v2-7b28356176b0a34a0c690c6815befc03_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;863&#39; height=&#39;259&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"863\" data-rawheight=\"259\" data-original-token=\"v2-0dd2351bc43790c592f105771aa28c42\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-7b28356176b0a34a0c690c6815befc03_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"863\" data-original=\"https://picx.zhimg.com/v2-7b28356176b0a34a0c690c6815befc03_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-7b28356176b0a34a0c690c6815befc03_720w.jpg?source=1def8aca\"/></figure><p></p>",
+      "excerpt": "个人觉得是低代码平台对后期发展较好。 低代码开发平台是无需编码（0代码或无代码）或通过少量代码就可以快速生成应用程序的开发平台。它的强大之处在于，允许终端用户使用易于理解的可视化工具开发自己的应用程序，而不是传统的编写代码方式。构建业务流程、逻辑和数据模型等所需的功能，必要时还可以添加自己的代码。完成业务逻辑、功能构建后，即可一键交付应用并进行更新，自动跟踪所有更改并处理数据库脚本和部署流程，实现…",
+      "voteupCount": 0,
+      "commentCount": 1,
+      "createdTime": 1623103317,
+      "updatedTime": 1623103415,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-7b28356176b0a34a0c690c6815befc03_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-7b28356176b0a34a0c690c6815befc03_r.jpg?source=1def8aca",
+            "width": 863,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1922742675",
+      "author": "氚云实施中心",
+      "url": "https://www.zhihu.com/question/462973596/answer/1922742675",
+      "content": "<p data-pid=\"1mFNRy7v\">低代码平台</p>",
+      "excerpt": "低代码平台",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1622802329,
+      "updatedTime": 1622802329,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1959121448",
+      "author": "有颜有货",
+      "url": "https://www.zhihu.com/question/462973596/answer/1959121448",
+      "content": "<p data-pid=\"J8VJC5tt\">随着企业个性化、多样化的需求不断增多，传统软件开发的速度已然有些跟不上了。在这种背景和需求的驱动下，低代码和零代码开始进入人们的视野。</p><p data-pid=\"lVGeOzhF\">低代码、零代码究竟能干什么？二者有什么区别？哪个更适合公司发展？</p><p data-pid=\"3IJ34IVX\">……</p><p data-pid=\"cxSN6LQ9\">这些问题，恐怕连技术开发者们都很难说清。</p><p data-pid=\"fKT6Qjyc\">下面，本人就给大家好好讲讲这二者之间究竟有合不同？希望对大家有所帮助！</p><p class=\"ztext-empty-paragraph\"><br/></p><h3><b>一、概念上的区别</b></h3><p data-pid=\"6U-Zt-25\">1、低代码，是一种可以让开发者依托平台快速搭建企业信息化的系统，在这过程中，使用者只需要少量的代码编写，其他的大部分工作都是通过可视化的拖拽、点选完成。</p><p data-pid=\"4y0ydYlq\">而低代码开发平台，则是一种高生产力的开发方式，它的好处就在于：可以让开发人员的需求减少，开发时间缩短，效率成倍提高。据相关数据显示，使用低代码的开发效率是传统方式的3～8倍。</p><p data-pid=\"ALlYRKNq\">2、零代码，或称无代码是一种完全不需要任何代码编程的开发方式，它主要是围绕企业数据和业务管理需求，通过可视化方式设计数据结构，用户交互形式、设置访问权限和定义工作流程的平台。</p><p class=\"ztext-empty-paragraph\"><br/></p><h3><b>二、面向用户不同</b></h3><p data-pid=\"7Pi_yhIG\">低代码和零代码平台，唯一的区别就是是否要求开发者具备编程的能力。</p><ul><li data-pid=\"kgobyPIo\">直接点说，<b>低代码</b>平台主要用户还是：企业的信息化研发部门，有一定的研发实力的团队，通过对低代码的应用，来快速搭建企业的信息化IT建设。</li><li data-pid=\"PDHMLYa-\">而<b>零代码</b>主要面向的是：业务、产品、运营、人事等非技术开发人员，他们不需要懂和写代码，通过可视化拖拽方式，即可以快速实现功能需求。</li></ul><p class=\"ztext-empty-paragraph\"><br/></p><h3><b>三、低代码和零代码，哪个更适合公司发展？</b></h3><p data-pid=\"uCWL_FDG\">首先，我们能肯定的是，无论是低代码开发平台，还是零代码开发平台，都具备开发企业信息化系统的能力。只不过侧重点所有不同。</p><p data-pid=\"EL4FwGme\">零代码的特点是轻便简单，适用于大型公司IT等非核心产品业务等，比如对于实现BPM业务流程管理这种需求方向而言，使用零代码开发更有优势。主要解决的问题是，提供了一种全新的开发手段和体系，大大降低了开发门槛，还为企业节省了开发成本。</p><p data-pid=\"OS2DiTSp\">而对于一些比较复杂、大型的系统应用来说，零代码便无法胜任，仍需要借助二次开发完成部署，这时就需要像织信这样的低代码平台来登场了。低代码主要解决的问题是，加快程序员开发速度，直接为公司降低开发成本。</p><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"4-GqNlm8\"><b>四、低代码、零代码是否真的靠谱？</b></p><p data-pid=\"8KUENf7R\">虽然表面上，好像低代码 、零代码的概念是这两年才听说的，但其实，他们已存在很多年了。只是之前一直不温不火。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-fec15144fbb2705a6403b1f32da38bc6_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"890\" data-rawheight=\"491\" data-original-token=\"v2-779b09e82514a3e8749f070673727cf0\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-6084eb37c40061c1dd50ca1b818237c1_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"890\" data-original=\"https://picx.zhimg.com/v2-fec15144fbb2705a6403b1f32da38bc6_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;890&#39; height=&#39;491&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"890\" data-rawheight=\"491\" data-original-token=\"v2-779b09e82514a3e8749f070673727cf0\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-6084eb37c40061c1dd50ca1b818237c1_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"890\" data-original=\"https://picx.zhimg.com/v2-fec15144fbb2705a6403b1f32da38bc6_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-fec15144fbb2705a6403b1f32da38bc6_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"r-H0V-7Z\">早在1982年，詹姆斯·马丁（James Martin）出版了《无程序员的应用程序开发》一书。他在书中写道：“每台计算机可用的程序员数量正在迅速减少，以至于将来大多数计算机必须至少部分地在没有程序员的情况下工作。”</p><p data-pid=\"OjcKwyzk\">2014年，Forrester创造了“低码”一词来对专注于开发简单性和易用性的开发平台进行分类。这些平台使开发人员和所有技能水平的用户都可以编写应用程序代码，而无需完全了解编码，低代码迅速流行起来。</p><p data-pid=\"uNPQ1QxP\">再回到2020年，不少低代码平台也已接受了多年时间的检验。而织信就是一款高度自定义的智能信息管理平台，能够根据企业及团队的需求，低成本高效率地帮助管理者搭建一站式的企业管理平台。成为开启数字化转型的重要引擎。</p><p data-pid=\"7WRXnE7R\">合理并且有效地运用低代码开发平台，不仅可以让我们工作高效地运行，还能最大程度保证团队目标的达成。我推荐使用<b><a href=\"https://link.zhihu.com/?target=https%3A//www.informat.cn/%3Ftag%3Dfromzh20210624\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">织信Informat</a></b>，它内置了100+的应用模板，覆盖OA、ERP、CRM、绩效、人事、企业服务、个人及组织等多个应用场景。拥有在线搭建功能，点击一键安装，即可免费试用。现注册还可以享<b>终身免费使用</b>权益。是帮助企业开启数字化转型的重要引擎。</p><p data-pid=\"34aoSOXH\"><b>点击“<a href=\"https://link.zhihu.com/?target=https%3A//www.informat.cn/%3Ftag%3Dfromzh20210624\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">织信</a>”享免费权益。</b></p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-b31c03f9d48748dc38b4654a84197ab9_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"936\" data-rawheight=\"513\" data-original-token=\"v2-3de049ea377a5e41a5d06dacbf592f65\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-bbd86ba30e75265e1727f2e4218e0afc_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"936\" data-original=\"https://picx.zhimg.com/v2-b31c03f9d48748dc38b4654a84197ab9_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;936&#39; height=&#39;513&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"936\" data-rawheight=\"513\" data-original-token=\"v2-3de049ea377a5e41a5d06dacbf592f65\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-bbd86ba30e75265e1727f2e4218e0afc_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"936\" data-original=\"https://picx.zhimg.com/v2-b31c03f9d48748dc38b4654a84197ab9_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-b31c03f9d48748dc38b4654a84197ab9_720w.jpg?source=1def8aca\"/></figure><p></p>",
+      "excerpt": "随着企业个性化、多样化的需求不断增多，传统软件开发的速度已然有些跟不上了。在这种背景和需求的驱动下，低代码和零代码开始进入人们的视野。 低代码、零代码究竟能干什么？二者有什么区别？哪个更适合公司发展？ … 这些问题，恐怕连技术开发者们都很难说清。 下面，本人就给大家好好讲讲这二者之间究竟有合不同？希望对大家有所帮助！ 一、概念上的区别1、低代码，是一种可以让开发者依托平台快速搭建企业信息化的系统，在…",
+      "voteupCount": 3,
+      "commentCount": 0,
+      "createdTime": 1624542370,
+      "updatedTime": 1624542370,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-fec15144fbb2705a6403b1f32da38bc6_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-fec15144fbb2705a6403b1f32da38bc6_r.jpg?source=1def8aca",
+            "width": 890,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-b31c03f9d48748dc38b4654a84197ab9_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-b31c03f9d48748dc38b4654a84197ab9_r.jpg?source=1def8aca",
+            "width": 936,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//www.informat.cn/%3Ftag%3Dfromzh20210624",
+            "canonicalUrl": "https://www.informat.cn/?tag=fromzh20210624",
+            "domain": "www.informat.cn",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://www.informat.cn/?tag=fromzh20210624",
+              "clickable": true
+            }
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//www.informat.cn/%3Ftag%3Dfromzh20210624",
+            "canonicalUrl": "https://www.informat.cn/?tag=fromzh20210624",
+            "domain": "www.informat.cn",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://www.informat.cn/?tag=fromzh20210624",
+              "clickable": true
+            }
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1960753087",
+      "author": "百数",
+      "url": "https://www.zhihu.com/question/462973596/answer/1960753087",
+      "content": "<p data-pid=\"8Z6NRkf_\"><b>零代码和<span class=\"nolink\">低代码平台</span>这两个平台那个对公司后期的发展好？</b></p><p data-pid=\"dzOe4_Pn\">信息技术的发展如火如荼，低代码，零代码开始进入人们视野。随着越来越多的企业意识到它们重要性，它们的身价也逐渐在“水涨船高”。那么，究竟哪种平台对于企业后期的发展更好？</p><p data-pid=\"5mLL9G2Z\"><b>要想回答这个问题，首先得找一下这二者的不同。</b></p><p data-pid=\"g1Ba0U06\">1、概念</p><p data-pid=\"T2Z0Izcc\">低代码平台是可以通过少量代码就可以快速生成应用程序的开发平台，是一种通过可视化进行应用程序开发的方法。其最大的优势是用拖拽组件和模型驱动的逻辑来代替传统开发语言来创建网页和移动应用程序。据相关数据显示，使用低代码的开发效率是传统方式的3～8倍。</p><p data-pid=\"pd8vpliv\">零代码平台又称无代码是一种完全不需要任何代码编程的开发方式，它主要是围绕企业数据和业务管理需求，通过可视化方式设计数据结构，用户交互形式、设置访问权限和定义工作流程的平台。</p><p data-pid=\"rsjeD7Rr\">2、面向的人群不同</p><p data-pid=\"HkzgypfD\">低代码比零代码更灵活，甚至有些软件提供了开源版本，可以让用户更自由的进行定制化。同时因为低代码需要，对人群的技术门槛还是学习能力都有一点点要求。而零代码开发平台更适合老板、产品经理、销售、运营等非技术人员。</p><p data-pid=\"p-JweyR1\">3、使用场景不同</p><p data-pid=\"pn0BgP6q\">无代码开发平台非常适合构建针对特定场景的小型应用程序，如问卷调查等。</p><p data-pid=\"_CHfVKpm\">低代码开发平台不仅适用于特定的小型应用程序，对于大型企业的复杂的应用程序都是可以轻松驾驭的。</p><p data-pid=\"WhNRiiYC\">4、可扩展性不同</p><p data-pid=\"FrfoEOPA\">无代码开发平台无法直接对系统自主开发，必须借助第三方系统才能进行二次开发，企业想要对系统进行改动非常麻烦。</p><p data-pid=\"Hxr9Ha3c\">低代码开发平台除了可以方便快捷的接入第三方API外，还可以使用学习成本极低的Python脚本语言对系统进行功能的扩展，扩展性非常灵活与自由；给企业带来便捷的同时又不会给企业带来麻烦与负担。</p><p data-pid=\"doKAiLJm\"><b>哪个更适合企业后续发展呢？</b></p><p data-pid=\"Uly3ebEF\">首先得承认无论是低代码开发平台还是零代码开发平台都对企业发展有实质性帮助，两者的区别主要是侧重点不同。</p><p data-pid=\"7YEl87K2\">零代码开发平台轻便简单，对不是技术人员非常友好，能轻松上手。主要是为企业提供了一种全新的开发手段和体系，大大降低了开发门槛，还为企业节省了开发成本。</p><p data-pid=\"-sLNEmo-\">低代码开发平台拥有零代码开发平台所有功能，还对专业开发人员非常友好，可以胜任一些比较复杂、大型的系统应用，从而为企业减少成功，增加效益。</p><p data-pid=\"FfZYNBM3\"><b>低代码开发or零代码开发靠谱吗？</b></p><p data-pid=\"ue9B8mu8\">低代码或者零代码开发听上去很简单，实质也是在传统代码开发上做了优化，完全是可用于开发从IT流程到业务软件的所有内容。但是由于不同厂商生产的工具细节不同，各个低代码开发平台给企业带来的好处也有一定的侧重点。</p><p data-pid=\"rlGxbWJx\"><b>就拿我司产品——<span class=\"nolink\">百数低代码开发平台</span>来说，它能给企业带来的好处有：</b></p><a href=\"https://www.zhihu.com/zvideo/1348266484620288000\" data-draft-node=\"block\" data-draft-type=\"link-card\"></a><ul><li data-pid=\"shWWqIIj\">降低开发周期</li></ul><p data-pid=\"U6ksueNe\">以往很多企业在面临应用需求时，通常是采购新软件或者内部开发，但是这两种模式都比较花费时间与精力去维护。而百数低代码开发平台则可以改变这种状态，即需要什么系统都可以在平台进行自主开发，有的系统甚至只需几分钟就能完成搭建，效率提高了80%以上，降低了开发周期。</p><ul><li data-pid=\"P65i1gpP\">提高系统敏捷性</li></ul><p data-pid=\"OMld5Zym\">低代码开发平台“可塑性”非常强，再加上百数低代码开发平台有一套完善的二次开发体系，支持用Python脚本+功能模块等进行二次开发。如果企业在发展过程中遇到系统需要扩展的话，百数对此非常好解决。且这套开发体系不需要纯依靠专业开发人员进行，只要你稍微掌握相关知识就可以操作。</p><ul><li data-pid=\"gYSlRrkc\">降低开发成本</li></ul><p data-pid=\"o3i2Hgym\">在传统环境之中，只有专业开发人员才有能力参与实际的应用开发，这整个过程不仅是时间成本高，需要花费的经济成本也是不一般。而采用百数低代码开发平台则每个人都能通过可视化及拖拉拽功等功能来构建自己需要的应用程序，做自己系统的“开发者”，从而降低了开发人员的经济投入，提高了企业效益。</p><ul><li data-pid=\"3HtEGF_K\">提高生产效率</li></ul><p data-pid=\"tCcRMgi_\">通过简化传统系统开发的过程与时间，开发者们可以在更短的时间内完成开发开发工作，将更多的时间投入到其他工作中。另外，百数低代码开发平台还有监视和警报功能，这些功能可以在流程有故障风险时通知人员。或者，如果服务器已满负荷运行，则可以重新路由流程以防止瓶颈和延迟，或者执行补救工作流以维护SLA并最大程度地减少IT花费在扑救火灾上的时间。</p><ul><li data-pid=\"OIcMkjUa\">支持私有化部署，安全更放心</li></ul><p data-pid=\"8YeaqR5g\">除了能做以上几点的优势，百数最大的优势是支持私有化部署——为企业打造独立的空间，空间内置独立的服务器,ip,存储，独立的域名、企业自定义Log、对接企业微信公众号。因此百数低代码开发平台是部署在阿里云服务器平台，采用 HTTPS 加密通讯，三层备份保障，拥有绝对安全保密的云办公环境，从此不用担心信息会被泄露等风险。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-8c491d789752635cfa50adfedaf605eb_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1431\" data-rawheight=\"564\" data-original-token=\"v2-8c491d789752635cfa50adfedaf605eb\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-9b9a2aaea2ed4e489309a7b94103087d_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1431\" data-original=\"https://picx.zhimg.com/v2-8c491d789752635cfa50adfedaf605eb_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1431&#39; height=&#39;564&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1431\" data-rawheight=\"564\" data-original-token=\"v2-8c491d789752635cfa50adfedaf605eb\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-9b9a2aaea2ed4e489309a7b94103087d_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1431\" data-original=\"https://picx.zhimg.com/v2-8c491d789752635cfa50adfedaf605eb_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-8c491d789752635cfa50adfedaf605eb_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"579gVJ0t\"><b>点击“<a href=\"https://link.zhihu.com/?target=https%3A//pub.baishuyun.com/user/spread/130267%3Fkey%3D%25E4%25BD%258E%25E4%25BB%25A3%25E7%25A0%2581%25E5%25B9%25B3%25E5%258F%25B0%26title%3D%25E9%259B%25B6%25E4%25BB%25A3%25E7%25A0%2581%25E5%2592%258C%25E4%25BD%258E%25E4%25BB%25A3%25E7%25A0%2581%25E5%25B9%25B3%25E5%258F%25B0%25E8%25BF%2599%25E4%25B8%25A4%25E4%25B8%25AA%25E5%25B9%25B3%25E5%258F%25B0%25E9%2582%25A3%25E4%25B8%25AA%25E5%25AF%25B9%25E5%2585%25AC%25E5%258F%25B8%25E5%2590%258E%25E6%259C%259F%25E7%259A%2584%25E5%258F%2591%25E5%25B1%2595%25E5%25A5%25BD%25EF%25BC%259F%26url%3Dhttps%3A//www.zhihu.com/question/462973596/answer/1960753087\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">百数</a>”即可体验，感谢观看！</b></p>",
+      "excerpt": "零代码和低代码平台这两个平台那个对公司后期的发展好？信息技术的发展如火如荼，低代码，零代码开始进入人们视野。随着越来越多的企业意识到它们重要性，它们的身价也逐渐在“水涨船高”。那么，究竟哪种平台对于企业后期的发展更好？ 要想回答这个问题，首先得找一下这二者的不同。1、概念 低代码平台是可以通过少量代码就可以快速生成应用程序的开发平台，是一种通过可视化进行应用程序开发的方法。其最大的优势是用拖拽组件…",
+      "voteupCount": 2,
+      "commentCount": 0,
+      "createdTime": 1624612155,
+      "updatedTime": 1653555752,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-8c491d789752635cfa50adfedaf605eb_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-8c491d789752635cfa50adfedaf605eb_r.jpg?source=1def8aca",
+            "width": 1431,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://www.zhihu.com/zvideo/1348266484620288000",
+            "canonicalUrl": "https://www.zhihu.com/zvideo/1348266484620288000",
+            "domain": "www.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified"
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//pub.baishuyun.com/user/spread/130267%3Fkey%3D%25E4%25BD%258E%25E4%25BB%25A3%25E7%25A0%2581%25E5%25B9%25B3%25E5%258F%25B0%26title%3D%25E9%259B%25B6%25E4%25BB%25A3%25E7%25A0%2581%25E5%2592%258C%25E4%25BD%258E%25E4%25BB%25A3%25E7%25A0%2581%25E5%25B9%25B3%25E5%258F%25B0%25E8%25BF%2599%25E4%25B8%25A4%25E4%25B8%25AA%25E5%25B9%25B3%25E5%258F%25B0%25E9%2582%25A3%25E4%25B8%25AA%25E5%25AF%25B9%25E5%2585%25AC%25E5%258F%25B8%25E5%2590%258E%25E6%259C%259F%25E7%259A%2584%25E5%258F%2591%25E5%25B1%2595%25E5%25A5%25BD%25EF%25BC%259F%26url%3Dhttps%3A//www.zhihu.com/question/462973596/answer/1960753087",
+            "canonicalUrl": "https://pub.baishuyun.com/user/spread/130267?key=%E4%BD%8E%E4%BB%A3%E7%A0%81%E5%B9%B3%E5%8F%B0&title=%E9%9B%B6%E4%BB%A3%E7%A0%81%E5%92%8C%E4%BD%8E%E4%BB%A3%E7%A0%81%E5%B9%B3%E5%8F%B0%E8%BF%99%E4%B8%A4%E4%B8%AA%E5%B9%B3%E5%8F%B0%E9%82%A3%E4%B8%AA%E5%AF%B9%E5%85%AC%E5%8F%B8%E5%90%8E%E6%9C%9F%E7%9A%84%E5%8F%91%E5%B1%95%E5%A5%BD%EF%BC%9F&url=https://www.zhihu.com/question/462973596/answer/1960753087",
+            "domain": "pub.baishuyun.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://pub.baishuyun.com/user/spread/130267?key=%E4%BD%8E%E4%BB%A3%E7%A0%81%E5%B9%B3%E5%8F%B0&title=%E9%9B%B6%E4%BB%A3%E7%A0%81%E5%92%8C%E4%BD%8E%E4%BB%A3%E7%A0%81%E5%B9%B3%E5%8F%B0%E8%BF%99%E4%B8%A4%E4%B8%AA%E5%B9%B3%E5%8F%B0%E9%82%A3%E4%B8%AA%E5%AF%B9%E5%85%AC%E5%8F%B8%E5%90%8E%E6%9C%9F%E7%9A%84%E5%8F%91%E5%B1%95%E5%A5%BD%EF%BC%9F&url=https://www.zhihu.com/question/462973596/answer/1960753087",
+              "clickable": true
+            }
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2300277407",
+      "author": "葡萄城",
+      "url": "https://www.zhihu.com/question/462973596/answer/2300277407",
+      "content": "<p data-pid=\"fzLb3MTQ\">在同客户和业界人士探讨“更高效率的软件开发方式”时，我发现大多数人并不清楚“<a href=\"https://link.zhihu.com/?target=https%3A//www.grapecity.com.cn/lowcode\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">低代码</a>”和“无代码”之间的区别。低代码和无代码开发平台都提供了无需编写代码即可开发软件应用程序的能力，而且厂商都在突出“高<a href=\"https://www.zhihu.com/search?q=%E7%94%9F%E4%BA%A7%E7%8E%87&amp;search_source=Entity&amp;hybrid_search_source=Entity&amp;hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A2273852549%7D\" class=\"internal\" target=\"_blank\">生产率</a>”这一卖点来争夺市场，甚至有无代码厂商宣称“无代码”是“低代码”的进化版。事实真的如此吗？<br/>相信当您充分了解这两种技术后，就会发现无代码和<a href=\"https://link.zhihu.com/?target=https%3A//www.grapecity.com.cn/lowcode\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">低代码</a>对于使用者来说是完全不同的技术方案。无代码专注于简单场景，而低代码则凭借扩展性和集成能力的优势，能够承载企业级核心业务。我认为弄清楚这个两个概念，并理解两个概念中每个概念的真正含义及应用场景，对寻求提升软件开发效率的软件公司或企业IT部门来说至关重要。<br/>看起来很相似<br/>就像我在文章开头里提到的，低代码和无代码开发平台都提供了无需编写代码即可开发软件应用程序的方法，这点让两者看起来很相似。<br/></p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-7d2547d13a71c58e180062944a60cec8_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"875\" data-rawheight=\"427\" data-original-token=\"v2-7d2547d13a71c58e180062944a60cec8\" class=\"origin_image zh-lightbox-thumb\" width=\"875\" data-original=\"https://picx.zhimg.com/v2-7d2547d13a71c58e180062944a60cec8_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;875&#39; height=&#39;427&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"875\" data-rawheight=\"427\" data-original-token=\"v2-7d2547d13a71c58e180062944a60cec8\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"875\" data-original=\"https://picx.zhimg.com/v2-7d2547d13a71c58e180062944a60cec8_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-7d2547d13a71c58e180062944a60cec8_720w.jpg?source=1def8aca\"/><figcaption>（无代码开发的可视化界面，图片来自网络）</figcaption></figure><p data-pid=\"EiOsgjVQ\">面对绝大多数应用场景，两者都不需要开发人员掌握传统编程语言的任何知识，而是直接提供了可视化的开发方法。开发者从屏幕上选择所需的功能组件，并将其拖拽到可视化流程里的方式完成应用开发。这种可视化方法大幅拉低了软件开发的技术门槛，让普通IT人员，甚至业务人员都可以成为开发者，直接开发并交付应用程序。这就是他们之间的相同之处。<br/></p><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-0747375a1ea1fc260fc804fbbb9cfa44_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"1315\" data-rawheight=\"812\" data-original-token=\"v2-0747375a1ea1fc260fc804fbbb9cfa44\" class=\"origin_image zh-lightbox-thumb\" width=\"1315\" data-original=\"https://pic1.zhimg.com/v2-0747375a1ea1fc260fc804fbbb9cfa44_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1315&#39; height=&#39;812&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"1315\" data-rawheight=\"812\" data-original-token=\"v2-0747375a1ea1fc260fc804fbbb9cfa44\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1315\" data-original=\"https://pic1.zhimg.com/v2-0747375a1ea1fc260fc804fbbb9cfa44_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-0747375a1ea1fc260fc804fbbb9cfa44_720w.jpg?source=1def8aca\"/><figcaption>（低代码开发的可视化界面，来自活字格官网）</figcaption></figure><p data-pid=\"mbHEKaxE\">但实际上有很大不同<br/>虽然低代码和无代码都是在可视化的开发应用系统，但是在系统规模和应用行业上有根本的区别。<br/>对于只希望解决简单功能的业务的用户而言，无代码应用程序开发平台可能非常有用。无代码平台是简单的工具，非常适合构建针对特定场景的小型应用程序，如<a href=\"https://www.zhihu.com/search?q=%E9%97%AE%E5%8D%B7%E8%B0%83%E6%9F%A5&amp;search_source=Entity&amp;hybrid_search_source=Entity&amp;hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A2273852549%7D\" class=\"internal\" target=\"_blank\">问卷调查</a>等。如果这能够满足您的需求的话，那也不错。<br/></p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-617b416938fd943a579f7ad285113004_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"1313\" data-rawheight=\"625\" data-original-token=\"v2-617b416938fd943a579f7ad285113004\" class=\"origin_image zh-lightbox-thumb\" width=\"1313\" data-original=\"https://picx.zhimg.com/v2-617b416938fd943a579f7ad285113004_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1313&#39; height=&#39;625&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"1313\" data-rawheight=\"625\" data-original-token=\"v2-617b416938fd943a579f7ad285113004\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1313\" data-original=\"https://picx.zhimg.com/v2-617b416938fd943a579f7ad285113004_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-617b416938fd943a579f7ad285113004_720w.jpg?source=1def8aca\"/><figcaption>（使用无代码工具开发调查问卷应用，图片来自网络）</figcaption></figure><p data-pid=\"ZUQP5Yf4\">但是大多数无代码工具的问题在于，您在其上开发的应用程序经常无法很好地扩展，并且集成能力非常有限。那是因为相比于低代码，无代码平台为了降低复杂度，没有考虑更广泛的<a href=\"https://www.zhihu.com/search?q=%E4%BC%81%E4%B8%9A%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84&amp;search_source=Entity&amp;hybrid_search_source=Entity&amp;hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A2273852549%7D\" class=\"internal\" target=\"_blank\">企业体系结构</a>，并且大多数无代码平台上可使用的集成工具往往很有限。因为无代码的这些局限，在您将应用要扩展到企业级，甚至承担企业核心业务场景时，很可能会遭遇下列挑战：<br/></p><ul><li data-pid=\"o3_V7yO_\">系统架构：由于开发者对企业应用的体系结构缺乏经验，随意追加应用程序会让企业IT体系结构的风险增加。更麻烦的是，大多数无代码平台都需要部署到公共云，不能灵活地部署到私有云或本地，这对于很多企业场景，尤其是中大型企业的核心业务场景来说，是很难被接受的。</li><li data-pid=\"lh5l6yPz\">可扩展性：因为无代码平台倾向于运营效率，所以它们不具备关注用户体验的能力，并且无法连接到已有系统，还有不支持同第三方系统或本地系统集成的问题。</li><li data-pid=\"iyHN1nQi\">统筹：由于使用无代码工具构建的应用程序具有独立性。如何将该应用生成的数据与其他系统的数据汇总到一起，就成为了一个普遍的挑战。这种现象被称为“数据孤岛”，是企业信息化中最难解决的顽症之一。</li></ul><p data-pid=\"L1cT35GH\">相比之下，低代码平台则可以很好帮你解决这些问题。低代码平台往往可以同主流技术保持同步，它们提供灵活的体系结构，支持外部数据库，提供开放的API扩展平台等技术能力。正是这些特性，让低代码完全具备支撑企业核心业务的能力，同时还能与企业其他系统（如ERP、MES等）深度集成。此外，以活字格为代表的部分低代码开发平台的部署方式更加灵活，同时云端和本地部署，特别适合国内企业对于“系统可控性”的要求。<br/></p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-c8f993f05701729d80ba1cf64c9052a0_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"1436\" data-rawheight=\"846\" data-original-token=\"v2-c8f993f05701729d80ba1cf64c9052a0\" class=\"origin_image zh-lightbox-thumb\" width=\"1436\" data-original=\"https://pic1.zhimg.com/v2-c8f993f05701729d80ba1cf64c9052a0_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1436&#39; height=&#39;846&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"1436\" data-rawheight=\"846\" data-original-token=\"v2-c8f993f05701729d80ba1cf64c9052a0\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1436\" data-original=\"https://pic1.zhimg.com/v2-c8f993f05701729d80ba1cf64c9052a0_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-c8f993f05701729d80ba1cf64c9052a0_720w.jpg?source=1def8aca\"/><figcaption>（低代码应用与用友U8+深度集成，图片来自活字格官网）</figcaption></figure><p data-pid=\"47-Tzl-P\">确定哪种工具适合您的业务<br/>无须讳言，无论您决定采用哪种平台企业都要面临挑战。无代码开发平台被业界认为过于简单以致无法支持复杂的应用场景；对于非专业开发人员而言低代码开发平台则过于复杂。<br/>如果您选择了“无代码”，您的业务人员确实具备了开发应用的能力，但功能需求超出了业务开发人员的能力，或者扩展性、部署方式等非功能需求无法满足企业的要求，您要怎么办？多数情况下，企业决策者不能接受你只满足了他99%的需求，他们需要你100%的完成这个项目，此时您恐怕只能再找一个外包公司从头再来了。<br/>如果您选择了“低代码”，您是否有足够的IT人员（非专业软件开发人员）来承担应用开发工作？如果没有的话，您恐怕只能依赖现有的专业开发者。那么评估传统开发方式与低代码开发方式的成本差异，再对比学习低代码开发平台的成本，才能做出一个客观的决策。虽然绝大多数场景下，选择低代码都会大幅降低整体成本。<br/></p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-551ca480be43be1edb79f97621424525_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"800\" data-rawheight=\"432\" data-original-token=\"v2-551ca480be43be1edb79f97621424525\" class=\"origin_image zh-lightbox-thumb\" width=\"800\" data-original=\"https://picx.zhimg.com/v2-551ca480be43be1edb79f97621424525_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;800&#39; height=&#39;432&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"800\" data-rawheight=\"432\" data-original-token=\"v2-551ca480be43be1edb79f97621424525\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"800\" data-original=\"https://picx.zhimg.com/v2-551ca480be43be1edb79f97621424525_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-551ca480be43be1edb79f97621424525_720w.jpg?source=1def8aca\"/><figcaption>（使用低代码开发的MES系统，图片来自活字格官网）</figcaption></figure><p data-pid=\"w2phTRW2\">总结<br/>无代码和低代码都是能够帮助开发者快速构建企业应用的先进工具。但“无代码”并不是“低代码”的进化版。受限于扩展性和系统集成能力，无代码专注于简单场景，而低代码则可以承载企业核心业务需求。当您需要在无代码和低代码中做出选择时，除了应用场景外，还需要充分考虑各平台的部署方式、协作开发能力等差异，找出适合自己团队与客户需求的方案。<br/>了解更多关于活字格低代码开发平台信息，请点击下方链接访问活字格官网。<br/></p><a href=\"https://link.zhihu.com/?target=https%3A//www.grapecity.com.cn/solutions/huozige%3Fzhihu%3D2300277407\" data-draft-node=\"block\" data-draft-type=\"link-card\" data-image=\"https://pic2.zhimg.com/v2-09c33119209f2476d50a17202a500307_ipico.jpg\" data-image-width=\"657\" data-image-height=\"756\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">活字格低代码开发平台 - 活字格企业级低代码开发平台|通过低代码快速开发企业级Web应用 - 葡萄城官网​www.grapecity.com.cn/solutions/huozige?zhihu=442000328</a><p></p>",
+      "excerpt": "在同客户和业界人士探讨“更高效率的软件开发方式”时，我发现大多数人并不清楚“ 低代码 ”和“无代码”之间的区别。低代码和无代码开发平台都提供了无需编写代码即可开发软件应用程序的能力，而且厂商都在突出“高生产率 ”这一卖点来争夺市场，甚至有无代码厂商宣称“无代码”是“低代码”的进化版。事实真的如此吗？ 相信当您充分了解这两种技术后，就会发现无代码和低代码 对于使用者来说是完全不同的技术方案。无代码专注于简…",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1641459479,
+      "updatedTime": 1641522057,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-7d2547d13a71c58e180062944a60cec8_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-7d2547d13a71c58e180062944a60cec8_r.jpg?source=1def8aca",
+            "width": 875,
+            "caption": "（无代码开发的可视化界面，图片来自网络）",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-0747375a1ea1fc260fc804fbbb9cfa44_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-0747375a1ea1fc260fc804fbbb9cfa44_r.jpg?source=1def8aca",
+            "width": 1315,
+            "caption": "（低代码开发的可视化界面，来自活字格官网）",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-617b416938fd943a579f7ad285113004_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-617b416938fd943a579f7ad285113004_r.jpg?source=1def8aca",
+            "width": 1313,
+            "caption": "（使用无代码工具开发调查问卷应用，图片来自网络）",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-c8f993f05701729d80ba1cf64c9052a0_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-c8f993f05701729d80ba1cf64c9052a0_r.jpg?source=1def8aca",
+            "width": 1436,
+            "caption": "（低代码应用与用友U8+深度集成，图片来自活字格官网）",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-551ca480be43be1edb79f97621424525_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-551ca480be43be1edb79f97621424525_r.jpg?source=1def8aca",
+            "width": 800,
+            "caption": "（使用低代码开发的MES系统，图片来自活字格官网）",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//www.grapecity.com.cn/lowcode",
+            "canonicalUrl": "https://www.grapecity.com.cn/lowcode",
+            "domain": "www.grapecity.com.cn",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://www.grapecity.com.cn/lowcode",
+              "clickable": true
+            }
+          },
+          {
+            "originalUrl": "https://www.zhihu.com/search?q=%E7%94%9F%E4%BA%A7%E7%8E%87&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A2273852549%7D",
+            "canonicalUrl": "https://www.zhihu.com/search?q=%E7%94%9F%E4%BA%A7%E7%8E%87&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A2273852549%7D",
+            "domain": "www.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified"
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//www.grapecity.com.cn/lowcode",
+            "canonicalUrl": "https://www.grapecity.com.cn/lowcode",
+            "domain": "www.grapecity.com.cn",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://www.grapecity.com.cn/lowcode",
+              "clickable": true
+            }
+          },
+          {
+            "originalUrl": "https://www.zhihu.com/search?q=%E9%97%AE%E5%8D%B7%E8%B0%83%E6%9F%A5&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A2273852549%7D",
+            "canonicalUrl": "https://www.zhihu.com/search?q=%E9%97%AE%E5%8D%B7%E8%B0%83%E6%9F%A5&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A2273852549%7D",
+            "domain": "www.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified"
+          },
+          {
+            "originalUrl": "https://www.zhihu.com/search?q=%E4%BC%81%E4%B8%9A%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A2273852549%7D",
+            "canonicalUrl": "https://www.zhihu.com/search?q=%E4%BC%81%E4%B8%9A%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A2273852549%7D",
+            "domain": "www.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified"
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//www.grapecity.com.cn/solutions/huozige%3Fzhihu%3D2300277407",
+            "canonicalUrl": "https://www.grapecity.com.cn/solutions/huozige?zhihu=2300277407",
+            "domain": "www.grapecity.com.cn",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://www.grapecity.com.cn/solutions/huozige?zhihu=2300277407",
+              "clickable": true
+            }
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    }
+  ]
+}

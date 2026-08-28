@@ -1,0 +1,666 @@
+{
+  "schema": "zhihu-research-benchmark/result",
+  "schema_version": "1.0.0-pilot",
+  "generated_at": "2026-08-28T04:52:58.606Z",
+  "dataset_version": "d2-0b79a386e75bc46a",
+  "dataset_version_status": "D2.1",
+  "case_id": "case-hpylori-treatment",
+  "case_meta": {
+    "category": [
+      "G",
+      "A",
+      "F"
+    ],
+    "question_count": 5,
+    "source_count": 216,
+    "verified_source_count": 0,
+    "gold_label_status": "PROVISIONAL",
+    "gold_adjudication_status": "PENDING_SECOND_ADJUDICATION",
+    "scoring_status": "PROVISIONAL_SEMANTIC"
+  },
+  "strategy_id": "B0_POPULARITY_TOP_K",
+  "strategy_config": {
+    "strategy_id": "B0_POPULARITY_TOP_K",
+    "budget_key": "K_SMALL",
+    "K": 10,
+    "tie_break": "source_id_asc",
+    "query_text_source": "case.research_question + question titles",
+    "embedding": null,
+    "mmr_lambda": null,
+    "lane_weights": null,
+    "lane_kinds": null,
+    "novelty_threshold": null,
+    "floor_rule": null,
+    "strategy_class": "FAIR_COMPARISON",
+    "excluded_from_fair_comparison": false,
+    "experiment_preregistration": "pre-registration/EXPERIMENT_PRE_REGISTRATION.json (version 1.0.0)",
+    "result_status": "D2.1_EVALUATOR + REAL_DENSE_RACE",
+    "result_status_note": "real dense embedding (bge-small-zh-v1.5 fp32); D2.1 corrected evaluator; preregistration frozen before run"
+  },
+  "candidate_pool_id": "pool-52215270+533032588+616791818+3376603186+525603218",
+  "budget": {
+    "key": "K_SMALL",
+    "K": 10
+  },
+  "selected_source_ids": [
+    "52215270:1829396577",
+    "52215270:1909462572",
+    "52215270:2326510132",
+    "52215270:2014865559",
+    "52215270:975101683",
+    "52215270:1751794385",
+    "52215270:1308415055",
+    "616791818:3164788252",
+    "52215270:1876563261",
+    "52215270:1546721934"
+  ],
+  "provenance": [
+    {
+      "source_id": "52215270:1829396577",
+      "question_id": "52215270",
+      "author_key": "孙小白",
+      "voteupCount": 358,
+      "createdTime": 1618127773
+    },
+    {
+      "source_id": "52215270:1909462572",
+      "question_id": "52215270",
+      "author_key": "逍遥散人",
+      "voteupCount": 241,
+      "createdTime": 1622127555
+    },
+    {
+      "source_id": "52215270:2326510132",
+      "question_id": "52215270",
+      "author_key": "四川大学华西医院",
+      "voteupCount": 191,
+      "createdTime": 1643244386
+    },
+    {
+      "source_id": "52215270:2014865559",
+      "question_id": "52215270",
+      "author_key": "小乖谈人生",
+      "voteupCount": 115,
+      "createdTime": 1627011568
+    },
+    {
+      "source_id": "52215270:975101683",
+      "question_id": "52215270",
+      "author_key": "魏玮",
+      "voteupCount": 110,
+      "createdTime": 1579089057
+    },
+    {
+      "source_id": "52215270:1751794385",
+      "question_id": "52215270",
+      "author_key": "小小菇",
+      "voteupCount": 107,
+      "createdTime": 1614351095
+    },
+    {
+      "source_id": "52215270:1308415055",
+      "question_id": "52215270",
+      "author_key": "匿名用户",
+      "voteupCount": 74,
+      "createdTime": 1593398192
+    },
+    {
+      "source_id": "616791818:3164788252",
+      "question_id": "616791818",
+      "author_key": "追逐玉米地",
+      "voteupCount": 61,
+      "createdTime": 1691995863
+    },
+    {
+      "source_id": "52215270:1876563261",
+      "question_id": "52215270",
+      "author_key": "小太阳nice",
+      "voteupCount": 55,
+      "createdTime": 1620544403
+    },
+    {
+      "source_id": "52215270:1546721934",
+      "question_id": "52215270",
+      "author_key": "小南",
+      "voteupCount": 40,
+      "createdTime": 1603851847
+    }
+  ],
+  "metric_results": {
+    "must_see_recall": {
+      "value": 0.22727272727272727,
+      "hit": 5,
+      "scorable": 22,
+      "scoring_status": "PROVISIONAL"
+    },
+    "aspect_recall": {
+      "value": 0.7142857142857143,
+      "covered_aspects": 5,
+      "scorable_aspects": 7,
+      "increments": "1/7",
+      "scoring_status": "PROVISIONAL"
+    },
+    "aspect_source_recall_diagnostic": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "no_scorable_aspect_gold"
+    },
+    "expert_recall": {
+      "value": 0.1111111111111111,
+      "hit": 3,
+      "scorable": 27,
+      "scoring_status": "PROVISIONAL"
+    },
+    "long_tail_recall": {
+      "value": 0,
+      "hit": 0,
+      "scorable": 31,
+      "scoring_status": "PROVISIONAL"
+    },
+    "fresh_window_membership_recall": {
+      "value": 0,
+      "hit": 0,
+      "scorable": 11,
+      "scoring_status": "MECHANICAL_CONFIRMED"
+    },
+    "fresh_content_recall": {
+      "value": 0,
+      "hit": 0,
+      "scorable": 11,
+      "scoring_status": "PROVISIONAL",
+      "note": "PROVISIONAL until relevance adjudicated; fresh-but-off-topic sources are never FINAL fresh relevant gold"
+    },
+    "historical_authority_retention": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "no_scorable_historical_authority_gold",
+      "scoring_status": "PROVISIONAL"
+    },
+    "evidence_presence_recall": {
+      "value": 0.11764705882352941,
+      "hit": 4,
+      "scorable": 34,
+      "scoring_status": "MECHANICAL_CONFIRMED"
+    },
+    "evidence_rich_recall": {
+      "value": 0.11764705882352941,
+      "hit": 4,
+      "scorable": 34,
+      "scoring_status": "PROVISIONAL",
+      "note": "FINAL only after evidence_quality is human-adjudicated"
+    },
+    "contradiction_claim_recall": {
+      "value": 0,
+      "covered": 0,
+      "scorable": 4,
+      "both_stances_covered": 1,
+      "scoring_status": "PROVISIONAL"
+    },
+    "cross_question_claim_recall": {
+      "value": 0,
+      "covered": 0,
+      "scorable": 4,
+      "per_claim": [
+        {
+          "claim_id": "xq1-treatment-decision-context",
+          "covered": false
+        },
+        {
+          "claim_id": "xq2-gastric-cancer-evidence-chain",
+          "covered": false
+        },
+        {
+          "claim_id": "xq3-side-effect-tradeoff-reality",
+          "covered": false
+        },
+        {
+          "claim_id": "xq4-regimen-evolution-and-resistance",
+          "covered": false
+        }
+      ],
+      "scoring_status": "PROVISIONAL"
+    },
+    "semantic_redundancy": {
+      "value": 0.7639408754009387,
+      "pairs": 45,
+      "scoring_status": "REAL_DENSE_BACKEND"
+    },
+    "semantic_diversity": {
+      "value": 0.2360591245990613
+    },
+    "claim_redundancy": {
+      "value": 0,
+      "sharing": 0,
+      "total": 45,
+      "scoring_status": "PROVISIONAL"
+    },
+    "analysis_coverage": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "no_verified_sources_in_pool",
+      "scoring_status": "MECHANICAL_CONFIRMED"
+    },
+    "normalized_question_diversity": {
+      "value": 0.22499999999999992,
+      "Q": 5,
+      "per_question": {
+        "52215270": 9,
+        "616791818": 1
+      },
+      "scoring_status": "MECHANICAL_CONFIRMED"
+    },
+    "source_concentration": {
+      "selected_question_count": 2,
+      "selected_content_by_question": {
+        "52215270": 9,
+        "616791818": 1
+      },
+      "largest_question_share": 0.9,
+      "selected_author_concentration": 0.10000000000000003,
+      "selected_content_type_distribution": {
+        "answer": 10
+      },
+      "claim_source_diversity": null
+    },
+    "per_question_coverage_preservation": {
+      "per_question": {
+        "52215270": {
+          "value": 0.2926829268292683,
+          "covered_units": 12,
+          "scorable_units": 41
+        },
+        "525603218": {
+          "value": 0,
+          "covered_units": 0,
+          "scorable_units": 9
+        },
+        "533032588": {
+          "value": 0,
+          "covered_units": 0,
+          "scorable_units": 17
+        },
+        "616791818": {
+          "value": 0.14285714285714285,
+          "covered_units": 3,
+          "scorable_units": 21
+        },
+        "3376603186": {
+          "value": 0,
+          "covered_units": 0,
+          "scorable_units": 9
+        }
+      },
+      "scorable_question_count": 5,
+      "unit_basis": "value_units",
+      "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+    },
+    "cross_question_unit_credit_diagnostic": {
+      "units": [
+        {
+          "unit_id": "critical_aspect:case-hpylori-treatment:asp-treatment-decision",
+          "question_ids": [
+            "3376603186",
+            "52215270",
+            "525603218",
+            "533032588",
+            "616791818"
+          ],
+          "covered_question_count": 1,
+          "question_count": 5,
+          "covered_questions": [
+            "52215270"
+          ]
+        },
+        {
+          "unit_id": "critical_aspect:case-hpylori-treatment:asp-gastric-cancer-risk",
+          "question_ids": [
+            "52215270",
+            "525603218",
+            "533032588",
+            "616791818"
+          ],
+          "covered_question_count": 1,
+          "question_count": 4,
+          "covered_questions": [
+            "52215270"
+          ]
+        },
+        {
+          "unit_id": "critical_aspect:case-hpylori-treatment:asp-treatment-regimens",
+          "question_ids": [
+            "3376603186",
+            "52215270",
+            "533032588",
+            "616791818"
+          ],
+          "covered_question_count": 1,
+          "question_count": 4,
+          "covered_questions": [
+            "52215270"
+          ]
+        },
+        {
+          "unit_id": "critical_aspect:case-hpylori-treatment:asp-side-effects-tradeoff",
+          "question_ids": [
+            "3376603186",
+            "52215270",
+            "616791818"
+          ],
+          "covered_question_count": 0,
+          "question_count": 3,
+          "covered_questions": []
+        },
+        {
+          "unit_id": "critical_aspect:case-hpylori-treatment:asp-self-cure-and-alternatives",
+          "question_ids": [
+            "3376603186",
+            "52215270",
+            "533032588",
+            "616791818"
+          ],
+          "covered_question_count": 0,
+          "question_count": 4,
+          "covered_questions": []
+        },
+        {
+          "unit_id": "critical_aspect:case-hpylori-treatment:asp-infection-transmission",
+          "question_ids": [
+            "52215270",
+            "525603218",
+            "616791818"
+          ],
+          "covered_question_count": 1,
+          "question_count": 3,
+          "covered_questions": [
+            "52215270"
+          ]
+        },
+        {
+          "unit_id": "critical_aspect:case-hpylori-treatment:asp-real-world-experience",
+          "question_ids": [
+            "52215270",
+            "616791818"
+          ],
+          "covered_question_count": 2,
+          "question_count": 2,
+          "covered_questions": [
+            "52215270",
+            "616791818"
+          ]
+        },
+        {
+          "unit_id": "contra_side:case-hpylori-treatment:c1-asymptomatic-must-treat:for",
+          "question_ids": [
+            "52215270",
+            "533032588"
+          ],
+          "covered_question_count": 1,
+          "question_count": 2,
+          "covered_questions": [
+            "52215270"
+          ]
+        },
+        {
+          "unit_id": "contra_side:case-hpylori-treatment:c2-hp-gastric-cancer-certainty:for",
+          "question_ids": [
+            "52215270",
+            "525603218",
+            "533032588"
+          ],
+          "covered_question_count": 1,
+          "question_count": 3,
+          "covered_questions": [
+            "52215270"
+          ]
+        },
+        {
+          "unit_id": "contra_side:case-hpylori-treatment:c2-hp-gastric-cancer-certainty:against",
+          "question_ids": [
+            "52215270",
+            "525603218",
+            "533032588"
+          ],
+          "covered_question_count": 0,
+          "question_count": 3,
+          "covered_questions": []
+        },
+        {
+          "unit_id": "contra_side:case-hpylori-treatment:c3-side-effects-vs-benefit:for",
+          "question_ids": [
+            "52215270",
+            "616791818"
+          ],
+          "covered_question_count": 0,
+          "question_count": 2,
+          "covered_questions": []
+        },
+        {
+          "unit_id": "contra_side:case-hpylori-treatment:c3-side-effects-vs-benefit:against",
+          "question_ids": [
+            "52215270",
+            "616791818"
+          ],
+          "covered_question_count": 1,
+          "question_count": 2,
+          "covered_questions": [
+            "616791818"
+          ]
+        },
+        {
+          "unit_id": "contra_side:case-hpylori-treatment:c4-self-cure-reality:for",
+          "question_ids": [
+            "3376603186",
+            "52215270",
+            "533032588",
+            "616791818"
+          ],
+          "covered_question_count": 0,
+          "question_count": 4,
+          "covered_questions": []
+        },
+        {
+          "unit_id": "contra_side:case-hpylori-treatment:c4-self-cure-reality:against",
+          "question_ids": [
+            "3376603186",
+            "52215270"
+          ],
+          "covered_question_count": 0,
+          "question_count": 2,
+          "covered_questions": []
+        }
+      ],
+      "note": "diagnostic; per-question coverage credits a CROSS_QUESTION unit only via its own question sources"
+    },
+    "minority_question_recall_macro": {
+      "value": 0.03571428571428571,
+      "questions": 4,
+      "excluded_largest": true,
+      "basis": "non-largest scorable reference questions by frozen pool size"
+    },
+    "minority_question_recall_min": {
+      "value": 0,
+      "basis": "non-largest scorable reference questions"
+    },
+    "minority_question_recall_micro_diagnostic": {
+      "value": 0.05357142857142857,
+      "note": "diagnostic only"
+    },
+    "independent_source_diversity": {
+      "value": 1,
+      "unique_pairs": 10,
+      "n": 10
+    },
+    "cost": {
+      "relative_compute_ops": 1162.0578283647394,
+      "embedding_calls": 0,
+      "embedding_cache_hits": 0,
+      "pairwise_similarity_calls": 0,
+      "selection_ops": 1162.0578283647394,
+      "wall_clock_ms": 0,
+      "note": "relative_compute_ops = local relative compute (embedding_calls + pairwise_similarity_calls + selection_ops) within same machine; NOT a production cost estimate. Provider/model cost must be measured separately."
+    },
+    "false_stop_rate": {
+      "value": "NOT_RUN",
+      "reason": "no Tier-3 batch fixture in this pilot; would require adaptive stopping harness"
+    }
+  },
+  "gold_stats_by_family": {
+    "relevance": {
+      "label_status": "PROVISIONAL",
+      "total": 189,
+      "scorable": 189,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "must_see": {
+      "label_status": "PROVISIONAL",
+      "total": 22,
+      "scorable": 22,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "aspect_membership": {
+      "label_status": "PROVISIONAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0,
+      "aspect_count": 7
+    },
+    "expertise_topic_match": {
+      "label_status": "PROVISIONAL",
+      "total": 27,
+      "scorable": 27,
+      "unresolved": 162,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "evidence_quality": {
+      "label_status": "PROVISIONAL",
+      "total": 34,
+      "scorable": 34,
+      "unresolved": 155,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "evidence_presence": {
+      "label_status": "MECHANICAL_CONFIRMED",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "freshness": {
+      "label_status": "MECHANICAL_WINDOW_AND_PROVISIONAL_RELEVANCE",
+      "total": 11,
+      "scorable": 11,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "unique_long_tail_contribution": {
+      "label_status": "PROVISIONAL",
+      "total": 31,
+      "scorable": 31,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "contradiction": {
+      "label_status": "PROVISIONAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0,
+      "claim_cluster_count": 4
+    },
+    "required_provenance_groups": {
+      "label_status": "PROVISIONAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0,
+      "claim_group_count": 4
+    },
+    "historical_authority": {
+      "label_status": "UNRESOLVED",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 189,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "_value_units": {
+      "total": 70,
+      "scorable": 70,
+      "by_type": {
+        "must_see": {
+          "total": 22,
+          "scorable": 22
+        },
+        "critical_aspect": {
+          "total": 7,
+          "scorable": 7
+        },
+        "unique_claim": {
+          "total": 31,
+          "scorable": 31
+        },
+        "required_contradiction_side": {
+          "total": 8,
+          "scorable": 8
+        },
+        "expert_source_group": {
+          "total": 1,
+          "scorable": 1
+        },
+        "evidence_source_group": {
+          "total": 1,
+          "scorable": 1
+        }
+      }
+    }
+  },
+  "cost": {
+    "embedding_calls": 0,
+    "embedding_cache_hits": 0,
+    "pairwise_similarity_calls": 0,
+    "selection_ops": 1162.0578283647394,
+    "wall_ms": 0
+  },
+  "stability": {
+    "value": 1,
+    "min": 1,
+    "pairs": 3,
+    "per_pair": [
+      1,
+      1,
+      1
+    ]
+  },
+  "warnings": [],
+  "notes": "P1 gate-01 Phase B race. Fair strategies never read evaluation gold (throwing-gold proxy). Preregistration 1.0.0 frozen before run.",
+  "runtime_identity": {
+    "node": "v22.22.2",
+    "platform": "node",
+    "benchmark_harness_version": "0.1.0-pilot",
+    "embedding_runtime": {
+      "id": "benchmark-local-deterministic-ngram",
+      "version": "1.0.0",
+      "kind": "deterministic-lexical-similarity-proxy",
+      "note": "NOT a neural embedding model. Pilot-only deterministic similarity proxy (char n-gram TF vectors + cosine) so B1/B2 are runnable offline, cheap and stable. Swap point for a real embedding runtime in a later round."
+    },
+    "selectors": {
+      "B0_POPULARITY_TOP_K": "1.0.0",
+      "B1_LEXICAL_NGRAM_PROXY": "1.0.0",
+      "B2_MMR_NGRAM_PROXY": "1.0.0",
+      "B2_ORACLE_LANES": "1.0.0"
+    }
+  }
+}

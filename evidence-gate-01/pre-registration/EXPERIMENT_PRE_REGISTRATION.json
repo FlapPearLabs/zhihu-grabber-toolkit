@@ -1,0 +1,99 @@
+{
+  "schema": "zhihu-research-benchmark/experiment-preregistration",
+  "schema_version": "1.0.0",
+  "experiment_id": "P1_DECISION_GRADE_EVIDENCE_GATE_01",
+  "experiment_version": "1.0.0",
+  "preregistered_at": "2026-08-28T05:10:00+08:00",
+  "preregistration_version_note": "Created BEFORE any Phase B selector result existed. Any parameter change AFTER seeing results requires EXPERIMENT_VERSION_BUMP and a full rerun.",
+  "status": "FROZEN",
+  "evaluation_gold": "never read by fair selectors; oracle lanes isolated as B3_ORACLE_LANES (UPPER_BOUND_DIAGNOSTIC_ONLY)",
+  "strategy_definitions": {
+    "B0_POPULARITY_TOP_K": {
+      "kind": "anchor-baseline",
+      "selection": "top-K by voteupCount desc, tie-break source_id asc",
+      "fair": true,
+      "reads_gold": false
+    },
+    "B1_DENSE_SEMANTIC_TOP_K": {
+      "kind": "real-dense-semantic-topk",
+      "selection": "top-K by dense cosine(queryText, content) desc, tie-break source_id asc",
+      "embedding": "Xenova/bge-small-zh-v1.5 (fp32 ONNX, 512-dim, mean pooling, L2-normalized) via @xenova/transformers; local pinned files; sha256 recorded in embedding identity artifact",
+      "fair": true,
+      "reads_gold": false
+    },
+    "B2_QUESTION_STRATIFIED_SIMPLE": {
+      "kind": "question-stratified-simple",
+      "selection": "1) floor_q = 1 for every question with >=1 candidate (hard per-question representation; derived ONLY from candidate/source-group structure); 2) global dense-relevance walk preferring floor-unfulfilled questions; 3) simple novelty gate: skip candidate if dense cosine to ANY already-selected source > 0.90",
+      "floor_rule": "floor_q = 1 per non-empty question; frozen BEFORE run; no per-q popularity quota, no optimizer",
+      "novelty_threshold": 0.90,
+      "anchor": "dense cosine to queryText (semantic); popularity NOT used inside groups",
+      "fair": true,
+      "reads_gold": false
+    },
+    "B3_DENSE_MMR_MULTI_LANE": {
+      "kind": "dense-mmr-plus-current-mechanical-lanes",
+      "selection": "MMR with lambda=0.5 over dense embeddings + current fair mechanical lanes (mainstream / evidence_PRESENCE / fresh-window / long-tail proxy; expert+contradictory EMPTY because no independent production-plausible signal), lane quotas from equal lane weights, fill-remaining from full pool",
+      "mmr_lambda": 0.5,
+      "lane_weights": { "mainstream": 1, "expert": 1, "evidence_rich": 1, "fresh": 1, "long_tail": 1, "contradictory": 1 },
+      "lane_mechanic": "same as pilot B2_MMR_NGRAM_PROXY (only embedding backend changes to real dense)",
+      "fair": true,
+      "reads_gold": false
+    },
+    "B3_ORACLE_LANES": {
+      "kind": "diagnostic-upper-bound",
+      "selection": "MMR(lambda=0.5) + gold lanes (expert/contradiction from evaluation gold)",
+      "fair": false,
+      "reads_gold": true,
+      "note": "UPPER_BOUND_DIAGNOSTIC_ONLY; EXCLUDED from winner comparison per task §B3"
+    }
+  },
+  "budgets": {
+    "rule": "per-case K frozen from case.json (pilot cases unchanged); new case-hpylori-treatment: K_SMALL=10, K_MEDIUM=15, K_LARGE=24 (pool 216; K_MEDIUM << pool size)",
+    "new_case": { "K_SMALL": 10, "K_MEDIUM": 15, "K_LARGE": 24 }
+  },
+  "dense_model": {
+    "id": "Xenova/bge-small-zh-v1.5",
+    "upstream": "BAAI/bge-small-zh-v1.5",
+    "dims": 512,
+    "quantization": "fp32",
+    "runtime": "@xenova/transformers (transformers.js v2), local pinned files, allowRemoteModels=false",
+    "input_normalization": "harness normalizeText (stripHtml+lowercase+token filter) then model tokenizer; mean pooling; L2 normalize",
+    "cache": "sha256(text)->vector; in-memory + on-disk (dense-embedding/cache/embedding-cache.json)",
+    "no_ngram_fallback": true
+  },
+  "seed": "none (all selectors deterministic; no RNG)",
+  "corpus_versions": {
+    "pilot_8_cases": "frozen D2 corpus (manifest.frozen-d2.json; sha256-verified)",
+    "case-hpylori-treatment": "gate-01 corpus: 5 questions captured 2026-08-28T04:25Z (216 sources; verify-output valid=true; captured pool is the frozen pool)"
+  },
+  "gold_versions": {
+    "pilot_8_cases": "g2-chatgpt-adjudicated (unchanged, byte-identical to pilot D2 pack)",
+    "case-hpylori-treatment": "g2-gate01-provisional-hpylori (PROVISIONAL, proposed by execution agent from full content reading BEFORE any selector result; frozen 2026-08-28T05:00Z)",
+    "second_adjudication": "DECISION_SENSITIVE_SECOND_ADJUDICATION_PACKET (blinded; ~30-50 labels) for ChatGPT; GOLD_DECISION_SENSITIVITY=HIGH if disagreements change winner"
+  },
+  "metric_version": "D2.1 corrected evaluator (order-invariant question provenance scope model; per-question credit semantics; CASE units excluded from per-question denominators)",
+  "primary_decision_metrics": [
+    "must_see_recall",
+    "cross_question_claim_recall (required-provenance coverage)",
+    "per_question_coverage_preservation + minority_question_recall_min",
+    "aspect_recall",
+    "semantic_redundancy + cost.relative_compute_ops"
+  ],
+  "secondary_diagnostics": ["expert_recall", "evidence_rich_recall", "fresh_content_recall", "long_tail_recall", "normalized_question_diversity", "source_concentration"],
+  "pre_registered_decision_rule": {
+    "OUTCOME_A_PROCEED_WITH_SIMPLIFICATION": "B2_QUESTION_STRATIFIED_SIMPLE ~= or > B3_DENSE_MMR_MULTI_LANE on primary coverage metrics AND cost lower AND complexity lower AND stability >= across real cases",
+    "OUTCOME_B_PROCEED_CURRENT_RCE_DIRECTION": "B3_DENSE_MMR_MULTI_LANE stably delivers important coverage improvements simple selectors cannot across multiple real cases",
+    "OUTCOME_C_MORE_SOPHISTICATED_SELECTOR_REQUIRED": "none of B0/B1/B2/B3 solves question/claim/aspect coverage",
+    "OUTCOME_D_RETHINK_RCE_METRIC_MODEL": "benchmark metrics do not stably correspond to human research value after evaluator fix + real dense + cross-domain",
+    "forbidden_this_round": ["xQuAD", "DPP", "Submodular", "trained LTR", "Tier-3 adaptive stopping", "production RCE", "Architecture Spec", "product version"]
+  },
+  "failure_discipline": "INVALID and rebuild if: strategy reads evaluation gold; gold changes after strategy run; dataset changes after preregistration; dense silently falls back to ngram; question provenance depends on source ordering; new case selected after seeing strategy outcome",
+  "outputs": [
+    "results/d21/* (D2.1_CORRECTION_PACKET inputs)",
+    "results/race/* (B0/B1/B2/B3 + oracle, all 9 cases)",
+    "packets/D2.1_CORRECTION_PACKET.md",
+    "packets/D2_TO_D2.1_METRIC_DIFF.md",
+    "packets/DECISION_SENSITIVE_SECOND_ADJUDICATION_PACKET.md + blinded JSON",
+    "packets/P1_DECISION_GRADE_EVIDENCE_GATE_01_REVIEW_PACKET_FOR_CHATGPT.md"
+  ]
+}

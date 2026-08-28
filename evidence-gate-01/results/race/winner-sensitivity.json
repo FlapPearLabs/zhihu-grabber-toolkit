@@ -1,0 +1,67 @@
+{
+  "case_id": "case-hpylori-treatment",
+  "baseline_must_see_ordering": [
+    "B0_POPULARITY_TOP_K",
+    "B3_DENSE_MMR_MULTI_LANE",
+    "B1_DENSE_SEMANTIC_TOP_K",
+    "B2_QUESTION_STRATIFIED_SIMPLE"
+  ],
+  "baseline_values": {
+    "B0_POPULARITY_TOP_K": 0.3181818181818182,
+    "B1_DENSE_SEMANTIC_TOP_K": 0.13636363636363635,
+    "B2_QUESTION_STRATIFIED_SIMPLE": 0.13636363636363635,
+    "B3_DENSE_MMR_MULTI_LANE": 0.18181818181818182
+  },
+  "flip_count": 3,
+  "flips": [
+    {
+      "flipped_label": "52215270:2297169997",
+      "baseline_top": "B0_POPULARITY_TOP_K",
+      "new_top": "B0_POPULARITY_TOP_K",
+      "new_order": [
+        "B0_POPULARITY_TOP_K",
+        "B1_DENSE_SEMANTIC_TOP_K",
+        "B2_QUESTION_STRATIFIED_SIMPLE",
+        "B3_DENSE_MMR_MULTI_LANE"
+      ],
+      "removed_from_gold": true,
+      "top_winner_changed": false,
+      "b3_b2_relative_flip": true,
+      "b0_b2_relative_flip": false
+    },
+    {
+      "flipped_label": "52215270:2326510132",
+      "baseline_top": "B0_POPULARITY_TOP_K",
+      "new_top": "B0_POPULARITY_TOP_K",
+      "new_order": [
+        "B0_POPULARITY_TOP_K",
+        "B2_QUESTION_STRATIFIED_SIMPLE",
+        "B3_DENSE_MMR_MULTI_LANE",
+        "B1_DENSE_SEMANTIC_TOP_K"
+      ],
+      "removed_from_gold": true,
+      "top_winner_changed": false,
+      "b3_b2_relative_flip": true,
+      "b0_b2_relative_flip": false
+    },
+    {
+      "flipped_label": "616791818:105981792797",
+      "baseline_top": "B0_POPULARITY_TOP_K",
+      "new_top": "B0_POPULARITY_TOP_K",
+      "new_order": [
+        "B0_POPULARITY_TOP_K",
+        "B1_DENSE_SEMANTIC_TOP_K",
+        "B2_QUESTION_STRATIFIED_SIMPLE",
+        "B3_DENSE_MMR_MULTI_LANE"
+      ],
+      "removed_from_gold": true,
+      "top_winner_changed": false,
+      "b3_b2_relative_flip": true,
+      "b0_b2_relative_flip": false
+    }
+  ],
+  "top_winner_flips": 0,
+  "b3_b2_relative_flips": 3,
+  "b0_b2_relative_flips": 0,
+  "verdict": "GOLD_DECISION_SENSITIVITY = HIGH (single must-see label flips change architecture ordering, incl. B3-vs-B2 relative position)"
+}

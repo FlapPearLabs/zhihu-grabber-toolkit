@@ -1,0 +1,605 @@
+{
+  "questionId": "466695857",
+  "questionTitle": "低代码开发平台提供源码有什么意义？",
+  "answerCount": 15,
+  "url": "https://www.zhihu.com/question/466695857",
+  "question": {
+    "id": "466695857",
+    "title": "低代码开发平台提供源码有什么意义？",
+    "descriptionHtml": "",
+    "descriptionMarkdown": "",
+    "topics": [
+      {
+        "id": "19552332",
+        "name": "软件开发"
+      },
+      {
+        "id": "21217894",
+        "name": "低代码"
+      }
+    ]
+  },
+  "fetchedAt": "2026-08-13T13:39:51.272Z",
+  "answers": [
+    {
+      "id": "3244238577",
+      "author": "元宇宙开发者",
+      "url": "https://www.zhihu.com/question/466695857/answer/3244238577",
+      "content": "<p data-pid=\"x_kHo3GX\">可逆 vs. 锁定</p><p data-pid=\"Nv6jicPt\">生成代码代表“从技术上可以选择会退”，将来也许有一天需要接着用代码开发，或者说从技术上可以更好和现在所有“代码编程”范式直接使用或对接。</p><p data-pid=\"eFvbTdRQ\">而绝大多数“低代码平台”，包括国外Mendix Outsystems PowerApps等无一例外，都是给客户（企业）安装一个运行时（aPaaS），所有配置出来的应用，都必须在这个“运行时”内部“运行”。就算能导出文件（例如Mendix导出mpk文件），还是只能在Mendix系统环境内运行，这就意味着，这种技术路线是不能“回退”的，例如有一天如果撤离中国，所有的平台投入和积累都将“付诸东流”。</p><p data-pid=\"72B4tIeg\">简单来讲：iVX是一种新的代码“生成”模型，由于直接生成前端（react/vue）、后台（Java/node）和数据库的代码，因此，技术上本身就是“可逆的”，几乎没有什么风险。如果选择“运行时”平台，基本就被“锁定”在这个平台了。</p><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"NlK9x3Fv\">面向开发者 vs. 面向企业服务</p><p data-pid=\"MoQHO0Nu\">虽然很多企业选择使用iVX系统来进行开发和代码生成，但是iVX并不是专门为“企业定制的”，也可以说iVX并不是专门做“企业服务”的。</p><p data-pid=\"gdgOABNQ\">iVX就是面向“开发者”的，同时具备“编程语言”属性和“IDE”属性，也因为这个原因，iVX在云端采用了完全免费的模式，包括应用代码的生成和导出部署都是免费的（只有云计算收费）。</p><p data-pid=\"B5xZfhcF\">而绝大多数的“低代码平台”是做“企业服务”的，在企业内部安装系统，并一直升级和维护这个系统，其收费模式也是面向企业的。</p><p data-pid=\"d7FOdg5M\">说得更直白一些，就是“iVX是一种新技术”，一种新的开发方式；而大多数低代码平台，是一种面向企业的产品和服务。</p><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"LLbVoGn4\">“图灵完备”的编程系统 vs. 与代码结合的业务系统</p><p data-pid=\"zMCCUqB5\">iVX具备了“图灵完备”的逻辑表达能力（事件面板方式，有一本新书讲这个《iVX：通用无代码编程》），因此理论上可以完成任何复杂逻辑的表达，不需要一行代码；再加上比较完善的“分层组件”系统，使得更适合表达各种复杂的业务和数据处理逻辑。</p><p data-pid=\"DNHnSpZJ\">而现在的大多数低代码平台，之所以叫“低代码”，就是由于对于一些代码逻辑还无法表达，必须借助代码手段来表达业务。这里就显得比较尴尬“低代码还是需要代码？--&gt;写代码还是需要程序员？--&gt;低代码平台还是需要程序员写代码？--&gt;程序员还要专门学习低代码平台和其架构再写代码？而且限制还挺多？--&gt;是否真的节省成本？业务人员真的可以直接使用吗？”这些都是问题。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-7c92ff9ad92432d4890c0fbbc87ab78f_720w.jpg?source=1def8aca\" data-rawwidth=\"1436\" data-rawheight=\"831\" data-size=\"normal\" data-original-token=\"v2-a9c56eade4725b0a20864e930fd11f74\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-97a49136056f60029e839fa9479676b5_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1436\" data-original=\"https://picx.zhimg.com/v2-7c92ff9ad92432d4890c0fbbc87ab78f_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1436&#39; height=&#39;831&#39;&gt;&lt;/svg&gt;\" data-rawwidth=\"1436\" data-rawheight=\"831\" data-size=\"normal\" data-original-token=\"v2-a9c56eade4725b0a20864e930fd11f74\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-97a49136056f60029e839fa9479676b5_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1436\" data-original=\"https://picx.zhimg.com/v2-7c92ff9ad92432d4890c0fbbc87ab78f_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-7c92ff9ad92432d4890c0fbbc87ab78f_720w.jpg?source=1def8aca\"/></figure><p class=\"ztext-empty-paragraph\"><br/></p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-5f7e87287837a4042947c58700b53b35_720w.jpg?source=1def8aca\" data-rawwidth=\"1065\" data-rawheight=\"875\" data-size=\"normal\" data-original-token=\"v2-05668ef2487564f646f960257e9c20fa\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-cf77ee9c3264bae7251527c9815b10c7_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1065\" data-original=\"https://picx.zhimg.com/v2-5f7e87287837a4042947c58700b53b35_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1065&#39; height=&#39;875&#39;&gt;&lt;/svg&gt;\" data-rawwidth=\"1065\" data-rawheight=\"875\" data-size=\"normal\" data-original-token=\"v2-05668ef2487564f646f960257e9c20fa\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-cf77ee9c3264bae7251527c9815b10c7_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1065\" data-original=\"https://picx.zhimg.com/v2-5f7e87287837a4042947c58700b53b35_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-5f7e87287837a4042947c58700b53b35_720w.jpg?source=1def8aca\"/></figure><p></p>",
+      "excerpt": "可逆 vs. 锁定 生成代码代表“从技术上可以选择会退”，将来也许有一天需要接着用代码开发，或者说从技术上可以更好和现在所有“代码编程”范式直接使用或对接。 而绝大多数“低代码平台”，包括国外Mendix Outsystems PowerApps等无一例外，都是给客户（企业）安装一个运行时（aPaaS），所有配置出来的应用，都必须在这个“运行时”内部“运行”。就算能导出文件（例如Mendix导出mpk文件），还是只能在Mendix系统环境内运行，这…",
+      "voteupCount": 12,
+      "commentCount": 0,
+      "createdTime": 1696926526,
+      "updatedTime": 1696926526,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-7c92ff9ad92432d4890c0fbbc87ab78f_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-7c92ff9ad92432d4890c0fbbc87ab78f_r.jpg?source=1def8aca",
+            "width": 1436,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-5f7e87287837a4042947c58700b53b35_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-5f7e87287837a4042947c58700b53b35_r.jpg?source=1def8aca",
+            "width": 1065,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2044730598",
+      "author": "悠闲的水",
+      "url": "https://www.zhihu.com/question/466695857/answer/2044730598",
+      "content": "<p data-pid=\"COUwb6mw\">越是靠近需求端，比不确定性越大，变化也越大。</p><p data-pid=\"ueQTtT_1\">这就意味着，在低代码领域，很难出一个平台，一统天下。</p><p data-pid=\"uOc8R8id\">比如伟大的前端，有react,vue,ng三家垄断。低代码领域，如果出现三个类似平台，意味着这三个平台大概提供一些类似office，打卡签到之类的功能。无法涵盖太多业务。</p><p data-pid=\"j8sJOXJf\">但是，低代码确实可以提升效率，节约成本。垂直到某个领域，低代码能给这个领域软件带来极大的扩展性和灵活性。</p><p data-pid=\"8P3nkQ8I\">低代码平台，提供源码的意义，就在于让每一个团队，都有属于自己的低代码平台。</p><p data-pid=\"0I63h6dh\">我闲来无事，做了开源方面探索。<a href=\"https://link.zhihu.com/?target=http%3A//rxdrag.com\" class=\" external\" target=\"_blank\" rel=\"nofollow noreferrer\"><span class=\"invisible\">http://</span><span class=\"visible\">rxdrag.com</span><span class=\"invisible\"></span></a>主页有代码和演示。手机码字不方便，就不挂链接了。</p><p data-pid=\"VY9GaB2Q\">欢迎交流。</p>",
+      "excerpt": "越是靠近需求端，比不确定性越大，变化也越大。 这就意味着，在低代码领域，很难出一个平台，一统天下。 比如伟大的前端，有react,vue,ng三家垄断。低代码领域，如果出现三个类似平台，意味着这三个平台大概提供一些类似office，打卡签到之类的功能。无法涵盖太多业务。 但是，低代码确实可以提升效率，节约成本。垂直到某个领域，低代码能给这个领域软件带来极大的扩展性和灵活性。 低代码平台，提供源码的意义，就在于让每一个…",
+      "voteupCount": 1,
+      "commentCount": 0,
+      "createdTime": 1628317413,
+      "updatedTime": 1628317413,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://link.zhihu.com/?target=http%3A//rxdrag.com",
+            "canonicalUrl": null,
+            "domain": null,
+            "clickable": false,
+            "securityClass": "rejected"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "3466479387",
+      "author": "云程智能体开发平台",
+      "url": "https://www.zhihu.com/question/466695857/answer/3466479387",
+      "content": "<h3>不管什么平台，100%交付源代码才是硬道理。</h3><h3> 门户首页</h3><p data-pid=\"QJYaKO2d\">平台提供了多角色门户功能，支持一人多门户页展示，以及个性化配置，实现“千人千面”门户效果。门户首页无需编码开发，基于门户设计器高保真渲染门户页，提供顶部导航、侧边导航两种导航模式，八种常用色系主题。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-845f8e5f48a73a184fed38b174b8434e_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-845f8e5f48a73a184fed38b174b8434e\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-845f8e5f48a73a184fed38b174b8434e_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;503&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-845f8e5f48a73a184fed38b174b8434e\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-845f8e5f48a73a184fed38b174b8434e_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-845f8e5f48a73a184fed38b174b8434e_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"z6zOc4_D\">· <b>数据集成</b></p><p data-pid=\"yK4oDcmO\">数据集成组件提供多数据源管理、数据集管理、数据服务生成等模块，支持mysql、pg、oracle、达梦等多种数据库注册，支持Table、SQL、HTTP、JSON等多种第三方数据集成，业务数据一键快速生成HTTP服务接口，方便第三方调用集成。</p><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-09ec86d2c546150f393d4bade54aff3c_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-09ec86d2c546150f393d4bade54aff3c\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-09ec86d2c546150f393d4bade54aff3c_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;503&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-09ec86d2c546150f393d4bade54aff3c\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-09ec86d2c546150f393d4bade54aff3c_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-09ec86d2c546150f393d4bade54aff3c_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"X6WOiL7n\">· <b>应用开发</b></p><p data-pid=\"nIucRq3O\">基于模型驱动开发思想，可在线配置化开发微应用，每个微应用包括数据模型、表单模型、页面模型、流程模型、报表模型等，通过拖拉拽方式构建模型，进而完成应用模块的快速开发和交付。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-b41efba77602cca65c82a6d7990f2ca1_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-b41efba77602cca65c82a6d7990f2ca1\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-b41efba77602cca65c82a6d7990f2ca1_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;503&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-b41efba77602cca65c82a6d7990f2ca1\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-b41efba77602cca65c82a6d7990f2ca1_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-b41efba77602cca65c82a6d7990f2ca1_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"RP0kkPwy\">· <b>表单设计器</b></p><p data-pid=\"x2yP5SI5\">云程平台提供了在线可视化化表单设计器，通过拖拉拽配置方式开发业务表单，支持在线预览，所见即所得。提供页面视图的配置化开发功能，支持单表、主子表、树页面、组合页面等多种页面生成，并可配置查询条件、操作按钮、导入导出、扩展事件等，满足项目复杂页面快速开发。</p><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-703e04a652e41fe0e51c0b02f1834139_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-703e04a652e41fe0e51c0b02f1834139\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://pica.zhimg.com/v2-703e04a652e41fe0e51c0b02f1834139_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;503&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-703e04a652e41fe0e51c0b02f1834139\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://pica.zhimg.com/v2-703e04a652e41fe0e51c0b02f1834139_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-703e04a652e41fe0e51c0b02f1834139_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"UZNICRpY\">· <b>打印设计器</b></p><p data-pid=\"sFkAQ4yt\">云程平台提供了一款web打印设计组件，无需安装插件，可拖拉拽在线设计打印模板，提供了文本、图片、表格等常见的打印元素，也支持通过应用中设计好的数据模型快速生成打印模板，支持移动端，PC端浏览器使用， 跟浏览器打印功能相比，可精准控制打印页面效果。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-64cf3505bb58c0cfaff726ec249c96d9_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2047\" data-rawheight=\"941\" data-original-token=\"v2-64cf3505bb58c0cfaff726ec249c96d9\" class=\"origin_image zh-lightbox-thumb\" width=\"2047\" data-original=\"https://pic1.zhimg.com/v2-64cf3505bb58c0cfaff726ec249c96d9_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2047&#39; height=&#39;941&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2047\" data-rawheight=\"941\" data-original-token=\"v2-64cf3505bb58c0cfaff726ec249c96d9\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2047\" data-original=\"https://pic1.zhimg.com/v2-64cf3505bb58c0cfaff726ec249c96d9_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-64cf3505bb58c0cfaff726ec249c96d9_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"6gUeY7Id\">· <b>图表设计器</b></p><p data-pid=\"yfEqdaah\">报表设计器是一款在线可视化报表建模工具，提供了汇总表、明细表、柱形图、条形图、饼图、<a href=\"https://www.zhihu.com/search?q=%E6%8A%98%E7%BA%BF%E5%9B%BE&amp;search_source=Entity&amp;hybrid_search_source=Entity&amp;hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A2370897680%7D\" class=\"internal\" target=\"_blank\">折线图</a>、面积图、雷达图、指标图等多种种常用图表，可以组合及联动使用。设计器采用拖拽操作的风格，简单易用，能够实时展示配置效果，一目了然。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-3b827b4fa441d97a1632ca33d328cf35_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-3b827b4fa441d97a1632ca33d328cf35\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-3b827b4fa441d97a1632ca33d328cf35_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;503&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-3b827b4fa441d97a1632ca33d328cf35\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-3b827b4fa441d97a1632ca33d328cf35_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-3b827b4fa441d97a1632ca33d328cf35_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"QUwNwlSe\">· <b>流程设计器</b></p><p data-pid=\"CKqG00e0\">基于BPMN2.0标准规范，可视化拖拉拽设计业务流程，支持会签、加签、跳转、退回、撤销等多种中国特色流程操作，支持用户、部门、角色、岗位、关系等多维度配置选人方式，支持跟表单和权限无缝集成，配置即用。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-796afa2d52b67430c49beb49abf4bdce_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-796afa2d52b67430c49beb49abf4bdce\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-796afa2d52b67430c49beb49abf4bdce_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;503&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-796afa2d52b67430c49beb49abf4bdce\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-796afa2d52b67430c49beb49abf4bdce_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-796afa2d52b67430c49beb49abf4bdce_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"p5PpqbEq\">· <b>门户设计器</b></p><p data-pid=\"2RodF3eO\">支持门户可视化设计，门户风格任意布局，支持一人多门户页，可按角色控制门户权限，支持个人门户自定义，从而实现多种个性化门户展现要求，达到“千人千面”效果。门户设计器默认提供了我的待办、常用流程、数据面板、轮播图等多个基础组件，以及可直接复用的业务模块组件，并支持自定义扩展组件。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-db492aa4913082e4409de8eb6d1532cb_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-db492aa4913082e4409de8eb6d1532cb\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://pic1.zhimg.com/v2-db492aa4913082e4409de8eb6d1532cb_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;503&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-db492aa4913082e4409de8eb6d1532cb\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://pic1.zhimg.com/v2-db492aa4913082e4409de8eb6d1532cb_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-db492aa4913082e4409de8eb6d1532cb_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"k7g-Hr5u\">· <b>大屏设计器</b></p><p data-pid=\"H6fJizzc\">提供可视化大屏设计器，基于丰富图形组件和多种行业模板，您可在十分钟之内快速搭建起美观、酷炫的大屏展示，实现业务数据可视化。大屏设计器采用拖拽式自由布局，无需编码，全图形化编辑，支持静态数据、Http服务、SQL等多种数据源配置，支持数据实时同步更新。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-6ac77fcf9d6b3b29ebca44496455b2d5_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-6ac77fcf9d6b3b29ebca44496455b2d5\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://pic1.zhimg.com/v2-6ac77fcf9d6b3b29ebca44496455b2d5_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;503&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-6ac77fcf9d6b3b29ebca44496455b2d5\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://pic1.zhimg.com/v2-6ac77fcf9d6b3b29ebca44496455b2d5_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-6ac77fcf9d6b3b29ebca44496455b2d5_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"Xq5LUv56\">· <b>移动端H5/小程序</b></p><p data-pid=\"N6Mnhyx6\">基于uni-app框架开发，一套代码，支持iOS、Android、Web、小程序等多个平台使用，移动应用开发采用配置化方式实现，可在线设计移动端表单和流程，快速构建和发布移动应用。基于服务化架构和前后端分离技术，实现PC端和移动端数据协同，在移动端可完成流程发起、待办处理、流程审批、数据查询等工作。</p><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-1dfb3d538dac8fe57903bf5e48c2d393_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"548\" data-original-token=\"v2-1dfb3d538dac8fe57903bf5e48c2d393\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://pic1.zhimg.com/v2-1dfb3d538dac8fe57903bf5e48c2d393_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;548&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"548\" data-original-token=\"v2-1dfb3d538dac8fe57903bf5e48c2d393\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://pic1.zhimg.com/v2-1dfb3d538dac8fe57903bf5e48c2d393_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-1dfb3d538dac8fe57903bf5e48c2d393_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"rjfFySLg\"><b>在线免费体验：<a href=\"https://link.zhihu.com/?target=http%3A//www.yunchengxc.com\" class=\" external\" target=\"_blank\" rel=\"nofollow noreferrer\"><span class=\"invisible\">http://www.</span><span class=\"visible\">yunchengxc.com</span><span class=\"invisible\"></span></a></b></p><p></p>",
+      "excerpt": "不管什么平台，100%交付源代码才是硬道理。 门户首页平台提供了多角色门户功能，支持一人多门户页展示，以及个性化配置，实现“千人千面”门户效果。门户首页无需编码开发，基于门户设计器高保真渲染门户页，提供顶部导航、侧边导航两种导航模式，八种常用色系主题。 [图片] · 数据集成数据集成组件提供多数据源管理、数据集管理、数据服务生成等模块，支持mysql、pg、oracle、达梦等多种数据库注册，支持Table、SQL、HTTP、JSON等多种…",
+      "voteupCount": 1,
+      "commentCount": 0,
+      "createdTime": 1713152473,
+      "updatedTime": 1713152473,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-845f8e5f48a73a184fed38b174b8434e_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-845f8e5f48a73a184fed38b174b8434e_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-09ec86d2c546150f393d4bade54aff3c_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-09ec86d2c546150f393d4bade54aff3c_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-b41efba77602cca65c82a6d7990f2ca1_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-b41efba77602cca65c82a6d7990f2ca1_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/v2-703e04a652e41fe0e51c0b02f1834139_r.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/v2-703e04a652e41fe0e51c0b02f1834139_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-64cf3505bb58c0cfaff726ec249c96d9_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-64cf3505bb58c0cfaff726ec249c96d9_r.jpg?source=1def8aca",
+            "width": 2047,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-3b827b4fa441d97a1632ca33d328cf35_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-3b827b4fa441d97a1632ca33d328cf35_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-796afa2d52b67430c49beb49abf4bdce_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-796afa2d52b67430c49beb49abf4bdce_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-db492aa4913082e4409de8eb6d1532cb_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-db492aa4913082e4409de8eb6d1532cb_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-6ac77fcf9d6b3b29ebca44496455b2d5_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-6ac77fcf9d6b3b29ebca44496455b2d5_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-1dfb3d538dac8fe57903bf5e48c2d393_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-1dfb3d538dac8fe57903bf5e48c2d393_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://www.zhihu.com/search?q=%E6%8A%98%E7%BA%BF%E5%9B%BE&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A2370897680%7D",
+            "canonicalUrl": "https://www.zhihu.com/search?q=%E6%8A%98%E7%BA%BF%E5%9B%BE&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A2370897680%7D",
+            "domain": "www.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified"
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=http%3A//www.yunchengxc.com",
+            "canonicalUrl": null,
+            "domain": null,
+            "clickable": false,
+            "securityClass": "rejected"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1958779750",
+      "author": "领悟杂谈",
+      "url": "https://www.zhihu.com/question/466695857/answer/1958779750",
+      "content": "<p data-pid=\"qeymgcmb\">低代码开发平台提供源码实际上意义有限。</p><p data-pid=\"ix0bcLfz\">1、对于企业来讲，提供代码可以给企业心理上安全“安慰&#34;。</p><p data-pid=\"mYPT6YTX\">2、实际执行效力来説，这个对企业来说帮助有限。主要由于低码这东西不是普通的东西，且看下面分解：</p><p data-pid=\"RpCEr1-n\">   （1）代码使用，需要企业有程序人员，如果没有程序人员。拿到代码也没用。</p><p data-pid=\"aNOv5cYm\">   （2）代码阅读和使用实际上会成为很大的难题。这决定于，代码的质量如何（是否有统一规范、程序人员是否都严格按规范执行、代码是否附送了完整的说明文档）；程序员的阅读理解能力怎么样。本人十年前也定代码，看别人代码、理解别人代码是件痛苦的事，改别人的代码更要命，一不小心可能原来没问题，一下改出问题来。甚至有人说，改别人代码，还不如自己重新写一套。</p><p data-pid=\"96Mjq6Sh\">3、如果企业也有研发人员、代码供商也提供了代码和相关文档，接下来就是时间性问题。如果企业决要用这代码，那就需要较长时间的代码阅读和理解。同时，还会面临一个问题，如果对原代码进行修改，也可能意味着，后续厂家升级与自己无关，自己必须坚持当前这个版本走下去。</p><p data-pid=\"O8Xj34mv\">从我们企业的实操情况来讲，外包了一堆系统，有一堆的代码，问题是没有人能用以前的代码继续项目。基本是脱离原厂，代码即作废的状态。</p><p data-pid=\"fD9UW-dD\">我的建议是，给代码能给企业”安慰“，对于企业实际操作意义不大，或者有较大意义的仅限个别公司；不如尽量在零代码上多做文章，提升模板化能力，让企业成为自己的合作开发者；同时，对平台进行封装，规范标准和接口，让企业能通过接口提供扩展，这样兼顾长期升级的需要，又可以达到企业协同二次开发的效果。</p><p></p>",
+      "excerpt": "低代码开发平台提供源码实际上意义有限。 1、对于企业来讲，提供代码可以给企业心理上安全“安慰&#34;。 2、实际执行效力来説，这个对企业来说帮助有限。主要由于低码这东西不是普通的东西，且看下面分解： （1）代码使用，需要企业有程序人员，如果没有程序人员。拿到代码也没用。 （2）代码阅读和使用实际上会成为很大的难题。这决定于，代码的质量如何（是否有统一规范、程序人员是否都严格按规范执行、代码是否附送了完整的说明…",
+      "voteupCount": 1,
+      "commentCount": 2,
+      "createdTime": 1624530135,
+      "updatedTime": 1624530135,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "3279920257",
+      "author": "引迈小六",
+      "url": "https://www.zhihu.com/question/466695857/answer/3279920257",
+      "content": "<p data-pid=\"L2ajy5zl\">对于低代码开发产品来讲，全源码交付是它最大优势之一。全源码意味着开发者可以获得完整的应用程序源代码，这对于任何软件项目都是至关重要的。</p><p data-pid=\"kHC20PaK\">就以 JNPF 来举例说明吧，作为一款基于低代码开发理念的全源码交付式开发工具。以简化开发流程、降低技术门槛和提高生产力为目标，为开发者提供了一个高效的开发环境。</p><p data-pid=\"oxbfzFVO\">JNPF 提供完整的应用程序源代码，使开发者具备定制化能力和独立部署选项。让其可以根据特定需求自由调整和扩展应用程序，完全掌握开发进程。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-2625d38f942b69dd44c4f532607be134_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"900\" data-rawheight=\"286\" data-original-token=\"v2-9b8e05446479f504cc8142858b9e7a0a\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-ea983eeae769ca1f5e7956ce8a07d25f_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"900\" data-original=\"https://picx.zhimg.com/v2-2625d38f942b69dd44c4f532607be134_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;900&#39; height=&#39;286&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"900\" data-rawheight=\"286\" data-original-token=\"v2-9b8e05446479f504cc8142858b9e7a0a\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-ea983eeae769ca1f5e7956ce8a07d25f_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"900\" data-original=\"https://picx.zhimg.com/v2-2625d38f942b69dd44c4f532607be134_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-2625d38f942b69dd44c4f532607be134_720w.jpg?source=1def8aca\"/></figure><h2>何谓全源交付？</h2><p data-pid=\"PRiGiDaa\">我们先来解释一下，什么是全源码交付吧。</p><p data-pid=\"83VOwK7k\"><b>全源码交付是指低代码开发平台将生成的应用程序的全部源代码完整地提供给开发者</b>。这与传统软件开发中的编译后交付方式不同，全源码交付便于开发者能够<b>自由地修改、定制和扩展应用程序</b>，以此满足不同企业与用户之间复杂多样的业务需求。</p><h2>全源码交付的价值</h2><h3><b>01、自由度</b></h3><p data-pid=\"e90ciKG6\">全源码交付能提供更大的开发自由度，企业或者用户完全可以根据自身的业务需求对应用程序进行灵活的定制和修改。</p><p data-pid=\"KP_prPW2\">而对开发者而言，全源码交付也意味着，把开发的主动权牢牢掌握在了自己手里。开发者可以根据自己的编程能力和经验，自主决定如何优化和扩展应用程序，从而更好地满足业务需求。</p><h3><b>02、可定制性</b></h3><p data-pid=\"K8hUVors\">通过获得完整的源代码，为企业或者用户带去了可以自由定制和扩展应用程序的能力。</p><p data-pid=\"uV9lAtRX\">在全源码交付的基础上，开发者就可以按照企业的业务流程和规则进行定制，无论是调整界面风格，还是添加新功能，全源码交付使开发者能够完全掌控应用程序的发展方向，从而打造出更符合实际需求的应用程序。</p><p data-pid=\"O66kw-aa\">这样的定制能力才是低代码开发平台饱受市场好评和喜爱的真正原因，也能帮助企业更好地适应不断变化的市场环境和业务需求。</p><h3><b>03、独立部署</b></h3><p data-pid=\"iuRAvqNo\">拥有完整的源代码意味着开发者可以自由选择将应用程序部署在自己的服务器上，这种自主权不仅提高了开发的灵活性，还为项目开发更富安全性和可靠性。</p><h3><b>04、可扩展性</b></h3><p data-pid=\"JSkcsXZ3\">通过全源码交付，能够实现对应用程序进行无限制地扩展。而对于开发者而言，添加新的功能、模块或集成其他系统，这些都可以根据企业的发展需求调整变换，使应用程序能够适应不断变化的业务需求和技术要求。</p><h3><b>05、持续维护</b></h3><p data-pid=\"F5JOeEJh\">全源码交付使开发者能够自主地进行应用程序的维护和更新。开发者可以根据需求进行修复漏洞、升级功能或添加新功能，而无需等待低代码平台提供商的发布周期。</p><h2>写在最后</h2><p data-pid=\"WybJUAUj\">在全源码交付的支持下，实现高效开发的同时，也赋予开发者更大的自主权和创造力。企业通过低代码开发工具，简化开发流程、降低技术门槛和提高团队协作，加速了应用程序的开发周期。开发者能够进行灵活的定制和独立部署，并且具备持续维护的能力，为企业创造了更高的效率和创新能力。</p><p data-pid=\"whrVKXf7\">网址放在这里，有兴趣的可以自己去试试：<a href=\"https://link.zhihu.com/?target=https%3A//www.jnpfsoft.com/%3Fzhihu\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">jnpfsoft.com</a></p>",
+      "excerpt": "对于低代码开发产品来讲，全源码交付是它最大优势之一。全源码意味着开发者可以获得完整的应用程序源代码，这对于任何软件项目都是至关重要的。 就以 JNPF 来举例说明吧，作为一款基于低代码开发理念的全源码交付式开发工具。以简化开发流程、降低技术门槛和提高生产力为目标，为开发者提供了一个高效的开发环境。 JNPF 提供完整的应用程序源代码，使开发者具备定制化能力和独立部署选项。让其可以根据特定需求自由调整和扩展应…",
+      "voteupCount": 1,
+      "commentCount": 0,
+      "createdTime": 1699336954,
+      "updatedTime": 1699336954,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-2625d38f942b69dd44c4f532607be134_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-2625d38f942b69dd44c4f532607be134_r.jpg?source=1def8aca",
+            "width": 900,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//www.jnpfsoft.com/%3Fzhihu",
+            "canonicalUrl": "https://www.jnpfsoft.com/?zhihu",
+            "domain": "www.jnpfsoft.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://www.jnpfsoft.com/?zhihu",
+              "clickable": true
+            }
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2401915395",
+      "author": "百数",
+      "url": "https://www.zhihu.com/question/466695857/answer/2401915395",
+      "content": "<p data-pid=\"hVu9dtUj\"><b>源码</b>就是指编写的最原始程序的代码。运行的软件是要经过编写的，程序员编写程序的过程中需要他们的“语言”。音乐家用五线谱，建筑师用图纸，那程序员的工作的语言就是“源码”了。</p><p data-pid=\"gQzktRYp\">因此，在很多的时候,我们在建设各种各样的平台的时候如果能直接拿到源码，就可以按照源码提供的教程,很顺利的完成一个平台的建设或者更改。对于企业或者开发者而言，使用起来将会更加的方便快捷。</p><p data-pid=\"bQkppi-4\">然而人们平时使用软件时不是直接操作源码，而是程序把“源码”翻译成我们可直观的形式表现出来供我们使用的。 任何一个网站页面，换成源码就是一堆按一定格式书写的文字和符号，但我们的浏览器帮我们翻译成眼前的模样了。</p><p data-pid=\"7srfsV5y\">由此可见，源码的出现给大家带来了方便快捷的开发方式。但是任何一门语言的学习都是需要花费时间与精力，也就是说有一定的技术门槛，不是谁都能提供掌握操作源码的能力。对于专业人士而言，低代码开发平台提供源码确实带来很高的开发自由度。但是对于普通人而言，低代码开发平台提供源代码的意义不大，毕竟不是专业人士会代码的人屈指可数吧！</p><p data-pid=\"kzbAl1-9\">如今低代码的软件开发行业的风口，许多企业都对低代码产品跃跃欲试，但是选型切记要多看多比，功能齐全是最基本，但除了功能之外，还有许多重要因素需要考量！</p><p data-pid=\"-aH0vfzU\"><b>百数作为一款低代码开发平台，可以迅速搭建数据中台、移动办公平台、工作流引擎、协同办公、进销存管理系统、OA系统、CRM管理系统等企业级管理系统。</b></p><a href=\"https://www.zhihu.com/zvideo/1348266484620288000\" data-draft-node=\"block\" data-draft-type=\"link-card\"></a><p data-pid=\"JDTcol0L\"><b>百数的优势</b></p><ul><li data-pid=\"IJzN7Sd0\"><b>完善的登录体系</b></li></ul><p data-pid=\"1mYHdeJE\">百数为客户提供多样化的登录，支持手机、微信公众、企业微信、钉钉等进行登录，企业在使用的方便快捷。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-3ae30160d13bd5217174d95f81ee0965_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1034\" data-rawheight=\"426\" data-original-token=\"v2-3ae30160d13bd5217174d95f81ee0965\" class=\"origin_image zh-lightbox-thumb\" width=\"1034\" data-original=\"https://pic1.zhimg.com/v2-3ae30160d13bd5217174d95f81ee0965_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1034&#39; height=&#39;426&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1034\" data-rawheight=\"426\" data-original-token=\"v2-3ae30160d13bd5217174d95f81ee0965\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1034\" data-original=\"https://pic1.zhimg.com/v2-3ae30160d13bd5217174d95f81ee0965_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-3ae30160d13bd5217174d95f81ee0965_720w.jpg?source=1def8aca\"/></figure><p class=\"ztext-empty-paragraph\"><br/></p><ul><li data-pid=\"VY6JJ8uY\"><b>灵活的后端开发，拥有无限扩展能力。</b></li></ul><p data-pid=\"0q_ZvkSW\">百数后端拥有独立开发的能力，不需要安装复杂的软件，在原生系统的基础上可以实现多样化的功能扩展，例如：表单控件、数据计算方式的升级，实现数据报表的多样化处理；python语言自带的API接口，轻松对接第三方数据平台等等；让业务处理更加自主灵活。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-beba9f94540c855384975c777ff2e88c_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1397\" data-rawheight=\"601\" data-original-token=\"v2-beba9f94540c855384975c777ff2e88c\" class=\"origin_image zh-lightbox-thumb\" width=\"1397\" data-original=\"https://picx.zhimg.com/v2-beba9f94540c855384975c777ff2e88c_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1397&#39; height=&#39;601&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1397\" data-rawheight=\"601\" data-original-token=\"v2-beba9f94540c855384975c777ff2e88c\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1397\" data-original=\"https://picx.zhimg.com/v2-beba9f94540c855384975c777ff2e88c_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-beba9f94540c855384975c777ff2e88c_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"jdshnsRu\"><b>此外，百数后端还支持功能模块直接使用</b></p><p data-pid=\"n0vSCOqD\">功能模块对于百数基础功能的辅助升级体现在表单控件能力的扩展、复杂多表的复合计算、第三方对接等多个系统维度，应用场景丰富，能够全方位渗透式的为定制化业务场景服务。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-eb02cc73e87a878c34851834ffe4f9e6_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1421\" data-rawheight=\"723\" data-original-token=\"v2-eb02cc73e87a878c34851834ffe4f9e6\" class=\"origin_image zh-lightbox-thumb\" width=\"1421\" data-original=\"https://picx.zhimg.com/v2-eb02cc73e87a878c34851834ffe4f9e6_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1421&#39; height=&#39;723&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1421\" data-rawheight=\"723\" data-original-token=\"v2-eb02cc73e87a878c34851834ffe4f9e6\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1421\" data-original=\"https://picx.zhimg.com/v2-eb02cc73e87a878c34851834ffe4f9e6_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-eb02cc73e87a878c34851834ffe4f9e6_720w.jpg?source=1def8aca\"/></figure><ul><li data-pid=\"OHpndW6H\"><b>托管式私有化部署</b></li></ul><p data-pid=\"57VGafMP\">市面上大部分产品属于公有云，公有云属于共享服务器。百数的托管式私有云部署则属于非共享资源，是为某个客户单独搭建使用，每个公司使用的服务器或存储应用都是单独的，用户拥有绝对的控制权。</p><p data-pid=\"LRPmUCY4\">安全性能上拥有独立的服务器、IP、域名，对企业的隐私保密较强，信息安全有足够的保障。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-2ef2da89c253131918b80456ca783bd4_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"986\" data-rawheight=\"328\" data-original-token=\"v2-2ef2da89c253131918b80456ca783bd4\" class=\"origin_image zh-lightbox-thumb\" width=\"986\" data-original=\"https://picx.zhimg.com/v2-2ef2da89c253131918b80456ca783bd4_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;986&#39; height=&#39;328&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"986\" data-rawheight=\"328\" data-original-token=\"v2-2ef2da89c253131918b80456ca783bd4\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"986\" data-original=\"https://picx.zhimg.com/v2-2ef2da89c253131918b80456ca783bd4_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-2ef2da89c253131918b80456ca783bd4_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"mNYJAa7c\">在品牌建设力上面更是可以摆脱官方的域名和logo，一切都可以根据企业需求自定义设置，对于大企业而言可以提高品牌建设力。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-cbd77415e7c60e6db3721659d08b00fa_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1030\" data-rawheight=\"460\" data-original-token=\"v2-cbd77415e7c60e6db3721659d08b00fa\" class=\"origin_image zh-lightbox-thumb\" width=\"1030\" data-original=\"https://pic1.zhimg.com/v2-cbd77415e7c60e6db3721659d08b00fa_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1030&#39; height=&#39;460&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1030\" data-rawheight=\"460\" data-original-token=\"v2-cbd77415e7c60e6db3721659d08b00fa\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1030\" data-original=\"https://pic1.zhimg.com/v2-cbd77415e7c60e6db3721659d08b00fa_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-cbd77415e7c60e6db3721659d08b00fa_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"0BWSGg0d\">在拓展性能上支持无线扩展，没有任何后顾之忧。系统更新上面不用担心停服影响工作，一切都可以自定义设置更新时间。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-1cb3e1961eb8ea6efcdd23f98be05624_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"969\" data-rawheight=\"508\" data-original-token=\"v2-1cb3e1961eb8ea6efcdd23f98be05624\" class=\"origin_image zh-lightbox-thumb\" width=\"969\" data-original=\"https://picx.zhimg.com/v2-1cb3e1961eb8ea6efcdd23f98be05624_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;969&#39; height=&#39;508&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"969\" data-rawheight=\"508\" data-original-token=\"v2-1cb3e1961eb8ea6efcdd23f98be05624\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"969\" data-original=\"https://picx.zhimg.com/v2-1cb3e1961eb8ea6efcdd23f98be05624_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-1cb3e1961eb8ea6efcdd23f98be05624_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"X7du2PiO\"><b>参考案例——订单管理系统</b></p><p data-pid=\"IfEXBIKg\">伴随交易的产生，订单管理成为了企业物流运转尤为重要的部分。百数订单管理系统通过对商品交易各环节的统一衔接管理，实现客户、商品、订单数据多维汇总分析，为企业经营决策提供数据支撑，减少可控损失。</p><p data-pid=\"k8tRgSds\"><b>三方订单管理平台对接</b></p><p data-pid=\"6nalFEA-\">百数订单管理系统可以对接外部的订单管理平台，比如聚水潭、奇门、微盟等电商企业常用的管理平台，方便企业在百数也能充分利用其他平台的原始订单数据，实现业务订单管理闭环。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-6862c3960d606b6795a262e59be6da8b_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1073\" data-rawheight=\"584\" data-original-token=\"v2-6862c3960d606b6795a262e59be6da8b\" class=\"origin_image zh-lightbox-thumb\" width=\"1073\" data-original=\"https://picx.zhimg.com/v2-6862c3960d606b6795a262e59be6da8b_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1073&#39; height=&#39;584&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1073\" data-rawheight=\"584\" data-original-token=\"v2-6862c3960d606b6795a262e59be6da8b\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1073\" data-original=\"https://picx.zhimg.com/v2-6862c3960d606b6795a262e59be6da8b_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-6862c3960d606b6795a262e59be6da8b_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"bivXb8_B\"><b>合同订单管理</b></p><p data-pid=\"vhjXQrh3\"><b>1.客户信息建档</b></p><p data-pid=\"z0J1EXcY\">创建客户信息查询报表可以方便办事人员快捷查找合作客户的具体信息，可直接在当前页面选择相应的客户新增合同、订单、报价等操作，无需切换多个表单报表，高效且准确。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-dbf85c254bcd9a58ff3b3f835b5de473_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1400\" data-rawheight=\"648\" data-original-token=\"v2-dbf85c254bcd9a58ff3b3f835b5de473\" class=\"origin_image zh-lightbox-thumb\" width=\"1400\" data-original=\"https://picx.zhimg.com/v2-dbf85c254bcd9a58ff3b3f835b5de473_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1400&#39; height=&#39;648&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1400\" data-rawheight=\"648\" data-original-token=\"v2-dbf85c254bcd9a58ff3b3f835b5de473\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1400\" data-original=\"https://picx.zhimg.com/v2-dbf85c254bcd9a58ff3b3f835b5de473_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-dbf85c254bcd9a58ff3b3f835b5de473_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"XQThXSBa\"><b>2.合同管理</b></p><p data-pid=\"8eyzb6Rp\">创建合同信息报表便于客户合同的统一管理，根据关键词筛选可方便快捷调取需要的合同信息，新增订单也可以借助控件设置直接跳转页面进行编辑。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-fe017127d630f6c36e856d0fa973f874_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1041\" data-rawheight=\"504\" data-original-token=\"v2-fe017127d630f6c36e856d0fa973f874\" class=\"origin_image zh-lightbox-thumb\" width=\"1041\" data-original=\"https://pic1.zhimg.com/v2-fe017127d630f6c36e856d0fa973f874_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1041&#39; height=&#39;504&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1041\" data-rawheight=\"504\" data-original-token=\"v2-fe017127d630f6c36e856d0fa973f874\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1041\" data-original=\"https://pic1.zhimg.com/v2-fe017127d630f6c36e856d0fa973f874_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-fe017127d630f6c36e856d0fa973f874_720w.jpg?source=1def8aca\"/></figure><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"q1GEFH5o\"><b>客户报价单</b></p><p data-pid=\"BR_9nI8i\">借助数据加载功能，在新增报价表单可以直接勾选商品详情，减少手动录入带来的商品细节错误，提高操作准确率。</p><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-06a16bff9e52b063807aa2bef6ae51a3_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1051\" data-rawheight=\"579\" data-original-token=\"v2-06a16bff9e52b063807aa2bef6ae51a3\" class=\"origin_image zh-lightbox-thumb\" width=\"1051\" data-original=\"https://pic1.zhimg.com/v2-06a16bff9e52b063807aa2bef6ae51a3_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1051&#39; height=&#39;579&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1051\" data-rawheight=\"579\" data-original-token=\"v2-06a16bff9e52b063807aa2bef6ae51a3\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1051\" data-original=\"https://pic1.zhimg.com/v2-06a16bff9e52b063807aa2bef6ae51a3_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-06a16bff9e52b063807aa2bef6ae51a3_720w.jpg?source=1def8aca\"/></figure><p class=\"ztext-empty-paragraph\"><br/></p><p class=\"ztext-empty-paragraph\"><br/></p><h3><b>新增订单管理</b></h3><p data-pid=\"nsGuS6_q\"><b>1.新增客户订单</b></p><p data-pid=\"7a7KZbr2\">根据行业实际需求，订单页面的字段设计均可修改调整，填写完成的订单将汇总到订单查询报表，方便统一管理和随时调阅。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-fa605f0578b653a72a65b6d6d3e8e5a9_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1155\" data-rawheight=\"671\" data-original-token=\"v2-fa605f0578b653a72a65b6d6d3e8e5a9\" class=\"origin_image zh-lightbox-thumb\" width=\"1155\" data-original=\"https://pic1.zhimg.com/v2-fa605f0578b653a72a65b6d6d3e8e5a9_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1155&#39; height=&#39;671&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1155\" data-rawheight=\"671\" data-original-token=\"v2-fa605f0578b653a72a65b6d6d3e8e5a9\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1155\" data-original=\"https://pic1.zhimg.com/v2-fa605f0578b653a72a65b6d6d3e8e5a9_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-fa605f0578b653a72a65b6d6d3e8e5a9_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"l9Nmjvpo\"><b>2.订单回款登记</b></p><p data-pid=\"GLCdypre\">订单回款进展登记有利于企业把控资金流动状况，及时提醒合作客户按时回款。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-6a81a40a8e10d93a0a6b4d030f45391d_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1133\" data-rawheight=\"671\" data-original-token=\"v2-6a81a40a8e10d93a0a6b4d030f45391d\" class=\"origin_image zh-lightbox-thumb\" width=\"1133\" data-original=\"https://pic1.zhimg.com/v2-6a81a40a8e10d93a0a6b4d030f45391d_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1133&#39; height=&#39;671&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1133\" data-rawheight=\"671\" data-original-token=\"v2-6a81a40a8e10d93a0a6b4d030f45391d\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1133\" data-original=\"https://pic1.zhimg.com/v2-6a81a40a8e10d93a0a6b4d030f45391d_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-6a81a40a8e10d93a0a6b4d030f45391d_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"2lRPokge\"><b>3.新增备库订单</b></p><p data-pid=\"88sRaV3i\">包含商品明细以及交货日期，方便车间有序安排订单生产，减少库存积压。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-8ecd276c6e0c66ee53750226b586cd0a_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1105\" data-rawheight=\"676\" data-original-token=\"v2-8ecd276c6e0c66ee53750226b586cd0a\" class=\"origin_image zh-lightbox-thumb\" width=\"1105\" data-original=\"https://pic1.zhimg.com/v2-8ecd276c6e0c66ee53750226b586cd0a_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1105&#39; height=&#39;676&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1105\" data-rawheight=\"676\" data-original-token=\"v2-8ecd276c6e0c66ee53750226b586cd0a\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1105\" data-original=\"https://pic1.zhimg.com/v2-8ecd276c6e0c66ee53750226b586cd0a_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-8ecd276c6e0c66ee53750226b586cd0a_720w.jpg?source=1def8aca\"/></figure><p class=\"ztext-empty-paragraph\"><br/></p><h3><b>订单数据分析</b></h3><p data-pid=\"gOJtkcMq\">利用丰富的报表功能，多维度展现销售数据。</p><p data-pid=\"My4nM2P_\"><b>1.销售数据分析</b></p><p data-pid=\"3wgKex2I\">汇总订单数、销售总额、商品销售排行榜等各项指标，方便运营部门提炼重要数据信息，进行阶段性工作复盘。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-7b8f9b9b6a28944fca3d0dc4492346b3_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1269\" data-rawheight=\"775\" data-original-token=\"v2-7b8f9b9b6a28944fca3d0dc4492346b3\" class=\"origin_image zh-lightbox-thumb\" width=\"1269\" data-original=\"https://pic1.zhimg.com/v2-7b8f9b9b6a28944fca3d0dc4492346b3_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1269&#39; height=&#39;775&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1269\" data-rawheight=\"775\" data-original-token=\"v2-7b8f9b9b6a28944fca3d0dc4492346b3\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1269\" data-original=\"https://pic1.zhimg.com/v2-7b8f9b9b6a28944fca3d0dc4492346b3_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-7b8f9b9b6a28944fca3d0dc4492346b3_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"-w4JG_4j\"><b>2.商品销售统计</b></p><p data-pid=\"BuBDrDHX\">呈现商品销量占比、销量汇总、销量排行等各类指标数据，为商品生产数量、仓储比例等提供数据支撑。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-2153bfbadeb19b71a709b07ed5486a64_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1268\" data-rawheight=\"772\" data-original-token=\"v2-2153bfbadeb19b71a709b07ed5486a64\" class=\"origin_image zh-lightbox-thumb\" width=\"1268\" data-original=\"https://pic1.zhimg.com/v2-2153bfbadeb19b71a709b07ed5486a64_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1268&#39; height=&#39;772&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1268\" data-rawheight=\"772\" data-original-token=\"v2-2153bfbadeb19b71a709b07ed5486a64\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1268\" data-original=\"https://pic1.zhimg.com/v2-2153bfbadeb19b71a709b07ed5486a64_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-2153bfbadeb19b71a709b07ed5486a64_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"MEquhove\"><b>来源：<a href=\"https://link.zhihu.com/?target=https%3A//pub.baishuyun.com/user/spread/130267%3Fkey%3D%25E4%25BD%258E%25E4%25BB%25A3%25E7%25A0%2581%25E5%25BC%2580%25E5%258F%2591%25E5%25B9%25B3%25E5%258F%25B0%26title%3D%25E4%25BD%258E%25E4%25BB%25A3%25E7%25A0%2581%25E5%25BC%2580%25E5%258F%2591%25E5%25B9%25B3%25E5%258F%25B0%25E6%258F%2590%25E4%25BE%259B%25E6%25BA%2590%25E7%25A0%2581%25E6%259C%2589%25E4%25BB%2580%25E4%25B9%2588%25E6%2584%258F%25E4%25B9%2589%25EF%25BC%259F%26url%3Dhttps%3A//www.zhihu.com/question/466695857/answer/2401915395\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">百数低代码开发平台</a></b></p><p data-pid=\"qzQyyg9H\">希望对您有所帮助，感谢观看！</p>",
+      "excerpt": "源码就是指编写的最原始程序的代码。运行的软件是要经过编写的，程序员编写程序的过程中需要他们的“语言”。音乐家用五线谱，建筑师用图纸，那程序员的工作的语言就是“源码”了。因此，在很多的时候,我们在建设各种各样的平台的时候如果能直接拿到源码，就可以按照源码提供的教程,很顺利的完成一个平台的建设或者更改。对于企业或者开发者而言，使用起来将会更加的方便快捷。 然而人们平时使用软件时不是直接操作源码，而是程…",
+      "voteupCount": 2,
+      "commentCount": 0,
+      "createdTime": 1647941604,
+      "updatedTime": 1653988831,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-3ae30160d13bd5217174d95f81ee0965_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-3ae30160d13bd5217174d95f81ee0965_r.jpg?source=1def8aca",
+            "width": 1034,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-beba9f94540c855384975c777ff2e88c_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-beba9f94540c855384975c777ff2e88c_r.jpg?source=1def8aca",
+            "width": 1397,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-eb02cc73e87a878c34851834ffe4f9e6_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-eb02cc73e87a878c34851834ffe4f9e6_r.jpg?source=1def8aca",
+            "width": 1421,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-2ef2da89c253131918b80456ca783bd4_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-2ef2da89c253131918b80456ca783bd4_r.jpg?source=1def8aca",
+            "width": 986,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-cbd77415e7c60e6db3721659d08b00fa_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-cbd77415e7c60e6db3721659d08b00fa_r.jpg?source=1def8aca",
+            "width": 1030,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-1cb3e1961eb8ea6efcdd23f98be05624_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-1cb3e1961eb8ea6efcdd23f98be05624_r.jpg?source=1def8aca",
+            "width": 969,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-6862c3960d606b6795a262e59be6da8b_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-6862c3960d606b6795a262e59be6da8b_r.jpg?source=1def8aca",
+            "width": 1073,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-dbf85c254bcd9a58ff3b3f835b5de473_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-dbf85c254bcd9a58ff3b3f835b5de473_r.jpg?source=1def8aca",
+            "width": 1400,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-fe017127d630f6c36e856d0fa973f874_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-fe017127d630f6c36e856d0fa973f874_r.jpg?source=1def8aca",
+            "width": 1041,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-06a16bff9e52b063807aa2bef6ae51a3_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-06a16bff9e52b063807aa2bef6ae51a3_r.jpg?source=1def8aca",
+            "width": 1051,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-fa605f0578b653a72a65b6d6d3e8e5a9_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-fa605f0578b653a72a65b6d6d3e8e5a9_r.jpg?source=1def8aca",
+            "width": 1155,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-6a81a40a8e10d93a0a6b4d030f45391d_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-6a81a40a8e10d93a0a6b4d030f45391d_r.jpg?source=1def8aca",
+            "width": 1133,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-8ecd276c6e0c66ee53750226b586cd0a_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-8ecd276c6e0c66ee53750226b586cd0a_r.jpg?source=1def8aca",
+            "width": 1105,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-7b8f9b9b6a28944fca3d0dc4492346b3_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-7b8f9b9b6a28944fca3d0dc4492346b3_r.jpg?source=1def8aca",
+            "width": 1269,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-2153bfbadeb19b71a709b07ed5486a64_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-2153bfbadeb19b71a709b07ed5486a64_r.jpg?source=1def8aca",
+            "width": 1268,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://www.zhihu.com/zvideo/1348266484620288000",
+            "canonicalUrl": "https://www.zhihu.com/zvideo/1348266484620288000",
+            "domain": "www.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified"
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//pub.baishuyun.com/user/spread/130267%3Fkey%3D%25E4%25BD%258E%25E4%25BB%25A3%25E7%25A0%2581%25E5%25BC%2580%25E5%258F%2591%25E5%25B9%25B3%25E5%258F%25B0%26title%3D%25E4%25BD%258E%25E4%25BB%25A3%25E7%25A0%2581%25E5%25BC%2580%25E5%258F%2591%25E5%25B9%25B3%25E5%258F%25B0%25E6%258F%2590%25E4%25BE%259B%25E6%25BA%2590%25E7%25A0%2581%25E6%259C%2589%25E4%25BB%2580%25E4%25B9%2588%25E6%2584%258F%25E4%25B9%2589%25EF%25BC%259F%26url%3Dhttps%3A//www.zhihu.com/question/466695857/answer/2401915395",
+            "canonicalUrl": "https://pub.baishuyun.com/user/spread/130267?key=%E4%BD%8E%E4%BB%A3%E7%A0%81%E5%BC%80%E5%8F%91%E5%B9%B3%E5%8F%B0&title=%E4%BD%8E%E4%BB%A3%E7%A0%81%E5%BC%80%E5%8F%91%E5%B9%B3%E5%8F%B0%E6%8F%90%E4%BE%9B%E6%BA%90%E7%A0%81%E6%9C%89%E4%BB%80%E4%B9%88%E6%84%8F%E4%B9%89%EF%BC%9F&url=https://www.zhihu.com/question/466695857/answer/2401915395",
+            "domain": "pub.baishuyun.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://pub.baishuyun.com/user/spread/130267?key=%E4%BD%8E%E4%BB%A3%E7%A0%81%E5%BC%80%E5%8F%91%E5%B9%B3%E5%8F%B0&title=%E4%BD%8E%E4%BB%A3%E7%A0%81%E5%BC%80%E5%8F%91%E5%B9%B3%E5%8F%B0%E6%8F%90%E4%BE%9B%E6%BA%90%E7%A0%81%E6%9C%89%E4%BB%80%E4%B9%88%E6%84%8F%E4%B9%89%EF%BC%9F&url=https://www.zhihu.com/question/466695857/answer/2401915395",
+              "clickable": true
+            }
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "3386875412",
+      "author": "天翎MyApps低代码平台",
+      "url": "https://www.zhihu.com/question/466695857/answer/3386875412",
+      "content": "<p data-pid=\"onYhGWAv\">随着低代码开发平台的日益普及，越来越多的企业开始采用这种方式来加速应用开发。低代码平台通过提供图形化界面和预构建模块，降低了应用开发的复杂性，使得非专业开发者也能参与到应用开发中。然而，对于一些企业，特别是中小型企业或者初创企业而言，部分商用低代码平台云端部署和源码不开放的特性会带来一些不可忽视的劣势。<br/><br/><b>一、定制化和灵活性受限</b><br/>尽管低代码平台提供了丰富的预定义模板和模块，使得企业可以根据需求进行配置和扩展，但在面对特殊的业务需求时，由于源码不开放，无法进行深度的定制开发。这需要企业寻找其他解决方案或与供应商进行协商，增加了开发时间和成本。<br/><br/>而在深度定制方面，由于低代码平台的封装性和模块化设计，企业无法直接修改和调整核心功能。当业务需求超出预定义模块的范围时，企业需要与供应商合作或寻找其他解决方案，这可能会增加开发时间和成本。另外，由于低代码平台的可视化设计和拖拽式编辑，开发者缺乏对底层代码的深入了解和掌控，这可能导致在处理复杂逻辑和性能优化时遇到困难。<br/><br/><b>二、性能问题</b><br/>在云端部署应用时，由于云服务提供商对硬件资源的共享，以及低代码平台在处理复杂计算和大量数据时的限制，企业可能面临性能问题。这可能在处理大规模数据、复杂算法或实时交互的应用中表现尤为明显。<br/><br/>具体来说，企业会遇到数据加载缓慢、界面卡顿、响应时间延长等问题。这些问题会极大地影响用户体验和业务效率，甚至导致关键业务无法正常运行。此外，由于低代码平台的云端部署特性，企业无法直接访问底层硬件资源，这进一步限制了性能优化和调整的能力。<br/><br/><b>三、安全风险</b><br/>由于低代码平台的源码不开放，企业可能无法验证平台的安全性。在云端部署时，企业的敏感数据和应用逻辑都存储在云服务提供商的服务器上，增加了数据泄露和被非法访问的风险。此外，由于低代码平台的封装特性，企业无法对平台进行安全审计和漏洞扫描，进一步增加了安全风险。同时在源码这一方面上来说，在源码不开放的情况下，企业也无法对平台进行深入的安全审查和漏洞扫描，这增加了潜在的安全风险。此外，由于数据存储在云端，企业可能面临数据泄露和被非法访问的风险。如果低代码平台存在安全漏洞或被黑客攻击，会导致应用崩溃、数据丢失或被篡改等严重后果。<br/><br/><br/><b>四、集成难度</b><br/>低代码平台云端部署和源码不开放可能增加与其他系统的集成难度。企业需要将新构建的应用与现有的IT系统（如数据库、ERP、CRM等）进行集成，以实现数据的共享和业务流程的自动化。然而，由于低代码平台的封闭性和抽象层特性，与其他系统的集成会变得复杂和耗时。这需要额外的定制开发或寻找第三方解决方案，增加了开发成本和技术难度。<br/><br/>外，由于源码不开放，企业也无法直接修改和调整集成逻辑，需要与供应商合作或寻找第三方解决方案。这些因素都会导致集成成本的增加和技术难度的提升。<br/><br/><br/><b>五、长期成本和维护问题</b><br/>使用低代码平台进行云端部署时，企业通常以季度或者年的时间周期内持续付费以获得平台的使用权和云服务提供商的支持服务。随着业务的发展和变化，企业需要购买更高级别的服务或扩展功能，这将进一步增加成本压力。此外，由于源码不开放，企业在维护和升级应用时高度依赖供应商，这可能导致成本上的不可控和技术锁定的风险。<br/><br/>此外，由于源码不开放，企业在日常维护和升级应用时高度依赖供应商的技术支持和更新。如果供应商无法满足企业的需求或提供及时的技术支持，企业可能会面临应用停顿或技术落后的问题。这种技术锁定也极大地限制了企业的自主创新能力和对技术的掌控能力。<br/><br/><br/><b>六、技术锁定风险</b><br/>由于是云端部署和源码不开放的特性，会使得企业使用此类低代码平台开发时会面临技术锁定风险。一旦企业选择了某个特定的低代码平台并在此平台上构建了大量的应用，而该平台的技术发生重大变化或供应商出现变更都可能导致企业面临巨大的转换成本和技术风险。另外低代码平台通常封装了一整套完整的技术体系，因此企业假如希望从现有平台迁移到其他平台可能会发现自己在技术上受到了限制。如果新的平台无法兼容现有的应用架构或者提供类似的功能模块，企业往往需要大量的时间和金钱用以重新构建应用，这极大地影响业务的连续性和稳定性。<br/><br/><br/><b>七、培训和知识传递挑战</b><br/>低代码平台的可视化设计和模块化特性，降低了应用开发的门槛，使得非专业开发者也能快速上手。<br/>然而，随着业务的发展和人员的流动，如何有效地传递和积累在低代码平台上开发应用的知识和经验成为一个重要问题。由于源码不开放，开发者无法通过源码来深入学习和掌握相关技术，这增加了培训和知识传递的难度，也可能影响企业未来的技术发展和创新。<br/><br/><br/><b>八、缺乏对底层技术的掌控</b><br/>由于低代码平台的源码不开放，企业无法接触到平台的底层技术实现细节。这意味着企业在遇到技术问题时无法自行排查和解决，单方面的依赖于供应商的支持和服务。这限制了企业对于当前系统的掌控能力，也影响企业的自主创新发展。<br/><br/>具体来说，由于源码不开放，企业在使用的过程中无法直接访问和修改底层技术实现细节。在遇到技术问题时，企业高度依赖供应商的技术支持和解决方案。这种依赖性可能导致企业对供应商的依赖和技术锁定，限制了企业的自主权。对于企业来说可能无法及时跟进最新的技术趋势和进展，这可能影响企业在市场竞争中的地位和竞争力。<br/><br/><br/><b>九、总结</b><br/>综上所述，低代码平台云端部署和源码不开放的特性给企业带来了一系列劣势和挑战。企业在选择使用低代码平台时需要充分考虑这些因素，并进行全面的评估和权衡。低代码平台固然能够加速应用开发进程并降低开发门槛，但企业在采用这种开发方式时仍需谨慎对待其中的限制和潜在风险。</p>",
+      "excerpt": "随着低代码开发平台的日益普及，越来越多的企业开始采用这种方式来加速应用开发。低代码平台通过提供图形化界面和预构建模块，降低了应用开发的复杂性，使得非专业开发者也能参与到应用开发中。然而，对于一些企业，特别是中小型企业或者初创企业而言，部分商用低代码平台云端部署和源码不开放的特性会带来一些不可忽视的劣势。 一、定制化和灵活性受限 尽管低代码平台提供了丰富的预定义模板和模块，使得企业可以根据需求进行配…",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1707028147,
+      "updatedTime": 1707028147,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2140398007",
+      "author": "Fourv",
+      "url": "https://www.zhihu.com/question/466695857/answer/2140398007",
+      "content": "<p data-pid=\"fS3w38sp\">这样企业就可进行二次开发，在有了源码的前提下重新更改要求，满足新的项目需求，不需要重新购买，能节省一些开支。</p><p data-pid=\"Fggdhxd6\">有了源码相对来说是拥有了开发的主导权，不再受限于开发人员。而一旦有了新的需求，就能快速便捷的解决问题，满足需求。</p>",
+      "excerpt": "这样企业就可进行二次开发，在有了源码的前提下重新更改要求，满足新的项目需求，不需要重新购买，能节省一些开支。 有了源码相对来说是拥有了开发的主导权，不再受限于开发人员。而一旦有了新的需求，就能快速便捷的解决问题，满足需求。",
+      "voteupCount": 0,
+      "commentCount": 1,
+      "createdTime": 1632622611,
+      "updatedTime": 1632622611,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2140488947",
+      "author": "开发工具爱好者",
+      "url": "https://www.zhihu.com/question/466695857/answer/2140488947",
+      "content": "<p data-pid=\"yAFvtrsP\">低代码中的“代码”两个字意味着编程扩展能力。目前，低代码开发平台的编程扩展方式主要有两种：</p><ul><li data-pid=\"zIwunRno\">A. 平台的成果物即源代码，开发者直接对成果物进行二次开发</li><li data-pid=\"VDdsea8X\">B. 平台提供编程API，开发者对平台而不是项目进行二次开发</li></ul><p data-pid=\"WUYD6mU3\">A的好处很明显，那就是完全没有任何的限制，包括开发平台本身的商业授权；缺点是一旦自己修改过代码，以后就不能再使用平台进行可视化开发了。而B的好处则主要体现在后期维护阶段依然可以通过平台提供的可视化设计器进行开发，无需担心冲突问题，开发效率更高；缺点是得继续支付平台的授权费用。</p><p data-pid=\"b2ihd-iK\">B方案还有一个优势，那就是可以通过扩展平台，来实现逻辑复用。如果你是一家做特定行业项目的软件公司，这一点尤其重要。你甚至可以用这种方式搭建一个针对特定行业的低代码开发平台，为后面接的所有项目降本增效。</p><p data-pid=\"6K1ENrDN\">当然，B方案对低代码平台的架构能力要求非常高：厂商必须弄明白开放哪些API，这些API该如何组织和设计才能确保开发者的编程扩展效率，能玩转这个模式的都是在开发行业里摸爬滚打几十年的大厂，国内的话可以看看帆软和葡萄城。</p>",
+      "excerpt": "低代码中的“代码”两个字意味着编程扩展能力。目前，低代码开发平台的编程扩展方式主要有两种： A. 平台的成果物即源代码，开发者直接对成果物进行二次开发B. 平台提供编程API，开发者对平台而不是项目进行二次开发A的好处很明显，那就是完全没有任何的限制，包括开发平台本身的商业授权；缺点是一旦自己修改过代码，以后就不能再使用平台进行可视化开发了。而B的好处则主要体现在后期维护阶段依然可以通过平台提供的可视化设计…",
+      "voteupCount": 0,
+      "commentCount": 1,
+      "createdTime": 1632625343,
+      "updatedTime": 1632625343,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2099716352",
+      "author": "本草姑娘",
+      "url": "https://www.zhihu.com/question/466695857/answer/2099716352",
+      "content": "<p data-pid=\"Nzh7k8-L\">有了源码，企业可以二次开发，对新的业务和新的开发需求，不需要再次购买，可以降低成本，提高开发效率，体现了低代码的灵活性。因此低码星球选择了做低代码的服务平台，也是看着低代码的市场发展。</p>",
+      "excerpt": "有了源码，企业可以二次开发，对新的业务和新的开发需求，不需要再次购买，可以降低成本，提高开发效率，体现了低代码的灵活性。因此低码星球选择了做低代码的服务平台，也是看着低代码的市场发展。",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1630595521,
+      "updatedTime": 1630595521,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1957526887",
+      "author": "bruce",
+      "url": "https://www.zhihu.com/question/466695857/answer/1957526887",
+      "content": "<p data-pid=\"-oLjwjye\">目前国内能提供源代码的低代码平台确实非常少，而广州天翎低代码平台确实其中一家。</p><p data-pid=\"ILCBhyQF\">有了产品源码可以进行功能的二次开发，使得产品更加贴近你们自己的业务需求。</p><p data-pid=\"MpGbppId\">并且可以针对特定的数据安全要求，对产品的底层进行安全性修改。</p>",
+      "excerpt": "目前国内能提供源代码的低代码平台确实非常少，而广州天翎低代码平台确实其中一家。 有了产品源码可以进行功能的二次开发，使得产品更加贴近你们自己的业务需求。 并且可以针对特定的数据安全要求，对产品的底层进行安全性修改。",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1624492688,
+      "updatedTime": 1624492688,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2043119425",
+      "author": "吾日三省吾身",
+      "url": "https://www.zhihu.com/question/466695857/answer/2043119425",
+      "content": "<p data-pid=\"cyaVyzyl\">可以让企业自己定制特定的业务需求，做属于自己的系统产品呀，而且这样更能突出低代码平台灵活度高</p>",
+      "excerpt": "可以让企业自己定制特定的业务需求，做属于自己的系统产品呀，而且这样更能突出低代码平台灵活度高",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1628240255,
+      "updatedTime": 1628240255,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1982005809",
+      "author": "鹿晗",
+      "url": "https://www.zhihu.com/question/466695857/answer/1982005809",
+      "content": "<p data-pid=\"VkDnj00K\">不同的产品有不同的功能需求，有源码方便客户根据自己的需求开发适合自己的产品</p>",
+      "excerpt": "不同的产品有不同的功能需求，有源码方便客户根据自己的需求开发适合自己的产品",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1625557305,
+      "updatedTime": 1625557305,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2007801020",
+      "author": "我是小间谍",
+      "url": "https://www.zhihu.com/question/466695857/answer/2007801020",
+      "content": "<p data-pid=\"cLCRwTiJ\">可以二次开发啊</p>",
+      "excerpt": "可以二次开发啊",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1626697393,
+      "updatedTime": 1626697393,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2011434031",
+      "author": "深海白刺",
+      "url": "https://www.zhihu.com/question/466695857/answer/2011434031",
+      "content": "<p data-pid=\"BopZIzex\">对于个别企业而言便于做二次开发，完善或丰富现有系统功能。但也不是所有的企业都需要这个功能，我们公司用的百数同样也可以灵活的进行二次开发，不需要这个源码功能。</p>",
+      "excerpt": "对于个别企业而言便于做二次开发，完善或丰富现有系统功能。但也不是所有的企业都需要这个功能，我们公司用的百数同样也可以灵活的进行二次开发，不需要这个源码功能。",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1626855738,
+      "updatedTime": 1626855738,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    }
+  ]
+}

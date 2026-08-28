@@ -1,0 +1,531 @@
+{
+  "questionId": "Q-SYN-D3",
+  "questionTitle": "2026 新规下平台A 的合规调整如何？",
+  "answerCount": 30,
+  "url": "https://www.zhihu.com/question/Q-SYN-D3",
+  "question": {
+    "id": "Q-SYN-D3",
+    "title": "2026 新规下平台A 的合规调整如何？",
+    "descriptionHtml": "",
+    "descriptionMarkdown": "",
+    "topics": [
+      {
+        "id": "syn",
+        "name": "synthetic"
+      }
+    ]
+  },
+  "fetchedAt": "2026-08-13T13:39:52.000Z",
+  "answers": [
+    {
+      "id": "300001",
+      "author": "Q3_USER_1",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300001",
+      "content": "平台A发布2026年版本，强化了安全与合规能力。",
+      "voteupCount": 8,
+      "commentCount": 5,
+      "createdTime": 1784260179,
+      "updatedTime": 1784260179,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300002",
+      "author": "Q3_USER_2",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300002",
+      "content": "平台A发布2026年版本，强化了安全与合规能力。2026年新规对低代码平台的数据安全与合规提出新要求。",
+      "voteupCount": 10,
+      "commentCount": 2,
+      "createdTime": 1781952760,
+      "updatedTime": 1781952760,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300003",
+      "author": "Q3_USER_3",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300003",
+      "content": "2026年新规对低代码平台的数据安全与合规提出新要求。平台A发布2026年版本，强化了安全与合规能力。",
+      "voteupCount": 1,
+      "commentCount": 1,
+      "createdTime": 1784719492,
+      "updatedTime": 1784719492,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300004",
+      "author": "Q3_USER_4",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300004",
+      "content": "平台A针对2026年新规调整了数据本地化策略。2026年新规对低代码平台的数据安全与合规提出新要求。",
+      "voteupCount": 7,
+      "commentCount": 1,
+      "createdTime": 1783583306,
+      "updatedTime": 1783583306,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300005",
+      "author": "Q3_USER_5",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300005",
+      "content": "新的合规要求下平台A的权限与审计功能需要升级。平台A针对2026年新规调整了数据本地化策略。",
+      "voteupCount": 2,
+      "commentCount": 1,
+      "createdTime": 1785891509,
+      "updatedTime": 1785891509,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300006",
+      "author": "Q3_USER_6",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300006",
+      "content": "平台A针对2026年新规调整了数据本地化策略。平台A发布2026年版本，强化了安全与合规能力。",
+      "voteupCount": 6,
+      "commentCount": 3,
+      "createdTime": 1784920047,
+      "updatedTime": 1784920047,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300007",
+      "author": "Q3_USER_7",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300007",
+      "content": "新的合规要求下平台A的权限与审计功能需要升级。2026年新规对低代码平台的数据安全与合规提出新要求。",
+      "voteupCount": 4,
+      "commentCount": 3,
+      "createdTime": 1784294346,
+      "updatedTime": 1784294346,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300008",
+      "author": "Q3_USER_8",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300008",
+      "content": "平台A发布2026年版本，强化了安全与合规能力。",
+      "voteupCount": 5,
+      "commentCount": 3,
+      "createdTime": 1781495952,
+      "updatedTime": 1781495952,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300009",
+      "author": "Q3_USER_9",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300009",
+      "content": "平台A针对2026年新规调整了数据本地化策略。",
+      "voteupCount": 6,
+      "commentCount": 2,
+      "createdTime": 1783785105,
+      "updatedTime": 1783785105,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300010",
+      "author": "Q3_USER_10",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300010",
+      "content": "平台A发布2026年版本，强化了安全与合规能力。新的合规要求下平台A的权限与审计功能需要升级。",
+      "voteupCount": 4,
+      "commentCount": 4,
+      "createdTime": 1783729375,
+      "updatedTime": 1783729375,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300011",
+      "author": "Q3_USER_11",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300011",
+      "content": "新的合规要求下平台A的权限与审计功能需要升级。",
+      "voteupCount": 5,
+      "commentCount": 5,
+      "createdTime": 1785953306,
+      "updatedTime": 1785953306,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300012",
+      "author": "Q3_USER_12",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300012",
+      "content": "2026年新规对低代码平台的数据安全与合规提出新要求。",
+      "voteupCount": 5,
+      "commentCount": 3,
+      "createdTime": 1781945054,
+      "updatedTime": 1781945054,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300013",
+      "author": "Q3_USER_13",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300013",
+      "content": "平台A针对2026年新规调整了数据本地化策略。",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1782188049,
+      "updatedTime": 1782188049,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300014",
+      "author": "Q3_USER_14",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300014",
+      "content": "平台A发布2026年版本，强化了安全与合规能力。",
+      "voteupCount": 9,
+      "commentCount": 0,
+      "createdTime": 1781784685,
+      "updatedTime": 1781784685,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300015",
+      "author": "Q3_USER_15",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300015",
+      "content": "平台A发布2026年版本，强化了安全与合规能力。新的合规要求下平台A的权限与审计功能需要升级。",
+      "voteupCount": 8,
+      "commentCount": 3,
+      "createdTime": 1785340688,
+      "updatedTime": 1785340688,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300016",
+      "author": "Q3_USER_16",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300016",
+      "content": "平台A针对2026年新规调整了数据本地化策略。",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1786529371,
+      "updatedTime": 1786529371,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300017",
+      "author": "Q3_USER_17",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300017",
+      "content": "2026年新规对低代码平台的数据安全与合规提出新要求。",
+      "voteupCount": 8,
+      "commentCount": 2,
+      "createdTime": 1783328126,
+      "updatedTime": 1783328126,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300018",
+      "author": "Q3_USER_18",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300018",
+      "content": "新的合规要求下平台A的权限与审计功能需要升级。",
+      "voteupCount": 3,
+      "commentCount": 1,
+      "createdTime": 1784688660,
+      "updatedTime": 1784688660,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300019",
+      "author": "Q3_USER_19",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300019",
+      "content": "2026年新规对低代码平台的数据安全与合规提出新要求。",
+      "voteupCount": 6,
+      "commentCount": 4,
+      "createdTime": 1784470011,
+      "updatedTime": 1784470011,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300020",
+      "author": "Q3_USER_20",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300020",
+      "content": "平台A针对2026年新规调整了数据本地化策略。",
+      "voteupCount": 7,
+      "commentCount": 1,
+      "createdTime": 1783730600,
+      "updatedTime": 1783730600,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300021",
+      "author": "Q3_USER_21",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300021",
+      "content": "新的合规要求下平台A的权限与审计功能需要升级。",
+      "voteupCount": 3,
+      "commentCount": 5,
+      "createdTime": 1784723565,
+      "updatedTime": 1784723565,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300022",
+      "author": "Q3_USER_22",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300022",
+      "content": "2026年新规对低代码平台的数据安全与合规提出新要求。新的合规要求下平台A的权限与审计功能需要升级。",
+      "voteupCount": 5,
+      "commentCount": 4,
+      "createdTime": 1786363407,
+      "updatedTime": 1786363407,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300023",
+      "author": "Q3_USER_23",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300023",
+      "content": "2026年新规对低代码平台的数据安全与合规提出新要求。",
+      "voteupCount": 10,
+      "commentCount": 0,
+      "createdTime": 1785657073,
+      "updatedTime": 1785657073,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300024",
+      "author": "Q3_USER_24",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300024",
+      "content": "平台A发布2026年版本，强化了安全与合规能力。",
+      "voteupCount": 3,
+      "commentCount": 1,
+      "createdTime": 1781720108,
+      "updatedTime": 1781720108,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300025",
+      "author": "Q3_USER_25",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300025",
+      "content": "平台A发布2026年版本，强化了安全与合规能力。平台A针对2026年新规调整了数据本地化策略。",
+      "voteupCount": 5,
+      "commentCount": 3,
+      "createdTime": 1783163053,
+      "updatedTime": 1783163053,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300026",
+      "author": "Q3_USER_26",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300026",
+      "content": "2026年新规对低代码平台的数据安全与合规提出新要求。平台A发布2026年版本，强化了安全与合规能力。",
+      "voteupCount": 7,
+      "commentCount": 5,
+      "createdTime": 1786234012,
+      "updatedTime": 1786234012,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300027",
+      "author": "Q3_USER_27",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300027",
+      "content": "平台A针对2026年新规调整了数据本地化策略。2026年新规对低代码平台的数据安全与合规提出新要求。",
+      "voteupCount": 1,
+      "commentCount": 3,
+      "createdTime": 1785025707,
+      "updatedTime": 1785025707,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300028",
+      "author": "Q3_USER_28",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300028",
+      "content": "平台A发布2026年版本，强化了安全与合规能力。新的合规要求下平台A的权限与审计功能需要升级。",
+      "voteupCount": 8,
+      "commentCount": 5,
+      "createdTime": 1786225365,
+      "updatedTime": 1786225365,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300029",
+      "author": "Q3_USER_29",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300029",
+      "content": "平台A发布2026年版本，强化了安全与合规能力。",
+      "voteupCount": 1,
+      "commentCount": 5,
+      "createdTime": 1783502844,
+      "updatedTime": 1783502844,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "300030",
+      "author": "Q3_USER_30",
+      "url": "https://www.zhihu.com/question/Q-SYN-D3/answer/300030",
+      "content": "2026年新规对低代码平台的数据安全与合规提出新要求。新的合规要求下平台A的权限与审计功能需要升级。",
+      "voteupCount": 7,
+      "commentCount": 0,
+      "createdTime": 1783626375,
+      "updatedTime": 1783626375,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    }
+  ]
+}

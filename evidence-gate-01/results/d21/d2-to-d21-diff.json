@@ -1,0 +1,1316 @@
+{
+  "schema": "zhihu-research-benchmark/d2-to-d21-diff",
+  "generated_at": "2026-08-28T04:39:58.838Z",
+  "files_compared": 96,
+  "files_with_any_metric_change": 12,
+  "files_with_selection_identical": 96,
+  "metric_change_frequency": {
+    "per_question_coverage_preservation": 12,
+    "minority_question_recall_macro": 9
+  },
+  "note": "selection_identical=true proves inputs/selectors frozen; all metric deltas are evaluator-only",
+  "rows": [
+    {
+      "file": "case-439521858__B0_POPULARITY_TOP_K__K_LARGE.json",
+      "case_id": "case-439521858",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-a004826011655a5a",
+      "dataset_version_d21": "d2-755751b2d7bd7d24",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-439521858__B0_POPULARITY_TOP_K__K_MEDIUM.json",
+      "case_id": "case-439521858",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-a004826011655a5a",
+      "dataset_version_d21": "d2-755751b2d7bd7d24",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-439521858__B0_POPULARITY_TOP_K__K_SMALL.json",
+      "case_id": "case-439521858",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-a004826011655a5a",
+      "dataset_version_d21": "d2-755751b2d7bd7d24",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-439521858__B1_LEXICAL_NGRAM_PROXY__K_LARGE.json",
+      "case_id": "case-439521858",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-a004826011655a5a",
+      "dataset_version_d21": "d2-755751b2d7bd7d24",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-439521858__B1_LEXICAL_NGRAM_PROXY__K_MEDIUM.json",
+      "case_id": "case-439521858",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-a004826011655a5a",
+      "dataset_version_d21": "d2-755751b2d7bd7d24",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-439521858__B1_LEXICAL_NGRAM_PROXY__K_SMALL.json",
+      "case_id": "case-439521858",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-a004826011655a5a",
+      "dataset_version_d21": "d2-755751b2d7bd7d24",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-439521858__B2_MMR_NGRAM_PROXY__K_LARGE.json",
+      "case_id": "case-439521858",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-a004826011655a5a",
+      "dataset_version_d21": "d2-755751b2d7bd7d24",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-439521858__B2_MMR_NGRAM_PROXY__K_MEDIUM.json",
+      "case_id": "case-439521858",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-a004826011655a5a",
+      "dataset_version_d21": "d2-755751b2d7bd7d24",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-439521858__B2_MMR_NGRAM_PROXY__K_SMALL.json",
+      "case_id": "case-439521858",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-a004826011655a5a",
+      "dataset_version_d21": "d2-755751b2d7bd7d24",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-439521858__B2_ORACLE_LANES__K_LARGE.json",
+      "case_id": "case-439521858",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-a004826011655a5a",
+      "dataset_version_d21": "d2-755751b2d7bd7d24",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-439521858__B2_ORACLE_LANES__K_MEDIUM.json",
+      "case_id": "case-439521858",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-a004826011655a5a",
+      "dataset_version_d21": "d2-755751b2d7bd7d24",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-439521858__B2_ORACLE_LANES__K_SMALL.json",
+      "case_id": "case-439521858",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-a004826011655a5a",
+      "dataset_version_d21": "d2-755751b2d7bd7d24",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-466695857__B0_POPULARITY_TOP_K__K_LARGE.json",
+      "case_id": "case-466695857",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0a2f840a5296e069",
+      "dataset_version_d21": "d2-f8c3cad94d981f7d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-466695857__B0_POPULARITY_TOP_K__K_MEDIUM.json",
+      "case_id": "case-466695857",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0a2f840a5296e069",
+      "dataset_version_d21": "d2-f8c3cad94d981f7d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-466695857__B0_POPULARITY_TOP_K__K_SMALL.json",
+      "case_id": "case-466695857",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0a2f840a5296e069",
+      "dataset_version_d21": "d2-f8c3cad94d981f7d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-466695857__B1_LEXICAL_NGRAM_PROXY__K_LARGE.json",
+      "case_id": "case-466695857",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0a2f840a5296e069",
+      "dataset_version_d21": "d2-f8c3cad94d981f7d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-466695857__B1_LEXICAL_NGRAM_PROXY__K_MEDIUM.json",
+      "case_id": "case-466695857",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0a2f840a5296e069",
+      "dataset_version_d21": "d2-f8c3cad94d981f7d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-466695857__B1_LEXICAL_NGRAM_PROXY__K_SMALL.json",
+      "case_id": "case-466695857",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0a2f840a5296e069",
+      "dataset_version_d21": "d2-f8c3cad94d981f7d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-466695857__B2_MMR_NGRAM_PROXY__K_LARGE.json",
+      "case_id": "case-466695857",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0a2f840a5296e069",
+      "dataset_version_d21": "d2-f8c3cad94d981f7d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-466695857__B2_MMR_NGRAM_PROXY__K_MEDIUM.json",
+      "case_id": "case-466695857",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0a2f840a5296e069",
+      "dataset_version_d21": "d2-f8c3cad94d981f7d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-466695857__B2_MMR_NGRAM_PROXY__K_SMALL.json",
+      "case_id": "case-466695857",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0a2f840a5296e069",
+      "dataset_version_d21": "d2-f8c3cad94d981f7d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-466695857__B2_ORACLE_LANES__K_LARGE.json",
+      "case_id": "case-466695857",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0a2f840a5296e069",
+      "dataset_version_d21": "d2-f8c3cad94d981f7d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-466695857__B2_ORACLE_LANES__K_MEDIUM.json",
+      "case_id": "case-466695857",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0a2f840a5296e069",
+      "dataset_version_d21": "d2-f8c3cad94d981f7d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-466695857__B2_ORACLE_LANES__K_SMALL.json",
+      "case_id": "case-466695857",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0a2f840a5296e069",
+      "dataset_version_d21": "d2-f8c3cad94d981f7d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-477427067__B0_POPULARITY_TOP_K__K_LARGE.json",
+      "case_id": "case-477427067",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-804c1e77245bf155",
+      "dataset_version_d21": "d2-10b1fffdae7bdf53",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-477427067__B0_POPULARITY_TOP_K__K_MEDIUM.json",
+      "case_id": "case-477427067",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-804c1e77245bf155",
+      "dataset_version_d21": "d2-10b1fffdae7bdf53",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-477427067__B0_POPULARITY_TOP_K__K_SMALL.json",
+      "case_id": "case-477427067",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-804c1e77245bf155",
+      "dataset_version_d21": "d2-10b1fffdae7bdf53",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-477427067__B1_LEXICAL_NGRAM_PROXY__K_LARGE.json",
+      "case_id": "case-477427067",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-804c1e77245bf155",
+      "dataset_version_d21": "d2-10b1fffdae7bdf53",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-477427067__B1_LEXICAL_NGRAM_PROXY__K_MEDIUM.json",
+      "case_id": "case-477427067",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-804c1e77245bf155",
+      "dataset_version_d21": "d2-10b1fffdae7bdf53",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-477427067__B1_LEXICAL_NGRAM_PROXY__K_SMALL.json",
+      "case_id": "case-477427067",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-804c1e77245bf155",
+      "dataset_version_d21": "d2-10b1fffdae7bdf53",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-477427067__B2_MMR_NGRAM_PROXY__K_LARGE.json",
+      "case_id": "case-477427067",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-804c1e77245bf155",
+      "dataset_version_d21": "d2-10b1fffdae7bdf53",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-477427067__B2_MMR_NGRAM_PROXY__K_MEDIUM.json",
+      "case_id": "case-477427067",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-804c1e77245bf155",
+      "dataset_version_d21": "d2-10b1fffdae7bdf53",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-477427067__B2_MMR_NGRAM_PROXY__K_SMALL.json",
+      "case_id": "case-477427067",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-804c1e77245bf155",
+      "dataset_version_d21": "d2-10b1fffdae7bdf53",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-477427067__B2_ORACLE_LANES__K_LARGE.json",
+      "case_id": "case-477427067",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-804c1e77245bf155",
+      "dataset_version_d21": "d2-10b1fffdae7bdf53",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-477427067__B2_ORACLE_LANES__K_MEDIUM.json",
+      "case_id": "case-477427067",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-804c1e77245bf155",
+      "dataset_version_d21": "d2-10b1fffdae7bdf53",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-477427067__B2_ORACLE_LANES__K_SMALL.json",
+      "case_id": "case-477427067",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-804c1e77245bf155",
+      "dataset_version_d21": "d2-10b1fffdae7bdf53",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-485463474__B0_POPULARITY_TOP_K__K_LARGE.json",
+      "case_id": "case-485463474",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-23cc409657ab7c50",
+      "dataset_version_d21": "d2-0115167cb3c3d991",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-485463474__B0_POPULARITY_TOP_K__K_MEDIUM.json",
+      "case_id": "case-485463474",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-23cc409657ab7c50",
+      "dataset_version_d21": "d2-0115167cb3c3d991",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-485463474__B0_POPULARITY_TOP_K__K_SMALL.json",
+      "case_id": "case-485463474",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-23cc409657ab7c50",
+      "dataset_version_d21": "d2-0115167cb3c3d991",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-485463474__B1_LEXICAL_NGRAM_PROXY__K_LARGE.json",
+      "case_id": "case-485463474",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-23cc409657ab7c50",
+      "dataset_version_d21": "d2-0115167cb3c3d991",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-485463474__B1_LEXICAL_NGRAM_PROXY__K_MEDIUM.json",
+      "case_id": "case-485463474",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-23cc409657ab7c50",
+      "dataset_version_d21": "d2-0115167cb3c3d991",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-485463474__B1_LEXICAL_NGRAM_PROXY__K_SMALL.json",
+      "case_id": "case-485463474",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-23cc409657ab7c50",
+      "dataset_version_d21": "d2-0115167cb3c3d991",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-485463474__B2_MMR_NGRAM_PROXY__K_LARGE.json",
+      "case_id": "case-485463474",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-23cc409657ab7c50",
+      "dataset_version_d21": "d2-0115167cb3c3d991",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-485463474__B2_MMR_NGRAM_PROXY__K_MEDIUM.json",
+      "case_id": "case-485463474",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-23cc409657ab7c50",
+      "dataset_version_d21": "d2-0115167cb3c3d991",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-485463474__B2_MMR_NGRAM_PROXY__K_SMALL.json",
+      "case_id": "case-485463474",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-23cc409657ab7c50",
+      "dataset_version_d21": "d2-0115167cb3c3d991",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-485463474__B2_ORACLE_LANES__K_LARGE.json",
+      "case_id": "case-485463474",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-23cc409657ab7c50",
+      "dataset_version_d21": "d2-0115167cb3c3d991",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-485463474__B2_ORACLE_LANES__K_MEDIUM.json",
+      "case_id": "case-485463474",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-23cc409657ab7c50",
+      "dataset_version_d21": "d2-0115167cb3c3d991",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-485463474__B2_ORACLE_LANES__K_SMALL.json",
+      "case_id": "case-485463474",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-23cc409657ab7c50",
+      "dataset_version_d21": "d2-0115167cb3c3d991",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-487214224__B0_POPULARITY_TOP_K__K_LARGE.json",
+      "case_id": "case-487214224",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-d4219178decd79bb",
+      "dataset_version_d21": "d2-bb34f180781f7eed",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-487214224__B0_POPULARITY_TOP_K__K_MEDIUM.json",
+      "case_id": "case-487214224",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-d4219178decd79bb",
+      "dataset_version_d21": "d2-bb34f180781f7eed",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-487214224__B0_POPULARITY_TOP_K__K_SMALL.json",
+      "case_id": "case-487214224",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-d4219178decd79bb",
+      "dataset_version_d21": "d2-bb34f180781f7eed",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-487214224__B1_LEXICAL_NGRAM_PROXY__K_LARGE.json",
+      "case_id": "case-487214224",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-d4219178decd79bb",
+      "dataset_version_d21": "d2-bb34f180781f7eed",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-487214224__B1_LEXICAL_NGRAM_PROXY__K_MEDIUM.json",
+      "case_id": "case-487214224",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-d4219178decd79bb",
+      "dataset_version_d21": "d2-bb34f180781f7eed",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-487214224__B1_LEXICAL_NGRAM_PROXY__K_SMALL.json",
+      "case_id": "case-487214224",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-d4219178decd79bb",
+      "dataset_version_d21": "d2-bb34f180781f7eed",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-487214224__B2_MMR_NGRAM_PROXY__K_LARGE.json",
+      "case_id": "case-487214224",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-d4219178decd79bb",
+      "dataset_version_d21": "d2-bb34f180781f7eed",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-487214224__B2_MMR_NGRAM_PROXY__K_MEDIUM.json",
+      "case_id": "case-487214224",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-d4219178decd79bb",
+      "dataset_version_d21": "d2-bb34f180781f7eed",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-487214224__B2_MMR_NGRAM_PROXY__K_SMALL.json",
+      "case_id": "case-487214224",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-d4219178decd79bb",
+      "dataset_version_d21": "d2-bb34f180781f7eed",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-487214224__B2_ORACLE_LANES__K_LARGE.json",
+      "case_id": "case-487214224",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_LARGE",
+      "K": 8,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-d4219178decd79bb",
+      "dataset_version_d21": "d2-bb34f180781f7eed",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-487214224__B2_ORACLE_LANES__K_MEDIUM.json",
+      "case_id": "case-487214224",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-d4219178decd79bb",
+      "dataset_version_d21": "d2-bb34f180781f7eed",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-487214224__B2_ORACLE_LANES__K_SMALL.json",
+      "case_id": "case-487214224",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-d4219178decd79bb",
+      "dataset_version_d21": "d2-bb34f180781f7eed",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-cross-lowcode__B0_POPULARITY_TOP_K__K_LARGE.json",
+      "case_id": "case-cross-lowcode",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_LARGE",
+      "K": 20,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0d27a3b47062c1c6",
+      "dataset_version_d21": "d2-2eb507b199b1c0b1",
+      "changed_metrics": [
+        {
+          "metric": "minority_question_recall_macro",
+          "d2": 0.5883333333333333,
+          "d21": 0.5073809523809524
+        }
+      ],
+      "per_question_d2": {
+        "439521858": "6/9",
+        "462973596": "2/5",
+        "466695857": "3/8",
+        "477427067": "4/11",
+        "485463474": "2/4",
+        "487214224": "1/1"
+      },
+      "per_question_d21": {
+        "439521858": "6/9",
+        "462973596": "3/7",
+        "466695857": "3/8",
+        "477427067": "4/11",
+        "485463474": "2/5",
+        "487214224": "2/3"
+      }
+    },
+    {
+      "file": "case-cross-lowcode__B0_POPULARITY_TOP_K__K_MEDIUM.json",
+      "case_id": "case-cross-lowcode",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_MEDIUM",
+      "K": 10,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0d27a3b47062c1c6",
+      "dataset_version_d21": "d2-2eb507b199b1c0b1",
+      "changed_metrics": [
+        {
+          "metric": "minority_question_recall_macro",
+          "d2": 0.3083333333333333,
+          "d21": 0.2883333333333333
+        }
+      ],
+      "per_question_d2": {
+        "439521858": "6/9",
+        "462973596": "0/5",
+        "466695857": "3/8",
+        "477427067": "3/11",
+        "485463474": "2/4",
+        "487214224": "0/1"
+      },
+      "per_question_d21": {
+        "439521858": "6/9",
+        "462973596": "0/7",
+        "466695857": "3/8",
+        "477427067": "3/11",
+        "485463474": "2/5",
+        "487214224": "0/3"
+      }
+    },
+    {
+      "file": "case-cross-lowcode__B0_POPULARITY_TOP_K__K_SMALL.json",
+      "case_id": "case-cross-lowcode",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_SMALL",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0d27a3b47062c1c6",
+      "dataset_version_d21": "d2-2eb507b199b1c0b1",
+      "changed_metrics": [],
+      "per_question_d2": {
+        "439521858": "5/9",
+        "462973596": "0/5",
+        "466695857": "0/8",
+        "477427067": "2/11",
+        "485463474": "0/4",
+        "487214224": "0/1"
+      },
+      "per_question_d21": {
+        "439521858": "5/9",
+        "462973596": "0/7",
+        "466695857": "0/8",
+        "477427067": "2/11",
+        "485463474": "0/5",
+        "487214224": "0/3"
+      }
+    },
+    {
+      "file": "case-cross-lowcode__B1_LEXICAL_NGRAM_PROXY__K_LARGE.json",
+      "case_id": "case-cross-lowcode",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_LARGE",
+      "K": 20,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0d27a3b47062c1c6",
+      "dataset_version_d21": "d2-2eb507b199b1c0b1",
+      "changed_metrics": [
+        {
+          "metric": "minority_question_recall_macro",
+          "d2": 0.2533333333333333,
+          "d21": 0.2761904761904762
+        }
+      ],
+      "per_question_d2": {
+        "439521858": "6/9",
+        "462973596": "3/5",
+        "466695857": "0/8",
+        "477427067": "5/11",
+        "485463474": "0/4",
+        "487214224": "0/1"
+      },
+      "per_question_d21": {
+        "439521858": "6/9",
+        "462973596": "5/7",
+        "466695857": "0/8",
+        "477427067": "5/11",
+        "485463474": "0/5",
+        "487214224": "0/3"
+      }
+    },
+    {
+      "file": "case-cross-lowcode__B1_LEXICAL_NGRAM_PROXY__K_MEDIUM.json",
+      "case_id": "case-cross-lowcode",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_MEDIUM",
+      "K": 10,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0d27a3b47062c1c6",
+      "dataset_version_d21": "d2-2eb507b199b1c0b1",
+      "changed_metrics": [
+        {
+          "metric": "minority_question_recall_macro",
+          "d2": 0.1688888888888889,
+          "d21": 0.1746031746031746
+        }
+      ],
+      "per_question_d2": {
+        "439521858": "4/9",
+        "462973596": "2/5",
+        "466695857": "0/8",
+        "477427067": "3/11",
+        "485463474": "0/4",
+        "487214224": "0/1"
+      },
+      "per_question_d21": {
+        "439521858": "4/9",
+        "462973596": "3/7",
+        "466695857": "0/8",
+        "477427067": "3/11",
+        "485463474": "0/5",
+        "487214224": "0/3"
+      }
+    },
+    {
+      "file": "case-cross-lowcode__B1_LEXICAL_NGRAM_PROXY__K_SMALL.json",
+      "case_id": "case-cross-lowcode",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_SMALL",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0d27a3b47062c1c6",
+      "dataset_version_d21": "d2-2eb507b199b1c0b1",
+      "changed_metrics": [],
+      "per_question_d2": {
+        "439521858": "3/9",
+        "462973596": "0/5",
+        "466695857": "0/8",
+        "477427067": "2/11",
+        "485463474": "0/4",
+        "487214224": "0/1"
+      },
+      "per_question_d21": {
+        "439521858": "3/9",
+        "462973596": "0/7",
+        "466695857": "0/8",
+        "477427067": "2/11",
+        "485463474": "0/5",
+        "487214224": "0/3"
+      }
+    },
+    {
+      "file": "case-cross-lowcode__B2_MMR_NGRAM_PROXY__K_LARGE.json",
+      "case_id": "case-cross-lowcode",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_LARGE",
+      "K": 20,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0d27a3b47062c1c6",
+      "dataset_version_d21": "d2-2eb507b199b1c0b1",
+      "changed_metrics": [
+        {
+          "metric": "minority_question_recall_macro",
+          "d2": 0.46333333333333326,
+          "d21": 0.439047619047619
+        }
+      ],
+      "per_question_d2": {
+        "439521858": "6/9",
+        "462973596": "2/5",
+        "466695857": "4/8",
+        "477427067": "5/11",
+        "485463474": "3/4",
+        "487214224": "0/1"
+      },
+      "per_question_d21": {
+        "439521858": "6/9",
+        "462973596": "3/7",
+        "466695857": "4/8",
+        "477427067": "5/11",
+        "485463474": "3/5",
+        "487214224": "0/3"
+      }
+    },
+    {
+      "file": "case-cross-lowcode__B2_MMR_NGRAM_PROXY__K_MEDIUM.json",
+      "case_id": "case-cross-lowcode",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_MEDIUM",
+      "K": 10,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0d27a3b47062c1c6",
+      "dataset_version_d21": "d2-2eb507b199b1c0b1",
+      "changed_metrics": [
+        {
+          "metric": "minority_question_recall_macro",
+          "d2": 0.2011111111111111,
+          "d21": 0.21825396825396828
+        }
+      ],
+      "per_question_d2": {
+        "439521858": "5/9",
+        "462973596": "1/5",
+        "466695857": "2/8",
+        "477427067": "4/11",
+        "485463474": "0/4",
+        "487214224": "0/1"
+      },
+      "per_question_d21": {
+        "439521858": "5/9",
+        "462973596": "2/7",
+        "466695857": "2/8",
+        "477427067": "3/11",
+        "485463474": "0/5",
+        "487214224": "0/3"
+      }
+    },
+    {
+      "file": "case-cross-lowcode__B2_MMR_NGRAM_PROXY__K_SMALL.json",
+      "case_id": "case-cross-lowcode",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_SMALL",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0d27a3b47062c1c6",
+      "dataset_version_d21": "d2-2eb507b199b1c0b1",
+      "changed_metrics": [],
+      "per_question_d2": {
+        "439521858": "4/9",
+        "462973596": "0/5",
+        "466695857": "0/8",
+        "477427067": "2/11",
+        "485463474": "0/4",
+        "487214224": "0/1"
+      },
+      "per_question_d21": {
+        "439521858": "4/9",
+        "462973596": "0/7",
+        "466695857": "0/8",
+        "477427067": "2/11",
+        "485463474": "0/5",
+        "487214224": "0/3"
+      }
+    },
+    {
+      "file": "case-cross-lowcode__B2_ORACLE_LANES__K_LARGE.json",
+      "case_id": "case-cross-lowcode",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_LARGE",
+      "K": 20,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0d27a3b47062c1c6",
+      "dataset_version_d21": "d2-2eb507b199b1c0b1",
+      "changed_metrics": [
+        {
+          "metric": "minority_question_recall_macro",
+          "d2": 0.35333333333333333,
+          "d21": 0.3476190476190476
+        }
+      ],
+      "per_question_d2": {
+        "439521858": "6/9",
+        "462973596": "3/5",
+        "466695857": "4/8",
+        "477427067": "5/11",
+        "485463474": "0/4",
+        "487214224": "0/1"
+      },
+      "per_question_d21": {
+        "439521858": "6/9",
+        "462973596": "4/7",
+        "466695857": "4/8",
+        "477427067": "4/11",
+        "485463474": "0/5",
+        "487214224": "0/3"
+      }
+    },
+    {
+      "file": "case-cross-lowcode__B2_ORACLE_LANES__K_MEDIUM.json",
+      "case_id": "case-cross-lowcode",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_MEDIUM",
+      "K": 10,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0d27a3b47062c1c6",
+      "dataset_version_d21": "d2-2eb507b199b1c0b1",
+      "changed_metrics": [
+        {
+          "metric": "minority_question_recall_macro",
+          "d2": 0.19111111111111112,
+          "d21": 0.19682539682539685
+        }
+      ],
+      "per_question_d2": {
+        "439521858": "5/9",
+        "462973596": "2/5",
+        "466695857": "0/8",
+        "477427067": "5/11",
+        "485463474": "0/4",
+        "487214224": "0/1"
+      },
+      "per_question_d21": {
+        "439521858": "5/9",
+        "462973596": "3/7",
+        "466695857": "0/8",
+        "477427067": "4/11",
+        "485463474": "0/5",
+        "487214224": "0/3"
+      }
+    },
+    {
+      "file": "case-cross-lowcode__B2_ORACLE_LANES__K_SMALL.json",
+      "case_id": "case-cross-lowcode",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_SMALL",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d2-0d27a3b47062c1c6",
+      "dataset_version_d21": "d2-2eb507b199b1c0b1",
+      "changed_metrics": [
+        {
+          "metric": "minority_question_recall_macro",
+          "d2": 0.1688888888888889,
+          "d21": 0.1746031746031746
+        }
+      ],
+      "per_question_d2": {
+        "439521858": "4/9",
+        "462973596": "2/5",
+        "466695857": "0/8",
+        "477427067": "3/11",
+        "485463474": "0/4",
+        "487214224": "0/1"
+      },
+      "per_question_d21": {
+        "439521858": "4/9",
+        "462973596": "3/7",
+        "466695857": "0/8",
+        "477427067": "2/11",
+        "485463474": "0/5",
+        "487214224": "0/3"
+      }
+    },
+    {
+      "file": "case-synth-dominance__B0_POPULARITY_TOP_K__K_LARGE.json",
+      "case_id": "case-synth-dominance",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_LARGE",
+      "K": 40,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-57f90be47f7440c2",
+      "dataset_version_d21": "d1-cfd1364c8d619c12",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-dominance__B0_POPULARITY_TOP_K__K_MEDIUM.json",
+      "case_id": "case-synth-dominance",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_MEDIUM",
+      "K": 20,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-57f90be47f7440c2",
+      "dataset_version_d21": "d1-cfd1364c8d619c12",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-dominance__B0_POPULARITY_TOP_K__K_SMALL.json",
+      "case_id": "case-synth-dominance",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_SMALL",
+      "K": 10,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-57f90be47f7440c2",
+      "dataset_version_d21": "d1-cfd1364c8d619c12",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-dominance__B1_LEXICAL_NGRAM_PROXY__K_LARGE.json",
+      "case_id": "case-synth-dominance",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_LARGE",
+      "K": 40,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-57f90be47f7440c2",
+      "dataset_version_d21": "d1-cfd1364c8d619c12",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-dominance__B1_LEXICAL_NGRAM_PROXY__K_MEDIUM.json",
+      "case_id": "case-synth-dominance",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_MEDIUM",
+      "K": 20,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-57f90be47f7440c2",
+      "dataset_version_d21": "d1-cfd1364c8d619c12",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-dominance__B1_LEXICAL_NGRAM_PROXY__K_SMALL.json",
+      "case_id": "case-synth-dominance",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_SMALL",
+      "K": 10,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-57f90be47f7440c2",
+      "dataset_version_d21": "d1-cfd1364c8d619c12",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-dominance__B2_MMR_NGRAM_PROXY__K_LARGE.json",
+      "case_id": "case-synth-dominance",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_LARGE",
+      "K": 40,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-57f90be47f7440c2",
+      "dataset_version_d21": "d1-cfd1364c8d619c12",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-dominance__B2_MMR_NGRAM_PROXY__K_MEDIUM.json",
+      "case_id": "case-synth-dominance",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_MEDIUM",
+      "K": 20,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-57f90be47f7440c2",
+      "dataset_version_d21": "d1-cfd1364c8d619c12",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-dominance__B2_MMR_NGRAM_PROXY__K_SMALL.json",
+      "case_id": "case-synth-dominance",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_SMALL",
+      "K": 10,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-57f90be47f7440c2",
+      "dataset_version_d21": "d1-cfd1364c8d619c12",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-dominance__B2_ORACLE_LANES__K_LARGE.json",
+      "case_id": "case-synth-dominance",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_LARGE",
+      "K": 40,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-57f90be47f7440c2",
+      "dataset_version_d21": "d1-cfd1364c8d619c12",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-dominance__B2_ORACLE_LANES__K_MEDIUM.json",
+      "case_id": "case-synth-dominance",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_MEDIUM",
+      "K": 20,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-57f90be47f7440c2",
+      "dataset_version_d21": "d1-cfd1364c8d619c12",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-dominance__B2_ORACLE_LANES__K_SMALL.json",
+      "case_id": "case-synth-dominance",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_SMALL",
+      "K": 10,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-57f90be47f7440c2",
+      "dataset_version_d21": "d1-cfd1364c8d619c12",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-expert__B0_POPULARITY_TOP_K__K_LARGE.json",
+      "case_id": "case-synth-expert",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_LARGE",
+      "K": 10,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-dd176f851ce0cef3",
+      "dataset_version_d21": "d1-af7ee9cf09dd611d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-expert__B0_POPULARITY_TOP_K__K_MEDIUM.json",
+      "case_id": "case-synth-expert",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-dd176f851ce0cef3",
+      "dataset_version_d21": "d1-af7ee9cf09dd611d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-expert__B0_POPULARITY_TOP_K__K_SMALL.json",
+      "case_id": "case-synth-expert",
+      "strategy_id": "B0_POPULARITY_TOP_K",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-dd176f851ce0cef3",
+      "dataset_version_d21": "d1-af7ee9cf09dd611d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-expert__B1_LEXICAL_NGRAM_PROXY__K_LARGE.json",
+      "case_id": "case-synth-expert",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_LARGE",
+      "K": 10,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-dd176f851ce0cef3",
+      "dataset_version_d21": "d1-af7ee9cf09dd611d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-expert__B1_LEXICAL_NGRAM_PROXY__K_MEDIUM.json",
+      "case_id": "case-synth-expert",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-dd176f851ce0cef3",
+      "dataset_version_d21": "d1-af7ee9cf09dd611d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-expert__B1_LEXICAL_NGRAM_PROXY__K_SMALL.json",
+      "case_id": "case-synth-expert",
+      "strategy_id": "B1_LEXICAL_NGRAM_PROXY",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-dd176f851ce0cef3",
+      "dataset_version_d21": "d1-af7ee9cf09dd611d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-expert__B2_MMR_NGRAM_PROXY__K_LARGE.json",
+      "case_id": "case-synth-expert",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_LARGE",
+      "K": 10,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-dd176f851ce0cef3",
+      "dataset_version_d21": "d1-af7ee9cf09dd611d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-expert__B2_MMR_NGRAM_PROXY__K_MEDIUM.json",
+      "case_id": "case-synth-expert",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-dd176f851ce0cef3",
+      "dataset_version_d21": "d1-af7ee9cf09dd611d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-expert__B2_MMR_NGRAM_PROXY__K_SMALL.json",
+      "case_id": "case-synth-expert",
+      "strategy_id": "B2_MMR_NGRAM_PROXY",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-dd176f851ce0cef3",
+      "dataset_version_d21": "d1-af7ee9cf09dd611d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-expert__B2_ORACLE_LANES__K_LARGE.json",
+      "case_id": "case-synth-expert",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_LARGE",
+      "K": 10,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-dd176f851ce0cef3",
+      "dataset_version_d21": "d1-af7ee9cf09dd611d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-expert__B2_ORACLE_LANES__K_MEDIUM.json",
+      "case_id": "case-synth-expert",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_MEDIUM",
+      "K": 5,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-dd176f851ce0cef3",
+      "dataset_version_d21": "d1-af7ee9cf09dd611d",
+      "changed_metrics": []
+    },
+    {
+      "file": "case-synth-expert__B2_ORACLE_LANES__K_SMALL.json",
+      "case_id": "case-synth-expert",
+      "strategy_id": "B2_ORACLE_LANES",
+      "budget_key": "K_SMALL",
+      "K": 3,
+      "selection_identical": true,
+      "dataset_version_d2": "d1-dd176f851ce0cef3",
+      "dataset_version_d21": "d1-af7ee9cf09dd611d",
+      "changed_metrics": []
+    }
+  ]
+}

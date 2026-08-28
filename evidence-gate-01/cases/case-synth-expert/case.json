@@ -1,0 +1,52 @@
+{
+  "case_id": "case-synth-expert",
+  "category": [
+    "H",
+    "D"
+  ],
+  "research_question": "平台 B 的技术架构、源码开放与安全模型如何？其选型价值如何评估？",
+  "question_ids": [
+    "Q-SYN-E1"
+  ],
+  "reference_questions": [
+    "Q-SYN-E1"
+  ],
+  "budgets": {
+    "K_SMALL": 3,
+    "K_MEDIUM": 5,
+    "K_LARGE": 10
+  },
+  "freshness_window_policy": {
+    "policy_id": "fresh-365d-before-fetch",
+    "window_sec": 31536000,
+    "reference_epoch_sec": 1786628392,
+    "reference_note": "fetchedAt; PILOT_CANDIDATE_WINDOW",
+    "note": "frozen BEFORE strategy execution"
+  },
+  "long_tail_min_chars": 20,
+  "mmr_lambda": 0.5,
+  "mmr_lambda_note": "pilot configuration parameter, NOT a production default",
+  "lane_weights": {
+    "mainstream": 1,
+    "expert": 1,
+    "evidence_rich": 1,
+    "fresh": 1,
+    "long_tail": 1,
+    "contradictory": 1
+  },
+  "author_identity": "fixture_defined",
+  "author_identity_confidence": "MEDIUM",
+  "expert_author_keys": [
+    "expert_01",
+    "expert_02",
+    "expert_03",
+    "expert_04",
+    "expert_05",
+    "expert_06",
+    "expert_07",
+    "expert_08",
+    "expert_09",
+    "expert_10"
+  ],
+  "notes": "SYNTHETIC FIXTURE (seeded deterministic). 10 expert answers (low votes, deep technical) vs 30 mainstream (high votes, generic). Popularity-only selection misses experts; expert lane should preserve them. Gold = FIXTURE_MECHANICAL."
+}

@@ -1,0 +1,550 @@
+{
+  "questionId": "485463474",
+  "questionTitle": "入坑零代码、低代码、APaas系统，你需要了解权限控制上有哪些坑？",
+  "answerCount": 7,
+  "url": "https://www.zhihu.com/question/485463474",
+  "question": {
+    "id": "485463474",
+    "title": "入坑零代码、低代码、APaas系统，你需要了解权限控制上有哪些坑？",
+    "descriptionHtml": "<p>零代码、低代码、APaas系统热度日高，争论不断。传统软件开发人员认为相关软件只是玩具，仅能实现简单应用，无法实现复杂业务。实际情况是什么样？</p>",
+    "descriptionMarkdown": "零代码、低代码、APaas系统热度日高，争论不断。传统软件开发人员认为相关软件只是玩具，仅能实现简单应用，无法实现复杂业务。实际情况是什么样？",
+    "topics": [
+      {
+        "id": "19557683",
+        "name": "ERP"
+      },
+      {
+        "id": "19864268",
+        "name": "权限管理"
+      },
+      {
+        "id": "20920983",
+        "name": "aPaaS"
+      },
+      {
+        "id": "21217894",
+        "name": "低代码"
+      },
+      {
+        "id": "21334942",
+        "name": "零代码"
+      }
+    ]
+  },
+  "fetchedAt": "2026-08-13T13:39:51.862Z",
+  "answers": [
+    {
+      "id": "2109090852",
+      "author": "领悟杂谈",
+      "url": "https://www.zhihu.com/question/485463474/answer/2109090852",
+      "content": "<p data-pid=\"4uPNey5y\">当前零代码、低代码、APaas系统话题热度不断提高，随之其是否能实现复杂业务一直是业内争吵的焦点。很多公司准备入坑，但不知道这坑到底有多深，本人根据切身经验加以探讨。</p><p data-pid=\"-EBOHNAJ\">整体上从对权限的支撑能力，将权限支撑能力划分为：仅适合权限要求弱小团体使用；仅适合单部门体系使用；能适用于公司网状或矩阵化权限管理使用；能适用于集团型公司复杂权限使用。</p><p data-pid=\"XaD3KTn5\">相对于EXCEL，权限控制解决EXCEL文件权限控制不足问题。如多人收集汇总数据、多级部门汇总数据，避免人员看到、维护大于本人员权限数据。权限控制之重要性，是系统选型核心重点。</p><p data-pid=\"H5F-Th7g\">当前零代码、低代码、APaas系统大都从表格入手，多从模仿Salesforce、Airtable这些软件开始。表格网络化之后，第一要解决问题是权限问题，权限问题解决不好，表格网络化基本没有存在市场价值。</p><p data-pid=\"OrlGz_iH\">由于沿用Salesforce、Airtable概念，这导致目前市场上软件大多数权限基于单表控制；或者由于基于表的概念，对于数据量较大、使用部门较多的情况考虑欠缺，这整体导致权限控制能力相对比较弱，限制了对复杂业务、多部门协作的支持。</p><p data-pid=\"Aje6M_XF\">从目前市场上软件还看，基本都可以实现对表记录新增、修改、删除、导入、导控制，对视图权限控制，对字段权限控制，但在行权限控制上比较薄弱。对于行权限控制分为以下三种情况：</p><p data-pid=\"NZZBF1TL\">（1）无法对行记录权限进行控制；</p><p data-pid=\"jGudpDdH\">（2）仅对部门条线化管理权限可以控制，如本人看本人、领导看本人、上级领导看下线领导、上级部门看下线部门，即存在隶属关系权限控制。</p><p data-pid=\"9PSQqAco\">（3）矩阵化部门权限管理（或监督型权限管理），如质量保障部、财务部、风险控制部，可以查看销售部门、采购部门、项目相关数据，而这些部门与销售部门、采购部门等没有隶属关系。</p><p data-pid=\"SvvbJWhS\">（4）项目权限控制，成员加入项目后，项目成员可编辑查看该记录信息。</p><p data-pid=\"ynBJHwRK\">对于权限控制，可参考本人《零代码、低代码、APaaS系统设计（之四）权限设计推荐》一文</p><a href=\"https://zhuanlan.zhihu.com/p/376564945\" data-draft-node=\"block\" data-draft-type=\"link-card\" class=\"internal\">领悟杂谈：零代码、低代码、APaaS系统设计（之四）权限设计推荐</a><h2>一、无法对行记录权限进行控制</h2><p data-pid=\"2bxLuDAl\">此类权限控制，没有提供数据权限、行权限功能。严格说，此类软件仅适于很小的团队应用，相关团队对于数据权限没有太高要求，没有本人只能看本人数据权限要求。此类软件一般适用于权限要求弱、小团体使用。</p><p data-pid=\"Zm7fvB1q\">如下图：        </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-98059ed3b2e0a0ad9940beba5e263f0a_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"938\" data-rawheight=\"437\" data-original-token=\"v2-c3a612dc66350943d35fefe61e7dda1b\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-a0445c4738e2a4b87bbd5e5773e11df7_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"938\" data-original=\"https://pic1.zhimg.com/v2-98059ed3b2e0a0ad9940beba5e263f0a_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;938&#39; height=&#39;437&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"938\" data-rawheight=\"437\" data-original-token=\"v2-c3a612dc66350943d35fefe61e7dda1b\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-a0445c4738e2a4b87bbd5e5773e11df7_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"938\" data-original=\"https://pic1.zhimg.com/v2-98059ed3b2e0a0ad9940beba5e263f0a_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-98059ed3b2e0a0ad9940beba5e263f0a_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"E8sisrfA\">                                              （图1、某1软件权限设计界面）  </p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-7e37ce023f540265b23534022332c4cc_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"816\" data-rawheight=\"758\" data-original-token=\"v2-a73dc85822ef651eefd1c78f5ec73a27\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-9a8339b889d6bbb9d8abe0a0201193d0_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"816\" data-original=\"https://picx.zhimg.com/v2-7e37ce023f540265b23534022332c4cc_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;816&#39; height=&#39;758&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"816\" data-rawheight=\"758\" data-original-token=\"v2-a73dc85822ef651eefd1c78f5ec73a27\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-9a8339b889d6bbb9d8abe0a0201193d0_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"816\" data-original=\"https://picx.zhimg.com/v2-7e37ce023f540265b23534022332c4cc_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-7e37ce023f540265b23534022332c4cc_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"4YEbrLR7\">                                  （图2、某2软件权限设计界面）</p><h2>二、仅对部门条线化管理权限可以控制</h2><p data-pid=\"E_I0CDIH\">此类权限一般在模板表定义时，定义一个成员字段，通过成员字段设置作为成员、作为记录拥有者、仅用于记录人员数据，在权限处设置本人和下属，即具有相关的记录权限。此类软件仅适合单部门体系使用。</p><p data-pid=\"zJi1ilWy\">此类权限局限性为：</p><p data-pid=\"pDUZOQCs\">（1）、对于部门设定某普通员工作为业务管理员，代为管理某业务数据的（如合同管理员、案件管理员等）不能很好支持。</p><p data-pid=\"_kq43Gqe\">（2）、矩阵化部门权限管理（或监督型权限管理）不能很好支持。如财务部门要监管销售合同数据。</p><p data-pid=\"gGvLKv9b\">（3）、如果员工岗位调到其他部门，而数据上又没有将该员工在原部门数据成员、数据拥有者记录取消，则可能出现新部门领导看到其他部门数据情况。</p><p data-pid=\"SxMKlNNI\">注：一般通过表字段上定义部门、公司字段，通过该字段控制部门数据查看范围相对比安全。</p><p data-pid=\"lH8W-2cB\">（4）该设计由于仅显示名称，对于公司存在人员重名，无法区分；对于集团公司，存在不同公司下有相同部门时，无法区分部门。一般对于较大公司对于信息管理，需要通过集团、公司、事业部、部门等字段共同区分人员和部门。</p><p data-pid=\"n6jIUQ_W\">从以上我们可以看到，条线化管理应用局限性也比较大，如涉及要跨财务、质量管理、风控、法务等体系管理，则很难支持该业务。</p><p data-pid=\"kbZIkzw0\">如下图：  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-00175129528d115ed44e42a818d2d7a2_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"345\" data-rawheight=\"294\" data-original-token=\"v2-4a596c95de471bfc9b3a5bc206be0f98\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-7b66f86db8dad0e177764e3842cc827f_720w.jpg?source=1def8aca\" class=\"content_image\" width=\"345\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;345&#39; height=&#39;294&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"345\" data-rawheight=\"294\" data-original-token=\"v2-4a596c95de471bfc9b3a5bc206be0f98\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-7b66f86db8dad0e177764e3842cc827f_720w.jpg?source=1def8aca\" class=\"content_image lazy\" width=\"345\" data-actualsrc=\"https://picx.zhimg.com/50/v2-00175129528d115ed44e42a818d2d7a2_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"mwXWsMeY\">                                    （图3、某3软件模板表增加成员字段）  </p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-998e9b8c6252189fbf3c18b4280029e6_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"351\" data-rawheight=\"449\" data-original-token=\"v2-bf64d0544dfc577f108ca55e442e4e90\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-2e723d2c56c757f351687d4b2d4c7c5e_720w.jpg?source=1def8aca\" class=\"content_image\" width=\"351\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;351&#39; height=&#39;449&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"351\" data-rawheight=\"449\" data-original-token=\"v2-bf64d0544dfc577f108ca55e442e4e90\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-2e723d2c56c757f351687d4b2d4c7c5e_720w.jpg?source=1def8aca\" class=\"content_image lazy\" width=\"351\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-998e9b8c6252189fbf3c18b4280029e6_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"pV8nEQpO\">                                     （图4、某3软件权限配置）  </p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-1d9590b36360ceabea250abcec1e97bd_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"706\" data-rawheight=\"596\" data-original-token=\"v2-c3a8d9e1f8d93a6309c04dc29dff2778\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-da3f3ac097a35088340048cd3cb815a8_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"706\" data-original=\"https://pic1.zhimg.com/v2-1d9590b36360ceabea250abcec1e97bd_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;706&#39; height=&#39;596&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"706\" data-rawheight=\"596\" data-original-token=\"v2-c3a8d9e1f8d93a6309c04dc29dff2778\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-da3f3ac097a35088340048cd3cb815a8_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"706\" data-original=\"https://pic1.zhimg.com/v2-1d9590b36360ceabea250abcec1e97bd_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-1d9590b36360ceabea250abcec1e97bd_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"StG0qlhy\">                                           （图5、某4软件行权限配置）  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-51c775e2fcb54a7fe9ae7c8bde258151_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"745\" data-rawheight=\"486\" data-original-token=\"v2-a794f36b1995424d88f0fd74212ca91c\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-56230f295a4a8006e23ce38a7567f4ec_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"745\" data-original=\"https://pic1.zhimg.com/v2-51c775e2fcb54a7fe9ae7c8bde258151_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;745&#39; height=&#39;486&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"745\" data-rawheight=\"486\" data-original-token=\"v2-a794f36b1995424d88f0fd74212ca91c\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-56230f295a4a8006e23ce38a7567f4ec_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"745\" data-original=\"https://pic1.zhimg.com/v2-51c775e2fcb54a7fe9ae7c8bde258151_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-51c775e2fcb54a7fe9ae7c8bde258151_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"0OnMfKnP\">                                               （图6、某4字段条件匹配当前人员权限配置）</p><h2><code>三、矩阵化部门权限管理（或监督型权限管理）</code></h2><p data-pid=\"EyvtfTpO\">1、逐个表定义权限，按部成、成员字段区配权限</p><p data-pid=\"jnsQ6x5i\">矩阵化部门（或监督型）权限管理，目前一般是在表上通过增加部门字段、成员字段，然后，在权限设置时，将成员字段设置当人员人或指定人员匹配，校验是否本人或指定我人有权记录；将部门字段与指定部门匹配（如当前用户所在部门、当前部门所在部门及下级部门、指定的部门），即可以实现条线化权限管理，同时，也可以实现财务等部门管理其他部门数据的业务要求。此类软件能适用于公司网状或矩阵化权限管理使用，人员用户数量不适过多。</p><p data-pid=\"5TeAHt8l\">以上权限控制的缺陷是：</p><p data-pid=\"I3bBHUFb\">（1）逐个表配置，权限配置工作量巨大。</p><p data-pid=\"vy8ng0nr\">（2）不支持大集团分级数据授权模式。</p><p data-pid=\"_ZpKTo2Z\">如下图：  </p><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-c3e113cc5719c694cd9307a70fbcde8c_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"542\" data-rawheight=\"511\" data-original-token=\"v2-21994f01d3f5c0757612bf1154d0dbf7\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-bd5dddfec648413e15341f69f02e40a3_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"542\" data-original=\"https://pic1.zhimg.com/v2-c3e113cc5719c694cd9307a70fbcde8c_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;542&#39; height=&#39;511&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"542\" data-rawheight=\"511\" data-original-token=\"v2-21994f01d3f5c0757612bf1154d0dbf7\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-bd5dddfec648413e15341f69f02e40a3_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"542\" data-original=\"https://pic1.zhimg.com/v2-c3e113cc5719c694cd9307a70fbcde8c_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-c3e113cc5719c694cd9307a70fbcde8c_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"62Oifzwl\">                                          （图7、某4软件成员匹配设置）  </p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-e0c304d1a786e39abc21109e147e30ac_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"545\" data-rawheight=\"584\" data-original-token=\"v2-116d208c42dd245337da9fc74e3eea3b\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-6e68d0cda9c8e24e12c3aa6d4aecaaa1_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"545\" data-original=\"https://picx.zhimg.com/v2-e0c304d1a786e39abc21109e147e30ac_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;545&#39; height=&#39;584&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"545\" data-rawheight=\"584\" data-original-token=\"v2-116d208c42dd245337da9fc74e3eea3b\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-6e68d0cda9c8e24e12c3aa6d4aecaaa1_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"545\" data-original=\"https://picx.zhimg.com/v2-e0c304d1a786e39abc21109e147e30ac_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-e0c304d1a786e39abc21109e147e30ac_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"FJuaqdCH\">                                           （图8、某4软件部门匹配设置）</p><p data-pid=\"u-_yyvi2\">2、模板表中定义筛选公司或部门字段in操作人员部门权限表</p><p data-pid=\"C1GAEuXY\">此类权限是定义组织机构，并定义角色或人员所具有的组织机构权限（如图7），然后，在表单中定义公司、部门字段找当前人员有权限的公司和部门记录。</p><p data-pid=\"S1D2h92L\">该方式的优点是，</p><p data-pid=\"_tzGuJ4t\">（1）、权限条件统一定义，人员或角色定义组织机构权限仅需权一次，权限定义工作量相比较小。</p><p data-pid=\"VlWGW_hp\">（2）、权限可通过in 语句多层嵌套，可以实现较为复杂权限。如“五”中所述权限。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-e8a898dd7f431331256188856c3b0ebf_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1415\" data-rawheight=\"318\" data-original-token=\"v2-9b24fe7e82729537399e287d3f3ee9ce\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-a0b0b496705faa9260883c05078cecbb_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1415\" data-original=\"https://picx.zhimg.com/v2-e8a898dd7f431331256188856c3b0ebf_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1415&#39; height=&#39;318&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1415\" data-rawheight=\"318\" data-original-token=\"v2-9b24fe7e82729537399e287d3f3ee9ce\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-a0b0b496705faa9260883c05078cecbb_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1415\" data-original=\"https://picx.zhimg.com/v2-e8a898dd7f431331256188856c3b0ebf_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-e8a898dd7f431331256188856c3b0ebf_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"XYRAGOgu\">                                           （图9、某5软件人员部门权限设置）  </p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-09d4637e3002216a980b71b63b4df761_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"655\" data-rawheight=\"280\" data-original-token=\"v2-50a2b8a22d34616e7565acd50b76b291\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-f1d869bef4c796eb0aaeed41666dcdc4_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"655\" data-original=\"https://pic1.zhimg.com/v2-09d4637e3002216a980b71b63b4df761_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;655&#39; height=&#39;280&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"655\" data-rawheight=\"280\" data-original-token=\"v2-50a2b8a22d34616e7565acd50b76b291\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-f1d869bef4c796eb0aaeed41666dcdc4_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"655\" data-original=\"https://pic1.zhimg.com/v2-09d4637e3002216a980b71b63b4df761_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-09d4637e3002216a980b71b63b4df761_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"x8Zl7Hmp\">                                （图10、某5软件通过SQL条件嵌套过滤数据）</p><p data-pid=\"KRKO93NB\">  上图权限满足：按角色过滤数据、按项目组过滤数据、按主责人员和最后修改人员过滤数据、按组织机构和组织机构权限表过滤数据复合权限控制。</p><p data-pid=\"oYvdZzPO\">注：本种权限控制，在零代码、低代码、APaas系统中非常少。</p><h2><code>四、项目权限控制</code></h2><p data-pid=\"hF7TgAG9\">此类权限一般在模板表定义时，定义一个成员字段，通过成员字段设置多选成员，并通过权限处设置成员为加入的、拥有的，来界定多个成员有权限。参见图3、图4。</p><p data-pid=\"sti1gyuv\">该设计局限性：</p><p data-pid=\"l61kT_h-\">（1）、一般成立项目组，成员可能由多个公司、部门、人员组成，项目组中需要区分以上信息；人员在项目中担任不同角色，需要区分；人员有不同的加入项目时间和离开项目时间，需要进行区分。目前设计无法加以区分。</p><p data-pid=\"AKCUwYVi\">（2）、项目权限控制时，还涉及项目中子任务、内容权限控制，一般项目控制为，项目经理对项目中所有子任务有调整权、检查权；项目中可能分成数个项目小组，小组长对本人负责范围内的子任务有调整权、检查权。目前，试用软件范围内，尚未看到有软件支持子任务权限控制。</p><p data-pid=\"sYn3xuKL\">注：项目权限控制是日常管理中运用非常普遍权限控制，建议重点支持。</p><h2><code>五、考虑不足权限控制</code></h2><p data-pid=\"doBPKMKc\">1、通过子表公司、部门授权控制主表行记录：</p><p data-pid=\"IvxOlGbr\">工作任务、事故、案件等，在企业管理中一般指定主责公司、主责部门、主责人员（不同部门可能各设一名）。同时，同一项任务由多部门共同承担、一事故涉及多公司和部门、一案件当事人涉及集团内多公司，在管理时存在两个角度管理：A、主责公司部门统筹管理；B、涉事公司统计本公司涉及的任务、事故、案件等。实际上业务办理虽然工作主责管理单位跟进，但该工作对本单位有紧密关联关系，相关部门负责人、相关公司负责人要纳入本公司和部门跟踪范围。因此，根据子表所列公司、部门控制权限，也是权限的一种主要形式。</p><p data-pid=\"oAQ7ig0N\">2、多种组织机构权限控制</p><p data-pid=\"4OtRD37t\">企业管理由于管理需要，不仅要按统一固定组织机构管理数据，还需要按多种不同组织机构管理数据。例如：按销售大区管理、按管理体系管理（如人力资源、财务体系、风控体系、采购体系、办公室体系等）、党组织等。</p><p data-pid=\"psK58u18\">销售管理中，大区管理（东部区、西部区等，该大区在组织机构上不一定存在，仅仅在总部指定人员分别负责不同区域分公司和代理商的销售管理）。</p><p data-pid=\"zZoW5WM5\">集团公司一般进行体系化管理，如人力资源体系、财务体系、风控体系，各公司财务、人力资源、风控服务本公司管理，同时，要服从本体系管理。</p><p data-pid=\"kxkAWisi\">多组织体系授权控制支持，是复杂权限授权支持要件，也是集团化权限管理要件。</p><p data-pid=\"5fr7mvuc\">3、集团分级行数据授权</p><p data-pid=\"Fkl86Ltw\">集团公司人数众多，如人员权限全归集团总部授权，其工作量巨大，相关系统管理员无力承担该工作量。一般情况下，由集团总部授权子集团管理本集团范围内公司和部门，子集团再授权给下级公司管理本级公司下部门人权授权。目前，分级数据授权在零代码、低代码、APaas领域暂未发现该类授权。只有分级授权，才能适应大型企业权限应用，能适用于集团型公司复杂权限使用</p><p data-pid=\"TBJNV-mu\">注：从成员选择未考虑同名人员、多部门、多公司区分，以及实现复杂权限管理的供应商比例非常大，目前市场上对于大型企业的典型客户不足，或涉及业务尚不复杂。供应商应重点解决权限问题，以满足复杂业务需要。降低公众中，无法实现复杂业务印象不利影响。</p><p data-pid=\"dGxW-GvI\"><b>综上所述：</b>从以上分析，部分软件仅适合小团体使用；部分软件仅适合单体系部门使用；部分软件可适用矩阵化管理模式，但其权限分配工作量巨大，仍有待进一步优化；而对于复杂权限支持，目前市场上软件均存在不同程度不足。软件企业采购，根据适用范围慎重选型。</p><table data-draft-node=\"block\" data-draft-type=\"table\" data-size=\"normal\" data-row-style=\"normal\"><tbody><tr><th>适用团队规模</th><th>功能特点</th><th>备注</th></tr><tr><td>小团队使用</td><td>无法对数据行权限进行控制</td><td></td></tr><tr><td>单部门条线团队使用</td><td>定义岗位和员工上下级关系；<br/>定义编辑、查看本人创建数据。定义上级编辑、查看本人，及下属、下级单位数据；</td><td>人员调动时，可能出现权限漏洞。</td></tr><tr><td>网状矩阵化（监督型）团队使用</td><td>支持部门条线化权限授权。<br/>模式1：基于表单，通过表单上字段条件定义人员、角色，设置可管理部门组织机构权限。模式2：基于组织机构等维护，定义人员、角色部门组织机构权限；基于表单，定义表上字段与某部门组织机构权限过滤筛选关系。</td><td>适用协同人力资源、财务、风控、办公室等多部门联合使用。<br/>使用小规模公司管理</td></tr><tr><td>集团化团队使用</td><td>支持网状矩阵化（监督型）权限分配；<br/>支持分级授权；支持分组织机构授权；支持通过涉及组织，多层反查约束授权。</td><td>重点支持5000人以上权限分配；<br/>大型组织，需重点考察部门和人员选择界面（部门多、人员多），是否分层显示部门、分部门过滤人员，一次性加载部门和人员说明未经历大团队项目考验。分级授权重点考察组织机构控件是否可部分加载有权限部门；多分、子公司管理</td></tr><tr><td>项目团队管理</td><td>定义行记录（项目）团队，以及行记录主责人员（项目经理）；<br/>定义团队小组长，及可编辑、查看资源（如任务、任务下文件等）；实现仅本团队成员可编辑、查看本记录数据。非本团队成员无权查看和维护。</td><td>涉及项目管理需考察</td></tr></tbody></table><p data-pid=\"ZWtwzt9W\">后续导读：</p><a href=\"https://www.zhihu.com/question/487214224/answer/2124048604\" data-draft-node=\"block\" data-draft-type=\"link-card\" data-image=\"https://pica.zhimg.com/v2-fb526b385c85e58ce2a3e51be745fc9e_180x120.jpg\" data-image-width=\"1606\" data-image-height=\"1180\" class=\"internal\">入坑零代码、低代码、APaas系统，你需要了解系统支持业务线和业务数量是否与本团队相匹配有哪些坑？</a><p></p>",
+      "excerpt": "当前零代码、低代码、APaas系统话题热度不断提高，随之其是否能实现复杂业务一直是业内争吵的焦点。很多公司准备入坑，但不知道这坑到底有多深，本人根据切身经验加以探讨。 整体上从对权限的支撑能力，将权限支撑能力划分为：仅适合权限要求弱小团体使用；仅适合单部门体系使用；能适用于公司网状或矩阵化权限管理使用；能适用于集团型公司复杂权限使用。 相对于EXCEL，权限控制解决EXCEL文件权限控制不足问题。如多人收集汇总…",
+      "voteupCount": 5,
+      "commentCount": 4,
+      "createdTime": 1631068410,
+      "updatedTime": 1631776793,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-98059ed3b2e0a0ad9940beba5e263f0a_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-98059ed3b2e0a0ad9940beba5e263f0a_r.jpg?source=1def8aca",
+            "width": 938,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-7e37ce023f540265b23534022332c4cc_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-7e37ce023f540265b23534022332c4cc_r.jpg?source=1def8aca",
+            "width": 816,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/50/v2-00175129528d115ed44e42a818d2d7a2_720w.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/50/v2-00175129528d115ed44e42a818d2d7a2_720w.jpg?source=1def8aca",
+            "width": 345,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/50/v2-998e9b8c6252189fbf3c18b4280029e6_720w.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/50/v2-998e9b8c6252189fbf3c18b4280029e6_720w.jpg?source=1def8aca",
+            "width": 351,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-1d9590b36360ceabea250abcec1e97bd_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-1d9590b36360ceabea250abcec1e97bd_r.jpg?source=1def8aca",
+            "width": 706,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-51c775e2fcb54a7fe9ae7c8bde258151_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-51c775e2fcb54a7fe9ae7c8bde258151_r.jpg?source=1def8aca",
+            "width": 745,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-c3e113cc5719c694cd9307a70fbcde8c_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-c3e113cc5719c694cd9307a70fbcde8c_r.jpg?source=1def8aca",
+            "width": 542,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-e0c304d1a786e39abc21109e147e30ac_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-e0c304d1a786e39abc21109e147e30ac_r.jpg?source=1def8aca",
+            "width": 545,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-e8a898dd7f431331256188856c3b0ebf_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-e8a898dd7f431331256188856c3b0ebf_r.jpg?source=1def8aca",
+            "width": 1415,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-09d4637e3002216a980b71b63b4df761_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-09d4637e3002216a980b71b63b4df761_r.jpg?source=1def8aca",
+            "width": 655,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://zhuanlan.zhihu.com/p/376564945",
+            "canonicalUrl": "https://zhuanlan.zhihu.com/p/376564945",
+            "domain": "zhuanlan.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified"
+          },
+          {
+            "originalUrl": "https://www.zhihu.com/question/487214224/answer/2124048604",
+            "canonicalUrl": "https://www.zhihu.com/question/487214224/answer/2124048604",
+            "domain": "www.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2180915039",
+      "author": "自由",
+      "url": "https://www.zhihu.com/question/485463474/answer/2180915039",
+      "content": "<p data-pid=\"ixAz2-jU\">目前正处于信息发展时期，讲求效率快，走慢一步就很容易被落下了。正因为如此，传统的开发系统已经跟不上时代的脚步，也无法适应新时期企业信息化的需求。在这种情况之下，企业选择了低代码和无代码平台，试图借助工具来使企业走向科学化发展，好让企业在竞争中具备优势。</p><p data-pid=\"dpsyU5-R\">那么今天，我们就来讲讲低代码和无代码的区别，究竟企业应该如何选择适合自身的系统开发平台呢？</p><p data-pid=\"vEYtkS4z\">一、低代码和无代码的区别</p><p data-pid=\"Q_WBwF8j\"><b>低代码：</b>通过少量代码就可以快速生成应用程序的开发平台。通过可视化进行应用程序开发的方法，使具有不同经验水平的开发人员可以通过图形化的用户界面，使用拖拽组件和模型驱动的逻辑来创建网页和移动应用程序。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-0aa82f752bb37c1f405400586fbda004_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1339\" data-rawheight=\"769\" data-original-token=\"v2-00f4bc491b63ee9fe29537ab85371eca\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-d8bf2fffb8c3a39161bc131bff826145_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1339\" data-original=\"https://picx.zhimg.com/v2-0aa82f752bb37c1f405400586fbda004_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1339&#39; height=&#39;769&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1339\" data-rawheight=\"769\" data-original-token=\"v2-00f4bc491b63ee9fe29537ab85371eca\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-d8bf2fffb8c3a39161bc131bff826145_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1339\" data-original=\"https://picx.zhimg.com/v2-0aa82f752bb37c1f405400586fbda004_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-0aa82f752bb37c1f405400586fbda004_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"PXIhlCdU\"><b>无代码：</b>也叫零代码，从字面上就很容易理解，开发软件过程中，不需要编写代码，只需通过拖拽的方式就可以实现各种软件的构建，这就是无代码。</p><p data-pid=\"BdrelrFS\">就这么一看是不是会觉得零代码会更好呢？其实不然，无代码平台的弊端是不容忽视的：</p><p data-pid=\"eh6y_5Tz\">1、无代码开发平台封装的组件限制了专业程序员的使用；</p><p data-pid=\"I-dSHk8F\">2、业务流程只能随着组件改变。组件的功能和种类，限制了应用程序的开发；</p><p data-pid=\"JWvpdGev\">3、可靠性和安全性存在一定风险。如果无代码开发平台的组件存在质量或安全漏洞问题，开发出的应用程序的稳定性和安全性就会受到影响。</p><p data-pid=\"YAsmV9OT\">了解清楚了两者的区别之后，接下来再来讲讲企业该如何选择适合自身的系统开发平台，才能使企业的办公效率得到提速呢？</p><p data-pid=\"ON3PVCBW\">二、企业应如何选适合自身的系统开发平台？</p><p data-pid=\"tADbrRGU\">如果企业是做软件开发的，有专业的开发人员，这种情况下的企业不管是使用低代码平台，还是使用无代码平台做软件开发，都可以大幅度地实现开发效率的提高。</p><p data-pid=\"gHBmBd2u\">而低代码开发平台不仅适用于特定的小型应用程序，对于大型企业的复杂的应用程序都是可以轻松驾驭的。从<b>低代码开发平台</b>的功能特征中，可以体现出低代码开发平台的优势所在：</p><p class=\"ztext-empty-paragraph\"><br/></p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-f471233710e68c697bff55e947854390_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"573\" data-rawheight=\"219\" data-original-token=\"v2-4f8b0954682cc08a1a12a77a93a09b3c\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-5554b101b84e222cdb16e2b52fdf5370_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"573\" data-original=\"https://picx.zhimg.com/v2-f471233710e68c697bff55e947854390_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;573&#39; height=&#39;219&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"573\" data-rawheight=\"219\" data-original-token=\"v2-4f8b0954682cc08a1a12a77a93a09b3c\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-5554b101b84e222cdb16e2b52fdf5370_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"573\" data-original=\"https://picx.zhimg.com/v2-f471233710e68c697bff55e947854390_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-f471233710e68c697bff55e947854390_720w.jpg?source=1def8aca\"/></figure><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-2e112a33c3fa3ea72e31b578b3d2fe73_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1329\" data-rawheight=\"747\" data-original-token=\"v2-18c8df0634e4f3d774dbb158b90808af\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-ee4e874b28bcbaba5d43cd97149a504a_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1329\" data-original=\"https://picx.zhimg.com/v2-2e112a33c3fa3ea72e31b578b3d2fe73_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1329&#39; height=&#39;747&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1329\" data-rawheight=\"747\" data-original-token=\"v2-18c8df0634e4f3d774dbb158b90808af\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-ee4e874b28bcbaba5d43cd97149a504a_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1329\" data-original=\"https://picx.zhimg.com/v2-2e112a33c3fa3ea72e31b578b3d2fe73_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-2e112a33c3fa3ea72e31b578b3d2fe73_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"164vLt2v\"><b>1、配置即开发、所见即所得：</b>平台提供全可视化的开发环境、丰富的开发组件及多种案例模板，降低了应用软件的开发难度，用户无需从零开始，节省80%以上开发工作量；</p><p data-pid=\"gBWeNGf-\"><b>2、全浏览器操作，随时修改随时生效：</b>平台采用纯Web开发模式，用户无需安装特定的开发环境，所有的开发工作都在Web页面通过可视化配置方式完成，用户可以在线轻松的完成OA、CRM、HER和SCM等任何行业的流程管理软件搭建，随时修改随时生效，无需打包编译和发布，是真正意义上的中文PasS开发平台；</p><p data-pid=\"VUI6oRTJ\"><b>3、支持服务器端宏语言，轻松满足复杂业务逻辑需求：</b>平台为开发者提供了基于JavaScript的服务器端宏语言Iscript，并提供在线调试工具集，用户在短时间内即可完成一个复杂的业务管理系统；</p><p data-pid=\"92vS2RR2\"><b>4、<a href=\"https://link.zhihu.com/?target=http%3A//www.teemlink.com/tag/%25e6%25b5%2581%25e7%25a8%258b%25e5%25bc%2595%25e6%2593%258e/\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">流程引擎</a>强大，特适应中国式流程管理：</b>平台内置天翎自主研发的流程引擎，符合BPMN2.0标准的同时比Activity等开源技术更适应中国式流程管理业务模式和操作习惯；</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-3d85599f84cc205c154c81489e25329d_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1337\" data-rawheight=\"744\" data-original-token=\"v2-09e508d0536e63d50328dddfb0e43e46\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-7ee39c957176e5369b13312a5f624d11_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1337\" data-original=\"https://pic1.zhimg.com/v2-3d85599f84cc205c154c81489e25329d_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1337&#39; height=&#39;744&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1337\" data-rawheight=\"744\" data-original-token=\"v2-09e508d0536e63d50328dddfb0e43e46\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-7ee39c957176e5369b13312a5f624d11_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1337\" data-original=\"https://pic1.zhimg.com/v2-3d85599f84cc205c154c81489e25329d_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-3d85599f84cc205c154c81489e25329d_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"xs3GaR5z\"><b>5、支持多租户模式，满足集团型企业灵活管控：</b>平台充分考虑集团型企业的业务场景，支持独立配置企业域的组织架构模型，通过多租户模式的灵活授权，使得用户单一账号能够在多子公司灵活应用又不妨碍子公司间业务数据隔离；</p><p data-pid=\"JbApF20y\"><b>6、独创查询微语言DQL，检索更加方便灵活：</b>平台自定义查询微语言DQL，描述用户的查询需求，简化数据查询操作，节约用户学习成本的同时又能更好的满足用户的查询和检索需求；</p><p data-pid=\"ZU8a6NZY\"><b>7、提供丰富完整的开发接口，方便系统集成和拓展：</b>平台内置Webservice、RestFul、SAP、速达、用友、金蝶和MS Office等接口，提供详细的API接口说明，通过这些接口平台可以快速友好的同其他系统或智能硬件进行整合，实现系统间业务数据的双向交换、共享业务处理流程等功能；</p><p data-pid=\"ef4SxkND\"><b>8、强大的自我进化能力，满足用户日益变化的业务需求：</b>平台拥有稳健、易拓展的设计架构和丰富的开发接口，同时支持支持版本管理，使得平台具备优秀的自我进化能力，用户通过平台配置的应用可直接在web页面进行维护和修改，并根据自身不断变化的业务需求灵活的配置相关功能；</p><p data-pid=\"ggLc-DAY\"><b>9、学习曲线平缓、上手迅速：</b>平台封装了大量的可视化开发组件和业务模板，同时提供完善的培训课程及多种技术支持渠道，有Java基础的开发人员经过一周的培训即可快速掌握并能熟练配置出复杂的应用；</p><p data-pid=\"0wWSreLg\"><b>10、提供全源码交付机制，解决后顾之忧：</b>平台可以提供全部源码，保障用户在不同的应用阶段、不同层次和不同规模的服务需求都能得到满足，确保选用我司产品后没有任何后顾之忧。</p>",
+      "excerpt": "目前正处于信息发展时期，讲求效率快，走慢一步就很容易被落下了。正因为如此，传统的开发系统已经跟不上时代的脚步，也无法适应新时期企业信息化的需求。在这种情况之下，企业选择了低代码和无代码平台，试图借助工具来使企业走向科学化发展，好让企业在竞争中具备优势。 那么今天，我们就来讲讲低代码和无代码的区别，究竟企业应该如何选择适合自身的系统开发平台呢？ 一、低代码和无代码的区别 低代码：通过少量代码就可以快…",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1634771385,
+      "updatedTime": 1634771385,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-0aa82f752bb37c1f405400586fbda004_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-0aa82f752bb37c1f405400586fbda004_r.jpg?source=1def8aca",
+            "width": 1339,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-f471233710e68c697bff55e947854390_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-f471233710e68c697bff55e947854390_r.jpg?source=1def8aca",
+            "width": 573,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-2e112a33c3fa3ea72e31b578b3d2fe73_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-2e112a33c3fa3ea72e31b578b3d2fe73_r.jpg?source=1def8aca",
+            "width": 1329,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-3d85599f84cc205c154c81489e25329d_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-3d85599f84cc205c154c81489e25329d_r.jpg?source=1def8aca",
+            "width": 1337,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://link.zhihu.com/?target=http%3A//www.teemlink.com/tag/%25e6%25b5%2581%25e7%25a8%258b%25e5%25bc%2595%25e6%2593%258e/",
+            "canonicalUrl": null,
+            "domain": null,
+            "clickable": false,
+            "securityClass": "rejected"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2406068294",
+      "author": "两眼忧郁的大叔",
+      "url": "https://www.zhihu.com/question/485463474/answer/2406068294",
+      "content": "<p data-pid=\"hhuQWxki\">太阳低下没有新鲜事，低代码或者零代码也不是新事务，只不过用一种新概念来包装加工一些旧的工具或系统，比如Dreamweaver、在线建站系统等，透过拖拽就可以完成一些网站页面的开发，比如一些PASS平台，通过成熟的中间件或组件，快速搭建一个分布式系统等等。至于低代码、零代码或无代码的差别，从名称上大概也可以猜出一二来。</p><p data-pid=\"oKItzAuW\">听惯了PaaS、IaaS、SaaS、BaaS，这里再提及一个：aPaaS，是PaaS的一个分支，全称为应用程序平台即服务。在国外也都有比较成功的案例，国内也有一些厂商在从事这块业务，目的就是让非技术人员也可以参与进来，进行业务系统的研发。这也是当下云计算、信息化、数字化必然涉及到的一块业务，总存在一些企业信息化能力很弱，没有专职的研发团队来进行软件开发，交由专业的厂商来做似乎是一个明智的选择。</p><p data-pid=\"yX6-GhlL\">近两年也出现一批业务流程管理类的低代码平台，相比aPaaS而言，上手入门门槛更低，短时间就可以搭建一套适用于企业业务管理系统，相比传统的研发模式，不仅省时间成本，研发团队岗位、硬件投入成本也大量减少，对中小企业而言，何乐而不为。</p><p data-pid=\"zxPJd-1q\">低代码再好也不是银弹，无法解决所有问题，在试用了国内BPM类型几个低代码平台后，简单梳理了下优缺利弊。</p><p data-pid=\"t1HvZ0DL\">利</p><p data-pid=\"zv6ImCEG\">无须依赖开发人员，懂一定的基础即可上手开发业务系统</p><p data-pid=\"V0qHYlUA\">功能覆盖数据收集、报表、流程审核等常见的功能，提供通用应用模板</p><p data-pid=\"4mSIWoUh\">无须弄懂应用的运转逻辑、服务器运维等，全由平台负责</p><p data-pid=\"TUf91_QZ\">与支持的第三方应用授权绑定实现数据同步，如钉钉、teambition等</p><p data-pid=\"5Jr36OcY\">提供接入工具插件，提升用户体验，比如OCR工具等</p><p data-pid=\"0H0kDZbO\">降低研发团队人员开支，降低研发时间成本</p><p data-pid=\"B4Iq7BHD\">在同一套低代码平台内部，各个子系统间的数据互通，降低了数据孤岛的可能性</p><p data-pid=\"ay9myD-R\">弊</p><p data-pid=\"N4V4Dp5F\">需要一定的逻辑抽象能力，并非面向所有人员都可以轻松上手使用</p><p data-pid=\"DmK_jcK8\">系统运行限定在低代码平台的云服务上，主要面向企业内部的管理系统为主，虽然少部分可以私有化部署</p><p data-pid=\"8xddQiXz\">无法完美与自研系统融合，对外提供API有限，不能直接读取底层数据库</p><p data-pid=\"05zaV8U0\">复杂的场景无法支持，一旦使用后出现无法满足需求的情况，只能舍弃需求</p><p data-pid=\"9gPzVSvE\">面向C端用户的功能应用适用性不高，与当下的小程序业态融合不够友好</p><p data-pid=\"J3nXwSoi\">一些研发过程中常见的管理系统脚手架，也被包装成低代码/无代码平台，进行对外销售。这也说明概念不断推陈出新，蹭个热度更有助于打开销售局面，提高市场占有率。</p><p data-pid=\"LDYN6dj_\">在有一定研发能力，业务场景并非简单的增删查改的情况下，通过编码的方式会更好。时下形态下的低代码已经可以帮不少中小微企业解决实际的问题，特别是传统企业的数字化转型，是一个值得尝试的方向。</p>",
+      "excerpt": "太阳低下没有新鲜事，低代码或者零代码也不是新事务，只不过用一种新概念来包装加工一些旧的工具或系统，比如Dreamweaver、在线建站系统等，透过拖拽就可以完成一些网站页面的开发，比如一些PASS平台，通过成熟的中间件或组件，快速搭建一个分布式系统等等。至于低代码、零代码或无代码的差别，从名称上大概也可以猜出一二来。 听惯了PaaS、IaaS、SaaS、BaaS，这里再提及一个：aPaaS，是PaaS的一个分支，全称为应用程序平台即服…",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1648169357,
+      "updatedTime": 1648169357,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2189029739",
+      "author": "bruce",
+      "url": "https://www.zhihu.com/question/485463474/answer/2189029739",
+      "content": "<p data-pid=\"7re1r9jG\">低代码：用<b>少量代码</b>就可以开发程序，适合有技术但想<b>节省时间</b>的<b>技术人员</b>。</p><p data-pid=\"sFxBbX65\">目前天翎低代码平台采用的是低代码➕无代码双结合的模式。</p><p data-pid=\"4Sykgb2c\">对于非技术人员在设计表单系统时采用常规模式，仅需通过拖拉拽方式完成<a href=\"https://www.zhihu.com/search?q=%E8%A1%A8%E5%8D%95&amp;search_source=Entity&amp;hybrid_search_source=Entity&amp;hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A1959641782%7D\" class=\"internal\" target=\"_blank\">表单</a>设计，无需任何代码量。</p><p data-pid=\"L0iBBvz2\">对于开发人员可以开发<a href=\"https://www.zhihu.com/search?q=%E6%89%A9%E5%B1%95%E6%A8%A1%E5%BC%8F&amp;search_source=Entity&amp;hybrid_search_source=Entity&amp;hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A1959641782%7D\" class=\"internal\" target=\"_blank\">扩展模式</a>，在图形化界面中可以编写各种复杂业务逻辑。</p><p></p>",
+      "excerpt": "低代码：用 少量代码就可以开发程序，适合有技术但想节省时间的技术人员。目前天翎低代码平台采用的是低代码➕无代码双结合的模式。 对于非技术人员在设计表单系统时采用常规模式，仅需通过拖拉拽方式完成 表单 设计，无需任何代码量。对于开发人员可以开发 扩展模式 ，在图形化界面中可以编写各种复杂业务逻辑。",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1635206609,
+      "updatedTime": 1635206609,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://www.zhihu.com/search?q=%E8%A1%A8%E5%8D%95&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A1959641782%7D",
+            "canonicalUrl": "https://www.zhihu.com/search?q=%E8%A1%A8%E5%8D%95&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A1959641782%7D",
+            "domain": "www.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified"
+          },
+          {
+            "originalUrl": "https://www.zhihu.com/search?q=%E6%89%A9%E5%B1%95%E6%A8%A1%E5%BC%8F&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A1959641782%7D",
+            "canonicalUrl": "https://www.zhihu.com/search?q=%E6%89%A9%E5%B1%95%E6%A8%A1%E5%BC%8F&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A1959641782%7D",
+            "domain": "www.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2940558097",
+      "author": "枚达零低代码",
+      "url": "https://www.zhihu.com/question/485463474/answer/2940558097",
+      "content": "<h2>可能会遇到的坑</h2><p data-pid=\"3WVOCcCQ\">在零代码、低代码、APaaS系统中，权限控制是一个非常关键的问题，以下是一些可能会遇到的坑：<br/></p><ol><li data-pid=\"x1nfGBFg\">默认权限过于宽松：某些零代码、低代码、APaaS系统可能会在创建应用程序时自动为所有用户授予默认权限。这可能会导致权限泄露和安全漏洞。因此，必须确保在创建应用程序时对权限进行明确的控制和分配。</li><li data-pid=\"j4PoECoU\">非一致性的权限控制：在零代码、低代码、APaaS系统中，通常会有多种方式和位置来定义和管理权限。如果不进行一致性检查，就可能导致权限控制的混乱和不一致，从而影响应用程序的安全性。</li><li data-pid=\"6EFIKLXk\">缺少细粒度的权限控制：某些零代码、低代码、APaaS系统可能缺乏细粒度的权限控制，这可能会导致敏感数据或操作暴露给不应该访问或执行的用户。因此，在创建应用程序时必须确保可以进行适当的权限控制。</li><li data-pid=\"vALUI0vF\">权限继承的问题：在零代码、低代码、APaaS系统中，可能会存在权限继承的问题，即子组件或子应用程序会自动继承其父组件或父应用程序的权限。这可能会导致意外的权限暴露和不一致，从而影响应用程序的安全性。</li><li data-pid=\"7WJ93nXp\">缺少审计和日志记录：缺少审计和日志记录功能可能会导致无法追踪敏感操作的来源和时间，从而使应用程序容易受到攻击。因此，在创建应用程序时，必须确保有足够的审计和日志记录功能，以跟踪和监控用户的行为和操作。</li></ol><p data-pid=\"c-bto_o6\">总之，在使用零代码、低代码、APaaS系统时，必须非常小心地考虑和管理权限控制，以确保应用程序的安全性和保密性。</p><h2>枚达零低代码平台在权限控制方面的设计</h2><h3>功能权限（PC+移动页面权限、页面元素权限）</h3><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-8c90926b483fabb68346f3b9070f0d8e_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"5120\" data-rawheight=\"2880\" data-original-token=\"v2-099fc1610b3fb7e49c4784dd1fb189da\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-c13bc0739b671c9a59e5699112597cc6_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"5120\" data-original=\"https://picx.zhimg.com/v2-8c90926b483fabb68346f3b9070f0d8e_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;5120&#39; height=&#39;2880&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"5120\" data-rawheight=\"2880\" data-original-token=\"v2-099fc1610b3fb7e49c4784dd1fb189da\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-c13bc0739b671c9a59e5699112597cc6_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"5120\" data-original=\"https://picx.zhimg.com/v2-8c90926b483fabb68346f3b9070f0d8e_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-8c90926b483fabb68346f3b9070f0d8e_720w.jpg?source=1def8aca\"/></figure><h3>数据查看权限(数据行[固定字段+表单字段过滤]、数列权限)</h3><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-b4534b3685f565e950b3cf1f62e7c074_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"5120\" data-rawheight=\"2880\" data-original-token=\"v2-39c78eb99be177fc59460a45f8cd85b3\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-7b2ccde7b037180554b622f2407225a1_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"5120\" data-original=\"https://pica.zhimg.com/v2-b4534b3685f565e950b3cf1f62e7c074_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;5120&#39; height=&#39;2880&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"5120\" data-rawheight=\"2880\" data-original-token=\"v2-39c78eb99be177fc59460a45f8cd85b3\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-7b2ccde7b037180554b622f2407225a1_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"5120\" data-original=\"https://pica.zhimg.com/v2-b4534b3685f565e950b3cf1f62e7c074_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-b4534b3685f565e950b3cf1f62e7c074_720w.jpg?source=1def8aca\"/></figure><h3>数据操作权限（新增、编辑、删除、打印、导入、导出）</h3><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-b4534b3685f565e950b3cf1f62e7c074_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"5120\" data-rawheight=\"2880\" data-original-token=\"v2-39c78eb99be177fc59460a45f8cd85b3\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-7b2ccde7b037180554b622f2407225a1_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"5120\" data-original=\"https://pic1.zhimg.com/v2-b4534b3685f565e950b3cf1f62e7c074_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;5120&#39; height=&#39;2880&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"5120\" data-rawheight=\"2880\" data-original-token=\"v2-39c78eb99be177fc59460a45f8cd85b3\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-7b2ccde7b037180554b622f2407225a1_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"5120\" data-original=\"https://pic1.zhimg.com/v2-b4534b3685f565e950b3cf1f62e7c074_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-b4534b3685f565e950b3cf1f62e7c074_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"qKfvRT3Q\"><a href=\"https://link.zhihu.com/?target=https%3A//metaiot.cn/col.jsp%3Fid%3D124\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">枚达零低代码</a> <b>致力于让每（枚）个中小企业都能通过零低代码平台快速低成本抵（达）数字化彼岸</b></p>",
+      "excerpt": "可能会遇到的坑在零代码、低代码、APaaS系统中，权限控制是一个非常关键的问题，以下是一些可能会遇到的坑： 默认权限过于宽松：某些零代码、低代码、APaaS系统可能会在创建应用程序时自动为所有用户授予默认权限。这可能会导致权限泄露和安全漏洞。因此，必须确保在创建应用程序时对权限进行明确的控制和分配。非一致性的权限控制：在零代码、低代码、APaaS系统中，通常会有多种方式和位置来定义和管理权限。如果不进行一致性检…",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1679033841,
+      "updatedTime": 1679033841,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-8c90926b483fabb68346f3b9070f0d8e_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-8c90926b483fabb68346f3b9070f0d8e_r.jpg?source=1def8aca",
+            "width": 5120,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/v2-b4534b3685f565e950b3cf1f62e7c074_r.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/v2-b4534b3685f565e950b3cf1f62e7c074_r.jpg?source=1def8aca",
+            "width": 5120,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-b4534b3685f565e950b3cf1f62e7c074_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-b4534b3685f565e950b3cf1f62e7c074_r.jpg?source=1def8aca",
+            "width": 5120,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//metaiot.cn/col.jsp%3Fid%3D124",
+            "canonicalUrl": "https://metaiot.cn/col.jsp?id=124",
+            "domain": "metaiot.cn",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://metaiot.cn/col.jsp?id=124",
+              "clickable": true
+            }
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2706684256",
+      "author": "蓝库云",
+      "url": "https://www.zhihu.com/question/485463474/answer/2706684256",
+      "content": "<p data-pid=\"QUd8_1t4\">曾经如何编写代码来构建软件的时代已经结束。如今，计算机科学已经发展得如此之快，以至于我们可以部署零代码工具来创建软件、Web应用程序和移动应用程序，而无需使用或知道任何代码。在本文中，<a href=\"https://link.zhihu.com/?target=https%3A//lancode.com/\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">蓝库云</a>将和大家探讨什么是零代码、如何使用这种方法及其优势。</p><p data-pid=\"5Xk7mUVB\"><b>什么是零码？</b></p><p data-pid=\"lt2CE22Y\">零代码是一种不涉及编码的编程和软件开发方法，这意味着开发人员不需要用一种或多种编程语言逐行编写代码。相反，使用适当的零代码工具，开发人员可以使用可视界面并将软件组件与拖放构建机制集成。</p><p data-pid=\"IXfTc0Dt\">您将使用的无代码平台将提供预构建的软件块和应用程序模板，您可以根据需要集成它们来创建软件。借助零代码，流程自动化、运营数字化以及构建应用程序和网站的过程变得更加容易，从而降低了成本并触手可及。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-73a94928ce4fb3b36cef9c9b69fcff53_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"1500\" data-rawheight=\"785\" data-original-token=\"v2-73a94928ce4fb3b36cef9c9b69fcff53\" class=\"origin_image zh-lightbox-thumb\" width=\"1500\" data-original=\"https://picx.zhimg.com/v2-73a94928ce4fb3b36cef9c9b69fcff53_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1500&#39; height=&#39;785&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"1500\" data-rawheight=\"785\" data-original-token=\"v2-73a94928ce4fb3b36cef9c9b69fcff53\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1500\" data-original=\"https://picx.zhimg.com/v2-73a94928ce4fb3b36cef9c9b69fcff53_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-73a94928ce4fb3b36cef9c9b69fcff53_720w.jpg?source=1def8aca\"/><figcaption>零代码工具</figcaption></figure><p data-pid=\"UKwgWKoJ\"><b>零代码平台能做什么？</b></p><p data-pid=\"Pajpky8X\">零代码平台正在改变软件开发和业务领域。它们在我们观察到的商业世界日益增长的现象中发挥着重要作用：技术的开放性和全民参与性。</p><p data-pid=\"q_QPzQav\">随着“技术的开放性”，我们指的是计算机、软件和设备变得越来越容易使用，因此计算机技能不再是少数人的特权。</p><p data-pid=\"9xMUYhKF\">全民开发人员在现在的公司里面已经越来越多了，但他们通过简单的培训学习就能搭建具有自动化流程、公司内部数字化和创建软件的技能，零代码工具使这成为可能，是全民开发人员能够为其公司提供此类服务的方式。</p><p data-pid=\"z-7MXDHs\">借助零代码工具，全民开发人员不仅能够自动化某些流程，而且能够构建软件和应用程序、创建软件、构建网站、为公司及其与客户的互动创建数字解决方案。</p><p data-pid=\"ULOrWJ-G\">涉及零代码平台时，安全性也是另一个重要的团队。多亏了这些解决方案的功能和支持团队，您正在创建的软件的安全性始终得到增强。这不再是您需要依靠自己的技能独自处理的事情，但您现在可以依靠整个专业支持团队的专业知识和知识。</p><p data-pid=\"ik1-iA_n\">使用零代码软件，开发变得更加灵活、成本更低且耗时更少。这是否意味着传统开发人员（那些熟悉多种编程语言的人）将难以继续他们的工作？一点也不。相反，零代码平台是传统开发人员和开发团队也可以利用的解决方案：他们的流程将变得更快、更容易，让他们承担越来越多的工作。正如我们即将发现的那样，零代码工具不会剥夺熟练的开发人员使用编程语言和传统编码的可能性。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-3fa6aace895e382b3cabbb6ae7ac86bf_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"1200\" data-rawheight=\"628\" data-original-token=\"v2-3fa6aace895e382b3cabbb6ae7ac86bf\" class=\"origin_image zh-lightbox-thumb\" width=\"1200\" data-original=\"https://picx.zhimg.com/v2-3fa6aace895e382b3cabbb6ae7ac86bf_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1200&#39; height=&#39;628&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"1200\" data-rawheight=\"628\" data-original-token=\"v2-3fa6aace895e382b3cabbb6ae7ac86bf\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1200\" data-original=\"https://picx.zhimg.com/v2-3fa6aace895e382b3cabbb6ae7ac86bf_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-3fa6aace895e382b3cabbb6ae7ac86bf_720w.jpg?source=1def8aca\"/><figcaption>零代码应用搭建</figcaption></figure><p data-pid=\"dCYnUPUj\"><b>谁可以使用零代码平台？</b></p><p data-pid=\"tgWTKhaL\">正如我们刚刚提到的，零代码平是全民都可以开发的工具，任何需要构建应用程序或构建Web应用程序的人，任何需要在其业务中实现流程自动化的人都可以部署零代码平台来创建确切的软件他们的业务或客户所需的工具。</p><p data-pid=\"dZ_t62OY\">然而，软件开发人员使用的零代码工具类型可以产生巨大的影响。零代码平台背后的原则始终是相同的：为软件开发人员提供预构建的元素和组装它们的可视界面。但是，您在创作过程中的自由度以及您可以达到的定制水平将取决于您选择的无代码工具的质量。</p><p data-pid=\"dzrKlrsu\">例如，蓝库云零代码平台被称为最好的零代码部署之一，因为：</p><p data-pid=\"8qMZ9PN0\">1、它提供了一个稳定的框架，可通过许多不同的应用程序模板进行定制。</p><p data-pid=\"GN1wYXlV\">2、它提供了大量预构建且集成良好的字段元素，您可以部署这些字段元素来组装您的应用程序使用简单。</p><p data-pid=\"Iim0J0BH\">3、它增强并保证了您的应用程序、数据和数据库的安全性。</p><p data-pid=\"2AwkCVhU\">4、是您正在创建的应用程序的唯一所有者。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-7e70dde7795558d6a278dd6331aaade7_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"600\" data-original-token=\"v2-7e70dde7795558d6a278dd6331aaade7\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-7e70dde7795558d6a278dd6331aaade7_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;600&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"600\" data-original-token=\"v2-7e70dde7795558d6a278dd6331aaade7\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-7e70dde7795558d6a278dd6331aaade7_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-7e70dde7795558d6a278dd6331aaade7_720w.jpg?source=1def8aca\"/><figcaption>零代码工具平台</figcaption></figure><p data-pid=\"dYVuZ6X6\"><b>零代码平台如何帮助更快地构建应用程序？</b></p><p data-pid=\"4wJCOWPQ\">在短期内，使用零代码平台开发软件会更快，因为整个开发过程更容易、更直观，并且需要更低的知识、技能和专注度。</p><p data-pid=\"VZ6cd-YG\">您可以部署模板和预构建元素，而不必逐行写下代码。尝试解决方案、犯错误和寻找其他解决方案的过程也更容易：当您需要尝试不同的替代方案时，您不必一次又一次地编写代码。您需要做的就是选择另一个应用程序模板，删除一个元素并尝试另一个，添加或删除元素，等等。</p><p data-pid=\"NkN5OsaP\">零代码平台为软件开发提供了最快的解决方案，即使与需要一些编码的低代码平台相比也是如此。使用无代码应用程序，创建软件、 自动化流程等过程需要几天，而不是几个月！</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-1a135a07b44b6cd276b45fc687597b00_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"512\" data-original-token=\"v2-1a135a07b44b6cd276b45fc687597b00\" class=\"origin_image zh-lightbox-thumb\" width=\"1024\" data-original=\"https://picx.zhimg.com/v2-1a135a07b44b6cd276b45fc687597b00_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1024&#39; height=&#39;512&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"512\" data-original-token=\"v2-1a135a07b44b6cd276b45fc687597b00\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1024\" data-original=\"https://picx.zhimg.com/v2-1a135a07b44b6cd276b45fc687597b00_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-1a135a07b44b6cd276b45fc687597b00_720w.jpg?source=1def8aca\"/><figcaption>零代码的未来趋势</figcaption></figure><p data-pid=\"xTIHZ1IK\"><b>零代码是未来吗？</b></p><p data-pid=\"a6imTghm\">零代码是未来，因为我们正在协助以下趋势：</p><p data-pid=\"3ptNmHtE\">零代码正在成为商业应用程序开发的未来，因为它降低了软件编程的成本和时间。</p><p data-pid=\"EKJ-xQg-\">零代码解决方案和工具变得越来越先进。</p><p data-pid=\"aGVLiAp2\">越来越多的商业和商业模式需要定制软件。</p><p data-pid=\"ecajmN3K\">对程序员的需求高于就业市场上可用的程序员。零代码似乎是可以填补空白的解决方案。</p><p></p>",
+      "excerpt": "曾经如何编写代码来构建软件的时代已经结束。如今，计算机科学已经发展得如此之快，以至于我们可以部署零代码工具来创建软件、Web应用程序和移动应用程序，而无需使用或知道任何代码。在本文中， 蓝库云 将和大家探讨什么是零代码、如何使用这种方法及其优势。 什么是零码？零代码是一种不涉及编码的编程和软件开发方法，这意味着开发人员不需要用一种或多种编程语言逐行编写代码。相反，使用适当的零代码工具，开发人员可以使用…",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1665223076,
+      "updatedTime": 1665223076,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-73a94928ce4fb3b36cef9c9b69fcff53_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-73a94928ce4fb3b36cef9c9b69fcff53_r.jpg?source=1def8aca",
+            "width": 1500,
+            "caption": "零代码工具",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-3fa6aace895e382b3cabbb6ae7ac86bf_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-3fa6aace895e382b3cabbb6ae7ac86bf_r.jpg?source=1def8aca",
+            "width": 1200,
+            "caption": "零代码应用搭建",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-7e70dde7795558d6a278dd6331aaade7_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-7e70dde7795558d6a278dd6331aaade7_r.jpg?source=1def8aca",
+            "width": 1000,
+            "caption": "零代码工具平台",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-1a135a07b44b6cd276b45fc687597b00_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-1a135a07b44b6cd276b45fc687597b00_r.jpg?source=1def8aca",
+            "width": 1024,
+            "caption": "零代码的未来趋势",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//lancode.com/",
+            "canonicalUrl": "https://lancode.com/",
+            "domain": "lancode.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://lancode.com/",
+              "clickable": true
+            }
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2688629921",
+      "author": "葡萄城",
+      "url": "https://www.zhihu.com/question/485463474/answer/2688629921",
+      "content": "<p data-pid=\"De4Mn3hP\">零代码、低代码、APaaS系统产生的目的都是为了高效的建立应用系统。但三者之间还有很大的差别。</p><p data-pid=\"J0Q__P1x\">零代码平台通常采用拖、拉、拽等可视化方法就可以直接实现应用系统的搭建，在此过程中无需进行代码的开发。大多数零代码开发平台都基于表单驱动的方法，这种表单驱动的低代码，源于广泛应用于ERP、OA等软件中对表单、流程等元素的可配置技术。借助这些能力，成品软件可以在不做二次开发的前提下，满足大部分的个性化需求。可配置技术有效降低了开发需求，缩短了软件实施周期，已经成为行业软件的“标准”。部分企业软件厂商和互联网平台提供商将可配置的表单、工作流和统计报表等企业中常用的能力封装成相对独立的产品，用来解决成品软件中无法实现的个性化需求。</p><p data-pid=\"GKw-8J8V\">那么从零代码衍生的技术特性来看，对于系统权限的控制就是非常有限的，它所能控制的权限范围会受制于平台本体所提供的控制能力，通过情况下可配置的权限都偏向于业务端预置的数据权限和功能权限以及常见的用户管理权限和角色管理权限。其控制或配置调整的能力是预先固话好的，灵活性不高。</p><p data-pid=\"ckrlOJoA\">相比而已，基于模型驱动的低代码开发平台就有更优的控制能力，例如葡萄城的活字格、ClickPaaS、Outsystem等低代码开发平台。</p><p data-pid=\"84dGh4z1\">模型驱动的低代码，衍生于软件开发中的可视化技术。软件开发进入高级语言阶段后，可视化成为软件开发技术的主流趋势。可视化技术及其背后的代码自动生成技术（包含C#等程序代码和XML等描述性语言），大幅降低了人力操作，提升开发效率的同时，优化了软件质量。在此基础上，部分软件开发技术提供商将可视化技术的应用范围从编码阶段中的前端界面和数据库结构设计，扩展到软件开发的全过程，提供覆盖软件全生命周期的可视化开发解决方案，帮助开发者降低编码工作量。这种方案延续了现有软件开发模式中从数据模型、领域模型到用户交互的基本模式，所以被称之为模型驱动的低代码平台。</p><p data-pid=\"J1pB1hQK\">同样，从模型驱动的低代码开发平台的技术特性来看，编码过程中涉及到的数据建模、表单设计、流程设计、页面设计等多个环节都是开放的，因此都有机会对其进行权限控制。</p><p data-pid=\"nSc4ZIFf\">以葡萄城的活字格企业级低代码开发平台为例，其内置的权限管理能够有效保证应用及数据的安全。</p><p data-pid=\"kGonYEq_\">权限管理是指根据系统设置的安全规则或策略，用户可以访问且只能访问自己被授权的资源。从大的维度上主要可以分为<b><i>数据权限</i></b>、<b><i>页面权限</i></b>和<b><i>单元格权限</i></b>。</p><ol><li data-pid=\"RPdDi2VZ\">数据权限包括行权限、字段权限和创建记录权限：</li></ol><p data-pid=\"-4JYL9KG\">1）行权限</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-5057393f5c3bc0fd9429fdf3be9560bd_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"1124\" data-rawheight=\"360\" data-original-token=\"v2-5057393f5c3bc0fd9429fdf3be9560bd\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-8024b224cd5c005a808d04820267d185_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1124\" data-original=\"https://picx.zhimg.com/v2-5057393f5c3bc0fd9429fdf3be9560bd_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1124&#39; height=&#39;360&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"1124\" data-rawheight=\"360\" data-original-token=\"v2-5057393f5c3bc0fd9429fdf3be9560bd\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-8024b224cd5c005a808d04820267d185_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1124\" data-original=\"https://picx.zhimg.com/v2-5057393f5c3bc0fd9429fdf3be9560bd_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-5057393f5c3bc0fd9429fdf3be9560bd_720w.jpg?source=1def8aca\"/><figcaption>设置行权限</figcaption></figure><a href=\"https://link.zhihu.com/?target=https%3A//help.grapecity.com.cn/pages/viewpage.action%3FpageId%3D72356890\" data-draft-node=\"block\" data-draft-type=\"link-card\" data-image=\"https://picx.zhimg.com/v2-667daf7a55e3307160b57ff12ce0b6c3_ipico.jpg\" data-image-width=\"120\" data-image-height=\"120\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">行权限 - 活字格V8帮助手册 - 葡萄城产品文档中心</a><p data-pid=\"96XW5WE9\">2）<a href=\"https://link.zhihu.com/?target=https%3A//help.grapecity.com.cn/pages/viewpage.action%3FpageId%3D72356919\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">字段权限</a> 字段权限及列权限，主要用于用户可以访问的字段。给表设置字段权限，可以使不同的用户对不同的字段有不同的权限去访问和编辑，起到数据保护的作用。字段权限是一组授权项目的集合，多个授权项目之间是『或』的关系，即符合任何一个授权项目的条件，就有相应的权限。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-a8dfc4a0c7402fd700e694cf75e3748b_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"355\" data-rawheight=\"355\" data-original-token=\"v2-a8dfc4a0c7402fd700e694cf75e3748b\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-1854ab357b73959663870ab38021b41c_720w.jpg?source=1def8aca\" class=\"content_image\" width=\"355\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;355&#39; height=&#39;355&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"355\" data-rawheight=\"355\" data-original-token=\"v2-a8dfc4a0c7402fd700e694cf75e3748b\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-1854ab357b73959663870ab38021b41c_720w.jpg?source=1def8aca\" class=\"content_image lazy\" width=\"355\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-a8dfc4a0c7402fd700e694cf75e3748b_720w.jpg?source=1def8aca\"/><figcaption>设置字段权限</figcaption></figure><p data-pid=\"Von5CLRf\">3）<a href=\"https://link.zhihu.com/?target=https%3A//help.grapecity.com.cn/pages/viewpage.action%3FpageId%3D72356953\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">创建记录权限</a> 根据条件控制用户是否有创建记录的权限。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-aaa61c443b15a9229dbee18fcd0442b1_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"1073\" data-rawheight=\"307\" data-original-token=\"v2-aaa61c443b15a9229dbee18fcd0442b1\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-2209964f2a804e036c676548110c3219_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1073\" data-original=\"https://picx.zhimg.com/v2-aaa61c443b15a9229dbee18fcd0442b1_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1073&#39; height=&#39;307&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"1073\" data-rawheight=\"307\" data-original-token=\"v2-aaa61c443b15a9229dbee18fcd0442b1\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-2209964f2a804e036c676548110c3219_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1073\" data-original=\"https://picx.zhimg.com/v2-aaa61c443b15a9229dbee18fcd0442b1_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-aaa61c443b15a9229dbee18fcd0442b1_720w.jpg?source=1def8aca\"/><figcaption>创建记录权限</figcaption></figure><p data-pid=\"CqwJoTk6\">2.<a href=\"https://link.zhihu.com/?target=https%3A//help.grapecity.com.cn/pages/viewpage.action%3FpageId%3D72356972\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">页面权限</a> 顾名思义，就是为每个页面设置用户/组的访问权限。在应用的开发阶段，可以在设计器中设置页面权限，发布应用后可直接在管理控制台设置页面权限。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-053fa9c515d3c3f9711601276530d4c9_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"717\" data-rawheight=\"740\" data-original-token=\"v2-053fa9c515d3c3f9711601276530d4c9\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-89476efda6788c0ceddf940cabc6c257_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"717\" data-original=\"https://pic1.zhimg.com/v2-053fa9c515d3c3f9711601276530d4c9_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;717&#39; height=&#39;740&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"717\" data-rawheight=\"740\" data-original-token=\"v2-053fa9c515d3c3f9711601276530d4c9\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-89476efda6788c0ceddf940cabc6c257_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"717\" data-original=\"https://pic1.zhimg.com/v2-053fa9c515d3c3f9711601276530d4c9_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-053fa9c515d3c3f9711601276530d4c9_720w.jpg?source=1def8aca\"/><figcaption>在设计器中设置页面权限</figcaption></figure><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-f20c0936bd5d2f13f14c78067a094e65_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"1019\" data-rawheight=\"639\" data-original-token=\"v2-f20c0936bd5d2f13f14c78067a094e65\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-0c8aa6f286e3c5e3f5d68cba062321f6_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1019\" data-original=\"https://pic1.zhimg.com/v2-f20c0936bd5d2f13f14c78067a094e65_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1019&#39; height=&#39;639&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"1019\" data-rawheight=\"639\" data-original-token=\"v2-f20c0936bd5d2f13f14c78067a094e65\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-0c8aa6f286e3c5e3f5d68cba062321f6_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1019\" data-original=\"https://pic1.zhimg.com/v2-f20c0936bd5d2f13f14c78067a094e65_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-f20c0936bd5d2f13f14c78067a094e65_720w.jpg?source=1def8aca\"/><figcaption>在管理控制台设置用户权限</figcaption></figure><p data-pid=\"Cl1Ajv_q\">3. <a href=\"https://link.zhihu.com/?target=https%3A//help.grapecity.com.cn/pages/viewpage.action%3FpageId%3D72357001\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">单元格权限</a> 活字格支持为设置了单元格类型的单元格设置权限，以精准的控制每个角色的用户所能访问的元素。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-ae3af42f896d23d4b0947d62aeb782a9_720w.jpg?source=1def8aca\" data-size=\"normal\" data-rawwidth=\"1038\" data-rawheight=\"537\" data-original-token=\"v2-ae3af42f896d23d4b0947d62aeb782a9\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-79d477b7843bda766994c6eeda5915cb_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1038\" data-original=\"https://pica.zhimg.com/v2-ae3af42f896d23d4b0947d62aeb782a9_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1038&#39; height=&#39;537&#39;&gt;&lt;/svg&gt;\" data-size=\"normal\" data-rawwidth=\"1038\" data-rawheight=\"537\" data-original-token=\"v2-ae3af42f896d23d4b0947d62aeb782a9\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-79d477b7843bda766994c6eeda5915cb_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1038\" data-original=\"https://pica.zhimg.com/v2-ae3af42f896d23d4b0947d62aeb782a9_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-ae3af42f896d23d4b0947d62aeb782a9_720w.jpg?source=1def8aca\"/><figcaption>设置单元格权限</figcaption></figure><p data-pid=\"JpJrQqaC\">从以上的简单描述中我们可以看到，基于模型驱动的活字格低代码开发平台能够控制能力上更加开放、灵活。如果您对活字格低代码开发平台感兴趣，可以通过以下链接进行了解。</p><a href=\"https://link.zhihu.com/?target=https%3A//www.grapecity.com.cn/solutions/huozige\" data-draft-node=\"block\" data-draft-type=\"link-card\" data-image=\"https://pica.zhimg.com/v2-c5d14b69fa113411008e6c495311fae6_180x120.jpg\" data-image-width=\"1100\" data-image-height=\"571\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">活字格低代码开发平台 - 活字格企业级低代码开发平台|通过低代码快速开发企业级Web应用 - 葡萄城官网</a><p></p>",
+      "excerpt": "零代码、低代码、APaaS系统产生的目的都是为了高效的建立应用系统。但三者之间还有很大的差别。 零代码平台通常采用拖、拉、拽等可视化方法就可以直接实现应用系统的搭建，在此过程中无需进行代码的开发。大多数零代码开发平台都基于表单驱动的方法，这种表单驱动的低代码，源于广泛应用于ERP、OA等软件中对表单、流程等元素的可配置技术。借助这些能力，成品软件可以在不做二次开发的前提下，满足大部分的个性化需求。可配置技…",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1664075504,
+      "updatedTime": 1664075504,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-5057393f5c3bc0fd9429fdf3be9560bd_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-5057393f5c3bc0fd9429fdf3be9560bd_r.jpg?source=1def8aca",
+            "width": 1124,
+            "caption": "设置行权限",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/50/v2-a8dfc4a0c7402fd700e694cf75e3748b_720w.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/50/v2-a8dfc4a0c7402fd700e694cf75e3748b_720w.jpg?source=1def8aca",
+            "width": 355,
+            "caption": "设置字段权限",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-aaa61c443b15a9229dbee18fcd0442b1_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-aaa61c443b15a9229dbee18fcd0442b1_r.jpg?source=1def8aca",
+            "width": 1073,
+            "caption": "创建记录权限",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-053fa9c515d3c3f9711601276530d4c9_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-053fa9c515d3c3f9711601276530d4c9_r.jpg?source=1def8aca",
+            "width": 717,
+            "caption": "在设计器中设置页面权限",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-f20c0936bd5d2f13f14c78067a094e65_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-f20c0936bd5d2f13f14c78067a094e65_r.jpg?source=1def8aca",
+            "width": 1019,
+            "caption": "在管理控制台设置用户权限",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/v2-ae3af42f896d23d4b0947d62aeb782a9_r.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/v2-ae3af42f896d23d4b0947d62aeb782a9_r.jpg?source=1def8aca",
+            "width": 1038,
+            "caption": "设置单元格权限",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//help.grapecity.com.cn/pages/viewpage.action%3FpageId%3D72356890",
+            "canonicalUrl": "https://help.grapecity.com.cn/pages/viewpage.action?pageId=72356890",
+            "domain": "help.grapecity.com.cn",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://help.grapecity.com.cn/pages/viewpage.action?pageId=72356890",
+              "clickable": true
+            }
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//help.grapecity.com.cn/pages/viewpage.action%3FpageId%3D72356919",
+            "canonicalUrl": "https://help.grapecity.com.cn/pages/viewpage.action?pageId=72356919",
+            "domain": "help.grapecity.com.cn",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://help.grapecity.com.cn/pages/viewpage.action?pageId=72356919",
+              "clickable": true
+            }
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//help.grapecity.com.cn/pages/viewpage.action%3FpageId%3D72356953",
+            "canonicalUrl": "https://help.grapecity.com.cn/pages/viewpage.action?pageId=72356953",
+            "domain": "help.grapecity.com.cn",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://help.grapecity.com.cn/pages/viewpage.action?pageId=72356953",
+              "clickable": true
+            }
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//help.grapecity.com.cn/pages/viewpage.action%3FpageId%3D72356972",
+            "canonicalUrl": "https://help.grapecity.com.cn/pages/viewpage.action?pageId=72356972",
+            "domain": "help.grapecity.com.cn",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://help.grapecity.com.cn/pages/viewpage.action?pageId=72356972",
+              "clickable": true
+            }
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//help.grapecity.com.cn/pages/viewpage.action%3FpageId%3D72357001",
+            "canonicalUrl": "https://help.grapecity.com.cn/pages/viewpage.action?pageId=72357001",
+            "domain": "help.grapecity.com.cn",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://help.grapecity.com.cn/pages/viewpage.action?pageId=72357001",
+              "clickable": true
+            }
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//www.grapecity.com.cn/solutions/huozige",
+            "canonicalUrl": "https://www.grapecity.com.cn/solutions/huozige",
+            "domain": "www.grapecity.com.cn",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://www.grapecity.com.cn/solutions/huozige",
+              "clickable": true
+            }
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    }
+  ]
+}

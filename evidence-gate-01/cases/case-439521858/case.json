@@ -1,0 +1,23 @@
+{
+  "case_id": "case-439521858",
+  "category": ["C", "A"],
+  "research_question": "宜搭、简道云、氚云三个低代码平台相比各自的优劣是什么？如何选择？",
+  "question_ids": ["439521858"],
+  "reference_questions": ["439521858"],
+  "budgets": { "K_SMALL": 3, "K_MEDIUM": 5, "K_LARGE": 8 },
+  "freshness_window_policy": {
+    "policy_id": "fresh-365d-before-fetch",
+    "window_sec": 31536000,
+    "reference_epoch_sec": 1786387106,
+    "reference_note": "fetchedAt 2026-08-10T18:38:26Z; PILOT_CANDIDATE_WINDOW (case-specific, event-relative)",
+    "note": "frozen BEFORE strategy execution; must not be adjusted post-hoc by results"
+  },
+  "long_tail_min_chars": 80,
+  "mmr_lambda": 0.5,
+  "mmr_lambda_note": "pilot configuration parameter, NOT a production default",
+  "lane_weights": { "mainstream": 1, "expert": 1, "evidence_rich": 1, "fresh": 1, "long_tail": 1, "contradictory": 1 },
+  "author_identity": "name_only",
+  "author_identity_confidence": "WEAK",
+  "expert_author_keys": ["表单大师", "百数", "云程智能体开发平台", "效率工具指北"],
+  "notes": "verified corpus (handoff verified=true). Vendor-heavy question: several answers are vendor self-promotion; expert lane is PROVISIONAL."
+}

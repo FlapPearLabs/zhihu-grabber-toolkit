@@ -1,0 +1,1212 @@
+{
+  "questionId": "439521858",
+  "questionTitle": "宜搭和简道云、氚云比起来有什么优劣之处？",
+  "answerCount": 17,
+  "url": "https://www.zhihu.com/question/439521858",
+  "question": {
+    "id": "439521858",
+    "title": "宜搭和简道云、氚云比起来有什么优劣之处？",
+    "descriptionHtml": "",
+    "descriptionMarkdown": "",
+    "topics": [
+      {
+        "id": "19559804",
+        "name": "企业管理"
+      },
+      {
+        "id": "19560856",
+        "name": "项目管理"
+      },
+      {
+        "id": "19576268",
+        "name": "工具软件"
+      },
+      {
+        "id": "19633313",
+        "name": "IT 项目管理"
+      },
+      {
+        "id": "21217894",
+        "name": "低代码"
+      }
+    ]
+  },
+  "fetchedAt": "2026-08-10T18:38:26.202Z",
+  "answers": [
+    {
+      "id": "1918690313431659010",
+      "author": "效率工具指北",
+      "url": "https://www.zhihu.com/question/439521858/answer/1918690313431659010",
+      "content": "<p data-pid=\"bT-03zqz\"><b>【对比宜搭、简道云、氚云等主流10款低代码开发平台】</b></p><p data-pid=\"TSW5Q0B0\">在数字化转型的浪潮下，越来越多的企业开始寻求高效、灵活的开发工具，以加速业务创新和流程自动化。低代码开发平台（Low-code Development Platform，简称LCDP）应运而生，成为了企业技术团队的重要武器。</p><p data-pid=\"nI34Yt9k\">我们将对比<b>10款热门的低代码开发平台</b>，从功能、易用性、定制化能力到性价比，全方位为您呈现各平台的特点，帮助您选择最适合自己企业的解决方案。</p><h2>一、热门的低代码开发平台有哪些</h2><h3>1.<a href=\"https://link.zhihu.com/?target=https%3A//sc.pingcode.com/sto67\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">网易 CodeWave</a></h3><p data-pid=\"U0HoU5FB\">与市面上众多低代码平台相比，网易 CodeWave 是我<b>首先推荐</b>的一款产品。一方面，根据IDC发布《中国低代码/无代码开发平台 2023 年厂商评估》，网易被列入<b>领导者类别。</b></p><p data-pid=\"NQbLBYRd\">另一方面在于网易 CodeWave 是<b>国内唯一的全栈可视化开发平台，支持导出应用和源码且无平台锁定</b>，可部署到任意云平台。除了前端页面可以通过拖拉拽实现之外，后端逻辑编写也可以通过可视化方式开发，大幅降低开发门槛。</p><p data-pid=\"FXn4aij2\">除此以外，网易 CodeWave 具备<b>金融级的安全要求</b>并提供应用源码以确保代码级安全，这在安全保障方面与其他平台形成差异。可能也是这个原因，其<b>收获了大量的国央企客户</b>，例如<b>中石油、中石化、中国电信</b>、国家电网、中国中铁、工商银行、民生银行、上海电气、三只松鼠、长安汽车、浙江大学等。</p><p data-pid=\"X5qw_E7u\">同时，<b>网易参与了国内可视化开发行业标准制定；Gartner 发布首份中国可视化开发报告，网易可视化开发平台入选</b>。</p><p data-pid=\"5yLEXna9\">网易 CodeWave 是自研的全栈编程语言 NASL 提供全新软件开发范式，这在国内低代码平台中较为独特。其具有自主研发的语言优势，能够提供更贴合自身平台架构的开发体验，而其他平台多基于常见的开发技术或框架构建。</p><p data-pid=\"_jgw1r0K\">在<b>功能应用</b>上，支持广泛的业务场景，包括供应链、ERP、智慧工地、协同办公、营销活动等，已在游戏、制造、医疗等行业成功落地多个项目（例如泰康人寿基于网易 CodeWave 开发上线80多个应用，节省成本160w+），具备良好的扩展性和多端适配能力（Web、小程序、H5 等）。</p><p data-pid=\"_e6H91m2\">平台内置资产中心、模板库和连接器机制，支持对接企业现有的 ERP、OA、SRM、数据库、API 等系统，打通数据孤岛，提升开发效率。支持多人协作和组件级分支管理，适配复杂项目的并行开发与持续交付。</p><p class=\"ztext-empty-paragraph\"><br/></p><a href=\"https://link.zhihu.com/?target=https%3A//sc.pingcode.com/sto67\" data-draft-node=\"block\" data-draft-type=\"link-card\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">官网</a><p class=\"ztext-empty-paragraph\"><br/></p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-0d0cb0c0029a1a288498b7c7e76cf8f5_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"3790\" data-rawheight=\"2010\" data-original-token=\"v2-8866c8bc3e0d6d19622bb16811f5ed10\" class=\"origin_image zh-lightbox-thumb\" width=\"3790\" data-original=\"https://picx.zhimg.com/v2-0d0cb0c0029a1a288498b7c7e76cf8f5_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;3790&#39; height=&#39;2010&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"3790\" data-rawheight=\"2010\" data-original-token=\"v2-8866c8bc3e0d6d19622bb16811f5ed10\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"3790\" data-original=\"https://picx.zhimg.com/v2-0d0cb0c0029a1a288498b7c7e76cf8f5_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-0d0cb0c0029a1a288498b7c7e76cf8f5_720w.jpg?source=1def8aca\"/></figure><h3>2.简道云</h3><p data-pid=\"9VqglscV\">简道云是一款国内领先的低代码开发平台，旨在帮助企业快速构建定制化的管理系统，提升业务流程的自动化和协作效率。作为一款零代码工具，简道云特别适合中小型企业和非技术团队，能够在无需编程的情况下，快速搭建符合自身需求的应用系统。</p><p data-pid=\"wt4vesNk\">简道云提供了丰富的功能模块，涵盖了表单设计、工作流管理、数据分析、报表生成等方面。用户可以通过拖拽式操作，轻松创建自定义表单和工作流程，满足不同业务场景的需求。此外，简道云还支持多种数据展示方式，如看板、甘特图、日历等，帮助用户直观地查看和管理数据。</p><p data-pid=\"9ArxUm8O\">简道云的主要优势在于其高灵活性和易用性。用户无需具备专业的技术背景，即可通过简道云快速构建符合自身需求的应用系统。同时，简道云提供了丰富的模板和组件，用户可以根据实际需求进行选择和组合，降低了开发成本和时间</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-cc0626d8a016fa43cd7e33f0d6dd4cec_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"475\" data-original-token=\"v2-27f1634b69de9cb2cdd60adf0d099cc5\" class=\"origin_image zh-lightbox-thumb\" width=\"1024\" data-original=\"https://picx.zhimg.com/v2-cc0626d8a016fa43cd7e33f0d6dd4cec_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1024&#39; height=&#39;475&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"475\" data-original-token=\"v2-27f1634b69de9cb2cdd60adf0d099cc5\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1024\" data-original=\"https://picx.zhimg.com/v2-cc0626d8a016fa43cd7e33f0d6dd4cec_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-cc0626d8a016fa43cd7e33f0d6dd4cec_720w.jpg?source=1def8aca\"/></figure><h3>3.氚云</h3><p data-pid=\"S8neg4i7\">氚云是一款专注于企业级低代码开发的数字化平台，旨在通过可视化建模和灵活配置，帮助企业快速构建定制化的业务应用。与传统开发方式相比，氚云降低了技术门槛，使得非技术人员也能参与到应用的开发与部署中，从而提升了企业的数字化转型效率。</p><p data-pid=\"nkHMSB1l\">氚云提供了丰富的功能模块，包括表单设计、流程引擎、数据分析、报表生成等。用户可以通过拖拽式操作，快速创建自定义表单和工作流程，满足不同业务场景的需求。此外，氚云还支持多种数据展示方式，如看板、甘特图、日历等，帮助用户直观地查看和管理数据。</p><p data-pid=\"Mey0dVvN\">氚云的主要优势在于其高灵活性和易用性。用户无需具备专业的技术背景，即可通过氚云快速构建符合自身需求的应用系统。同时，氚云提供了丰富的模板和组件，用户可以根据实际需求进行选择和组合，降低了开发成本和时间。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-bf84908076aa2435b0dc2ab061c3971b_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"489\" data-original-token=\"v2-dc16a2945409ebc667349287da16e8db\" class=\"origin_image zh-lightbox-thumb\" width=\"1024\" data-original=\"https://picx.zhimg.com/v2-bf84908076aa2435b0dc2ab061c3971b_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1024&#39; height=&#39;489&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"489\" data-original-token=\"v2-dc16a2945409ebc667349287da16e8db\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1024\" data-original=\"https://picx.zhimg.com/v2-bf84908076aa2435b0dc2ab061c3971b_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-bf84908076aa2435b0dc2ab061c3971b_720w.jpg?source=1def8aca\"/></figure><h3>4.JVS低代码</h3><p data-pid=\"IpJ685GJ\">JVS低代码是一款面向企业级应用的低代码开发平台，旨在通过可视化配置和模型驱动的方式，帮助企业快速构建定制化的管理系统。该平台特别适用于中小型企业，能够降低开发成本，提高开发效率，满足复杂业务场景的需求。</p><p data-pid=\"Wc7JncaT\">JVS低代码平台提供了丰富的功能模块，包括表单设计、流程引擎、逻辑引擎、数据加工、图表引擎等。用户可以通过拖拽式操作，快速创建自定义表单和工作流程，满足不同业务场景的需求。此外，JVS还支持私有化部署和源码级授权，企业可以根据自身需求进行深度定制和二次开发。</p><p data-pid=\"Ax4ze2f_\">JVS低代码平台的主要优势在于其高灵活性和扩展性。平台采用微服务架构，支持与现有系统的集成，能够满足企业复杂的业务需求。同时，JVS提供了丰富的模板和组件，用户可以根据实际需求进行选择和组合，降低了开发成本和时间</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-848d68ae4a21e12d739a96845c92bc81_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"474\" data-original-token=\"v2-866cd5b94f45a55d7c7250b7d2573e1a\" class=\"origin_image zh-lightbox-thumb\" width=\"1024\" data-original=\"https://picx.zhimg.com/v2-848d68ae4a21e12d739a96845c92bc81_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1024&#39; height=&#39;474&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"474\" data-original-token=\"v2-866cd5b94f45a55d7c7250b7d2573e1a\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1024\" data-original=\"https://picx.zhimg.com/v2-848d68ae4a21e12d739a96845c92bc81_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-848d68ae4a21e12d739a96845c92bc81_720w.jpg?source=1def8aca\"/></figure><h3>5.宜搭</h3><p data-pid=\"w0TZEC_2\">宜搭是阿里巴巴自研的低代码开发平台，依托钉钉和阿里云生态，旨在通过可视化拖拽和配置，帮助企业快速构建数字化应用。该平台特别适合业务人员、HR、财务等非技术岗位用户，降低了开发门槛，提升了应用交付效率。</p><p data-pid=\"X4r4UUGN\">宜搭提供了表单设计、流程引擎、报表生成、数据大屏、权限管理等多种功能模块。用户可以通过拖拽组件、设置公式和配置流程，快速搭建符合业务需求的应用系统。此外，宜搭支持与钉钉组织架构和消息系统深度集成，实现跨部门的协同办公。</p><p data-pid=\"_53Rszlq\">宜搭的主要优势在于其易用性和高扩展性。平台提供了丰富的模板和组件，用户可以根据实际需求进行选择和组合，降低了开发成本和时间。同时，宜搭支持与第三方系统的集成，满足企业复杂的业务需求。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-2e8aca88ae32bb01b6c4c5d4f80fb376_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"470\" data-original-token=\"v2-0991d7526e2a113d19621da67bd3bf0d\" class=\"origin_image zh-lightbox-thumb\" width=\"1024\" data-original=\"https://picx.zhimg.com/v2-2e8aca88ae32bb01b6c4c5d4f80fb376_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1024&#39; height=&#39;470&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"470\" data-original-token=\"v2-0991d7526e2a113d19621da67bd3bf0d\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1024\" data-original=\"https://picx.zhimg.com/v2-2e8aca88ae32bb01b6c4c5d4f80fb376_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-2e8aca88ae32bb01b6c4c5d4f80fb376_720w.jpg?source=1def8aca\"/></figure><h3>6.JeecgBoot</h3><p data-pid=\"yEN1h9o_\">JeecgBoot 是一款开源的企业级低代码开发平台，旨在通过可视化配置和自动化代码生成，帮助企业快速构建定制化的业务系统。该平台基于 Java 技术栈，采用前后端分离架构，支持微服务部署，特别适用于 SAAS 项目、企业信息管理系统（MIS）、内部办公系统（OA）、企业资源计划系统（ERP）等场景。</p><p data-pid=\"PfEt0AlB\">JeecgBoot 提供了丰富的功能模块，包括 Online 表单设计器、报表设计器、大屏设计器、流程设计器、图表设计器等，支持零代码在线开发。用户可以通过拖拽操作，快速构建符合业务需求的应用界面和流程。此外，平台集成了强大的代码生成器，支持一键生成前后端代码，减少了重复劳动，提高了开发效率。</p><p data-pid=\"edubVfJK\">JeecgBoot 的主要优势在于其高灵活性和可扩展性。平台采用模块化设计，支持插件化扩展，能够满足企业多样化的业务需求。同时，JeecgBoot 提供了完善的权限控制、数据权限、RBAC 权限模型等安全机制，确保系统的安全性和稳定性。此外，平台支持与国产操作系统和数据库的兼容，满足信创环境下的应用需求。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-99b03a12188424b9840fa9096626abd8_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"622\" data-original-token=\"v2-9c2a20b72c7225d7938ad4d472ae31f6\" class=\"origin_image zh-lightbox-thumb\" width=\"1024\" data-original=\"https://pic1.zhimg.com/v2-99b03a12188424b9840fa9096626abd8_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1024&#39; height=&#39;622&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"622\" data-original-token=\"v2-9c2a20b72c7225d7938ad4d472ae31f6\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1024\" data-original=\"https://pic1.zhimg.com/v2-99b03a12188424b9840fa9096626abd8_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-99b03a12188424b9840fa9096626abd8_720w.jpg?source=1def8aca\"/></figure><h3>7.蓝凌低代码平台</h3><p data-pid=\"vVi_PUql\">蓝凌低代码平台是蓝凌软件推出的一款企业级低代码开发平台，旨在通过可视化配置和智能建模，帮助企业快速构建定制化的业务应用。该平台特别适用于中大型企业，尤其在OA协同办公、知识管理、项目管理等场景中表现突出。</p><p data-pid=\"k8KLQC0j\">蓝凌低代码平台提供了丰富的功能模块，包括表单设计器、流程引擎、报表生成器、图表引擎、权限管理等。用户可以通过拖拽操作，快速构建符合业务需求的应用系统。此外，平台支持与第三方系统的集成，满足企业复杂的业务需求。</p><p data-pid=\"1Pky3Vl8\">蓝凌低代码平台的主要优势在于其高灵活性和可扩展性。平台采用模块化设计，支持插件化扩展，能够满足企业多样化的业务需求。同时，蓝凌提供了丰富的模板和组件，用户可以根据实际需求进行选择和组合，降低了开发成本和时间。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-5bd004098338eb47f5a3442200af768a_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"605\" data-original-token=\"v2-684f1d99380762db1da0367bb32c625e\" class=\"origin_image zh-lightbox-thumb\" width=\"1024\" data-original=\"https://pic1.zhimg.com/v2-5bd004098338eb47f5a3442200af768a_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1024&#39; height=&#39;605&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"605\" data-original-token=\"v2-684f1d99380762db1da0367bb32c625e\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1024\" data-original=\"https://pic1.zhimg.com/v2-5bd004098338eb47f5a3442200af768a_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-5bd004098338eb47f5a3442200af768a_720w.jpg?source=1def8aca\"/></figure><h3>8.轻骑兵低代码开发平台</h3><p data-pid=\"S2kaIoba\">轻骑兵低代码开发平台（HUSSAR LCDP）是一款由云豹快码（北京）信息技术有限公司开发的企业级低代码开发平台，旨在通过可视化配置和模型驱动的方式，帮助企业快速构建定制化的业务应用。该平台特别适用于中大型企业，尤其在OA协同办公、知识管理、项目管理等场景中表现突出。</p><p data-pid=\"AWnHL8Nn\">轻骑兵低代码开发平台提供了丰富的功能模块，包括表单设计器、流程引擎、报表生成器、图表引擎、权限管理等。用户可以通过拖拽操作，快速构建符合业务需求的应用系统。此外，平台支持与第三方系统的集成，满足企业复杂的业务需求。</p><p data-pid=\"K380ZckI\">轻骑兵低代码开发平台的主要优势在于其高灵活性和可扩展性。平台采用模块化设计，支持插件化扩展，能够满足企业多样化的业务需求。同时，平台提供了丰富的模板和组件，用户可以根据实际需求进行选择和组合，降低了开发成本和时间</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-c82e076b2856ec65f0f467e0c746b302_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"559\" data-original-token=\"v2-be2cbdd5f4d04f93d627a82b435b54a7\" class=\"origin_image zh-lightbox-thumb\" width=\"1024\" data-original=\"https://picx.zhimg.com/v2-c82e076b2856ec65f0f467e0c746b302_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1024&#39; height=&#39;559&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"559\" data-original-token=\"v2-be2cbdd5f4d04f93d627a82b435b54a7\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1024\" data-original=\"https://picx.zhimg.com/v2-c82e076b2856ec65f0f467e0c746b302_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-c82e076b2856ec65f0f467e0c746b302_720w.jpg?source=1def8aca\"/></figure><h3>9.Zoho Creator</h3><p data-pid=\"hLpOgVhx\">Zoho Creator 是一款由 Zoho 公司推出的云端低代码开发平台，旨在帮助企业快速构建定制化的业务应用。该平台自2006年上线以来，凭借其强大的功能和灵活的配置，成为企业数字化转型的重要工具。 </p><p data-pid=\"PXgBUj6l\">Zoho Creator 提供了丰富的功能模块，包括表单设计器、流程引擎、报表生成器、图表引擎、权限管理等。用户可以通过拖拽操作，快速构建符合业务需求的应用系统。此外，平台支持与第三方系统的集成，满足企业复杂的业务需求。</p><p data-pid=\"a8HWkjLx\">Zoho Creator 的主要优势在于其高灵活性和可扩展性。平台采用模块化设计，支持插件化扩展，能够满足企业多样化的业务需求。同时，Zoho Creator 提供了丰富的模板和组件，用户可以根据实际需求进行选择和组合，降低了开发成本和时间。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-b992f74502f24929664a67254cc40fd1_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"419\" data-original-token=\"v2-e8f608988ae8a64a5e84b3399c14e2a1\" class=\"origin_image zh-lightbox-thumb\" width=\"1024\" data-original=\"https://pic1.zhimg.com/v2-b992f74502f24929664a67254cc40fd1_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1024&#39; height=&#39;419&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"419\" data-original-token=\"v2-e8f608988ae8a64a5e84b3399c14e2a1\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1024\" data-original=\"https://pic1.zhimg.com/v2-b992f74502f24929664a67254cc40fd1_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-b992f74502f24929664a67254cc40fd1_720w.jpg?source=1def8aca\"/></figure><h3>10.炎黄盈动</h3><p data-pid=\"EELN2eyO\">炎黄盈动（Actionsoft）是一款企业级低代码开发平台，专注于为企业提供数字化转型和业务流程自动化的解决方案。该平台结合了低代码开发、智能化流程管理和数据集成，旨在帮助企业快速构建定制化应用，提升业务效率和运营能力。炎黄盈动已经为超过3000家企业提供服务，涵盖了金融、制造、能源等多个行业，特别适用于那些希望在短时间内实现数字化转型的企业。其平台具有高效的开发、快速的部署和深度集成能力，是企业数字化和智能化转型的理想选择。</p><p data-pid=\"v3HnJdXt\">炎黄盈动的主要功能模块包括低代码应用平台（aPaaS）、智能流程平台（bpmPaaS）、集成平台（iPaaS）以及AI Agent平台。aPaaS模块支持通过可视化设计，快速构建表单、数据、流程等业务应用；bpmPaaS则符合BPMN2.0标准，支持企业的流程建模、执行和优化；iPaaS平台则帮助企业打通内外部系统的集成，推动数据流动和业务协同；AI Agent平台集成了智能化功能，提升业务决策和工作效率。整个平台的设计目标是通过低代码和智能化技术，帮助企业高效应对快速变化的市场环境。</p><p data-pid=\"cfKtiz_3\">炎黄盈动平台的优势主要体现在灵活性、效率和适应性上。平台不仅提供全面的场景覆盖，包括流程、数据、协同和移动应用，还支持高效的开发和快速上线，开发周期大幅缩短。它可以灵活部署在公有云和私有云环境中，满足不同企业的安全和合规需求。此外，平台还支持国产化信创适配，确保符合国内行业的标准和要求。炎黄盈动凭借其高效、灵活且安全的特点，成为了许多企业数字化转型的优选平台。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-9b345fcda45cbea7d143c504dd94c25e_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"598\" data-original-token=\"v2-ddbe19890894e1b3eb1963334bdca579\" class=\"origin_image zh-lightbox-thumb\" width=\"1024\" data-original=\"https://pic1.zhimg.com/v2-9b345fcda45cbea7d143c504dd94c25e_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1024&#39; height=&#39;598&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1024\" data-rawheight=\"598\" data-original-token=\"v2-ddbe19890894e1b3eb1963334bdca579\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1024\" data-original=\"https://pic1.zhimg.com/v2-9b345fcda45cbea7d143c504dd94c25e_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-9b345fcda45cbea7d143c504dd94c25e_720w.jpg?source=1def8aca\"/></figure><h2>二、低代码开发平台与传统开发方式的区别</h2><h3>开发效率与成本对比</h3><p data-pid=\"A55dwWP6\">低代码开发平台通过可视化建模、拖拽式组件和预置模板，显著提高了开发效率，缩短了项目交付周期。相比传统开发方式，低代码平台减少了大量的手动编码工作，使得开发人员可以更专注于业务逻辑和用户体验的设计。此外，低代码平台通常采用订阅制付费模式，降低了企业在基础设施和人力资源方面的投入成本。</p><h3>技术门槛与协作模式</h3><p data-pid=\"rREZ8Y25\">传统开发方式通常需要开发人员具备扎实的编程基础和多种技术栈的掌握，且开发过程往往是线性的，沟通成本高。而低代码开发平台则降低了技术门槛，非技术人员也可以通过可视化界面参与应用的构建，促进了业务部门与IT部门的协作。这种协作模式有助于快速响应业务需求的变化，提高了组织的敏捷性。</p><h2>三、低代码开发平台适用于哪些行业和业务场景？</h2><h3>行业应用广泛</h3><p data-pid=\"GygGL9Ls\">低代码开发平台在多个行业中得到了广泛应用，包括金融、医疗、教育、制造、零售和政府等。在金融领域，低代码平台可以帮助构建客户服务系统、风险管理系统和投资管理系统；在医疗领域，可用于患者管理、电子病历和远程医疗等应用场景；在教育行业，低代码平台可用于学生信息管理、在线学习和考试评估等系统的构建。</p><h3>业务场景多样</h3><p data-pid=\"yS6wTSNY\">低代码平台适用于多种业务场景，如企业内部管理系统、客户关系管理（CRM）、订单管理、库存管理、审批流程自动化等。通过低代码平台，企业可以快速构建定制化的应用程序，满足特定业务需求，提高运营效率。</p><h2>四、企业使用低代码开发平台能带来哪些业务价值？</h2><p data-pid=\"gE5iuoVs\">低代码开发平台对企业的最大价值体现在其提升开发效率和降低成本上。<b>通过减少编程工作量，低代码平台使得开发周期大幅缩短，企业能够快速推出产品并响应市场变化</b>。相比传统开发方式，低代码平台不仅提升了开发效率，还降低了对高技能开发人员的依赖，<b>从而减少了企业的人力成本和技术投入</b>。这种高效的开发模式使得企业能够在竞争激烈的市场中迅速抓住机会。</p><p data-pid=\"Aj4l9y17\">此外，低代码平台能够增强企业的敏捷性。<b>通过让业务人员参与到开发过程中，企业能够更快速地调整应用功能，满足不断变化的业务需求</b>。这种灵活性不仅能提升团队间的协作效率，还能够加速产品创新和市场响应，<b>帮助企业在数字化转型过程中保持竞争优势</b>。</p><h2>五、如何选择适合企业的低代码开发平台？</h2><p data-pid=\"ZvQTWHEx\">在选择低代码开发平台时，企业首先需要关注平台的功能和定制化能力。<b>一个优秀的低代码平台应当提供丰富的开发工具，如表单设计、流程引擎和数据集成接口</b>，以满足不同业务场景的需求。此外，平台的扩展性也至关重要，<b>企业应该选择支持未来业务增长和系统扩展的低代码平台</b>，以确保平台的长期适用性。</p><p data-pid=\"YTeyasE1\">安全性和合规性也是选择平台时不可忽视的因素。<b>低代码平台必须具备强大的数据保护机制，如加密技术和权限控制</b>，以确保企业数据的安全性。同时，平台是否符合行业的合规要求，如GDPR或其他相关法规，也直接影响企业的决策。<b>因此，企业在选择低代码平台时应全面考虑平台的安全和合规性能</b>。</p><h2>六、低代码开发平台的未来发展趋势是什么？</h2><p data-pid=\"CuU9ve14\">低代码开发平台的未来将与人工智能（AI）和自动化技术紧密融合。<b>未来的低代码平台将借助AI技术，提供自动化代码生成、智能推荐和自然语言处理等功能</b>，进一步降低开发门槛和提高开发效率。<b>这种技术进步将使得企业能够在不依赖大量开发资源的情况下，快速实现复杂的应用开发和部署</b>。</p><p data-pid=\"hlh44Eos\">同时，随着企业对多平台部署需求的增加，低代码平台也将支持更多的部署方式，包括<b>云端、本地和混合部署</b>。平台的集成功能将更加强大，能够与各类第三方应用和服务进行无缝对接，支持企业在更复杂的业务环境中实现更高效的数据流通和业务自动化。<b>这一趋势将推动低代码平台在各行各业中的广泛应用</b>。</p><h2>总结</h2><p data-pid=\"gpqMYXkk\">经过详细对比，本文介绍的10款低代码开发平台在功能和应用场景上各具优势。无论您是希望简化企业流程、提升开发效率，还是实现更复杂的定制化需求，这些平台都能提供合适的解决方案。选择适合自己企业需求的低代码平台，能够在降低开发成本的同时，提升创新能力和市场响应速度。希望本文的评测能够帮助您做出明智决策，推动企业数字化转型迈向新台阶。</p><h3>常见问题解答（FAQ）</h3><h3>1.低代码开发平台能支持哪些功能？</h3><p data-pid=\"n6ORgBLz\">大多数低代码平台都支持基本的表单构建、工作流设计、数据集成、报告生成等功能。更高级的平台还支持人工智能、机器学习集成、定制化插件、跨平台部署等功能，满足更复杂的业务需求。</p><h3>2.使用低代码平台是否会影响应用的性能？</h3><p data-pid=\"I5u0cMit\">低代码平台的应用性能通常不亚于传统开发方式。<b>不过，性能还取决于平台本身的优化程度及所选功能的复杂性</b>。合理的设计与选择功能可以确保应用具备良好的性能。</p><h3>3.低代码平台能实现多大的定制化？</h3><p data-pid=\"A48x6xFN\">虽然低代码平台简化了开发过程，但大多数平台仍然支持一定程度的定制化开发。用户可以通过拖拽组件和配置界面快速搭建基础应用，<b>而对复杂的业务需求，可以通过少量代码或插件进行个性化调整</b>。</p><h3>4.如何确保低代码开发平台的安全性？</h3><p data-pid=\"3J-ev2yO\">低代码平台的安全性通常由平台提供商负责，包括数据加密、身份验证、权限管理等功能。企业在选择平台时，<b>应关注平台是否符合行业安全标准和法规要求</b>，并与供应商确认具体的安全措施。</p>",
+      "excerpt": "【对比宜搭、简道云、氚云等主流10款低代码开发平台】在数字化转型的浪潮下，越来越多的企业开始寻求高效、灵活的开发工具，以加速业务创新和流程自动化。低代码开发平台（Low-code Development Platform，简称LCDP）应运而生，成为了企业技术团队的重要武器。 我们将对比 10款热门的低代码开发平台，从功能、易用性、定制化能力到性价比，全方位为您呈现各平台的特点，帮助您选择最适合自己企业的解决方案。一、热门的低代码开…",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1750231418,
+      "updatedTime": 1750231484,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-0d0cb0c0029a1a288498b7c7e76cf8f5_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-0d0cb0c0029a1a288498b7c7e76cf8f5_r.jpg?source=1def8aca",
+            "width": 3790,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-cc0626d8a016fa43cd7e33f0d6dd4cec_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-cc0626d8a016fa43cd7e33f0d6dd4cec_r.jpg?source=1def8aca",
+            "width": 1024,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-bf84908076aa2435b0dc2ab061c3971b_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-bf84908076aa2435b0dc2ab061c3971b_r.jpg?source=1def8aca",
+            "width": 1024,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-848d68ae4a21e12d739a96845c92bc81_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-848d68ae4a21e12d739a96845c92bc81_r.jpg?source=1def8aca",
+            "width": 1024,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-2e8aca88ae32bb01b6c4c5d4f80fb376_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-2e8aca88ae32bb01b6c4c5d4f80fb376_r.jpg?source=1def8aca",
+            "width": 1024,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-99b03a12188424b9840fa9096626abd8_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-99b03a12188424b9840fa9096626abd8_r.jpg?source=1def8aca",
+            "width": 1024,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-5bd004098338eb47f5a3442200af768a_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-5bd004098338eb47f5a3442200af768a_r.jpg?source=1def8aca",
+            "width": 1024,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-c82e076b2856ec65f0f467e0c746b302_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-c82e076b2856ec65f0f467e0c746b302_r.jpg?source=1def8aca",
+            "width": 1024,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-b992f74502f24929664a67254cc40fd1_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-b992f74502f24929664a67254cc40fd1_r.jpg?source=1def8aca",
+            "width": 1024,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-9b345fcda45cbea7d143c504dd94c25e_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-9b345fcda45cbea7d143c504dd94c25e_r.jpg?source=1def8aca",
+            "width": 1024,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//sc.pingcode.com/sto67",
+            "canonicalUrl": "https://sc.pingcode.com/sto67",
+            "domain": "sc.pingcode.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://sc.pingcode.com/sto67",
+              "clickable": true
+            },
+            "anchorText": "网易 CodeWave"
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//sc.pingcode.com/sto67",
+            "canonicalUrl": "https://sc.pingcode.com/sto67",
+            "domain": "sc.pingcode.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://sc.pingcode.com/sto67",
+              "clickable": true
+            },
+            "anchorText": "官网"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1968643478662644597",
+      "author": "leek",
+      "url": "https://www.zhihu.com/question/439521858/answer/1968643478662644597",
+      "content": "<p data-pid=\"lQgqjpdK\">宜搭和简道云、氚云都是比较出色的低代码平台</p><p data-pid=\"0ELllSI5\">简道云：95%功能通过拖拽式操作去实现，一款零代码平台，复杂业务场景支持有限，难以满足高度定制化需求。</p><p data-pid=\"mf8jRzqT\">宜搭：提供大量预置模板和组件，支持多类型页面创建与组件化布局，能满足企业多样化开发需求，标准版流程功能较简单，复杂多分支流程需依赖代码实现</p><p data-pid=\"7TUvu-hd\">氚云：支持可视化表单、自动化流程、智能报表等功能，主要聚焦表单流程类应用，只支持发布到钉钉工作台，依赖钉钉生态，限制应用场景拓展。</p><p data-pid=\"yET2LQ30\">真正的低代码不仅仅是拖拉拽和表单流程搭建，国内还有一个小众，但是却是软件开发级别的低代码开发平台——JVS低代码。</p><a class=\"video-box\" href=\"https://link.zhihu.com/?target=https%3A//www.zhihu.com/video/1968641278020392028\" target=\"_blank\" data-video-id=\"\" data-video-playable=\"true\" data-name=\"\" data-poster=\"https://pic1.zhimg.com/v2-4b40659a97002bd20b45da4569239008_1440w.jpg?source=ccfced1a\" data-lens-id=\"1968641278020392028\"><img class=\"thumbnail\" src=\"https://pic1.zhimg.com/v2-4b40659a97002bd20b45da4569239008_1440w.jpg?source=ccfced1a\"/><span class=\"content\"><span class=\"title\"><span class=\"z-ico-extern-gray\"></span><span class=\"z-ico-extern-blue\"></span></span><span class=\"url\"><span class=\"z-ico-video\"></span>https://www.zhihu.com/video/1968641278020392028</span></span></a><p data-pid=\"d081sGh6\"><b>列表页的配置器，可以配置各种列表页，列表页上的数据字段、展示内容、交互操作</b></p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-322e58670b72e5e6943621fe36bb679b_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-37197dd70d802d8b221b572217fd2bc8\" class=\"origin_image zh-lightbox-thumb\" width=\"2559\" data-original=\"https://pic1.zhimg.com/v2-322e58670b72e5e6943621fe36bb679b_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2559&#39; height=&#39;1398&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-37197dd70d802d8b221b572217fd2bc8\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2559\" data-original=\"https://pic1.zhimg.com/v2-322e58670b72e5e6943621fe36bb679b_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-322e58670b72e5e6943621fe36bb679b_720w.jpg?source=1def8aca\"/></figure><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"x3Ik8djJ\">表单的配置器，构建用户信息查询录入的操作界面</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-f2210e32d0a952d224f5d83f83fb65c9_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-38a0a5563a998b88682559848ec63e9e\" class=\"origin_image zh-lightbox-thumb\" width=\"2559\" data-original=\"https://picx.zhimg.com/v2-f2210e32d0a952d224f5d83f83fb65c9_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2559&#39; height=&#39;1398&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-38a0a5563a998b88682559848ec63e9e\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2559\" data-original=\"https://picx.zhimg.com/v2-f2210e32d0a952d224f5d83f83fb65c9_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-f2210e32d0a952d224f5d83f83fb65c9_720w.jpg?source=1def8aca\"/></figure><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"Ag0luRI6\">逻辑的配置器，构建自动化处理的业务功能</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-43a4144a6934b75755716d2854ea54d8_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-22ee269dabd4778258d4166e3eb33fc6\" class=\"origin_image zh-lightbox-thumb\" width=\"2559\" data-original=\"https://pic1.zhimg.com/v2-43a4144a6934b75755716d2854ea54d8_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2559&#39; height=&#39;1398&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-22ee269dabd4778258d4166e3eb33fc6\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2559\" data-original=\"https://pic1.zhimg.com/v2-43a4144a6934b75755716d2854ea54d8_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-43a4144a6934b75755716d2854ea54d8_720w.jpg?source=1def8aca\"/></figure><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"vWyFZm1p\">流程的配置器，实现人工审批的功能</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-46d7142b7c79b2a4064c93507c774ef6_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-b1396fd0a8567dd48a1682b1b27b3609\" class=\"origin_image zh-lightbox-thumb\" width=\"2559\" data-original=\"https://picx.zhimg.com/v2-46d7142b7c79b2a4064c93507c774ef6_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2559&#39; height=&#39;1398&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-b1396fd0a8567dd48a1682b1b27b3609\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2559\" data-original=\"https://picx.zhimg.com/v2-46d7142b7c79b2a4064c93507c774ef6_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-46d7142b7c79b2a4064c93507c774ef6_720w.jpg?source=1def8aca\"/></figure><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"brt4HrWg\">图表的配置器，配置用于嵌入业务系统的可视化图表</p><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-0ffd1dbc94ef2efeba00c6f6881ab543_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-43aa7bb6d6a2dc3124b800bb7b8d2499\" class=\"origin_image zh-lightbox-thumb\" width=\"2559\" data-original=\"https://pica.zhimg.com/v2-0ffd1dbc94ef2efeba00c6f6881ab543_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2559&#39; height=&#39;1398&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-43aa7bb6d6a2dc3124b800bb7b8d2499\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2559\" data-original=\"https://pica.zhimg.com/v2-0ffd1dbc94ef2efeba00c6f6881ab543_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-0ffd1dbc94ef2efeba00c6f6881ab543_720w.jpg?source=1def8aca\"/></figure><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"oXA8nfkX\">报表的配置器，配置统计分析明细报表</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-bf8eb083e252ac7bd33e4a06536c47d9_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-e957ff2a5583037e20ddbd35c0c1c72b\" class=\"origin_image zh-lightbox-thumb\" width=\"2559\" data-original=\"https://pic1.zhimg.com/v2-bf8eb083e252ac7bd33e4a06536c47d9_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2559&#39; height=&#39;1398&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-e957ff2a5583037e20ddbd35c0c1c72b\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2559\" data-original=\"https://pic1.zhimg.com/v2-bf8eb083e252ac7bd33e4a06536c47d9_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-bf8eb083e252ac7bd33e4a06536c47d9_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"iYErnfdM\">大屏的配置器，配置大屏展示的可视化界面</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-21e91cc163848f8e01c1240dd6daa4d5_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-0a46fbe491d79c58d8c786800d9ac25d\" class=\"origin_image zh-lightbox-thumb\" width=\"2559\" data-original=\"https://pica.zhimg.com/v2-21e91cc163848f8e01c1240dd6daa4d5_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2559&#39; height=&#39;1398&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-0a46fbe491d79c58d8c786800d9ac25d\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2559\" data-original=\"https://pica.zhimg.com/v2-21e91cc163848f8e01c1240dd6daa4d5_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-21e91cc163848f8e01c1240dd6daa4d5_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"4_151Y-R\">数据加工的配置器：</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-0a2572d1f0d79de79311bb87496245ec_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-7650b57428a0c8d62c5a93fdc68a7e89\" class=\"origin_image zh-lightbox-thumb\" width=\"2559\" data-original=\"https://pic1.zhimg.com/v2-0a2572d1f0d79de79311bb87496245ec_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2559&#39; height=&#39;1398&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-7650b57428a0c8d62c5a93fdc68a7e89\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2559\" data-original=\"https://pic1.zhimg.com/v2-0a2572d1f0d79de79311bb87496245ec_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-0a2572d1f0d79de79311bb87496245ec_720w.jpg?source=1def8aca\"/></figure><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"VayVyh-n\">除了这些基础的能力配置器以外，还提供应用的详细配置，包括应用的审计管理与权限控制：</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-83ec4140554bfbd4d4624f8f084d7f77_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-070d837cffa45469c4bec7d0d4edf619\" class=\"origin_image zh-lightbox-thumb\" width=\"2559\" data-original=\"https://pica.zhimg.com/v2-83ec4140554bfbd4d4624f8f084d7f77_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2559&#39; height=&#39;1398&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-070d837cffa45469c4bec7d0d4edf619\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2559\" data-original=\"https://pica.zhimg.com/v2-83ec4140554bfbd4d4624f8f084d7f77_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-83ec4140554bfbd4d4624f8f084d7f77_720w.jpg?source=1def8aca\"/></figure><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-a9fa17d94b67a28d32fee0854a49fe30_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1689\" data-rawheight=\"483\" data-original-token=\"v2-f198cf96e6938e284844209fdde96211\" class=\"origin_image zh-lightbox-thumb\" width=\"1689\" data-original=\"https://pic1.zhimg.com/v2-a9fa17d94b67a28d32fee0854a49fe30_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1689&#39; height=&#39;483&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1689\" data-rawheight=\"483\" data-original-token=\"v2-f198cf96e6938e284844209fdde96211\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1689\" data-original=\"https://pic1.zhimg.com/v2-a9fa17d94b67a28d32fee0854a49fe30_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-a9fa17d94b67a28d32fee0854a49fe30_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"N57ifLwJ\">除了上述的基础能力以外，系统提供了自定后端服务的扩展、和自定义前端页面的扩展，也就是你可以自己手写服务和前端业务接入到应用中来，系统提供了标准的方式可以接入 手写的代码：</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-97f845cf990dda02200baca827d74f42_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-253ee45199219a385990d25d47a1c82f\" class=\"origin_image zh-lightbox-thumb\" width=\"2559\" data-original=\"https://pic1.zhimg.com/v2-97f845cf990dda02200baca827d74f42_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2559&#39; height=&#39;1398&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-253ee45199219a385990d25d47a1c82f\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2559\" data-original=\"https://pic1.zhimg.com/v2-97f845cf990dda02200baca827d74f42_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-97f845cf990dda02200baca827d74f42_720w.jpg?source=1def8aca\"/></figure><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"_yiD4kgp\">扩展性上，组件可以通过界面化的配置扩展，也可以灵活的编写公式加工的脚本：</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-073fdbcd32922902f4a351a669111150_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-4e6dd86f34ce2a32910a48b04b555825\" class=\"origin_image zh-lightbox-thumb\" width=\"2559\" data-original=\"https://pic1.zhimg.com/v2-073fdbcd32922902f4a351a669111150_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2559&#39; height=&#39;1398&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-4e6dd86f34ce2a32910a48b04b555825\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2559\" data-original=\"https://pic1.zhimg.com/v2-073fdbcd32922902f4a351a669111150_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-073fdbcd32922902f4a351a669111150_720w.jpg?source=1def8aca\"/></figure><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-956c0af9bcd19558cb184927f8122a4e_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-e14eea407b6dcd30a855ef2e49a58ce5\" class=\"origin_image zh-lightbox-thumb\" width=\"2559\" data-original=\"https://picx.zhimg.com/v2-956c0af9bcd19558cb184927f8122a4e_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2559&#39; height=&#39;1398&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-e14eea407b6dcd30a855ef2e49a58ce5\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2559\" data-original=\"https://picx.zhimg.com/v2-956c0af9bcd19558cb184927f8122a4e_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-956c0af9bcd19558cb184927f8122a4e_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"jWzodYHg\">JVS采用了 spring cloud 的微服务的方式进行构建，可以不断的扩展业务处理节点，无需担心性能的问题。</p><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"7ezLpUO7\">除了系统功能，还支持设备接入，包括物联网的设备和监控设备：</p><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-7bc535f012a7c67b57cd33ccf07543ac_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-cea26193e86315eced033ccabfdf3e39\" class=\"origin_image zh-lightbox-thumb\" width=\"2559\" data-original=\"https://pic1.zhimg.com/v2-7bc535f012a7c67b57cd33ccf07543ac_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2559&#39; height=&#39;1398&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-cea26193e86315eced033ccabfdf3e39\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2559\" data-original=\"https://pic1.zhimg.com/v2-7bc535f012a7c67b57cd33ccf07543ac_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-7bc535f012a7c67b57cd33ccf07543ac_720w.jpg?source=1def8aca\"/></figure><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"PjbrY0zQ\">复杂应用举例，我们可以支持工业上的 MES、ERP、APS，也可以提供金融行业的风控系统、进件系统等等：</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-3ee222dec5fb0ec26abe7bec75c525ee_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-3da2e730297e110333537727c4f0f4c1\" class=\"origin_image zh-lightbox-thumb\" width=\"2559\" data-original=\"https://picx.zhimg.com/v2-3ee222dec5fb0ec26abe7bec75c525ee_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2559&#39; height=&#39;1398&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2559\" data-rawheight=\"1398\" data-original-token=\"v2-3da2e730297e110333537727c4f0f4c1\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2559\" data-original=\"https://picx.zhimg.com/v2-3ee222dec5fb0ec26abe7bec75c525ee_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-3ee222dec5fb0ec26abe7bec75c525ee_720w.jpg?source=1def8aca\"/></figure><p class=\"ztext-empty-paragraph\"><br/></p><a href=\"https://link.zhihu.com/?target=https%3A//bctools.cn/\" data-draft-node=\"block\" data-draft-type=\"link-card\" data-draft-title=\"JVS官网-快速开发平台|JVS低代码开发平台\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">JVS官网-快速开发平台|JVS低代码开发平台</a><p><br/> </p>",
+      "excerpt": "宜搭和简道云、氚云都是比较出色的低代码平台 简道云：95%功能通过拖拽式操作去实现，一款零代码平台，复杂业务场景支持有限，难以满足高度定制化需求。 宜搭：提供大量预置模板和组件，支持多类型页面创建与组件化布局，能满足企业多样化开发需求，标准版流程功能较简单，复杂多分支流程需依赖代码实现 氚云：支持可视化表单、自动化流程、智能报表等功能，主要聚焦表单流程类应用，只支持发布到钉钉工作台，依赖钉钉生态，限制…",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1762141180,
+      "updatedTime": 1762141180,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-4b40659a97002bd20b45da4569239008_1440w.jpg?source=ccfced1a",
+            "displayUrl": "https://pic1.zhimg.com/v2-4b40659a97002bd20b45da4569239008_1440w.jpg?source=ccfced1a",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-322e58670b72e5e6943621fe36bb679b_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-322e58670b72e5e6943621fe36bb679b_r.jpg?source=1def8aca",
+            "width": 2559,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-f2210e32d0a952d224f5d83f83fb65c9_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-f2210e32d0a952d224f5d83f83fb65c9_r.jpg?source=1def8aca",
+            "width": 2559,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-43a4144a6934b75755716d2854ea54d8_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-43a4144a6934b75755716d2854ea54d8_r.jpg?source=1def8aca",
+            "width": 2559,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-46d7142b7c79b2a4064c93507c774ef6_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-46d7142b7c79b2a4064c93507c774ef6_r.jpg?source=1def8aca",
+            "width": 2559,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/v2-0ffd1dbc94ef2efeba00c6f6881ab543_r.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/v2-0ffd1dbc94ef2efeba00c6f6881ab543_r.jpg?source=1def8aca",
+            "width": 2559,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-bf8eb083e252ac7bd33e4a06536c47d9_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-bf8eb083e252ac7bd33e4a06536c47d9_r.jpg?source=1def8aca",
+            "width": 2559,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/v2-21e91cc163848f8e01c1240dd6daa4d5_r.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/v2-21e91cc163848f8e01c1240dd6daa4d5_r.jpg?source=1def8aca",
+            "width": 2559,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-0a2572d1f0d79de79311bb87496245ec_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-0a2572d1f0d79de79311bb87496245ec_r.jpg?source=1def8aca",
+            "width": 2559,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/v2-83ec4140554bfbd4d4624f8f084d7f77_r.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/v2-83ec4140554bfbd4d4624f8f084d7f77_r.jpg?source=1def8aca",
+            "width": 2559,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-a9fa17d94b67a28d32fee0854a49fe30_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-a9fa17d94b67a28d32fee0854a49fe30_r.jpg?source=1def8aca",
+            "width": 1689,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-97f845cf990dda02200baca827d74f42_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-97f845cf990dda02200baca827d74f42_r.jpg?source=1def8aca",
+            "width": 2559,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-073fdbcd32922902f4a351a669111150_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-073fdbcd32922902f4a351a669111150_r.jpg?source=1def8aca",
+            "width": 2559,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-956c0af9bcd19558cb184927f8122a4e_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-956c0af9bcd19558cb184927f8122a4e_r.jpg?source=1def8aca",
+            "width": 2559,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-7bc535f012a7c67b57cd33ccf07543ac_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-7bc535f012a7c67b57cd33ccf07543ac_r.jpg?source=1def8aca",
+            "width": 2559,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-3ee222dec5fb0ec26abe7bec75c525ee_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-3ee222dec5fb0ec26abe7bec75c525ee_r.jpg?source=1def8aca",
+            "width": 2559,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//www.zhihu.com/video/1968641278020392028",
+            "canonicalUrl": "https://www.zhihu.com/video/1968641278020392028",
+            "domain": "www.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://www.zhihu.com/video/1968641278020392028",
+              "clickable": true
+            },
+            "anchorText": "https://www.zhihu.com/video/1968641278020392028"
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//bctools.cn/",
+            "canonicalUrl": "https://bctools.cn/",
+            "domain": "bctools.cn",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://bctools.cn/",
+              "clickable": true
+            },
+            "anchorText": "JVS官网-快速开发平台|JVS低代码开发平台"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "3376976033",
+      "author": "表单大师",
+      "url": "https://www.zhihu.com/question/439521858/answer/3376976033",
+      "content": "<p data-pid=\"02K2TDc1\">宜搭和简道云、氚云比起来有什么优劣之处？</p><p data-pid=\"SDjAYBRh\">这个问题，作为同行（我们的产品是表单大师）,来回答一波。</p><p data-pid=\"8d-Yjo5w\">首先宜搭和氚云，本质上是一家，一个是阿里的亲儿子，一个是阿里的干儿子。</p><p data-pid=\"-d9abEwx\">目前宜搭与钉钉完全集成，任何钉钉都用户都可以很快的找到和使用。</p><p data-pid=\"o7B9PVYW\">个人觉得氚云 跟简道云、宜搭，以及 表单大师本质上不属于同一类产品。</p><p data-pid=\"Vvu4j0V5\">氚云属于低代码，是需要编写代码的，主要面向的人群是开发人员。</p><p data-pid=\"4VS0VUWo\">而后者及 表单大师属行零代码产品，几乎不用编写代码，面向的是不懂代码的业务人员。</p><a href=\"https://link.zhihu.com/?target=https%3A//www.jsform.com/%3Fru%3DRp4ni44T\" data-draft-node=\"block\" data-draft-type=\"link-card\" data-image=\"https://picx.zhimg.com/v2-4aae77581356f7c07c09ed783d8820af_180x120.jpg\" data-image-width=\"644\" data-image-height=\"460\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">Bangboss|表单大师-简单好用的数据收集、管理和分析平台</a><p data-pid=\"L4kQLGXZ\">所以，从客户群体来说就不一样。如果你是开发人员，优先考虑氚云，否则优先考虑其它几个产品。</p><p data-pid=\"neznopoL\">产品功能上，三者都比较偏向于企业的内部应用，企业对外的功能都较弱。</p><p data-pid=\"3ITN1Mx2\"><b>总结：</b></p><p data-pid=\"n0GDMBr2\">1、如果你是程序员，首选氚云，因为可以写代码，自主控制权更高。</p><p data-pid=\"eD867rbQ\">2、如果是对内业务，可以选择宜搭和简道云。</p><p data-pid=\"acsyfw3G\">3、如果是对外业务，或者是内外结合的业务，可以选择表单大师(<a href=\"https://link.zhihu.com/?target=https%3A//www.jsform.com/%3Fru%3DRp4ni44T\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">Bangboss|表单大师-简单好用的数据收集、管理和分析平台</a>)</p><p data-pid=\"tgRwJ3bG\"><b>最后，安利一下我们的产品（1分钟快速了解）</b>：</p><a class=\"video-box\" href=\"https://link.zhihu.com/?target=https%3A//www.zhihu.com/video/1734254155013820416\" target=\"_blank\" data-video-id=\"\" data-video-playable=\"true\" data-name=\"\" data-poster=\"https://picx.zhimg.com/v2-2b108fd06b9a25994c7f9ae593c77c3c.jpg?source=382ee89a\" data-lens-id=\"1734254155013820416\"><img class=\"thumbnail\" src=\"https://picx.zhimg.com/v2-2b108fd06b9a25994c7f9ae593c77c3c.jpg?source=382ee89a\"/><span class=\"content\"><span class=\"title\"><span class=\"z-ico-extern-gray\"></span><span class=\"z-ico-extern-blue\"></span></span><span class=\"url\"><span class=\"z-ico-video\"></span>https://www.zhihu.com/video/1734254155013820416</span></span></a><p data-pid=\"5WDzIKvx\">也可以1对1加微信了解：</p><a href=\"https://xg.zhihu.com/plugin/2b0d35eb2e3b1028d79e806abfa0f70d?BIZ=ECOMMERCE\" data-draft-node=\"block\" data-draft-type=\"link-card\" class=\"internal\"><span class=\"invisible\">https://</span><span class=\"visible\">xg.zhihu.com/plugin/2b0</span><span class=\"invisible\">d35eb2e3b1028d79e806abfa0f70d?BIZ=ECOMMERCE</span><span class=\"ellipsis\"></span></a><p></p>",
+      "excerpt": "宜搭和简道云、氚云比起来有什么优劣之处？ 这个问题，作为同行（我们的产品是表单大师）,来回答一波。 首先宜搭和氚云，本质上是一家，一个是阿里的亲儿子，一个是阿里的干儿子。 目前宜搭与钉钉完全集成，任何钉钉都用户都可以很快的找到和使用。 个人觉得氚云 跟简道云、宜搭，以及 表单大师本质上不属于同一类产品。 氚云属于低代码，是需要编写代码的，主要面向的人群是开发人员。 而后者及 表单大师属行零代码产品，几乎不…",
+      "voteupCount": 26,
+      "commentCount": 2,
+      "createdTime": 1706258438,
+      "updatedTime": 1723714658,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-2b108fd06b9a25994c7f9ae593c77c3c.jpg?source=382ee89a",
+            "displayUrl": "https://picx.zhimg.com/v2-2b108fd06b9a25994c7f9ae593c77c3c.jpg?source=382ee89a",
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//www.jsform.com/%3Fru%3DRp4ni44T",
+            "canonicalUrl": "https://www.jsform.com/?ru=Rp4ni44T",
+            "domain": "www.jsform.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://www.jsform.com/?ru=Rp4ni44T",
+              "clickable": true
+            },
+            "anchorText": "Bangboss|表单大师-简单好用的数据收集、管理和分析平台"
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//www.jsform.com/%3Fru%3DRp4ni44T",
+            "canonicalUrl": "https://www.jsform.com/?ru=Rp4ni44T",
+            "domain": "www.jsform.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://www.jsform.com/?ru=Rp4ni44T",
+              "clickable": true
+            },
+            "anchorText": "Bangboss|表单大师-简单好用的数据收集、管理和分析平台"
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//www.zhihu.com/video/1734254155013820416",
+            "canonicalUrl": "https://www.zhihu.com/video/1734254155013820416",
+            "domain": "www.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://www.zhihu.com/video/1734254155013820416",
+              "clickable": true
+            },
+            "anchorText": "https://www.zhihu.com/video/1734254155013820416"
+          },
+          {
+            "originalUrl": "https://xg.zhihu.com/plugin/2b0d35eb2e3b1028d79e806abfa0f70d?BIZ=ECOMMERCE",
+            "canonicalUrl": "https://xg.zhihu.com/plugin/2b0d35eb2e3b1028d79e806abfa0f70d?BIZ=ECOMMERCE",
+            "domain": "xg.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "anchorText": "https://xg.zhihu.com/plugin/2b0d35eb2e3b1028d79e806abfa0f70d?BIZ=ECOMMERCE"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      },
+      "comments": [
+        {
+          "contentHtml": "功能还是少，例如基本海报支付，生成小程序...",
+          "contentMarkdown": "功能还是少，例如基本海报支付，生成小程序\\.\\.\\.",
+          "authorName": "简单之见",
+          "createdTime": 1715916450
+        }
+      ]
+    },
+    {
+      "id": "3450414501",
+      "author": "云程智能体开发平台",
+      "url": "https://www.zhihu.com/question/439521858/answer/3450414501",
+      "content": "<p data-pid=\"xHQkhmv7\">每个低代码产品都有自己的特点和优势，没有一个绝对的好或者不好，要根据你的需求去选择。</p><p data-pid=\"SPAwh60V\">1、简道云是帆软旗下的产品，定位是无代码平台，它的数据处理和报表能力很强。</p><p data-pid=\"sKOhpyXh\">2、宜搭是阿里系产品，主要跟钉钉生态绑定，消息推送、移动端功能是它的强项。</p><p data-pid=\"KT8fLJ38\">3、氚云起家钉钉生态，重点是表单和工作流，沉淀了大量的业务应用模块，可以开箱即用。</p><p data-pid=\"VAOeMqSH\"><b>关注一下可交付源代码，支持私有化部署的云程低代码开发平台。</b></p><p data-pid=\"_rbk0mbL\">云程平台是一款采用SpringBoot、SpringCloud、Vue.js主流技术栈，提供了开箱即用的数据建模、表单设计、页面设计、流程设计、报表设计、门户设计、打印设计、大屏设计、移动设计、数据集成等一系列可视化建模设计工具，可低代码/零代码（简单应用无代码开发、复杂应用低代码开发）方式快速构建业务应用，平台既可私有化部署（支持物理机、虚拟机、信创国产化），也可云化部署（支持华为云\\阿里云等公有云、企业私有云、kubernetes容器云）。</p><p data-pid=\"YBqsYtHS\"><b>在线免费体验：<a href=\"https://link.zhihu.com/?target=http%3A//www.yunchengxc.com\" class=\" external\" target=\"_blank\" rel=\"nofollow noreferrer\"><span class=\"invisible\">http://www.</span><span class=\"visible\">yunchengxc.com</span><span class=\"invisible\"></span></a></b></p><p data-pid=\"vnm9NAsD\"><b>门户首页</b></p><p data-pid=\"q4Q4eQAC\">平台提供了多角色门户功能，支持一人多门户页展示，以及个性化配置，实现“千人千面”门户效果。门户首页无需编码开发，基于门户设计器高保真渲染门户页，提供顶部导航、侧边导航两种导航模式，八种常用色系主题。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-845f8e5f48a73a184fed38b174b8434e_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-845f8e5f48a73a184fed38b174b8434e\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://pic1.zhimg.com/v2-845f8e5f48a73a184fed38b174b8434e_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;503&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-845f8e5f48a73a184fed38b174b8434e\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://pic1.zhimg.com/v2-845f8e5f48a73a184fed38b174b8434e_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-845f8e5f48a73a184fed38b174b8434e_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"z6zOc4_D\">· <b>数据集成</b></p><p data-pid=\"yK4oDcmO\">数据集成组件提供多数据源管理、数据集管理、数据服务生成等模块，支持mysql、pg、oracle、达梦等多种数据库注册，支持Table、SQL、HTTP、JSON等多种第三方数据集成，业务数据一键快速生成HTTP服务接口，方便第三方调用集成。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-09ec86d2c546150f393d4bade54aff3c_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-09ec86d2c546150f393d4bade54aff3c\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-09ec86d2c546150f393d4bade54aff3c_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;503&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-09ec86d2c546150f393d4bade54aff3c\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-09ec86d2c546150f393d4bade54aff3c_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-09ec86d2c546150f393d4bade54aff3c_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"X6WOiL7n\">· <b>应用开发</b></p><p data-pid=\"nIucRq3O\">基于模型驱动开发思想，可在线配置化开发微应用，每个微应用包括数据模型、表单模型、页面模型、流程模型、报表模型等，通过拖拉拽方式构建模型，进而完成应用模块的快速开发和交付。</p><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-b41efba77602cca65c82a6d7990f2ca1_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-b41efba77602cca65c82a6d7990f2ca1\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-b41efba77602cca65c82a6d7990f2ca1_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;503&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-b41efba77602cca65c82a6d7990f2ca1\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-b41efba77602cca65c82a6d7990f2ca1_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-b41efba77602cca65c82a6d7990f2ca1_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"RP0kkPwy\">· <b>表单设计器</b></p><p data-pid=\"x2yP5SI5\">云程平台提供了在线可视化化表单设计器，通过拖拉拽配置方式开发业务表单，支持在线预览，所见即所得。提供页面视图的配置化开发功能，支持单表、主子表、树页面、组合页面等多种页面生成，并可配置查询条件、操作按钮、导入导出、扩展事件等，满足项目复杂页面快速开发。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-703e04a652e41fe0e51c0b02f1834139_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-703e04a652e41fe0e51c0b02f1834139\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://pic1.zhimg.com/v2-703e04a652e41fe0e51c0b02f1834139_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;503&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-703e04a652e41fe0e51c0b02f1834139\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://pic1.zhimg.com/v2-703e04a652e41fe0e51c0b02f1834139_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-703e04a652e41fe0e51c0b02f1834139_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"UZNICRpY\">· <b>打印设计器</b></p><p data-pid=\"sFkAQ4yt\">云程平台提供了一款web打印设计组件，无需安装插件，可拖拉拽在线设计打印模板，提供了文本、图片、表格等常见的打印元素，也支持通过应用中设计好的数据模型快速生成打印模板，支持移动端，PC端浏览器使用， 跟浏览器打印功能相比，可精准控制打印页面效果。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-64cf3505bb58c0cfaff726ec249c96d9_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2047\" data-rawheight=\"941\" data-original-token=\"v2-64cf3505bb58c0cfaff726ec249c96d9\" class=\"origin_image zh-lightbox-thumb\" width=\"2047\" data-original=\"https://picx.zhimg.com/v2-64cf3505bb58c0cfaff726ec249c96d9_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2047&#39; height=&#39;941&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2047\" data-rawheight=\"941\" data-original-token=\"v2-64cf3505bb58c0cfaff726ec249c96d9\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2047\" data-original=\"https://picx.zhimg.com/v2-64cf3505bb58c0cfaff726ec249c96d9_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-64cf3505bb58c0cfaff726ec249c96d9_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"6gUeY7Id\">· <b>图表设计器</b></p><p data-pid=\"yfEqdaah\">报表设计器是一款在线可视化报表建模工具，提供了汇总表、明细表、柱形图、条形图、饼图、<a href=\"https://www.zhihu.com/search?q=%E6%8A%98%E7%BA%BF%E5%9B%BE&amp;search_source=Entity&amp;hybrid_search_source=Entity&amp;hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A2370897680%7D\" class=\"internal\" target=\"_blank\">折线图</a>、面积图、雷达图、指标图等多种种常用图表，可以组合及联动使用。设计器采用拖拽操作的风格，简单易用，能够实时展示配置效果，一目了然。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-3b827b4fa441d97a1632ca33d328cf35_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-3b827b4fa441d97a1632ca33d328cf35\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-3b827b4fa441d97a1632ca33d328cf35_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;503&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-3b827b4fa441d97a1632ca33d328cf35\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://picx.zhimg.com/v2-3b827b4fa441d97a1632ca33d328cf35_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-3b827b4fa441d97a1632ca33d328cf35_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"QUwNwlSe\">· <b>流程设计器</b></p><p data-pid=\"CKqG00e0\">基于BPMN2.0标准规范，可视化拖拉拽设计业务流程，支持会签、加签、跳转、退回、撤销等多种中国特色流程操作，支持用户、部门、角色、岗位、关系等多维度配置选人方式，支持跟表单和权限无缝集成，配置即用。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-796afa2d52b67430c49beb49abf4bdce_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-796afa2d52b67430c49beb49abf4bdce\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://pic1.zhimg.com/v2-796afa2d52b67430c49beb49abf4bdce_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;503&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-796afa2d52b67430c49beb49abf4bdce\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://pic1.zhimg.com/v2-796afa2d52b67430c49beb49abf4bdce_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-796afa2d52b67430c49beb49abf4bdce_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"p5PpqbEq\">· <b>门户设计器</b></p><p data-pid=\"2RodF3eO\">支持门户可视化设计，门户风格任意布局，支持一人多门户页，可按角色控制门户权限，支持个人门户自定义，从而实现多种个性化门户展现要求，达到“千人千面”效果。门户设计器默认提供了我的待办、常用流程、数据面板、轮播图等多个基础组件，以及可直接复用的业务模块组件，并支持自定义扩展组件。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-db492aa4913082e4409de8eb6d1532cb_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-db492aa4913082e4409de8eb6d1532cb\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://pica.zhimg.com/v2-db492aa4913082e4409de8eb6d1532cb_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;503&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-db492aa4913082e4409de8eb6d1532cb\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://pica.zhimg.com/v2-db492aa4913082e4409de8eb6d1532cb_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-db492aa4913082e4409de8eb6d1532cb_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"k7g-Hr5u\">· <b>大屏设计器</b></p><p data-pid=\"H6fJizzc\">提供可视化大屏设计器，基于丰富图形组件和多种行业模板，您可在十分钟之内快速搭建起美观、酷炫的大屏展示，实现业务数据可视化。大屏设计器采用拖拽式自由布局，无需编码，全图形化编辑，支持静态数据、Http服务、SQL等多种数据源配置，支持数据实时同步更新。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-6ac77fcf9d6b3b29ebca44496455b2d5_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-6ac77fcf9d6b3b29ebca44496455b2d5\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://pic1.zhimg.com/v2-6ac77fcf9d6b3b29ebca44496455b2d5_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;503&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"503\" data-original-token=\"v2-6ac77fcf9d6b3b29ebca44496455b2d5\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://pic1.zhimg.com/v2-6ac77fcf9d6b3b29ebca44496455b2d5_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-6ac77fcf9d6b3b29ebca44496455b2d5_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"Xq5LUv56\">· <b>移动端H5/小程序</b></p><p data-pid=\"N6Mnhyx6\">基于uni-app框架开发，一套代码，支持iOS、Android、Web、小程序等多个平台使用，移动应用开发采用配置化方式实现，可在线设计移动端表单和流程，快速构建和发布移动应用。基于服务化架构和前后端分离技术，实现PC端和移动端数据协同，在移动端可完成流程发起、待办处理、流程审批、数据查询等工作。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-1dfb3d538dac8fe57903bf5e48c2d393_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"548\" data-original-token=\"v2-1dfb3d538dac8fe57903bf5e48c2d393\" class=\"origin_image zh-lightbox-thumb\" width=\"1000\" data-original=\"https://pic1.zhimg.com/v2-1dfb3d538dac8fe57903bf5e48c2d393_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1000&#39; height=&#39;548&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1000\" data-rawheight=\"548\" data-original-token=\"v2-1dfb3d538dac8fe57903bf5e48c2d393\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1000\" data-original=\"https://pic1.zhimg.com/v2-1dfb3d538dac8fe57903bf5e48c2d393_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-1dfb3d538dac8fe57903bf5e48c2d393_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"rjfFySLg\"><b>在线免费体验：<a href=\"https://link.zhihu.com/?target=http%3A//www.yunchengxc.com\" class=\" external\" target=\"_blank\" rel=\"nofollow noreferrer\"><span class=\"invisible\">http://www.</span><span class=\"visible\">yunchengxc.com</span><span class=\"invisible\"></span></a></b></p>",
+      "excerpt": "每个低代码产品都有自己的特点和优势，没有一个绝对的好或者不好，要根据你的需求去选择。 1、简道云是帆软旗下的产品，定位是无代码平台，它的数据处理和报表能力很强。 2、宜搭是阿里系产品，主要跟钉钉生态绑定，消息推送、移动端功能是它的强项。 3、氚云起家钉钉生态，重点是表单和工作流，沉淀了大量的业务应用模块，可以开箱即用。 关注一下可交付源代码，支持私有化部署的云程低代码开发平台。云程平台是一款采用SpringB…",
+      "voteupCount": 1,
+      "commentCount": 0,
+      "createdTime": 1711933846,
+      "updatedTime": 1711933846,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-845f8e5f48a73a184fed38b174b8434e_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-845f8e5f48a73a184fed38b174b8434e_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-09ec86d2c546150f393d4bade54aff3c_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-09ec86d2c546150f393d4bade54aff3c_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-b41efba77602cca65c82a6d7990f2ca1_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-b41efba77602cca65c82a6d7990f2ca1_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-703e04a652e41fe0e51c0b02f1834139_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-703e04a652e41fe0e51c0b02f1834139_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-64cf3505bb58c0cfaff726ec249c96d9_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-64cf3505bb58c0cfaff726ec249c96d9_r.jpg?source=1def8aca",
+            "width": 2047,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-3b827b4fa441d97a1632ca33d328cf35_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-3b827b4fa441d97a1632ca33d328cf35_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-796afa2d52b67430c49beb49abf4bdce_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-796afa2d52b67430c49beb49abf4bdce_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/v2-db492aa4913082e4409de8eb6d1532cb_r.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/v2-db492aa4913082e4409de8eb6d1532cb_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-6ac77fcf9d6b3b29ebca44496455b2d5_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-6ac77fcf9d6b3b29ebca44496455b2d5_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-1dfb3d538dac8fe57903bf5e48c2d393_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-1dfb3d538dac8fe57903bf5e48c2d393_r.jpg?source=1def8aca",
+            "width": 1000,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://link.zhihu.com/?target=http%3A//www.yunchengxc.com",
+            "canonicalUrl": null,
+            "domain": null,
+            "clickable": false,
+            "securityClass": "rejected",
+            "anchorText": "http://www.yunchengxc.com"
+          },
+          {
+            "originalUrl": "https://www.zhihu.com/search?q=%E6%8A%98%E7%BA%BF%E5%9B%BE&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A2370897680%7D",
+            "canonicalUrl": "https://www.zhihu.com/search?q=%E6%8A%98%E7%BA%BF%E5%9B%BE&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22answer%22%2C%22sourceId%22%3A2370897680%7D",
+            "domain": "www.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "anchorText": "折线图"
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=http%3A//www.yunchengxc.com",
+            "canonicalUrl": null,
+            "domain": null,
+            "clickable": false,
+            "securityClass": "rejected",
+            "anchorText": "http://www.yunchengxc.com"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      },
+      "comments": []
+    },
+    {
+      "id": "1780646730",
+      "author": "领悟杂谈",
+      "url": "https://www.zhihu.com/question/439521858/answer/1780646730",
+      "content": "<p data-pid=\"gNhGDb1P\">客观讲宜搭在所有这类软件里面目前是相对比较差的一个。主要是设计思想相对比较乱。相对来讲简道云、明道、轻流、氚云、伙伴云等比宜搭要好得多。</p><p data-pid=\"1oB83ISI\">另外，宜搭、简道云、明道、轻流、氚云、伙伴云等属于使于小团队使用，比如50人以下。如果公司级使用，建议还是云表、活字格、魔方网表、jnpfsoft等。</p><p data-pid=\"d3k_SBtn\">如果再大一点的公司，建议还是使用私有化部署的系统，毕竟数据是企业核心资产。</p><a href=\"https://zhuanlan.zhihu.com/p/356015370\" data-draft-node=\"block\" data-draft-type=\"link-card\" class=\"internal\">领悟杂谈：关于国内网表软件、零代码、低代码、APaas软件等快速开发软件选型</a><a href=\"https://www.zhihu.com/question/477427067\" data-draft-node=\"block\" data-draft-type=\"link-card\" class=\"internal\">零代码、低代码、APaaS系统应从哪些指标考察选型？</a><p></p>",
+      "excerpt": "客观讲宜搭在所有这类软件里面目前是相对比较差的一个。主要是设计思想相对比较乱。相对来讲简道云、明道、轻流、氚云、伙伴云等比宜搭要好得多。 另外，宜搭、简道云、明道、轻流、氚云、伙伴云等属于使于小团队使用，比如50人以下。如果公司级使用，建议还是云表、活字格、魔方网表、jnpfsoft等。 如果再大一点的公司，建议还是使用私有化部署的系统，毕竟数据是企业核心资产。 [文章: 关于国内网表软件、零代码、低代码、APaas软件等快速开发软件选型]",
+      "voteupCount": 13,
+      "commentCount": 1,
+      "createdTime": 1615775994,
+      "updatedTime": 1637206336,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://zhuanlan.zhihu.com/p/356015370",
+            "canonicalUrl": "https://zhuanlan.zhihu.com/p/356015370",
+            "domain": "zhuanlan.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "anchorText": "领悟杂谈：关于国内网表软件、零代码、低代码、APaas软件等快速开发软件选型"
+          },
+          {
+            "originalUrl": "https://www.zhihu.com/question/477427067",
+            "canonicalUrl": "https://www.zhihu.com/question/477427067",
+            "domain": "www.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "anchorText": "零代码、低代码、APaaS系统应从哪些指标考察选型？"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      },
+      "comments": [
+        {
+          "contentHtml": "专业资深大咖，感谢整理，支持[赞]",
+          "contentMarkdown": "专业资深大咖，感谢整理，支持\\[赞\\]",
+          "authorName": "春秋战国",
+          "createdTime": 1635986930
+        }
+      ]
+    },
+    {
+      "id": "1976466205",
+      "author": "百数",
+      "url": "https://www.zhihu.com/question/439521858/answer/1976466205",
+      "content": "<p data-pid=\"07BGFknm\"><b>宜搭、简道云、氚云都是现在市场上有名的低代码开发平台。除此之外，不妨使用下<span class=\"nolink\">百数</span>，再来比较一下。</b></p><p data-pid=\"50j9uCm6\"><b><span class=\"nolink\">“百数”</span></b>是国内首家专注于打造真正的<b><span class=\"nolink\">低代码开发</span></b>的<b><span class=\"nolink\">低代码开发平台</span></b>，至今立足办公领域近十年。主要通过可视化、拖拽式、低代码的方式快速开发数据中台、ERP、协同办公、进销存管理系统等企业级管理系统，从而代替传统的编写代码方式。</p><a href=\"https://www.zhihu.com/zvideo/1357310564788662272\" data-draft-node=\"block\" data-draft-type=\"link-card\"></a><p data-pid=\"eCAcoCVS\"><b><span class=\"nolink\">百数</span></b>平台上除了支持自己搭建之外，还有超800个已开发好的成熟应用与案例，用户直接安装即可使用，也支持根据需求进行调整。</p><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-c27bcb7338d61bc5c67710a382a69124_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1051\" data-rawheight=\"1183\" data-original-token=\"v2-c27bcb7338d61bc5c67710a382a69124\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-1110bc8bd7ecf187c8ae898002c21845_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1051\" data-original=\"https://picx.zhimg.com/v2-c27bcb7338d61bc5c67710a382a69124_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1051&#39; height=&#39;1183&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1051\" data-rawheight=\"1183\" data-original-token=\"v2-c27bcb7338d61bc5c67710a382a69124\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-1110bc8bd7ecf187c8ae898002c21845_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1051\" data-original=\"https://picx.zhimg.com/v2-c27bcb7338d61bc5c67710a382a69124_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-c27bcb7338d61bc5c67710a382a69124_720w.jpg?source=1def8aca\"/></figure><h3><b>百数</b><span class=\"nolink\">低代码开发平台</span><b>的功能体系</b></h3><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-4e1107783c2e2a956a76cc5778a4b832_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2388\" data-rawheight=\"1570\" data-original-token=\"v2-4e1107783c2e2a956a76cc5778a4b832\" class=\"origin_image zh-lightbox-thumb\" width=\"2388\" data-original=\"https://picx.zhimg.com/v2-4e1107783c2e2a956a76cc5778a4b832_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;2388&#39; height=&#39;1570&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"2388\" data-rawheight=\"1570\" data-original-token=\"v2-4e1107783c2e2a956a76cc5778a4b832\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"2388\" data-original=\"https://picx.zhimg.com/v2-4e1107783c2e2a956a76cc5778a4b832_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-4e1107783c2e2a956a76cc5778a4b832_720w.jpg?source=1def8aca\"/></figure><h3><b>百数</b><span class=\"nolink\">低代码开发平台</span><b>的模式</b></h3><p data-pid=\"vnOKuWA9\"><b>第1种，公有云模式</b></p><p data-pid=\"4k90puNY\">百数公有云平台企业可以免费使用，企业可以在平台内创建自己的OA系统、ERP系统、进销存管理系统等等。</p><p data-pid=\"WexbY3vR\">开发方式非常简单，只需要把左侧控件以鼠标拖拽的方式拖至右侧就可以了。同时也可以直接在现有的管理系统内进行修改/新增/删除操作，以便加快系统开发进度。 </p><p data-pid=\"APweNV-G\">此外，百数低代码开发平台还支持后端使用Python脚本语言开发，可以针对特定功能，以代码编写的形式完成，增加系统深度，让你的管理系统更适合你企业的需求。</p><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-5d16542574dde5af07b8a968f1807633_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1243\" data-rawheight=\"670\" data-original-token=\"v2-5d16542574dde5af07b8a968f1807633\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-f745c80eb1e194d6c07b773c3997da92_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1243\" data-original=\"https://picx.zhimg.com/v2-5d16542574dde5af07b8a968f1807633_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1243&#39; height=&#39;670&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1243\" data-rawheight=\"670\" data-original-token=\"v2-5d16542574dde5af07b8a968f1807633\" data-default-watermark-src=\"https://pica.zhimg.com/50/v2-f745c80eb1e194d6c07b773c3997da92_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1243\" data-original=\"https://picx.zhimg.com/v2-5d16542574dde5af07b8a968f1807633_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-5d16542574dde5af07b8a968f1807633_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"EDyFCFNw\"><b>第2种，私有云模式</b></p><p data-pid=\"lcrhPa5P\">百数私有云模式意在帮助企业树立品牌意识，保护企业数据安全。</p><p data-pid=\"G_9EScVY\">百数私有云除了拥有公有云的所有功能外，还可以进行以下操作。</p><p data-pid=\"aEx98bRl\">企业可以使用自己的域名、服务器，设置网络白名单，选择属意软件版本，自主更新，并可控制更时间段，以减少网络攻击及办公平台的稳定。</p><p data-pid=\"Em5m03Kl\">同时，企业可以自主上传品牌logo，修改品牌名称，让员工有归属感，树立企业的品牌形式。</p><a href=\"https://www.zhihu.com/zvideo/1366337095536164864\" data-draft-node=\"block\" data-draft-type=\"link-card\"></a><p data-pid=\"cka2pYKS\"><b>第3种，商务模式</b></p><p data-pid=\"IACxyQ3E\">针对私有云模式，可以开通商务模式。</p><p data-pid=\"i_JqLaah\">主要针对拥有开发能力的企业，百数提供商务模式，相当于一个小型的百数低代码平台，企业可以在平台内开发各种功能应用，之后以会员的形式出售给第三方企业使用。与传统的SaaS创业有些类似。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-2c8fed5efb9d907aceb74bb2a4b473e4_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1258\" data-rawheight=\"664\" data-original-token=\"v2-2c8fed5efb9d907aceb74bb2a4b473e4\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-1b732691856406ec1cff7e348ea9ad1f_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1258\" data-original=\"https://pica.zhimg.com/v2-2c8fed5efb9d907aceb74bb2a4b473e4_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1258&#39; height=&#39;664&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1258\" data-rawheight=\"664\" data-original-token=\"v2-2c8fed5efb9d907aceb74bb2a4b473e4\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-1b732691856406ec1cff7e348ea9ad1f_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1258\" data-original=\"https://pica.zhimg.com/v2-2c8fed5efb9d907aceb74bb2a4b473e4_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-2c8fed5efb9d907aceb74bb2a4b473e4_720w.jpg?source=1def8aca\"/></figure><h3><b>百数</b><span class=\"nolink\">低代码开发平台</span><b>价值</b></h3><p data-pid=\"Ql_0cyvI\"><b>1、降低门槛要求</b></p><p data-pid=\"AAJi1zwv\">低代码开发平台的最大特征是用少量代码甚至不用代码，这无疑是大大降低编程语言的学习难度，让开发程序的过程变得更加的人性化，从而降低了应用开发的技术门槛，打破了技术人员才能开发应用的局限性。</p><blockquote data-pid=\"0SquTWyd\">例如：百数低代码开发平台上有上百个用代码封装好的控件，使用的时候拖拉拽即可进行搭建，并且能够做到5分钟开发一套管理系统。</blockquote><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-b07e42d439f1508cf1fa7a5ae531c78f_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"745\" data-rawheight=\"383\" data-original-token=\"v2-b07e42d439f1508cf1fa7a5ae531c78f\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-e53d79f63129055bd671f4ca72fd73f4_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"745\" data-original=\"https://picx.zhimg.com/v2-b07e42d439f1508cf1fa7a5ae531c78f_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;745&#39; height=&#39;383&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"745\" data-rawheight=\"383\" data-original-token=\"v2-b07e42d439f1508cf1fa7a5ae531c78f\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-e53d79f63129055bd671f4ca72fd73f4_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"745\" data-original=\"https://picx.zhimg.com/v2-b07e42d439f1508cf1fa7a5ae531c78f_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-b07e42d439f1508cf1fa7a5ae531c78f_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"tDrd6txH\"><b>2、缩短开发周期，提前交付使用</b></p><p data-pid=\"bRCWVSUs\">传统模式开发整个软件开发过程一般分为需求-设计-编码-测试-验收几个阶段，所需的工程师也是要求最齐全的。需要用到的也是最专业的的代码，同时所需的时长没有一年半载就搞不定的。</p><p data-pid=\"IYcDyLkg\">而百数低代码开发平台则只需一个人最多一个月就能完成系统的开发，有些简单的管理系统也许几个小时就能开发完成，因此这开发周期就比传统的模式缩短了三分之二，提高了工作效率，可以让企业提前就能交付使用。</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-b885c9d0413349c1f83a89de4f1eef0c_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"881\" data-rawheight=\"538\" data-original-token=\"v2-b885c9d0413349c1f83a89de4f1eef0c\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-20dd5db8108df19a81a446a2331f12f7_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"881\" data-original=\"https://picx.zhimg.com/v2-b885c9d0413349c1f83a89de4f1eef0c_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;881&#39; height=&#39;538&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"881\" data-rawheight=\"538\" data-original-token=\"v2-b885c9d0413349c1f83a89de4f1eef0c\" data-default-watermark-src=\"https://pic1.zhimg.com/50/v2-20dd5db8108df19a81a446a2331f12f7_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"881\" data-original=\"https://picx.zhimg.com/v2-b885c9d0413349c1f83a89de4f1eef0c_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-b885c9d0413349c1f83a89de4f1eef0c_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"cnCVdq5o\"><b>3、降低成本，提高企业效益</b></p><p data-pid=\"cyCuWoCt\">系统应用开发的成本主要来自于人工，而“低代码开发”则降低了技术准入门槛，很多开发工作不需要组建专业的开发技术人才团队，也就降低了人工成本值，从而整体降低运营成本，降低企业系统应用在后续维护上投入的资金和人力。</p><p data-pid=\"zUJOskud\">例如：某家生物科技公司，因具体业务模式的调整需要修改之前已搭建好的系统方案，原本的服务商报价在35万元，时间保守估计在3个月。通过百数低代码平台的快速搭建，利用图形化拖拉拽的方式，替代原本编写代码的方式，仅由3个人的团队开发20天，就完成了改建，并且无需花费大量时间进行测试和修改。</p><p data-pid=\"0s95NQKV\"><b>4、支持自定义计算和个性化拓展</b></p><p data-pid=\"rWK8PzWP\">低代码开发平台可塑性非常高，支持用户进行自定义计算跟扩展。而百数又属于国内首批“低代码平台”服务提直供商，多数客户是来自各行业的代表性企业，积累了丰富的项目经验，目前在医疗、电商、教育培训、轨道交通等多个行业拥有成熟的解决方案，在为企业提供个性化拓展和自定义计算上有着绝对的优势。</p><p data-pid=\"05NVWOG2\">某企业用百数搭建的数据报表：</p><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-3d19f6f9ab7c85a77e30fb4e18e6b921_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1918\" data-rawheight=\"1078\" data-original-token=\"v2-3d19f6f9ab7c85a77e30fb4e18e6b921\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-e4e9dfcb58da5de28c4758c681ca3383_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1918\" data-original=\"https://picx.zhimg.com/v2-3d19f6f9ab7c85a77e30fb4e18e6b921_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1918&#39; height=&#39;1078&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1918\" data-rawheight=\"1078\" data-original-token=\"v2-3d19f6f9ab7c85a77e30fb4e18e6b921\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-e4e9dfcb58da5de28c4758c681ca3383_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1918\" data-original=\"https://picx.zhimg.com/v2-3d19f6f9ab7c85a77e30fb4e18e6b921_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-3d19f6f9ab7c85a77e30fb4e18e6b921_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"GrpjWYW8\"><b>5、运维简单，速度快</b></p><p data-pid=\"Yqkjwcr_\">低代码开发平台系统搭建采用组件形式，以及面向对象的开发方式，使得代码的结构化程度更高，通常来说更容易维护。</p><h3><b>百数</b><span class=\"nolink\">低代码开发平台</span><b>经典案例</b></h3><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-72f8625a6a5ba4947395bc4c891df45f_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1077\" data-rawheight=\"582\" data-original-token=\"v2-72f8625a6a5ba4947395bc4c891df45f\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-60702e1ead4a12604984e175bc52fb7a_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1077\" data-original=\"https://pic1.zhimg.com/v2-72f8625a6a5ba4947395bc4c891df45f_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1077&#39; height=&#39;582&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1077\" data-rawheight=\"582\" data-original-token=\"v2-72f8625a6a5ba4947395bc4c891df45f\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-60702e1ead4a12604984e175bc52fb7a_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1077\" data-original=\"https://pic1.zhimg.com/v2-72f8625a6a5ba4947395bc4c891df45f_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-72f8625a6a5ba4947395bc4c891df45f_720w.jpg?source=1def8aca\"/></figure><blockquote data-pid=\"Y8qKGxiK\"><b>客户背景</b><br/>XX县消防救援大队<br/><b>问题重点</b><br/>1. 数据量庞大，每次汇总、分析甚至记录的调阅工作都需要花费大量的人力和时间<br/>2. 统计出的数据还需要人工进行再次验证才能保证其准确性<br/>3. 许多数据的收集工作耗费时间太长，无法第一时间进行上报，数据的时效性大打折扣<br/><b>解决方案</b></blockquote><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-ac56649a35d0290f8e836a4d98ac7e53_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1088\" data-rawheight=\"591\" data-original-token=\"v2-ac56649a35d0290f8e836a4d98ac7e53\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-57e0c4981dcc7701f9308a06b84483eb_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"1088\" data-original=\"https://pica.zhimg.com/v2-ac56649a35d0290f8e836a4d98ac7e53_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1088&#39; height=&#39;591&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1088\" data-rawheight=\"591\" data-original-token=\"v2-ac56649a35d0290f8e836a4d98ac7e53\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-57e0c4981dcc7701f9308a06b84483eb_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1088\" data-original=\"https://pica.zhimg.com/v2-ac56649a35d0290f8e836a4d98ac7e53_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-ac56649a35d0290f8e836a4d98ac7e53_720w.jpg?source=1def8aca\"/></figure><blockquote data-pid=\"IWnrMvCM\"><b>巡检系统搭建</b><br/>主要是消防队日常消防巡检使用，系统涵盖了三消场所、出租屋和社会单位的消防设施巡检，还可对室外消防栓进行管理，特别是利用了百数的打印功能结合数据外链/内链二维码生成的功能，为每个消防栓生成一张“身份证”，扫码即可查看、填写巡检记录。<br/><b>1、场所巡检</b><br/>检查人员在待查场所通过移动端访问，直接扫描该场所的二维码，现场拍照录入场所的实际情况，登记其消防器材、消防巡查等结果。</blockquote><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-8895ec6bfaf3622613de56a441f127ce_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"970\" data-rawheight=\"568\" data-original-token=\"v2-8895ec6bfaf3622613de56a441f127ce\" class=\"origin_image zh-lightbox-thumb\" width=\"970\" data-original=\"https://pic1.zhimg.com/v2-8895ec6bfaf3622613de56a441f127ce_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;970&#39; height=&#39;568&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"970\" data-rawheight=\"568\" data-original-token=\"v2-8895ec6bfaf3622613de56a441f127ce\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"970\" data-original=\"https://pic1.zhimg.com/v2-8895ec6bfaf3622613de56a441f127ce_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-8895ec6bfaf3622613de56a441f127ce_720w.jpg?source=1def8aca\"/></figure><blockquote data-pid=\"-q9moC47\"><b>2、数据库表单</b><br/>在本套系统中，每个表单都涉及到大量的数据，各种数据相互独立又有一定的关联型，百数表单系统对于多张表单的数据的调用是非常方便的。不仅如此，在进行填写数据时，还可通过数据助手、功能模块等自动对数据库内的内容进行新增、修改，大大节约了维护人员的工作量。</blockquote><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-59b289ef3ec93c1cc3958804235f77b1_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"235\" data-rawheight=\"430\" data-original-token=\"v2-59b289ef3ec93c1cc3958804235f77b1\" class=\"content_image\" width=\"235\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;235&#39; height=&#39;430&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"235\" data-rawheight=\"430\" data-original-token=\"v2-59b289ef3ec93c1cc3958804235f77b1\" class=\"content_image lazy\" width=\"235\" data-actualsrc=\"https://picx.zhimg.com/50/v2-59b289ef3ec93c1cc3958804235f77b1_720w.jpg?source=1def8aca\"/></figure><blockquote data-pid=\"UEagIGMx\"><b>3、第三方API接入</b><br/>本套系统中还特别采用了第三方API的接入，实现身份证、营业执照等证照的自动识别、自动查询、校验真伪，不仅节约了人力，而且数据的准确性、有效性也大大提升。</blockquote><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-43f60db1ace2cb19bdc1524a0d8e36ff_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"530\" data-rawheight=\"656\" data-original-token=\"v2-43f60db1ace2cb19bdc1524a0d8e36ff\" class=\"origin_image zh-lightbox-thumb\" width=\"530\" data-original=\"https://pic1.zhimg.com/v2-43f60db1ace2cb19bdc1524a0d8e36ff_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;530&#39; height=&#39;656&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"530\" data-rawheight=\"656\" data-original-token=\"v2-43f60db1ace2cb19bdc1524a0d8e36ff\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"530\" data-original=\"https://pic1.zhimg.com/v2-43f60db1ace2cb19bdc1524a0d8e36ff_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-43f60db1ace2cb19bdc1524a0d8e36ff_720w.jpg?source=1def8aca\"/></figure><blockquote data-pid=\"5q6F3dqs\">4、 <b>二维码生成与使用</b><br/>在本套系统中，针对各场所需要的告知书、标签、户籍卡等，可以通过自定义打印模板+二维码打印功能便捷实现，减少设计核对时间。<br/>不仅如此，对于印刷品的打印，还有完整的数据分析控制台。可以跟踪到位，方便工作时间管理与推进。</blockquote><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-4eebab992554a9dda6b3d158b6947576_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"807\" data-rawheight=\"389\" data-original-token=\"v2-4eebab992554a9dda6b3d158b6947576\" class=\"origin_image zh-lightbox-thumb\" width=\"807\" data-original=\"https://picx.zhimg.com/v2-4eebab992554a9dda6b3d158b6947576_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;807&#39; height=&#39;389&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"807\" data-rawheight=\"389\" data-original-token=\"v2-4eebab992554a9dda6b3d158b6947576\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"807\" data-original=\"https://picx.zhimg.com/v2-4eebab992554a9dda6b3d158b6947576_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-4eebab992554a9dda6b3d158b6947576_720w.jpg?source=1def8aca\"/></figure><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-e7d85749ba16522fd0c8a2b41471c734_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"873\" data-rawheight=\"676\" data-original-token=\"v2-e7d85749ba16522fd0c8a2b41471c734\" class=\"origin_image zh-lightbox-thumb\" width=\"873\" data-original=\"https://pica.zhimg.com/v2-e7d85749ba16522fd0c8a2b41471c734_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;873&#39; height=&#39;676&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"873\" data-rawheight=\"676\" data-original-token=\"v2-e7d85749ba16522fd0c8a2b41471c734\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"873\" data-original=\"https://pica.zhimg.com/v2-e7d85749ba16522fd0c8a2b41471c734_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-e7d85749ba16522fd0c8a2b41471c734_720w.jpg?source=1def8aca\"/></figure><blockquote data-pid=\"yzWgYTUs\"><b>其他系统</b><br/>除了上面提到的功能外，博罗县消防救援大队还实现了消防大数据看板、消防考试上云、行政管理上云、考勤上云，还结合百数地图报表，实现了电动自行车充电桩巡查地图。<br/><b>消防数据看板</b><br/>通过消防数据看板，更直观地呈现测数据、经营情况、企业数据等类目。</blockquote><figure data-size=\"normal\"><noscript><img src=\"https://pica.zhimg.com/50/v2-ff9b8b6e8fa9a6fde7940c06bfba7cb0_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1080\" data-rawheight=\"1449\" data-original-token=\"v2-ff9b8b6e8fa9a6fde7940c06bfba7cb0\" class=\"origin_image zh-lightbox-thumb\" width=\"1080\" data-original=\"https://picx.zhimg.com/v2-ff9b8b6e8fa9a6fde7940c06bfba7cb0_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1080&#39; height=&#39;1449&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1080\" data-rawheight=\"1449\" data-original-token=\"v2-ff9b8b6e8fa9a6fde7940c06bfba7cb0\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1080\" data-original=\"https://picx.zhimg.com/v2-ff9b8b6e8fa9a6fde7940c06bfba7cb0_r.jpg?source=1def8aca\" data-actualsrc=\"https://pica.zhimg.com/50/v2-ff9b8b6e8fa9a6fde7940c06bfba7cb0_720w.jpg?source=1def8aca\"/></figure><blockquote data-pid=\"RGl5XzlF\"><b>消防考试上云</b><br/>利用百数平台强大的后端计算能力，借助功能模块，实现了消防考试上云。</blockquote><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-fbd3f97325fd969cfa6f697163bb8511_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1080\" data-rawheight=\"816\" data-original-token=\"v2-fbd3f97325fd969cfa6f697163bb8511\" class=\"origin_image zh-lightbox-thumb\" width=\"1080\" data-original=\"https://picx.zhimg.com/v2-fbd3f97325fd969cfa6f697163bb8511_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1080&#39; height=&#39;816&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1080\" data-rawheight=\"816\" data-original-token=\"v2-fbd3f97325fd969cfa6f697163bb8511\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1080\" data-original=\"https://picx.zhimg.com/v2-fbd3f97325fd969cfa6f697163bb8511_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-fbd3f97325fd969cfa6f697163bb8511_720w.jpg?source=1def8aca\"/></figure><blockquote data-pid=\"CLDcPBe7\">并能自动计算消防考试得分，大大节省了人力投入。</blockquote><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-7ea6f88e87c98bf35f60b0fe5c03534f_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1080\" data-rawheight=\"628\" data-original-token=\"v2-7ea6f88e87c98bf35f60b0fe5c03534f\" class=\"origin_image zh-lightbox-thumb\" width=\"1080\" data-original=\"https://picx.zhimg.com/v2-7ea6f88e87c98bf35f60b0fe5c03534f_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1080&#39; height=&#39;628&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1080\" data-rawheight=\"628\" data-original-token=\"v2-7ea6f88e87c98bf35f60b0fe5c03534f\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1080\" data-original=\"https://picx.zhimg.com/v2-7ea6f88e87c98bf35f60b0fe5c03534f_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-7ea6f88e87c98bf35f60b0fe5c03534f_720w.jpg?source=1def8aca\"/></figure><blockquote data-pid=\"IJd9TnwT\"><b>行政管理上云</b><br/>依托行政大数据，对于管辖范围内数十万家企业、单位进行管理和统计。</blockquote><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-714152e47a75337b89923bdba96c623f_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1321\" data-rawheight=\"728\" data-original-token=\"v2-714152e47a75337b89923bdba96c623f\" class=\"origin_image zh-lightbox-thumb\" width=\"1321\" data-original=\"https://pica.zhimg.com/v2-714152e47a75337b89923bdba96c623f_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1321&#39; height=&#39;728&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1321\" data-rawheight=\"728\" data-original-token=\"v2-714152e47a75337b89923bdba96c623f\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1321\" data-original=\"https://pica.zhimg.com/v2-714152e47a75337b89923bdba96c623f_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-714152e47a75337b89923bdba96c623f_720w.jpg?source=1def8aca\"/></figure><blockquote data-pid=\"9bg_5_Ov\"><b>考勤上云</b><br/>通过工作看板，借助不同的数据图表，考勤异常情况、考勤明细、工作提醒等等重要信息一览无遗。</blockquote><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-eb3720b359f2d634a2fc9935ab5ca038_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1266\" data-rawheight=\"592\" data-original-token=\"v2-eb3720b359f2d634a2fc9935ab5ca038\" class=\"origin_image zh-lightbox-thumb\" width=\"1266\" data-original=\"https://pic1.zhimg.com/v2-eb3720b359f2d634a2fc9935ab5ca038_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1266&#39; height=&#39;592&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1266\" data-rawheight=\"592\" data-original-token=\"v2-eb3720b359f2d634a2fc9935ab5ca038\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1266\" data-original=\"https://pic1.zhimg.com/v2-eb3720b359f2d634a2fc9935ab5ca038_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-eb3720b359f2d634a2fc9935ab5ca038_720w.jpg?source=1def8aca\"/></figure><blockquote data-pid=\"jdRhXUlP\"><b>电动自行车充电桩巡查地图</b><br/>充分利用系统功能，使用地图场景报表实现对辖区内所有电动自行车充电桩进行管理，不仅可以清晰查看到电动自行车充电桩的位置，更是可以利用地图场景报表的线路规划功能，直接规划巡查路线。</blockquote><figure data-size=\"normal\"><noscript><img src=\"https://pic1.zhimg.com/50/v2-09fb00d3587565e972824d52013baed4_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1254\" data-rawheight=\"725\" data-original-token=\"v2-09fb00d3587565e972824d52013baed4\" class=\"origin_image zh-lightbox-thumb\" width=\"1254\" data-original=\"https://pic1.zhimg.com/v2-09fb00d3587565e972824d52013baed4_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;1254&#39; height=&#39;725&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"1254\" data-rawheight=\"725\" data-original-token=\"v2-09fb00d3587565e972824d52013baed4\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"1254\" data-original=\"https://pic1.zhimg.com/v2-09fb00d3587565e972824d52013baed4_r.jpg?source=1def8aca\" data-actualsrc=\"https://pic1.zhimg.com/50/v2-09fb00d3587565e972824d52013baed4_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"pruimBec\">综上，接入<b><span class=\"nolink\">百数系统</span></b>后，无论是场所的巡检还是巡查，相关工作人员通过百数平台的移动办公功能，可以将每一次巡检的记录在第一时间录入系统中，大大简化了工作流程和强度，增强了数据的时效性和准确性。总而言之，百数低代码开发平台可以满足用户在办公场景下的所有需求。</p><p class=\"ztext-empty-paragraph\"><br/></p><h3><b>感兴趣的朋友，欢迎来体验！</b></h3><h3>参考模板：<a href=\"https://link.zhihu.com/?target=https%3A//pub.baishuyun.com/user/spread/130267%3Fkey%3D%25E7%25AE%2580%25E9%2581%2593%25E4%25BA%2591%26title%3D%25E5%25AE%259C%25E6%2590%25AD%25E5%2592%258C%25E7%25AE%2580%25E9%2581%2593%25E4%25BA%2591%25E3%2580%2581%25E6%25B0%259A%25E4%25BA%2591%25E6%25AF%2594%25E8%25B5%25B7%25E6%259D%25A5%25E6%259C%2589%25E4%25BB%2580%25E4%25B9%2588%25E4%25BC%2598%25E5%258A%25A3%25E4%25B9%258B%25E5%25A4%2584%25EF%25BC%259F%26url%3Dhttps%3A//www.zhihu.com/question/439521858/answer/1976466205\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">低代码开发平台</a></h3><p data-pid=\"DCxuIEUv\">谢谢阅读~</p>",
+      "excerpt": "宜搭、简道云、氚云都是现在市场上有名的低代码开发平台。除此之外，不妨使用下百数，再来比较一下。 “百数”是国内首家专注于打造真正的低代码开发的低代码开发平台，至今立足办公领域近十年。主要通过可视化、拖拽式、低代码的方式快速开发数据中台、ERP、协同办公、进销存管理系统等企业级管理系统，从而代替传统的编写代码方式。 [视频: 百数低代码开发平台] 百数平台上除了支持自己搭建之外，还有超800个已开发好的成熟应用与案例，用户直接安装即可使…",
+      "voteupCount": 25,
+      "commentCount": 3,
+      "createdTime": 1625303681,
+      "updatedTime": 1657166148,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-c27bcb7338d61bc5c67710a382a69124_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-c27bcb7338d61bc5c67710a382a69124_r.jpg?source=1def8aca",
+            "width": 1051,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-4e1107783c2e2a956a76cc5778a4b832_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-4e1107783c2e2a956a76cc5778a4b832_r.jpg?source=1def8aca",
+            "width": 2388,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-5d16542574dde5af07b8a968f1807633_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-5d16542574dde5af07b8a968f1807633_r.jpg?source=1def8aca",
+            "width": 1243,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/v2-2c8fed5efb9d907aceb74bb2a4b473e4_r.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/v2-2c8fed5efb9d907aceb74bb2a4b473e4_r.jpg?source=1def8aca",
+            "width": 1258,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-b07e42d439f1508cf1fa7a5ae531c78f_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-b07e42d439f1508cf1fa7a5ae531c78f_r.jpg?source=1def8aca",
+            "width": 745,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-b885c9d0413349c1f83a89de4f1eef0c_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-b885c9d0413349c1f83a89de4f1eef0c_r.jpg?source=1def8aca",
+            "width": 881,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-3d19f6f9ab7c85a77e30fb4e18e6b921_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-3d19f6f9ab7c85a77e30fb4e18e6b921_r.jpg?source=1def8aca",
+            "width": 1918,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-72f8625a6a5ba4947395bc4c891df45f_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-72f8625a6a5ba4947395bc4c891df45f_r.jpg?source=1def8aca",
+            "width": 1077,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/v2-ac56649a35d0290f8e836a4d98ac7e53_r.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/v2-ac56649a35d0290f8e836a4d98ac7e53_r.jpg?source=1def8aca",
+            "width": 1088,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-8895ec6bfaf3622613de56a441f127ce_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-8895ec6bfaf3622613de56a441f127ce_r.jpg?source=1def8aca",
+            "width": 970,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/50/v2-59b289ef3ec93c1cc3958804235f77b1_720w.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/50/v2-59b289ef3ec93c1cc3958804235f77b1_720w.jpg?source=1def8aca",
+            "width": 235,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-43f60db1ace2cb19bdc1524a0d8e36ff_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-43f60db1ace2cb19bdc1524a0d8e36ff_r.jpg?source=1def8aca",
+            "width": 530,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-4eebab992554a9dda6b3d158b6947576_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-4eebab992554a9dda6b3d158b6947576_r.jpg?source=1def8aca",
+            "width": 807,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/v2-e7d85749ba16522fd0c8a2b41471c734_r.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/v2-e7d85749ba16522fd0c8a2b41471c734_r.jpg?source=1def8aca",
+            "width": 873,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-ff9b8b6e8fa9a6fde7940c06bfba7cb0_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-ff9b8b6e8fa9a6fde7940c06bfba7cb0_r.jpg?source=1def8aca",
+            "width": 1080,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-fbd3f97325fd969cfa6f697163bb8511_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-fbd3f97325fd969cfa6f697163bb8511_r.jpg?source=1def8aca",
+            "width": 1080,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-7ea6f88e87c98bf35f60b0fe5c03534f_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-7ea6f88e87c98bf35f60b0fe5c03534f_r.jpg?source=1def8aca",
+            "width": 1080,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pica.zhimg.com",
+            "originalUrl": "https://pica.zhimg.com/v2-714152e47a75337b89923bdba96c623f_r.jpg?source=1def8aca",
+            "displayUrl": "https://pica.zhimg.com/v2-714152e47a75337b89923bdba96c623f_r.jpg?source=1def8aca",
+            "width": 1321,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-eb3720b359f2d634a2fc9935ab5ca038_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-eb3720b359f2d634a2fc9935ab5ca038_r.jpg?source=1def8aca",
+            "width": 1266,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "pic1.zhimg.com",
+            "originalUrl": "https://pic1.zhimg.com/v2-09fb00d3587565e972824d52013baed4_r.jpg?source=1def8aca",
+            "displayUrl": "https://pic1.zhimg.com/v2-09fb00d3587565e972824d52013baed4_r.jpg?source=1def8aca",
+            "width": 1254,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://www.zhihu.com/zvideo/1357310564788662272",
+            "canonicalUrl": "https://www.zhihu.com/zvideo/1357310564788662272",
+            "domain": "www.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified"
+          },
+          {
+            "originalUrl": "https://www.zhihu.com/zvideo/1366337095536164864",
+            "canonicalUrl": "https://www.zhihu.com/zvideo/1366337095536164864",
+            "domain": "www.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified"
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//pub.baishuyun.com/user/spread/130267%3Fkey%3D%25E7%25AE%2580%25E9%2581%2593%25E4%25BA%2591%26title%3D%25E5%25AE%259C%25E6%2590%25AD%25E5%2592%258C%25E7%25AE%2580%25E9%2581%2593%25E4%25BA%2591%25E3%2580%2581%25E6%25B0%259A%25E4%25BA%2591%25E6%25AF%2594%25E8%25B5%25B7%25E6%259D%25A5%25E6%259C%2589%25E4%25BB%2580%25E4%25B9%2588%25E4%25BC%2598%25E5%258A%25A3%25E4%25B9%258B%25E5%25A4%2584%25EF%25BC%259F%26url%3Dhttps%3A//www.zhihu.com/question/439521858/answer/1976466205",
+            "canonicalUrl": "https://pub.baishuyun.com/user/spread/130267?key=%E7%AE%80%E9%81%93%E4%BA%91&title=%E5%AE%9C%E6%90%AD%E5%92%8C%E7%AE%80%E9%81%93%E4%BA%91%E3%80%81%E6%B0%9A%E4%BA%91%E6%AF%94%E8%B5%B7%E6%9D%A5%E6%9C%89%E4%BB%80%E4%B9%88%E4%BC%98%E5%8A%A3%E4%B9%8B%E5%A4%84%EF%BC%9F&url=https://www.zhihu.com/question/439521858/answer/1976466205",
+            "domain": "pub.baishuyun.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://pub.baishuyun.com/user/spread/130267?key=%E7%AE%80%E9%81%93%E4%BA%91&title=%E5%AE%9C%E6%90%AD%E5%92%8C%E7%AE%80%E9%81%93%E4%BA%91%E3%80%81%E6%B0%9A%E4%BA%91%E6%AF%94%E8%B5%B7%E6%9D%A5%E6%9C%89%E4%BB%80%E4%B9%88%E4%BC%98%E5%8A%A3%E4%B9%8B%E5%A4%84%EF%BC%9F&url=https://www.zhihu.com/question/439521858/answer/1976466205",
+              "clickable": true
+            },
+            "anchorText": "低代码开发平台"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      },
+      "comments": [
+        {
+          "contentHtml": "非常不错，很用心，满分~~~~",
+          "contentMarkdown": "非常不错，很用心，满分\\~\\~\\~\\~",
+          "authorName": "文辉",
+          "createdTime": 1636686973
+        },
+        {
+          "contentHtml": "简直是程序猿的福音啊！！",
+          "contentMarkdown": "简直是程序猿的福音啊！！",
+          "authorName": "藏匿于夜色",
+          "createdTime": 1634526105
+        },
+        {
+          "contentHtml": "[赞同]不错",
+          "contentMarkdown": "\\[赞同\\]不错",
+          "authorName": "张汾汾",
+          "createdTime": 1625308423
+        }
+      ]
+    },
+    {
+      "id": "1775773370",
+      "author": "永安坊的大蚂蚁",
+      "url": "https://www.zhihu.com/question/439521858/answer/1775773370",
+      "content": "<p data-pid=\"pbBpq_tA\">宜搭、简道云和氚云三者都是表单驱动的低代码开发平台，功能定位很接近。从厂商专注的领域看，如果希望做数据填报，选择帆软出品的简道云；如果重点是审批工作流，奥哲家的氚云更有竞争力；如果要跟钉钉深度集成，阿里自家的宜搭更有保障。</p><p data-pid=\"B0xg53Fv\">当然，如果你要做的是高复杂度的大型系统，下面三家模型驱动的低代码开发平台选一个：outsystems、活字格、clickpaas</p>",
+      "excerpt": "宜搭、简道云和氚云三者都是表单驱动的低代码开发平台，功能定位很接近。从厂商专注的领域看，如果希望做数据填报，选择帆软出品的简道云；如果重点是审批工作流，奥哲家的氚云更有竞争力；如果要跟钉钉深度集成，阿里自家的宜搭更有保障。 当然，如果你要做的是高复杂度的大型系统，下面三家模型驱动的低代码开发平台选一个：outsystems、活字格、clickpaas",
+      "voteupCount": 14,
+      "commentCount": 7,
+      "createdTime": 1615522053,
+      "updatedTime": 1615522053,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      },
+      "comments": [
+        {
+          "contentHtml": "需要氚云开发的可以联系我",
+          "contentMarkdown": "需要氚云开发的可以联系我",
+          "authorName": "少刷抖音多看书",
+          "createdTime": 1656472530
+        },
+        {
+          "contentHtml": "请问一下，目前还在试用，但是对编程还在摸索，有哪些流程是氚云普通版具备简道云普通版不具备的嘛？我目前还没太感觉出来，[思考]都是收费29xx哪个档位的，再高的专业版就超预算了",
+          "contentMarkdown": "请问一下，目前还在试用，但是对编程还在摸索，有哪些流程是氚云普通版具备简道云普通版不具备的嘛？我目前还没太感觉出来，\\[思考\\]都是收费29xx哪个档位的，再高的专业版就超预算了",
+          "authorName": "KyaraQ",
+          "createdTime": 1632422811
+        },
+        {
+          "contentHtml": "请教下什么叫模型驱动呢？谢谢",
+          "contentMarkdown": "请教下什么叫模型驱动呢？谢谢",
+          "authorName": "HelloWorld",
+          "createdTime": 1628196064
+        }
+      ]
+    },
+    {
+      "id": "2550630306",
+      "author": "赵大多数",
+      "url": "https://www.zhihu.com/question/439521858/answer/2550630306",
+      "content": "<p data-pid=\"D_MKBq_N\">在今年的6月，1个头部云制造商SaaS架构设计师为某零售企业演示了如何用低代码30分钟搭建招聘管理系统，充分的展现了低代码开发设计在现阶段的优势。</p><p data-pid=\"cM5wSqIg\">“低代码开发设计”指客户可以把早就产生模块的图型代码，运用拖拉拽的方式快速拼成软件。一类常用的评价是，低代码减少了设计开发从业门槛，不清楚代码的人能上手做设计开发，专业的软件工程师会降低工作量。</p><p data-pid=\"h9XjiD7u\">这种技术应用看起来会解放许多企业和很多人，也让不少设计开发企业嗅到了无穷创业商机，对于许多急于数字化转型中小型企业、传统企业来说，低代码似乎成了解决方案。</p><p data-pid=\"ZAJLvoqR\">现阶段市面上主流的低代码开发平台也就几类，为了给企业客户提供合适的建议，特地选了几款产品做1个测评比照。</p><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"ih9rQ6Kj\"><b>氚云</b></p><p data-pid=\"2cxbCf2w\">氚云是一款面向管理者或业务人员的以场景为中心的零（低）代码平台。氚云不是以流程和业务为定位的，而是以明确的场景为中心，通过可视化表单、流程设计、智能报表和模板化应用，帮助管理者或业务人员快速搭建流程与应用，透明呈现业务进度，实时展现精准数据，完整沉淀管理信息。</p><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"mIvyklKz\"><b>宜搭</b></p><p data-pid=\"ga09NETc\">目前跟钉钉融合为一体，可以在钉钉容器内完成设计，通讯录关联，同时借助一体优势可以直接将应用发布到钉钉工作台。最大的问题在于还处在疯狂上升期，产品、培圳、文档、技术支持、售后体系都在打磨中，同样与钉钉审批的定位也在内部协调。</p><p data-pid=\"V7oGwslv\"><b>简道云</b></p><p data-pid=\"t-RAI6tG\">帆软在B领域外的另一个探索。简道云最大的优势在于界面的友好型和数据的统计分析，延续了帆软一贯的数据处理思路，在这方面处于领先位置。</p><p data-pid=\"J-8tS7aQ\">而低代码行业启效云在近期也深受广大用户的关注，我们不妨也来看看启效云能做些什么吧！</p><a href=\"https://link.zhihu.com/?target=https%3A//www.qixiaocloud.com/h-col-137.html\" data-draft-node=\"block\" data-draft-type=\"link-card\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">启效云低代码-不懂代码也能轻松构建应用，助力企业数字化转型！ - PaaS,APaaS,企业信息化系统,低代码,无代码低代码平台 (qixiaocloud.com)</a><p data-pid=\"IEpPbXno\"><b>启效云</b></p><p data-pid=\"xCjndfnY\">企业可以通过启效云搭建包括制造数据管理、计划排程管理、生产调度管理、库存管理、质量管理、人力资源管理、设备管理、采购管理、成本管理、看板管理、生产过程控制、底层数据集成分析、上层数据集成分解等管理模块，为企业打造一个提质增效、降本减存的制造协同管理平台，实现数字化工厂转型。</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-9916d964c7c54db722cbe2eda0819036_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"972\" data-rawheight=\"623\" data-original-token=\"v2-1cdf8157f1159df9e0579fda9aa13812\" class=\"origin_image zh-lightbox-thumb\" width=\"972\" data-original=\"https://picx.zhimg.com/v2-9916d964c7c54db722cbe2eda0819036_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;972&#39; height=&#39;623&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"972\" data-rawheight=\"623\" data-original-token=\"v2-1cdf8157f1159df9e0579fda9aa13812\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"972\" data-original=\"https://picx.zhimg.com/v2-9916d964c7c54db722cbe2eda0819036_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-9916d964c7c54db722cbe2eda0819036_720w.jpg?source=1def8aca\"/></figure><p data-pid=\"aIy2f9Kw\">系统可部署于Windows/Linux服务器，也全面兼容MySQL、Oracle、SQLServer数据库系统；系统既可部署于本地私有云平台，也可部署于网络公有云平台；</p><p data-pid=\"Jo6M-4Zt\">采用实时数据库与分区历史数据库进行数据存储，并可以灵活进行分布式部署，大大提升系统响应速度与数据存储限制；</p><p data-pid=\"KDo3k9wv\">平台基于数据仓库技术、线上分析处理技术、数据挖掘、数据展现技术，提供强大的多维动态数据分析及数据钻取，精细化统计分析，海量数据秒级处理，为企业经营决策提供科学依据，</p><p data-pid=\"lA5xl6XT\">基于B/S架构的可视化拖拽式操作方式设计、搭建应用系统，无需安装，WEB浏览器即可完全所有操作；</p><p data-pid=\"KoOeV23O\">自动化的运维系统，系统服务的伸缩性；多租户系统，多种方式的数据隔离支持；</p><p data-pid=\"eY6Et8rQ\">平台接入无限制：采用最新的前端开发技术与最成熟的后端开发框架，保证了系统跨平台、跨终端的访问能力。具备访问权限的用户在任何时间、任何地点、任意终端（电脑、平板、智能手机）都可无障碍访问；基于云原生、云计算、丰富的自定义连接器、产品接口及高并发语音等方式， 基础设施不需要经常变动，应用之间较少依赖或耦合，可以在对系统影响最小的前提下，系统功能可以可持续扩展和能力提高。</p>",
+      "excerpt": "在今年的6月，1个头部云制造商SaaS架构设计师为某零售企业演示了如何用低代码30分钟搭建招聘管理系统，充分的展现了低代码开发设计在现阶段的优势。 “低代码开发设计”指客户可以把早就产生模块的图型代码，运用拖拉拽的方式快速拼成软件。一类常用的评价是，低代码减少了设计开发从业门槛，不清楚代码的人能上手做设计开发，专业的软件工程师会降低工作量。 这种技术应用看起来会解放许多企业和很多人，也让不少设计开发企业嗅…",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1656485154,
+      "updatedTime": 1656485154,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-9916d964c7c54db722cbe2eda0819036_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-9916d964c7c54db722cbe2eda0819036_r.jpg?source=1def8aca",
+            "width": 972,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//www.qixiaocloud.com/h-col-137.html",
+            "canonicalUrl": "https://www.qixiaocloud.com/h-col-137.html",
+            "domain": "www.qixiaocloud.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://www.qixiaocloud.com/h-col-137.html",
+              "clickable": true
+            },
+            "anchorText": "启效云低代码-不懂代码也能轻松构建应用，助力企业数字化转型！ - PaaS,APaaS,企业信息化系统,低代码,无代码低代码平台 (qixiaocloud.com)"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2091701747",
+      "author": "本草姑娘",
+      "url": "https://www.zhihu.com/question/439521858/answer/2091701747",
+      "content": "<p data-pid=\"ajcFP6Ec\">优势：1.服务以租赁形式按需付费使用，成本低、投入小 2.无需自己维护服务器和机房，极大降低使用门槛，提升效率 3.可视化搭建，极大降低用户理解和搭建成本，快速迭代更新系统以满足不断变 化的业务需求 4.海量数据高效存储查询，租户隔离，分库分表，多引擎适配自动优化保证最优 性能 5.数据安全可靠，阿里云存储数据可靠性高达 99.9999999% 6.服务高可用，同城双备，异地多活，保证 99.9% 不中断 7.高安全，共享阿里集团安全等级，为您的企业应用保驾护航。</p><p data-pid=\"SnTRzNPo\">缺点：宜搭是带审批的流程彻底不支持业务规则来修改数据。因此如果您使用宜搭构建。那么必须制作一张辅助表来完成。</p><p></p>",
+      "excerpt": "优势：1.服务以租赁形式按需付费使用，成本低、投入小 2.无需自己维护服务器和机房，极大降低使用门槛，提升效率 3.可视化搭建，极大降低用户理解和搭建成本，快速迭代更新系统以满足不断变 化的业务需求 4.海量数据高效存储查询，租户隔离，分库分表，多引擎适配自动优化保证最优 性能 5.数据安全可靠，阿里云存储数据可靠性高达 99.9999999% 6.服务高可用，同城双备，异地多活，保证 99.9% 不中断 7.高安全，共享阿里集团安全…",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1630249140,
+      "updatedTime": 1630249140,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1698674167",
+      "author": "风君子",
+      "url": "https://www.zhihu.com/question/439521858/answer/1698674167",
+      "content": "<p data-pid=\"soYCXuYM\">就目前体验的结果，宜搭比简道云难用太多了，远没有第三方体验好，而且官方的文档做的太low了，也没有什么支持</p>",
+      "excerpt": "就目前体验的结果，宜搭比简道云难用太多了，远没有第三方体验好，而且官方的文档做的太low了，也没有什么支持",
+      "voteupCount": 9,
+      "commentCount": 3,
+      "createdTime": 1611643187,
+      "updatedTime": 1611643187,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      },
+      "comments": [
+        {
+          "contentHtml": "钉钉的东西，就是难用，但功能强大",
+          "contentMarkdown": "钉钉的东西，就是难用，但功能强大",
+          "authorName": "gjhjkj",
+          "createdTime": 1650001247
+        },
+        {
+          "contentHtml": "<p>文档前几天更新了一个版本，还在持续更新中，可以看下 <a href=\"http://link.zhihu.com/?target=https%3A//www.yuque.com/yida/\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">宜搭文档</a> 。技术支持，也刚建了钉钉宜搭开发者大家庭群：<a href=\"http://link.zhihu.com/?target=https%3A//www.yuque.com/yida/topics/18\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">🔥宜搭怎么用？解决你 99% 的问题！ · 宜搭</a>。期待进一步交流和探讨。</p>",
+          "contentMarkdown": "文档前几天更新了一个版本，还在持续更新中，可以看下 原文链接文字：宜搭文档\n[打开外部链接 · www.yuque.com](https://www.yuque.com/yida/) 。技术支持，也刚建了钉钉宜搭开发者大家庭群：原文链接文字：🔥宜搭怎么用？解决你 99% 的问题！ · 宜搭\n[打开外部链接 · www.yuque.com](https://www.yuque.com/yida/topics/18)。期待进一步交流和探讨。",
+          "authorName": "九神",
+          "createdTime": 1612865922
+        },
+        {
+          "contentHtml": "<p>从开发人员和技术优势，相信很快会超过氚云和简道云，可以预见不久将取代很多应用软件（用户体验、即开即用和运营费用都是巨大优势），实现云战略。</p>",
+          "contentMarkdown": "从开发人员和技术优势，相信很快会超过氚云和简道云，可以预见不久将取代很多应用软件（用户体验、即开即用和运营费用都是巨大优势），实现云战略。",
+          "authorName": "JOHN",
+          "createdTime": 1611748897
+        }
+      ]
+    },
+    {
+      "id": "1806634616",
+      "author": "金克荣",
+      "url": "https://www.zhihu.com/question/439521858/answer/1806634616",
+      "content": "<p data-pid=\"oiNlR_7P\">宜搭尊享版和钉钉审批高级版，总不能两个都买吧。搞不懂两个的边界，宜搭界面好，功能多，使用也复杂。钉钉应该早点把这两个的边界清晰一点。</p><p data-pid=\"D-K0U_9L\">问了两个服务商，一个让我买高级版，因为有用友U8 连接器，方便对接。一个让我买宜搭，说U8连接器功能少，而且宜搭流程更好。</p><p data-pid=\"xi-RQdjR\">扯淡的玩意……宜搭和钉钉审批没点技术，又不可能做到互通。</p><p data-pid=\"hgW_Mbjq\">搞啥么这是。</p>",
+      "excerpt": "宜搭尊享版和钉钉审批高级版，总不能两个都买吧。搞不懂两个的边界，宜搭界面好，功能多，使用也复杂。钉钉应该早点把这两个的边界清晰一点。 问了两个服务商，一个让我买高级版，因为有用友U8 连接器，方便对接。一个让我买宜搭，说U8连接器功能少，而且宜搭流程更好。 扯淡的玩意…宜搭和钉钉审批没点技术，又不可能做到互通。 搞啥么这是。",
+      "voteupCount": 2,
+      "commentCount": 2,
+      "createdTime": 1617024383,
+      "updatedTime": 1617024383,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      },
+      "comments": [
+        {
+          "contentHtml": "同感",
+          "contentMarkdown": "同感",
+          "authorName": "枇杷熟了",
+          "createdTime": 1705322845
+        },
+        {
+          "contentHtml": "u8是什么？[好奇]",
+          "contentMarkdown": "u8是什么？\\[好奇\\]",
+          "authorName": "无人喝彩",
+          "createdTime": 1631267603
+        }
+      ]
+    },
+    {
+      "id": "3306973514",
+      "author": "易水寒",
+      "url": "https://www.zhihu.com/question/439521858/answer/3306973514",
+      "content": "<p></p><a href=\"https://zhuanlan.zhihu.com/p/667399838\" data-draft-node=\"block\" data-draft-type=\"link-card\" class=\"internal\">易水寒：低代码平台，宜搭、氚云、简道云对比，怎么选</a><p></p>",
+      "excerpt": "[文章: 低代码平台，宜搭、氚云、简道云对比，怎么选]",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1701242858,
+      "updatedTime": 1701242858,
+      "assets": {
+        "images": [],
+        "links": [
+          {
+            "originalUrl": "https://zhuanlan.zhihu.com/p/667399838",
+            "canonicalUrl": "https://zhuanlan.zhihu.com/p/667399838",
+            "domain": "zhuanlan.zhihu.com",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "anchorText": "易水寒：低代码平台，宜搭、氚云、简道云对比，怎么选"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "2009238931",
+      "author": "阿莞",
+      "url": "https://www.zhihu.com/question/439521858/answer/2009238931",
+      "content": "<p data-pid=\"kiN-2n5z\">各有各自的特点吧！如果要我用体验来说，我推荐使用百数,界面目前交互差点,但是功能实现比较全面,不容易让业务断层,或者无法往后迭代更新</p>",
+      "excerpt": "各有各自的特点吧！如果要我用体验来说，我推荐使用百数,界面目前交互差点,但是功能实现比较全面,不容易让业务断层,或者无法往后迭代更新",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1626764704,
+      "updatedTime": 1626764704,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1746716534",
+      "author": "白纸红扇",
+      "url": "https://www.zhihu.com/question/439521858/answer/1746716534",
+      "content": "<p data-pid=\"UNLQLzbV\">宜搭就是垃圾</p>",
+      "excerpt": "宜搭就是垃圾",
+      "voteupCount": 4,
+      "commentCount": 0,
+      "createdTime": 1614135269,
+      "updatedTime": 1614135269,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      },
+      "comments": []
+    },
+    {
+      "id": "1682235591",
+      "author": "Alex",
+      "url": "https://www.zhihu.com/question/439521858/answer/1682235591",
+      "content": "<p data-pid=\"2HUNPAVm\">宜搭与钉钉兼容性更高，可以直接在钉钉上发布应用，个人感觉运行速度更快，应该是因为与钉钉后台兼容性更好。劣势是现阶段还不如简道云使用简便清晰明了，程序员思维过重。</p>",
+      "excerpt": "宜搭与钉钉兼容性更高，可以直接在钉钉上发布应用，个人感觉运行速度更快，应该是因为与钉钉后台兼容性更好。劣势是现阶段还不如简道云使用简便清晰明了，程序员思维过重。",
+      "voteupCount": 0,
+      "commentCount": 0,
+      "createdTime": 1610855009,
+      "updatedTime": 1610855009,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      }
+    },
+    {
+      "id": "1682718413",
+      "author": "JOHN",
+      "url": "https://www.zhihu.com/question/439521858/answer/1682718413",
+      "content": "<p data-pid=\"-esIRjdB\">刚推出估计需要一段时间才能比较谁优谁劣，目前有两个问题：</p><ol><li data-pid=\"zdDzy2BI\">宜搭现在免费吗？以后免费吗？</li><li data-pid=\"dPFQs0fo\">宜搭和氚云是竞争关系吗？阿里如何对待亲儿子和干儿子？</li></ol>",
+      "excerpt": "刚推出估计需要一段时间才能比较谁优谁劣，目前有两个问题： 宜搭现在免费吗？以后免费吗？宜搭和氚云是竞争关系吗？阿里如何对待亲儿子和干儿子？",
+      "voteupCount": 1,
+      "commentCount": 10,
+      "createdTime": 1610875159,
+      "updatedTime": 1610875159,
+      "assets": {
+        "images": [],
+        "links": [],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      },
+      "comments": [
+        {
+          "contentHtml": "<p>其实华为做低代码平台多好，是目前华为云的一个大需求量，钉钉社交属性其实没那么强，这使得其他家也可以做企业平台，毕竟单企业用，其实还是孤岛。多个不同公司间的信息孤岛打通，要是把不做到微信qq这样的交流的话，其实有点伪命题。</p>",
+          "contentMarkdown": "其实华为做低代码平台多好，是目前华为云的一个大需求量，钉钉社交属性其实没那么强，这使得其他家也可以做企业平台，毕竟单企业用，其实还是孤岛。多个不同公司间的信息孤岛打通，要是把不做到微信qq这样的交流的话，其实有点伪命题。",
+          "authorName": "云影自悠悠",
+          "createdTime": 1611657364
+        },
+        {
+          "contentHtml": "<p>有竞争是好事，欢迎腾讯也来做这一块，但根据经验，腾讯做大后不但不会便宜而且更贵更多限制，例如微信认证每年300元，虽然不多但让很多商户叫苦连天，所以希望更多的企业加入这块，例如百度、头条甚至华为。</p>",
+          "contentMarkdown": "有竞争是好事，欢迎腾讯也来做这一块，但根据经验，腾讯做大后不但不会便宜而且更贵更多限制，例如微信认证每年300元，虽然不多但让很多商户叫苦连天，所以希望更多的企业加入这块，例如百度、头条甚至华为。",
+          "authorName": "JOHN",
+          "createdTime": 1611297877
+        },
+        {
+          "contentHtml": "<p>我比较了2边收费，宜搭的数据费用简直是天价，简道云4950元75万条，氚云免费不限量，宜搭4988元只有5万条数据，贵了15倍，每加4000元加10万条数据，每条数据每年4分钱，简直的天价呀。</p><p>而且宜搭我问客服，每个表单上传，里面每行数据就算一条，表单做了10个数据收据，提交一次就是10条数据量。</p><p>感觉宜搭是钉钉为了赚钱才推出来的产品，阿里内部可能是各部门独立结算，所以市场已经够大了，现在要开始赚钱了。不过吃的也太狠了，是简道云十几倍的价格，还只标了个1980元起，就是在做价格游戏。</p><p>数据库的价格有多便宜，懂点技术的人都知道，把低成本的数据库，通过钉钉4亿的基数，卖个天价，也确实只有钉钉自己推才能做的出来，要是其他家敢这样做，早就被pass了。</p><p>所以如果宜搭不改变数据量的定价，那后面市场还真不一定，氚云一个私营公司都可以做数据免费了，就看钉钉愿不愿意做了。毕竟现在腾讯的低代码也开始公测了，还有百度的amis，后面企业微信如果在价格上有优势，用腾讯的低代码配合企业微信，想想钉钉其实还是挺危险的，目前并没有做到微信的不可替代性，总算出来个可以深度绑定企业的宜搭，还搞个价格游戏。</p>",
+          "contentMarkdown": "我比较了2边收费，宜搭的数据费用简直是天价，简道云4950元75万条，氚云免费不限量，宜搭4988元只有5万条数据，贵了15倍，每加4000元加10万条数据，每条数据每年4分钱，简直的天价呀。\n\n而且宜搭我问客服，每个表单上传，里面每行数据就算一条，表单做了10个数据收据，提交一次就是10条数据量。\n\n感觉宜搭是钉钉为了赚钱才推出来的产品，阿里内部可能是各部门独立结算，所以市场已经够大了，现在要开始赚钱了。不过吃的也太狠了，是简道云十几倍的价格，还只标了个1980元起，就是在做价格游戏。\n\n数据库的价格有多便宜，懂点技术的人都知道，把低成本的数据库，通过钉钉4亿的基数，卖个天价，也确实只有钉钉自己推才能做的出来，要是其他家敢这样做，早就被pass了。\n\n所以如果宜搭不改变数据量的定价，那后面市场还真不一定，氚云一个私营公司都可以做数据免费了，就看钉钉愿不愿意做了。毕竟现在腾讯的低代码也开始公测了，还有百度的amis，后面企业微信如果在价格上有优势，用腾讯的低代码配合企业微信，想想钉钉其实还是挺危险的，目前并没有做到微信的不可替代性，总算出来个可以深度绑定企业的宜搭，还搞个价格游戏。",
+          "authorName": "云影自悠悠",
+          "createdTime": 1611285562
+        }
+      ]
+    },
+    {
+      "id": "2226898798",
+      "author": "基石协作科技",
+      "url": "https://www.zhihu.com/question/439521858/answer/2226898798",
+      "content": "<p data-pid=\"UEi92EdL\">在10月20日的云栖大会低代码峰会上，宜搭联合简道云、氚云还有其他5家低代码厂商，成立了一个“低代码联盟”，共享钉钉底座能力和平台资源。从这个消息便可以看出，宜搭和简道云、氚云在功能上互补的地方还是比较多的。</p><p data-pid=\"1HjsBMCP\"><b>宜搭和简道云、氚云有哪些差别？</b></p><p data-pid=\"kBHks8yi\">第一个差别就是简道云是零代码开发平台，而宜搭和氚云是低代码开发平台。低代码和零代码的区别简单来说就是：</p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-aab7e5815f8d1d215df2b8f29c3b7287_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"638\" data-rawheight=\"488\" data-original-token=\"v2-aab7e5815f8d1d215df2b8f29c3b7287\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-14764c6153f6ca257b39349d637df62e_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"638\" data-original=\"https://picx.zhimg.com/v2-aab7e5815f8d1d215df2b8f29c3b7287_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;638&#39; height=&#39;488&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"638\" data-rawheight=\"488\" data-original-token=\"v2-aab7e5815f8d1d215df2b8f29c3b7287\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-14764c6153f6ca257b39349d637df62e_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"638\" data-original=\"https://picx.zhimg.com/v2-aab7e5815f8d1d215df2b8f29c3b7287_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-aab7e5815f8d1d215df2b8f29c3b7287_720w.jpg?source=1def8aca\"/></figure><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"08-cCV8J\">宜搭和氚云的前后端都支持使用代码进行开发，其扩展能力较为强大；</p><p data-pid=\"srmdIdw1\">而简道云平台中应用的配置几乎不涉及到代码。</p><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"MC2ZJEso\">而就基础能力来说，宜搭、简道云、氚云三者差不多，主要功能模块有单据、流程、报表三大部分，都以页面形式为搭建维度，用户可根据使用场景选择配置相应的页面，如单据页面、报表页面、流程页面、展示页面等。</p><p data-pid=\"-O3LhK-I\">不过某些功能会有所不同，比如说，宜搭标准版本的流程功能对比氚云、简道云更基础一些，不过无法使用可视化拖拽的形式进行配置，基础功能包括审批条件、审批人设置、节点配置等，比较适合一些简单的流程，但是对于一些多分支流程，一些复杂的业务流程，支撑起来有一定困难。</p><p data-pid=\"BQo4dYo2\">而在仪表盘方面，简道云，氚云的报表和仪表盘将数据处理和数据呈现都整合到了一起，这个一方面是操作上更聚合，不过另一方面就是报表计算的功能受到了一些限制，没有简道云强大。</p><p data-pid=\"3RgwxMDr\">宜搭优势在于其模板多，组件丰富，代码拓展能力强，但是上手门槛高；氚云优势在于能够基于代码拓展能力实现前后台交互、数据库查询、对接第三方系统等较复杂的功能需求；简道云优势在于应用搭建简单，数据分析能力强，上手门槛低。</p><p data-pid=\"T1nuzT03\">以上就是宜搭、简道云、氚云各自的优势对比了。</p><p class=\"ztext-empty-paragraph\"><br/></p><p data-pid=\"c9aOn3Sz\">说起低代码开发，现在国内低代码开发平台还是比较多的，合理并且有效地运用低代码开发平台，不仅可以让我们工作高效地运行，还能最大程度保证团队目标的达成。除了宜搭、氚云、简单云之外，这里也比较推荐用<a href=\"https://link.zhihu.com/?target=https%3A//www.informat.cn/%3Ftag%3Dfromzh111616\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">织信Informat低代码开发平台</a>。</p><p data-pid=\"bXu93dAT\"><b>织信informat</b>内置100多个应用模板并覆盖：OA、ERP、CRM、绩效、人事、企业服务、个人及组织等多个应用场景，点击一键安装，不像别的开发平台，需要很强的技术背景以及花费大量的学习时间，可以说织信兼顾同时到了功能强大和好用两个特点，是一款非常适合企业部门使用的管理工具，是企业数字化转型相当有力的一个推手。</p><p data-pid=\"Nz25vYpI\">可以去了解一下<a href=\"https://link.zhihu.com/?target=https%3A//www.informat.cn/%3Ftag%3Dfromzh111616\" class=\" wrap external\" target=\"_blank\" rel=\"nofollow noreferrer\">织信informat</a>做个对比~</p><p class=\"ztext-empty-paragraph\"><br/></p><figure data-size=\"normal\"><noscript><img src=\"https://picx.zhimg.com/50/v2-a162c0d39e5dd9a6efca9780c416aebb_720w.jpg?source=1def8aca\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"540\" data-rawheight=\"450\" data-original-token=\"v2-a162c0d39e5dd9a6efca9780c416aebb\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-244a1c8f877fec5f0f104670837b806a_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb\" width=\"540\" data-original=\"https://picx.zhimg.com/v2-a162c0d39e5dd9a6efca9780c416aebb_r.jpg?source=1def8aca\"/></noscript><img src=\"data:image/svg+xml;utf8,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; width=&#39;540&#39; height=&#39;450&#39;&gt;&lt;/svg&gt;\" data-caption=\"\" data-size=\"normal\" data-rawwidth=\"540\" data-rawheight=\"450\" data-original-token=\"v2-a162c0d39e5dd9a6efca9780c416aebb\" data-default-watermark-src=\"https://picx.zhimg.com/50/v2-244a1c8f877fec5f0f104670837b806a_720w.jpg?source=1def8aca\" class=\"origin_image zh-lightbox-thumb lazy\" width=\"540\" data-original=\"https://picx.zhimg.com/v2-a162c0d39e5dd9a6efca9780c416aebb_r.jpg?source=1def8aca\" data-actualsrc=\"https://picx.zhimg.com/50/v2-a162c0d39e5dd9a6efca9780c416aebb_720w.jpg?source=1def8aca\"/></figure><p></p>",
+      "excerpt": "在10月20日的云栖大会低代码峰会上，宜搭联合简道云、氚云还有其他5家低代码厂商，成立了一个“低代码联盟”，共享钉钉底座能力和平台资源。从这个消息便可以看出，宜搭和简道云、氚云在功能上互补的地方还是比较多的。 宜搭和简道云、氚云有哪些差别？第一个差别就是简道云是零代码开发平台，而宜搭和氚云是低代码开发平台。低代码和零代码的区别简单来说就是： [图片] 宜搭和氚云的前后端都支持使用代码进行开发，其扩展能力较为强大…",
+      "voteupCount": 5,
+      "commentCount": 0,
+      "createdTime": 1637057910,
+      "updatedTime": 1637058212,
+      "assets": {
+        "images": [
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-aab7e5815f8d1d215df2b8f29c3b7287_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-aab7e5815f8d1d215df2b8f29c3b7287_r.jpg?source=1def8aca",
+            "width": 638,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          },
+          {
+            "detected": true,
+            "host": "picx.zhimg.com",
+            "originalUrl": "https://picx.zhimg.com/v2-a162c0d39e5dd9a6efca9780c416aebb_r.jpg?source=1def8aca",
+            "displayUrl": "https://picx.zhimg.com/v2-a162c0d39e5dd9a6efca9780c416aebb_r.jpg?source=1def8aca",
+            "width": 540,
+            "clickable": true,
+            "securityClass": "zhimg_cdn"
+          }
+        ],
+        "links": [
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//www.informat.cn/%3Ftag%3Dfromzh111616",
+            "canonicalUrl": "https://www.informat.cn/?tag=fromzh111616",
+            "domain": "www.informat.cn",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://www.informat.cn/?tag=fromzh111616",
+              "clickable": true
+            },
+            "anchorText": "织信Informat低代码开发平台"
+          },
+          {
+            "originalUrl": "https://link.zhihu.com/?target=https%3A//www.informat.cn/%3Ftag%3Dfromzh111616",
+            "canonicalUrl": "https://www.informat.cn/?tag=fromzh111616",
+            "domain": "www.informat.cn",
+            "clickable": true,
+            "securityClass": "external_unverified",
+            "zhihuRedirect": {
+              "targetUrl": "https://www.informat.cn/?tag=fromzh111616",
+              "clickable": true
+            },
+            "anchorText": "织信informat"
+          }
+        ],
+        "references": [],
+        "codeBlocks": [],
+        "videos": []
+      },
+      "comments": []
+    }
+  ]
+}

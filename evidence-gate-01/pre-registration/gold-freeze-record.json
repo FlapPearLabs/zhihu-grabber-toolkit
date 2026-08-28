@@ -1,0 +1,14 @@
+{
+  "gold_sha256": {
+    "case-439521858": "ae630ffc7beef12a2e3e1cda46d79f1b65f67c3f4d7887d7648c838863788fd4",
+    "case-466695857": "ad560b9a9da235b6507740e3897e69a912312624e3825b13938d34f2c0b066b5",
+    "case-477427067": "8303f6a47952a521d94fc821fb16fd51bb2b4b5a7c217c4358617782b8b1ad61",
+    "case-485463474": "4cf764c0a959fdb899415a62f8da41ebb8eb0f56a5188f087607402686d40aed",
+    "case-487214224": "4862aa51b26740250677016f2adcdbb6b650e219dda4c008686e2055dbd999b1",
+    "case-cross-lowcode": "2873bdeafe151ea91f7549a5d0d0ca446a1e3b2bba990ba697b1bafdd172049e",
+    "case-hpylori-treatment": "8961a90b93a32e882c879506012f14bd00653165abb6977c314d8f240d3df5bc",
+    "case-synth-dominance": "9650758b63dc1d3551ef87673e05b84da4c18ffb7f059a8172d2668489030245",
+    "case-synth-expert": "80af2aba23d1cb2c8ad0cc4c21fb2c4aa01d194ddb5c4e9286ac7c85873b7e91"
+  },
+  "freeze_note": "gold freeze record created 2026-08-28 BEFORE race run; any deviation invalidates the race"
+}

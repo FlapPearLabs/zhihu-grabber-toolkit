@@ -1,0 +1,114 @@
+{
+  "case_id": "case-466695857",
+  "gold_version": "g1-agent-proposal",
+  "label_status_policy": {
+    "semantic": "PROVISIONAL",
+    "mechanical": "MECHANICAL_CONFIRMED",
+    "note": "Semantic labels are AGENT PROPOSALS, not FINAL human gold. Adjudication pending. Mechanical labels derived from canonical metadata."
+  },
+  "families": {
+    "relevance": {
+      "label_status": "PROVISIONAL",
+      "sources": [
+        "466695857:3244238577", "466695857:2044730598", "466695857:3466479387",
+        "466695857:1958779750", "466695857:3279920257", "466695857:2401915395",
+        "466695857:3386875412", "466695857:2140398007", "466695857:2140488947",
+        "466695857:2099716352", "466695857:1957526887", "466695857:2043119425",
+        "466695857:1982005809", "466695857:2007801020", "466695857:2011434031"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "per_question": {
+        "466695857": [
+          "466695857:3244238577", "466695857:2044730598", "466695857:3466479387",
+          "466695857:1958779750", "466695857:3279920257", "466695857:2401915395",
+          "466695857:3386875412", "466695857:2140398007", "466695857:2140488947",
+          "466695857:2099716352", "466695857:1957526887", "466695857:2043119425",
+          "466695857:1982005809", "466695857:2007801020", "466695857:2011434031"
+        ]
+      }
+    },
+    "must_see": {
+      "label_status": "PROVISIONAL",
+      "sources": ["466695857:3244238577", "466695857:3466479387", "466695857:1958779750", "466695857:2401915395"],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "technical reversibility/lock-in view + vendor pro-source + critical counter-view + concept explainer"
+    },
+    "aspect_membership": {
+      "label_status": "PROVISIONAL",
+      "aspects": [
+        { "aspect_id": "asp-pro-source", "name": "源码交付的价值主张（二次开发/自主可控）", "sources": ["466695857:3466479387", "466695857:3279920257", "466695857:3386875412", "466695857:2401915395", "466695857:1957526887", "466695857:2140398007", "466695857:2140488947", "466695857:2099716352"] },
+        { "aspect_id": "asp-critique", "name": "源码意义有限/非必需（反方）", "sources": ["466695857:1958779750", "466695857:2011434031"] },
+        { "aspect_id": "asp-technical", "name": "技术视角（可逆性/锁定/扩展机制）", "sources": ["466695857:3244238577", "466695857:2140488947", "466695857:2044730598"] }
+      ]
+    },
+    "expertise_topic_match": {
+      "label_status": "PROVISIONAL",
+      "sources": ["466695857:3244238577", "466695857:3466479387", "466695857:3386875412", "466695857:3279920257", "466695857:2401915395"],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "vendor/domain accounts (WEAK name-only identity)"
+    },
+    "evidence_quality": {
+      "label_status": "PROVISIONAL",
+      "sources": ["466695857:2044730598", "466695857:3466479387", "466695857:3279920257", "466695857:2401915395"],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "SEMANTIC evidence quality (agent proposal, PROVISIONAL). Evidence PRESENCE (mechanical markers) is computed separately by the harness."
+    },
+    "evidence_presence": {
+      "label_status": "MECHANICAL_CONFIRMED",
+      "note": "computed by harness from frozen corpus evidence markers"
+    },
+    "freshness": {
+      "label_status": "PROVISIONAL",
+      "fresh_relevant_sources": [],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "window": { "policy_id": "fresh-365d-before-fetch", "reference_epoch_sec": 1786628391, "window_sec": 31536000 },
+      "note": "no fresh-relevant sources (all captured answers predate window); window membership (mechanical) computed by harness -> fresh_content_recall = N/A (documented blind spot)"
+    },
+    "unique_long_tail_contribution": {
+      "label_status": "PROVISIONAL",
+      "sources": ["466695857:2011434031", "466695857:1957526887", "466695857:2099716352", "466695857:3386875412", "466695857:3279920257", "466695857:2043119425"],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "zero/low-vote contributions incl. nuanced counterpoint (深海白刺: not every enterprise needs source code)"
+    },
+    "contradiction": {
+      "label_status": "PROVISIONAL",
+      "claim_clusters": [
+        {
+          "claim_id": "c1-source-value",
+          "canonical_claim": "低代码平台提供源码是否有实际意义",
+          "stances": {
+            "for": ["466695857:3466479387", "466695857:3279920257", "466695857:3386875412", "466695857:2401915395", "466695857:2140398007", "466695857:1957526887", "466695857:2099716352"],
+            "against": ["466695857:1958779750", "466695857:2011434031"]
+          },
+          "source_ids": ["466695857:3466479387", "466695857:3279920257", "466695857:3386875412", "466695857:2401915395", "466695857:2140398007", "466695857:1957526887", "466695857:2099716352", "466695857:1958779750", "466695857:2011434031"],
+          "disputed": false
+        }
+      ]
+    },
+    "required_provenance_groups": {
+      "label_status": "PROVISIONAL",
+      "claim_groups": [],
+      "note": "single-question case: no cross-question claims (N/A)"
+    },
+    "historical_authority": {
+      "label_status": "PROVISIONAL",
+      "sources": ["466695857:3244238577", "466695857:1958779750", "466695857:3466479387"],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "top-vote anchors + practitioner critic + leading vendor stance"
+    }
+  },
+  "provenance": {
+    "proposed_by": "agent",
+    "proposal_method": "blind content scan of canonical answers (no strategy outputs visible)",
+    "adjudicated_by": null,
+    "adjudication_status": "PENDING",
+    "label_status": "PROVISIONAL"
+  }
+}

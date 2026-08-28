@@ -1,0 +1,5721 @@
+{
+  "tables": [
+    {
+      "case_id": "case-439521858",
+      "budget_key": "K_LARGE",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.8,
+                "covered_units": 12,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7090681706496679,
+          "selected": [
+            "439521858:3376976033",
+            "439521858:1976466205",
+            "439521858:1775773370",
+            "439521858:1780646730",
+            "439521858:1698674167",
+            "439521858:2226898798",
+            "439521858:1746716534",
+            "439521858:1806634616"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 0.75,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.7333333333333333,
+                "covered_units": 11,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7361430755487162,
+          "selected": [
+            "439521858:3306973514",
+            "439521858:1775773370",
+            "439521858:2226898798",
+            "439521858:1780646730",
+            "439521858:3376976033",
+            "439521858:1698674167",
+            "439521858:1682235591",
+            "439521858:1682718413"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 0.75,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.7333333333333333,
+                "covered_units": 11,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7361430755487162,
+          "selected": [
+            "439521858:3306973514",
+            "439521858:1775773370",
+            "439521858:2226898798",
+            "439521858:1780646730",
+            "439521858:3376976033",
+            "439521858:1698674167",
+            "439521858:1682235591",
+            "439521858:1682718413"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 8,
+          "must_see": 0.75,
+          "aspect": 0.75,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.6666666666666666,
+                "covered_units": 10,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7429630215660329,
+          "selected": [
+            "439521858:1775773370",
+            "439521858:3306973514",
+            "439521858:1968643478662644597",
+            "439521858:1918690313431659010",
+            "439521858:2226898798",
+            "439521858:1780646730",
+            "439521858:2550630306",
+            "439521858:1698674167"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 0.75,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.7333333333333333,
+                "covered_units": 11,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7809374194713977,
+          "selected": [
+            "439521858:1775773370",
+            "439521858:3376976033",
+            "439521858:1968643478662644597",
+            "439521858:1918690313431659010",
+            "439521858:2226898798",
+            "439521858:1698674167",
+            "439521858:1780646730",
+            "439521858:2550630306"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-439521858",
+      "budget_key": "K_MEDIUM",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0.75,
+          "aspect": 0.75,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.6,
+                "covered_units": 9,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7773886669059894,
+          "selected": [
+            "439521858:3376976033",
+            "439521858:1976466205",
+            "439521858:1775773370",
+            "439521858:1780646730",
+            "439521858:1698674167"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 5,
+          "must_see": 1,
+          "aspect": 0.75,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.6666666666666666,
+                "covered_units": 10,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7894590650418813,
+          "selected": [
+            "439521858:3306973514",
+            "439521858:1775773370",
+            "439521858:2226898798",
+            "439521858:1780646730",
+            "439521858:3376976033"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 5,
+          "must_see": 1,
+          "aspect": 0.75,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.6666666666666666,
+                "covered_units": 10,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7894590650418813,
+          "selected": [
+            "439521858:3306973514",
+            "439521858:1775773370",
+            "439521858:2226898798",
+            "439521858:1780646730",
+            "439521858:3376976033"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0.75,
+          "aspect": 0.75,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.6,
+                "covered_units": 9,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.756582525215094,
+          "selected": [
+            "439521858:1775773370",
+            "439521858:3306973514",
+            "439521858:1968643478662644597",
+            "439521858:2226898798",
+            "439521858:1780646730"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 5,
+          "must_see": 0.75,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.4666666666666667,
+                "covered_units": 7,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.8036541368741096,
+          "selected": [
+            "439521858:1775773370",
+            "439521858:3376976033",
+            "439521858:1968643478662644597",
+            "439521858:1918690313431659010",
+            "439521858:2226898798"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-439521858",
+      "budget_key": "K_SMALL",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0.5,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.4,
+                "covered_units": 6,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.8087475998345078,
+          "selected": [
+            "439521858:3376976033",
+            "439521858:1976466205",
+            "439521858:1775773370"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0.5,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.4,
+                "covered_units": 6,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7602609321221278,
+          "selected": [
+            "439521858:3306973514",
+            "439521858:1775773370",
+            "439521858:2226898798"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0.5,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.4,
+                "covered_units": 6,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7602609321221278,
+          "selected": [
+            "439521858:3306973514",
+            "439521858:1775773370",
+            "439521858:2226898798"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0.25,
+          "aspect": 0.25,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.2,
+                "covered_units": 3,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.6769784718407115,
+          "selected": [
+            "439521858:1775773370",
+            "439521858:3306973514",
+            "439521858:1968643478662644597"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 3,
+          "must_see": 0.5,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.4,
+                "covered_units": 6,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7944596699522394,
+          "selected": [
+            "439521858:1775773370",
+            "439521858:3376976033",
+            "439521858:1968643478662644597"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-477427067",
+      "budget_key": "K_LARGE",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "477427067": {
+                "value": 0.7333333333333333,
+                "covered_units": 11,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.8232365585564689,
+          "selected": [
+            "477427067:2040315771",
+            "477427067:3050814230",
+            "477427067:2450810640",
+            "477427067:2238312306",
+            "477427067:110295980268",
+            "477427067:1963909107758106013",
+            "477427067:3547824796",
+            "477427067:1908569584690258620"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 8,
+          "must_see": 0.75,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "477427067": {
+                "value": 0.8,
+                "covered_units": 12,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.8098468470220729,
+          "selected": [
+            "477427067:2140439894",
+            "477427067:3050814230",
+            "477427067:2450810640",
+            "477427067:1908569584690258620",
+            "477427067:2040315771",
+            "477427067:110295980268",
+            "477427067:1963909107758106013",
+            "477427067:2141034490"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "477427067": {
+                "value": 0.8666666666666667,
+                "covered_units": 13,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.811235833291022,
+          "selected": [
+            "477427067:2140439894",
+            "477427067:3050814230",
+            "477427067:1908569584690258620",
+            "477427067:2040315771",
+            "477427067:110295980268",
+            "477427067:1963909107758106013",
+            "477427067:2141034490",
+            "477427067:2238312306"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 8,
+          "must_see": 0.75,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "477427067": {
+                "value": 0.8,
+                "covered_units": 12,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7968784732554868,
+          "selected": [
+            "477427067:3050814230",
+            "477427067:2040315771",
+            "477427067:1963909107758106013",
+            "477427067:2140439894",
+            "477427067:110295980268",
+            "477427067:2450810640",
+            "477427067:2042300823099667870",
+            "477427067:1908569584690258620"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "477427067": {
+                "value": 0.8666666666666667,
+                "covered_units": 13,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7982753250540593,
+          "selected": [
+            "477427067:3050814230",
+            "477427067:2040315771",
+            "477427067:1963909107758106013",
+            "477427067:2140439894",
+            "477427067:110295980268",
+            "477427067:2238312306",
+            "477427067:2042300823099667870",
+            "477427067:1908569584690258620"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-477427067",
+      "budget_key": "K_MEDIUM",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0.75,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "477427067": {
+                "value": 0.5333333333333333,
+                "covered_units": 8,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.818039318554723,
+          "selected": [
+            "477427067:2040315771",
+            "477427067:3050814230",
+            "477427067:2450810640",
+            "477427067:2238312306",
+            "477427067:110295980268"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0.5,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "477427067": {
+                "value": 0.6,
+                "covered_units": 9,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7973216206551049,
+          "selected": [
+            "477427067:2140439894",
+            "477427067:3050814230",
+            "477427067:2450810640",
+            "477427067:1908569584690258620",
+            "477427067:2040315771"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0.75,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "477427067": {
+                "value": 0.6666666666666666,
+                "covered_units": 10,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7807637488453361,
+          "selected": [
+            "477427067:2140439894",
+            "477427067:3050814230",
+            "477427067:1908569584690258620",
+            "477427067:2040315771",
+            "477427067:110295980268"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0.5,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "477427067": {
+                "value": 0.5333333333333333,
+                "covered_units": 8,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.8196652234497475,
+          "selected": [
+            "477427067:3050814230",
+            "477427067:2040315771",
+            "477427067:1963909107758106013",
+            "477427067:110295980268",
+            "477427067:2450810640"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 5,
+          "must_see": 0.5,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "477427067": {
+                "value": 0.6666666666666666,
+                "covered_units": 10,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.8026324235068716,
+          "selected": [
+            "477427067:3050814230",
+            "477427067:2040315771",
+            "477427067:1963909107758106013",
+            "477427067:2140439894",
+            "477427067:1908569584690258620"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-477427067",
+      "budget_key": "K_SMALL",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0.25,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "477427067": {
+                "value": 0.4,
+                "covered_units": 6,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.8329447919876305,
+          "selected": [
+            "477427067:2040315771",
+            "477427067:3050814230",
+            "477427067:2450810640"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0,
+          "aspect": 0.75,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "477427067": {
+                "value": 0.26666666666666666,
+                "covered_units": 4,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7976257113831404,
+          "selected": [
+            "477427067:2140439894",
+            "477427067:3050814230",
+            "477427067:2450810640"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0.25,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "477427067": {
+                "value": 0.5333333333333333,
+                "covered_units": 8,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7634499779882171,
+          "selected": [
+            "477427067:2140439894",
+            "477427067:3050814230",
+            "477427067:1908569584690258620"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0.25,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "477427067": {
+                "value": 0.4666666666666667,
+                "covered_units": 7,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.8196038310191428,
+          "selected": [
+            "477427067:3050814230",
+            "477427067:2040315771",
+            "477427067:1963909107758106013"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 3,
+          "must_see": 0.25,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "477427067": {
+                "value": 0.4666666666666667,
+                "covered_units": 7,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.8196038310191428,
+          "selected": [
+            "477427067:3050814230",
+            "477427067:2040315771",
+            "477427067:1963909107758106013"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-466695857",
+      "budget_key": "K_LARGE",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 8,
+          "must_see": 0.6666666666666666,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "466695857": {
+                "value": 0.8,
+                "covered_units": 8,
+                "scorable_units": 10
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7294822091718679,
+          "selected": [
+            "466695857:3244238577",
+            "466695857:2401915395",
+            "466695857:1958779750",
+            "466695857:2044730598",
+            "466695857:3279920257",
+            "466695857:3466479387",
+            "466695857:1957526887",
+            "466695857:1982005809"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 8,
+          "must_see": 0.6666666666666666,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "466695857": {
+                "value": 0.8,
+                "covered_units": 8,
+                "scorable_units": 10
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7883654139721796,
+          "selected": [
+            "466695857:2044730598",
+            "466695857:2099716352",
+            "466695857:2401915395",
+            "466695857:1957526887",
+            "466695857:3279920257",
+            "466695857:2140488947",
+            "466695857:3386875412",
+            "466695857:1958779750"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 8,
+          "must_see": 0.6666666666666666,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "466695857": {
+                "value": 0.8,
+                "covered_units": 8,
+                "scorable_units": 10
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7883654139721796,
+          "selected": [
+            "466695857:2044730598",
+            "466695857:2099716352",
+            "466695857:2401915395",
+            "466695857:1957526887",
+            "466695857:3279920257",
+            "466695857:2140488947",
+            "466695857:3386875412",
+            "466695857:1958779750"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 8,
+          "must_see": 0.3333333333333333,
+          "aspect": 0.6666666666666666,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "466695857": {
+                "value": 0.5,
+                "covered_units": 5,
+                "scorable_units": 10
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7445567715996558,
+          "selected": [
+            "466695857:2044730598",
+            "466695857:3279920257",
+            "466695857:2099716352",
+            "466695857:2401915395",
+            "466695857:3466479387",
+            "466695857:1957526887",
+            "466695857:3244238577",
+            "466695857:3386875412"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 8,
+          "must_see": 0.6666666666666666,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "466695857": {
+                "value": 0.8,
+                "covered_units": 8,
+                "scorable_units": 10
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7755035476411789,
+          "selected": [
+            "466695857:2044730598",
+            "466695857:3279920257",
+            "466695857:2099716352",
+            "466695857:2401915395",
+            "466695857:3244238577",
+            "466695857:1957526887",
+            "466695857:3386875412",
+            "466695857:1958779750"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-466695857",
+      "budget_key": "K_MEDIUM",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0.6666666666666666,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "466695857": {
+                "value": 0.7,
+                "covered_units": 7,
+                "scorable_units": 10
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7956421185279368,
+          "selected": [
+            "466695857:3244238577",
+            "466695857:2401915395",
+            "466695857:1958779750",
+            "466695857:2044730598",
+            "466695857:3279920257"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0,
+          "aspect": 0.6666666666666666,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "466695857": {
+                "value": 0.4,
+                "covered_units": 4,
+                "scorable_units": 10
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7787194473774413,
+          "selected": [
+            "466695857:2044730598",
+            "466695857:2099716352",
+            "466695857:2401915395",
+            "466695857:1957526887",
+            "466695857:3279920257"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0,
+          "aspect": 0.6666666666666666,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "466695857": {
+                "value": 0.4,
+                "covered_units": 4,
+                "scorable_units": 10
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7787194473774413,
+          "selected": [
+            "466695857:2044730598",
+            "466695857:2099716352",
+            "466695857:2401915395",
+            "466695857:1957526887",
+            "466695857:3279920257"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0,
+          "aspect": 0.6666666666666666,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "466695857": {
+                "value": 0.3,
+                "covered_units": 3,
+                "scorable_units": 10
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7304507500526665,
+          "selected": [
+            "466695857:2044730598",
+            "466695857:3279920257",
+            "466695857:2099716352",
+            "466695857:2401915395",
+            "466695857:3466479387"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 5,
+          "must_see": 0,
+          "aspect": 0.6666666666666666,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "466695857": {
+                "value": 0.4,
+                "covered_units": 4,
+                "scorable_units": 10
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7787194473774413,
+          "selected": [
+            "466695857:2044730598",
+            "466695857:3279920257",
+            "466695857:2099716352",
+            "466695857:2401915395",
+            "466695857:1957526887"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-466695857",
+      "budget_key": "K_SMALL",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0.6666666666666666,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "466695857": {
+                "value": 0.7,
+                "covered_units": 7,
+                "scorable_units": 10
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.8108037258785804,
+          "selected": [
+            "466695857:3244238577",
+            "466695857:2401915395",
+            "466695857:1958779750"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0,
+          "aspect": 0.6666666666666666,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "466695857": {
+                "value": 0.3,
+                "covered_units": 3,
+                "scorable_units": 10
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.8047204023623219,
+          "selected": [
+            "466695857:2044730598",
+            "466695857:2099716352",
+            "466695857:2401915395"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0,
+          "aspect": 0.6666666666666666,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "466695857": {
+                "value": 0.3,
+                "covered_units": 3,
+                "scorable_units": 10
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.8047204023623219,
+          "selected": [
+            "466695857:2044730598",
+            "466695857:2099716352",
+            "466695857:2401915395"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0,
+          "aspect": 0.6666666666666666,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "466695857": {
+                "value": 0.3,
+                "covered_units": 3,
+                "scorable_units": 10
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7588994118001837,
+          "selected": [
+            "466695857:2044730598",
+            "466695857:3279920257",
+            "466695857:2099716352"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 3,
+          "must_see": 0,
+          "aspect": 0.6666666666666666,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "466695857": {
+                "value": 0.3,
+                "covered_units": 3,
+                "scorable_units": 10
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7588994118001837,
+          "selected": [
+            "466695857:2044730598",
+            "466695857:3279920257",
+            "466695857:2099716352"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-485463474",
+      "budget_key": "K_LARGE",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "485463474": {
+                "value": 1,
+                "covered_units": 4,
+                "scorable_units": 4
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7773774986966112,
+          "selected": [
+            "485463474:2109090852",
+            "485463474:2180915039",
+            "485463474:2189029739",
+            "485463474:2406068294",
+            "485463474:2688629921",
+            "485463474:2706684256",
+            "485463474:2940558097"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "485463474": {
+                "value": 1,
+                "covered_units": 4,
+                "scorable_units": 4
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7773774986966112,
+          "selected": [
+            "485463474:2940558097",
+            "485463474:2109090852",
+            "485463474:2688629921",
+            "485463474:2406068294",
+            "485463474:2189029739",
+            "485463474:2180915039",
+            "485463474:2706684256"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "485463474": {
+                "value": 1,
+                "covered_units": 4,
+                "scorable_units": 4
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7773774986966112,
+          "selected": [
+            "485463474:2940558097",
+            "485463474:2109090852",
+            "485463474:2688629921",
+            "485463474:2406068294",
+            "485463474:2189029739",
+            "485463474:2180915039",
+            "485463474:2706684256"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "485463474": {
+                "value": 1,
+                "covered_units": 4,
+                "scorable_units": 4
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7773774986966112,
+          "selected": [
+            "485463474:2109090852",
+            "485463474:2940558097",
+            "485463474:2189029739",
+            "485463474:2688629921",
+            "485463474:2406068294",
+            "485463474:2180915039",
+            "485463474:2706684256"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "485463474": {
+                "value": 1,
+                "covered_units": 4,
+                "scorable_units": 4
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7773774986966112,
+          "selected": [
+            "485463474:2109090852",
+            "485463474:2940558097",
+            "485463474:2189029739",
+            "485463474:2688629921",
+            "485463474:2406068294",
+            "485463474:2706684256",
+            "485463474:2180915039"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-485463474",
+      "budget_key": "K_MEDIUM",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0.5,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "485463474": {
+                "value": 0.5,
+                "covered_units": 2,
+                "scorable_units": 4
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7955713747141839,
+          "selected": [
+            "485463474:2109090852",
+            "485463474:2180915039",
+            "485463474:2189029739",
+            "485463474:2406068294",
+            "485463474:2688629921"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 5,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "485463474": {
+                "value": 1,
+                "covered_units": 4,
+                "scorable_units": 4
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7704325512444568,
+          "selected": [
+            "485463474:2940558097",
+            "485463474:2109090852",
+            "485463474:2688629921",
+            "485463474:2406068294",
+            "485463474:2189029739"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 5,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "485463474": {
+                "value": 1,
+                "covered_units": 4,
+                "scorable_units": 4
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7704325512444568,
+          "selected": [
+            "485463474:2940558097",
+            "485463474:2109090852",
+            "485463474:2688629921",
+            "485463474:2406068294",
+            "485463474:2189029739"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 5,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "485463474": {
+                "value": 1,
+                "covered_units": 4,
+                "scorable_units": 4
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.770432551244457,
+          "selected": [
+            "485463474:2109090852",
+            "485463474:2940558097",
+            "485463474:2189029739",
+            "485463474:2688629921",
+            "485463474:2406068294"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 5,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "485463474": {
+                "value": 1,
+                "covered_units": 4,
+                "scorable_units": 4
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.770432551244457,
+          "selected": [
+            "485463474:2109090852",
+            "485463474:2940558097",
+            "485463474:2189029739",
+            "485463474:2688629921",
+            "485463474:2406068294"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-485463474",
+      "budget_key": "K_SMALL",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0.5,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "485463474": {
+                "value": 0.5,
+                "covered_units": 2,
+                "scorable_units": 4
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7335381889807192,
+          "selected": [
+            "485463474:2109090852",
+            "485463474:2180915039",
+            "485463474:2189029739"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 3,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "485463474": {
+                "value": 1,
+                "covered_units": 4,
+                "scorable_units": 4
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.8155790567101735,
+          "selected": [
+            "485463474:2940558097",
+            "485463474:2109090852",
+            "485463474:2688629921"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 3,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "485463474": {
+                "value": 1,
+                "covered_units": 4,
+                "scorable_units": 4
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.8155790567101735,
+          "selected": [
+            "485463474:2940558097",
+            "485463474:2109090852",
+            "485463474:2688629921"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 3,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "485463474": {
+                "value": 1,
+                "covered_units": 4,
+                "scorable_units": 4
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.6993058392614673,
+          "selected": [
+            "485463474:2109090852",
+            "485463474:2940558097",
+            "485463474:2189029739"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 3,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "485463474": {
+                "value": 1,
+                "covered_units": 4,
+                "scorable_units": 4
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.6993058392614673,
+          "selected": [
+            "485463474:2109090852",
+            "485463474:2940558097",
+            "485463474:2189029739"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-487214224",
+      "budget_key": "K_LARGE",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "487214224": {
+                "value": 1,
+                "covered_units": 2,
+                "scorable_units": 2
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.5714475171042905,
+          "selected": [
+            "487214224:2124048604",
+            "487214224:2027722356278215762",
+            "487214224:2146329149"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "487214224": {
+                "value": 1,
+                "covered_units": 2,
+                "scorable_units": 2
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.5714475171042905,
+          "selected": [
+            "487214224:2124048604",
+            "487214224:2146329149",
+            "487214224:2027722356278215762"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "487214224": {
+                "value": 1,
+                "covered_units": 2,
+                "scorable_units": 2
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.5714475171042905,
+          "selected": [
+            "487214224:2124048604",
+            "487214224:2146329149",
+            "487214224:2027722356278215762"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "487214224": {
+                "value": 1,
+                "covered_units": 2,
+                "scorable_units": 2
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.5714475171042905,
+          "selected": [
+            "487214224:2124048604",
+            "487214224:2146329149",
+            "487214224:2027722356278215762"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 8,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "487214224": {
+                "value": 1,
+                "covered_units": 2,
+                "scorable_units": 2
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.5714475171042905,
+          "selected": [
+            "487214224:2124048604",
+            "487214224:2027722356278215762",
+            "487214224:2146329149"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-487214224",
+      "budget_key": "K_MEDIUM",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 5,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "487214224": {
+                "value": 1,
+                "covered_units": 2,
+                "scorable_units": 2
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.5714475171042905,
+          "selected": [
+            "487214224:2124048604",
+            "487214224:2027722356278215762",
+            "487214224:2146329149"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 5,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "487214224": {
+                "value": 1,
+                "covered_units": 2,
+                "scorable_units": 2
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.5714475171042905,
+          "selected": [
+            "487214224:2124048604",
+            "487214224:2146329149",
+            "487214224:2027722356278215762"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 5,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "487214224": {
+                "value": 1,
+                "covered_units": 2,
+                "scorable_units": 2
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.5714475171042905,
+          "selected": [
+            "487214224:2124048604",
+            "487214224:2146329149",
+            "487214224:2027722356278215762"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 5,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "487214224": {
+                "value": 1,
+                "covered_units": 2,
+                "scorable_units": 2
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.5714475171042905,
+          "selected": [
+            "487214224:2124048604",
+            "487214224:2146329149",
+            "487214224:2027722356278215762"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 5,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "487214224": {
+                "value": 1,
+                "covered_units": 2,
+                "scorable_units": 2
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.5714475171042905,
+          "selected": [
+            "487214224:2124048604",
+            "487214224:2027722356278215762",
+            "487214224:2146329149"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-487214224",
+      "budget_key": "K_SMALL",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 3,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "487214224": {
+                "value": 1,
+                "covered_units": 2,
+                "scorable_units": 2
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.5714475171042905,
+          "selected": [
+            "487214224:2124048604",
+            "487214224:2027722356278215762",
+            "487214224:2146329149"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 3,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "487214224": {
+                "value": 1,
+                "covered_units": 2,
+                "scorable_units": 2
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.5714475171042905,
+          "selected": [
+            "487214224:2124048604",
+            "487214224:2146329149",
+            "487214224:2027722356278215762"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 3,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "487214224": {
+                "value": 1,
+                "covered_units": 2,
+                "scorable_units": 2
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.5714475171042905,
+          "selected": [
+            "487214224:2124048604",
+            "487214224:2146329149",
+            "487214224:2027722356278215762"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 3,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "487214224": {
+                "value": 1,
+                "covered_units": 2,
+                "scorable_units": 2
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.5714475171042905,
+          "selected": [
+            "487214224:2124048604",
+            "487214224:2146329149",
+            "487214224:2027722356278215762"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 3,
+          "must_see": 1,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "487214224": {
+                "value": 1,
+                "covered_units": 2,
+                "scorable_units": 2
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.5714475171042905,
+          "selected": [
+            "487214224:2124048604",
+            "487214224:2027722356278215762",
+            "487214224:2146329149"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-cross-lowcode",
+      "budget_key": "K_LARGE",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 20,
+          "must_see": 0.5333333333333333,
+          "aspect": 1,
+          "xq_claim": 1,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.6666666666666666,
+                "covered_units": 6,
+                "scorable_units": 9
+              },
+              "462973596": {
+                "value": 0.42857142857142855,
+                "covered_units": 3,
+                "scorable_units": 7
+              },
+              "466695857": {
+                "value": 0.375,
+                "covered_units": 3,
+                "scorable_units": 8
+              },
+              "477427067": {
+                "value": 0.36363636363636365,
+                "covered_units": 4,
+                "scorable_units": 11
+              },
+              "485463474": {
+                "value": 0.4,
+                "covered_units": 2,
+                "scorable_units": 5
+              },
+              "487214224": {
+                "value": 0.6666666666666666,
+                "covered_units": 2,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 6,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.5073809523809524,
+          "minority_min": 0.375,
+          "diversity": 0.8639999999999999,
+          "redundancy": 0.6977934731689146,
+          "selected": [
+            "439521858:3376976033",
+            "439521858:1976466205",
+            "477427067:2040315771",
+            "439521858:1775773370",
+            "439521858:1780646730",
+            "466695857:3244238577",
+            "439521858:1698674167",
+            "477427067:3050814230",
+            "439521858:2226898798",
+            "485463474:2109090852",
+            "487214224:2124048604",
+            "439521858:1746716534",
+            "462973596:1959121448",
+            "477427067:2450810640",
+            "439521858:1806634616",
+            "462973596:1953772075",
+            "462973596:1960753087",
+            "466695857:2401915395",
+            "477427067:2238312306",
+            "439521858:1682718413"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 20,
+          "must_see": 0.4666666666666667,
+          "aspect": 0.8333333333333334,
+          "xq_claim": 0.25,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.7777777777777778,
+                "covered_units": 7,
+                "scorable_units": 9
+              },
+              "462973596": {
+                "value": 0.5714285714285714,
+                "covered_units": 4,
+                "scorable_units": 7
+              },
+              "466695857": {
+                "value": 0.25,
+                "covered_units": 2,
+                "scorable_units": 8
+              },
+              "477427067": {
+                "value": 0.8181818181818182,
+                "covered_units": 9,
+                "scorable_units": 11
+              },
+              "485463474": {
+                "value": 0.2,
+                "covered_units": 1,
+                "scorable_units": 5
+              },
+              "487214224": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 6,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.35984126984126985,
+          "minority_min": 0,
+          "diversity": 0.8399999999999999,
+          "redundancy": 0.7919540919857471,
+          "selected": [
+            "477427067:3050814230",
+            "477427067:2450810640",
+            "439521858:1780646730",
+            "485463474:2406068294",
+            "477427067:1908569584690258620",
+            "462973596:2052511352",
+            "477427067:2141034490",
+            "439521858:2226898798",
+            "466695857:2044730598",
+            "439521858:2550630306",
+            "477427067:110295980268",
+            "477427067:2140439894",
+            "439521858:1775773370",
+            "477427067:2238312306",
+            "477427067:1963909107758106013",
+            "439521858:1918690313431659010",
+            "462973596:1960753087",
+            "462973596:1928406979",
+            "477427067:2040315771",
+            "466695857:2099716352"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 20,
+          "must_see": 0.5333333333333333,
+          "aspect": 1,
+          "xq_claim": 0.5,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.7777777777777778,
+                "covered_units": 7,
+                "scorable_units": 9
+              },
+              "462973596": {
+                "value": 0.5714285714285714,
+                "covered_units": 4,
+                "scorable_units": 7
+              },
+              "466695857": {
+                "value": 0.25,
+                "covered_units": 2,
+                "scorable_units": 8
+              },
+              "477427067": {
+                "value": 0.8181818181818182,
+                "covered_units": 9,
+                "scorable_units": 11
+              },
+              "485463474": {
+                "value": 0.8,
+                "covered_units": 4,
+                "scorable_units": 5
+              },
+              "487214224": {
+                "value": 0.3333333333333333,
+                "covered_units": 1,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 6,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.5465079365079366,
+          "minority_min": 0.25,
+          "diversity": 0.8939999999999998,
+          "redundancy": 0.7792744079535457,
+          "selected": [
+            "477427067:3050814230",
+            "439521858:1780646730",
+            "485463474:2406068294",
+            "462973596:2052511352",
+            "466695857:2044730598",
+            "487214224:2146329149",
+            "477427067:1908569584690258620",
+            "477427067:2141034490",
+            "439521858:2226898798",
+            "439521858:2550630306",
+            "477427067:110295980268",
+            "477427067:2140439894",
+            "439521858:1775773370",
+            "477427067:2238312306",
+            "477427067:1963909107758106013",
+            "439521858:1918690313431659010",
+            "462973596:1928406979",
+            "477427067:2040315771",
+            "466695857:2099716352",
+            "485463474:2940558097"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 20,
+          "must_see": 0.4,
+          "aspect": 1,
+          "xq_claim": 0.5,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.5555555555555556,
+                "covered_units": 5,
+                "scorable_units": 9
+              },
+              "462973596": {
+                "value": 0.2857142857142857,
+                "covered_units": 2,
+                "scorable_units": 7
+              },
+              "466695857": {
+                "value": 0.25,
+                "covered_units": 2,
+                "scorable_units": 8
+              },
+              "477427067": {
+                "value": 0.7272727272727273,
+                "covered_units": 8,
+                "scorable_units": 11
+              },
+              "485463474": {
+                "value": 0.8,
+                "covered_units": 4,
+                "scorable_units": 5
+              },
+              "487214224": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 6,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.3782539682539683,
+          "minority_min": 0,
+          "diversity": 0.8519999999999999,
+          "redundancy": 0.7272336692534767,
+          "selected": [
+            "477427067:3050814230",
+            "439521858:1780646730",
+            "477427067:1963909107758106013",
+            "466695857:2099716352",
+            "477427067:2450810640",
+            "439521858:3306973514",
+            "477427067:2042300823099667870",
+            "477427067:2140439894",
+            "439521858:2226898798",
+            "485463474:2940558097",
+            "439521858:1968643478662644597",
+            "477427067:1908569584690258620",
+            "466695857:2044730598",
+            "439521858:1918690313431659010",
+            "487214224:2027722356278215762",
+            "485463474:2406068294",
+            "477427067:110295980268",
+            "477427067:2238312306",
+            "477427067:2141034490",
+            "462973596:1963312102"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 20,
+          "must_see": 0.4,
+          "aspect": 1,
+          "xq_claim": 0.5,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.6666666666666666,
+                "covered_units": 6,
+                "scorable_units": 9
+              },
+              "462973596": {
+                "value": 0.42857142857142855,
+                "covered_units": 3,
+                "scorable_units": 7
+              },
+              "466695857": {
+                "value": 0.25,
+                "covered_units": 2,
+                "scorable_units": 8
+              },
+              "477427067": {
+                "value": 0.6363636363636364,
+                "covered_units": 7,
+                "scorable_units": 11
+              },
+              "485463474": {
+                "value": 0.8,
+                "covered_units": 4,
+                "scorable_units": 5
+              },
+              "487214224": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 6,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.429047619047619,
+          "minority_min": 0,
+          "diversity": 0.9239999999999999,
+          "redundancy": 0.7321076766051431,
+          "selected": [
+            "477427067:3050814230",
+            "439521858:1780646730",
+            "477427067:1963909107758106013",
+            "466695857:2099716352",
+            "462973596:2052511352",
+            "477427067:2450810640",
+            "485463474:2940558097",
+            "477427067:2042300823099667870",
+            "477427067:2140439894",
+            "466695857:2044730598",
+            "439521858:2226898798",
+            "477427067:110295980268",
+            "439521858:1968643478662644597",
+            "477427067:1908569584690258620",
+            "439521858:1775773370",
+            "462973596:1963312102",
+            "439521858:1976466205",
+            "487214224:2027722356278215762",
+            "485463474:2406068294",
+            "462973596:1970717782"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-cross-lowcode",
+      "budget_key": "K_MEDIUM",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 10,
+          "must_see": 0.4,
+          "aspect": 0.8333333333333334,
+          "xq_claim": 0.5,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.6666666666666666,
+                "covered_units": 6,
+                "scorable_units": 9
+              },
+              "462973596": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 7
+              },
+              "466695857": {
+                "value": 0.375,
+                "covered_units": 3,
+                "scorable_units": 8
+              },
+              "477427067": {
+                "value": 0.2727272727272727,
+                "covered_units": 3,
+                "scorable_units": 11
+              },
+              "485463474": {
+                "value": 0.4,
+                "covered_units": 2,
+                "scorable_units": 5
+              },
+              "487214224": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 6,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.2883333333333333,
+          "minority_min": 0,
+          "diversity": 0.696,
+          "redundancy": 0.7538758083329371,
+          "selected": [
+            "439521858:3376976033",
+            "439521858:1976466205",
+            "477427067:2040315771",
+            "439521858:1775773370",
+            "439521858:1780646730",
+            "466695857:3244238577",
+            "439521858:1698674167",
+            "477427067:3050814230",
+            "439521858:2226898798",
+            "485463474:2109090852"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 10,
+          "must_see": 0.2,
+          "aspect": 0.8333333333333334,
+          "xq_claim": 0.25,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.5555555555555556,
+                "covered_units": 5,
+                "scorable_units": 9
+              },
+              "462973596": {
+                "value": 0.2857142857142857,
+                "covered_units": 2,
+                "scorable_units": 7
+              },
+              "466695857": {
+                "value": 0.25,
+                "covered_units": 2,
+                "scorable_units": 8
+              },
+              "477427067": {
+                "value": 0.36363636363636365,
+                "covered_units": 4,
+                "scorable_units": 11
+              },
+              "485463474": {
+                "value": 0.2,
+                "covered_units": 1,
+                "scorable_units": 5
+              },
+              "487214224": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 6,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.2582539682539683,
+          "minority_min": 0,
+          "diversity": 0.8639999999999999,
+          "redundancy": 0.8036349668856019,
+          "selected": [
+            "477427067:3050814230",
+            "477427067:2450810640",
+            "439521858:1780646730",
+            "485463474:2406068294",
+            "477427067:1908569584690258620",
+            "462973596:2052511352",
+            "477427067:2141034490",
+            "439521858:2226898798",
+            "466695857:2044730598",
+            "439521858:2550630306"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 10,
+          "must_see": 0.2,
+          "aspect": 0.8333333333333334,
+          "xq_claim": 0.25,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.5555555555555556,
+                "covered_units": 5,
+                "scorable_units": 9
+              },
+              "462973596": {
+                "value": 0.2857142857142857,
+                "covered_units": 2,
+                "scorable_units": 7
+              },
+              "466695857": {
+                "value": 0.25,
+                "covered_units": 2,
+                "scorable_units": 8
+              },
+              "477427067": {
+                "value": 0.36363636363636365,
+                "covered_units": 4,
+                "scorable_units": 11
+              },
+              "485463474": {
+                "value": 0.2,
+                "covered_units": 1,
+                "scorable_units": 5
+              },
+              "487214224": {
+                "value": 0.3333333333333333,
+                "covered_units": 1,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 6,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.32492063492063494,
+          "minority_min": 0.2,
+          "diversity": 0.9359999999999999,
+          "redundancy": 0.7987599699118308,
+          "selected": [
+            "477427067:3050814230",
+            "439521858:1780646730",
+            "485463474:2406068294",
+            "462973596:2052511352",
+            "466695857:2044730598",
+            "487214224:2146329149",
+            "477427067:1908569584690258620",
+            "477427067:2141034490",
+            "439521858:2226898798",
+            "439521858:2550630306"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 10,
+          "must_see": 0.2,
+          "aspect": 0.8333333333333334,
+          "xq_claim": 0.25,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.5555555555555556,
+                "covered_units": 5,
+                "scorable_units": 9
+              },
+              "462973596": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 7
+              },
+              "466695857": {
+                "value": 0.25,
+                "covered_units": 2,
+                "scorable_units": 8
+              },
+              "477427067": {
+                "value": 0.2727272727272727,
+                "covered_units": 3,
+                "scorable_units": 11
+              },
+              "485463474": {
+                "value": 0.6,
+                "covered_units": 3,
+                "scorable_units": 5
+              },
+              "487214224": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 6,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.2811111111111111,
+          "minority_min": 0,
+          "diversity": 0.7919999999999998,
+          "redundancy": 0.7210877747475275,
+          "selected": [
+            "477427067:3050814230",
+            "439521858:1780646730",
+            "477427067:1963909107758106013",
+            "466695857:2099716352",
+            "477427067:2450810640",
+            "439521858:3306973514",
+            "477427067:2042300823099667870",
+            "439521858:2226898798",
+            "485463474:2940558097",
+            "439521858:1968643478662644597"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 10,
+          "must_see": 0.13333333333333333,
+          "aspect": 1,
+          "xq_claim": 0.25,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.3333333333333333,
+                "covered_units": 3,
+                "scorable_units": 9
+              },
+              "462973596": {
+                "value": 0.2857142857142857,
+                "covered_units": 2,
+                "scorable_units": 7
+              },
+              "466695857": {
+                "value": 0.25,
+                "covered_units": 2,
+                "scorable_units": 8
+              },
+              "477427067": {
+                "value": 0.36363636363636365,
+                "covered_units": 4,
+                "scorable_units": 11
+              },
+              "485463474": {
+                "value": 0.6,
+                "covered_units": 3,
+                "scorable_units": 5
+              },
+              "487214224": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 6,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.29380952380952385,
+          "minority_min": 0,
+          "diversity": 0.8159999999999998,
+          "redundancy": 0.7463494158640954,
+          "selected": [
+            "477427067:3050814230",
+            "439521858:1780646730",
+            "477427067:1963909107758106013",
+            "466695857:2099716352",
+            "462973596:2052511352",
+            "477427067:2450810640",
+            "485463474:2940558097",
+            "477427067:2042300823099667870",
+            "477427067:2140439894",
+            "466695857:2044730598"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-cross-lowcode",
+      "budget_key": "K_SMALL",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0.2,
+          "aspect": 0.3333333333333333,
+          "xq_claim": 0.25,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.5555555555555556,
+                "covered_units": 5,
+                "scorable_units": 9
+              },
+              "462973596": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 7
+              },
+              "466695857": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 8
+              },
+              "477427067": {
+                "value": 0.18181818181818182,
+                "covered_units": 2,
+                "scorable_units": 11
+              },
+              "485463474": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 5
+              },
+              "487214224": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 6,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.11111111111111112,
+          "minority_min": 0,
+          "diversity": 0.3839999999999998,
+          "redundancy": 0.803640591692921,
+          "selected": [
+            "439521858:3376976033",
+            "439521858:1976466205",
+            "477427067:2040315771",
+            "439521858:1775773370",
+            "439521858:1780646730"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0.13333333333333333,
+          "aspect": 0.5,
+          "xq_claim": 0.25,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.3333333333333333,
+                "covered_units": 3,
+                "scorable_units": 9
+              },
+              "462973596": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 7
+              },
+              "466695857": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 8
+              },
+              "477427067": {
+                "value": 0.36363636363636365,
+                "covered_units": 4,
+                "scorable_units": 11
+              },
+              "485463474": {
+                "value": 0.2,
+                "covered_units": 1,
+                "scorable_units": 5
+              },
+              "487214224": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 6,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.10666666666666666,
+          "minority_min": 0,
+          "diversity": 0.6719999999999999,
+          "redundancy": 0.8276552564196111,
+          "selected": [
+            "477427067:3050814230",
+            "477427067:2450810640",
+            "439521858:1780646730",
+            "485463474:2406068294",
+            "477427067:1908569584690258620"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0.06666666666666667,
+          "aspect": 0.8333333333333334,
+          "xq_claim": 0.25,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.3333333333333333,
+                "covered_units": 3,
+                "scorable_units": 9
+              },
+              "462973596": {
+                "value": 0.2857142857142857,
+                "covered_units": 2,
+                "scorable_units": 7
+              },
+              "466695857": {
+                "value": 0.25,
+                "covered_units": 2,
+                "scorable_units": 8
+              },
+              "477427067": {
+                "value": 0.18181818181818182,
+                "covered_units": 2,
+                "scorable_units": 11
+              },
+              "485463474": {
+                "value": 0.2,
+                "covered_units": 1,
+                "scorable_units": 5
+              },
+              "487214224": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 6,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.2138095238095238,
+          "minority_min": 0,
+          "diversity": 0.9599999999999999,
+          "redundancy": 0.775605322406314,
+          "selected": [
+            "477427067:3050814230",
+            "439521858:1780646730",
+            "485463474:2406068294",
+            "462973596:2052511352",
+            "466695857:2044730598"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0.06666666666666667,
+          "aspect": 0.6666666666666666,
+          "xq_claim": 0.25,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.3333333333333333,
+                "covered_units": 3,
+                "scorable_units": 9
+              },
+              "462973596": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 7
+              },
+              "466695857": {
+                "value": 0.25,
+                "covered_units": 2,
+                "scorable_units": 8
+              },
+              "477427067": {
+                "value": 0.2727272727272727,
+                "covered_units": 3,
+                "scorable_units": 11
+              },
+              "485463474": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 5
+              },
+              "487214224": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 6,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.11666666666666665,
+          "minority_min": 0,
+          "diversity": 0.7679999999999998,
+          "redundancy": 0.7019449107289761,
+          "selected": [
+            "477427067:3050814230",
+            "439521858:1780646730",
+            "477427067:1963909107758106013",
+            "466695857:2044730598",
+            "439521858:3306973514"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 5,
+          "must_see": 0.06666666666666667,
+          "aspect": 0.8333333333333334,
+          "xq_claim": 0.25,
+          "per_q": {
+            "per_question": {
+              "439521858": {
+                "value": 0.3333333333333333,
+                "covered_units": 3,
+                "scorable_units": 9
+              },
+              "462973596": {
+                "value": 0.2857142857142857,
+                "covered_units": 2,
+                "scorable_units": 7
+              },
+              "466695857": {
+                "value": 0.25,
+                "covered_units": 2,
+                "scorable_units": 8
+              },
+              "477427067": {
+                "value": 0.2727272727272727,
+                "covered_units": 3,
+                "scorable_units": 11
+              },
+              "485463474": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 5
+              },
+              "487214224": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 6,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.1738095238095238,
+          "minority_min": 0,
+          "diversity": 0.8639999999999999,
+          "redundancy": 0.7484079581737711,
+          "selected": [
+            "477427067:3050814230",
+            "439521858:1780646730",
+            "477427067:1963909107758106013",
+            "466695857:2099716352",
+            "462973596:2052511352"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-synth-dominance",
+      "budget_key": "K_LARGE",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 40,
+          "must_see": 0,
+          "aspect": 0,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-D1": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 12
+              },
+              "Q-SYN-D2": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              },
+              "Q-SYN-D3": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 3,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0,
+          "minority_min": 0,
+          "diversity": 0,
+          "redundancy": 0.7729586099540776,
+          "selected": [
+            "Q-SYN-D1:100744",
+            "Q-SYN-D1:100843",
+            "Q-SYN-D1:100899",
+            "Q-SYN-D1:100386",
+            "Q-SYN-D1:100619",
+            "Q-SYN-D1:100861",
+            "Q-SYN-D1:100315",
+            "Q-SYN-D1:100536",
+            "Q-SYN-D1:100939",
+            "Q-SYN-D1:100488",
+            "Q-SYN-D1:100531",
+            "Q-SYN-D1:100567",
+            "Q-SYN-D1:100943",
+            "Q-SYN-D1:100821",
+            "Q-SYN-D1:100233",
+            "Q-SYN-D1:100571",
+            "Q-SYN-D1:100209",
+            "Q-SYN-D1:100376",
+            "Q-SYN-D1:100284",
+            "Q-SYN-D1:100211",
+            "Q-SYN-D1:100145",
+            "Q-SYN-D1:100942",
+            "Q-SYN-D1:100908",
+            "Q-SYN-D1:100753",
+            "Q-SYN-D1:100248",
+            "Q-SYN-D1:100366",
+            "Q-SYN-D1:100953",
+            "Q-SYN-D1:100450",
+            "Q-SYN-D1:100949",
+            "Q-SYN-D1:100252",
+            "Q-SYN-D1:100673",
+            "Q-SYN-D1:100771",
+            "Q-SYN-D1:100175",
+            "Q-SYN-D1:100882",
+            "Q-SYN-D1:100542",
+            "Q-SYN-D1:100368",
+            "Q-SYN-D1:100587",
+            "Q-SYN-D1:100357",
+            "Q-SYN-D1:100229",
+            "Q-SYN-D1:100332"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 40,
+          "must_see": 0,
+          "aspect": 0.3333333333333333,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-D1": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 12
+              },
+              "Q-SYN-D2": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              },
+              "Q-SYN-D3": {
+                "value": 0.3333333333333333,
+                "covered_units": 1,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 3,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.16666666666666666,
+          "minority_min": 0,
+          "diversity": 0.8774999999999998,
+          "redundancy": 0.6940603700532715,
+          "selected": [
+            "Q-SYN-D3:300004",
+            "Q-SYN-D3:300027",
+            "Q-SYN-D3:300022",
+            "Q-SYN-D3:300030",
+            "Q-SYN-D3:300003",
+            "Q-SYN-D3:300026",
+            "Q-SYN-D3:300002",
+            "Q-SYN-D3:300007",
+            "Q-SYN-D3:300012",
+            "Q-SYN-D3:300017",
+            "Q-SYN-D3:300019",
+            "Q-SYN-D3:300023",
+            "Q-SYN-D3:300005",
+            "Q-SYN-D3:300006",
+            "Q-SYN-D3:300025",
+            "Q-SYN-D1:100384",
+            "Q-SYN-D2:200023",
+            "Q-SYN-D2:200034",
+            "Q-SYN-D1:100172",
+            "Q-SYN-D1:100388",
+            "Q-SYN-D1:100430",
+            "Q-SYN-D2:200009",
+            "Q-SYN-D3:300010",
+            "Q-SYN-D3:300015",
+            "Q-SYN-D3:300028",
+            "Q-SYN-D1:100356",
+            "Q-SYN-D1:100469",
+            "Q-SYN-D2:200021",
+            "Q-SYN-D2:200042",
+            "Q-SYN-D1:100074",
+            "Q-SYN-D1:100258",
+            "Q-SYN-D1:100646",
+            "Q-SYN-D1:100985",
+            "Q-SYN-D3:300009",
+            "Q-SYN-D3:300013",
+            "Q-SYN-D3:300016",
+            "Q-SYN-D3:300020",
+            "Q-SYN-D1:100518",
+            "Q-SYN-D1:100535",
+            "Q-SYN-D2:200031"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 40,
+          "must_see": 0.08333333333333333,
+          "aspect": 1,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-D1": {
+                "value": 0.16666666666666666,
+                "covered_units": 2,
+                "scorable_units": 12
+              },
+              "Q-SYN-D2": {
+                "value": 0.6666666666666666,
+                "covered_units": 2,
+                "scorable_units": 3
+              },
+              "Q-SYN-D3": {
+                "value": 0.3333333333333333,
+                "covered_units": 1,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 3,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.5,
+          "minority_min": 0.3333333333333333,
+          "diversity": 0.9206249999999999,
+          "redundancy": 0.6576947739738207,
+          "selected": [
+            "Q-SYN-D3:300004",
+            "Q-SYN-D1:100384",
+            "Q-SYN-D2:200023",
+            "Q-SYN-D3:300022",
+            "Q-SYN-D3:300012",
+            "Q-SYN-D3:300005",
+            "Q-SYN-D3:300010",
+            "Q-SYN-D1:100356",
+            "Q-SYN-D2:200021",
+            "Q-SYN-D1:100241",
+            "Q-SYN-D2:200012",
+            "Q-SYN-D1:100361",
+            "Q-SYN-D1:100620",
+            "Q-SYN-D1:100319",
+            "Q-SYN-D2:200050",
+            "Q-SYN-D3:300001",
+            "Q-SYN-D2:200011",
+            "Q-SYN-D2:200022",
+            "Q-SYN-D1:100018",
+            "Q-SYN-D1:100271",
+            "Q-SYN-D2:200027",
+            "Q-SYN-D1:100088",
+            "Q-SYN-D2:200041",
+            "Q-SYN-D1:100153",
+            "Q-SYN-D1:100158",
+            "Q-SYN-D3:300011",
+            "Q-SYN-D2:200007",
+            "Q-SYN-D2:200026",
+            "Q-SYN-D2:200036",
+            "Q-SYN-D1:100118",
+            "Q-SYN-D1:100536",
+            "Q-SYN-D1:100091",
+            "Q-SYN-D1:100280",
+            "Q-SYN-D2:200008",
+            "Q-SYN-D1:100143",
+            "Q-SYN-D1:100022",
+            "Q-SYN-D1:100071",
+            "Q-SYN-D2:200002",
+            "Q-SYN-D1:100038",
+            "Q-SYN-D1:100006"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 40,
+          "must_see": 0.08333333333333333,
+          "aspect": 0.6666666666666666,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-D1": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 12
+              },
+              "Q-SYN-D2": {
+                "value": 1,
+                "covered_units": 3,
+                "scorable_units": 3
+              },
+              "Q-SYN-D3": {
+                "value": 0.3333333333333333,
+                "covered_units": 1,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 3,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.6666666666666666,
+          "minority_min": 0.3333333333333333,
+          "diversity": 0.9543749999999999,
+          "redundancy": 0.6626440291366772,
+          "selected": [
+            "Q-SYN-D3:300004",
+            "Q-SYN-D1:100430",
+            "Q-SYN-D3:300022",
+            "Q-SYN-D2:200016",
+            "Q-SYN-D3:300003",
+            "Q-SYN-D1:100895",
+            "Q-SYN-D3:300005",
+            "Q-SYN-D2:200032",
+            "Q-SYN-D2:200023",
+            "Q-SYN-D2:200001",
+            "Q-SYN-D3:300027",
+            "Q-SYN-D3:300013",
+            "Q-SYN-D3:300030",
+            "Q-SYN-D1:100355",
+            "Q-SYN-D3:300026",
+            "Q-SYN-D2:200004",
+            "Q-SYN-D3:300012",
+            "Q-SYN-D1:100985",
+            "Q-SYN-D3:300002",
+            "Q-SYN-D2:200017",
+            "Q-SYN-D3:300006",
+            "Q-SYN-D1:100535",
+            "Q-SYN-D3:300007",
+            "Q-SYN-D3:300016",
+            "Q-SYN-D3:300010",
+            "Q-SYN-D1:100150",
+            "Q-SYN-D3:300017",
+            "Q-SYN-D2:200015",
+            "Q-SYN-D3:300019",
+            "Q-SYN-D1:100620",
+            "Q-SYN-D3:300023",
+            "Q-SYN-D2:200026",
+            "Q-SYN-D1:100266",
+            "Q-SYN-D1:100190",
+            "Q-SYN-D3:300025",
+            "Q-SYN-D2:200035",
+            "Q-SYN-D1:100384",
+            "Q-SYN-D1:100025",
+            "Q-SYN-D3:300001",
+            "Q-SYN-D2:200020"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 40,
+          "must_see": 0.5,
+          "aspect": 1,
+          "xq_claim": 1,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-D1": {
+                "value": 0.5833333333333334,
+                "covered_units": 7,
+                "scorable_units": 12
+              },
+              "Q-SYN-D2": {
+                "value": 1,
+                "covered_units": 3,
+                "scorable_units": 3
+              },
+              "Q-SYN-D3": {
+                "value": 0.3333333333333333,
+                "covered_units": 1,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 3,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.6666666666666666,
+          "minority_min": 0.3333333333333333,
+          "diversity": 0.9618749999999999,
+          "redundancy": 0.6465861316097888,
+          "selected": [
+            "Q-SYN-D3:300004",
+            "Q-SYN-D2:200001",
+            "Q-SYN-D3:300022",
+            "Q-SYN-D2:200017",
+            "Q-SYN-D1:100004",
+            "Q-SYN-D1:100384",
+            "Q-SYN-D2:200005",
+            "Q-SYN-D3:300003",
+            "Q-SYN-D2:200032",
+            "Q-SYN-D2:200004",
+            "Q-SYN-D3:300005",
+            "Q-SYN-D2:200002",
+            "Q-SYN-D3:300027",
+            "Q-SYN-D3:300013",
+            "Q-SYN-D1:100005",
+            "Q-SYN-D3:300030",
+            "Q-SYN-D2:200003",
+            "Q-SYN-D3:300026",
+            "Q-SYN-D2:200016",
+            "Q-SYN-D1:100001",
+            "Q-SYN-D2:200023",
+            "Q-SYN-D3:300012",
+            "Q-SYN-D3:300016",
+            "Q-SYN-D1:100002",
+            "Q-SYN-D3:300002",
+            "Q-SYN-D3:300006",
+            "Q-SYN-D2:200015",
+            "Q-SYN-D1:100003",
+            "Q-SYN-D3:300007",
+            "Q-SYN-D3:300010",
+            "Q-SYN-D2:200026",
+            "Q-SYN-D1:100172",
+            "Q-SYN-D3:300017",
+            "Q-SYN-D2:200035",
+            "Q-SYN-D3:300019",
+            "Q-SYN-D3:300023",
+            "Q-SYN-D1:100241",
+            "Q-SYN-D1:100518",
+            "Q-SYN-D3:300025",
+            "Q-SYN-D2:200021"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-synth-dominance",
+      "budget_key": "K_MEDIUM",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 20,
+          "must_see": 0,
+          "aspect": 0,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-D1": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 12
+              },
+              "Q-SYN-D2": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              },
+              "Q-SYN-D3": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 3,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0,
+          "minority_min": 0,
+          "diversity": 0,
+          "redundancy": 0.7649248471182165,
+          "selected": [
+            "Q-SYN-D1:100744",
+            "Q-SYN-D1:100843",
+            "Q-SYN-D1:100899",
+            "Q-SYN-D1:100386",
+            "Q-SYN-D1:100619",
+            "Q-SYN-D1:100861",
+            "Q-SYN-D1:100315",
+            "Q-SYN-D1:100536",
+            "Q-SYN-D1:100939",
+            "Q-SYN-D1:100488",
+            "Q-SYN-D1:100531",
+            "Q-SYN-D1:100567",
+            "Q-SYN-D1:100943",
+            "Q-SYN-D1:100821",
+            "Q-SYN-D1:100233",
+            "Q-SYN-D1:100571",
+            "Q-SYN-D1:100209",
+            "Q-SYN-D1:100376",
+            "Q-SYN-D1:100284",
+            "Q-SYN-D1:100211"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 20,
+          "must_see": 0,
+          "aspect": 0.3333333333333333,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-D1": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 12
+              },
+              "Q-SYN-D2": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              },
+              "Q-SYN-D3": {
+                "value": 0.3333333333333333,
+                "covered_units": 1,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 3,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.16666666666666666,
+          "minority_min": 0,
+          "diversity": 0.6074999999999999,
+          "redundancy": 0.7564499474699612,
+          "selected": [
+            "Q-SYN-D3:300004",
+            "Q-SYN-D3:300027",
+            "Q-SYN-D3:300022",
+            "Q-SYN-D3:300030",
+            "Q-SYN-D3:300003",
+            "Q-SYN-D3:300026",
+            "Q-SYN-D3:300002",
+            "Q-SYN-D3:300007",
+            "Q-SYN-D3:300012",
+            "Q-SYN-D3:300017",
+            "Q-SYN-D3:300019",
+            "Q-SYN-D3:300023",
+            "Q-SYN-D3:300005",
+            "Q-SYN-D3:300006",
+            "Q-SYN-D3:300025",
+            "Q-SYN-D1:100384",
+            "Q-SYN-D2:200023",
+            "Q-SYN-D2:200034",
+            "Q-SYN-D1:100172",
+            "Q-SYN-D1:100388"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 20,
+          "must_see": 0,
+          "aspect": 0.3333333333333333,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-D1": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 12
+              },
+              "Q-SYN-D2": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              },
+              "Q-SYN-D3": {
+                "value": 0.3333333333333333,
+                "covered_units": 1,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 3,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.16666666666666666,
+          "minority_min": 0,
+          "diversity": 0.99,
+          "redundancy": 0.6727011718579926,
+          "selected": [
+            "Q-SYN-D3:300004",
+            "Q-SYN-D1:100384",
+            "Q-SYN-D2:200023",
+            "Q-SYN-D3:300022",
+            "Q-SYN-D3:300012",
+            "Q-SYN-D3:300005",
+            "Q-SYN-D3:300010",
+            "Q-SYN-D1:100356",
+            "Q-SYN-D2:200021",
+            "Q-SYN-D1:100241",
+            "Q-SYN-D2:200012",
+            "Q-SYN-D1:100361",
+            "Q-SYN-D1:100620",
+            "Q-SYN-D1:100319",
+            "Q-SYN-D2:200050",
+            "Q-SYN-D3:300001",
+            "Q-SYN-D2:200011",
+            "Q-SYN-D2:200022",
+            "Q-SYN-D1:100018",
+            "Q-SYN-D1:100271"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 20,
+          "must_see": 0.08333333333333333,
+          "aspect": 0.6666666666666666,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-D1": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 12
+              },
+              "Q-SYN-D2": {
+                "value": 1,
+                "covered_units": 3,
+                "scorable_units": 3
+              },
+              "Q-SYN-D3": {
+                "value": 0.3333333333333333,
+                "covered_units": 1,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 3,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.6666666666666666,
+          "minority_min": 0.3333333333333333,
+          "diversity": 0.9299999999999999,
+          "redundancy": 0.6763403266871781,
+          "selected": [
+            "Q-SYN-D3:300004",
+            "Q-SYN-D1:100430",
+            "Q-SYN-D3:300022",
+            "Q-SYN-D2:200016",
+            "Q-SYN-D3:300003",
+            "Q-SYN-D1:100895",
+            "Q-SYN-D3:300005",
+            "Q-SYN-D2:200032",
+            "Q-SYN-D2:200023",
+            "Q-SYN-D2:200001",
+            "Q-SYN-D3:300027",
+            "Q-SYN-D3:300013",
+            "Q-SYN-D3:300030",
+            "Q-SYN-D1:100355",
+            "Q-SYN-D3:300026",
+            "Q-SYN-D2:200004",
+            "Q-SYN-D3:300012",
+            "Q-SYN-D1:100985",
+            "Q-SYN-D3:300002",
+            "Q-SYN-D2:200017"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 20,
+          "must_see": 0.3333333333333333,
+          "aspect": 1,
+          "xq_claim": 1,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-D1": {
+                "value": 0.4166666666666667,
+                "covered_units": 5,
+                "scorable_units": 12
+              },
+              "Q-SYN-D2": {
+                "value": 1,
+                "covered_units": 3,
+                "scorable_units": 3
+              },
+              "Q-SYN-D3": {
+                "value": 0.3333333333333333,
+                "covered_units": 1,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 3,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.6666666666666666,
+          "minority_min": 0.3333333333333333,
+          "diversity": 0.9599999999999997,
+          "redundancy": 0.6494072227199593,
+          "selected": [
+            "Q-SYN-D3:300004",
+            "Q-SYN-D2:200001",
+            "Q-SYN-D3:300022",
+            "Q-SYN-D2:200017",
+            "Q-SYN-D1:100004",
+            "Q-SYN-D1:100384",
+            "Q-SYN-D2:200005",
+            "Q-SYN-D3:300003",
+            "Q-SYN-D2:200032",
+            "Q-SYN-D2:200004",
+            "Q-SYN-D3:300005",
+            "Q-SYN-D2:200002",
+            "Q-SYN-D3:300027",
+            "Q-SYN-D3:300013",
+            "Q-SYN-D1:100005",
+            "Q-SYN-D3:300030",
+            "Q-SYN-D2:200003",
+            "Q-SYN-D3:300026",
+            "Q-SYN-D2:200016",
+            "Q-SYN-D1:100001"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-synth-dominance",
+      "budget_key": "K_SMALL",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 10,
+          "must_see": 0,
+          "aspect": 0,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-D1": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 12
+              },
+              "Q-SYN-D2": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              },
+              "Q-SYN-D3": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 3,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0,
+          "minority_min": 0,
+          "diversity": 0,
+          "redundancy": 0.7568227386992586,
+          "selected": [
+            "Q-SYN-D1:100744",
+            "Q-SYN-D1:100843",
+            "Q-SYN-D1:100899",
+            "Q-SYN-D1:100386",
+            "Q-SYN-D1:100619",
+            "Q-SYN-D1:100861",
+            "Q-SYN-D1:100315",
+            "Q-SYN-D1:100536",
+            "Q-SYN-D1:100939",
+            "Q-SYN-D1:100488"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 10,
+          "must_see": 0,
+          "aspect": 0.3333333333333333,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-D1": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 12
+              },
+              "Q-SYN-D2": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              },
+              "Q-SYN-D3": {
+                "value": 0.3333333333333333,
+                "covered_units": 1,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 3,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.16666666666666666,
+          "minority_min": 0,
+          "diversity": 0,
+          "redundancy": 0.9147231917908032,
+          "selected": [
+            "Q-SYN-D3:300004",
+            "Q-SYN-D3:300027",
+            "Q-SYN-D3:300022",
+            "Q-SYN-D3:300030",
+            "Q-SYN-D3:300003",
+            "Q-SYN-D3:300026",
+            "Q-SYN-D3:300002",
+            "Q-SYN-D3:300007",
+            "Q-SYN-D3:300012",
+            "Q-SYN-D3:300017"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 10,
+          "must_see": 0,
+          "aspect": 0.3333333333333333,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-D1": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 12
+              },
+              "Q-SYN-D2": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 3
+              },
+              "Q-SYN-D3": {
+                "value": 0.3333333333333333,
+                "covered_units": 1,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 3,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.16666666666666666,
+          "minority_min": 0,
+          "diversity": 0.9299999999999999,
+          "redundancy": 0.6813254905171139,
+          "selected": [
+            "Q-SYN-D3:300004",
+            "Q-SYN-D1:100384",
+            "Q-SYN-D2:200023",
+            "Q-SYN-D3:300022",
+            "Q-SYN-D3:300012",
+            "Q-SYN-D3:300005",
+            "Q-SYN-D3:300010",
+            "Q-SYN-D1:100356",
+            "Q-SYN-D2:200021",
+            "Q-SYN-D1:100241"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 10,
+          "must_see": 0.08333333333333333,
+          "aspect": 0.6666666666666666,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-D1": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 12
+              },
+              "Q-SYN-D2": {
+                "value": 1,
+                "covered_units": 3,
+                "scorable_units": 3
+              },
+              "Q-SYN-D3": {
+                "value": 0.3333333333333333,
+                "covered_units": 1,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 3,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.6666666666666666,
+          "minority_min": 0.3333333333333333,
+          "diversity": 0.9299999999999999,
+          "redundancy": 0.6775178917830837,
+          "selected": [
+            "Q-SYN-D3:300004",
+            "Q-SYN-D1:100430",
+            "Q-SYN-D3:300022",
+            "Q-SYN-D2:200016",
+            "Q-SYN-D3:300003",
+            "Q-SYN-D1:100895",
+            "Q-SYN-D3:300005",
+            "Q-SYN-D2:200050",
+            "Q-SYN-D2:200001",
+            "Q-SYN-D3:300027"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 10,
+          "must_see": 0.16666666666666666,
+          "aspect": 1,
+          "xq_claim": 1,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-D1": {
+                "value": 0.25,
+                "covered_units": 3,
+                "scorable_units": 12
+              },
+              "Q-SYN-D2": {
+                "value": 1,
+                "covered_units": 3,
+                "scorable_units": 3
+              },
+              "Q-SYN-D3": {
+                "value": 0.3333333333333333,
+                "covered_units": 1,
+                "scorable_units": 3
+              }
+            },
+            "scorable_question_count": 3,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.6666666666666666,
+          "minority_min": 0.3333333333333333,
+          "diversity": 0.9299999999999999,
+          "redundancy": 0.6483591834572248,
+          "selected": [
+            "Q-SYN-D3:300004",
+            "Q-SYN-D2:200001",
+            "Q-SYN-D3:300022",
+            "Q-SYN-D2:200017",
+            "Q-SYN-D1:100004",
+            "Q-SYN-D1:100384",
+            "Q-SYN-D2:200005",
+            "Q-SYN-D3:300003",
+            "Q-SYN-D2:200032",
+            "Q-SYN-D2:200004"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-synth-expert",
+      "budget_key": "K_LARGE",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 10,
+          "must_see": 0.25,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-E1": {
+                "value": 0.2,
+                "covered_units": 3,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7350045961965314,
+          "selected": [
+            "Q-SYN-E1:410001",
+            "Q-SYN-E1:410020",
+            "Q-SYN-E1:410010",
+            "Q-SYN-E1:410026",
+            "Q-SYN-E1:410002",
+            "Q-SYN-E1:410009",
+            "Q-SYN-E1:410015",
+            "Q-SYN-E1:410019",
+            "Q-SYN-E1:410027",
+            "Q-SYN-E1:410004"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 10,
+          "must_see": 0.625,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-E1": {
+                "value": 0.7333333333333333,
+                "covered_units": 11,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.6680973090821273,
+          "selected": [
+            "Q-SYN-E1:400005",
+            "Q-SYN-E1:400007",
+            "Q-SYN-E1:400002",
+            "Q-SYN-E1:400003",
+            "Q-SYN-E1:400004",
+            "Q-SYN-E1:400006",
+            "Q-SYN-E1:400010",
+            "Q-SYN-E1:400008",
+            "Q-SYN-E1:400001",
+            "Q-SYN-E1:400009"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 10,
+          "must_see": 0.5,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-E1": {
+                "value": 0.5333333333333333,
+                "covered_units": 8,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.6320763423877817,
+          "selected": [
+            "Q-SYN-E1:400005",
+            "Q-SYN-E1:400007",
+            "Q-SYN-E1:400002",
+            "Q-SYN-E1:400003",
+            "Q-SYN-E1:400006",
+            "Q-SYN-E1:400008",
+            "Q-SYN-E1:400001",
+            "Q-SYN-E1:410021",
+            "Q-SYN-E1:410012",
+            "Q-SYN-E1:410004"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 10,
+          "must_see": 0.625,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-E1": {
+                "value": 0.6666666666666666,
+                "covered_units": 10,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.6061258304314343,
+          "selected": [
+            "Q-SYN-E1:400005",
+            "Q-SYN-E1:400006",
+            "Q-SYN-E1:400003",
+            "Q-SYN-E1:410021",
+            "Q-SYN-E1:400002",
+            "Q-SYN-E1:400008",
+            "Q-SYN-E1:400007",
+            "Q-SYN-E1:400001",
+            "Q-SYN-E1:410002",
+            "Q-SYN-E1:410030"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 10,
+          "must_see": 0.75,
+          "aspect": 1,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-E1": {
+                "value": 0.7333333333333333,
+                "covered_units": 11,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.6389721932906635,
+          "selected": [
+            "Q-SYN-E1:400005",
+            "Q-SYN-E1:400006",
+            "Q-SYN-E1:400003",
+            "Q-SYN-E1:410021",
+            "Q-SYN-E1:400002",
+            "Q-SYN-E1:400008",
+            "Q-SYN-E1:400007",
+            "Q-SYN-E1:400001",
+            "Q-SYN-E1:410002",
+            "Q-SYN-E1:400004"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-synth-expert",
+      "budget_key": "K_MEDIUM",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0.25,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-E1": {
+                "value": 0.2,
+                "covered_units": 3,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7853488663452022,
+          "selected": [
+            "Q-SYN-E1:410001",
+            "Q-SYN-E1:410020",
+            "Q-SYN-E1:410010",
+            "Q-SYN-E1:410026",
+            "Q-SYN-E1:410002"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0.5,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-E1": {
+                "value": 0.4,
+                "covered_units": 6,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7034366918416565,
+          "selected": [
+            "Q-SYN-E1:400005",
+            "Q-SYN-E1:400007",
+            "Q-SYN-E1:400002",
+            "Q-SYN-E1:400003",
+            "Q-SYN-E1:400004"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0.375,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-E1": {
+                "value": 0.4,
+                "covered_units": 6,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.6731391246018072,
+          "selected": [
+            "Q-SYN-E1:400005",
+            "Q-SYN-E1:400007",
+            "Q-SYN-E1:400002",
+            "Q-SYN-E1:400003",
+            "Q-SYN-E1:400006"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 5,
+          "must_see": 0.375,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-E1": {
+                "value": 0.3333333333333333,
+                "covered_units": 5,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.6329034721508114,
+          "selected": [
+            "Q-SYN-E1:400005",
+            "Q-SYN-E1:400006",
+            "Q-SYN-E1:400003",
+            "Q-SYN-E1:410021",
+            "Q-SYN-E1:400002"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 5,
+          "must_see": 0.375,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-E1": {
+                "value": 0.3333333333333333,
+                "covered_units": 5,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.6329034721508114,
+          "selected": [
+            "Q-SYN-E1:400005",
+            "Q-SYN-E1:400006",
+            "Q-SYN-E1:400003",
+            "Q-SYN-E1:410021",
+            "Q-SYN-E1:400002"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-synth-expert",
+      "budget_key": "K_SMALL",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0.125,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-E1": {
+                "value": 0.13333333333333333,
+                "covered_units": 2,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.7745624759225439,
+          "selected": [
+            "Q-SYN-E1:410001",
+            "Q-SYN-E1:410020",
+            "Q-SYN-E1:410010"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0.25,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-E1": {
+                "value": 0.26666666666666666,
+                "covered_units": 4,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.6900164394417886,
+          "selected": [
+            "Q-SYN-E1:400005",
+            "Q-SYN-E1:400007",
+            "Q-SYN-E1:400002"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0.25,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-E1": {
+                "value": 0.26666666666666666,
+                "covered_units": 4,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.6900164394417886,
+          "selected": [
+            "Q-SYN-E1:400005",
+            "Q-SYN-E1:400007",
+            "Q-SYN-E1:400002"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 3,
+          "must_see": 0.25,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-E1": {
+                "value": 0.26666666666666666,
+                "covered_units": 4,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.6529924817933023,
+          "selected": [
+            "Q-SYN-E1:400005",
+            "Q-SYN-E1:400006",
+            "Q-SYN-E1:400003"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 3,
+          "must_see": 0.25,
+          "aspect": 0.5,
+          "xq_claim": null,
+          "per_q": {
+            "per_question": {
+              "Q-SYN-E1": {
+                "value": 0.26666666666666666,
+                "covered_units": 4,
+                "scorable_units": 15
+              }
+            },
+            "scorable_question_count": 1,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": null,
+          "minority_min": null,
+          "diversity": null,
+          "redundancy": 0.6529924817933023,
+          "selected": [
+            "Q-SYN-E1:400005",
+            "Q-SYN-E1:400006",
+            "Q-SYN-E1:400003"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-hpylori-treatment",
+      "budget_key": "K_LARGE",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 24,
+          "must_see": 0.36363636363636365,
+          "aspect": 0.8571428571428571,
+          "xq_claim": 0.25,
+          "per_q": {
+            "per_question": {
+              "52215270": {
+                "value": 0.43902439024390244,
+                "covered_units": 18,
+                "scorable_units": 41
+              },
+              "525603218": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 9
+              },
+              "533032588": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 17
+              },
+              "616791818": {
+                "value": 0.23809523809523808,
+                "covered_units": 5,
+                "scorable_units": 21
+              },
+              "3376603186": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 9
+              }
+            },
+            "scorable_question_count": 5,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.05952380952380952,
+          "minority_min": 0,
+          "diversity": 0.2734375,
+          "redundancy": 0.7829333535243714,
+          "selected": [
+            "52215270:1829396577",
+            "52215270:1909462572",
+            "52215270:2326510132",
+            "52215270:2014865559",
+            "52215270:975101683",
+            "52215270:1751794385",
+            "52215270:1308415055",
+            "616791818:3164788252",
+            "52215270:1876563261",
+            "52215270:1546721934",
+            "52215270:1809284916",
+            "616791818:3257696322",
+            "52215270:3312209969",
+            "52215270:2272668883",
+            "52215270:3599356918",
+            "52215270:2595133035",
+            "52215270:2042267633",
+            "52215270:556686085",
+            "52215270:1466037599",
+            "52215270:2312503952",
+            "52215270:1473588196",
+            "52215270:2487666293",
+            "52215270:3325360572",
+            "616791818:100435850777"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 24,
+          "must_see": 0.18181818181818182,
+          "aspect": 0.7142857142857143,
+          "xq_claim": 0.25,
+          "per_q": {
+            "per_question": {
+              "52215270": {
+                "value": 0.24390243902439024,
+                "covered_units": 10,
+                "scorable_units": 41
+              },
+              "525603218": {
+                "value": 0.1111111111111111,
+                "covered_units": 1,
+                "scorable_units": 9
+              },
+              "533032588": {
+                "value": 0.058823529411764705,
+                "covered_units": 1,
+                "scorable_units": 17
+              },
+              "616791818": {
+                "value": 0.047619047619047616,
+                "covered_units": 1,
+                "scorable_units": 21
+              },
+              "3376603186": {
+                "value": 0.4444444444444444,
+                "covered_units": 4,
+                "scorable_units": 9
+              }
+            },
+            "scorable_question_count": 5,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.16549953314659194,
+          "minority_min": 0.047619047619047616,
+          "diversity": 0.6553819444444444,
+          "redundancy": 0.8621765799649197,
+          "selected": [
+            "3376603186:28820202588",
+            "52215270:3135772229",
+            "52215270:1785021055",
+            "52215270:2296865871",
+            "52215270:2723267423",
+            "52215270:3599356918",
+            "52215270:3041977917",
+            "52215270:1045312528",
+            "525603218:2452223602",
+            "616791818:3162185276",
+            "52215270:2326510132",
+            "52215270:2275231958",
+            "616791818:1955368980899402784",
+            "616791818:100435850777",
+            "52215270:3156697298",
+            "533032588:2490915044",
+            "52215270:2580378256",
+            "525603218:2439553978",
+            "533032588:2491991837",
+            "52215270:3469375511",
+            "52215270:2569715050",
+            "52215270:2368983902",
+            "52215270:2874637547",
+            "52215270:2301329431"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 24,
+          "must_see": 0.18181818181818182,
+          "aspect": 0.8571428571428571,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "52215270": {
+                "value": 0.1951219512195122,
+                "covered_units": 8,
+                "scorable_units": 41
+              },
+              "525603218": {
+                "value": 0.3333333333333333,
+                "covered_units": 3,
+                "scorable_units": 9
+              },
+              "533032588": {
+                "value": 0.058823529411764705,
+                "covered_units": 1,
+                "scorable_units": 17
+              },
+              "616791818": {
+                "value": 0.19047619047619047,
+                "covered_units": 4,
+                "scorable_units": 21
+              },
+              "3376603186": {
+                "value": 0.4444444444444444,
+                "covered_units": 4,
+                "scorable_units": 9
+              }
+            },
+            "scorable_question_count": 5,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.2567693744164332,
+          "minority_min": 0.058823529411764705,
+          "diversity": 0.802951388888889,
+          "redundancy": 0.8323458610262341,
+          "selected": [
+            "3376603186:28820202588",
+            "52215270:3135772229",
+            "525603218:2452223602",
+            "616791818:3162185276",
+            "533032588:2490915044",
+            "52215270:2296865871",
+            "52215270:3599356918",
+            "52215270:3041977917",
+            "616791818:1955368980899402784",
+            "52215270:3156697298",
+            "52215270:2580378256",
+            "533032588:2491991837",
+            "52215270:2874637547",
+            "52215270:2301329431",
+            "525603218:2451056296",
+            "616791818:3162664036",
+            "52215270:2038115913",
+            "52215270:556686085",
+            "52215270:1700601664",
+            "525603218:2425975849",
+            "52215270:2487142104",
+            "616791818:105981792797",
+            "525603218:2440646193",
+            "52215270:2529421586"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 24,
+          "must_see": 0.36363636363636365,
+          "aspect": 0.7142857142857143,
+          "xq_claim": 0.25,
+          "per_q": {
+            "per_question": {
+              "52215270": {
+                "value": 0.36585365853658536,
+                "covered_units": 15,
+                "scorable_units": 41
+              },
+              "525603218": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 9
+              },
+              "533032588": {
+                "value": 0.23529411764705882,
+                "covered_units": 4,
+                "scorable_units": 17
+              },
+              "616791818": {
+                "value": 0.14285714285714285,
+                "covered_units": 3,
+                "scorable_units": 21
+              },
+              "3376603186": {
+                "value": 0.4444444444444444,
+                "covered_units": 4,
+                "scorable_units": 9
+              }
+            },
+            "scorable_question_count": 5,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.20564892623716152,
+          "minority_min": 0,
+          "diversity": 0.685763888888889,
+          "redundancy": 0.8009308832214801,
+          "selected": [
+            "3376603186:28820202588",
+            "52215270:3599356918",
+            "616791818:1955368980899402784",
+            "533032588:2491991837",
+            "616791818:105981792797",
+            "533032588:2502760023",
+            "616791818:1984271783860406148",
+            "52215270:2723267423",
+            "52215270:2296865871",
+            "52215270:2326510132",
+            "533032588:1949471360410695335",
+            "52215270:3135772229",
+            "52215270:1785021055",
+            "52215270:2297169997",
+            "52215270:2051757753643823511",
+            "52215270:2874637547",
+            "52215270:3041977917",
+            "533032588:2520479547",
+            "52215270:2071906039922963690",
+            "52215270:2038115913",
+            "533032588:2488625187",
+            "52215270:1515402768",
+            "52215270:1988509248930456248",
+            "52215270:3156697298"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 24,
+          "must_see": 0.2727272727272727,
+          "aspect": 0.8571428571428571,
+          "xq_claim": 0.25,
+          "per_q": {
+            "per_question": {
+              "52215270": {
+                "value": 0.3170731707317073,
+                "covered_units": 13,
+                "scorable_units": 41
+              },
+              "525603218": {
+                "value": 0.2222222222222222,
+                "covered_units": 2,
+                "scorable_units": 9
+              },
+              "533032588": {
+                "value": 0.23529411764705882,
+                "covered_units": 4,
+                "scorable_units": 17
+              },
+              "616791818": {
+                "value": 0.14285714285714285,
+                "covered_units": 3,
+                "scorable_units": 21
+              },
+              "3376603186": {
+                "value": 0.4444444444444444,
+                "covered_units": 4,
+                "scorable_units": 9
+              }
+            },
+            "scorable_question_count": 5,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.26120448179271705,
+          "minority_min": 0.14285714285714285,
+          "diversity": 0.7508680555555555,
+          "redundancy": 0.8045082005400809,
+          "selected": [
+            "3376603186:28820202588",
+            "52215270:2874637547",
+            "616791818:1955368980899402784",
+            "52215270:2723267423",
+            "616791818:105981792797",
+            "52215270:2296865871",
+            "533032588:1949471360410695335",
+            "52215270:3135772229",
+            "52215270:3599356918",
+            "52215270:1785021055",
+            "616791818:1984271783860406148",
+            "533032588:2491991837",
+            "52215270:3041977917",
+            "52215270:2038115913",
+            "52215270:2051757753643823511",
+            "52215270:3156697298",
+            "533032588:2488625187",
+            "52215270:2326510132",
+            "52215270:2071906039922963690",
+            "533032588:2502760023",
+            "616791818:3162185276",
+            "52215270:2275231958",
+            "52215270:1988509248930456248",
+            "525603218:2440646193"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-hpylori-treatment",
+      "budget_key": "K_MEDIUM",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 15,
+          "must_see": 0.3181818181818182,
+          "aspect": 0.8571428571428571,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "52215270": {
+                "value": 0.36585365853658536,
+                "covered_units": 15,
+                "scorable_units": 41
+              },
+              "525603218": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 9
+              },
+              "533032588": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 17
+              },
+              "616791818": {
+                "value": 0.23809523809523808,
+                "covered_units": 5,
+                "scorable_units": 21
+              },
+              "3376603186": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 9
+              }
+            },
+            "scorable_question_count": 5,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.05952380952380952,
+          "minority_min": 0,
+          "diversity": 0.2888888888888888,
+          "redundancy": 0.7713290142710514,
+          "selected": [
+            "52215270:1829396577",
+            "52215270:1909462572",
+            "52215270:2326510132",
+            "52215270:2014865559",
+            "52215270:975101683",
+            "52215270:1751794385",
+            "52215270:1308415055",
+            "616791818:3164788252",
+            "52215270:1876563261",
+            "52215270:1546721934",
+            "52215270:1809284916",
+            "616791818:3257696322",
+            "52215270:3312209969",
+            "52215270:2272668883",
+            "52215270:3599356918"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 15,
+          "must_see": 0.13636363636363635,
+          "aspect": 0.7142857142857143,
+          "xq_claim": 0.25,
+          "per_q": {
+            "per_question": {
+              "52215270": {
+                "value": 0.1951219512195122,
+                "covered_units": 8,
+                "scorable_units": 41
+              },
+              "525603218": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 9
+              },
+              "533032588": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 17
+              },
+              "616791818": {
+                "value": 0.047619047619047616,
+                "covered_units": 1,
+                "scorable_units": 21
+              },
+              "3376603186": {
+                "value": 0.4444444444444444,
+                "covered_units": 4,
+                "scorable_units": 9
+              }
+            },
+            "scorable_question_count": 5,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.12301587301587301,
+          "minority_min": 0,
+          "diversity": 0.6333333333333333,
+          "redundancy": 0.8728389979472034,
+          "selected": [
+            "3376603186:28820202588",
+            "52215270:3135772229",
+            "52215270:1785021055",
+            "52215270:2296865871",
+            "52215270:2723267423",
+            "52215270:3599356918",
+            "52215270:3041977917",
+            "52215270:1045312528",
+            "525603218:2452223602",
+            "616791818:3162185276",
+            "52215270:2326510132",
+            "52215270:2275231958",
+            "616791818:1955368980899402784",
+            "616791818:100435850777",
+            "52215270:3156697298"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 15,
+          "must_see": 0.13636363636363635,
+          "aspect": 0.8571428571428571,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "52215270": {
+                "value": 0.14634146341463414,
+                "covered_units": 6,
+                "scorable_units": 41
+              },
+              "525603218": {
+                "value": 0.1111111111111111,
+                "covered_units": 1,
+                "scorable_units": 9
+              },
+              "533032588": {
+                "value": 0.058823529411764705,
+                "covered_units": 1,
+                "scorable_units": 17
+              },
+              "616791818": {
+                "value": 0.047619047619047616,
+                "covered_units": 1,
+                "scorable_units": 21
+              },
+              "3376603186": {
+                "value": 0.4444444444444444,
+                "covered_units": 4,
+                "scorable_units": 9
+              }
+            },
+            "scorable_question_count": 5,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.16549953314659194,
+          "minority_min": 0.047619047619047616,
+          "diversity": 0.8222222222222222,
+          "redundancy": 0.8521992418595478,
+          "selected": [
+            "3376603186:28820202588",
+            "52215270:3135772229",
+            "525603218:2452223602",
+            "616791818:3162185276",
+            "533032588:2490915044",
+            "52215270:2296865871",
+            "52215270:3599356918",
+            "52215270:3041977917",
+            "616791818:1955368980899402784",
+            "52215270:3156697298",
+            "52215270:2580378256",
+            "533032588:2491991837",
+            "52215270:2874637547",
+            "52215270:2301329431",
+            "525603218:2451056296"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 15,
+          "must_see": 0.18181818181818182,
+          "aspect": 0.7142857142857143,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "52215270": {
+                "value": 0.14634146341463414,
+                "covered_units": 6,
+                "scorable_units": 41
+              },
+              "525603218": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 9
+              },
+              "533032588": {
+                "value": 0.11764705882352941,
+                "covered_units": 2,
+                "scorable_units": 17
+              },
+              "616791818": {
+                "value": 0.14285714285714285,
+                "covered_units": 3,
+                "scorable_units": 21
+              },
+              "3376603186": {
+                "value": 0.4444444444444444,
+                "covered_units": 4,
+                "scorable_units": 9
+              }
+            },
+            "scorable_question_count": 5,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.17623716153127916,
+          "minority_min": 0,
+          "diversity": 0.788888888888889,
+          "redundancy": 0.8245134682281985,
+          "selected": [
+            "3376603186:28820202588",
+            "52215270:3599356918",
+            "616791818:1955368980899402784",
+            "533032588:2491991837",
+            "616791818:105981792797",
+            "533032588:2502760023",
+            "616791818:1984271783860406148",
+            "52215270:2723267423",
+            "52215270:2296865871",
+            "52215270:2326510132",
+            "533032588:1949471360410695335",
+            "52215270:3135772229",
+            "52215270:1785021055",
+            "52215270:2297169997",
+            "52215270:2051757753643823511"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 15,
+          "must_see": 0.13636363636363635,
+          "aspect": 0.7142857142857143,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "52215270": {
+                "value": 0.12195121951219512,
+                "covered_units": 5,
+                "scorable_units": 41
+              },
+              "525603218": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 9
+              },
+              "533032588": {
+                "value": 0.058823529411764705,
+                "covered_units": 1,
+                "scorable_units": 17
+              },
+              "616791818": {
+                "value": 0.14285714285714285,
+                "covered_units": 3,
+                "scorable_units": 21
+              },
+              "3376603186": {
+                "value": 0.4444444444444444,
+                "covered_units": 4,
+                "scorable_units": 9
+              }
+            },
+            "scorable_question_count": 5,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.16153127917833798,
+          "minority_min": 0,
+          "diversity": 0.7222222222222221,
+          "redundancy": 0.8263344393289735,
+          "selected": [
+            "3376603186:28820202588",
+            "52215270:2874637547",
+            "616791818:1955368980899402784",
+            "52215270:2723267423",
+            "616791818:105981792797",
+            "52215270:2296865871",
+            "533032588:1949471360410695335",
+            "52215270:3135772229",
+            "52215270:3599356918",
+            "52215270:1785021055",
+            "616791818:1984271783860406148",
+            "533032588:2491991837",
+            "52215270:3041977917",
+            "52215270:2038115913",
+            "52215270:2051757753643823511"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "case-hpylori-treatment",
+      "budget_key": "K_SMALL",
+      "rows": [
+        {
+          "strategy": "B0_POPULARITY_TOP_K",
+          "oracle": false,
+          "K": 10,
+          "must_see": 0.22727272727272727,
+          "aspect": 0.7142857142857143,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "52215270": {
+                "value": 0.2926829268292683,
+                "covered_units": 12,
+                "scorable_units": 41
+              },
+              "525603218": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 9
+              },
+              "533032588": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 17
+              },
+              "616791818": {
+                "value": 0.14285714285714285,
+                "covered_units": 3,
+                "scorable_units": 21
+              },
+              "3376603186": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 9
+              }
+            },
+            "scorable_question_count": 5,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.03571428571428571,
+          "minority_min": 0,
+          "diversity": 0.22499999999999992,
+          "redundancy": 0.7639408754009387,
+          "selected": [
+            "52215270:1829396577",
+            "52215270:1909462572",
+            "52215270:2326510132",
+            "52215270:2014865559",
+            "52215270:975101683",
+            "52215270:1751794385",
+            "52215270:1308415055",
+            "616791818:3164788252",
+            "52215270:1876563261",
+            "52215270:1546721934"
+          ]
+        },
+        {
+          "strategy": "B1_DENSE_SEMANTIC_TOP_K",
+          "oracle": false,
+          "K": 10,
+          "must_see": 0.045454545454545456,
+          "aspect": 0.2857142857142857,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "52215270": {
+                "value": 0.04878048780487805,
+                "covered_units": 2,
+                "scorable_units": 41
+              },
+              "525603218": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 9
+              },
+              "533032588": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 17
+              },
+              "616791818": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 21
+              },
+              "3376603186": {
+                "value": 0.4444444444444444,
+                "covered_units": 4,
+                "scorable_units": 9
+              }
+            },
+            "scorable_question_count": 5,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.1111111111111111,
+          "minority_min": 0,
+          "diversity": 0.6000000000000001,
+          "redundancy": 0.8766635678166588,
+          "selected": [
+            "3376603186:28820202588",
+            "52215270:3135772229",
+            "52215270:1785021055",
+            "52215270:2296865871",
+            "52215270:2723267423",
+            "52215270:3599356918",
+            "52215270:3041977917",
+            "52215270:1045312528",
+            "525603218:2452223602",
+            "616791818:3162185276"
+          ]
+        },
+        {
+          "strategy": "B2_QUESTION_STRATIFIED_SIMPLE",
+          "oracle": false,
+          "K": 10,
+          "must_see": 0.09090909090909091,
+          "aspect": 0.5714285714285714,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "52215270": {
+                "value": 0.0975609756097561,
+                "covered_units": 4,
+                "scorable_units": 41
+              },
+              "525603218": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 9
+              },
+              "533032588": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 17
+              },
+              "616791818": {
+                "value": 0.047619047619047616,
+                "covered_units": 1,
+                "scorable_units": 21
+              },
+              "3376603186": {
+                "value": 0.4444444444444444,
+                "covered_units": 4,
+                "scorable_units": 9
+              }
+            },
+            "scorable_question_count": 5,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.12301587301587301,
+          "minority_min": 0,
+          "diversity": 0.8499999999999999,
+          "redundancy": 0.8689472746307506,
+          "selected": [
+            "3376603186:28820202588",
+            "52215270:3135772229",
+            "525603218:2452223602",
+            "616791818:3162185276",
+            "533032588:2490915044",
+            "52215270:2296865871",
+            "52215270:3599356918",
+            "52215270:3041977917",
+            "616791818:1955368980899402784",
+            "52215270:3156697298"
+          ]
+        },
+        {
+          "strategy": "B3_DENSE_MMR_MULTI_LANE",
+          "oracle": false,
+          "K": 10,
+          "must_see": 0.13636363636363635,
+          "aspect": 0.5714285714285714,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "52215270": {
+                "value": 0.04878048780487805,
+                "covered_units": 2,
+                "scorable_units": 41
+              },
+              "525603218": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 9
+              },
+              "533032588": {
+                "value": 0.11764705882352941,
+                "covered_units": 2,
+                "scorable_units": 17
+              },
+              "616791818": {
+                "value": 0.14285714285714285,
+                "covered_units": 3,
+                "scorable_units": 21
+              },
+              "3376603186": {
+                "value": 0.4444444444444444,
+                "covered_units": 4,
+                "scorable_units": 9
+              }
+            },
+            "scorable_question_count": 5,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.17623716153127916,
+          "minority_min": 0,
+          "diversity": 0.8999999999999999,
+          "redundancy": 0.8062713965683719,
+          "selected": [
+            "3376603186:28820202588",
+            "52215270:3599356918",
+            "616791818:1955368980899402784",
+            "533032588:2491991837",
+            "616791818:105981792797",
+            "533032588:2502760023",
+            "616791818:1984271783860406148",
+            "52215270:2296865871",
+            "52215270:2326510132",
+            "533032588:1949471360410695335"
+          ]
+        },
+        {
+          "strategy": "B3_ORACLE_LANES",
+          "oracle": true,
+          "K": 10,
+          "must_see": 0.13636363636363635,
+          "aspect": 0.42857142857142855,
+          "xq_claim": 0,
+          "per_q": {
+            "per_question": {
+              "52215270": {
+                "value": 0.07317073170731707,
+                "covered_units": 3,
+                "scorable_units": 41
+              },
+              "525603218": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 9
+              },
+              "533032588": {
+                "value": 0,
+                "covered_units": 0,
+                "scorable_units": 17
+              },
+              "616791818": {
+                "value": 0.14285714285714285,
+                "covered_units": 3,
+                "scorable_units": 21
+              },
+              "3376603186": {
+                "value": 0.4444444444444444,
+                "covered_units": 4,
+                "scorable_units": 9
+              }
+            },
+            "scorable_question_count": 5,
+            "unit_basis": "value_units",
+            "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+          },
+          "minority_macro": 0.1468253968253968,
+          "minority_min": 0,
+          "diversity": 0.7999999999999999,
+          "redundancy": 0.8225214163527776,
+          "selected": [
+            "3376603186:28820202588",
+            "52215270:2874637547",
+            "616791818:1955368980899402784",
+            "52215270:2723267423",
+            "616791818:105981792797",
+            "52215270:2296865871",
+            "533032588:1949471360410695335",
+            "52215270:3599356918",
+            "52215270:1785021055",
+            "616791818:1984271783860406148"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,445 @@
+{
+  "schema": "zhihu-research-benchmark/result",
+  "schema_version": "1.0.0-pilot",
+  "generated_at": "2026-08-28T04:52:58.497Z",
+  "dataset_version": "d1-af7ee9cf09dd611d",
+  "dataset_version_status": "D2.1",
+  "case_id": "case-synth-expert",
+  "case_meta": {
+    "category": [
+      "H",
+      "D"
+    ],
+    "question_count": 1,
+    "source_count": 40,
+    "verified_source_count": 40,
+    "gold_label_status": "FIXTURE_MECHANICAL",
+    "gold_adjudication_status": "NOT_REQUIRED",
+    "scoring_status": "FIXTURE_MECHANICAL"
+  },
+  "strategy_id": "B3_DENSE_MMR_MULTI_LANE",
+  "strategy_config": {
+    "strategy_id": "B3_DENSE_MMR_MULTI_LANE",
+    "budget_key": "K_MEDIUM",
+    "K": 5,
+    "tie_break": "source_id_asc",
+    "query_text_source": "case.research_question + question titles",
+    "embedding": {
+      "model": {
+        "id": "Xenova/bge-small-zh-v1.5",
+        "upstream": "BAAI/bge-small-zh-v1.5",
+        "dims": 512,
+        "kind": "real-dense-embedding (ONNX fp32 via transformers.js)",
+        "quantization": "fp32",
+        "max_seq_length": 512,
+        "license": "MIT (BAAI bge)",
+        "files": [
+          "config.json",
+          "tokenizer.json",
+          "tokenizer_config.json",
+          "special_tokens_map.json",
+          "vocab.txt",
+          "onnx/model.onnx"
+        ],
+        "note": "Chinese-optimized BERT-based embedding; cosine similarity in benchmark is computed over these real vectors, NOT char n-grams. Model files pinned in dense-embedding/models/ (sha256 in embedding identity artifact)."
+      },
+      "runtime": "transformers.js @xenova/transformers",
+      "norm": "normalizeText (shared with harness) + mean pooling + L2 normalize",
+      "determinism": "fp32 ONNX, fixed weights, sha256 input keys, disk cache",
+      "artifact": "dense-embedding/cache/embedding-cache.json"
+    },
+    "mmr_lambda": 0.5,
+    "lane_weights": {
+      "mainstream": 1,
+      "expert": 1,
+      "evidence_rich": 1,
+      "fresh": 1,
+      "long_tail": 1,
+      "contradictory": 1
+    },
+    "lane_kinds": {
+      "mainstream": "mechanical",
+      "evidence_rich": "mechanical_presence",
+      "fresh": "mechanical_window",
+      "long_tail": "mechanical_proxy",
+      "expert": "NO_INDEPENDENT_SIGNAL_EMPTY",
+      "contradictory": "NO_INDEPENDENT_SIGNAL_EMPTY"
+    },
+    "novelty_threshold": null,
+    "floor_rule": null,
+    "strategy_class": "FAIR_COMPARISON",
+    "excluded_from_fair_comparison": false,
+    "experiment_preregistration": "pre-registration/EXPERIMENT_PRE_REGISTRATION.json (version 1.0.0)",
+    "result_status": "D2.1_EVALUATOR + REAL_DENSE_RACE",
+    "result_status_note": "real dense embedding (bge-small-zh-v1.5 fp32); D2.1 corrected evaluator; preregistration frozen before run"
+  },
+  "candidate_pool_id": "pool-Q-SYN-E1",
+  "budget": {
+    "key": "K_MEDIUM",
+    "K": 5
+  },
+  "selected_source_ids": [
+    "Q-SYN-E1:400005",
+    "Q-SYN-E1:400006",
+    "Q-SYN-E1:400003",
+    "Q-SYN-E1:410021",
+    "Q-SYN-E1:400002"
+  ],
+  "provenance": [
+    {
+      "source_id": "Q-SYN-E1:400005",
+      "question_id": "Q-SYN-E1",
+      "author_key": "expert_05",
+      "voteupCount": 1,
+      "createdTime": 1639254429
+    },
+    {
+      "source_id": "Q-SYN-E1:400006",
+      "question_id": "Q-SYN-E1",
+      "author_key": "expert_06",
+      "voteupCount": 0,
+      "createdTime": 1658043074
+    },
+    {
+      "source_id": "Q-SYN-E1:400003",
+      "question_id": "Q-SYN-E1",
+      "author_key": "expert_03",
+      "voteupCount": 0,
+      "createdTime": 1655327719
+    },
+    {
+      "source_id": "Q-SYN-E1:410021",
+      "question_id": "Q-SYN-E1",
+      "author_key": "user_21",
+      "voteupCount": 24,
+      "createdTime": 1630880988
+    },
+    {
+      "source_id": "Q-SYN-E1:400002",
+      "question_id": "Q-SYN-E1",
+      "author_key": "expert_02",
+      "voteupCount": 2,
+      "createdTime": 1641859240
+    }
+  ],
+  "metric_results": {
+    "must_see_recall": {
+      "value": 0.375,
+      "hit": 3,
+      "scorable": 8,
+      "scoring_status": "PROVISIONAL"
+    },
+    "aspect_recall": {
+      "value": 0.5,
+      "covered_aspects": 1,
+      "scorable_aspects": 2,
+      "increments": "1/2",
+      "scoring_status": "PROVISIONAL"
+    },
+    "aspect_source_recall_diagnostic": {
+      "value": 0.2,
+      "aspects": 2,
+      "per_aspect": [
+        0.4,
+        0
+      ],
+      "note": "diagnostic only; not the approved aspect_recall"
+    },
+    "expert_recall": {
+      "value": 0.4,
+      "hit": 4,
+      "scorable": 10,
+      "scoring_status": "PROVISIONAL"
+    },
+    "long_tail_recall": {
+      "value": 0.2,
+      "hit": 1,
+      "scorable": 5,
+      "scoring_status": "PROVISIONAL"
+    },
+    "fresh_window_membership_recall": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "no_fresh_window_members",
+      "scoring_status": "MECHANICAL_CONFIRMED"
+    },
+    "fresh_content_recall": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "no_scorable_fresh_relevant_gold",
+      "scoring_status": "PROVISIONAL",
+      "note": "PROVISIONAL until relevance adjudicated; fresh-but-off-topic sources are never FINAL fresh relevant gold"
+    },
+    "historical_authority_retention": {
+      "value": 0.3333333333333333,
+      "hit": 2,
+      "scorable": 6,
+      "scoring_status": "PROVISIONAL"
+    },
+    "evidence_presence_recall": {
+      "value": 0.25,
+      "hit": 5,
+      "scorable": 20,
+      "scoring_status": "MECHANICAL_CONFIRMED"
+    },
+    "evidence_rich_recall": {
+      "value": 0.25,
+      "hit": 5,
+      "scorable": 20,
+      "scoring_status": "PROVISIONAL",
+      "note": "FINAL only after evidence_quality is human-adjudicated"
+    },
+    "contradiction_claim_recall": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "no_scorable_contradiction_clusters",
+      "scoring_status": "PROVISIONAL"
+    },
+    "cross_question_claim_recall": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "no_cross_question_claim_gold"
+    },
+    "semantic_redundancy": {
+      "value": 0.6329034721508114,
+      "pairs": 10,
+      "scoring_status": "REAL_DENSE_BACKEND"
+    },
+    "semantic_diversity": {
+      "value": 0.36709652784918856
+    },
+    "claim_redundancy": {
+      "value": 0,
+      "sharing": 0,
+      "total": 10,
+      "scoring_status": "PROVISIONAL"
+    },
+    "analysis_coverage": {
+      "value": 0.125,
+      "hit": 5,
+      "scorable": 40,
+      "scoring_status": "MECHANICAL_CONFIRMED"
+    },
+    "normalized_question_diversity": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "Q<=1"
+    },
+    "source_concentration": {
+      "selected_question_count": 1,
+      "selected_content_by_question": {
+        "Q-SYN-E1": 5
+      },
+      "largest_question_share": 1,
+      "selected_author_concentration": 0.20000000000000004,
+      "selected_content_type_distribution": {
+        "answer": 5
+      },
+      "claim_source_diversity": null
+    },
+    "per_question_coverage_preservation": {
+      "per_question": {
+        "Q-SYN-E1": {
+          "value": 0.3333333333333333,
+          "covered_units": 5,
+          "scorable_units": 15
+        }
+      },
+      "scorable_question_count": 1,
+      "unit_basis": "value_units",
+      "provenance_semantics": "D2.1: unit credit per question in question_ids; covered(q) requires selected supporting source FROM q; CASE units excluded"
+    },
+    "cross_question_unit_credit_diagnostic": {
+      "units": [],
+      "note": "diagnostic; per-question coverage credits a CROSS_QUESTION unit only via its own question sources"
+    },
+    "minority_question_recall_macro": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "fewer_than_two_scorable_reference_questions"
+    },
+    "minority_question_recall_min": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "fewer_than_two_scorable_reference_questions"
+    },
+    "minority_question_recall_micro_diagnostic": {
+      "value": "N/A",
+      "scorable": 0,
+      "reason": "fewer_than_two_scorable_reference_questions"
+    },
+    "independent_source_diversity": {
+      "value": 1,
+      "unique_pairs": 5,
+      "n": 5
+    },
+    "cost": {
+      "relative_compute_ops": 439,
+      "embedding_calls": 41,
+      "embedding_cache_hits": 41,
+      "pairwise_similarity_calls": 193,
+      "selection_ops": 205,
+      "wall_clock_ms": 2,
+      "note": "relative_compute_ops = local relative compute (embedding_calls + pairwise_similarity_calls + selection_ops) within same machine; NOT a production cost estimate. Provider/model cost must be measured separately."
+    },
+    "false_stop_rate": {
+      "value": "NOT_RUN",
+      "reason": "no Tier-3 batch fixture in this pilot; would require adaptive stopping harness"
+    }
+  },
+  "gold_stats_by_family": {
+    "relevance": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 40,
+      "scorable": 40,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "must_see": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 8,
+      "scorable": 8,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "aspect_membership": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0,
+      "aspect_count": 2
+    },
+    "expertise_topic_match": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 10,
+      "scorable": 10,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "evidence_quality": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 20,
+      "scorable": 20,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "evidence_presence": {
+      "label_status": "MECHANICAL_CONFIRMED",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "freshness": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "unique_long_tail_contribution": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 5,
+      "scorable": 5,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "contradiction": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0,
+      "claim_cluster_count": 0
+    },
+    "required_provenance_groups": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 0,
+      "scorable": 0,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0,
+      "claim_group_count": 0
+    },
+    "historical_authority": {
+      "label_status": "FIXTURE_MECHANICAL",
+      "total": 6,
+      "scorable": 6,
+      "unresolved": 0,
+      "disputed": 0,
+      "gold_dispute_rate": 0
+    },
+    "_value_units": {
+      "total": 17,
+      "scorable": 17,
+      "by_type": {
+        "must_see": {
+          "total": 8,
+          "scorable": 8
+        },
+        "critical_aspect": {
+          "total": 2,
+          "scorable": 2
+        },
+        "unique_claim": {
+          "total": 5,
+          "scorable": 5
+        },
+        "expert_source_group": {
+          "total": 1,
+          "scorable": 1
+        },
+        "evidence_source_group": {
+          "total": 1,
+          "scorable": 1
+        }
+      }
+    }
+  },
+  "cost": {
+    "embedding_calls": 41,
+    "embedding_cache_hits": 41,
+    "pairwise_similarity_calls": 193,
+    "selection_ops": 205,
+    "wall_ms": 2
+  },
+  "stability": {
+    "value": 1,
+    "min": 1,
+    "pairs": 3,
+    "per_pair": [
+      1,
+      1,
+      1
+    ]
+  },
+  "warnings": [],
+  "notes": "P1 gate-01 Phase B race. Fair strategies never read evaluation gold (throwing-gold proxy). Preregistration 1.0.0 frozen before run.",
+  "runtime_identity": {
+    "node": "v22.22.2",
+    "platform": "node",
+    "benchmark_harness_version": "0.1.0-pilot",
+    "embedding_runtime": {
+      "id": "benchmark-local-deterministic-ngram",
+      "version": "1.0.0",
+      "kind": "deterministic-lexical-similarity-proxy",
+      "note": "NOT a neural embedding model. Pilot-only deterministic similarity proxy (char n-gram TF vectors + cosine) so B1/B2 are runnable offline, cheap and stable. Swap point for a real embedding runtime in a later round."
+    },
+    "selectors": {
+      "B0_POPULARITY_TOP_K": "1.0.0",
+      "B1_LEXICAL_NGRAM_PROXY": "1.0.0",
+      "B2_MMR_NGRAM_PROXY": "1.0.0",
+      "B2_ORACLE_LANES": "1.0.0"
+    }
+  }
+}

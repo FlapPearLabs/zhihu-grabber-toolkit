@@ -1,0 +1,95 @@
+{
+  "case_id": "case-487214224",
+  "gold_version": "g1-agent-proposal",
+  "label_status_policy": {
+    "semantic": "PROVISIONAL",
+    "mechanical": "MECHANICAL_CONFIRMED",
+    "note": "Semantic labels are AGENT PROPOSALS, not FINAL human gold. Adjudication pending. Mechanical labels derived from canonical metadata. Contains 1 explicitly off-topic noise source kept OUT of relevance gold."
+  },
+  "noise_sources": {
+    "note": "off-topic answer (道家/道教 content) that is mechanically FRESH but topically IRRELEVANT; kept out of relevance; still counted in freshness family (mechanical truth)",
+    "sources": ["487214224:2027722356278215762"]
+  },
+  "families": {
+    "relevance": {
+      "label_status": "PROVISIONAL",
+      "sources": ["487214224:2124048604", "487214224:2146329149"],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "per_question": {
+        "487214224": ["487214224:2124048604", "487214224:2146329149"]
+      },
+      "note": "excludes off-topic noise source 487214224:2027722356278215762"
+    },
+    "must_see": {
+      "label_status": "PROVISIONAL",
+      "sources": ["487214224:2124048604"],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "only substantive deep answer on the question"
+    },
+    "aspect_membership": {
+      "label_status": "PROVISIONAL",
+      "aspects": [
+        { "aspect_id": "asp-business-lines", "name": "业务线/业务数量与团队匹配评估", "sources": ["487214224:2124048604", "487214224:2146329149"] }
+      ]
+    },
+    "expertise_topic_match": {
+      "label_status": "PROVISIONAL",
+      "sources": ["487214224:2124048604"],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "practitioner (WEAK name-only)"
+    },
+    "evidence_quality": {
+      "label_status": "PROVISIONAL",
+      "sources": ["487214224:2124048604", "487214224:2146329149"],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "SEMANTIC evidence quality (agent proposal, PROVISIONAL). Evidence PRESENCE (mechanical markers) is computed separately by the harness."
+    },
+    "evidence_presence": {
+      "label_status": "MECHANICAL_CONFIRMED",
+      "note": "computed by harness from frozen corpus evidence markers"
+    },
+    "freshness": {
+      "label_status": "PROVISIONAL",
+      "fresh_relevant_sources": [],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "window": { "policy_id": "fresh-365d-before-fetch", "reference_epoch_sec": 1786628392, "window_sec": 31536000 },
+      "note": "P0-6: the single fresh-window member is the OFF-TOPIC noise answer -> fresh_relevant = [] (never FINAL fresh relevant gold). fresh_window_membership_recall (mechanical) still tests robustness against fresh-but-irrelevant content."
+    },
+    "unique_long_tail_contribution": {
+      "label_status": "PROVISIONAL",
+      "sources": ["487214224:2146329149"],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "zero-vote substantive overview"
+    },
+    "contradiction": {
+      "label_status": "PROVISIONAL",
+      "claim_clusters": [],
+      "note": "no substantive contradiction in a 2-relevant-source question (N/A)"
+    },
+    "required_provenance_groups": {
+      "label_status": "PROVISIONAL",
+      "claim_groups": [],
+      "note": "single-question case: no cross-question claims (N/A)"
+    },
+    "historical_authority": {
+      "label_status": "PROVISIONAL",
+      "sources": ["487214224:2124048604"],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "top-vote anchor"
+    }
+  },
+  "provenance": {
+    "proposed_by": "agent",
+    "proposal_method": "blind content scan of canonical answers (no strategy outputs visible)",
+    "adjudicated_by": null,
+    "adjudication_status": "PENDING",
+    "label_status": "PROVISIONAL"
+  }
+}

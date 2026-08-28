@@ -1,0 +1,260 @@
+[
+  {
+    "unit_id": "must_see:Q-SYN-E1:400001",
+    "scope": "QUESTION",
+    "question_ids": [
+      "Q-SYN-E1"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-E1:400001"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-E1:400002",
+    "scope": "QUESTION",
+    "question_ids": [
+      "Q-SYN-E1"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-E1:400002"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-E1:400003",
+    "scope": "QUESTION",
+    "question_ids": [
+      "Q-SYN-E1"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-E1:400003"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-E1:400004",
+    "scope": "QUESTION",
+    "question_ids": [
+      "Q-SYN-E1"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-E1:400004"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-E1:400005",
+    "scope": "QUESTION",
+    "question_ids": [
+      "Q-SYN-E1"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-E1:400005"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-E1:410001",
+    "scope": "QUESTION",
+    "question_ids": [
+      "Q-SYN-E1"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-E1:410001"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-E1:410002",
+    "scope": "QUESTION",
+    "question_ids": [
+      "Q-SYN-E1"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-E1:410002"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:Q-SYN-E1:410003",
+    "scope": "QUESTION",
+    "question_ids": [
+      "Q-SYN-E1"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "Q-SYN-E1:410003"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-architecture",
+    "scope": "QUESTION",
+    "question_ids": [
+      "Q-SYN-E1"
+    ],
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-architecture",
+    "supporting_source_ids": [
+      "Q-SYN-E1:400001",
+      "Q-SYN-E1:400002",
+      "Q-SYN-E1:400003",
+      "Q-SYN-E1:400004",
+      "Q-SYN-E1:400005",
+      "Q-SYN-E1:400006",
+      "Q-SYN-E1:400007",
+      "Q-SYN-E1:400008",
+      "Q-SYN-E1:400009",
+      "Q-SYN-E1:400010"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-ux",
+    "scope": "QUESTION",
+    "question_ids": [
+      "Q-SYN-E1"
+    ],
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-ux",
+    "supporting_source_ids": [
+      "Q-SYN-E1:410001",
+      "Q-SYN-E1:410002",
+      "Q-SYN-E1:410003"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:Q-SYN-E1:400006",
+    "scope": "QUESTION",
+    "question_ids": [
+      "Q-SYN-E1"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "Q-SYN-E1:400006"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:Q-SYN-E1:400007",
+    "scope": "QUESTION",
+    "question_ids": [
+      "Q-SYN-E1"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "Q-SYN-E1:400007"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:Q-SYN-E1:400008",
+    "scope": "QUESTION",
+    "question_ids": [
+      "Q-SYN-E1"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "Q-SYN-E1:400008"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:Q-SYN-E1:400009",
+    "scope": "QUESTION",
+    "question_ids": [
+      "Q-SYN-E1"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "Q-SYN-E1:400009"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:Q-SYN-E1:400010",
+    "scope": "QUESTION",
+    "question_ids": [
+      "Q-SYN-E1"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "Q-SYN-E1:400010"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "expert_source_group",
+    "scope": "CASE",
+    "question_ids": [],
+    "unit_type": "expert_source_group",
+    "supporting_source_ids": [
+      "Q-SYN-E1:400001",
+      "Q-SYN-E1:400002",
+      "Q-SYN-E1:400003",
+      "Q-SYN-E1:400004",
+      "Q-SYN-E1:400005",
+      "Q-SYN-E1:400006",
+      "Q-SYN-E1:400007",
+      "Q-SYN-E1:400008",
+      "Q-SYN-E1:400009",
+      "Q-SYN-E1:400010"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "evidence_source_group",
+    "scope": "CASE",
+    "question_ids": [],
+    "unit_type": "evidence_source_group",
+    "supporting_source_ids": [
+      "Q-SYN-E1:400001",
+      "Q-SYN-E1:400002",
+      "Q-SYN-E1:400003",
+      "Q-SYN-E1:400004",
+      "Q-SYN-E1:400005",
+      "Q-SYN-E1:400006",
+      "Q-SYN-E1:400007",
+      "Q-SYN-E1:400008",
+      "Q-SYN-E1:400009",
+      "Q-SYN-E1:400010",
+      "Q-SYN-E1:410003",
+      "Q-SYN-E1:410006",
+      "Q-SYN-E1:410009",
+      "Q-SYN-E1:410012",
+      "Q-SYN-E1:410015",
+      "Q-SYN-E1:410018",
+      "Q-SYN-E1:410021",
+      "Q-SYN-E1:410024",
+      "Q-SYN-E1:410027",
+      "Q-SYN-E1:410030"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  }
+]

@@ -1,0 +1,29 @@
+{
+  "case_id": "case-hpylori-treatment",
+  "category": ["G", "A", "F"],
+  "research_question": "幽门螺杆菌（Hp）感染是否必须治疗？哪些人有明确根除指征、哪些人可以观察？四联/三联等方案的真实疗效、副作用与耐药情况如何？不治疗的后果与自愈/替代方案（益生菌、中药等）的真实情况是什么？",
+  "question_ids": ["52215270", "533032588", "616791818", "3376603186", "525603218"],
+  "reference_questions": ["52215270", "533032588", "616791818", "3376603186", "525603218"],
+  "budgets": { "K_SMALL": 10, "K_MEDIUM": 15, "K_LARGE": 24 },
+  "budgets_note": "P1 gate-01 preregistration (frozen 2026-08-28 BEFORE any strategy run). Pool = 216 captured sources; K_MEDIUM = 15 << 216 (no saturation).",
+  "freshness_window_policy": {
+    "policy_id": "fresh-365d-before-max-fetch",
+    "window_sec": 31536000,
+    "reference_epoch_sec": 1787891115,
+    "reference_note": "max fetchedAt across the 5 questions (2026-08-28T04:25:15.677Z); frozen BEFORE strategy execution",
+    "note": "11 sources fall in the 365d window (incl. 2026/2025-12 content); fresh_content_recall is scorable in this case (unlike most pilot cases)"
+  },
+  "long_tail_min_chars": 80,
+  "mmr_lambda": 0.5,
+  "mmr_lambda_note": "preregistered gate-01 parameter (same value as pilot cases); NOT a production default",
+  "lane_weights": { "mainstream": 1, "expert": 1, "evidence_rich": 1, "fresh": 1, "long_tail": 1, "contradictory": 1 },
+  "author_identity": "name_only",
+  "author_identity_confidence": "WEAK",
+  "expert_author_keys": [
+    "四川大学华西医院", "火箭军特色医学中心", "爱喝咖啡的王医生", "超医生", "方糖医生",
+    "戴维C医生", "王微医生", "大城小医徐医生", "灯博士周强", "药理学博士", "王药师聊健康科普",
+    "消化科索宝军医生", "中医马惠兰主任", "石家庄健胃中医院", "泌尿男科王海主任", "医学风清扬",
+    "药店的猫", "血液与肿瘤咨讯", "儿科柯大夫", "肛肠科黄秀芳"
+  ],
+  "notes": "NEW REAL CROSS-DOMAIN CASE (P1 gate-01, §3). Domain: medicine (gastroenterology) — deliberately NOT low-code/enterprise software. 5 questions / 216 captured sources; captured vs reported: 52215270 136/145, 533032588 34/35, 616791818 28/32 (count mismatch = folded/collapsed answers; captured pool is the frozen benchmark pool), 3376603186 8/8, 525603218 10/10. Size imbalance 136 : 8 (17x). Gold is PROVISIONAL (proposed by execution agent BEFORE any selector run; frozen 2026-08-28) pending ChatGPT second adjudication of decision-sensitive labels. Selection rationale documented in packets/ (WHY_THIS_CASE). grabbed via zhihu-answer-grabber (verify-output valid=true for all 5)."
+}

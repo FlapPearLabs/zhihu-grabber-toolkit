@@ -1,0 +1,124 @@
+{
+  "case_id": "case-487214224",
+  "gold_version": "g2-chatgpt-adjudicated",
+  "label_status_policy": {
+    "semantic": "HUMAN_ADJUDICATED",
+    "mechanical": "MECHANICAL_CONFIRMED",
+    "unresolved": "EXCLUDED_FROM_NUMERATOR_AND_DENOMINATOR",
+    "note": "ChatGPT source-level adjudication is the FINAL semantic gold for real cases; D1 provisional labels superseded"
+  },
+  "families": {
+    "relevance": {
+      "label_status": "HUMAN_ADJUDICATED",
+      "sources": [
+        "487214224:2124048604"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "per_question": {
+        "487214224": [
+          "487214224:2124048604"
+        ]
+      },
+      "adjudication": "CONFIRMED"
+    },
+    "must_see": {
+      "label_status": "HUMAN_ADJUDICATED",
+      "sources": [
+        "487214224:2124048604"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "relevance-gated; adjudicated"
+    },
+    "aspect_membership": {
+      "label_status": "HUMAN_ADJUDICATED",
+      "aspects": [
+        {
+          "aspect_id": "asp-business-lines",
+          "name": "业务线/业务数量与团队匹配评估",
+          "definition": "业务线/业务数量与团队匹配评估",
+          "primary_sources": [
+            "487214224:2124048604"
+          ],
+          "sources": [
+            "487214224:2124048604"
+          ],
+          "unresolved_sources": [],
+          "disputed_sources": []
+        }
+      ]
+    },
+    "expertise_topic_match": {
+      "label_status": "HUMAN_ADJUDICATED",
+      "sources": [
+        "487214224:2124048604"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "relevance-gated SUPPORTED = scorable; UNRESOLVED excluded from numerator/denominator; FINAL semantics belong to ChatGPT adjudication"
+    },
+    "evidence_quality": {
+      "label_status": "HUMAN_ADJUDICATED",
+      "sources": [
+        "487214224:2124048604"
+      ],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "relevance-gated; UNRESOLVED excluded; FINAL only per adjudication"
+    },
+    "evidence_presence": {
+      "label_status": "MECHANICAL_CONFIRMED",
+      "note": "computed by harness from frozen corpus evidence markers"
+    },
+    "freshness": {
+      "label_status": "MECHANICAL_WINDOW_AND_FINAL_RELEVANCE",
+      "fresh_relevant_sources": [],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "window": {
+        "policy_id": "fresh-365d-before-fetch",
+        "window_sec": 31536000,
+        "reference_epoch_sec": 1786628392,
+        "reference_note": "fetchedAt 2026-08-13T13:39:52Z; PILOT_CANDIDATE_WINDOW; 1 fresh source (off-topic noise) inside window",
+        "note": "frozen BEFORE strategy execution; must not be adjusted post-hoc by results"
+      },
+      "note": "fresh window membership (mechanical) ∩ FINAL relevance (adjudicated); off-topic fresh source never FINAL fresh relevant"
+    },
+    "unique_long_tail_contribution": {
+      "label_status": "HUMAN_ADJUDICATED",
+      "sources": [],
+      "unresolved_sources": [],
+      "disputed_sources": [],
+      "note": "relevance-gated; adjudicated"
+    },
+    "contradiction": {
+      "label_status": "HUMAN_ADJUDICATED",
+      "claim_clusters": [],
+      "note": "schema KEEP only; stances from ChatGPT final claim_stances; no provenance-derived stances"
+    },
+    "required_provenance_groups": {
+      "label_status": "HUMAN_ADJUDICATED",
+      "claim_groups": [],
+      "note": "required_provenance_final is D2 authority"
+    },
+    "historical_authority": {
+      "label_status": "UNRESOLVED",
+      "sources": [],
+      "unresolved_sources": [
+        "487214224:2124048604"
+      ],
+      "disputed_sources": [],
+      "note": "adjudicated UNRESOLVED for all real case labels (packet omits timestamp/age evidence for long-established status); excluded from numerator and denominator; unresolved stats are relevance-gated"
+    }
+  },
+  "provenance": {
+    "proposed_by": "ChatGPT",
+    "proposed_method": "independent source-level adjudication of adjudication-packet-v2.2",
+    "adjudicated_by": "ChatGPT",
+    "adjudication_status": "COMPLETE",
+    "label_status": "HUMAN_ADJUDICATED",
+    "source_file": "TRACK_B_SEMANTIC_GOLD_ADJUDICATION_V1.json",
+    "d1_status": "SUPERSEDED"
+  }
+}

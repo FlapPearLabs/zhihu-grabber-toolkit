@@ -1,0 +1,676 @@
+[
+  {
+    "unit_id": "must_see:439521858:1780646730",
+    "scope": "QUESTION",
+    "question_ids": [
+      "439521858"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "439521858:1780646730"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:439521858:1775773370",
+    "scope": "QUESTION",
+    "question_ids": [
+      "439521858"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "439521858:1775773370"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:439521858:2226898798",
+    "scope": "QUESTION",
+    "question_ids": [
+      "439521858"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "439521858:2226898798"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:477427067:1908569584690258620",
+    "scope": "QUESTION",
+    "question_ids": [
+      "477427067"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "477427067:1908569584690258620"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:477427067:2040315771",
+    "scope": "QUESTION",
+    "question_ids": [
+      "477427067"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "477427067:2040315771"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:477427067:2238312306",
+    "scope": "QUESTION",
+    "question_ids": [
+      "477427067"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "477427067:2238312306"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:477427067:110295980268",
+    "scope": "QUESTION",
+    "question_ids": [
+      "477427067"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "477427067:110295980268"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:462973596:1950703418",
+    "scope": "QUESTION",
+    "question_ids": [
+      "462973596"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "462973596:1950703418"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:462973596:1946530886",
+    "scope": "QUESTION",
+    "question_ids": [
+      "462973596"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "462973596:1946530886"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:466695857:3244238577",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "466695857:3244238577"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:466695857:1958779750",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "466695857:1958779750"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:466695857:2140488947",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "466695857:2140488947"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:485463474:2109090852",
+    "scope": "QUESTION",
+    "question_ids": [
+      "485463474"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "485463474:2109090852"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:485463474:2940558097",
+    "scope": "QUESTION",
+    "question_ids": [
+      "485463474"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "485463474:2940558097"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:487214224:2124048604",
+    "scope": "QUESTION",
+    "question_ids": [
+      "487214224"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "487214224:2124048604"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:case-cross-lowcode:asp-criteria",
+    "scope": "CROSS_QUESTION",
+    "question_ids": [
+      "462973596",
+      "477427067"
+    ],
+    "unit_type": "critical_aspect",
+    "aspect_id": "case-cross-lowcode:asp-criteria",
+    "supporting_source_ids": [
+      "462973596:2300277407",
+      "477427067:110295980268",
+      "477427067:1908569584690258620",
+      "477427067:1930584287444469456",
+      "477427067:1963909107758106013",
+      "477427067:2040315771",
+      "477427067:2042300823099667870",
+      "477427067:2140439894",
+      "477427067:2141034490",
+      "477427067:2238312306",
+      "477427067:2450810640",
+      "477427067:2884408759",
+      "477427067:3050814230",
+      "477427067:3547824796"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-vendor-compare",
+    "scope": "QUESTION",
+    "question_ids": [
+      "439521858"
+    ],
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-vendor-compare",
+    "supporting_source_ids": [
+      "439521858:1682235591",
+      "439521858:1698674167",
+      "439521858:1775773370",
+      "439521858:1780646730",
+      "439521858:1806634616",
+      "439521858:1918690313431659010",
+      "439521858:1968643478662644597",
+      "439521858:1976466205",
+      "439521858:2009238931",
+      "439521858:2091701747",
+      "439521858:2226898798",
+      "439521858:2550630306",
+      "439521858:3376976033",
+      "439521858:3450414501"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:case-cross-lowcode:asp-concept",
+    "scope": "CROSS_QUESTION",
+    "question_ids": [
+      "462973596",
+      "477427067",
+      "485463474",
+      "487214224"
+    ],
+    "unit_type": "critical_aspect",
+    "aspect_id": "case-cross-lowcode:asp-concept",
+    "supporting_source_ids": [
+      "462973596:1928406979",
+      "462973596:1928502944",
+      "462973596:1941438029",
+      "462973596:1950703418",
+      "462973596:1959121448",
+      "462973596:1960753087",
+      "462973596:1963312102",
+      "462973596:2070640394",
+      "462973596:2300277407",
+      "462973596:2721876544",
+      "477427067:110295980268",
+      "477427067:2179827948",
+      "477427067:2407150303",
+      "477427067:2450810640",
+      "477427067:3050814230",
+      "485463474:2180915039",
+      "485463474:2189029739",
+      "485463474:2406068294",
+      "485463474:2688629921",
+      "485463474:2706684256",
+      "487214224:2146329149"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-pitfalls",
+    "scope": "CROSS_QUESTION",
+    "question_ids": [
+      "485463474",
+      "487214224"
+    ],
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-pitfalls",
+    "supporting_source_ids": [
+      "485463474:2109090852",
+      "485463474:2940558097",
+      "487214224:2124048604"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-zero-vs-low",
+    "scope": "QUESTION",
+    "question_ids": [
+      "462973596"
+    ],
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-zero-vs-low",
+    "supporting_source_ids": [
+      "462973596:1928406979",
+      "462973596:1946530886",
+      "462973596:1950703418",
+      "462973596:1953772075",
+      "462973596:1959121448",
+      "462973596:1960753087",
+      "462973596:1963312102",
+      "462973596:1970717782",
+      "462973596:2052511352",
+      "462973596:2070640394",
+      "462973596:2300277407",
+      "462973596:2721876544"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-source-code",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-source-code",
+    "supporting_source_ids": [
+      "466695857:1957526887",
+      "466695857:1958779750",
+      "466695857:1982005809",
+      "466695857:2011434031",
+      "466695857:2043119425",
+      "466695857:2044730598",
+      "466695857:2099716352",
+      "466695857:2140398007",
+      "466695857:2140488947",
+      "466695857:2401915395",
+      "466695857:3244238577",
+      "466695857:3279920257",
+      "466695857:3386875412",
+      "466695857:3466479387"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:439521858:2550630306",
+    "scope": "QUESTION",
+    "question_ids": [
+      "439521858"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "439521858:2550630306"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:439521858:2091701747",
+    "scope": "QUESTION",
+    "question_ids": [
+      "439521858"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "439521858:2091701747"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:439521858:1682235591",
+    "scope": "QUESTION",
+    "question_ids": [
+      "439521858"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "439521858:1682235591"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:477427067:1908569584690258620",
+    "scope": "QUESTION",
+    "question_ids": [
+      "477427067"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "477427067:1908569584690258620"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:477427067:2179827948",
+    "scope": "QUESTION",
+    "question_ids": [
+      "477427067"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "477427067:2179827948"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:477427067:2140439894",
+    "scope": "QUESTION",
+    "question_ids": [
+      "477427067"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "477427067:2140439894"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:477427067:1963909107758106013",
+    "scope": "QUESTION",
+    "question_ids": [
+      "477427067"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "477427067:1963909107758106013"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:477427067:1930584287444469456",
+    "scope": "QUESTION",
+    "question_ids": [
+      "477427067"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "477427067:1930584287444469456"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:466695857:1957526887",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "466695857:1957526887"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:466695857:2011434031",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "466695857:2011434031"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:485463474:2940558097",
+    "scope": "QUESTION",
+    "question_ids": [
+      "485463474"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "485463474:2940558097"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "contra_side:case-cross-lowcode:c1-yida-verdict:for",
+    "scope": "QUESTION",
+    "question_ids": [
+      "439521858"
+    ],
+    "unit_type": "required_contradiction_side",
+    "claim_id": "case-cross-lowcode:c1-yida-verdict",
+    "stance": "for",
+    "supporting_source_ids": [
+      "439521858:1775773370",
+      "439521858:1968643478662644597"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "contra_side:case-cross-lowcode:c1-yida-verdict:against",
+    "scope": "QUESTION",
+    "question_ids": [
+      "439521858"
+    ],
+    "unit_type": "required_contradiction_side",
+    "claim_id": "case-cross-lowcode:c1-yida-verdict",
+    "stance": "against",
+    "supporting_source_ids": [
+      "439521858:1698674167",
+      "439521858:1780646730"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "contra_side:c2-zero-vs-low-future:for",
+    "scope": "QUESTION",
+    "question_ids": [
+      "462973596"
+    ],
+    "unit_type": "required_contradiction_side",
+    "claim_id": "c2-zero-vs-low-future",
+    "stance": "for",
+    "supporting_source_ids": [
+      "462973596:1946530886",
+      "462973596:1970717782",
+      "462973596:2052511352",
+      "462973596:2721876544"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "contra_side:c2-zero-vs-low-future:against",
+    "scope": "QUESTION",
+    "question_ids": [
+      "462973596"
+    ],
+    "unit_type": "required_contradiction_side",
+    "claim_id": "c2-zero-vs-low-future",
+    "stance": "against",
+    "supporting_source_ids": [
+      "462973596:1928406979",
+      "462973596:1950703418",
+      "462973596:1953772075",
+      "462973596:2300277407"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "contra_side:c3-source-value:for",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "required_contradiction_side",
+    "claim_id": "c3-source-value",
+    "stance": "for",
+    "supporting_source_ids": [
+      "466695857:1957526887",
+      "466695857:1982005809",
+      "466695857:2043119425",
+      "466695857:2044730598",
+      "466695857:2099716352",
+      "466695857:2140398007",
+      "466695857:2401915395",
+      "466695857:3244238577",
+      "466695857:3279920257",
+      "466695857:3386875412",
+      "466695857:3466479387"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "contra_side:c3-source-value:against",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "required_contradiction_side",
+    "claim_id": "c3-source-value",
+    "stance": "against",
+    "supporting_source_ids": [
+      "466695857:1958779750",
+      "466695857:2011434031"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "expert_source_group",
+    "scope": "CASE",
+    "question_ids": [],
+    "unit_type": "expert_source_group",
+    "supporting_source_ids": [
+      "439521858:1780646730",
+      "439521858:1976466205",
+      "439521858:3376976033",
+      "439521858:3450414501",
+      "462973596:1928502944",
+      "462973596:1946530886",
+      "462973596:1953772075",
+      "462973596:1960753087",
+      "462973596:2300277407",
+      "462973596:2721876544",
+      "466695857:1957526887",
+      "466695857:1958779750",
+      "466695857:2401915395",
+      "466695857:3279920257",
+      "466695857:3386875412",
+      "466695857:3466479387",
+      "477427067:1930584287444469456",
+      "477427067:1963909107758106013",
+      "477427067:2040315771",
+      "477427067:2042300823099667870",
+      "477427067:2179827948",
+      "477427067:2238312306",
+      "477427067:2407150303",
+      "477427067:2884408759",
+      "477427067:3050814230",
+      "477427067:3547824796",
+      "485463474:2109090852",
+      "485463474:2189029739",
+      "485463474:2688629921",
+      "485463474:2706684256",
+      "485463474:2940558097",
+      "487214224:2124048604"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "evidence_source_group",
+    "scope": "CASE",
+    "question_ids": [],
+    "unit_type": "evidence_source_group",
+    "supporting_source_ids": [
+      "439521858:2226898798",
+      "462973596:1950703418",
+      "462973596:1970717782",
+      "466695857:1958779750",
+      "466695857:2044730598",
+      "466695857:2140488947",
+      "466695857:3244238577",
+      "477427067:110295980268",
+      "477427067:1908569584690258620",
+      "477427067:1930584287444469456",
+      "477427067:2040315771",
+      "477427067:2238312306",
+      "485463474:2109090852",
+      "487214224:2124048604"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  }
+]

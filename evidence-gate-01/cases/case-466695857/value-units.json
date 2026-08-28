@@ -1,0 +1,197 @@
+[
+  {
+    "unit_id": "must_see:466695857:3244238577",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "466695857:3244238577"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:466695857:1958779750",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "466695857:1958779750"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "must_see:466695857:2140488947",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "must_see",
+    "supporting_source_ids": [
+      "466695857:2140488947"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-pro-source",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-pro-source",
+    "supporting_source_ids": [
+      "466695857:1957526887",
+      "466695857:1982005809",
+      "466695857:2007801020",
+      "466695857:2043119425",
+      "466695857:2044730598",
+      "466695857:2099716352",
+      "466695857:2140398007",
+      "466695857:2140488947",
+      "466695857:2401915395",
+      "466695857:3244238577",
+      "466695857:3279920257",
+      "466695857:3386875412",
+      "466695857:3466479387"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:case-466695857:asp-critique",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "critical_aspect",
+    "aspect_id": "case-466695857:asp-critique",
+    "supporting_source_ids": [
+      "466695857:1958779750",
+      "466695857:2011434031"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "critical_aspect:asp-technical",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "critical_aspect",
+    "aspect_id": "asp-technical",
+    "supporting_source_ids": [
+      "466695857:2044730598",
+      "466695857:2140488947",
+      "466695857:3244238577"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:466695857:1957526887",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "466695857:1957526887"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "unique_claim:466695857:2011434031",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "unique_claim",
+    "supporting_source_ids": [
+      "466695857:2011434031"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "contra_side:c1-source-value:for",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "required_contradiction_side",
+    "claim_id": "c1-source-value",
+    "stance": "for",
+    "supporting_source_ids": [
+      "466695857:1957526887",
+      "466695857:1982005809",
+      "466695857:2007801020",
+      "466695857:2043119425",
+      "466695857:2044730598",
+      "466695857:2099716352",
+      "466695857:2140398007",
+      "466695857:2401915395",
+      "466695857:3244238577",
+      "466695857:3279920257",
+      "466695857:3386875412",
+      "466695857:3466479387"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "contra_side:c1-source-value:against",
+    "scope": "QUESTION",
+    "question_ids": [
+      "466695857"
+    ],
+    "unit_type": "required_contradiction_side",
+    "claim_id": "c1-source-value",
+    "stance": "against",
+    "supporting_source_ids": [
+      "466695857:1958779750",
+      "466695857:2011434031"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "expert_source_group",
+    "scope": "CASE",
+    "question_ids": [],
+    "unit_type": "expert_source_group",
+    "supporting_source_ids": [
+      "466695857:1957526887",
+      "466695857:1958779750",
+      "466695857:2044730598",
+      "466695857:2401915395",
+      "466695857:3279920257",
+      "466695857:3386875412",
+      "466695857:3466479387"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  },
+  {
+    "unit_id": "evidence_source_group",
+    "scope": "CASE",
+    "question_ids": [],
+    "unit_type": "evidence_source_group",
+    "supporting_source_ids": [
+      "466695857:1958779750",
+      "466695857:2044730598",
+      "466695857:2140488947",
+      "466695857:3244238577"
+    ],
+    "scorable": true,
+    "status": "scorable"
+  }
+]
