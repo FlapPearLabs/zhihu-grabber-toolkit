@@ -38,14 +38,24 @@ if (!fs.existsSync(CHATGPT)) {
 }
 const adj = load(CHATGPT);
 
-// decisions may be keyed by label_id or source_id — normalize to label_id map
+// decisions may be a list of {label_id, decision} or a label_id->decision map
 const byLabel = new Map();
 for (const l of packet.labels) byLabel.set(l.label_id, l);
 const decisions = new Map();
-for (const [k, v] of Object.entries(adj.decisions || adj)) {
-  const labelId = byLabel.has(k) ? k : (byLabel.get('MS:' + k) ? 'MS:' + k : null);
-  if (labelId) decisions.set(labelId, v);
-  else decisions.set(k, v); // keep raw; V1 will catch unknown
+const raw = adj.decisions || adj;
+if (Array.isArray(raw)) {
+  for (const item of raw) {
+    if (item && item.label_id != null) decisions.set(item.label_id, item.decision);
+    else if (item && typeof item === 'object') {
+      const [k, v] = Object.entries(item)[0];
+      decisions.set(k, v);
+    }
+  }
+} else {
+  for (const [k, v] of Object.entries(raw)) {
+    if (typeof v === 'object' && v !== null && v.decision !== undefined) decisions.set(k, v.decision);
+    else decisions.set(k, v);
+  }
 }
 
 // V1: coverage

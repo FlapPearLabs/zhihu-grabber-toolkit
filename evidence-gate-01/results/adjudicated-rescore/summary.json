@@ -1,0 +1,38 @@
+{
+  "schema": "zhihu-research-benchmark/adjudicated-rescore-summary",
+  "generated_at": null,
+  "mode": "FIXED_SELECTION_RESCORING_ONLY",
+  "selector_invoked": false,
+  "selection_identity": "EXACT (validated R1)",
+  "runs": 27,
+  "gold": {
+    "before": "cases/case-hpylori-treatment/GOLD_BEFORE_SECOND_ADJUDICATION.json",
+    "after": "cases/case-hpylori-treatment/GOLD_AFTER_SECOND_ADJUDICATION.json",
+    "diff": "cases/case-hpylori-treatment/SECOND_ADJUDICATION_DIFF.json",
+    "must_see_22_to_13": true,
+    "chatgpt_final_set_match": true
+  },
+  "b2_vs_b3_k_medium_after": {
+    "must_see": [
+      0.23076923076923078,
+      0.3076923076923077
+    ],
+    "aspect": [
+      0.8571428571428571,
+      0.7142857142857143
+    ],
+    "minority_min": [
+      0.05,
+      0
+    ],
+    "redundancy": [
+      0.8521992418595478,
+      0.8245134682281985
+    ],
+    "ops": [
+      380,
+      8445
+    ]
+  },
+  "outcome": "OUTCOME_A"
+}

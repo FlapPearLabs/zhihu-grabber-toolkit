@@ -156,7 +156,19 @@ function main() {
   const adj = JSON.parse(fs.readFileSync(ADJ, 'utf8'));
   const packet = JSON.parse(fs.readFileSync(path.join(paths.root, 'adjudication/decision-sensitive-packet.json'), 'utf8'));
   const decisions = new Map();
-  for (const [k, v] of Object.entries(adj.decisions || adj)) decisions.set(k, v);
+  {
+    const raw = adj.decisions || adj;
+    if (Array.isArray(raw)) {
+      for (const item of raw) {
+        if (item && item.label_id != null) decisions.set(item.label_id, item.decision);
+      }
+    } else {
+      for (const [k, v] of Object.entries(raw)) {
+        if (typeof v === 'object' && v !== null && v.decision !== undefined) decisions.set(k, v.decision);
+        else decisions.set(k, v);
+      }
+    }
+  }
 
   fs.mkdirSync(OU, { recursive: true });
   const runs = loadRuns();
@@ -212,6 +224,14 @@ function main() {
     const afterUnits = deriveValueUnits(afterGold);
     const mAfter = computeFor({ ...afterGold, value_units: afterUnits }, loaded.caseCfg, pool, selected, null);
     const mBefore = computeFor({ ...beforeGold, value_units: deriveValueUnits(beforeGold) }, loaded.caseCfg, pool, selected, null);
+    // semantic redundancy is gold-independent and selection-identical ->
+    // AFTER must equal the frozen race (dense backend) value.
+    if (r.metric_results.semantic_redundancy && r.metric_results.semantic_redundancy.scoring_status === 'REAL_DENSE_BACKEND') {
+      mAfter.semantic_redundancy = r.metric_results.semantic_redundancy;
+      mAfter.semantic_diversity = r.metric_results.semantic_diversity;
+      mBefore.semantic_redundancy = r.metric_results.semantic_redundancy;
+      mBefore.semantic_diversity = r.metric_results.semantic_diversity;
+    }
     allRuns.push({
       case_id: NEW,
       strategy_id: r.strategy_id,

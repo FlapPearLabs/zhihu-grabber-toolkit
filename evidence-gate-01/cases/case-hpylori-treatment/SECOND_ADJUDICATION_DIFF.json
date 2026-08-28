@@ -1,0 +1,50 @@
+{
+  "schema": "zhihu-research-benchmark/second-adjudication-diff",
+  "case_id": "case-hpylori-treatment",
+  "gold_before": "GOLD_BEFORE_SECOND_ADJUDICATION.json",
+  "gold_after": "GOLD_AFTER_SECOND_ADJUDICATION.json",
+  "must_see_before": 22,
+  "must_see_after": 13,
+  "must_see_removed": [
+    "52215270:1466037599",
+    "52215270:1515402768",
+    "52215270:1829396577",
+    "52215270:1909462572",
+    "52215270:2240620369",
+    "52215270:2297169997",
+    "52215270:2874637547",
+    "52215270:3312209969",
+    "533032588:2488047450",
+    "616791818:3257696322"
+  ],
+  "must_see_promoted": [
+    "52215270:3599356918"
+  ],
+  "removedMustSeeCount": 10,
+  "promotedCandidatesCount": 1,
+  "retained_original_must_see": [
+    "3376603186:28820202588",
+    "52215270:2071906039922963690",
+    "52215270:2326510132",
+    "52215270:3156697298",
+    "52215270:3611600579",
+    "52215270:975101683",
+    "525603218:2444858135",
+    "533032588:2712153634",
+    "533032588:83325887262",
+    "616791818:105981792797",
+    "616791818:3164788252",
+    "616791818:91125298017"
+  ],
+  "stance_removals": [],
+  "aspect_removals": [
+    {
+      "aspect_id": "case-hpylori-treatment:asp-treatment-regimens",
+      "source": "533032588:2487596117"
+    }
+  ],
+  "contradiction_clusters_before": 4,
+  "contradiction_clusters_after": 4,
+  "aspects_before": 7,
+  "aspects_after": 7
+}

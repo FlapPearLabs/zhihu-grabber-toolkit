@@ -1,0 +1,132 @@
+{
+  "schema": "zhihu-research-benchmark/architecture-outcome",
+  "experiment": "P1_DECISION_GRADE_EVIDENCE_GATE_01",
+  "stage": "ADJUDICATION_CLOSURE (fixed-selection rescore)",
+  "declaration": "EVIDENCE_SUPPORTED_ARCHITECTURE_OUTCOME (NOT MECHANICALLY_PROVEN_WINNER)",
+  "decision_rule": "pre-registered OUTCOME A/B/C/D applied without rewriting; B2~=or>B3 equivalence margin undefined -> no mechanical winner claim",
+  "outcome": "OUTCOME_A_PROCEED_WITH_SIMPLIFICATION",
+  "outcome_key": "A",
+  "rationale": [
+    "medical (adjudicated): B2 vs B3 coverage split by metric — B2 higher on aspect (K15/K24) and minority_min (all budgets); B3 higher on must_see by 1-2 sources (K10 4v3, K15 4v3, K24 6v4) and xq (K24 .25v0); differences are 1-2 source level (13-slot denominator)",
+    "low-code (unchanged gold): B2 >= B3 on must_see at K_LARGE (0.533 vs 0.400), B2 > B3 on minority_min (0.25 vs 0), B3 only lower redundancy",
+    "B3 has NO cross-domain stable coverage gain over B2: its must_see edge exists only on the medical case and inside the 1-2 source band; low-code B2 >= B3",
+    "B2 materially simpler (floor=1 + novelty gate) and 5-30x cheaper (ops 380-617 vs 4.4k-18.4k @ medical; 86-298 vs 705-5772 @ low-code)",
+    "B3 consistent advantage = lower redundancy (both domains, all budgets) — a cost-adjacent fifth primary, not a coverage improvement",
+    "B3_ORACLE (gold lanes) also fails to beat fair selectors on must_see (medical K15 .231 < B0/B1/B3 .308): lanes provide no selector-level coverage upper bound"
+  ],
+  "b2_vs_b3_k_medium_after": {
+    "must_see": [
+      0.23076923076923078,
+      0.3076923076923077
+    ],
+    "aspect": [
+      0.8571428571428571,
+      0.7142857142857143
+    ],
+    "minority_min": [
+      0.05,
+      0
+    ],
+    "redundancy": [
+      0.8521992418595478,
+      0.8245134682281985
+    ],
+    "ops": [
+      380,
+      8445
+    ]
+  },
+  "b2_vs_b3_all_budgets_after": {
+    "K_SMALL": {
+      "must_see": [
+        0.23076923076923078,
+        0.3076923076923077
+      ],
+      "aspect": [
+        0.5714285714285714,
+        0.5714285714285714
+      ],
+      "minority_min": [
+        0,
+        0
+      ],
+      "redundancy": [
+        0.8689472746307506,
+        0.8062713965683719
+      ],
+      "ops": [
+        289,
+        4423
+      ]
+    },
+    "K_MEDIUM": {
+      "must_see": [
+        0.23076923076923078,
+        0.3076923076923077
+      ],
+      "aspect": [
+        0.8571428571428571,
+        0.7142857142857143
+      ],
+      "minority_min": [
+        0.05,
+        0
+      ],
+      "redundancy": [
+        0.8521992418595478,
+        0.8245134682281985
+      ],
+      "ops": [
+        380,
+        8445
+      ]
+    },
+    "K_LARGE": {
+      "must_see": [
+        0.3076923076923077,
+        0.46153846153846156
+      ],
+      "aspect": [
+        0.8571428571428571,
+        0.7142857142857143
+      ],
+      "minority_min": [
+        0.0625,
+        0
+      ],
+      "redundancy": [
+        0.8323458610262341,
+        0.8009308832214801
+      ],
+      "ops": [
+        617,
+        18384
+      ]
+    }
+  },
+  "b0_robustness": {
+    "after_adjudication": "B0 must_see = 0.308 @K15 (tie best), 0.231 @K10 (tie 2nd), 0.308 @K24 (2nd); popularity remains top-tier but loses exclusivity once over-inclusive provisional labels are removed",
+    "note": "B0 hits 4/13 @K15 (was 7/22): provisional over-inclusion favored comprehensive popular answers which the second judge pruned",
+    "gold_sensitivity_of_B0_top": "winner-sensitivity: 0 flips unseat B0 under provisional gold; under adjudicated gold B0 ties/seconds rather than dominates"
+  },
+  "six_lanes_implication": {
+    "mainstream": "retrieval signal / soft ranking feature (vote count already a core B0 signal)",
+    "expert": "retrieval signal + soft feature (credential-topic match); no hard lane",
+    "evidence_rich": "retrieval signal + soft feature (mechanical markers); no hard lane",
+    "fresh": "query expansion / temporal signal; diagnostic only in current corpus (minimal fresh-window substance)",
+    "long_tail": "soft ranking feature (zero-vote + substantive), not a quota lane",
+    "contradictory": "diagnostic only at selector level (no independent production signal); contradiction belongs to claim-stage analysis"
+  },
+  "architecture_hypothesis_if_A": "question/source-group preservation + popularity anchor + dense semantic relevance/novelty + optional lightweight redundancy control — NOT ship-B2-as-is, NOT six hard lanes",
+  "caveats": [
+    "equivalence margin for B2~=or>B3 not preregistered; verdict is engineering judgment on primary-metric evidence",
+    "medical case counts at 13-slot denominator: 1-2 source deltas dominate B2-vs-B3 must_see differences",
+    "blinding partially compromised (sensitivity IDs disclosed pre-adjudication) — see ChatGPT formal review finding 8",
+    "cross-lowcode gold untouched by second adjudication (as designed)"
+  ],
+  "final_state": {
+    "TARGET_STATUS": "NOT_IMPLEMENTED",
+    "IMPLEMENTATION_AUTHORIZATION": "NONE",
+    "SPEC_PREPARATION_GATE": "NOT_READY_PENDING_CHATGPT_FINAL_REVIEW"
+  }
+}

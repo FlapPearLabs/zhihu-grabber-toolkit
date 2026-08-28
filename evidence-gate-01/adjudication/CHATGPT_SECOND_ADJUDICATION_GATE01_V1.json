@@ -1,0 +1,373 @@
+{
+  "schema": "zhihu-research-benchmark/second-adjudication-chatgpt-v1",
+  "experiment": "P1_DECISION_GRADE_EVIDENCE_GATE_01",
+  "case_id": "case-hpylori-treatment",
+  "adjudicator": "ChatGPT GPT-5.6 Sol",
+  "basis": "Only the submitted blinded packet excerpts and stated label questions; no web verification and no unblinding key.",
+  "blinding_status": "PARTIALLY_CONTAMINATED_BY_COMPANION_REVIEW_PACKET",
+  "blinding_note": "The companion review packet visible in the same submission disclosed three sensitivity-critical source IDs and the provisional strategy ordering before adjudication. No unblinding key or strategy selection lists were available. All 47 labels were judged under one fixed rubric rather than targeting those three labels.",
+  "rubric": {
+    "must_see": "YES only when the source is independently valuable enough to occupy one of 15 corpus slots due to current authority, unique evidence/aspect, or a uniquely informative firsthand counterexample; generic/redundant/promotional/weakly supported material is NO.",
+    "must_see_candidate": "Same standard as must_see.",
+    "contradiction_stance": "YES when the excerpt unambiguously expresses the specified for/against position.",
+    "cross_question_aspect": "YES when the excerpt directly and substantially represents the named aspect for that question."
+  },
+  "actual_packet_inventory": {
+    "must_see": 22,
+    "must_see_candidate": 10,
+    "contradiction_stance": 11,
+    "cross_question_aspect": 4
+  },
+  "inventory_note": "Actual JSON inventory is 22 must_see + 10 must_see_candidate + 11 contradiction_stance + 4 cross_question_aspect = 47. This does not match the companion Markdown inventory that states 15 contradiction_stance and 'up to 12' cross_question_aspect.",
+  "decision_counts": {
+    "YES": 27,
+    "NO": 20
+  },
+  "final_must_see_sources_if_applied": [
+    "3376603186:28820202588",
+    "52215270:2071906039922963690",
+    "52215270:2326510132",
+    "52215270:3156697298",
+    "52215270:3611600579",
+    "52215270:975101683",
+    "525603218:2444858135",
+    "533032588:2712153634",
+    "533032588:83325887262",
+    "616791818:105981792797",
+    "616791818:3164788252",
+    "616791818:91125298017",
+    "52215270:3599356918"
+  ],
+  "final_must_see_count_if_applied": 13,
+  "decisions": [
+    {
+      "label_id": "MS:3376603186:28820202588",
+      "kind": "must_see",
+      "source_id": "3376603186:28820202588",
+      "decision": "YES",
+      "reason": "直接覆盖“是否可自愈”这一小问题的核心结论与治疗边界；虽证据性一般，但在跨问题15条语料中有独立问题级价值。"
+    },
+    {
+      "label_id": "MS:52215270:1466037599",
+      "kind": "must_see",
+      "source_id": "52215270:1466037599",
+      "decision": "NO",
+      "reason": "表述偏旧且与更强的现行指南/共识来源高度重叠；15条预算下不是不可替代来源。"
+    },
+    {
+      "label_id": "MS:52215270:1515402768",
+      "kind": "must_see",
+      "source_id": "52215270:1515402768",
+      "decision": "NO",
+      "reason": "把益生菌/乳酸菌作为替代治疗方向，证据链与结论可靠性不足，并有明显权威背书堆叠。"
+    },
+    {
+      "label_id": "MS:52215270:1829396577",
+      "kind": "must_see",
+      "source_id": "52215270:1829396577",
+      "decision": "NO",
+      "reason": "核心风险计算作者自己承认“不够严谨”，属于可讨论材料而非不可替代证据。"
+    },
+    {
+      "label_id": "MS:52215270:1909462572",
+      "kind": "must_see",
+      "source_id": "52215270:1909462572",
+      "decision": "NO",
+      "reason": "较完整的基础科普，但从摘录看没有不可由更强指南/机制证据替代的独特信息。"
+    },
+    {
+      "label_id": "MS:52215270:2071906039922963690",
+      "kind": "must_see",
+      "source_id": "52215270:2071906039922963690",
+      "decision": "YES",
+      "reason": "直接引用2026年最新成人临床实践指南，给出根除获益人群、疗程和方案，是当前决策问题的高价值锚点。"
+    },
+    {
+      "label_id": "MS:52215270:2240620369",
+      "kind": "must_see",
+      "source_id": "52215270:2240620369",
+      "decision": "NO",
+      "reason": "第五次共识具有历史价值，但已被更晚共识/2026指南覆盖；15条预算下不应与更新来源同时列为必选。"
+    },
+    {
+      "label_id": "MS:52215270:2297169997",
+      "kind": "must_see",
+      "source_id": "52215270:2297169997",
+      "decision": "NO",
+      "reason": "信息完整但主要是常规根除指征和药物方案，和更强、更新的指南类来源重复。"
+    },
+    {
+      "label_id": "MS:52215270:2326510132",
+      "kind": "must_see",
+      "source_id": "52215270:2326510132",
+      "decision": "YES",
+      "reason": "提供个体化评估框架和多个明确适应证，并解释根除对胃黏膜/胃癌风险的意义，属于高价值临床决策来源。"
+    },
+    {
+      "label_id": "MS:52215270:2874637547",
+      "kind": "must_see",
+      "source_id": "52215270:2874637547",
+      "decision": "NO",
+      "reason": "“两派意见+2019共识”有价值，但与更完整的指南演变/争议来源重叠，15条预算下不是不可替代。"
+    },
+    {
+      "label_id": "MS:52215270:3156697298",
+      "kind": "must_see",
+      "source_id": "52215270:3156697298",
+      "decision": "YES",
+      "reason": "第六次共识同时给出治疗指征和儿童/高龄例外，提供重要边界条件。"
+    },
+    {
+      "label_id": "MS:52215270:3312209969",
+      "kind": "must_see",
+      "source_id": "52215270:3312209969",
+      "decision": "NO",
+      "reason": "仅是极短个人IBS经历，缺少诊断、时间线、替代解释和证据，不能单独成为必选研究来源。"
+    },
+    {
+      "label_id": "MS:52215270:3611600579",
+      "kind": "must_see",
+      "source_id": "52215270:3611600579",
+      "decision": "YES",
+      "reason": "虽是个体经历，但信息具体且主动声明“个人情况不代表普遍性”，能代表真实治疗不良体验这一重要反例维度。"
+    },
+    {
+      "label_id": "MS:52215270:975101683",
+      "kind": "must_see",
+      "source_id": "52215270:975101683",
+      "decision": "YES",
+      "reason": "直接讨论历次指南/共识中的不确定性和执行口径，是理解“为何医生意见不一”的独特元层证据。"
+    },
+    {
+      "label_id": "MS:525603218:2444858135",
+      "kind": "must_see",
+      "source_id": "525603218:2444858135",
+      "decision": "YES",
+      "reason": "专门覆盖“不治疗危害”问题，给出癌前演变链和共识立场；在跨问题语料中承担独立问题级价值。"
+    },
+    {
+      "label_id": "MS:533032588:2488047450",
+      "kind": "must_see",
+      "source_id": "533032588:2488047450",
+      "decision": "NO",
+      "reason": "属于主流科普型强结论，和最新指南及胃癌证据高度重叠，并含若干绝对化表述。"
+    },
+    {
+      "label_id": "MS:533032588:2712153634",
+      "kind": "must_see",
+      "source_id": "533032588:2712153634",
+      "decision": "YES",
+      "reason": "引用大规模长期队列并解释胃癌风险，是强实证型来源，可与指南类来源互补。"
+    },
+    {
+      "label_id": "MS:533032588:83325887262",
+      "kind": "must_see",
+      "source_id": "533032588:83325887262",
+      "decision": "YES",
+      "reason": "聚焦致癌机制并综述炎症、毒力因子和基因组不稳定性，提供不同于指南/流行病学的机制层证据。"
+    },
+    {
+      "label_id": "MS:616791818:105981792797",
+      "kind": "must_see",
+      "source_id": "616791818:105981792797",
+      "decision": "YES",
+      "reason": "直接回答根除后未必完全逆转既有损伤的机制问题，为“根除后胃会不会变好”提供独特边界条件。"
+    },
+    {
+      "label_id": "MS:616791818:3164788252",
+      "kind": "must_see",
+      "source_id": "616791818:3164788252",
+      "decision": "YES",
+      "reason": "详细、可追踪的两次根除治疗亲历，直接覆盖“根除后胃是否改善”的真实体验维度。"
+    },
+    {
+      "label_id": "MS:616791818:3257696322",
+      "kind": "must_see",
+      "source_id": "616791818:3257696322",
+      "decision": "NO",
+      "reason": "混合个人经历、条件致病菌解释和益生菌推断，部分论断缺乏可靠支撑；已有更强体验和机制来源。"
+    },
+    {
+      "label_id": "MS:616791818:91125298017",
+      "kind": "must_see",
+      "source_id": "616791818:91125298017",
+      "decision": "YES",
+      "reason": "以论文为中心总结根除前后DNA损伤/衰老机制，补充治疗后生物学变化这一独特证据层。"
+    },
+    {
+      "label_id": "MS2:52215270:3599356918",
+      "kind": "must_see_candidate",
+      "source_id": "52215270:3599356918",
+      "decision": "YES",
+      "reason": "卫健系统/医院专家给出结构化风险与进一步检查建议，补充“阳性后不等于直接吃药”的决策流程。"
+    },
+    {
+      "label_id": "MS2:52215270:2296865871",
+      "kind": "must_see_candidate",
+      "source_id": "52215270:2296865871",
+      "decision": "NO",
+      "reason": "医生观点但内容仍是常规“感染建议治疗+四联成功率”，与更强指南/专家来源重复。"
+    },
+    {
+      "label_id": "MS2:52215270:3135772229",
+      "kind": "must_see_candidate",
+      "source_id": "52215270:3135772229",
+      "decision": "NO",
+      "reason": "前后存在逻辑矛盾，并转向具体产品式替代方案，证据和中立性不足。"
+    },
+    {
+      "label_id": "MS2:616791818:1955368980899402784",
+      "kind": "must_see_candidate",
+      "source_id": "616791818:1955368980899402784",
+      "decision": "NO",
+      "reason": "只是高度概括的因果与疗效陈述，没有足够证据细节或独特信息。"
+    },
+    {
+      "label_id": "MS2:52215270:3041977917",
+      "kind": "must_see_candidate",
+      "source_id": "52215270:3041977917",
+      "decision": "NO",
+      "reason": "通用科普，主要重复“不能自愈、需系统治疗”，缺乏不可替代的研究价值。"
+    },
+    {
+      "label_id": "MS2:525603218:2452223602",
+      "kind": "must_see_candidate",
+      "source_id": "525603218:2452223602",
+      "decision": "NO",
+      "reason": "夹带具体抑菌产品推荐，信息质量和中立性不足。"
+    },
+    {
+      "label_id": "MS2:616791818:3162185276",
+      "kind": "must_see_candidate",
+      "source_id": "616791818:3162185276",
+      "decision": "NO",
+      "reason": "核心转向蜂蜜辅助治疗并声称极高有效率，明显具有产品推广/证据不足风险。"
+    },
+    {
+      "label_id": "MS2:533032588:2491991837",
+      "kind": "must_see_candidate",
+      "source_id": "533032588:2491991837",
+      "decision": "NO",
+      "reason": "核心是特定益生菌产品推荐，商业推广色彩强，不能作为高质量研究语料的必选。"
+    },
+    {
+      "label_id": "MS2:52215270:1785021055",
+      "kind": "must_see_candidate",
+      "source_id": "52215270:1785021055",
+      "decision": "NO",
+      "reason": "虽然医生视角较完整，但与现行指南、风险和治疗注意事项来源高度重叠；15条预算下替代性高。"
+    },
+    {
+      "label_id": "MS2:52215270:2723267423",
+      "kind": "must_see_candidate",
+      "source_id": "52215270:2723267423",
+      "decision": "NO",
+      "reason": "含可观察/益生菌等主张，但缺乏可靠证据锚点，且与已有副作用/个体化来源重复。"
+    },
+    {
+      "label_id": "ST:case-hpylori-treatment:c1-asymptomatic-must-treat:for:52215270:1876563261",
+      "kind": "contradiction_stance",
+      "source_id": "52215270:1876563261",
+      "decision": "YES",
+      "reason": "摘录明确主张无论有无症状都应治疗，与标注的 for 方向一致。"
+    },
+    {
+      "label_id": "ST:case-hpylori-treatment:c1-asymptomatic-must-treat:for:52215270:1853290758",
+      "kind": "contradiction_stance",
+      "source_id": "52215270:1853290758",
+      "decision": "YES",
+      "reason": "摘录明确主张即使无症状也必须治疗，与标注方向一致。"
+    },
+    {
+      "label_id": "ST:case-hpylori-treatment:c2-hp-gastric-cancer-certainty:for:52215270:1546721934",
+      "kind": "contradiction_stance",
+      "source_id": "52215270:1546721934",
+      "decision": "YES",
+      "reason": "摘录总体以 Hp 风险和治疗必要性为核心，与“应高度重视”方向一致。"
+    },
+    {
+      "label_id": "ST:case-hpylori-treatment:c2-hp-gastric-cancer-certainty:for:52215270:2272668883",
+      "kind": "contradiction_stance",
+      "source_id": "52215270:2272668883",
+      "decision": "YES",
+      "reason": "明确称 Hp 为 I 类致癌原并强调相关疾病风险，与 for 方向一致。"
+    },
+    {
+      "label_id": "ST:case-hpylori-treatment:c2-hp-gastric-cancer-certainty:against:52215270:1833916290",
+      "kind": "contradiction_stance",
+      "source_id": "52215270:1833916290",
+      "decision": "YES",
+      "reason": "承认风险但强调共生潜在收益与权衡，构成“风险不应被单向放大”的反向立场。"
+    },
+    {
+      "label_id": "ST:case-hpylori-treatment:c2-hp-gastric-cancer-certainty:against:52215270:1850517467",
+      "kind": "contradiction_stance",
+      "source_id": "52215270:1850517467",
+      "decision": "YES",
+      "reason": "明确主张分年龄/阶段权衡并强调潜在收益，与 against 方向一致。"
+    },
+    {
+      "label_id": "ST:case-hpylori-treatment:c3-side-effects-vs-benefit:against:52215270:2312503952",
+      "kind": "contradiction_stance",
+      "source_id": "52215270:2312503952",
+      "decision": "YES",
+      "reason": "明确认为常见副作用有限、可恢复，反对把副作用作为主要阻却理由。"
+    },
+    {
+      "label_id": "ST:case-hpylori-treatment:c3-side-effects-vs-benefit:against:52215270:2368754859",
+      "kind": "contradiction_stance",
+      "source_id": "52215270:2368754859",
+      "decision": "YES",
+      "reason": "明确表示四联治疗影响不大、收益值得，与 against 方向一致。"
+    },
+    {
+      "label_id": "ST:case-hpylori-treatment:c4-self-cure-reality:for:52215270:2347348694",
+      "kind": "contradiction_stance",
+      "source_id": "52215270:2347348694",
+      "decision": "YES",
+      "reason": "以个人经历明确声称益生菌后转阴，属于替代方式可清除的 for 立场。"
+    },
+    {
+      "label_id": "ST:case-hpylori-treatment:c4-self-cure-reality:for:52215270:3031497806",
+      "kind": "contradiction_stance",
+      "source_id": "52215270:3031497806",
+      "decision": "YES",
+      "reason": "明确声称不吃四联也能清除，与 for 方向一致。"
+    },
+    {
+      "label_id": "ST:case-hpylori-treatment:c4-self-cure-reality:against:52215270:2529421586",
+      "kind": "contradiction_stance",
+      "source_id": "52215270:2529421586",
+      "decision": "YES",
+      "reason": "明确称自愈很少且多数未经正规治疗将长期感染，与 against 方向一致。"
+    },
+    {
+      "label_id": "ASP:case-hpylori-treatment:asp-gastric-cancer-risk:525603218",
+      "kind": "cross_question_aspect",
+      "source_id": "525603218:2427116849",
+      "decision": "YES",
+      "reason": "摘录直接、系统覆盖未治疗危害与胃癌风险，足以作为该问题下此 aspect 的代表性来源。"
+    },
+    {
+      "label_id": "ASP:case-hpylori-treatment:asp-gastric-cancer-risk:533032588",
+      "kind": "cross_question_aspect",
+      "source_id": "533032588:2508198156",
+      "decision": "YES",
+      "reason": "直接解释 Hp 致癌机制并区分其他宿主/环境风险因素，与该 aspect 高度匹配。"
+    },
+    {
+      "label_id": "ASP:case-hpylori-treatment:asp-treatment-regimens:3376603186",
+      "kind": "cross_question_aspect",
+      "source_id": "3376603186:25292976115",
+      "decision": "YES",
+      "reason": "明确介绍四联疗法组成并将其置于自愈问题的治疗选择语境中，具备问题级代表性。"
+    },
+    {
+      "label_id": "ASP:case-hpylori-treatment:asp-treatment-regimens:533032588",
+      "kind": "cross_question_aspect",
+      "source_id": "533032588:2487596117",
+      "decision": "NO",
+      "reason": "只笼统说“联合用药、遵医嘱、耐药”，不足以称为该问题下 treatment-regimens 的主要代表。"
+    }
+  ]
+}
