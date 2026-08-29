@@ -8,6 +8,10 @@ REVIEWER = ChatGPT（外部独立 reviewer；本轮不 spawn 任何内置 review
 REVIEW_CYCLE = R1 REPAIR（BASE_REVIEWED_HEAD = 31cce41122515129cf2e18c0a70984851dec00e1；
               ChatGPT 判定 CHANGES_REQUESTED：P0=0 / P1=5 / P2=2；本 commit 仅修复
               findings，不重开 Approved Spec / Planning Gate / 冻结结论）
+              + R2 MINIMAL REPAIR（BASE = 73b5cab45dff13e17123b22364beb17167e0768；
+              repair evidence = docs/audit/P1_TOTICKET_CONFORMANCE_AUDIT_01.md @
+              audit/p1-toticket-conformance-01 / 3010e57；仅修复 F-1/F-2/F-3/F-4，
+              票集、编号、条件语义与冻结结论全部不变）
 BASE_SHA = 12788ce60fed39be6436b62525d4ba4d206f2b61（branch 的 master base）
 BRANCH = planning/p1-ticket-decomposition-01
 SCOPE = 仅本文件 + P1_TICKET_GRAPH_V1.md；零代码 / 零 Spec / 零 governance 改动
@@ -71,6 +75,24 @@ Date: 2026-08-29（R1 repair）
 9. **统一 merge 纪律**（适用于全部 ticket，下文不再逐条重复）：scope-clean branch 自
    latest remote master 创建、required quorum 对 exact HEAD PASS、`git diff --check` clean、
    ff-only merge、push 后 remote verify；remote master 集成全局串行。
+
+### 边语义与所有权规则（R2，F-3 / F-4）
+
+```text
+BLOCKED_BY / BLOCKS = DIRECT TICKET DEPENDENCY EDGES ONLY（直接边，不含传递关系）
+  A BLOCKS B  ⇔  B BLOCKED_BY A（逐票互反，机械可证）
+  传递影响只能用 TRANSITIVE_AFFECTS 或 prose 表达，禁止混入 BLOCKS。
+
+ANALYZED_SOURCE_SET_IDENTITY_OWNER = P1-T13（唯一写入者）
+  T13 唯一维护 per-group mapped / analyzed source-set identity（经 T07 hook 进入 CoverageState）；
+  T14 只消费该 identity 并写语义诊断（不得维护第二套 analyzed set、不得再次把 canonical source
+  标记为 analyzed）；T15 只做最终对账 / 身份比较 / 100% 断言 / 披露，不重算、不第二写入。
+
+PRE-SYNTHESIS COVERAGE GUARD = P1-T14
+  T14 在产出 cross-source synthesis 之前，必须机械比较
+  T12 selected verified corpus set identity == T13 mapped/analyzed source-set identity；
+  相等才允许 synthesis；不等 → FAIL_CLOSED 且 NO SYNTHESIS ARTIFACT。
+```
 
 ### Approved Spec requirement → ticket 覆盖矩阵
 
@@ -140,13 +162,40 @@ Ticket ID 空间 = T01..T18 恰好连续，无重编号。
 - **AUTHORITY**: Spec §5.3、§10、§12（evidence caveats 随行）；V0.3 决策 C 逐 runtime 资格先例；
   Planning Gate GATE-1 定义。
 - **IN_SCOPE**: 具名 runtime/provider 的 probe + 对抗 battery + 证据记录；local/remote 对比；
-  候选排序建议。
+  候选排序建议；**并在 Evidence Review PASS 之后形成 repo-tracked
+  `ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION`**（见下 DECISION_ARTIFACT）。
   **出网约束（R1，P1-3）**：在 T02 remote-egress authority PASS 之前，T01 对任何 remote
   EmbeddingProvider 的 qualification **只允许**使用 synthetic Chinese fixtures / handcrafted
   P1-like fixtures / 非敏感 benchmark / neutral text；**禁止**发送：真实知乎语料、本产品检索到的
   知乎源文本、任何真实 EXTERNAL_CORPUS。
-- **OUT_OF_SCOPE**: production adapter 实现；cache schema；冻结 production model；执行 GATE-2；
-  `bge-small-zh-v1.5` 不得因 harness 历史被默认批准。
+- **OUT_OF_SCOPE**: production adapter 实现；cache schema；执行 GATE-2；
+  `bge-small-zh-v1.5` 不得因 harness 历史被默认批准；跨 runtime / product-wide 永久模型冻结。
+- **DECISION_ARTIFACT（R2，F-1）**: 除 qualification report 外，T01 必须在
+  Evidence Review PASS 之后产出 repo-tracked：
+
+  ```text
+  ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION
+  作用域 = initial P1 implementation profile（仅此一个实现 profile）
+  至少明确：
+    · provider category（local | remote）
+    · named provider
+    · named model / profile
+    · model / version identity
+    · applicable normalization / profile identity
+    · local vs remote classification
+    · supporting qualification evidence reference
+    · qualification scope / caveats
+    · decision status
+  ```
+
+  边界：① 这不是修改 Approved Spec；② 不是 product-wide 永久模型冻结；③ 不是跨 runtime
+  qualification；④ 不把 experimental harness model（含 `bge-small-zh-v1.5`）自动升级为生产；
+  T01 据此**解决 D-1 for this initial P1 implementation profile**，但**不得**声称 D-1 globally
+  closed forever。
+  路径联动：accepted profile = LOCAL → 该 decision 必须同时携带 `NO_NEW_EGRESS = YES`
+  （与 report 一致）；accepted profile = REMOTE → decision 记录被接受的 remote profile，
+  但 **T10 remote implementation 仍为 `BLOCKED_BY = T01 + T02`**，且同时消费
+  ①T01 accepted implementation profile decision 与 ②T02 remote egress authority。
 - **BLOCKED_BY**: —；**BLOCKS**: T02（conditional）、T10。
 - **FILES_OR_COMPONENTS_EXPECTED**: repo-tracked qualification report（runtime-scoped）+ 可复现
   probe 脚本（discovery-only，不接入生产路径）。
@@ -157,10 +206,14 @@ Ticket ID 空间 = T01..T18 恰好连续，无重编号。
   **remote 结局（R1）**：report 须声明 qualification 仅用 fixtures/neutral text；若代表性
   qualification 无法在不使用真实公开知乎语料出网的情况下完成 → report 记录
   `REQUIRES_REMOTE_EGRESS_AUTHORITY` 并 **STOP 该 probe**——不得先行出网再补批准。
+  **decision artifact 条件（R2，F-1）**：`ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION`
+  必须可从 repo 独立验证、逐项覆盖 DECISION_ARTIFACT 清单、显式引用 supporting evidence，
+  且不得在 Evidence Review PASS 之前被 T10 消费。
 - **REQUIRED_TESTS/EVIDENCE**: 可复现 probe/battery（命令 + 期望输出）；fixture 来源与范围
-  显式标注；无 credential 值/哈希/前缀。
+  显式标注；无 credential 值/哈希/前缀；accepted decision record 本身为可验证 evidence。
 - **FAIL_CLOSED / STOP_CONDITIONS**: 证据不足 → `UNKNOWN`；触发
-  `REQUIRES_REMOTE_EGRESS_AUTHORITY` → 该 probe STOP，移交 T02。
+  `REQUIRES_REMOTE_EGRESS_AUTHORITY` → 该 probe STOP，移交 T02；
+  **accepted decision record 缺失 / 未完成 review / `UNKNOWN` → T10 不得启动（`UNKNOWN != PASS`）**。
 - **REVIEWER_QUORUM**: 1 × EVIDENCE_REVIEWER。
 - **MERGE_REQUIREMENT**: 治理默认（见 §B.9）。
 - **PARALLELIZABLE_WITH**: T03、T04、T05、T18（master 集成仍串行）。
@@ -230,7 +283,8 @@ Ticket ID 空间 = T01..T18 恰好连续，无重编号。
 - **IN_SCOPE**: plan schema 模块 + validation + hashing + 失败语义 + focused tests。
 - **OUT_OF_SCOPE**: universal research DSL；Planner 语义生成（T18）；provider IO；任何
   selection/verification authority。
-- **BLOCKED_BY**: —；**BLOCKS**: T18、T08。
+- **BLOCKED_BY**: —；**BLOCKS**: T18。（直接边；T08 经 T18→T06→T07 传递受影响，见
+  `TRANSITIVE_AFFECTS: T06/T07/T08/…`）
 - **FILES_OR_COMPONENTS_EXPECTED**: `research-orchestration/lib/plan-contract.mjs`（或同级命名）、
   focused tests。
 - **ACCEPTANCE_CRITERIA**: §4.1 六类概念字段全部可表达；plan persisted + validated + hashed；
@@ -399,7 +453,8 @@ Ticket ID 空间 = T01..T18 恰好连续，无重编号。
 - **IN_SCOPE**: 多组状态机扩展、逐组 capture/verify/handoff 编排、manifest 派生、resume /
   stale 传播、partial 报告、Source Completeness hook 更新。
 - **OUT_OF_SCOPE**: 新 handoff schema（§6.3 若需另行合同化）；verify 语义重实现；semantic 分析。
-- **BLOCKED_BY**: T08, T05；**BLOCKS**: T12、T13。
+- **BLOCKED_BY**: T08, T05；**BLOCKS**: T12。（直接边；T13 的直接 blocker 是 T12，T09→T13
+  为传递影响，见 `TRANSITIVE_AFFECTS: T13/T14/T15/T16`）
 - **FILES_OR_COMPONENTS_EXPECTED**: state/composition 模块扩展 + focused tests。
 - **ACCEPTANCE_CRITERIA**: 每组独立 capture/verify（`captured != verified` 逐组）；resume 复用
   仍 valid 完成组；stale/identity 变更 → 该组及依赖 artifact 失效；`FILE EXISTS != VALID CACHE`；
@@ -418,18 +473,26 @@ Ticket ID 空间 = T01..T18 恰好连续，无重编号。
 ### P1-T10 — EmbeddingProvider adapter + cache（LOCAL/REMOTE 双路径依赖）
 
 - **TYPE**: CODE
-- **GOAL**: 按 §5.3 contract 实现具名 EmbeddingProvider adapter（T01 选出的 provider/category）
-  与 cache：cache identity = canonical input hash + provider/model + embedding version +
+- **GOAL**: 按 §5.3 contract 实现 **T01 accepted implementation profile decision 明确指定**的
+  EmbeddingProvider adapter（provider / model / profile 由决策记录给定，本票不选择）与 cache：
+  cache identity = canonical input hash + provider/model + embedding version +
   normalization version；vector validity 由 controller 校验；failure identity；egress policy
   identity 记录。
-- **WHY_NOW**: GATE-1 解锁后的直接实现单元。
-- **AUTHORITY**: Spec §5.3、§10；D-7(a) 委派；T01 report / T02 authority 为条件输入。
-- **IN_SCOPE**: adapter、cache 持久化（flat-file 即可）、preflight（布尔模式）、fail-closed。
-- **OUT_OF_SCOPE**: vector database；dense 计算（T11）；runtime routing 变更；degraded mode。
-- **BLOCKED_BY（R1，P1-2 条件依赖）**:
-  - **LOCAL 路径**: `BLOCKED_BY = T01`；`REQUIRED_EVIDENCE = T01 report 之 NO_NEW_EGRESS = YES
-    记录`（不要求未激活的 T02）。
-  - **REMOTE 路径**: `BLOCKED_BY = T01 + T02`；`REQUIRED_EVIDENCE = T02 remote egress authority`。
+- **WHY_NOW**: GATE-1 解锁后（accepted decision 已存在）的直接实现单元。
+- **AUTHORITY**: Spec §5.3、§10；D-7(a) 委派；**T01
+  `ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION`** 为具名实现对象来源（R2，F-1）；
+  T02 authority 为 remote 路径附加条件。
+- **IN_SCOPE**: adapter、cache 持久化（flat-file 即可）、preflight（布尔模式）、fail-closed；
+  实现对象与 decision record 的机械一致性校验。
+- **OUT_OF_SCOPE**: vector database；dense 计算（T11）；runtime routing 变更；degraded mode；
+  **provider / model / profile 的选择决策（selection decision）——本票只能实现 T01 accepted
+  decision record 指定的对象，禁止自行从候选排序中挑选**（R2，F-1）。
+- **BLOCKED_BY（R1，P1-2 条件依赖 + R2，F-1）**:
+  - **LOCAL 路径**: `BLOCKED_BY = T01`；`REQUIRED_EVIDENCE = ①T01
+    ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION（含 LOCAL 分类）+
+    ②T01 report 之 NO_NEW_EGRESS = YES 记录`（不要求未激活的 T02）。
+  - **REMOTE 路径**: `BLOCKED_BY = T01 + T02`；`REQUIRED_EVIDENCE = ①T01 accepted
+    implementation profile decision + ②T02 remote egress authority`（两者同时消费）。
 - **BLOCKS**: T11。
 - **FILES_OR_COMPONENTS_EXPECTED**: embedding adapter 模块 + cache 模块 + preflight + tests。
 - **ACCEPTANCE_CRITERIA**: §5.3 八项 contract 字段全部落地；credential 值/路径内容不入 cache
@@ -437,8 +500,10 @@ Ticket ID 空间 = T01..T18 恰好连续，无重编号。
   实际路径一致（local 无新出网 / remote 有 T02 authority）。
 - **REQUIRED_TESTS**: contract 字段、cache identity/reuse/stale、failure identity、preflight、
   路径一致性。
-- **REQUIRED_EVIDENCE**: focused tests + 相应路径 evidence（T01 NO_NEW_EGRESS 记录或 T02 authority）。
+- **REQUIRED_EVIDENCE**: focused tests + 相应路径 evidence（LOCAL：T01 accepted decision record
+  + NO_NEW_EGRESS 记录；REMOTE：T01 accepted decision record + T02 authority）。
 - **FAIL_CLOSED / STOP_CONDITIONS**: remote 路径无 T02 authority → STOP；
+  **T01 accepted decision record 缺失 / 与实现对象不一致 → STOP（禁止自选 provider/model）**；
   `DENSE_CAPABILITY_UNAVAILABLE` → fail closed。
 - **REVIEWER_QUORUM**: 1 × CODE_REVIEWER。
 - **MERGE_REQUIREMENT**: 治理默认。
@@ -513,15 +578,23 @@ Ticket ID 空间 = T01..T18 恰好连续，无重编号。
   canonical group identity / provenance、selected/verified accounting、**per-group
   mapped/analyzed accounting 更新**（经 T07 hook）、main/minority/contradictory claims、
   expert/evidence-rich refs、completeness/coverage state、discussion-volume 信号。
-- **OUT_OF_SCOPE**: 跨组聚合（T14）；用 `canonicalSourceIds` union 冒充逻辑层；runtime fallback。
+- **OUT_OF_SCOPE**: 跨组聚合（T14）；用 `canonicalSourceIds` union 冒充逻辑层；runtime fallback；
+  cross-source synthesis（T14）。
+- **SINGLE_OWNER（R2，F-4）**: `ANALYZED_SOURCE_SET_IDENTITY_OWNER = P1-T13`。T13 是
+  **唯一写入者**，维护：per-group mapped source-set identity、per-group analyzed source-set
+  identity，以及经 T07 hook 进入 CoverageState 的对应 source accounting。T14 只消费该 identity；
+  T15 只做最终对账 / 身份比较 / 断言 / 披露。
 - **BLOCKED_BY**: T12；**BLOCKS**: T14。
 - **FILES_OR_COMPONENTS_EXPECTED**: group-representation + per-group extraction 模块 + tests。
 - **ACCEPTANCE_CRITERIA**: §8.1 字段全部可表达且可机械校验；claims 经 controller 校验 /
   controller-owned identity（模型只回短 token / 语义，不拥有 sourceId）；runtime unavailable →
-  fail closed；任一来源失败 → 该组 fail closed（无部分结果冒充）；runtime 身份如实记录。
-- **REQUIRED_TESTS**: 表示完整性、claims 抽取契约、隔离/投影安全、失败语义、accounting 更新。
+  fail closed；任一来源失败 → 该组 fail closed（无部分结果冒充）；runtime 身份如实记录；
+  **mapped/analyzed source-set identity 由本票唯一写入且可机械导出（供 T14 前置 guard 消费）**。
+- **REQUIRED_TESTS**: 表示完整性、claims 抽取契约、隔离/投影安全、失败语义、accounting 更新、
+  **analyzed set identity 单一所有权（无第二写入路径）**。
 - **REQUIRED_EVIDENCE**: focused tests。
-- **FAIL_CLOSED / STOP_CONDITIONS**: 表示层与 canonical 冲突 → fail；投影/隔离不可用 → fail。
+- **FAIL_CLOSED / STOP_CONDITIONS**: 表示层与 canonical 冲突 → fail；投影/隔离不可用 → fail；
+  **出现第二处 analyzed set 写入 → fail**。
 - **REVIEWER_QUORUM**: 1 × CODE_REVIEWER。
 - **MERGE_REQUIREMENT**: 治理默认。
 - **PARALLELIZABLE_WITH**: —。
@@ -538,17 +611,36 @@ Ticket ID 空间 = T01..T18 恰好连续，无重编号。
   discussion-volume 差异）。
 - **WHY_NOW**: T13 输出的直接消费者；P1 产品价值的核心输出面。
 - **AUTHORITY**: Spec §8.2/§8.3、§5.2、§10.1；父级 R5。
-- **IN_SCOPE**: claim/aspect 跨组聚合模块、synthesis 编排、aspect/claim/contradiction/
-  analyzed 诊断更新（经 T07 hook）、fail-closed。
+- **IN_SCOPE**: claim/aspect 跨组聚合模块、synthesis 编排、**PRE-SYNTHESIS coverage guard**、
+  synthesis-level 语义诊断更新（经 T07 hook）、fail-closed。
 - **OUT_OF_SCOPE**: per-group claim 抽取（T13）；新 runtime qualification；flat reduce /
-  naive equal weight；runtime fallback；P2/P3。
+  naive equal weight；runtime fallback；P2/P3；
+  **analyzed source-set identity 的写入（唯一写入者 = T13）**——T14 不得创建或维护第二套
+  analyzed source-set identity，不得再次把 canonical source 标记为 analyzed（R2，F-4）。
+- **PRE_SYNTHESIS_COVERAGE_GUARD（R2，F-2）**: 在产出任何 cross-source synthesis 之前，T14
+  必须读取：① **T12** selected verified corpus set identity；② **T13** mapped/analyzed
+  source-set identity，并执行机械比较：
+
+  ```text
+  selected_verified_source_set_identity == mapped_analyzed_source_set_identity
+  ？相等   → 允许 cross-source synthesis
+  ？不相等 → FAIL_CLOSED 且 NO SYNTHESIS ARTIFACT
+  ```
+
+  禁止"先生成 synthesis、再由 T15 事后发现 coverage 不完整"。T15 的最终对账与断言保留为
+  **双保险与产品披露**，不是唯一防线。
 - **BLOCKED_BY**: T13；**BLOCKS**: T15。
-- **FILES_OR_COMPONENTS_EXPECTED**: 聚合 + synthesis 模块 + tests。
+- **FILES_OR_COMPONENTS_EXPECTED**: 聚合 + synthesis + 前置 guard 模块 + tests。
 - **ACCEPTANCE_CRITERIA**: §8.2/§8.3 禁止项全部有负向测试；lineage controller-owned；
-  runtime unavailable → fail；诊断经 hook 如实更新。
-- **REQUIRED_TESTS**: 聚合语义、禁止项负向、failure 语义、hook 更新。
-- **REQUIRED_EVIDENCE**: focused tests；UNTRUSTED_CONTENT 投影安全断言。
-- **FAIL_CLOSED / STOP_CONDITIONS**: coverage/lineage invalid → fail；降级 → fail。
+  runtime unavailable → fail；诊断经 hook 如实更新；
+  **前置 guard：相等分支产出 synthesis、不等分支必须 FAIL_CLOSED 且不生成任何 synthesis
+  artifact**；**T14 不写 analyzed source-set identity（只消费 T13 的）**。
+- **REQUIRED_TESTS**: 聚合语义、禁止项负向、failure 语义、hook 更新、
+  **前置 guard 正向（相等→synthesis）+ 负向（不等→FAIL_CLOSED 且无 synthesis artifact）**、
+  **无第二 analyzed set 写入的负向测试**。
+- **REQUIRED_EVIDENCE**: focused tests；UNTRUSTED_CONTENT 投影安全断言；guard 两分支证据。
+- **FAIL_CLOSED / STOP_CONDITIONS**: coverage/lineage invalid → fail；降级 → fail；
+  **前置 guard 不等 → FAIL_CLOSED + NO SYNTHESIS ARTIFACT（STOP，不得部分产出）**。
 - **REVIEWER_QUORUM**: 1 × CODE_REVIEWER。
 - **MERGE_REQUIREMENT**: 治理默认。
 - **PARALLELIZABLE_WITH**: —。
@@ -568,17 +660,24 @@ Ticket ID 空间 = T01..T18 恰好连续，无重编号。
 - **WHY_NOW**: 把 P1 管线接回既有产品出口；coverage assertion 是产品合同（§1 / §9.3）。
 - **AUTHORITY**: Spec §1、§9.3、§15；父级 §10、§6。
 - **IN_SCOPE**: 最终 hook 汇聚与 feedback wiring（round → CoverageState → saturation → 再检索 /
-  budget stop → synthesis 的完整运行期闭环）、集合对账、assertion、render/披露扩展、事件/进度。
-- **OUT_OF_SCOPE**: 新 GUI/dashboard；sampled 路径变更；版本分配；阈值冻结（D-6 仍委派）。
+  budget stop → synthesis 的完整运行期闭环）、集合对账（identity comparison）、100% assertion、
+  final disclosure、render/披露扩展、事件/进度。
+- **OUT_OF_SCOPE**: 新 GUI/dashboard；sampled 路径变更；版本分配；阈值冻结（D-6 仍委派）；
+  **analyzed source-set identity 的重算或第二写入**（唯一写入者 = T13；T15 只比较、不重新计算）
+  （R2，F-4）；**替代 T14 的前置 guard**（T15 的最终 assertion 保留且为双保险，不是唯一防线）
+  （R2，F-2）。
 - **BLOCKED_BY**: T14, T07；**BLOCKS**: T16。
 - **FILES_OR_COMPONENTS_EXPECTED**: integration 模块 + render/披露扩展 + tests。
 - **ACCEPTANCE_CRITERIA**: 全部下游 hook 更新汇聚后，两集合机械相等才输出 100% assertion
   （否则 fail/披露缺口）；partial 不渲染为 complete；运行期 feedback 边可测试且 DAG 无环；
-  observability 满足父级 §10 最低集；无 machine-private path。
+  observability 满足父级 §10 最低集；无 machine-private path；
+  **T15 的最终 assertion 不得被删除或弱化**；**T15 只消费 T13 的 analyzed set identity
+  做比较，不写入新的 analyzed 状态**。
 - **REQUIRED_TESTS**: assertion 相等/不等两分支、feedback wiring 闭环、披露完整性、失败语义、
-  v0.3 回归。
+  v0.3 回归、**T15 不产生第二 analyzed set 的负向测试**。
 - **REQUIRED_EVIDENCE**: focused tests + 既有 suites 回归。
-- **FAIL_CLOSED / STOP_CONDITIONS**: 缺口冒充 full → fail；降级阈值放行 → fail。
+- **FAIL_CLOSED / STOP_CONDITIONS**: 缺口冒充 full → fail；降级阈值放行 → fail；
+  **最终对账不等且已被 T14 前置 guard 放行 → fail（双重防线联合校验）**。
 - **REVIEWER_QUORUM**: 1 × CODE_REVIEWER。
 - **MERGE_REQUIREMENT**: 治理默认。
 - **PARALLELIZABLE_WITH**: —。
@@ -698,6 +797,29 @@ PRESERVE 确认：GATE-1/2/3、T04 plan contract、T05 seam、T06 RRF、T08 grou
 multi-group、T10/T11 拆分、T12 frozen baseline、D-4/D-5/D-6 委派、D-8 NO_TICKET、无 browser
 scraping、无 global quality score、无 six hard lanes、无 mandatory MMR、无 vector DB、无 P2/P3、
 quorum 政策、hardest-first、串行 master 集成——全部未变；GATE-1/2/3 均未执行。
+
+---
+
+## 附二：R2 MINIMAL REPAIR RECORD（响应 /to-tickets Conformance Audit F-1..F-4）
+
+Repair evidence：`docs/audit/P1_TOTICKET_CONFORMANCE_AUDIT_01.md`
+@ `audit/p1-toticket-conformance-01` / `3010e575feb14b6bda0f4d465548de75529d3864`。
+Audit 是 repair evidence，**不是**可覆盖 Approved Spec / Planning Gate 的新 authority。
+
+| Finding | 修复位置 | 内容 |
+|---|---|---|
+| F-1（P1） | T01（DECISION_ARTIFACT / IN_SCOPE / AC / evidence / STOP）+ T10（GOAL / AUTHORITY / IN_SCOPE / OUT_OF_SCOPE / BLOCKED_BY / evidence / STOP） | T01 在 Evidence Review PASS 后产出 repo-tracked `ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION`（作用域 = initial P1 implementation profile；含 provider category / named provider / named model-profile / version identity / normalization identity / local-remote / evidence reference / scope-caveats / decision status）；LOCAL 须带 `NO_NEW_EGRESS = YES`；REMOTE 仍要求 T10 `BLOCKED_BY = T01 + T02` 且同时消费 decision + egress authority；T01 仅解决 D-1 for this initial profile，不声称 D-1 globally closed；T10 禁止 provider/model selection decision，只能实现 decision record 指定对象 |
+| F-2（P1） | T14（PRE_SYNTHESIS_COVERAGE_GUARD / IN_SCOPE / AC / tests / STOP）+ T15（OUT_OF_SCOPE / AC / STOP） | T14 在 synthesis 前机械比较 T12 selected verified set identity 与 T13 mapped/analyzed set identity：相等 → 允许 synthesis；不等 → `FAIL_CLOSED` + `NO SYNTHESIS ARTIFACT`（含正向/负向测试要求）；T15 保留最终对账 + 100% assertion + 披露（双保险，未删除、未弱化） |
+| F-3（P2） | §B 边语义规则 + T04 BLOCKS + T09 BLOCKS + GRAPH §C 矩阵 | 声明 `BLOCKED_BY / BLOCKS = DIRECT EDGES ONLY`、`A BLOCKS B ⇔ B BLOCKED_BY A`；删除误写的传递边 T04→T08、T09→T13，改用 `TRANSITIVE_AFFECTS`；未新增任何真实 DAG 边来迁就文字 |
+| F-4（P2） | §B 所有权规则 + T13（SINGLE_OWNER / AC / tests / STOP）+ T14（OUT_OF_SCOPE / AC / tests）+ T15（OUT_OF_SCOPE / AC / tests） | `ANALYZED_SOURCE_SET_IDENTITY_OWNER = P1-T13`：T13 唯一写入 per-group mapped/analyzed source-set identity；T14 只消费并写语义诊断（不得第二套 analyzed set、不得再次标记 canonical source 为 analyzed）；T15 只比较/断言/披露，不重算不写入 |
+
+R2 保持（未变）：18 票集与 T01..T18 编号、T02/T17 条件语义、T04/T18 分离、T05 seam、T06 RRF、
+T07 coverage contract/hooks/round infra、T08 selector A、T09 multi-group、T10/T11 拆分、
+T12 selector B、T13/T14 分离、T15 最终集成、T16 dogfood、GATE-1/2/3、D-4/D-5/D-6 委派验证、
+D-8 NO_TICKET、D-9 scoped amendment 规则、reviewer quorum、hardest-first、串行 master 集成。
+未重新引入：six hard lanes / mandatory MMR / global quality score / vector DB / browser
+scraping / Browser Session platform / P2/P3 / xQuAD / DPP / Submodular / LTR / advanced
+stopping / version assignment。
 
 ---
 

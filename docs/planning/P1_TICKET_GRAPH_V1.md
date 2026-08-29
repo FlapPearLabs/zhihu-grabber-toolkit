@@ -6,13 +6,25 @@ STATUS = REVIEW_PENDING
 AUTHORITY_CLASS = NON_AUTHORITATIVE_PLANNING_CANDIDATE
 REVIEW_CYCLE = R1 REPAIR（BASE_REVIEWED_HEAD = 31cce41122515129cf2e18c0a70984851dec00e1；
               ChatGPT CHANGES_REQUESTED：P0=0 / P1=5 / P2=2）
+              + R2 MINIMAL REPAIR（BASE = 73b5cab45dff13e17123b22364beb17167e0768；
+              repair evidence = docs/audit/P1_TOTICKET_CONFORMANCE_AUDIT_01.md @
+              audit/p1-toticket-conformance-01 / 3010e57；仅修复 F-1/F-2/F-3/F-4）
 COMPANION = docs/planning/P1_TICKET_DECOMPOSITION_V1.md（ticket contracts 详定义）
 BASE_SHA = 12788ce60fed39be6436b62525d4ba4d206f2b61
 BRANCH = planning/p1-ticket-decomposition-01
 TARGET_STATUS = NOT_IMPLEMENTED
 IMPLEMENTATION_AUTHORIZATION = NONE
 VERSION_ASSIGNMENT = UNASSIGNED
-Date: 2026-08-29（R1 repair）
+Date: 2026-08-29（R2 minimal repair）
+```
+
+## 边语义规则（R2，F-3）
+
+```text
+BLOCKED_BY / BLOCKS = DIRECT TICKET DEPENDENCY EDGES ONLY
+  A BLOCKS B  ⇔  B BLOCKED_BY A（逐票互反，机械可证）
+  传递影响只能以 TRANSITIVE_AFFECTS 或 prose 表达，禁止混入 BLOCKS。
+  本轮已删除误写的传递边：T04→T08、T09→T13；未新增任何真实 DAG 边来迁就文字。
 ```
 
 ## A. Graph status
@@ -97,37 +109,55 @@ P1-T15 CoverageState final integration + 100% analysis assertion + v0.3 integrat
 P1-T16 End-to-end dogfood acceptance ◄── P1-T03、P1-T17
 ```
 
-CoverageState 所有权（R1）：**T07** = contract + hooks + round controller infrastructure；
-**T09** = Source Completeness 更新；**T12** = selection accounting 更新；
-**T13/T14** = aspect/claim/contradiction/analyzed 诊断更新；**T15** = 最终 cross-cutting 集成 +
-完整 saturation feedback wiring + 100% analysis assertion。
+```text
+ANALYZED_SOURCE_SET_IDENTITY_OWNER = P1-T13
+```
 
-## C. blocked_by / blocks matrix
+CoverageState 所有权（R1 + R2，F-4）：**T07** = contract + hooks + round controller
+infrastructure；**T09** = Source Completeness 更新；**T12** = selection accounting 更新；
+**T13** = per-group mapped/analyzed source-set identity（**唯一写入者**，见上常量）；
+**T14** = 只消费 T13 的 identity + 写 synthesis-level 语义诊断（aspect / claim /
+contradiction / claim-source diversity）；**T15** = 最终 cross-cutting 集成 +
+完整 saturation feedback wiring + 最终对账 + 100% analysis assertion（不重算、不第二写入）。
 
-| Ticket | BLOCKED_BY | BLOCKS |
-|---|---|---|
-| P1-T01 | — | T02（conditional）, T10 |
-| P1-T02 | T01（且 iff T01 提议 remote 才激活） | T10（remote 分支） |
-| P1-T03 | — | T17, T16 |
-| P1-T04 | — | T18, T08 |
-| P1-T05 | — | T06, T09, T17 |
-| P1-T06 | T18, T05 | T07, T11 |
-| P1-T07 | T06 | T08, T15 |
-| P1-T08 | T07 | T09 |
-| P1-T09 | T08, T05 | T12, T13 |
-| P1-T10 | LOCAL: T01 ｜ REMOTE: T01+T02 | T11 |
-| P1-T11 | T10, T06 | T12 |
-| P1-T12 | T09, T11 | T13 |
-| P1-T13 | T12 | T14 |
-| P1-T14 | T13 | T15 |
-| P1-T15 | T14, T07 | T16 |
-| P1-T16 | T15, T03, T17 | —（completion） |
-| P1-T17 | T03, T05（+ D-9 amendment 产出票若触发） | T16 |
-| P1-T18 | T04 | T06 |
+**PRE-SYNTHESIS GUARD（R2，F-2）**：T14 产出 synthesis 前比较
+`T12 selected verified set identity == T13 mapped/analyzed set identity`；
+不等 → `FAIL_CLOSED` + `NO SYNTHESIS ARTIFACT`。T15 的断言保留为双保险与产品披露。
 
-自检：所有 BLOCKED_BY 均存在（T01..T18 封闭）；core lane 单向 + evidence/discovery lane 仅单向
-汇入 + T18 单向插入 T04→T06 之间 → **无环**。Plan 生成者（T18）先于一切消费者（T06、经管线
+## C. blocked_by / blocks matrix（DIRECT EDGES ONLY）
+
+| Ticket | BLOCKED_BY | BLOCKS | 互反 |
+|---|---|---|---|
+| P1-T01 | — | T02（conditional）, T10 | ✓ |
+| P1-T02 | T01（且 iff T01 提议 remote 才激活） | T10（remote 分支） | ✓ |
+| P1-T03 | — | T17, T16 | ✓ |
+| P1-T04 | — | T18 | ✓ |
+| P1-T05 | — | T06, T09, T17 | ✓ |
+| P1-T06 | T18, T05 | T07, T11 | ✓ |
+| P1-T07 | T06 | T08, T15 | ✓ |
+| P1-T08 | T07 | T09 | ✓ |
+| P1-T09 | T08, T05 | T12 | ✓ |
+| P1-T10 | LOCAL: T01 ｜ REMOTE: T01+T02 | T11 | ✓ |
+| P1-T11 | T10, T06 | T12 | ✓ |
+| P1-T12 | T09, T11 | T13 | ✓ |
+| P1-T13 | T12 | T14 | ✓ |
+| P1-T14 | T13 | T15 | ✓ |
+| P1-T15 | T14, T07 | T16 | ✓ |
+| P1-T16 | T15, T03, T17 | —（completion） | ✓ |
+| P1-T17 | T03, T05（+ D-9 amendment 产出票若触发） | T16 | ✓ |
+| P1-T18 | T04 | T06 | ✓ |
+
+R2 直接边修正记录：T04 的 BLOCKS 原误列 T08（T08 的直接 blocker 是 T07，T04→T08 为传递），
+已删除；T09 的 BLOCKS 原误列 T13（T13 的直接 blocker 是 T12），已删除。**未新增任何真实 DAG
+边来迁就文字**；传递影响仅在下方 `TRANSITIVE_AFFECTS` 中以 prose 表达。
+
+自检：所有 BLOCKED_BY 均存在（T01..T18 封闭）；**BLOCKS ⇔ BLOCKED_BY 逐票互反（直接边，
+18/18 机械验证通过）**；core lane 单向 + evidence/discovery lane 仅单向汇入 + T18 单向插入
+T04→T06 之间 → **无环（拓扑排序 18/18）**。Plan 生成者（T18）先于一切消费者（T06、经管线
 至 T08）；无 path 消费无人生成的 Plan。
+
+`TRANSITIVE_AFFECTS`（仅 prose，非 DAG 边）：T04 → T06/T07/T08/…；T09 → T13/T14/T15/T16；
+T01 → T11/T12（经 T10）。
 
 ## D. CRITICAL_PATH
 
@@ -240,3 +270,20 @@ NEXT_GATE = CHATGPT_FRESH_TICKET_GRAPH_DELTA_REVIEW
 保持：TARGET_STATUS = NOT_IMPLEMENTED / IMPLEMENTATION_AUTHORIZATION = NONE /
       VERSION_ASSIGNMENT = UNASSIGNED
 ```
+
+## L. R2 MINIMAL REPAIR RECORD（F-1..F-4）
+
+Repair evidence：`docs/audit/P1_TOTICKET_CONFORMANCE_AUDIT_01.md`
+@ `audit/p1-toticket-conformance-01` / `3010e575feb14b6bda0f4d465548de75529d3864`
+（audit = repair evidence，不是覆盖 Approved Spec / Planning Gate 的新 authority）。
+
+| Finding | 本文件修复 | 契约文件修复 |
+|---|---|---|
+| F-1（P1）D-1 决策交接 | §B 无新增边；矩阵保持 T01→T10 / T02→T10(remote)、T10→T11 | T01 增加 `ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION`；T10 禁自选 provider/model，LOCAL/REMOTE 双路径均消费该 decision（REMOTE 另加 T02） |
+| F-2（P1）synthesis 前置 guard | §B 增加 PRE-SYNTHESIS GUARD 说明（T14 guard + T15 双保险） | T14 增加 guard + AC + 正/负向测试 + STOP（不等 → FAIL_CLOSED + NO SYNTHESIS ARTIFACT）；T15 断言保留 |
+| F-3（P2）直接边语义 | 顶部 + §C 声明 DIRECT EDGES ONLY；删除 T04→T08、T09→T13；新增 `TRANSITIVE_AFFECTS` prose；逐票互反自检 | §B 同规则；T04 / T09 的 BLOCKS 行改为直接边 |
+| F-4（P2）analyzed set 单一所有权 | §B 所有权行重述：T13 唯一写入、T14 只消费+诊断、T15 只比较/断言 | T13 SINGLE_OWNER + 测试/STOP；T14 OUT_OF_SCOPE 禁第二套 analyzed set；T15 不重算不写入 |
+
+未变：18 票集与编号、T02/T17 条件语义、CRITICAL_PATH（11 节点）、并行车道、hardest-first、
+串行 master 集成、GATE-1/2/3、D-4/D-5/D-6 委派、D-8 NO_TICKET、D-9 scoped amendment、
+reviewer quorum；未引入任何 forbidden architecture。
