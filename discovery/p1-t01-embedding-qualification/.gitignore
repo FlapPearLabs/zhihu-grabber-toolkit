@@ -1,0 +1,16 @@
+# Local-only artifacts of the P1-T01 discovery harness.
+# Scoped to this directory so the repository root .gitignore is not modified by this ticket.
+
+# Downloaded model weights (small ~23MB, base ~103MB) — re-acquirable via
+# `npm run fetch-model`. Identity is pinned in committed artifacts by revision
+# SHA + per-file sha256, so the weights themselves must not be committed.
+models/
+models-*/
+
+# Installed dependencies (root .gitignore already ignores node_modules/, restated
+# here so this directory is self-contained).
+node_modules/
+
+# Scratch / intermediate run output. Decided evidence files are committed
+# explicitly under evidence/.
+*.tmp

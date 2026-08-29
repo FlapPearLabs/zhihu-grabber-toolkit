@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "probe": "P1_T01_REMOTE_EMBEDDINGS_CAPABILITY",
+  "enabled": true,
+  "inputPolicy": {
+    "corpusEgress": false,
+    "fixtureClass": "SYNTHETIC_HANDCRAFTED",
+    "persistedVectors": false
+  },
+  "results": [
+    {
+      "path": "/v1/embeddings",
+      "httpStatus": 404,
+      "errorClass": "NO_EMBEDDINGS_ENDPOINT",
+      "embeddingCapability": "NO",
+      "observedDimension": null
+    },
+    {
+      "path": "/embeddings",
+      "httpStatus": 404,
+      "errorClass": "NO_EMBEDDINGS_ENDPOINT",
+      "embeddingCapability": "NO",
+      "observedDimension": null
+    }
+  ],
+  "verdict": "CAPABILITY_ABSENT",
+  "verdictReason": "no_embeddings_endpoint"
+}

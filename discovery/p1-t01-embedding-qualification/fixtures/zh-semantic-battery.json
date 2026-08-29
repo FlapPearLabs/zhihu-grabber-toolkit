@@ -1,0 +1,204 @@
+{
+  "battery_id": "P1_T01_ZH_SEMANTIC_BATTERY_V1",
+  "version": 1,
+  "purpose": "EmbeddingProvider qualification for P1 (Cross-Question Deep Research) dense semantic geometry over Chinese public-Zhihu-like text.",
+  "provenance": {
+    "class": "SYNTHETIC_HANDCRAFTED",
+    "authored_by": "P1-T01 discovery executor",
+    "contains_real_zhihu_corpus": false,
+    "contains_real_external_corpus": false,
+    "contains_credentials": false,
+    "egress_class": "NON_SENSITIVE",
+    "note": "All sentences were handcrafted for this battery. They are P1-*shaped* (Chinese opinion / technical discussion phrasing typical of public Zhihu answers) but are NOT real Zhihu content and NOT derived from any captured corpus. Safe to send to a remote embedding provider under the P1-T01 fixture-only egress rule."
+  },
+  "scope_caveat": "This is a small handcrafted discrimination battery, NOT a universal Chinese embedding benchmark and NOT a Gold set. It establishes provider/model-scoped directional evidence only. Sampled evidence must not be upgraded to a global quality claim.",
+  "acceptance_criteria": {
+    "AC_1_relevance": "For each relevance anchor: cos(related) > cos(unrelated), margin >= 0.10.",
+    "AC_2_near_duplicate_vs_novel": "For each novelty anchor: cos(near_duplicate) > cos(same_topic_novel).",
+    "AC_3_terminology_variation": "For each terminology pair: cos(variant) > cos(unrelated_control).",
+    "AC_4_paraphrase_above_opposing": "min(cos over paraphrase pairs) > max(cos over opposing-framing pairs). METHODOLOGICAL CAVEAT (recorded, not retro-fitted): this formulation compares pairs drawn from DIFFERENT topics, and cosine similarity is not calibrated across topics, so it conflates topical baseline with semantic relation. It is reported for completeness but is NOT treated as decision-decisive. See AC_4b.",
+    "AC_4b_opposing_within_anchor": "DECISION-RELEVANT FORM OF AC_4. For each within-anchor item: cos(anchor, paraphrase) > cos(anchor, opposing). Holds topical baseline constant, so it isolates the semantic relation. This is the criterion that governs whether novelty / redundancy control can distinguish an opposing viewpoint from a duplicate.",
+    "AC_5_short_query_to_long_passage": "For each short query, the on-topic long passage ranks above the off-topic long passage.",
+    "AC_6_determinism": "Re-embedding the same input yields vectors equal within 1e-6 absolute tolerance.",
+    "AC_7_malformed_input": "Empty / whitespace / oversize inputs produce a deterministic, documented outcome (valid vector OR machine-readable failure identity). Never a silent garbage vector.",
+    "AC_8_vector_contract": "Fixed dimension across inputs and batch sizes; all components finite; L2 norm within 1e-3 of the declared normalization profile target.",
+    "AC_9_identity": "Provider echoes or deterministically exposes a stable model identity usable as cache-key identity.",
+    "AC_10_failure_identity": "Unknown model name and unreachable endpoint each produce a machine-readable failure identity (not a silent empty result).",
+    "AC_11_no_egress_at_embed_time": "The battery completes successfully with a black-hole proxy configured, proving no outbound network call is required at embed time."
+  },
+  "groups": {
+    "A_relevance": {
+      "description": "Semantic relevance: related vs unrelated, same anchor.",
+      "items": [
+        {
+          "id": "A1",
+          "anchor": "关于大模型推理成本高不高的讨论",
+          "related": "大模型推理的算力开销与降本方案梳理",
+          "unrelated": "周末去香山看红叶的最佳步行路线"
+        },
+        {
+          "id": "A2",
+          "anchor": "新手应该如何系统地学习摄影构图",
+          "related": "初学者建立摄影构图知识体系的路径建议",
+          "unrelated": "公司年会的报销流程一般需要几个审批节点"
+        },
+        {
+          "id": "A3",
+          "anchor": "年轻人为什么越来越不愿意换手机了",
+          "related": "消费者换机周期变长的原因分析",
+          "unrelated": "阳台上适合种植的几种耐阴植物推荐"
+        }
+      ]
+    },
+    "B_near_duplicate_vs_novel": {
+      "description": "Near-duplicate (redundancy) vs same-topic-novel (new aspect). Redundancy control needs near-dup > novel.",
+      "items": [
+        {
+          "id": "B1",
+          "anchor": "电动汽车冬季续航衰减非常明显",
+          "near_duplicate": "电车一到冬天续航就掉得厉害",
+          "same_topic_novel": "动力电池的梯次利用与回收政策解析"
+        },
+        {
+          "id": "B2",
+          "anchor": "租房时押金的退还纠纷很常见",
+          "near_duplicate": "退租以后房东扣着押金不给的情况很多",
+          "same_topic_novel": "长租公寓的资金池模式与暴雷成因"
+        },
+        {
+          "id": "B3",
+          "anchor": "长期熬夜会显著影响记忆力",
+          "near_duplicate": "经常通宵的人记忆力会明显变差",
+          "same_topic_novel": "深度睡眠阶段的脑脊液清除机制研究"
+        }
+      ]
+    },
+    "C_terminology_variation": {
+      "description": "Terminology / abbreviation variation, including cross-script (Latin acronym vs Chinese expansion).",
+      "items": [
+        {
+          "id": "C1",
+          "a": "LLM",
+          "b": "大语言模型",
+          "unrelated_control": "今年的春运火车票什么时候开售"
+        },
+        {
+          "id": "C2",
+          "a": "Transformer 的自注意力复杂度是 O(n^2)",
+          "b": "自注意力的计算量随序列长度呈平方增长",
+          "unrelated_control": "如何挑选一把适合新手的厨房菜刀"
+        },
+        {
+          "id": "C3",
+          "a": "RAG",
+          "b": "检索增强生成",
+          "unrelated_control": "小区地下车位的产权到期之后怎么办"
+        },
+        {
+          "id": "C4",
+          "a": "显卡显存不足导致训练中断",
+          "b": "GPU 内存溢出让模型训练停了下来",
+          "unrelated_control": "古镇里值得打卡的几家手工豆腐坊"
+        }
+      ]
+    },
+    "D_opposing_framing": {
+      "description": "Opposing framing with high surface lexical overlap. These are the adversarial pairs: a weak embedding scores them as near-duplicates.",
+      "items": [
+        {
+          "id": "D1",
+          "a": "我支持继续新建核电站",
+          "b": "我反对继续新建核电站"
+        },
+        {
+          "id": "D2",
+          "a": "远程办公提高了员工的工作效率",
+          "b": "远程办公降低了团队沟通效率"
+        },
+        {
+          "id": "D3",
+          "a": "这道题用动态规划做最合适",
+          "b": "这道题不适合用动态规划，贪心就够了"
+        }
+      ]
+    },
+    "I_opposing_within_anchor": {
+      "description": "WITHIN-ANCHOR opposing-vs-paraphrase discrimination. For each anchor, a same-topic paraphrase and a same-topic opposing restatement are compared against THE SAME anchor. This is the decision-relevant formulation for novelty / redundancy control: an opposing claim must be scored LESS similar to the anchor than a true paraphrase, otherwise redundancy control would discard a genuinely different viewpoint as a duplicate. Unlike AC_4 (which compares across different topics), this comparison holds topical baseline constant.",
+      "items": [
+        {
+          "id": "I1",
+          "anchor": "远程办公提高了员工的工作效率",
+          "paraphrase": "居家办公让员工的产出变得更高",
+          "opposing": "远程办公降低了员工的工作效率"
+        },
+        {
+          "id": "I2",
+          "anchor": "应该继续新建核电站",
+          "paraphrase": "需要继续推进核电项目的建设",
+          "opposing": "不应该继续新建核电站"
+        },
+        {
+          "id": "I3",
+          "anchor": "这道题用动态规划做最合适",
+          "paraphrase": "这道题目最适合采用动态规划来求解",
+          "opposing": "这道题不适合用动态规划"
+        }
+      ]
+    },
+    "E_paraphrase_reference": {
+      "description": "True paraphrase reference pairs. Used by AC_4: the weakest paraphrase must still out-score the strongest opposing pair.",
+      "items": [
+        {
+          "id": "P1",
+          "a": "电动汽车冬季续航衰减非常明显",
+          "b": "一到冬天，电车的续航里程就会明显缩水"
+        },
+        {
+          "id": "P2",
+          "a": "长期熬夜会显著影响记忆力",
+          "b": "经常熬夜的人，记忆能力会受到明显损害"
+        },
+        {
+          "id": "P3",
+          "a": "显卡显存不足导致训练中断",
+          "b": "因为显存不够，这次模型训练被迫中止"
+        }
+      ]
+    },
+    "F_short_query_to_long_passage": {
+      "description": "Short query vs longer technical / opinion Chinese passages (length robustness, retrieval-shaped).",
+      "items": [
+        {
+          "id": "F1",
+          "query": "注意力机制的计算复杂度",
+          "on_topic": "自注意力的核心开销在于对每个位置都要与序列中所有其他位置计算一次相关性，因此计算量随序列长度呈平方增长，显存占用也同步上升。为了缓解这个问题，工程上常见做法包括稀疏注意力、滑窗注意力以及线性化近似，但它们通常要在长程依赖建模能力上做出一定取舍。",
+          "off_topic": "选购一台家用烤箱时，主要应该关注温控精度、内胆材质与热风循环是否均匀这三点。温控不准会导致烘焙失败，内胆材质影响清洁难度，而热风循环是否均匀则直接决定上色是否一致。"
+        },
+        {
+          "id": "F2",
+          "query": "租房押金退还纠纷怎么处理",
+          "on_topic": "遇到房东拒退押金时，承租人可以先核对合同中关于房屋损耗与清洁标准的约定，再整理交房时的照片、视频与沟通记录作为证据。协商无果的情况下，可以向街道调解组织申请调解，或者直接向房屋所在地法院提起诉讼，标的额较小的通常适用小额诉讼程序。",
+          "off_topic": "制作一锅好的高汤，关键在于冷水下锅、小火慢炖以及中途不加冷水。骨头需要提前焯水去血沫，蔬菜香料在后半程放入以免产生苦味，整个过程中保持汤面微沸而不翻滚，出汤才会清澈。"
+        }
+      ]
+    },
+    "G_determinism": {
+      "description": "Determinism / stability probes: identical input repeated.",
+      "items": [
+        { "id": "G1", "text": "中文嵌入向量的稳定性验证文本" },
+        { "id": "G2", "text": "大模型推理成本与算力预算的权衡" }
+      ],
+      "repeats": 3
+    },
+    "H_malformed": {
+      "description": "Malformed / boundary inputs. Expected outcome must be deterministic and machine-identifiable.",
+      "items": [
+        { "id": "H1", "label": "empty_string", "text": "" },
+        { "id": "H2", "label": "whitespace_only", "text": "   " },
+        { "id": "H3", "label": "single_char", "text": "字" },
+        { "id": "H4", "label": "oversize_8000_chars", "generate": { "kind": "repeat", "base": "这是一段用于测试超长输入截断行为的合成中文文本。", "repeat": 320 } },
+        { "id": "H5", "label": "control_chars", "text": "合成文本\u0000\u0007含控制字符\t\n结尾" }
+      ]
+    }
+  }
+}

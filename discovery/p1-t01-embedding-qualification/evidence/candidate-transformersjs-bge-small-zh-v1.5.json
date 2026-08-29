@@ -1,0 +1,450 @@
+{
+  "schemaVersion": 1,
+  "artifact": "P1_T01_EMBEDDING_QUALIFICATION_EVIDENCE",
+  "generatedAt": "2026-08-29T18:57:55.334Z",
+  "node": "v22.22.2",
+  "platform": "darwin",
+  "battery": {
+    "id": "P1_T01_ZH_SEMANTIC_BATTERY_V1",
+    "version": 1,
+    "provenanceClass": "SYNTHETIC_HANDCRAFTED",
+    "containsRealCorpus": false,
+    "egressClass": "NON_SENSITIVE"
+  },
+  "runMode": {
+    "offlineEnforced": false,
+    "note": "offlineEnforced=true means the runner was executed with a black-hole proxy configured (AC_11)."
+  },
+  "candidates": [
+    {
+      "id": "transformersjs-local-bge-small-zh-v1.5",
+      "providerIdentity": {
+        "id": "transformersjs-local-Xenova-bge-small-zh-v1.5",
+        "providerCategory": "LOCAL",
+        "providerId": "transformersjs-local-onnx",
+        "providerVersionId": "onnxruntime-node-inprocess",
+        "modelId": "Xenova/bge-small-zh-v1.5",
+        "transport": "inprocess-onnx",
+        "requiresCredential": false,
+        "quantization": "quantized"
+      },
+      "health": {
+        "ok": true,
+        "models": [
+          "Xenova/bge-small-zh-v1.5"
+        ],
+        "modelPresent": true,
+        "revisionSha": "75c43b069aac4d136ba6bc1122f995fedcfd2781"
+      },
+      "AC_1_relevance": {
+        "items": [
+          {
+            "id": "A1",
+            "cos_related": 0.7034,
+            "cos_unrelated": 0.2879,
+            "margin": 0.4156,
+            "pass": true
+          },
+          {
+            "id": "A2",
+            "cos_related": 0.7757,
+            "cos_unrelated": 0.2558,
+            "margin": 0.5198,
+            "pass": true
+          },
+          {
+            "id": "A3",
+            "cos_related": 0.5878,
+            "cos_unrelated": 0.3045,
+            "margin": 0.2833,
+            "pass": true
+          }
+        ],
+        "pass": true
+      },
+      "AC_2_near_duplicate_vs_novel": {
+        "items": [
+          {
+            "id": "B1",
+            "cos_near_duplicate": 0.7554,
+            "cos_same_topic_novel": 0.4949,
+            "margin": 0.2605,
+            "pass": true
+          },
+          {
+            "id": "B2",
+            "cos_near_duplicate": 0.8134,
+            "cos_same_topic_novel": 0.5225,
+            "margin": 0.2909,
+            "pass": true
+          },
+          {
+            "id": "B3",
+            "cos_near_duplicate": 0.7965,
+            "cos_same_topic_novel": 0.4841,
+            "margin": 0.3124,
+            "pass": true
+          }
+        ],
+        "pass": true
+      },
+      "AC_3_terminology_variation": {
+        "items": [
+          {
+            "id": "C1",
+            "cos_variant": 0.3462,
+            "cos_unrelated_control": 0.2394,
+            "margin": 0.1068,
+            "pass": true
+          },
+          {
+            "id": "C2",
+            "cos_variant": 0.6341,
+            "cos_unrelated_control": 0.3292,
+            "margin": 0.3049,
+            "pass": true
+          },
+          {
+            "id": "C3",
+            "cos_variant": 0.3093,
+            "cos_unrelated_control": 0.235,
+            "margin": 0.0743,
+            "pass": true
+          },
+          {
+            "id": "C4",
+            "cos_variant": 0.647,
+            "cos_unrelated_control": 0.2545,
+            "margin": 0.3925,
+            "pass": true
+          }
+        ],
+        "pass": true
+      },
+      "AC_4_paraphrase_above_opposing": {
+        "paraphrase": [
+          {
+            "id": "P1",
+            "cos": 0.7421
+          },
+          {
+            "id": "P2",
+            "cos": 0.8615
+          },
+          {
+            "id": "P3",
+            "cos": 0.7617
+          }
+        ],
+        "opposing": [
+          {
+            "id": "D1",
+            "cos": 0.8986
+          },
+          {
+            "id": "D2",
+            "cos": 0.7596
+          },
+          {
+            "id": "D3",
+            "cos": 0.856
+          }
+        ],
+        "minParaphrase": 0.7421,
+        "maxOpposing": 0.8986,
+        "pass": false,
+        "margin": -0.1565
+      },
+      "AC_4b_opposing_within_anchor": {
+        "items": [
+          {
+            "id": "I1",
+            "cos_paraphrase": 0.6063,
+            "cos_opposing": 0.8803,
+            "margin": -0.274,
+            "pass": false
+          },
+          {
+            "id": "I2",
+            "cos_paraphrase": 0.822,
+            "cos_opposing": 0.9179,
+            "margin": -0.0959,
+            "pass": false
+          },
+          {
+            "id": "I3",
+            "cos_paraphrase": 0.9064,
+            "cos_opposing": 0.8677,
+            "margin": 0.0387,
+            "pass": true
+          }
+        ],
+        "pass": false
+      },
+      "AC_5_short_query_to_long_passage": {
+        "items": [
+          {
+            "id": "F1",
+            "cos_on_topic": 0.6294,
+            "cos_off_topic": 0.4523,
+            "margin": 0.1772,
+            "pass": true
+          },
+          {
+            "id": "F2",
+            "cos_on_topic": 0.6723,
+            "cos_off_topic": 0.2716,
+            "margin": 0.4006,
+            "pass": true
+          }
+        ],
+        "pass": true
+      },
+      "AC_6_determinism": {
+        "items": [
+          {
+            "id": "G1",
+            "repeats": 3,
+            "maxAbsDelta": 0,
+            "pass": true
+          },
+          {
+            "id": "G2",
+            "repeats": 3,
+            "maxAbsDelta": 0,
+            "pass": true
+          }
+        ],
+        "pass": true
+      },
+      "AC_7_malformed_input": {
+        "items": [
+          {
+            "id": "H1",
+            "label": "empty_string",
+            "inputChars": 0,
+            "outcome": "VECTOR_RETURNED",
+            "failureCode": null,
+            "dim": 512,
+            "norm": 1
+          },
+          {
+            "id": "H2",
+            "label": "whitespace_only",
+            "inputChars": 3,
+            "outcome": "VECTOR_RETURNED",
+            "failureCode": null,
+            "dim": 512,
+            "norm": 1
+          },
+          {
+            "id": "H3",
+            "label": "single_char",
+            "inputChars": 1,
+            "outcome": "VECTOR_RETURNED",
+            "failureCode": null,
+            "dim": 512,
+            "norm": 1
+          },
+          {
+            "id": "H4",
+            "label": "oversize_8000_chars",
+            "inputChars": 7680,
+            "outcome": "VECTOR_RETURNED",
+            "failureCode": null,
+            "dim": 512,
+            "norm": 1
+          },
+          {
+            "id": "H5",
+            "label": "control_chars",
+            "inputChars": 15,
+            "outcome": "VECTOR_RETURNED",
+            "failureCode": null,
+            "dim": 512,
+            "norm": 1
+          }
+        ],
+        "pass": true,
+        "note": "pass = every malformed input produced either a valid vector or a classified machine-readable failure code."
+      },
+      "AC_8_vector_contract": {
+        "observedDimensions": [
+          512
+        ],
+        "nonFiniteVectors": 0,
+        "normMin": 1,
+        "normMax": 1,
+        "dimensionStable": true,
+        "normalizationProfile": "L2_UNIT_NORM",
+        "normSpread": 7.9e-7,
+        "vectorsExamined": 68,
+        "pass": true
+      },
+      "AC_9_identity": {
+        "declaredModelId": "Xenova/bge-small-zh-v1.5",
+        "echoedModelId": "Xenova/bge-small-zh-v1.5",
+        "revisionSha": "75c43b069aac4d136ba6bc1122f995fedcfd2781",
+        "transport": "inprocess-onnx",
+        "requiresCredential": false,
+        "dtype": "float32",
+        "pass": true
+      },
+      "AC_10_failure_identity": {
+        "unknownModel": {
+          "outcome": "FAILURE",
+          "failureCode": "EMBEDDING_MODEL_UNKNOWN",
+          "message": "local ONNX model load failed: `local_files_only=true` or `env.allowRemoteModels=false` and file was not found locally at \"<HOME>/WorkBuddy/zhi'hu'grabber/discovery/p1-t01-embedding-qualification/model"
+        },
+        "unreachableEndpoint": {
+          "outcome": "FAILURE",
+          "failureCode": "EMBEDDING_PROVIDER_UNREACHABLE",
+          "message": "loopback embedding server unreachable: fetch failed"
+        },
+        "pass": true,
+        "note": "unknown model name MUST produce a classified machine-readable failure. Returning vectors for an unknown model is a silent fallback and is scored FAIL."
+      },
+      "latency": {
+        "batches": 32,
+        "perBatchMs": [
+          {
+            "n": 3,
+            "ms": 14.26
+          },
+          {
+            "n": 3,
+            "ms": 8.84
+          },
+          {
+            "n": 3,
+            "ms": 7.36
+          },
+          {
+            "n": 3,
+            "ms": 7.95
+          },
+          {
+            "n": 3,
+            "ms": 9.83
+          },
+          {
+            "n": 3,
+            "ms": 7.78
+          },
+          {
+            "n": 3,
+            "ms": 6.54
+          },
+          {
+            "n": 3,
+            "ms": 8.22
+          },
+          {
+            "n": 3,
+            "ms": 7.56
+          },
+          {
+            "n": 3,
+            "ms": 8.72
+          },
+          {
+            "n": 2,
+            "ms": 7.67
+          },
+          {
+            "n": 2,
+            "ms": 6.3
+          },
+          {
+            "n": 2,
+            "ms": 8.15
+          },
+          {
+            "n": 2,
+            "ms": 3.37
+          },
+          {
+            "n": 2,
+            "ms": 4.21
+          },
+          {
+            "n": 2,
+            "ms": 5.34
+          },
+          {
+            "n": 3,
+            "ms": 6.17
+          },
+          {
+            "n": 3,
+            "ms": 5.9
+          },
+          {
+            "n": 3,
+            "ms": 7.09
+          },
+          {
+            "n": 3,
+            "ms": 42.99
+          },
+          {
+            "n": 3,
+            "ms": 44.09
+          },
+          {
+            "n": 1,
+            "ms": 2.35
+          },
+          {
+            "n": 1,
+            "ms": 2.21
+          },
+          {
+            "n": 1,
+            "ms": 2.18
+          },
+          {
+            "n": 1,
+            "ms": 2.33
+          },
+          {
+            "n": 1,
+            "ms": 2.43
+          },
+          {
+            "n": 1,
+            "ms": 2.25
+          },
+          {
+            "n": 1,
+            "ms": 0.61
+          },
+          {
+            "n": 1,
+            "ms": 0.57
+          },
+          {
+            "n": 1,
+            "ms": 0.72
+          },
+          {
+            "n": 1,
+            "ms": 72.93
+          },
+          {
+            "n": 1,
+            "ms": 2.33
+          }
+        ],
+        "totalMs": 319.25
+      },
+      "summary": {
+        "pass": 9,
+        "fail": 1,
+        "unknown": 0,
+        "total": 10
+      },
+      "totalMs": 504.88
+    }
+  ]
+}

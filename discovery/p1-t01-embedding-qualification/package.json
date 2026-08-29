@@ -1,0 +1,17 @@
+{
+  "name": "p1-t01-embedding-qualification",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DISCOVERY-ONLY qualification harness for P1-T01 / Issue #33 (EmbeddingProvider Qualification Discovery). Not a production package; not a dependency of any production package.",
+  "type": "module",
+  "scripts": {
+    "fetch-model": "node fetch-model.mjs",
+    "qualify": "node qualify-embedding-provider.mjs",
+    "qualify:onnx": "node qualify-embedding-provider.mjs --provider transformersjs-local-bge-small-zh-v1.5",
+    "qualify:lmstudio": "node qualify-embedding-provider.mjs --provider lmstudio-local-nomic-embed-text-v1.5"
+  },
+  "devDependencies": {
+    "@xenova/transformers": "^2.17.2"
+  },
+  "//dependencyJustification": "RULES.md §7 requires recording the reason for any new dependency. @xenova/transformers is added here as a DEV-ONLY, DISCOVERY-SCOPED dependency of this isolated harness (own package.json, outside every production package). It is the only in-process, fully-local, version-pinnable runtime available in this environment that can serve a Chinese-capable sentence-embedding ONNX model without corpus egress. It is NOT added to zhihu-answer-grabber/ or corpus-anthology/. If P1-T10 adopts this profile it must promote the dependency to a production package under its own review and record its own justification."
+}
