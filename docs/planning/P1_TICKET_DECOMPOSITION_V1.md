@@ -9,6 +9,10 @@ REVIEW_CYCLE = R1 REPAIR（BASE_REVIEWED_HEAD = 31cce41122515129cf2e18c0a7098485
               ChatGPT 判定 CHANGES_REQUESTED：P0=0 / P1=5 / P2=2；本 commit 仅修复
               findings，不重开 Approved Spec / Planning Gate / 冻结结论）
               + R2 MINIMAL REPAIR（BASE = 73b5cab45dff13e17123b22364beb17167e0768；
+              + R3 MINIMAL REPAIR（BASE = bc89bc3616e98dc573632884ca2ce5dca44f1c59；
+              ChatGPT R2 delta review CHANGES_REQUESTED：P0=0 / P1=1 / P2=1；
+              仅修复 P1=T01 exact-SHA decision lifecycle、P2=residual analyzed-ownership ambiguity；
+              票集/编号/条件语义/边语义/冻结结论全部不变）
               repair evidence = docs/audit/P1_TOTICKET_CONFORMANCE_AUDIT_01.md @
               audit/p1-toticket-conformance-01 / 3010e57；仅修复 F-1/F-2/F-3/F-4，
               票集、编号、条件语义与冻结结论全部不变）
@@ -57,7 +61,7 @@ Date: 2026-08-29（R1 repair）
    verification authority。
 4. **CoverageState cross-cutting + 所有权显式拆分**（R1）：T07 = contract + update hooks +
    retrieval-round controller infrastructure；T09 = Source Completeness 更新；T12 = selection
-   accounting；T13/T14 = aspect/claim/contradiction/analyzed 诊断；T15 = 最终 cross-cutting
+   accounting；T13 = per-group mapped/analyzed source-set identity 写入（含 controller-derived aggregate identity）+ per-group aspect/claim/contradiction 诊断；T14 = synthesis-level aspect/claim/contradiction/claim-source-diversity 诊断（不写 analyzed source-set identity）；T15 = 最终 cross-cutting
    集成 + 完整 saturation feedback wiring + 100% analysis assertion。运行期反馈边
    （round → CoverageState → saturation → 再检索 / 下行）是 **runtime loop，不是 ticket 依赖环**；
    Ticket DAG 保持无环。
@@ -84,9 +88,16 @@ BLOCKED_BY / BLOCKS = DIRECT TICKET DEPENDENCY EDGES ONLY（直接边，不含�
   传递影响只能用 TRANSITIVE_AFFECTS 或 prose 表达，禁止混入 BLOCKS。
 
 ANALYZED_SOURCE_SET_IDENTITY_OWNER = P1-T13（唯一写入者）
-  T13 唯一维护 per-group mapped / analyzed source-set identity（经 T07 hook 进入 CoverageState）；
-  T14 只消费该 identity 并写语义诊断（不得维护第二套 analyzed set、不得再次把 canonical source
-  标记为 analyzed）；T15 只做最终对账 / 身份比较 / 100% 断言 / 披露，不重算、不第二写入。
+  T13 唯一写入：
+    · per-group mapped source-set identity
+    · per-group analyzed source-set identity
+    · controller-derived aggregate mapped/analyzed source-set identity
+      （由 per-group identities 确定性组合而成；即 T14 PRE-SYNTHESIS guard 所消费的 artifact）
+    （均经 T07 hook 进入 CoverageState）
+  T14 只消费该 aggregate identity 并写 synthesis-level 语义诊断（aspect / claim /
+  contradiction / claim-source-diversity；不得创建 / 更新 analyzed source-set identity、
+  不得再次把 canonical source 标记为 analyzed）；T15 只做最终对账 / 身份比较 / 100% 断言 /
+  披露，不重算、不第二写入。
 
 PRE-SYNTHESIS COVERAGE GUARD = P1-T14
   T14 在产出 cross-source synthesis 之前，必须机械比较
@@ -108,7 +119,7 @@ PRE-SYNTHESIS COVERAGE GUARD = P1-T14
 | §3 frozen selector baseline + §3.1 preservation contract | T12（selection accounting / preservation invariants） |
 | §8.1 logical group representation + per-group claims | T13（representation + per-group semantic claim extraction） |
 | §8.2/§8.3 claim/aspect aggregation + cross-source synthesis | T14 |
-| §9 CoverageState 三覆盖 + saturation + §9.4 diagnostics | T07（contract+hooks+round controller）、T09（source completeness）、T12（selection accounting）、T13/T14（aspect/claim/contradiction/analyzed 诊断）、T15（最终集成 + 完整 feedback wiring） |
+| §9 CoverageState 三覆盖 + saturation + §9.4 diagnostics | T07（contract+hooks+round controller）、T09（source completeness）、T12（selection accounting）、T13（per-group mapped/analyzed source-set identity 写入 + per-group aspect/claim/contradiction 诊断）、T14（synthesis-level aspect/claim/contradiction/claim-source-diversity 诊断）、T15（最终集成 + 完整 feedback wiring） |
 | §10 security & failure semantics | 全部 ticket STOP 条件；T01（出网禁令）、T02 显式 security gate |
 | §1.1 corpus selection ≠ sampled analysis；mode identity | T15（assertion + 披露）；T12 输出 selection accounting |
 | 100% Analysis Coverage assertion（selected set == mapped/analyzed set 机械相等） | T15 |
@@ -162,16 +173,18 @@ Ticket ID 空间 = T01..T18 恰好连续，无重编号。
 - **AUTHORITY**: Spec §5.3、§10、§12（evidence caveats 随行）；V0.3 决策 C 逐 runtime 资格先例；
   Planning Gate GATE-1 定义。
 - **IN_SCOPE**: 具名 runtime/provider 的 probe + 对抗 battery + 证据记录；local/remote 对比；
-  候选排序建议；**并在 Evidence Review PASS 之后形成 repo-tracked
-  `ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION`**（见下 DECISION_ARTIFACT）。
+  候选排序建议；**T01 exact candidate HEAD 在提交 EVIDENCE_REVIEWER 之前即须同时包含
+  （1）qualification report 与（2）repo-tracked
+  `ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION`**（见下 DECISION_ARTIFACT；两者在同一
+  exact HEAD 上提交并审核，非 review PASS 后补产）。
   **出网约束（R1，P1-3）**：在 T02 remote-egress authority PASS 之前，T01 对任何 remote
   EmbeddingProvider 的 qualification **只允许**使用 synthetic Chinese fixtures / handcrafted
   P1-like fixtures / 非敏感 benchmark / neutral text；**禁止**发送：真实知乎语料、本产品检索到的
   知乎源文本、任何真实 EXTERNAL_CORPUS。
 - **OUT_OF_SCOPE**: production adapter 实现；cache schema；执行 GATE-2；
   `bge-small-zh-v1.5` 不得因 harness 历史被默认批准；跨 runtime / product-wide 永久模型冻结。
-- **DECISION_ARTIFACT（R2，F-1）**: 除 qualification report 外，T01 必须在
-  Evidence Review PASS 之后产出 repo-tracked：
+- **DECISION_ARTIFACT（R2，F-1；R3 生命周期修正）**: T01 exact candidate HEAD 在提交
+  EVIDENCE_REVIEWER 之前即须包含 repo-tracked：
 
   ```text
   ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION
@@ -185,8 +198,11 @@ Ticket ID 空间 = T01..T18 恰好连续，无重编号。
     · local vs remote classification
     · supporting qualification evidence reference
     · qualification scope / caveats
-    · decision status
+    · decision status / lifecycle semantics
   ```
+
+  EVIDENCE_REVIEWER 在**同一 exact HEAD** 上审核 qualification evidence 与 decision artifact
+  两者；decision artifact 是 candidate HEAD 的内容，不是 review PASS 之后才补产生的文件。
 
   边界：① 这不是修改 Approved Spec；② 不是 product-wide 永久模型冻结；③ 不是跨 runtime
   qualification；④ 不把 experimental harness model（含 `bge-small-zh-v1.5`）自动升级为生产；
@@ -196,6 +212,29 @@ Ticket ID 空间 = T01..T18 恰好连续，无重编号。
   （与 report 一致）；accepted profile = REMOTE → decision 记录被接受的 remote profile，
   但 **T10 remote implementation 仍为 `BLOCKED_BY = T01 + T02`**，且同时消费
   ①T01 accepted implementation profile decision 与 ②T02 remote egress authority。
+
+  **条件有效性（R3）— 禁止 post-review 状态编辑**：
+
+  ```text
+  PROFILE_DECISION_EFFECTIVE_ON =
+    1. decision artifact 存在于 exact T01 candidate HEAD
+    2. EVIDENCE_REVIEWER 对该 exact 同一 HEAD PASS
+    3. 该 exact reviewed HEAD 被 ff-only merged
+    4. remote master 被 re-fetch 并验证确实包含它
+
+  BEFORE ALL CONDITIONS:
+    decision = NON_AUTHORITATIVE_CANDIDATE
+    T10 MUST NOT consume it.
+
+  AFTER ALL CONDITIONS:
+    decision = ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION
+    （仅针对 initial P1 implementation profile）
+
+  FORBIDDEN PATTERN（R3）:
+    Evidence Review PASS → edit decision file → new commit
+    （该模式显式禁止：会令原 PASS 失效并需要新 review；
+     reviewer 若要求变更 → 新 candidate HEAD → 重新 EVIDENCE REVIEW）
+  ```
 - **BLOCKED_BY**: —；**BLOCKS**: T02（conditional）、T10。
 - **FILES_OR_COMPONENTS_EXPECTED**: repo-tracked qualification report（runtime-scoped）+ 可复现
   probe 脚本（discovery-only，不接入生产路径）。
@@ -206,14 +245,17 @@ Ticket ID 空间 = T01..T18 恰好连续，无重编号。
   **remote 结局（R1）**：report 须声明 qualification 仅用 fixtures/neutral text；若代表性
   qualification 无法在不使用真实公开知乎语料出网的情况下完成 → report 记录
   `REQUIRES_REMOTE_EGRESS_AUTHORITY` 并 **STOP 该 probe**——不得先行出网再补批准。
-  **decision artifact 条件（R2，F-1）**：`ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION`
-  必须可从 repo 独立验证、逐项覆盖 DECISION_ARTIFACT 清单、显式引用 supporting evidence，
-  且不得在 Evidence Review PASS 之前被 T10 消费。
+  **decision artifact 条件（R2，F-1；R3 生命周期修正）**：`ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION`
+  必须存在于与 qualification evidence **同一 exact candidate HEAD**，可由 repo 独立验证、逐项覆盖
+  DECISION_ARTIFACT 清单、显式引用 supporting evidence；T10 在 `PROFILE_DECISION_EFFECTIVE_ON`
+  （review PASS + ff-only merge + remote verify）之前**不得**消费它。
 - **REQUIRED_TESTS/EVIDENCE**: 可复现 probe/battery（命令 + 期望输出）；fixture 来源与范围
   显式标注；无 credential 值/哈希/前缀；accepted decision record 本身为可验证 evidence。
 - **FAIL_CLOSED / STOP_CONDITIONS**: 证据不足 → `UNKNOWN`；触发
   `REQUIRES_REMOTE_EGRESS_AUTHORITY` → 该 probe STOP，移交 T02；
-  **accepted decision record 缺失 / 未完成 review / `UNKNOWN` → T10 不得启动（`UNKNOWN != PASS`）**。
+  **decision = NON_AUTHORITATIVE_CANDIDATE（PROFILE_DECISION_EFFECTIVE_ON 未全部满足前）→ T10
+  不得启动（`UNKNOWN != PASS`；post-review 编辑被禁止，reviewer 要求变更须新 candidate HEAD
+  重新 review）**。
 - **REVIEWER_QUORUM**: 1 × EVIDENCE_REVIEWER。
 - **MERGE_REQUIREMENT**: 治理默认（见 §B.9）。
 - **PARALLELIZABLE_WITH**: T03、T04、T05、T18（master 集成仍串行）。
@@ -401,7 +443,9 @@ Ticket ID 空间 = T01..T18 恰好连续，无重编号。
   validation 记录）。
 - **OUT_OF_SCOPE / 所有权边界（R1）**: 本票**不得**宣称"完整 P1 saturation 集成完成"——
   完整 feedback wiring 是 **T15**；Source Completeness 更新归 **T09**；selection accounting 归
-  **T12**；aspect/claim/contradiction/analyzed 诊断归 **T13/T14**。运行期反馈
+  **T12**；per-group mapped/analyzed source-set identity 写入与 per-group aspect/claim/contradiction
+  诊断归 **T13**；synthesis-level aspect/claim/contradiction/claim-source-diversity 诊断归 **T14**
+  （不写 analyzed source-set identity）；T15 只做最终对账 / 断言 / 披露。运行期反馈
   （round → CoverageState → saturation decision → 未饱和 → 回 T06 再检索；饱和 / budget stop →
   下行）是 runtime loop，**不是 ticket 依赖环**。
 - **BLOCKED_BY**: T06；**BLOCKS**: T08、T15（最终集成时消费）。
@@ -546,7 +590,7 @@ Ticket ID 空间 = T01..T18 恰好连续，无重编号。
   计数、verified 计数、exclusion reason categories、Selected Verified Research Corpus identity、
   selection accounting / preservation invariants**；并向 CoverageState 提供 **selection
   accounting 更新**（经 T07 hook）。
-- **OUT_OF_SCOPE**: **最终 `analyzed` 计数**（归 T13/T14 更新、T15 终审）；six hard quotas；
+- **OUT_OF_SCOPE**: **最终 `analyzed` 计数**（归 T13 唯一写入、T15 终审对账 / 断言）；six hard quotas；
   trained LTR 等排除项；group set selection（T08）；verification authority。
 - **BLOCKED_BY**: T09, T11；**BLOCKS**: T13。
 - **FILES_OR_COMPONENTS_EXPECTED**: rce-selector 模块 + tests。
@@ -580,10 +624,12 @@ Ticket ID 空间 = T01..T18 恰好连续，无重编号。
   expert/evidence-rich refs、completeness/coverage state、discussion-volume 信号。
 - **OUT_OF_SCOPE**: 跨组聚合（T14）；用 `canonicalSourceIds` union 冒充逻辑层；runtime fallback；
   cross-source synthesis（T14）。
-- **SINGLE_OWNER（R2，F-4）**: `ANALYZED_SOURCE_SET_IDENTITY_OWNER = P1-T13`。T13 是
-  **唯一写入者**，维护：per-group mapped source-set identity、per-group analyzed source-set
-  identity，以及经 T07 hook 进入 CoverageState 的对应 source accounting。T14 只消费该 identity；
-  T15 只做最终对账 / 身份比较 / 断言 / 披露。
+- **SINGLE_OWNER（R2，F-4；R3 措辞收敛）**: `ANALYZED_SOURCE_SET_IDENTITY_OWNER = P1-T13`。
+  T13 是**唯一写入者**，维护：per-group mapped source-set identity、per-group analyzed
+  source-set identity，以及由 per-group identities **确定性组合**而成的 **controller-derived
+  aggregate mapped/analyzed source-set identity**（即 T14 PRE-SYNTHESIS guard 消费的 artifact）；
+  上述均经 T07 hook 进入 CoverageState。T14 只消费该 aggregate identity；T15 只做最终对账 /
+  身份比较 / 断言 / 披露。
 - **BLOCKED_BY**: T12；**BLOCKS**: T14。
 - **FILES_OR_COMPONENTS_EXPECTED**: group-representation + per-group extraction 模块 + tests。
 - **ACCEPTANCE_CRITERIA**: §8.1 字段全部可表达且可机械校验；claims 经 controller 校验 /
@@ -788,7 +834,7 @@ D-9 动态前置（R1 修正）：若 T03 选中 provider 需要新 OAuth/Sessio
 | P1-1 | 新增 T18 / §B 矩阵 / §C / DAG / critical path / lanes | P1-T18 Research Planner Semantic Proposal（deepseek-api-tool-less；planner 仅 semantic proposal；`planner_invalid` / runtime fail-closed / NO_SILENT_RUNTIME_FALLBACK；T18 BLOCKED_BY T04、BLOCKS T06）；不重编号 T01–T17 |
 | P1-2 | T01 / T02 / T10 合同 | T01 local 结局含 repo-tracked `NO_NEW_EGRESS = YES`；T02 改为 REMOTE ONLY（iff T01 提议 remote）；T10 双路径依赖：LOCAL=T01（evidence=NO_NEW_EGRESS 记录），REMOTE=T01+T02（evidence=T02 authority）；local 路径不依赖未激活 T02 |
 | P1-3 | T01 IN_SCOPE / AC / STOP | T02 PASS 前 T01 对 remote embedding 只准用 synthetic/neutral fixtures；禁止真实知乎语料 / 检索源文本 / 真实 EXTERNAL_CORPUS 出网；无法回避时报告 `REQUIRES_REMOTE_EGRESS_AUTHORITY` 并 STOP 该 probe；禁止先出网后补批准 |
-| P1-4 | T07 / T09 / T15 / GRAPH | T07 = contract + hooks + round controller infrastructure（不得单独宣称完整 saturation 集成）；T09=Source Completeness、T12=selection accounting、T13/T14=claim/aspect/contradiction/analyzed 诊断、T15=最终集成 + 完整 feedback wiring；运行期反馈边是 runtime loop 而非 ticket 依赖环，DAG 无环 |
+| P1-4 | T07 / T09 / T15 / GRAPH | T07 = contract + hooks + round controller infrastructure（不得单独宣称完整 saturation 集成）；T09=Source Completeness、T12=selection accounting、T13=per-group mapped/analyzed source-set identity 写入 + per-group claim/aspect/contradiction 诊断、T14=synthesis-level aspect/claim/contradiction/claim-source-diversity 诊断（不写 analyzed identity）、T15=最终集成 + 完整 feedback wiring；运行期反馈边是 runtime loop 而非 ticket 依赖环，DAG 无环 |
 | P1-5 | T12 / T13 / T14 / T15 合同 | T12 仅拥有 eligible/selected/verified 计数 + exclusion reasons + corpus identity（不得要求最终 analyzed 计数）；T13 = representation + per-group semantic claim extraction（deepseek-api-tool-less）+ mapped/analyzed 更新；T14 = 跨组聚合 + synthesis（消费 T13）；T15 = 集合对账 + 100% assertion |
 | P2-1 | 头部 / §C / GRAPH | TICKET_COUNT = 18；UNCONDITIONAL = 16；CONDITIONAL = 2（T02、T17）；已机械核对 |
 | P2-2 | §H / GRAPH §H·§K | 治理顺序改为：ChatGPT exact-SHA PASS → ff-only integration → push → remote master verify → durable frozen planning basis → issue/Tracker creation workflow → per-ticket START_GATE；D-9 动态前置走 scoped Ticket Graph amendment，不静默追加 |
@@ -808,7 +854,7 @@ Audit 是 repair evidence，**不是**可覆盖 Approved Spec / Planning Gate �
 
 | Finding | 修复位置 | 内容 |
 |---|---|---|
-| F-1（P1） | T01（DECISION_ARTIFACT / IN_SCOPE / AC / evidence / STOP）+ T10（GOAL / AUTHORITY / IN_SCOPE / OUT_OF_SCOPE / BLOCKED_BY / evidence / STOP） | T01 在 Evidence Review PASS 后产出 repo-tracked `ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION`（作用域 = initial P1 implementation profile；含 provider category / named provider / named model-profile / version identity / normalization identity / local-remote / evidence reference / scope-caveats / decision status）；LOCAL 须带 `NO_NEW_EGRESS = YES`；REMOTE 仍要求 T10 `BLOCKED_BY = T01 + T02` 且同时消费 decision + egress authority；T01 仅解决 D-1 for this initial profile，不声称 D-1 globally closed；T10 禁止 provider/model selection decision，只能实现 decision record 指定对象 |
+| F-1（P1） | T01（DECISION_ARTIFACT / IN_SCOPE / AC / evidence / STOP）+ T10（GOAL / AUTHORITY / IN_SCOPE / OUT_OF_SCOPE / BLOCKED_BY / evidence / STOP） | T01 exact candidate HEAD 在提交 EVIDENCE_REVIEWER 前即须同时包含 qualification report 与 repo-tracked `ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION`（同一 exact HEAD 审核两者，非 review PASS 后补产）（作用域 = initial P1 implementation profile；含 provider category / named provider / named model-profile / version identity / normalization identity / local-remote / evidence reference / scope-caveats / decision status / lifecycle semantics）；新增 PROFILE_DECISION_EFFECTIVE_ON 条件有效性（4 条件全满足方为 ACCEPTED，此前为 NON_AUTHORITATIVE_CANDIDATE 且 T10 不得消费；禁止 post-review 状态编辑）；LOCAL 须带 `NO_NEW_EGRESS = YES`；REMOTE 仍要求 T10 `BLOCKED_BY = T01 + T02` 且同时消费 decision + egress authority；T01 仅解决 D-1 for this initial profile，不声称 D-1 globally closed；T10 禁止 provider/model selection decision，只能实现 decision record 指定对象 |
 | F-2（P1） | T14（PRE_SYNTHESIS_COVERAGE_GUARD / IN_SCOPE / AC / tests / STOP）+ T15（OUT_OF_SCOPE / AC / STOP） | T14 在 synthesis 前机械比较 T12 selected verified set identity 与 T13 mapped/analyzed set identity：相等 → 允许 synthesis；不等 → `FAIL_CLOSED` + `NO SYNTHESIS ARTIFACT`（含正向/负向测试要求）；T15 保留最终对账 + 100% assertion + 披露（双保险，未删除、未弱化） |
 | F-3（P2） | §B 边语义规则 + T04 BLOCKS + T09 BLOCKS + GRAPH §C 矩阵 | 声明 `BLOCKED_BY / BLOCKS = DIRECT EDGES ONLY`、`A BLOCKS B ⇔ B BLOCKED_BY A`；删除误写的传递边 T04→T08、T09→T13，改用 `TRANSITIVE_AFFECTS`；未新增任何真实 DAG 边来迁就文字 |
 | F-4（P2） | §B 所有权规则 + T13（SINGLE_OWNER / AC / tests / STOP）+ T14（OUT_OF_SCOPE / AC / tests）+ T15（OUT_OF_SCOPE / AC / tests） | `ANALYZED_SOURCE_SET_IDENTITY_OWNER = P1-T13`：T13 唯一写入 per-group mapped/analyzed source-set identity；T14 只消费并写语义诊断（不得第二套 analyzed set、不得再次标记 canonical source 为 analyzed）；T15 只比较/断言/披露，不重算不写入 |
@@ -825,3 +871,18 @@ stopping / version assignment。
 
 *本文件由 planning executor 产出，未经独立 review 前不构成任何 authority。
 最终审查者：ChatGPT（外部）。SELF_REVIEW != INDEPENDENT_REVIEW。*
+
+---
+
+## 附三：R3 MINIMAL REPAIR RECORD（响应 ChatGPT R2 delta review，CHANGES_REQUESTED：P0=0 / P1=1 / P2=1）
+
+BASE_REVIEWED_HEAD = bc89bc3616e98dc573632884ca2ce5dca44f1c59
+
+| Finding | 修复位置 | 内容 |
+|---|---|---|
+| P1（exact-SHA decision lifecycle） | T01（IN_SCOPE / DECISION_ARTIFACT / AC / STOP）+ R2 记录 F-1 行 | 去除"Evidence Review PASS 之后产出 decision artifact"的错误生命周期；T01 exact candidate HEAD 在提交 EVIDENCE_REVIEWER 前即须同时含 qualification report 与 `ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION`；EVIDENCE_REVIEWER 在同一 exact HEAD 审核两者；新增 PROFILE_DECISION_EFFECTIVE_ON（4 条件全满足方为 ACCEPTED，此前 = NON_AUTHORITATIVE_CANDIDATE 且 T10 不得消费）；显式禁止 post-review 状态编辑（Evidence Review PASS → edit → new commit）；reviewer 要求变更须新 candidate HEAD 重新 review；保留 LOCAL `NO_NEW_EGRESS = YES` 与 REMOTE 仍 `BLOCKED_BY = T01 + T02`；T10 禁止自选 provider/model 不变 |
+| P2（residual analyzed-ownership ambiguity） | §B.4 原则 / 覆盖矩阵 / T07 OUT_OF_SCOPE / T12 OUT_OF_SCOPE / T13 SINGLE_OWNER / §B 所有权规则 | 清除所有"T13/T14 联合拥有 analyzed 诊断"与"T14 更新 analyzed 状态"的残留措辞；明确 T13 唯一写入 per-group mapped/analyzed source-set identity 及 controller-derived aggregate identity（= T14 PRE-SYNTHESIS guard 消费 artifact）；T14 仅写 synthesis-level aspect/claim/contradiction/claim-source-diversity 诊断（不写 analyzed identity）；T15 仅对账/断言/披露 |
+
+PRESERVE 确认（R3 不变）：TICKET_COUNT = 18；UNCONDITIONAL = 16；CONDITIONAL = 2（T02、T17）；T01..T18 编号；全部 DIRECT 依赖边；BLOCKS⇔BLOCKED_BY 互反；DAG 无环；F2 pre-synthesis guard；F3 直接边语义；T02/T10 local/remote 条件；T17/D-9 规则；冻结 Spec 架构；无新增/移除/重编号 ticket；TARGET_STATUS = NOT_IMPLEMENTED / IMPLEMENTATION_AUTHORIZATION = NONE / VERSION_ASSIGNMENT = UNASSIGNED。
+
+NEXT_GATE = CHATGPT_FINAL_TICKET_GRAPH_DELTA_REVIEW（STOP，等独立 review）。

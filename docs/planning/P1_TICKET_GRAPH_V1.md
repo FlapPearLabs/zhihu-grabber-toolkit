@@ -7,6 +7,9 @@ AUTHORITY_CLASS = NON_AUTHORITATIVE_PLANNING_CANDIDATE
 REVIEW_CYCLE = R1 REPAIR（BASE_REVIEWED_HEAD = 31cce41122515129cf2e18c0a70984851dec00e1；
               ChatGPT CHANGES_REQUESTED：P0=0 / P1=5 / P2=2）
               + R2 MINIMAL REPAIR（BASE = 73b5cab45dff13e17123b22364beb17167e0768；
+              + R3 MINIMAL REPAIR（BASE = bc89bc3616e98dc573632884ca2ce5dca44f1c59；
+              ChatGPT R2 delta review CHANGES_REQUESTED：P0=0 / P1=1 / P2=1；
+              仅修复 P1=T01 exact-SHA decision lifecycle、P2=residual analyzed-ownership ambiguity）
               repair evidence = docs/audit/P1_TOTICKET_CONFORMANCE_AUDIT_01.md @
               audit/p1-toticket-conformance-01 / 3010e57；仅修复 F-1/F-2/F-3/F-4）
 COMPANION = docs/planning/P1_TICKET_DECOMPOSITION_V1.md（ticket contracts 详定义）
@@ -101,7 +104,7 @@ P1-T13 Question/Source-group representation + per-group semantic claim extractio
         │        └─ per-group mapped/analyzed accounting + claim/contradiction 诊断 → CoverageState（hook）
         ▼
 P1-T14 Cross-group Claim/Aspect aggregation + cross-source synthesis
-        │        └─ aspect/claim/analyzed 诊断 updates → CoverageState（hook）
+        │        └─ synthesis-level aspect/claim/contradiction/claim-source-diversity 诊断 updates → CoverageState（hook）
         ▼
 P1-T15 CoverageState final integration + 100% analysis assertion + v0.3 integration + observability
         │        （唯一有权宣称"完整 saturation feedback wiring 完成"的 ticket）
@@ -113,15 +116,18 @@ P1-T16 End-to-end dogfood acceptance ◄── P1-T03、P1-T17
 ANALYZED_SOURCE_SET_IDENTITY_OWNER = P1-T13
 ```
 
-CoverageState 所有权（R1 + R2，F-4）：**T07** = contract + hooks + round controller
-infrastructure；**T09** = Source Completeness 更新；**T12** = selection accounting 更新；
-**T13** = per-group mapped/analyzed source-set identity（**唯一写入者**，见上常量）；
-**T14** = 只消费 T13 的 identity + 写 synthesis-level 语义诊断（aspect / claim /
-contradiction / claim-source diversity）；**T15** = 最终 cross-cutting 集成 +
-完整 saturation feedback wiring + 最终对账 + 100% analysis assertion（不重算、不第二写入）。
+CoverageState 所有权（R1 + R2，F-4；R3 措辞收敛）：**T07** = contract + hooks + round
+controller infrastructure；**T09** = Source Completeness 更新；**T12** = selection
+accounting 更新；**T13** = per-group mapped/analyzed source-set identity（**唯一写入者**，
+含 controller-derived aggregate identity，即 T14 PRE-SYNTHESIS guard 消费 artifact）；
+**T14** = 只消费 T13 的 aggregate identity + 写 synthesis-level 语义诊断（aspect / claim /
+contradiction / claim-source diversity；不写 analyzed source-set identity）；**T15** =
+最终 cross-cutting 集成 + 完整 saturation feedback wiring + 最终对账 + 100% analysis
+assertion（不重算、不第二写入）。
 
 **PRE-SYNTHESIS GUARD（R2，F-2）**：T14 产出 synthesis 前比较
-`T12 selected verified set identity == T13 mapped/analyzed set identity`；
+`T12 selected verified set identity == T13 mapped/analyzed set identity`
+（后者 = T13 产出的 controller-derived aggregate identity）；
 不等 → `FAIL_CLOSED` + `NO SYNTHESIS ARTIFACT`。T15 的断言保留为双保险与产品披露。
 
 ## C. blocked_by / blocks matrix（DIRECT EDGES ONLY）
@@ -262,7 +268,7 @@ USER_DECISION_REQUIRED
 ## K. Exact next governance stage
 
 ```text
-NEXT_GATE = CHATGPT_FRESH_TICKET_GRAPH_DELTA_REVIEW
+NEXT_GATE = CHATGPT_FINAL_TICKET_GRAPH_DELTA_REVIEW
 （PASS 后，按 §H governance order）：
   exact-SHA PASS → ff-only integration → push → remote master verify
   → Ticket Graph 成为 durable frozen planning basis
@@ -283,7 +289,24 @@ Repair evidence：`docs/audit/P1_TOTICKET_CONFORMANCE_AUDIT_01.md`
 | F-2（P1）synthesis 前置 guard | §B 增加 PRE-SYNTHESIS GUARD 说明（T14 guard + T15 双保险） | T14 增加 guard + AC + 正/负向测试 + STOP（不等 → FAIL_CLOSED + NO SYNTHESIS ARTIFACT）；T15 断言保留 |
 | F-3（P2）直接边语义 | 顶部 + §C 声明 DIRECT EDGES ONLY；删除 T04→T08、T09→T13；新增 `TRANSITIVE_AFFECTS` prose；逐票互反自检 | §B 同规则；T04 / T09 的 BLOCKS 行改为直接边 |
 | F-4（P2）analyzed set 单一所有权 | §B 所有权行重述：T13 唯一写入、T14 只消费+诊断、T15 只比较/断言 | T13 SINGLE_OWNER + 测试/STOP；T14 OUT_OF_SCOPE 禁第二套 analyzed set；T15 不重算不写入 |
+| R3-P1（exact-SHA decision lifecycle） | §B 无新边；矩阵保持 T01→T10 / T02→T10(remote)、T10→T11 | T01 candidate HEAD 同时含 qualification report 与 decision artifact，EVIDENCE_REVIEWER 同 HEAD 审核；新增 PROFILE_DECISION_EFFECTIVE_ON（4 条件全满足方 ACCEPTED，此前 NON_AUTHORITATIVE_CANDIDATE 且 T10 不得消费）；禁止 post-review 状态编辑 |
+| R3-P2（residual analyzed-ownership ambiguity） | §B 所有权 prose 措辞收敛（与 DECOMPOSITION_V1 一致） | T13 唯一写入 per-group + aggregate mapped/analyzed identity；T14 只写 synthesis-level 语义诊断（不写 analyzed identity）；T15 只比较/断言 |
 
 未变：18 票集与编号、T02/T17 条件语义、CRITICAL_PATH（11 节点）、并行车道、hardest-first、
 串行 master 集成、GATE-1/2/3、D-4/D-5/D-6 委派、D-8 NO_TICKET、D-9 scoped amendment、
 reviewer quorum；未引入任何 forbidden architecture。
+
+---
+
+## M. R3 MINIMAL REPAIR RECORD（响应 ChatGPT R2 delta review，CHANGES_REQUESTED：P0=0 / P1=1 / P2=1）
+
+BASE_REVIEWED_HEAD = bc89bc3616e98dc573632884ca2ce5dca44f1c59
+
+| Finding | 本文件修复 | 契约文件修复 |
+|---|---|---|
+| R3-P1（exact-SHA decision lifecycle） | §B 无新边；矩阵保持 T01→T10 / T02→T10(remote)、T10→T11 | T01 candidate HEAD 同时含 qualification report 与 `ACCEPTED_EMBEDDING_IMPLEMENTATION_PROFILE_DECISION`，EVIDENCE_REVIEWER 同 exact HEAD 审核两者；新增 PROFILE_DECISION_EFFECTIVE_ON 条件有效性（4 条件全满足方为 ACCEPTED，此前 NON_AUTHORITATIVE_CANDIDATE 且 T10 不得消费）；显式禁止 post-review 状态编辑 |
+| R3-P2（residual analyzed-ownership ambiguity） | §B 所有权 prose + GRAPH T14 hook 行措辞收敛 | T13 SINGLE_OWNER + §B 所有权规则增强（含 controller-derived aggregate identity）；T07 OUT_OF_SCOPE / T12 OUT_OF_SCOPE / 覆盖矩阵 / §B.4 原则去"T13/T14 联合 analyzed"残留；T14 只写 synthesis-level 语义诊断（不写 analyzed identity） |
+
+未变（R3 保持）：18 票集与编号、T02/T17 条件语义、CRITICAL_PATH（11 节点）、并行车道、hardest-first、串行 master 集成、GATE-1/2/3、D-4/D-5/D-6 委派、D-8 NO_TICKET、D-9 scoped amendment、reviewer quorum；未引入任何 forbidden architecture；DAG 无环、BLOCKS⇔BLOCKED_BY 互反、F2 pre-synthesis guard、F3 直接边语义、T02/T10 local/remote 条件、T17/D-9 规则全部未变。
+
+NEXT_GATE = CHATGPT_FINAL_TICKET_GRAPH_DELTA_REVIEW（STOP，等独立 review）。
