@@ -19,6 +19,7 @@
  *   lmstudio-local-nomic-embed-text-v1.5     (LOCAL, loopback server)
  */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -272,18 +273,21 @@ async function runBattery(provider, battery) {
   result.AC_9_identity.pass =
     (result.AC_9_identity.echoedModelId ?? result.AC_9_identity.declaredModelId) === result.AC_9_identity.declaredModelId;
 
-  // ---- AC_10 failure identity
-  result.AC_10_failure_identity = await probeFailureIdentity(provider);
-  // A provider that ACCEPTS an unknown model name and still returns vectors is a
-  // silent fallback, not a classified failure. Per Spec §10.2 NO_SILENT_PROVIDER_FALLBACK
-  // that must count as FAIL, not PASS.
-  const classified = (e) =>
-    Boolean(e) && e.outcome === 'FAILURE' && Boolean(e.failureCode) && e.failureCode !== 'UNCLASSIFIED';
-  result.AC_10_failure_identity.pass =
-    classified(result.AC_10_failure_identity.unknownModel) &&
-    classified(result.AC_10_failure_identity.unreachableEndpoint);
-  result.AC_10_failure_identity.note =
-    'unknown model name MUST produce a classified machine-readable failure. Returning vectors for an unknown model is a silent fallback and is scored FAIL.';
+  // ---- AC_10 PROVIDER-SPECIFIC failure identity (R1: review finding P1-2)
+  result.AC_10_failure_identity = await runProviderFailureProbes(provider);
+
+  // ---- PROFILE / CACHE IDENTITY inputs (R1: review finding P1-3)
+  result.profileIdentity = { inputProfileMeasured: null, note: null };
+  if (typeof provider.inputProfile === 'function') {
+    try {
+      result.profileIdentity.inputProfileMeasured = await provider.inputProfile();
+    } catch (err) {
+      result.profileIdentity.inputProfileMeasured = { measured: false, error: redact(String(err?.message ?? err)).slice(0, 200) };
+    }
+  } else {
+    result.profileIdentity.note =
+      'input-side normalization was not measured for this provider family in R1; it is defined and measured for the selected in-process ONNX profile.';
+  }
 
   result.latency = {
     batches: timings.length,
@@ -294,33 +298,38 @@ async function runBattery(provider, battery) {
   return result;
 }
 
-async function probeFailureIdentity(provider) {
-  const out = { unknownModel: null, unreachableEndpoint: null };
-
-  // (a) unknown model name against the SAME provider family
-  try {
-    const bogus =
-      provider.providerId === 'lmstudio-local-embeddings'
-        ? (await import('./providers/lmstudio-openai-embeddings.mjs')).createProvider({ model: 't01-probe-no-such-model' })
-        : (await import('./providers/transformersjs-local-onnx.mjs')).createProvider({ model: 'T01Probe/no-such-model' });
-    await bogus.embed(['失败身份探测']);
-    out.unknownModel = { outcome: 'NO_FAILURE', failureCode: 'NONE', note: 'provider accepted an unknown model name' };
-  } catch (err) {
-    out.unknownModel = { outcome: 'FAILURE', failureCode: err?.failureCode ?? 'UNCLASSIFIED', message: redact(String(err?.message ?? err)).slice(0, 200) };
+/**
+ * R1 (review finding P1-2): each provider declares its OWN failure surface.
+ * Non-applicable surfaces are reported as N/A with a reason and are excluded from
+ * scoring. No failure surface observed on one provider family is attributed to
+ * another. NO_SILENT_PROVIDER_FALLBACK is unchanged: a provider that RETURNS
+ * VECTORS for an absent model / malformed input is a silent fallback and is FAIL.
+ */
+async function runProviderFailureProbes(provider) {
+  const probes = typeof provider.failureProbes === 'function' ? provider.failureProbes() : [];
+  const results = [];
+  for (const p of probes) {
+    if (!p.applicable) {
+      results.push({ id: p.id, applicable: false, reason: p.reason });
+      continue;
+    }
+    try {
+      const r = await p.probe();
+      results.push({ id: p.id, applicable: true, description: p.description, ...r });
+    } catch (err) {
+      results.push({ id: p.id, applicable: true, description: p.description, outcome: 'PROBE_ERROR', failureCode: 'UNCLASSIFIED', message: redact(String(err?.message ?? err)).slice(0, 240) });
+    }
   }
-
-  // (b) unreachable loopback endpoint
-  try {
-    const dead = (await import('./providers/lmstudio-openai-embeddings.mjs')).createProvider({
-      baseUrl: 'http://127.0.0.1:9',
-      timeoutMs: 5_000,
-    });
-    await dead.embed(['失败身份探测']);
-    out.unreachableEndpoint = { outcome: 'NO_FAILURE', failureCode: 'NONE' };
-  } catch (err) {
-    out.unreachableEndpoint = { outcome: 'FAILURE', failureCode: err?.failureCode ?? 'UNCLASSIFIED', message: redact(String(err?.message ?? err)).slice(0, 200) };
-  }
-  return out;
+  const applicable = results.filter((r) => r.applicable);
+  const classified = (r) => r.outcome === 'FAILURE' && Boolean(r.failureCode) && r.failureCode !== 'UNCLASSIFIED';
+  return {
+    probes: results,
+    applicableCount: applicable.length,
+    pass: applicable.length > 0 && applicable.every(classified),
+    scoringRule:
+      'pass = every APPLICABLE probe produced a classified machine-readable failure. N/A surfaces are excluded from scoring. Returning vectors for an absent model or accepting malformed input is a silent fallback and is FAIL.',
+    crossProviderClaim: 'NONE — every probe in this list belongs to the provider under test; non-applicable surfaces are marked N/A with a reason.',
+  };
 }
 
 function summarize(result) {
@@ -333,6 +342,21 @@ function summarize(result) {
     else counts.unknown += 1;
   }
   return { ...counts, total: acs.length };
+}
+
+function readRuntimeIdentity() {
+  const pkgs = ['@xenova/transformers', 'onnxruntime-node', 'onnxruntime-common', 'sharp'];
+  const out = { node: process.version, platform: process.platform, packages: {} };
+  for (const name of pkgs) {
+    try {
+      // Version numbers only — no paths are recorded.
+      const pkg = JSON.parse(readFileSync(join(HERE, 'node_modules', name, 'package.json'), 'utf8'));
+      out.packages[name] = pkg.version ?? null;
+    } catch {
+      out.packages[name] = null;
+    }
+  }
+  return out;
 }
 
 async function main() {
@@ -360,6 +384,7 @@ async function main() {
       offlineEnforced: process.env.P1_T01_OFFLINE_ENFORCED === '1',
       note: 'offlineEnforced=true means the runner was executed with a black-hole proxy configured (AC_11).',
     },
+    runtimeIdentity: readRuntimeIdentity(),
     candidates: [],
   };
 
@@ -412,7 +437,8 @@ function printHuman(report) {
       const flag = v.pass === true ? 'PASS' : v.pass === false ? 'FAIL' : 'N/A ';
       console.log(`    [${flag}] ${k}${detailFor(k, v)}`);
     }
-    console.log(`  latency: total=${c.latency?.totalMs}ms over ${c.latency?.batches} batches (wall ${c.totalMs}ms)\n`);
+    console.log(`  latency: total=${c.latency?.totalMs}ms over ${c.latency?.batches} batches (wall ${c.totalMs}ms)`);
+    console.log(`  ${detailFor('profileIdentity', c.profileIdentity ?? {})}\n`);
   }
 }
 
@@ -426,7 +452,16 @@ function detailFor(key, v) {
   if (key === 'AC_5_short_query_to_long_passage') return `  margins=${v.items.map((i) => `${i.id}:${i.margin}`).join(' ')}`;
   if (key === 'AC_6_determinism') return `  maxDelta=${v.items.map((i) => i.maxAbsDelta).join(' ')}`;
   if (key === 'AC_7_malformed_input') return `  ${v.items.map((i) => `${i.label}:${i.outcome}${i.failureCode ? `/${i.failureCode}` : ''}`).join(' ')}`;
-  if (key === 'AC_10_failure_identity') return `  unknown=${v.unknownModel?.failureCode} unreachable=${v.unreachableEndpoint?.failureCode}`;
+  if (key === 'AC_10_failure_identity') {
+    const parts = v.probes.map((p) => (p.applicable ? `${p.id}:${p.outcome}/${p.failureCode}` : `${p.id}:N/A`));
+    return `  ${parts.join(' ')} (crossProviderClaim=${v.crossProviderClaim})`;
+  }
+  if (key === 'profileIdentity') {
+    const ip = v.inputProfileMeasured;
+    if (!ip) return `  (not measured for this provider family)`;
+    const t = ip.truncationEvidence ?? {};
+    return `  tokenizer=${ip.tokenizerClass} maxLen=${ip.modelMaxLengthTokens} pooling=${ip.pooling} truncation=${t.interpretedAs ?? 'unmeasured'} cos(long,firstN)=${t.cos_long_vs_firstN ?? '-'}`;
+  }
   return '';
 }
 

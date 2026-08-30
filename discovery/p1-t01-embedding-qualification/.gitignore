@@ -11,6 +11,11 @@ models-*/
 # here so this directory is self-contained).
 node_modules/
 
+# Throwaway artifact dir created by the MISSING_LOCAL_ARTIFACT_OR_LOAD_FAILURE
+# failure probe (R1 / review finding P1-2). It exists only to prove load failure
+# on an empty artifact dir.
+probe-empty-model-dir/
+
 # Scratch / intermediate run output. Decided evidence files are committed
 # explicitly under evidence/.
 *.tmp

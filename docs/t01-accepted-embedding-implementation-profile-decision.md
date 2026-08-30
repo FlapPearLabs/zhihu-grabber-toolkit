@@ -13,6 +13,9 @@ SAME_HEAD_AS     = docs/t01-embedding-provider-qualification.md
                    + discovery/p1-t01-embedding-qualification/evidence/*.json
 SPEC_ANCHOR      = docs/specs/p1-cross-question-deep-research.md §5.3 (EmbeddingProvider contract)
                    + OPEN_DECISION D-1
+REVIEW_CYCLE     = R0 candidate @ a0402aee（CHANGES_REQUESTED_NARROW：P1-1/P1-2/P1-3）
+                   + R1 REPAIR（本 HEAD：精确 revision 钉死 / provider 专属失败面 /
+                   input-normalization identity）
 Date             = 2026-08-30
 ```
 
@@ -42,7 +45,10 @@ Xenova/bge-base-zh-v1.5
 
 MODEL_VERSION_IDENTITY =
   huggingfaceRepoId = Xenova/bge-base-zh-v1.5
-  revisionSha       = 71e50dc531959f9e04ebf190ea25b00261a0a186
+  exactRevisionPinned = true            (R1: fetch-model.mjs --revision, no main fallback)
+  requestedRevision = 71e50dc531959f9e04ebf190ea25b00261a0a186
+  revisionSha       = 71e50dc531959f9e04ebf190ea25b00261a0a186  (hub-resolved == requested)
+  perFileSourceRevision = 71e50dc531959f9e04ebf190ea25b00261a0a186 (every file, verified)
   onnx_sha256       = b665f3bba56c3119bc76ba131ebcc544d720a7408cb11581bdf354aaa0198d43
   onnx_bytes        = 102868746
   tokenizer_sha256  = 7dfbf1966ebf99d471c3796e9b457329d2b2182b817e144f1e904b957745c839
@@ -54,42 +60,70 @@ VECTOR_DIMENSION =
 768
   (constant across all inputs and batch sizes; observedDimensions = [768])
 
-NORMALIZATION_PROFILE_IDENTITY =
+INPUT_NORMALIZATION_VERSION =   (R1 / P1-3 — MEASURED actual behavior, not invented)
+T01_INPUT_NORM_V1
+  tokenizerClass    = BertTokenizer (wordpiece, vocab pinned by tokenizer.json sha256)
+  instructionPrefix = none (deliberately not applied in this battery)
+  maxInputTokens    = 512 (pipeline truncates input to the first 512 tokens; tokenizer
+                          itself does NOT truncate: raw 3452 tokens pass through tokenize())
+  truncationEvidence= shared-prefix bracketing: 508 tokens -> cos 0.974416 (below window),
+                          531 tokens -> cos 1.000000 (at window, identical to 3452-token input)
+  pooling           = mean
+  definition        = tokenize -> truncate to first 512 tokens -> mean-pool token embeddings
+  consequence       = text beyond 512 tokens contributes nothing to the vector (CAVEAT-8)
+
+OUTPUT_NORMALIZATION_VERSION =
 L2_UNIT_NORM
-  definition  = mean pooling, then L2 normalize
+  definition  = L2 normalize after pooling
   observed L2 norm range = [1.0, 1.0]
   consequence = cosine similarity equals dot product
 
+EMBEDDING_VERSION_IDENTITY =
+  modelRevision + file sha256 (above) + INPUT_NORMALIZATION_VERSION + OUTPUT_NORMALIZATION_VERSION
+  discovery runtime identity (from committed package-lock.json):
+    node                = v22.22.2
+    platform            = darwin
+    @xenova/transformers= 2.17.2
+    onnxruntime-node    = 1.14.0
+    onnxruntime-common  = 1.14.0
+    sharp               = 0.32.6
+  NOTE: T10 must compose the Spec §5.3 cache identity from these parts — no guessing.
+
 FAILURE_IDENTITY =
   DISCOVERY-PROPOSED (NOT an Approved contract; P1-T10 must re-derive from
-  Spec §5.3 / §10.2 under its own review):
-    EMBEDDING_MODEL_UNKNOWN          — unknown model name → fail closed
-    EMBEDDING_PROVIDER_UNREACHABLE   — transport unreachable
-    EMBEDDING_PROVIDER_HTTP_ERROR    — non-2xx, not classified above
-    EMBEDDING_RESPONSE_SCHEMA_INVALID— response shape violated
-    EMBEDDING_INPUT_INVALID          — input not an array of strings
-    EMBEDDING_VECTOR_NON_FINITE      — vector contains NaN/Inf
+  Spec §5.3 / §10.2 under its own review). PROVIDER-SPECIFIC (R1 / P1-2):
+  Applicable to THIS in-process ONNX provider (all verified):
+    EMBEDDING_MODEL_UNKNOWN        — unknown/absent model id → fail closed (verified)
+    EMBEDDING_MODEL_UNKNOWN        — missing local artifact / load failure (verified)
+    EMBEDDING_INPUT_INVALID        — input not an array of strings (verified)
+    EMBEDDING_VECTOR_NON_FINITE    — vector contains NaN/Inf
     EMBEDDING_VECTOR_DIMENSION_MISMATCH — dimension differs from profile
-  Observed on this profile:
-    unknown model      → EMBEDDING_MODEL_UNKNOWN        (verified)
-    unreachable endpoint → EMBEDDING_PROVIDER_UNREACHABLE (verified)
+  N/A for this provider:
+    EMBEDDING_PROVIDER_UNREACHABLE — in-process transport has NO network endpoint;
+                                     this surface belongs to the HTTP-server provider
+                                     family (e.g. lmstudio-local-embeddings). No
+                                     cross-provider failure claim is present.
+    EMBEDDING_PROVIDER_HTTP_ERROR  — same reason as above.
 
 EGRESS_CLASSIFICATION =
-LOCAL / NO_NEW_EGRESS = YES
-  embed-time outbound network = NONE (mechanically verified, AC_11)
-  only network action = one-time INBOUND acquisition of public model weights
+LOCAL / NO_NEW_EGRESS = YES   (revalidated in R1)
+  embed-time outbound network = NONE (mechanically verified, AC_11, R1 black-hole rerun
+                                     byte-identical to the online run)
+  only network action = one-time INBOUND acquisition of public model weights at the exact
+                        pinned revision (identity.json schemaVersion 2; fallbackToMainUsed=false)
   corpus egress = false
   credential used = false
 
 SUPPORTING_EVIDENCE =
   docs/t01-embedding-provider-qualification.md                       (report, same HEAD)
-  discovery/p1-t01-embedding-qualification/evidence/candidate-transformersjs-bge-base-zh-v1.5.json
-  discovery/p1-t01-embedding-qualification/evidence/candidate-transformersjs-bge-small-zh-v1.5.json
-  discovery/p1-t01-embedding-qualification/evidence/candidate-lmstudio-nomic-embed-text-v1.5.json
-  discovery/p1-t01-embedding-qualification/evidence/ac11-offline-blackhole-proxy-bge-base-zh-v1.5.json
+  discovery/p1-t01-embedding-qualification/evidence/candidate-transformersjs-bge-base-zh-v1.5-r1.json   (R1, authoritative)
+  discovery/p1-t01-embedding-qualification/evidence/candidate-transformersjs-bge-small-zh-v1.5-r1.json
+  discovery/p1-t01-embedding-qualification/evidence/candidate-lmstudio-nomic-embed-text-v1.5-r1.json
+  discovery/p1-t01-embedding-qualification/evidence/ac11-offline-blackhole-proxy-bge-base-zh-v1.5-r1.json
   discovery/p1-t01-embedding-qualification/evidence/remote-capability-deepseek.json
   discovery/p1-t01-embedding-qualification/fixtures/zh-semantic-battery.json
-  discovery/p1-t01-embedding-qualification/                          (probe harness + README)
+  discovery/p1-t01-embedding-qualification/                          (probe harness + README + lockfile)
+  (R0 非 -r1 证据文件保留作已审历史；其 AC_10 跨 provider 探针为 P1-2 已修正缺陷)
 
 QUALIFICATION_SCOPE =
   battery          = P1_T01_ZH_SEMANTIC_BATTERY_V1 (handcrafted synthetic Chinese)
@@ -99,8 +133,10 @@ QUALIFICATION_SCOPE =
   measured ACs     = AC_1 relevance, AC_2 near-dup vs novel, AC_3 terminology variation,
                      AC_4 (cross-topic, informational), AC_4b within-anchor opposition,
                      AC_5 short-query→long-passage, AC_6 determinism, AC_7 malformed input,
-                     AC_8 vector contract, AC_9 identity, AC_10 failure identity, AC_11 no-egress
-  outcome          = 9 pass / 1 fail / 0 unknown
+                     AC_8 vector contract, AC_9 identity, AC_10 failure identity (provider-
+                     specific), AC_11 no-egress, + input-side normalization measurement (R1)
+  outcome          = 9 pass / 1 fail / 0 unknown  (R1 rerun on exact pinned revision;
+                     numerically identical to R0 — no evidence drift)
   NOT covered      = real-Zhihu end-to-end acceptance (P1-T16 dogfood),
                      cross-domain generalization, GPU/other OS, real-corpus throughput
 ```
@@ -147,6 +183,20 @@ CAVEAT-7 (remote path remains closed, not rejected)
   provider (DeepSeek) exposes no embeddings endpoint (HTTP 404 on /v1/embeddings and
   /embeddings); no other remote embedding credential exists. Any future REMOTE profile
   additionally requires P1-T02 / GATE-2 egress authority. P1-T01 does not activate T02.
+
+CAVEAT-8 (input truncation — R1 MEASURED, not invented)
+  This profile truncates input to the first 512 tokens (tokenizer itself does not
+  truncate). 508 tokens → cos 0.974416 (below window); 531 tokens → cos 1.000000,
+  identical to a 3452-token input. 512 == model max_position_embeddings.
+  INPUT_NORMALIZATION_VERSION captures this. Any change (e.g. instruction prefix or
+  different truncation) changes the version and invalidates the Spec §5.3 cache identity;
+  re-qualification is required. T10 must surface this to operators.
+
+CAVEAT-9 (exact revision is a hard acquisition requirement — R1)
+  fetch-model.mjs requires --revision <sha> and fails closed (exit 2) if the revision
+  is unavailable or the hub-resolved sha differs; there is NO fallback to `main`.
+  T10 production model acquisition must keep the same pinned revision and verify file
+  sha256. Model updates are a new-revision re-qualification, not a silent bump.
 ```
 
 ---

@@ -5,7 +5,7 @@
   "description": "DISCOVERY-ONLY qualification harness for P1-T01 / Issue #33 (EmbeddingProvider Qualification Discovery). Not a production package; not a dependency of any production package.",
   "type": "module",
   "scripts": {
-    "fetch-model": "node fetch-model.mjs",
+    "fetch-model": "node fetch-model.mjs --model Xenova/bge-base-zh-v1.5 --revision 71e50dc531959f9e04ebf190ea25b00261a0a186",
     "qualify": "node qualify-embedding-provider.mjs",
     "qualify:onnx": "node qualify-embedding-provider.mjs --provider transformersjs-local-bge-small-zh-v1.5",
     "qualify:lmstudio": "node qualify-embedding-provider.mjs --provider lmstudio-local-nomic-embed-text-v1.5"

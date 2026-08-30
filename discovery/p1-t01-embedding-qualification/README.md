@@ -61,22 +61,39 @@ capability probe refuses to run unless the fixture file declares
 ```bash
 cd discovery/p1-t01-embedding-qualification
 
-# 0. install the discovery-scoped dev dependency
+# 0. install the discovery-scoped dev dependency (reproducible: `npm ci` verified)
 npm install --registry=https://registry.npmjs.org
+#    (in-place `npm ci` may be blocked by a sandbox bulk-delete guard; it was verified
+#     in a clean copy of package.json + package-lock.json — 80 packages, exit 0)
 
-# 1. one-time model acquisition (NETWORK: downloads public model weights only)
+# 1. one-time model acquisition — EXACT REVISION REQUIRED (R1 / P1-1).
+#    All files are fetched from resolve/<revision>/<file>. No `main` fallback.
+#    Missing/invalid/mismatched revision → FAIL_CLOSED (exit 2).
 #    behind a proxy, Node's env-proxy agent must be enabled:
 export HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897
 export NODE_USE_ENV_PROXY=1
-npm run fetch-model
+node fetch-model.mjs --model Xenova/bge-base-zh-v1.5 \
+  --revision 71e50dc531959f9e04ebf190ea25b00261a0a186 --dir ./models-bge-base-zh-v1.5
 
-# 2. run the battery for a single provider
-node qualify-embedding-provider.mjs --provider transformersjs-local-bge-small-zh-v1.5
-node qualify-embedding-provider.mjs --provider lmstudio-local-nomic-embed-text-v1.5
+# 2. run the battery for a provider
+P1_T01_ONNX_MODEL=Xenova/bge-base-zh-v1.5 \
+P1_T01_ONNX_MODEL_DIR="$PWD/models-bge-base-zh-v1.5" \
+  node qualify-embedding-provider.mjs --provider transformersjs-local-onnx
 
-# 3. run everything and write the evidence file
-node qualify-embedding-provider.mjs --provider all --out evidence/qualification-evidence.json
+# 3. write the evidence file
+P1_T01_ONNX_MODEL=Xenova/bge-base-zh-v1.5 \
+P1_T01_ONNX_MODEL_DIR="$PWD/models-bge-base-zh-v1.5" \
+  node qualify-embedding-provider.mjs --provider transformersjs-local-onnx \
+  --out evidence/candidate-transformersjs-bge-base-zh-v1.5-r1.json
 ```
+
+### Failure-identity probes are provider-specific (R1 / P1-2)
+
+Each provider adapter declares its own `failureProbes()`; non-applicable surfaces are
+reported as `N/A` with a reason and are excluded from scoring. The in-process ONNX
+provider therefore has `ENDPOINT_UNREACHABLE = N/A` (no endpoint exists) and verifies
+only its own surfaces (absent model / missing artifact / invalid input). No
+cross-provider failure claim is present, and `NO_SILENT_PROVIDER_FALLBACK` is unchanged.
 
 ### AC_11 — proving no egress at embed time
 
@@ -87,7 +104,9 @@ re-run it with a black-hole proxy:
 export HTTPS_PROXY=http://127.0.0.1:9 HTTP_PROXY=http://127.0.0.1:9
 export NODE_USE_ENV_PROXY=1
 export P1_T01_OFFLINE_ENFORCED=1
-node qualify-embedding-provider.mjs --provider transformersjs-local-bge-small-zh-v1.5
+P1_T01_ONNX_MODEL=Xenova/bge-base-zh-v1.5 \
+P1_T01_ONNX_MODEL_DIR="$PWD/models-bge-base-zh-v1.5" \
+  node qualify-embedding-provider.mjs --provider transformersjs-local-onnx
 ```
 
 A successful run under a black-hole proxy shows no outbound call was needed or made.

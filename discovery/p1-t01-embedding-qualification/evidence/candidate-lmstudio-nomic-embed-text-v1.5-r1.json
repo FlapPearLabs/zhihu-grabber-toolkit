@@ -1,0 +1,488 @@
+{
+  "schemaVersion": 1,
+  "artifact": "P1_T01_EMBEDDING_QUALIFICATION_EVIDENCE",
+  "generatedAt": "2026-08-30T06:49:02.695Z",
+  "node": "v22.22.2",
+  "platform": "darwin",
+  "battery": {
+    "id": "P1_T01_ZH_SEMANTIC_BATTERY_V1",
+    "version": 1,
+    "provenanceClass": "SYNTHETIC_HANDCRAFTED",
+    "containsRealCorpus": false,
+    "egressClass": "NON_SENSITIVE"
+  },
+  "runMode": {
+    "offlineEnforced": false,
+    "note": "offlineEnforced=true means the runner was executed with a black-hole proxy configured (AC_11)."
+  },
+  "runtimeIdentity": {
+    "node": "v22.22.2",
+    "platform": "darwin",
+    "packages": {
+      "@xenova/transformers": "2.17.2",
+      "onnxruntime-node": "1.14.0",
+      "onnxruntime-common": "1.14.0",
+      "sharp": "0.32.6"
+    }
+  },
+  "candidates": [
+    {
+      "id": "lmstudio-local-nomic-embed-text-v1.5",
+      "providerIdentity": {
+        "id": "lmstudio-local-nomic-embed-text-v1.5",
+        "providerCategory": "LOCAL",
+        "providerId": "lmstudio-local-embeddings",
+        "providerVersionId": "openai-compatible-v1-embeddings",
+        "modelId": "text-embedding-nomic-embed-text-v1.5",
+        "transport": "loopback-http:http://127.0.0.1:1234",
+        "requiresCredential": false
+      },
+      "health": {
+        "ok": true,
+        "models": [
+          "qwen/qwen3-1.7b",
+          "text-embedding-nomic-embed-text-v1.5",
+          "qwen3.5-vl-9b-mlx-crack",
+          "zai-org/glm-4.6v-flash"
+        ],
+        "modelPresent": true
+      },
+      "AC_1_relevance": {
+        "items": [
+          {
+            "id": "A1",
+            "cos_related": 0.7102,
+            "cos_unrelated": 0.5834,
+            "margin": 0.1268,
+            "pass": true
+          },
+          {
+            "id": "A2",
+            "cos_related": 0.7043,
+            "cos_unrelated": 0.5987,
+            "margin": 0.1056,
+            "pass": true
+          },
+          {
+            "id": "A3",
+            "cos_related": 0.6271,
+            "cos_unrelated": 0.4867,
+            "margin": 0.1404,
+            "pass": true
+          }
+        ],
+        "pass": true
+      },
+      "AC_2_near_duplicate_vs_novel": {
+        "items": [
+          {
+            "id": "B1",
+            "cos_near_duplicate": 0.6755,
+            "cos_same_topic_novel": 0.6583,
+            "margin": 0.0171,
+            "pass": true
+          },
+          {
+            "id": "B2",
+            "cos_near_duplicate": 0.9424,
+            "cos_same_topic_novel": 0.8593,
+            "margin": 0.0831,
+            "pass": true
+          },
+          {
+            "id": "B3",
+            "cos_near_duplicate": 0.7831,
+            "cos_same_topic_novel": 0.6079,
+            "margin": 0.1752,
+            "pass": true
+          }
+        ],
+        "pass": true
+      },
+      "AC_3_terminology_variation": {
+        "items": [
+          {
+            "id": "C1",
+            "cos_variant": 0.3995,
+            "cos_unrelated_control": 0.3226,
+            "margin": 0.0769,
+            "pass": true
+          },
+          {
+            "id": "C2",
+            "cos_variant": 0.5984,
+            "cos_unrelated_control": 0.4824,
+            "margin": 0.1159,
+            "pass": true
+          },
+          {
+            "id": "C3",
+            "cos_variant": 0.3652,
+            "cos_unrelated_control": 0.2918,
+            "margin": 0.0735,
+            "pass": true
+          },
+          {
+            "id": "C4",
+            "cos_variant": 0.6051,
+            "cos_unrelated_control": 0.581,
+            "margin": 0.0241,
+            "pass": true
+          }
+        ],
+        "pass": true
+      },
+      "AC_4_paraphrase_above_opposing": {
+        "paraphrase": [
+          {
+            "id": "P1",
+            "cos": 0.7147
+          },
+          {
+            "id": "P2",
+            "cos": 0.8396
+          },
+          {
+            "id": "P3",
+            "cos": 0.8031
+          }
+        ],
+        "opposing": [
+          {
+            "id": "D1",
+            "cos": 1
+          },
+          {
+            "id": "D2",
+            "cos": 0.8316
+          },
+          {
+            "id": "D3",
+            "cos": 0.8469
+          }
+        ],
+        "minParaphrase": 0.7147,
+        "maxOpposing": 1,
+        "pass": false,
+        "margin": -0.2853
+      },
+      "AC_4b_opposing_within_anchor": {
+        "items": [
+          {
+            "id": "I1",
+            "cos_paraphrase": 0.8671,
+            "cos_opposing": 0.8674,
+            "margin": -0.0003,
+            "pass": false
+          },
+          {
+            "id": "I2",
+            "cos_paraphrase": 0.5702,
+            "cos_opposing": 0.9396,
+            "margin": -0.3693,
+            "pass": false
+          },
+          {
+            "id": "I3",
+            "cos_paraphrase": 0.9032,
+            "cos_opposing": 0.9598,
+            "margin": -0.0566,
+            "pass": false
+          }
+        ],
+        "pass": false
+      },
+      "AC_5_short_query_to_long_passage": {
+        "items": [
+          {
+            "id": "F1",
+            "cos_on_topic": 0.7798,
+            "cos_off_topic": 0.6166,
+            "margin": 0.1631,
+            "pass": true
+          },
+          {
+            "id": "F2",
+            "cos_on_topic": 0.7184,
+            "cos_off_topic": 0.5565,
+            "margin": 0.1619,
+            "pass": true
+          }
+        ],
+        "pass": true
+      },
+      "AC_6_determinism": {
+        "items": [
+          {
+            "id": "G1",
+            "repeats": 3,
+            "maxAbsDelta": 0,
+            "pass": true
+          },
+          {
+            "id": "G2",
+            "repeats": 3,
+            "maxAbsDelta": 0,
+            "pass": true
+          }
+        ],
+        "pass": true
+      },
+      "AC_7_malformed_input": {
+        "items": [
+          {
+            "id": "H1",
+            "label": "empty_string",
+            "inputChars": 0,
+            "outcome": "VECTOR_RETURNED",
+            "failureCode": null,
+            "dim": 768,
+            "norm": 1
+          },
+          {
+            "id": "H2",
+            "label": "whitespace_only",
+            "inputChars": 3,
+            "outcome": "VECTOR_RETURNED",
+            "failureCode": null,
+            "dim": 768,
+            "norm": 1
+          },
+          {
+            "id": "H3",
+            "label": "single_char",
+            "inputChars": 1,
+            "outcome": "VECTOR_RETURNED",
+            "failureCode": null,
+            "dim": 768,
+            "norm": 1
+          },
+          {
+            "id": "H4",
+            "label": "oversize_8000_chars",
+            "inputChars": 7680,
+            "outcome": "VECTOR_RETURNED",
+            "failureCode": null,
+            "dim": 768,
+            "norm": 1
+          },
+          {
+            "id": "H5",
+            "label": "control_chars",
+            "inputChars": 15,
+            "outcome": "VECTOR_RETURNED",
+            "failureCode": null,
+            "dim": 768,
+            "norm": 1
+          }
+        ],
+        "pass": true,
+        "note": "pass = every malformed input produced either a valid vector or a classified machine-readable failure code."
+      },
+      "AC_8_vector_contract": {
+        "observedDimensions": [
+          768
+        ],
+        "nonFiniteVectors": 0,
+        "normMin": 1,
+        "normMax": 1,
+        "dimensionStable": true,
+        "normalizationProfile": "L2_UNIT_NORM",
+        "normSpread": 8e-8,
+        "vectorsExamined": 68,
+        "pass": true
+      },
+      "AC_9_identity": {
+        "declaredModelId": "text-embedding-nomic-embed-text-v1.5",
+        "echoedModelId": "text-embedding-nomic-embed-text-v1.5",
+        "revisionSha": null,
+        "transport": "loopback-http:http://127.0.0.1:1234",
+        "requiresCredential": false,
+        "dtype": null,
+        "pass": true
+      },
+      "AC_10_failure_identity": {
+        "probes": [
+          {
+            "id": "UNKNOWN_OR_ABSENT_MODEL",
+            "applicable": true,
+            "description": "request embeddings for a model name that is not loaded / not available",
+            "outcome": "NO_FAILURE",
+            "failureCode": "NONE",
+            "note": "server accepted an unknown model name and returned vectors — silent fallback"
+          },
+          {
+            "id": "INVALID_PROVIDER_INPUT",
+            "applicable": true,
+            "description": "malformed request body (input not an array of strings) against the HTTP contract",
+            "outcome": "NO_FAILURE",
+            "failureCode": "NONE",
+            "note": "server returned 200 for a malformed body"
+          },
+          {
+            "id": "ENDPOINT_UNREACHABLE",
+            "applicable": true,
+            "description": "loopback server not listening on the configured port",
+            "outcome": "FAILURE",
+            "failureCode": "EMBEDDING_PROVIDER_UNREACHABLE",
+            "message": "loopback embedding server unreachable: fetch failed"
+          },
+          {
+            "id": "MISSING_LOCAL_ARTIFACT_OR_LOAD_FAILURE",
+            "applicable": false,
+            "reason": "N/A — model artifact loading is server-side (LM Studio manages GGUF files); it is not observable through the OpenAI-compatible API surface probed here."
+          }
+        ],
+        "applicableCount": 3,
+        "pass": false,
+        "scoringRule": "pass = every APPLICABLE probe produced a classified machine-readable failure. N/A surfaces are excluded from scoring. Returning vectors for an absent model or accepting malformed input is a silent fallback and is FAIL.",
+        "crossProviderClaim": "NONE — every probe in this list belongs to the provider under test; non-applicable surfaces are marked N/A with a reason."
+      },
+      "profileIdentity": {
+        "inputProfileMeasured": null,
+        "note": "input-side normalization was not measured for this provider family in R1; it is defined and measured for the selected in-process ONNX profile."
+      },
+      "latency": {
+        "batches": 32,
+        "perBatchMs": [
+          {
+            "n": 3,
+            "ms": 571.57
+          },
+          {
+            "n": 3,
+            "ms": 37.33
+          },
+          {
+            "n": 3,
+            "ms": 37.63
+          },
+          {
+            "n": 3,
+            "ms": 39.17
+          },
+          {
+            "n": 3,
+            "ms": 39.05
+          },
+          {
+            "n": 3,
+            "ms": 45.28
+          },
+          {
+            "n": 3,
+            "ms": 37.07
+          },
+          {
+            "n": 3,
+            "ms": 45.72
+          },
+          {
+            "n": 3,
+            "ms": 35.97
+          },
+          {
+            "n": 3,
+            "ms": 39.33
+          },
+          {
+            "n": 2,
+            "ms": 21.89
+          },
+          {
+            "n": 2,
+            "ms": 21.44
+          },
+          {
+            "n": 2,
+            "ms": 20.29
+          },
+          {
+            "n": 2,
+            "ms": 18.99
+          },
+          {
+            "n": 2,
+            "ms": 19.81
+          },
+          {
+            "n": 2,
+            "ms": 18.06
+          },
+          {
+            "n": 3,
+            "ms": 25.87
+          },
+          {
+            "n": 3,
+            "ms": 31.84
+          },
+          {
+            "n": 3,
+            "ms": 33.69
+          },
+          {
+            "n": 3,
+            "ms": 50.96
+          },
+          {
+            "n": 3,
+            "ms": 50.91
+          },
+          {
+            "n": 1,
+            "ms": 10.59
+          },
+          {
+            "n": 1,
+            "ms": 10.42
+          },
+          {
+            "n": 1,
+            "ms": 10.9
+          },
+          {
+            "n": 1,
+            "ms": 12.8
+          },
+          {
+            "n": 1,
+            "ms": 11.99
+          },
+          {
+            "n": 1,
+            "ms": 13.62
+          },
+          {
+            "n": 1,
+            "ms": 13.53
+          },
+          {
+            "n": 1,
+            "ms": 12.85
+          },
+          {
+            "n": 1,
+            "ms": 11.86
+          },
+          {
+            "n": 1,
+            "ms": 490.42
+          },
+          {
+            "n": 1,
+            "ms": 11.03
+          }
+        ],
+        "totalMs": 1851.88
+      },
+      "summary": {
+        "pass": 8,
+        "fail": 2,
+        "unknown": 0,
+        "total": 10
+      },
+      "totalMs": 1940.65
+    }
+  ]
+}

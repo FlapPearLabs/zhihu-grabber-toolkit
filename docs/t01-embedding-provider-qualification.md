@@ -12,12 +12,37 @@ BASE_SHA        = cf4ce8bba66f11fd52de94e95957a0cd73fba4ea
 SCOPE           = 资格证据采集 + qualification decision artifact（同一 exact HEAD）
 TARGET_STATUS   = NOT_IMPLEMENTED
 IMPLEMENTATION_AUTHORIZATION = P1-T01 ONLY
+REVIEW_CYCLE    = R0 candidate @ a0402aee（verdict = CHANGES_REQUESTED_NARROW：P1-1 / P1-2 / P1-3）
+                  + R1 REPAIR（本 HEAD；仅修复三项 evidence-contract findings。
+                  provider 选型未被本 review 拒绝，未重开 embedding 市场调查）
 Date            = 2026-08-30
 ```
 
 > 本文件与 `docs/t01-accepted-embedding-implementation-profile-decision.md` 位于**同一个 exact
 > candidate HEAD**。在 EVIDENCE_REVIEWER 对该 exact HEAD PASS + ff-only merge + remote master
 > re-fetch 验证之前，两者均为 `NON_AUTHORITATIVE_CANDIDATE`，P1-T10 不得消费。
+
+---
+
+## 0a. R1 REPAIR RECORD（响应 CHANGES_REQUESTED_NARROW）
+
+| Finding | 修复 | 复验结果 |
+|---|---|---|
+| **P1-1 exact revision 可复现性** | `fetch-model.mjs` 增加 `--revision <sha>`：先经 Hub API 校验该 revision（404 / 形状非法 / 解析 sha 不一致 → `FAIL_CLOSED`，exit 2），全部文件一律从 `resolve/<revision>/<file>` 获取（**永不** `resolve/main/`，无静默回退），`identity.json` schemaVersion 2 记录 requested / resolved revision 与每文件 `sourceRevision`。选中 L2 以 `71e50dc531959f9e04ebf190ea25b00261a0a186` 重新获取 | `PINNED_REVISION_FETCH = PASS`（requested == hub-resolved == 每 file sourceRevision）；4 个文件 sha256 与 R0 证据**逐一相等** → `PREVIOUS_FILE_HASHES_MATCH = YES`，无 evidence drift，据此按任务要求**保留**原资格结论并重跑 |
+| **P1-2 provider 专属失败证据** | 每个 adapter 声明自己的 `failureProbes()`；不适用的面标 `N/A` + 理由并**不计分**；删除 R0 的跨 provider 失败探针（in-process ONNX 不再借用 LM Studio 端点） | 选中 profile：`UNKNOWN_OR_ABSENT_MODEL → EMBEDDING_MODEL_UNKNOWN`、`MISSING_LOCAL_ARTIFACT_OR_LOAD_FAILURE → EMBEDDING_MODEL_UNKNOWN`、`INVALID_PROVIDER_INPUT → EMBEDDING_INPUT_INVALID`，`ENDPOINT_UNREACHABLE = N/A`（in-process 无端点）→ PASS；`CROSS_PROVIDER_FAILURE_MISATTRIBUTION = NONE`。`NO_SILENT_PROVIDER_FALLBACK` 未削弱（LM Studio 新增实测：malformed body 亦返回 200 向量） |
+| **P1-3 完整 profile / cache identity** | 选中 profile 增加 `inputProfile()` **实测**输入侧行为（不做文档化虚构）：BertTokenizer、tokenizer 本身不截断（3452 token 原样通过）、但 embedding pipeline 将输入**截断到前 512 token**（共享前缀 bracketing：508 token → cos 0.974416 ≠ 1；531 token → cos 1.000000）、mean pooling、无 instruction prefix；并记录 lockfile 版本身份 | `INPUT_NORMALIZATION_VERSION` / `OUTPUT_NORMALIZATION_VERSION = L2_UNIT_NORM` / `EMBEDDING_VERSION_IDENTITY` 三者显式分离（见决策产物），T10 可直接组合 Spec §5.3 cache identity 而无需猜测 |
+
+重跑与漂移检查：
+
+```text
+SELECTED_PROFILE_RERUN = PASS（AC summary 9 pass / 1 fail / 0 unknown，与 R0 数值逐项一致，无漂移）
+AC11_OFFLINE           = PASS（黑洞代理重跑，AC_1..AC_8 数值与在线运行逐字节相同）
+LOCAL outcome          = 维持（未被修复证据推翻）
+T02                    = 保持 CONDITIONAL_NOT_ACTIVE，本票未激活
+```
+
+R0 证据文件（`evidence/*-v1.5.json`，非 `-r1`）**保留**在 repo 中作为已审历史；其 AC_10 段含
+已被 P1-2 指出的跨 provider 失败探针，属已修正缺陷，R1 以 `*-r1.json` 为准。
 
 ---
 
@@ -79,24 +104,25 @@ Date            = 2026-08-30
 | 1 | provider category | **LOCAL** |
 | 2 | named provider | `transformersjs-local-onnx`（进程内 ONNX Runtime，Node） |
 | 3 | named model/profile | `Xenova/bge-base-zh-v1.5`，quantized ONNX |
-| 4 | model/version identity | HF revision `71e50dc531959f9e04ebf190ea25b00261a0a186`；`onnx/model_quantized.onnx` 102,868,746 bytes，sha256 `b665f3bba56c3119bc76ba131ebcc544d720a7408cb11581bdf354aaa0198d43` |
+| 4 | model/version identity | **R1 精确 revision 钉死**：requested == hub-resolved == 每文件 `sourceRevision` = `71e50dc531959f9e04ebf190ea25b00261a0a186`；`onnx/model_quantized.onnx` 102,868,746 bytes，sha256 `b665f3bba56c3119bc76ba131ebcc544d720a7408cb11581bdf354aaa0198d43`；全部文件由 `resolve/<revision>/` 获取，无 `main` 回退（`fallbackToMainUsed = false`） |
 | 5 | vector dimension | **768**（跨输入与批大小恒定） |
-| 6 | vector validity contract | float32；全部分量 finite（nonFinite = 0）；空串/纯空白/单字/8000 字超长/含控制字符均返回有效 768 维向量（确定性，无静默垃圾向量） |
+| 6 | vector validity contract | float32；全部分量 finite（nonFinite = 0）；空串/纯空白/单字/8000 字超长/含控制字符均返回有效 768 维向量（确定性，无静默垃圾向量）。超长输入实测被截断到前 512 token（见 §7 CAVEAT-8） |
 | 7 | Chinese semantic quality | 见 §4。10 项 AC 中 9 项 PASS；唯一 FAIL 为**同锚点对立判别**（AC_4b），已按 Spec §3.2 定位归属（见 §7 CAVEAT-1） |
-| 8 | normalization profile | **mean pooling + L2 normalize**；实测 L2 norm ∈ [1, 1]，profile = `L2_UNIT_NORM`（单位范数，余弦即点积） |
-| 9 | machine-readable failure identity | discovery-proposed 代码集，实测可产生：`EMBEDDING_MODEL_UNKNOWN`（未知模型 fail-closed）、`EMBEDDING_PROVIDER_UNREACHABLE`（端点不可达） |
-| 10 | egress implications | **NO_NEW_EGRESS = YES**。嵌入阶段零出网（AC_11）。唯一网络动作是**一次性入站**下载公开模型权重（不含语料、不含凭据） |
+| 8 | normalization profile | 输入侧与输出侧分离（P1-3）：**输入** = BertTokenizer（wordpiece），无 instruction prefix，mean pooling，pipeline 截断到前 512 token（实测 bracket 508→cos 0.974416 / 531→cos 1.0）；**输出** = L2 normalize，实测 norm ∈ [1, 1]，`OUTPUT_NORMALIZATION_VERSION = L2_UNIT_NORM`。完整 `INPUT_NORMALIZATION_VERSION` 见决策产物 §1 |
+| 9 | machine-readable failure identity | **provider 专属（P1-2）**，本 provider 实测：`EMBEDDING_MODEL_UNKNOWN`（未知/缺失模型，fail-closed）、`EMBEDDING_MODEL_UNKNOWN`（本地 artifact 缺失/加载失败）、`EMBEDDING_INPUT_INVALID`（非数组输入）；`ENDPOINT_UNREACHABLE = N/A`（in-process 无端点）。无跨 provider 失败声明 |
+| 10 | egress implications | **NO_NEW_EGRESS = YES**。嵌入阶段零出网（AC_11，R1 黑洞代理复验逐字节一致）。唯一网络动作是**一次性入站**下载公开模型权重（不含语料、不含凭据） |
 
 ---
 
 ## 4. 三候选实测对照
 
-机器可读证据：
-`discovery/p1-t01-embedding-qualification/evidence/candidate-transformersjs-bge-small-zh-v1.5.json`、
-`.../candidate-transformersjs-bge-base-zh-v1.5.json`、
-`.../candidate-lmstudio-nomic-embed-text-v1.5.json`、
-`.../ac11-offline-blackhole-proxy-bge-base-zh-v1.5.json`、
+机器可读证据（**R1 为准**；R0 文件保留作已审历史）：
+`discovery/p1-t01-embedding-qualification/evidence/candidate-transformersjs-bge-small-zh-v1.5-r1.json`、
+`.../candidate-transformersjs-bge-base-zh-v1.5-r1.json`、
+`.../candidate-lmstudio-nomic-embed-text-v1.5-r1.json`、
+`.../ac11-offline-blackhole-proxy-bge-base-zh-v1.5-r1.json`、
 `.../remote-capability-deepseek.json`。
+（R0 对应非 `-r1` 文件保留；其 AC_10 段为 P1-2 已修正的跨 provider 探针。）
 
 ### 4.1 判别力（余弦 margin，越大越好）
 
@@ -115,9 +141,7 @@ Date            = 2026-08-30
 |---|---|---|---|
 | 维度 | 512 | **768** | 768 |
 | 归一化 | L2 单位范数 | L2 单位范数 | L2 单位范数 |
-| 确定性（3 次重复最大绝对偏差） | 0 | **0** | 0 |
-| 未知模型名 | `EMBEDDING_MODEL_UNKNOWN`（fail-closed） | `EMBEDDING_MODEL_UNKNOWN`（fail-closed） | **返回向量（`NONE`）= 静默回退** |
-| 端点不可达 | `EMBEDDING_PROVIDER_UNREACHABLE` | `EMBEDDING_PROVIDER_UNREACHABLE` | `EMBEDDING_PROVIDER_UNREACHABLE` |
+| 失败面（P1-2 后各自专属） | 未知模型/缺失 artifact/非法输入 → 分类 FAILURE；端点 N/A | 同左 | 未知模型 → **返回向量（静默回退）**；malformed body → **HTTP 200 返回向量（静默回退）**；端点不可达 → `EMBEDDING_PROVIDER_UNREACHABLE` |
 | battery 总时延（32 批） | 316.78 ms | 1469.57 ms | 1150.16 ms |
 | 模型体积 | 23 MB | **103 MB** | 由 LM Studio 管理 |
 
@@ -157,17 +181,18 @@ Date            = 2026-08-30
 ## 5. AC_11 — 出网否定性验证（机械证据，非声明）
 
 做法：把 `HTTPS_PROXY/HTTP_PROXY` 指向黑洞地址 `127.0.0.1:9` 并启用 Node env-proxy agent，
-重跑 L2 的完整 battery。
+对**精确钉死 revision** 的 L2 重跑完整 battery。
 
-结果（证据：`evidence/ac11-offline-blackhole-proxy-bge-base-zh-v1.5.json`）：
+结果（R1 证据：`evidence/ac11-offline-blackhole-proxy-bge-base-zh-v1.5-r1.json`）：
 
 ```text
 offlineEnforced = True
 AC summary      = pass 9 / fail 1 / unknown 0
-AC_1..AC_8 全部数值 与 在线运行 逐字节相同   → True
+AC_1..AC_8 全部数值 与 在线运行 逐字节相同   → True（R1 复验）
 ```
 
-即：**嵌入阶段不需要也无法进行任何对外网络调用**。
+即：**嵌入阶段不需要也无法进行任何对外网络调用**。R0（`ac11-offline-blackhole-proxy-bge-base-zh-v1.5.json`）
+与 R1 复验结论一致。
 
 ```text
 NO_NEW_EGRESS = YES
@@ -233,35 +258,59 @@ T10 若采纳该 profile，须自行按 `RULES.md` §7 记录理由并通过其 
 **CAVEAT-5（历史 harness 模型未被默认批准）**：`bge-small-zh-v1.5` 经实测后**未被选中**；
 选中的 `bge-base-zh-v1.5` 是依据本 battery 的实测判别力数据，与 harness 历史无关。
 
+**CAVEAT-6（远端路径保持关闭，非拒绝）**：REMOTE 记录为 `NOT_QUALIFIABLE_IN_THIS_ENVIRONMENT`；
+唯一持凭据的远端 provider（DeepSeek）`/v1/embeddings` 与 `/embeddings` 均 HTTP 404，无
+embeddings 能力；无其它远端 embedding 凭据。任何未来 REMOTE profile 另需 P1-T02 / GATE-2
+出网授权；本票不激活 T02。
+
+**CAVEAT-7（失败面归属，P1-2 修复后）**：失败身份为 **provider 专属**。本 profile 的
+`ENDPOINT_UNREACHABLE = N/A`（in-process 无端点）——该面属于 HTTP-server provider 家族
+（如 lmstudio），**不得**跨 provider 归因。`NO_SILENT_PROVIDER_FALLBACK` 未削弱：
+LM Studio 候选在 R1 复测中新增一个静默回退证据（malformed body 亦返回 HTTP 200 向量）。
+
+**CAVEAT-8（输入侧截断，R1 实测，非虚构）**：本 profile 的 embedding pipeline 将输入
+**截断到前 512 token**（实测 bracket：508 token → cos 0.974416 ≠ 1；531 token → cos 1.0
+与 3452-token 长文完全相同）。512 与该模型 `max_position_embeddings` 一致。这是**实际合格行为**
+的记录（P1-3 要求），**不是**为文档而发明的模型行为。下游 T10 必须以此为输入侧 identity；
+任何变更（如换用 instruction prefix 或改截断策略）都改变 `INPUT_NORMALIZATION_VERSION`，
+须重新资格化并按 §5.3 使 cache identity 失效。
+
+**CAVEAT-9（exact-revision 获取为硬要求，P1-1 修复后）**：`fetch-model.mjs` 现在**强制**
+`--revision <sha>`：Hub API 校验失败 / revision 不存在 / 解析 sha 不一致 → `FAIL_CLOSED`（exit 2），
+永不回退 `main`。任何未指定 revision 的获取都被拒绝。T10 生产化时必须沿用同一钉死 revision
++ 文件 sha256 验证；模型更新须显式走新 revision 的重新资格化。
+
 ---
 
 ## 8. 复现命令
 
 ```bash
 cd discovery/p1-t01-embedding-qualification
-npm install --registry=https://registry.npmjs.org
+npm install --registry=https://registry.npmjs.org    # 或 npm ci（已用干净副本验证可复现）
 
-# 一次性入站获取模型权重（需代理时启用 Node env-proxy）
+# 一次性入站获取模型权重（R1：必须指定精确 revision；fail-closed，无 main 回退）
 export HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 NODE_USE_ENV_PROXY=1
-npm run fetch-model                                   # L1: Xenova/bge-small-zh-v1.5
-node fetch-model.mjs --model Xenova/bge-base-zh-v1.5 --dir ./models-bge-base-zh-v1.5   # L2
+node fetch-model.mjs --model Xenova/bge-base-zh-v1.5 \
+  --revision 71e50dc531959f9e04ebf190ea25b00261a0a186 \
+  --dir ./models-bge-base-zh-v1.5                          # L2（选中，R1 精确钉死）
 
-# 跑 battery
-node qualify-embedding-provider.mjs --provider transformersjs-local-bge-small-zh-v1.5
+# 跑 battery（provider 专属失败面 + 输入侧身份测量）
 P1_T01_ONNX_MODEL=Xenova/bge-base-zh-v1.5 \
 P1_T01_ONNX_MODEL_DIR="$PWD/models-bge-base-zh-v1.5" \
-  node qualify-embedding-provider.mjs --provider transformersjs-local-onnx
-node qualify-embedding-provider.mjs --provider lmstudio-local-nomic-embed-text-v1.5
+  node qualify-embedding-provider.mjs --provider transformersjs-local-onnx \
+  --out evidence/candidate-transformersjs-bge-base-zh-v1.5-r1.json
 
 # AC_11 黑洞代理复验
 env P1_T01_OFFLINE_ENFORCED=1 HTTPS_PROXY=http://127.0.0.1:9 HTTP_PROXY=http://127.0.0.1:9 \
     NODE_USE_ENV_PROXY=1 P1_T01_ONNX_MODEL=Xenova/bge-base-zh-v1.5 \
     P1_T01_ONNX_MODEL_DIR="$PWD/models-bge-base-zh-v1.5" \
-  node qualify-embedding-provider.mjs --provider transformersjs-local-onnx
+  node qualify-embedding-provider.mjs --provider transformersjs-local-onnx \
+  --out evidence/ac11-offline-blackhole-proxy-bge-base-zh-v1.5-r1.json
 ```
 
 `git diff --check` 已执行且 clean。凭据值 / 哈希 / 前缀 / 本机私有路径均未进入任何提交产物
-（模型权重目录已由 discovery 目录内 `.gitignore` 排除；身份以 revision SHA + 文件 sha256 钉死）。
+（模型权重目录与探针空目录已由 discovery 目录内 `.gitignore` 排除；身份以精确 revision SHA
++ 文件 sha256 钉死；provider 错误消息统一经 `redact()` 后才落盘）。
 
 ---
 
@@ -271,10 +320,16 @@ env P1_T01_OFFLINE_ENFORCED=1 HTTPS_PROXY=http://127.0.0.1:9 HTTP_PROXY=http://1
 |---|---|
 | QUALIFICATION_RESULT | **LOCAL** |
 | SELECTED_PROVIDER | `transformersjs-local-onnx` |
-| SELECTED_MODEL_PROFILE | `Xenova/bge-base-zh-v1.5`（quantized ONNX） |
+| SELECTED_MODEL_PROFILE | `Xenova/bge-base-zh-v1.5`（quantized ONNX，精确 revision `71e50dc5…`） |
 | DECISION_ARTIFACT | `docs/t01-accepted-embedding-implementation-profile-decision.md`（同一 exact HEAD） |
 | DECISION_STATUS | `NON_AUTHORITATIVE_CANDIDATE` |
-| NO_NEW_EGRESS | **YES** |
+| PINNED_REVISION_FETCH | **PASS**（requested == resolved == per-file sourceRevision；fail-closed 路径 T1–T4 已验证 exit 2） |
+| PREVIOUS_FILE_HASHES_MATCH | **YES**（4 文件 sha256 与 R0 证据逐一相等，无 evidence drift） |
+| SELECTED_PROFILE_RERUN | **PASS**（AC summary 9/1/0，数值与 R0 逐项一致） |
+| PROVIDER_SPECIFIC_FAILURE_EVIDENCE | **PASS**（3 项 applicable 探针全为分类 FAILURE；ENDPOINT_UNREACHABLE = N/A） |
+| CROSS_PROVIDER_FAILURE_MISATTRIBUTION | **NONE** |
+| AC11_OFFLINE | **PASS**（黑洞代理复验逐字节一致） |
+| NO_NEW_EGRESS | **YES**（R1 复验后维持） |
 | REQUIRES_REMOTE_EGRESS_AUTHORITY | **NO** |
 | PROJECT_MEMORY_UPDATE_REQUIRED | **YES**（见 §10） |
 | REQUIRED_REVIEWER | `EVIDENCE_REVIEWER` |
@@ -284,10 +339,17 @@ env P1_T01_OFFLINE_ENFORCED=1 HTTPS_PROXY=http://127.0.0.1:9 HTTP_PROXY=http://1
 
 ## 10. PROJECT_MEMORY_UPDATE_REQUIRED = YES
 
-理由（不是机械更新）：本票产生了一条 **durable runtime/qualification fact**——
-本机已加载的 `text-embedding-nomic-embed-text-v1.5` 在中文上退化（不同中文句可产生余弦恰为 1.0
-的相同向量），且该 loopback provider 对未知模型名静默回退。后续 Agent 若不经此记录，
-很可能再次把"已加载的现成本地模型"当作 P1 embedding 的默认选择而重复踩坑。
+理由（不是机械更新）：本票产生多条 **durable runtime/qualification facts**：
+
+1. 本机已加载的 `text-embedding-nomic-embed-text-v1.5` 在中文上退化（不同中文句可产生余弦恰为
+   1.0 的相同向量），且该 loopback provider 对未知模型名与 malformed body 均静默回退
+   （违反 `NO_SILENT_PROVIDER_FALLBACK`）。后续 Agent 若不经此记录，很可能再次把
+   "已加载的现成本地模型"当作 P1 embedding 的默认选择而重复踩坑。
+2. 选中 profile 的输入侧行为：embedding pipeline 将输入截断到前 512 token（实测 bracket），
+   tokenizer 本身不截断；`INPUT_NORMALIZATION_VERSION` 变更即 cache identity 失效。
+3. 失败身份必须 provider 专属：in-process ONNX 的 `ENDPOINT_UNREACHABLE = N/A`；
+   `NO_SILENT_PROVIDER_FALLBACK` 仍为硬约束。
+4. 模型获取必须精确 revision 钉死（`--revision`，fail-closed，无 `main` 回退）。
 
 按 `AGENTS.md` §10.3 与 `docs/project-memory.md` Maintenance Contract，**post-gate durable
 knowledge 走独立 `docs/memory` follow-up branch**：本票**不**在已审 HEAD 上追加 memory 编辑，

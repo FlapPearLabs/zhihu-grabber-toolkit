@@ -15,6 +15,10 @@ import { EmbeddingProbeError, FAILURE_CODES, redact } from './errors.mjs';
 
 const DEFAULT_BASE_URL = 'http://127.0.0.1:1234';
 
+function classifyFailure(err) {
+  return { outcome: 'FAILURE', failureCode: err?.failureCode ?? 'UNCLASSIFIED', message: redact(String(err?.message ?? err)).slice(0, 240) };
+}
+
 export function createProvider({
   baseUrl = process.env.P1_T01_LMSTUDIO_BASE_URL ?? DEFAULT_BASE_URL,
   model = process.env.P1_T01_LMSTUDIO_EMBED_MODEL ?? 'text-embedding-nomic-embed-text-v1.5',
@@ -61,6 +65,69 @@ export function createProvider({
           `loopback embedding server unreachable: ${redact(err?.message ?? String(err))}`,
         );
       }
+    },
+
+    /**
+     * PROVIDER-SPECIFIC failure surface (review finding P1-2).
+     * These are the failure modes that actually apply to a loopback HTTP
+     * OpenAI-compatible embeddings server. They are NOT transferable to the
+     * in-process ONNX provider family and vice versa.
+     */
+    failureProbes() {
+      return [
+        {
+          id: 'UNKNOWN_OR_ABSENT_MODEL',
+          applicable: true,
+          description: 'request embeddings for a model name that is not loaded / not available',
+          probe: async () => {
+            const p = createProvider({ baseUrl, model: 't01-probe-no-such-model', timeoutMs });
+            try {
+              await p.embed(['失败身份探测']);
+              return { outcome: 'NO_FAILURE', failureCode: 'NONE', note: 'server accepted an unknown model name and returned vectors — silent fallback' };
+            } catch (err) {
+              return classifyFailure(err);
+            }
+          },
+        },
+        {
+          id: 'INVALID_PROVIDER_INPUT',
+          applicable: true,
+          description: 'malformed request body (input not an array of strings) against the HTTP contract',
+          probe: async () => {
+            try {
+              const res = await fetchWithTimeout(
+                `${baseUrl}/v1/embeddings`,
+                { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model, input: 'not-an-array' }) },
+                timeoutMs,
+              );
+              const status = res.status;
+              if (res.ok) return { outcome: 'NO_FAILURE', failureCode: 'NONE', note: 'server returned 200 for a malformed body' };
+              return { outcome: 'FAILURE', failureCode: 'EMBEDDING_PROVIDER_HTTP_ERROR', message: `HTTP ${status} for malformed request body` };
+            } catch (err) {
+              return classifyFailure(err);
+            }
+          },
+        },
+        {
+          id: 'ENDPOINT_UNREACHABLE',
+          applicable: true,
+          description: 'loopback server not listening on the configured port',
+          probe: async () => {
+            const dead = createProvider({ baseUrl: 'http://127.0.0.1:9', model, timeoutMs: 5_000 });
+            try {
+              await dead.embed(['失败身份探测']);
+              return { outcome: 'NO_FAILURE', failureCode: 'NONE' };
+            } catch (err) {
+              return classifyFailure(err);
+            }
+          },
+        },
+        {
+          id: 'MISSING_LOCAL_ARTIFACT_OR_LOAD_FAILURE',
+          applicable: false,
+          reason: 'N/A — model artifact loading is server-side (LM Studio manages GGUF files); it is not observable through the OpenAI-compatible API surface probed here.',
+        },
+      ];
     },
 
     async embed(texts) {
