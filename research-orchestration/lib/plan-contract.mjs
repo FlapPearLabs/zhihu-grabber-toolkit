@@ -54,6 +54,7 @@ export const PLAN_FAILURE_PLAN_MISSING = 'plan_missing';
 /** Stale-propagation reasons for the downstream dependency seam. */
 export const STALE_REASON_PLAN_HASH_MISMATCH = 'plan_hash_mismatch';
 export const STALE_REASON_PLAN_DEPENDENCY_MISSING = 'plan_dependency_missing';
+export const STALE_REASON_PLAN_DEPENDENCY_INVALID = 'plan_dependency_invalid';
 
 /**
  * D-3 delegated validation bounds (fail-closed; DEFAULT_REQUIRES nothing — they are
@@ -65,6 +66,19 @@ export const PLAN_MAX_INPUT_JSON_CHARS = 262_144;
 
 /** Hash domain separator (planHash = sha256(`${PLAN_HASH_DOMAIN}:${canonicalJson}`)). */
 export const PLAN_HASH_DOMAIN = 'research-plan-contract/v1';
+
+/**
+ * planHash identity format: exactly 64 lowercase hexadecimal characters (SHA-256 hex
+ * digest). A reusable plan dependency identity MUST be a syntactically valid planHash
+ * produced by this contract; any other string is a malformed identity and MUST NOT
+ * imply reuse (fail-closed stale-propagation contract). Two identical malformed strings
+ * therefore can NEVER become reusable.
+ */
+const PLAN_HASH_FORMAT = /^[0-9a-f]{64}$/;
+
+export function isValidPlanHashFormat(hash) {
+  return typeof hash === 'string' && PLAN_HASH_FORMAT.test(hash);
+}
 
 const PLAN_KEYS = [
   'schemaVersion',
@@ -384,16 +398,27 @@ export function loadPlan(workDir) {
  * Stale-propagation seam (Spec §4.3 boundary): downstream artifacts record the
  * planHash they were produced from; the controller compares it with the current
  * valid plan's planHash.
- * - equal        → { reusable: true,  stale: false, reason: null }
- * - different    → { reusable: false, stale: true,  reason: 'plan_hash_mismatch' }
- * - missing/unknown dependency → { reusable: false, stale: true,
- *     reason: 'plan_dependency_missing' }   (UNKNOWN != PASS: never reusable)
+ *
+ * A dependency identity is only trusted when it is a syntactically valid planHash
+ * (64 lowercase hex chars from this contract). Malformed identities MUST NOT imply
+ * reuse, even if identical — this is the fail-closed stale-propagation contract.
+ * - both valid + equal          → { reusable: true,  stale: false, reason: null }
+ * - both valid + different      → { reusable: false, stale: true,  reason: 'plan_hash_mismatch' }
+ * - malformed (wrong format)    → { reusable: false, stale: true,  reason: 'plan_dependency_invalid' }
+ * - missing/empty (no identity) → { reusable: false, stale: true,  reason: 'plan_dependency_missing' }
  */
 export function planDependencyStatus({ currentPlanHash, dependentPlanHash } = {}) {
-  const currentOk = typeof currentPlanHash === 'string' && currentPlanHash.length > 0;
-  const dependentOk = typeof dependentPlanHash === 'string' && dependentPlanHash.length > 0;
+  const currentOk = isValidPlanHashFormat(currentPlanHash);
+  const dependentOk = isValidPlanHashFormat(dependentPlanHash);
   if (!currentOk || !dependentOk) {
-    return { reusable: false, stale: true, reason: STALE_REASON_PLAN_DEPENDENCY_MISSING };
+    // Distinguish "no identity recorded" (missing) from "identity present but malformed"
+    // — both are fail-closed non-reusable, with honest distinct reasons.
+    const isMissing = (h) => !(typeof h === 'string' && h.length > 0);
+    const reason =
+      isMissing(currentPlanHash) || isMissing(dependentPlanHash)
+        ? STALE_REASON_PLAN_DEPENDENCY_MISSING
+        : STALE_REASON_PLAN_DEPENDENCY_INVALID;
+    return { reusable: false, stale: true, reason };
   }
   if (currentPlanHash === dependentPlanHash) {
     return { reusable: true, stale: false, reason: null };
