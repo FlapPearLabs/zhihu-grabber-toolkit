@@ -1,6 +1,6 @@
 # AGENTS.md — Agent 工作流程（Repository Governance）
 
-> **状态说明**：本文件最初于 2026-08-09 由历史任务契约、多轮独立审查决策、仓库既有 `SKILL.md` / `references/security.md` / `references/verification.md` / Approved Specs 中已执行并验证的治理实践重建；2026-08-23 进一步归一化为 **repository-driven continuous goal execution + independent Subagent review**。本文件定义执行、分支、审查、合并、恢复与长任务工作流；不得覆盖 `RULES.md` 的硬约束或 Applicable Approved Specs 的产品合同。
+> **状态说明**：本文件最初于 2026-08-09 由历史任务契约、多轮独立审查决策、仓库既有 `SKILL.md` / `references/security.md` / `references/verification.md` / Approved Specs 中已执行并验证的治理实践重建；2026-08-23 进一步归一化为 **repository-driven continuous goal execution + independent Subagent review**；2026-08-30 增加 **repository-first prompt compression / reviewer routing / minimal handoff** 合同，减少跨 Agent 重复粘贴稳定规则与过长成功日志。本文件定义执行、分支、审查、合并、恢复与长任务工作流；不得覆盖 `RULES.md` 的硬约束或 Applicable Approved Specs 的产品合同。
 
 ## 1. Authority 与状态源
 
@@ -62,6 +62,163 @@ NEXT_LEGAL_ACTION
 `remote truth > local assumption > conversation memory`。
 
 一个全新的 Codex / MiniMax / Claude Code / 其他 Agent 会话，应能仅凭 repo + GitHub state 恢复到正确下一步；如果做不到，说明 durable execution state 不完整，应先修状态而不是依赖旧聊天。
+
+### 2.1 Repository-First Prompt Compression / Rule Distribution
+
+本节解决一个独立的工程问题：**稳定治理已经存在于 repo 时，不得继续靠每轮超长 prompt / handoff 重复分发同一规则**。
+
+#### 2.1.1 Remote governance freshness
+
+- 每个新会话先 fetch / read **current remote master** 上的 `AGENTS.md`、`RULES.md` 与当前 Issue / Tracker；本地 stale copy、旧聊天、旧 handoff 不得覆盖 remote governance。
+- 如果本地 `AGENTS.md` 与 current remote master 不一致，先判断这是当前授权 branch 的治理改动还是本地 stale state；不得静默用旧版本继续执行。
+- 已进入 exact-SHA review 的 candidate 仍按其 reviewed authority/base 判断；不得因为 master 后续前进而偷偷改变 reviewed candidate 的规则解释。
+
+#### 2.1.2 Stable rules are inherited by reference
+
+当 Agent 能访问 repo / GitHub 时，task prompt 默认**继承**本文件、`RULES.md`、Applicable Specs、当前 Issue / START_GATE 中的稳定合同；prompt 只传递**本次任务特有的 delta**。
+
+默认不要重复粘贴：
+
+- 完整 `AGENTS.md` / `RULES.md`；
+- 完整 Approved Spec；
+- 完整 Ticket Graph / Issue body；
+- 通用 exact-SHA / no-amend / no-force / ff-only / remote-verify 流程；
+- 通用 test / evidence / memory / scope 规则。
+
+这些内容应通过 **path / Issue number / exact SHA / section anchor** 引用。只有执行环境无法读取该 remote authority 时，才内联完成任务所需的最小条款。
+
+一个普通 executor prompt 通常只需要：
+
+```text
+REPOSITORY
+TICKET / ISSUE
+AUTHORIZED_BASE 或 PREVIOUS_REVIEWED_HEAD（如适用）
+ROLE / REVIEWER_ROUTE
+TASK-SPECIFIC OBJECTIVE OR REVIEW FINDINGS
+EXPLICIT EXCEPTIONS / HARD STOPS（仅本票新增部分）
+```
+
+若 Issue 已精确定义 scope / acceptance / tests，prompt 应写“按 Issue 执行”，而不是再次完整复制 Issue。
+
+#### 2.1.3 Reviewer routing is explicit
+
+独立 review 的**角色 quorum**由 §5 决定；实际 reviewer route 按以下优先级确定：
+
+```text
+explicit Issue / START_GATE / product-owner instruction
+> milestone-level reviewer route
+> repository default
+```
+
+执行任务必须能够回答：
+
+```text
+REVIEWER_ROUTE = INTERNAL_SUBAGENT | EXTERNAL_CHATGPT | OTHER_EXPLICIT_REVIEWER
+```
+
+- 若 route 明确为 external reviewer，Executor push candidate 后必须输出最小 handoff 并 STOP；不得自行 spawn 另一个 reviewer 冒充指定 reviewer。
+- 若 route 明确为 internal Subagent，仍必须保持 Executor / Reviewer context 隔离；self-review 不算 independent review。
+- reviewer route 只决定“谁审”，不改变 exact-SHA / quorum / PASS contract。
+
+#### 2.1.4 Remote artifact handoff by reference
+
+当 candidate 已 push 且 reviewer 能访问 GitHub：
+
+- **remote branch / exact HEAD / repo paths 是 review source of truth**；
+- 不要求用户重新下载、整理、上传已经存在于 remote 的 repo 文件；
+- 不把完整源码、证据 JSON、Spec 正文复制进聊天 handoff；
+- Executor summary 只作导航，Reviewer 必须从 exact remote HEAD 独立读取事实。
+
+只有 remote 不可访问、权限失败、或存在未进入 repo 的外部 artifact 时，才要求最小必要文件 handoff。
+
+#### 2.1.5 Minimal standard packets
+
+成功路径默认使用最小结构化 packet；详细 command transcript / stdout / step-by-step narration 留在 repo、CI、Issue comment 或本地日志中，除非出现异常需要诊断。
+
+**Candidate / Executor handoff**：
+
+```text
+ISSUE
+BRANCH
+BASE_SHA
+HEAD
+REMOTE_TIP
+FILES_CHANGED
+TESTS_OR_EVIDENCE
+KNOWN_CAVEATS_OR_EXCEPTIONS
+PROJECT_MEMORY_UPDATE_REQUIRED
+REQUIRED_REVIEWER_ROUTE
+```
+
+**Review verdict**：
+
+```text
+REVIEWED_HEAD
+VERDICT
+FINDINGS
+POST_GATE_MEMORY_UPDATE_REQUIRED
+```
+
+**Repair handoff**：
+
+```text
+PREVIOUS_REVIEWED_HEAD
+NEW_HEAD
+REMOTE_TIP
+FINDINGS_CLOSED
+TESTS_OR_EVIDENCE
+GIT_DIFF_CHECK
+```
+
+**Integration handoff**：
+
+```text
+REVIEWED_HEAD
+REMOTE_MASTER_BEFORE
+REMOTE_MASTER_AFTER
+FF_ONLY
+REMOTE_VERIFY
+ISSUE_TRACKER_STATE
+CONDITIONAL_GATE_CHANGES
+NEXT_LEGAL_ACTION
+```
+
+Ticket-specific evidence fields只在确有 contract 需要时追加；不得为了“看起来完整”复制整份执行过程。
+
+#### 2.1.6 Output verbosity contract
+
+正常成功路径：
+
+- 不逐条叙述“现在读取 X / 现在运行 Y / 现在 push Z”；
+- 不回显无异常的完整命令输出；
+- 不重复用户已经知道的 Spec / Issue 正文；
+- 最终只报告 material result、exact identity、tests/evidence summary、异常 / caveat、next legal action。
+
+出现 hard stop、evidence drift、security incident、contract conflict、unexpected test failure 时，可以扩展输出到足以诊断，但仍优先给出精确事实而不是流水账。
+
+#### 2.1.7 Executor model recommendation metadata
+
+当任务需要交给 WorkBuddy / Codex / 其他外部 executor 时，handoff 应附带简短的：
+
+```text
+MODEL_RECOMMENDATION
+REASON
+WORK_TYPE
+```
+
+这是**executor routing metadata**，不是产品 runtime / SemanticRuntime / EmbeddingProvider 决策；不得把临时可用模型名单硬编码成产品合同。具体推荐随 ticket risk、上下文长度、成本与工具能力决定。
+
+#### 2.1.8 Promote recurring rules instead of copy-pasting forever
+
+若一个稳定 workflow instruction 在多个 ticket / 多个 Agent 会话中反复需要人工补充，应判断它是否属于：
+
+- workflow governance → 提议进入 `AGENTS.md`；
+- hard safety/project invariant → 提议进入 `RULES.md`；
+- product behavior → 进入 Applicable Spec / product contract；
+- durable learned fact → 进入 `docs/project-memory.md`；
+- transient execution state → 留在 Issue / Tracker / Git history。
+
+不得把同一事实同时机械复制到 chat、memory、Issue、Tracker、docs 多处形成 competing truth。任何 governance amendment 仍须走 §5 的独立 review quorum；“需要减少 prompt”不授权绕过 review。
 
 ## 3. Continuous Goal Execution
 
@@ -500,6 +657,8 @@ Subagent review 是默认 internal gate；**不再要求用户为每个普通 ti
 - 当前 Issue / Spec 明确要求人工 reviewer。
 
 若进入 external handoff，必须提供可复制 review packet / verdict packet，至少包含：repository、Issue、BASE、HEAD、Compare、authority、objective、scope、tests/evidence、known caveats、acceptance、要求的 verdict schema。
+
+若 external reviewer 可访问 repo / GitHub，则上述 `authority / objective / scope / acceptance / tests/evidence` **优先通过 Issue、repo path、exact SHA 引用满足**，不复制全文；remote branch / exact HEAD 是事实源。只有 reviewer 无法访问 remote authority / artifact 时，才内联最小必要正文或请求最小必要文件。具体 packet 压缩规则见 §2.1。
 
 ## 17. Ticket Completion 与停止条件
 
