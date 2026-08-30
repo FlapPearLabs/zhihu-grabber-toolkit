@@ -14,8 +14,10 @@ SAME_HEAD_AS     = docs/t01-embedding-provider-qualification.md
 SPEC_ANCHOR      = docs/specs/p1-cross-question-deep-research.md §5.3 (EmbeddingProvider contract)
                    + OPEN_DECISION D-1
 REVIEW_CYCLE     = R0 candidate @ a0402aee（CHANGES_REQUESTED_NARROW：P1-1/P1-2/P1-3）
-                   + R1 REPAIR（本 HEAD：精确 revision 钉死 / provider 专属失败面 /
+                   + R1 REPAIR @ bd24ae2（精确 revision 钉死 / provider 专属失败面 /
                    input-normalization identity）
+                   + R2 REPAIR（本 HEAD：FAILURE_IDENTITY 证据完整性，分离
+                   A 实测失败身份 / B 仅提案未触发身份，撤销 "all verified" 过度声称）
 Date             = 2026-08-30
 ```
 
@@ -91,14 +93,39 @@ EMBEDDING_VERSION_IDENTITY =
 
 FAILURE_IDENTITY =
   DISCOVERY-PROPOSED (NOT an Approved contract; P1-T10 must re-derive from
-  Spec §5.3 / §10.2 under its own review). PROVIDER-SPECIFIC (R1 / P1-2):
-  Applicable to THIS in-process ONNX provider (all verified):
-    EMBEDDING_MODEL_UNKNOWN        — unknown/absent model id → fail closed (verified)
-    EMBEDDING_MODEL_UNKNOWN        — missing local artifact / load failure (verified)
-    EMBEDDING_INPUT_INVALID        — input not an array of strings (verified)
-    EMBEDDING_VECTOR_NON_FINITE    — vector contains NaN/Inf
-    EMBEDDING_VECTOR_DIMENSION_MISMATCH — dimension differs from profile
-  N/A for this provider:
+  Spec §5.3 / §10.2 under its own review). PROVIDER-SPECIFIC (R1 / P1-2).
+  R2 EVIDENCE-INTEGRITY CORRECTION: the prior "Applicable to THIS in-process ONNX
+  provider (all verified)" overclaimed the evidence. Only the identities under (A)
+  were empirically triggered as observed machine-readable provider failures in T01.
+  The identities under (B) are DISCOVERY-PROPOSED identifiers defined in
+  providers/errors.mjs but were NOT triggered / NOT observed as failure paths in
+  T01. This is a truthful scoping of what the committed evidence demonstrates — it
+  is NOT a downgrade of the model selection.
+
+  (A) EMPIRICALLY VERIFIED / OBSERVED IN T01 — this in-process ONNX provider
+      (each exercised by an applicable AC_10 failure probe and produced a classified
+       machine-readable failure; see evidence/candidate-transformersjs-bge-base-zh-v1.5-r1.json
+       AC_10_failure_identity, applicableCount=3, crossProviderClaim=NONE):
+    EMBEDDING_MODEL_UNKNOWN
+      — unknown/absent model id (allowRemoteModels=false) → fail closed (verified)
+      — missing local artifact / load failure         → fail closed (verified)
+    EMBEDDING_INPUT_INVALID
+      — embed() called with a non-array input → fail closed (verified)
+
+  (B) DISCOVERY-PROPOSED / NOT EMPIRICALLY TRIGGERED IN T01
+      (defined in providers/errors.mjs; NOT observed as provider failures in T01;
+       may be carried as candidate controller-side production checks for P1-T10 to
+       re-derive under its own ticket — do NOT claim T01 verified them):
+    EMBEDDING_VECTOR_NON_FINITE
+      — vector contains NaN/Inf → NOT OBSERVED / NOT VERIFIED AS FAILURE PATH IN T01
+    EMBEDDING_VECTOR_DIMENSION_MISMATCH
+      — dimension differs from profile → NOT OBSERVED / NOT VERIFIED AS FAILURE PATH IN T01
+      (AC_8 observed the produced vectors to be finite and dimensionally stable;
+       that confirms the happy-path vector contract, NOT that the provider emits
+       these codes when the adverse condition occurs. No T01 probe injected
+       NaN/Inf or an off-dimension vector, so no failure path was demonstrated.)
+
+  N/A for this in-process provider surface (truthful — NOT endpoint failures for this profile):
     EMBEDDING_PROVIDER_UNREACHABLE — in-process transport has NO network endpoint;
                                      this surface belongs to the HTTP-server provider
                                      family (e.g. lmstudio-local-embeddings). No
