@@ -58,6 +58,47 @@ function firstLine(text) {
 }
 
 /**
+ * Review repair (P1-2, Issue #37): map a non-zero primitive exit to a machine-readable
+ * failure BEFORE parsing — a non-zero exit is a failure regardless of what stdout claims
+ * (existing orchestrator primitive semantics fail closed on non-zero exit). A structured
+ * `ok:false` error report on stdout is preserved as the provider failure identity
+ * (PROVIDER_REPORTED_FAILURE + provider_error_type); anything else — including a stdout
+ * claiming ok=true — fails closed as PROVIDER_PROCESS_NONZERO_EXIT.
+ */
+function processExitFailure({ providerId, capability, authClass, retrievedAt, res }) {
+  let structuredError = null;
+  let claimedOk = false;
+  try {
+    const parsed = JSON.parse(res.stdout);
+    if (parsed && parsed.ok === false && parsed.error) structuredError = parsed.error;
+    if (parsed && parsed.ok === true) claimedOk = true;
+  } catch { /* stdout not JSON — raw output stays the evidence */ }
+  if (structuredError) {
+    return failureResult({
+      providerId,
+      capability,
+      authClass,
+      retrievedAt,
+      code: 'PROVIDER_REPORTED_FAILURE',
+      failureClass: 'provider',
+      detail: structuredError.message ?? (firstLine(res.stderr) || firstLine(res.stdout)),
+      providerErrorType: structuredError.type ?? null,
+    });
+  }
+  return failureResult({
+    providerId,
+    capability,
+    authClass,
+    retrievedAt,
+    code: 'PROVIDER_PROCESS_NONZERO_EXIT',
+    failureClass: 'process',
+    detail: claimedOk
+      ? `primitive exited with status ${res.status} but stdout claimed ok=true`
+      : (firstLine(res.stderr) || firstLine(res.stdout)),
+  });
+}
+
+/**
  * @param {object} opts
  * @param {(name: string, args: string[], opts?: object) => { status: number, stdout: string, stderr: string }} opts.runner
  *     primitive runner (same injectable seam as orchestrator.mjs); default spawns the real CLI
@@ -91,6 +132,18 @@ export function createOfficialSearchAdapter({ runner, now = defaultNow } = {}) {
       }
 
       const res = runner('zhihu-search', [query, '--json']);
+
+      // Review repair (P1-2, Issue #37): enforce the primitive process contract BEFORE
+      // parsing — a non-zero exit is a failure even if stdout claims ok=true.
+      if (res.status !== 0) {
+        return processExitFailure({
+          providerId: PROVIDER_ZHIHU_OFFICIAL_SEARCH,
+          capability: CAPABILITY_SEARCH,
+          authClass: AUTH_CLASS_OFFICIAL_SECRET,
+          retrievedAt,
+          res,
+        });
+      }
 
       let payload = null;
       try {

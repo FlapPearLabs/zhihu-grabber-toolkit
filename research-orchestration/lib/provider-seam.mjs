@@ -126,17 +126,22 @@ export function validateProviderResult(result) {
     for (let i = 0; i < result.items.length; i += 1) {
       const item = result.items[i];
       if (!isPlainObject(item)) return { valid: false, reason: `items[${i}] is not an object` };
-      if (!isPlainObject(item.identity) || !isNonEmptyString(item.identity.questionId)) {
-        return { valid: false, reason: `items[${i}].identity.questionId missing/empty` };
-      }
+      if (!isPlainObject(item.identity)) return { valid: false, reason: `items[${i}].identity missing` };
       if (!isPlainObject(item.provenance)) return { valid: false, reason: `items[${i}].provenance missing` };
       const hasFailure = isPlainObject(item.failure);
       if (hasFailure) {
+        // Review repair (P2-1 alignment, Issue #37): a per-item failure may legitimately
+        // lack an extractable questionId (e.g. CANDIDATE_IDENTITY_INVALID) — the failure
+        // identity is what the controller judges, so an empty questionId must not
+        // invalidate the whole result before item.failure is even considered.
         if (!isNonEmptyString(item.failure.code) || !isNonEmptyString(item.failure.class)) {
           return { valid: false, reason: `items[${i}].failure needs machine-readable code + class` };
         }
         if (item.source_url != null) return { valid: false, reason: `items[${i}] must not carry source_url beside a failure` };
       } else {
+        if (!isNonEmptyString(item.identity.questionId)) {
+          return { valid: false, reason: `items[${i}].identity.questionId missing/empty` };
+        }
         const su = item.source_url;
         if (su !== null && su !== undefined) {
           if (!isPlainObject(su) || !isNonEmptyString(su.url) || !su.url.startsWith('https://')
@@ -255,8 +260,57 @@ export function createProviderSeam({ adapters = [] } = {}) {
         { details: { providerId: adapter.providerId, capability: adapter.capability } },
       );
     }
+    // Review repair (P1-1, Issue #37): bind every returned result identity to the
+    // routed adapter. A drifted/buggy adapter answering with another provider_id /
+    // capability / auth_class is a contract violation → fail closed.
+    assertResultIdentityBound(result, adapter);
     return result;
   }
 
   return { listProviders, route, retrieve };
+}
+
+/**
+ * Review repair (P1-1, Issue #37): a routed adapter may only return results carrying
+ * its own registered identity. Any mismatch fails closed (UNKNOWN_PROVIDER_CONTRACT);
+ * the controller never accepts a result whose provider/capability/auth identity cannot
+ * be mechanically bound to the adapter that produced it. Never throws for a match.
+ */
+function assertResultIdentityBound(result, adapter) {
+  if (result.provider_id !== adapter.providerId) {
+    throw new ProviderSeamError(
+      SEAM_ERROR_UNKNOWN_PROVIDER_CONTRACT,
+      `result.provider_id '${result.provider_id}' does not match the routed adapter '${adapter.providerId}'; UNKNOWN_PROVIDER_CONTRACT != PASS`,
+      {
+        details: {
+          routed: { providerId: adapter.providerId, capability: adapter.capability, authClass: adapter.authClass },
+          result: { provider_id: result.provider_id, capability: result.capability, auth_class: result.auth_class },
+        },
+      },
+    );
+  }
+  if (result.capability !== adapter.capability) {
+    throw new ProviderSeamError(
+      SEAM_ERROR_UNKNOWN_PROVIDER_CONTRACT,
+      `result.capability '${result.capability}' does not match the routed adapter capability '${adapter.capability}'; UNKNOWN_PROVIDER_CONTRACT != PASS`,
+      {
+        details: {
+          routed: { providerId: adapter.providerId, capability: adapter.capability },
+          result: { provider_id: result.provider_id, capability: result.capability },
+        },
+      },
+    );
+  }
+  if (result.auth_class !== adapter.authClass) {
+    throw new ProviderSeamError(
+      SEAM_ERROR_UNKNOWN_PROVIDER_CONTRACT,
+      `result.auth_class '${result.auth_class}' does not match the routed adapter auth_class '${adapter.authClass}'; UNKNOWN_PROVIDER_CONTRACT != PASS`,
+      {
+        details: {
+          routed: { providerId: adapter.providerId, authClass: adapter.authClass },
+          result: { provider_id: result.provider_id, auth_class: result.auth_class },
+        },
+      },
+    );
+  }
 }

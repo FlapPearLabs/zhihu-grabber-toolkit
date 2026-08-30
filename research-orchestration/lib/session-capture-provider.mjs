@@ -62,6 +62,41 @@ function firstLine(text) {
 }
 
 /**
+ * Review repair (P1-2, Issue #37): map a non-zero primitive exit to a machine-readable
+ * failure BEFORE parsing — a non-zero exit is a failure regardless of what stdout claims
+ * (existing orchestrator primitive semantics fail closed on non-zero exit). A structured
+ * `ok:false` error report on stdout is preserved as the provider failure identity
+ * (PROVIDER_REPORTED_FAILURE + provider_error_type); anything else — including a stdout
+ * claiming ok=true — fails closed as PROVIDER_PROCESS_NONZERO_EXIT.
+ */
+function processExitFailure({ retrievedAt, res }) {
+  let structuredError = null;
+  let claimedOk = false;
+  try {
+    const parsed = JSON.parse(res.stdout);
+    if (parsed && parsed.ok === false && parsed.error) structuredError = parsed.error;
+    if (parsed && parsed.ok === true) claimedOk = true;
+  } catch { /* stdout not JSON — raw output stays the evidence */ }
+  if (structuredError) {
+    return failureResult({
+      retrievedAt,
+      code: 'PROVIDER_REPORTED_FAILURE',
+      failureClass: 'provider',
+      detail: structuredError.message ?? (firstLine(res.stderr) || firstLine(res.stdout)),
+      providerErrorType: structuredError.type ?? null,
+    });
+  }
+  return failureResult({
+    retrievedAt,
+    code: 'PROVIDER_PROCESS_NONZERO_EXIT',
+    failureClass: 'process',
+    detail: claimedOk
+      ? `primitive exited with status ${res.status} but stdout claimed ok=true`
+      : (firstLine(res.stderr) || firstLine(res.stdout)),
+  });
+}
+
+/**
  * @param {object} opts
  * @param {(name: string, args: string[], opts?: object) => { status: number, stdout: string, stderr: string }} opts.runner
  *     primitive runner (same injectable seam as orchestrator.mjs); default spawns the real CLI
@@ -95,6 +130,12 @@ export function createSessionCaptureAdapter({ runner, now = defaultNow } = {}) {
 
       const res = runner('zhihu-grab', [questionId, '--out-dir', outDir, '--json']);
 
+      // Review repair (P1-2, Issue #37): enforce the primitive process contract BEFORE
+      // parsing — a non-zero exit is a failure even if stdout claims ok=true.
+      if (res.status !== 0) {
+        return processExitFailure({ retrievedAt, res });
+      }
+
       let payload = null;
       try {
         payload = JSON.parse(res.stdout);
@@ -123,6 +164,18 @@ export function createSessionCaptureAdapter({ runner, now = defaultNow } = {}) {
           code: 'PROVIDER_RESULT_CONTRACT_INVALID',
           failureClass: 'contract',
           detail: `unexpected capture stage: ${String(payload.stage)}`,
+        });
+      }
+
+      // Review repair (P1-3, Issue #37): capture success requires verified === false.
+      // A payload claiming verified=true is a contract violation — only verify-output may
+      // grant validity (captured != verified) — and must fail closed, never propagate.
+      if (payload.verified !== false) {
+        return failureResult({
+          retrievedAt,
+          code: 'PROVIDER_RESULT_CONTRACT_INVALID',
+          failureClass: 'contract',
+          detail: `capture payload must carry verified === false at stage=captured (got ${JSON.stringify(payload.verified)}); validity is granted only by verify-output`,
         });
       }
 
@@ -169,9 +222,10 @@ export function createSessionCaptureAdapter({ runner, now = defaultNow } = {}) {
             basis: 'capture_primitive_completion_contract_requires_server_paging_is_end',
           },
         },
-        // Authority boundary (captured != verified): mechanical mirror of the primitive,
-        // never upgraded by this wrapper. Validity is granted only by verify-output.
-        verified: payload.verified === true,
+        // Authority boundary (captured != verified): the verified gate above guarantees
+        // the primitive carried verified === false; the wrapper emits its own mechanical
+        // false and never propagates a truthy value. Validity is granted only by verify-output.
+        verified: false,
         validity_authority: 'verify-output',
       };
     },

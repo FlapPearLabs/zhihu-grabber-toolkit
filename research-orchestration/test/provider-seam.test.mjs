@@ -9,7 +9,10 @@
  *   - both adapter contract tests (Official Search + Session/Cookie capture wrapper);
  *   - failure / completeness semantics (machine-readable failure identity, no guessing);
  *   - NO_SILENT_PROVIDER_FALLBACK routing assertions (no substitution, no guessing,
- *     unsupported capability fail-closed, UNKNOWN_PROVIDER_CONTRACT != PASS).
+ *     unsupported capability fail-closed, UNKNOWN_PROVIDER_CONTRACT != PASS);
+ *   - section F: Issue #37 external CODE_REVIEW repair regressions
+ *     (P1-1 result↔adapter identity binding, P1-2 non-zero exit fail-closed,
+ *     P1-3 verified===false gate, P2-1 per-item failure semantics).
  *
  * All tests are deterministic and network-free: the CLI primitives are replaced by
  * fake runners recording invocations, mirroring orchestration.test.mjs conventions.
@@ -461,12 +464,13 @@ test('D5: provider-reported failure keeps provider error type machine-readable',
   assert.equal(result.completeness.status, COMPLETENESS_UNKNOWN);
 });
 
-test('D6: unparseable grab output → PROVIDER_OUTPUT_UNPARSEABLE', () => {
+test('D6: non-zero exit without a structured failure report → PROVIDER_PROCESS_NONZERO_EXIT (fail closed)', () => {
   const runner = makeRecordingRunner({ 'zhihu-grab': () => ({ status: 1, stdout: '', stderr: 'fatal' }) });
   const adapter = createSessionCaptureAdapter({ runner, now: FIXED_NOW });
   const result = adapter.retrieve({ questionId: '123', outDir: 'w' });
   assert.equal(result.ok, false);
-  assert.equal(result.failure.code, 'PROVIDER_OUTPUT_UNPARSEABLE');
+  assert.equal(result.failure.code, 'PROVIDER_PROCESS_NONZERO_EXIT');
+  assert.equal(result.failure.class, 'process');
 });
 
 test('D7: seam retrieve routes capture to exactly the session adapter', () => {
@@ -531,6 +535,136 @@ test('E2: a failed search does NOT trigger any fallback attempt; subsequent capt
   assert.equal(capture.ok, true);
   assert.deepEqual(runner.calls.map((c) => c.name), ['zhihu-search', 'zhihu-grab'],
     'exactly one attempt per retrieve — no silent retry, no silent substitute');
+});
+
+// ---------------------------------------------------------------------------
+// F. repair regressions (Issue #37 external CODE_REVIEW: P1-1 / P1-2 / P1-3 / P2-1)
+// ---------------------------------------------------------------------------
+
+test('F1: P1-1 — result.provider_id not matching the routed adapter → UNKNOWN_PROVIDER_CONTRACT (fail closed)', () => {
+  const drift = countingAdapter('search-a', CAPABILITY_SEARCH, AUTH_CLASS_OFFICIAL_SECRET,
+    validSearchResult({ provider_id: 'some-other-provider' }));
+  const seam = createProviderSeam({ adapters: [drift] });
+  assert.throws(() => seam.retrieve(CAPABILITY_SEARCH, { query: 'q' }), (err) => err instanceof ProviderSeamError
+    && err.code === SEAM_ERROR_UNKNOWN_PROVIDER_CONTRACT);
+  assert.equal(drift.__calls(), 1, 'adapter ran once; the seam rejected its result identity');
+});
+
+test('F2: P1-1 — result.capability not matching the routed adapter → UNKNOWN_PROVIDER_CONTRACT (fail closed)', () => {
+  const drift = countingAdapter('search-a', CAPABILITY_SEARCH, AUTH_CLASS_OFFICIAL_SECRET,
+    validSearchResult({ capability: CAPABILITY_CAPTURE }));
+  const seam = createProviderSeam({ adapters: [drift] });
+  assert.throws(() => seam.retrieve(CAPABILITY_SEARCH, { query: 'q' }), (err) => err instanceof ProviderSeamError
+    && err.code === SEAM_ERROR_UNKNOWN_PROVIDER_CONTRACT);
+});
+
+test('F3: P1-1 — result.auth_class not matching the routed adapter → UNKNOWN_PROVIDER_CONTRACT (fail closed)', () => {
+  const drift = countingAdapter('search-a', CAPABILITY_SEARCH, AUTH_CLASS_OFFICIAL_SECRET,
+    validSearchResult({ auth_class: AUTH_CLASS_SESSION }));
+  const seam = createProviderSeam({ adapters: [drift] });
+  assert.throws(() => seam.retrieve(CAPABILITY_SEARCH, { query: 'q' }), (err) => err instanceof ProviderSeamError
+    && err.code === SEAM_ERROR_UNKNOWN_PROVIDER_CONTRACT);
+});
+
+test('F4: P1-1 — matching identity passes the binding (positive control)', () => {
+  const seam = createProviderSeam({ adapters: [countingAdapter('search-a', CAPABILITY_SEARCH, AUTH_CLASS_OFFICIAL_SECRET)] });
+  const result = seam.retrieve(CAPABILITY_SEARCH, { query: 'q' });
+  assert.equal(result.provider_id, 'search-a');
+  assert.equal(result.capability, CAPABILITY_SEARCH);
+  assert.equal(result.auth_class, AUTH_CLASS_OFFICIAL_SECRET);
+});
+
+test('F5: P1-2 — official search: non-zero exit with stdout claiming ok=true fails closed', () => {
+  const runner = makeRecordingRunner({
+    'zhihu-search': okHandler(searchPayload([
+      { questionId: '123', url: 'https://www.zhihu.com/question/123' },
+    ]), 1),
+  });
+  const adapter = createOfficialSearchAdapter({ runner, now: FIXED_NOW });
+  const result = adapter.retrieve({ query: 'q' });
+  assert.equal(result.ok, false, 'non-zero exit must never be accepted as success');
+  assert.equal(result.failure.code, 'PROVIDER_PROCESS_NONZERO_EXIT');
+  assert.equal(result.failure.class, 'process');
+  assert.deepEqual(result.items, []);
+  assert.equal(validateProviderResult(result).valid, true, 'failure stays machine-readable');
+});
+
+test('F6: P1-2 — session capture: non-zero exit with stdout claiming ok=true fails closed', () => {
+  const runner = makeRecordingRunner({ 'zhihu-grab': okHandler(grabPayload(), 1) });
+  const adapter = createSessionCaptureAdapter({ runner, now: FIXED_NOW });
+  const result = adapter.retrieve({ questionId: '123', outDir: 'w' });
+  assert.equal(result.ok, false, 'non-zero exit must never be accepted as success');
+  assert.equal(result.failure.code, 'PROVIDER_PROCESS_NONZERO_EXIT');
+  assert.equal(result.failure.class, 'process');
+  assert.deepEqual(result.items, []);
+  assert.equal(validateProviderResult(result).valid, true, 'failure stays machine-readable');
+});
+
+test('F7: P1-2 — non-zero exit still preserves a structured ok:false provider error detail', () => {
+  const runner = makeRecordingRunner({
+    'zhihu-search': okHandler(JSON.stringify({
+      schemaVersion: 1, ok: false, command: 'search', error: { type: 'http_403', message: 'denied' },
+    }), 1),
+  });
+  const adapter = createOfficialSearchAdapter({ runner, now: FIXED_NOW });
+  const result = adapter.retrieve({ query: 'q' });
+  assert.equal(result.ok, false);
+  assert.equal(result.failure.code, 'PROVIDER_REPORTED_FAILURE');
+  assert.equal(result.failure.class, 'provider');
+  assert.equal(result.failure.provider_error_type, 'http_403', 'machine-readable provider error detail preserved');
+  assert.equal(result.failure.detail, 'denied');
+});
+
+test('F8: P1-3 — stage=captured + verified=true → PROVIDER_RESULT_CONTRACT_INVALID (fail closed, never propagated)', () => {
+  const runner = makeRecordingRunner({ 'zhihu-grab': okHandler(grabPayload({ verified: true })) });
+  const adapter = createSessionCaptureAdapter({ runner, now: FIXED_NOW });
+  const result = adapter.retrieve({ questionId: '123', outDir: 'w' });
+  assert.equal(result.ok, false);
+  assert.equal(result.failure.code, 'PROVIDER_RESULT_CONTRACT_INVALID');
+  assert.equal(result.failure.class, 'contract');
+  assert.equal(result.verified, undefined, 'no verified claim escapes the gate');
+  assert.equal(validateProviderResult(result).valid, true, 'failure stays machine-readable');
+});
+
+test('F9: P1-3 — stage=captured without verified:false → PROVIDER_RESULT_CONTRACT_INVALID (strict === false gate)', () => {
+  const runner = makeRecordingRunner({ 'zhihu-grab': okHandler(grabPayload({ verified: undefined })) });
+  const adapter = createSessionCaptureAdapter({ runner, now: FIXED_NOW });
+  const result = adapter.retrieve({ questionId: '123', outDir: 'w' });
+  assert.equal(result.ok, false);
+  assert.equal(result.failure.code, 'PROVIDER_RESULT_CONTRACT_INVALID');
+});
+
+test('F10: P2-1 — invalid candidate identity surfaces as a per-item failure through the seam (not whole-result rejection)', () => {
+  const runner = makeRecordingRunner({
+    'zhihu-search': okHandler(searchPayload([
+      { title: 'no id', url: 'https://www.zhihu.com/question/999' },
+      { questionId: '123', url: 'https://www.zhihu.com/question/123' },
+    ])),
+  });
+  const seam = createProviderSeam({ adapters: [createOfficialSearchAdapter({ runner, now: FIXED_NOW })] });
+  const result = seam.retrieve(CAPABILITY_SEARCH, { query: 'q' });
+  assert.equal(result.ok, true, 'per-item failure must not invalidate the whole result');
+  assert.equal(result.items.length, 2);
+  assert.equal(result.items[0].failure.code, 'CANDIDATE_IDENTITY_INVALID');
+  assert.equal(result.items[1].identity.questionId, '123');
+  assert.equal(validateProviderResult(result).valid, true, 'validator accepts failed items lacking questionId');
+});
+
+test('F11: P2-1 — validator accepts failed items lacking questionId; still rejects such success items', () => {
+  const failedItem = validSearchResult({
+    items: [
+      {
+        identity: { kind: 'candidate', questionId: '' },
+        provenance: { route: 'zhihu-answer-grabber:search', rank: 1 },
+        source_url: null,
+        failure: { code: 'CANDIDATE_IDENTITY_INVALID', class: 'contract' },
+      },
+    ],
+  });
+  assert.equal(validateProviderResult(failedItem).valid, true, 'per-item failure with empty questionId is valid');
+  assert.equal(validateProviderResult(validSearchResult({
+    items: [{ identity: { kind: 'candidate', questionId: '' }, provenance: { route: 'r' }, source_url: null }],
+  })).valid, false, 'success items still require a non-empty questionId');
 });
 
 // helper kept at bottom to avoid hoisting confusion
