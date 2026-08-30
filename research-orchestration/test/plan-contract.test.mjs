@@ -32,6 +32,8 @@ import {
   PLAN_FAILURE_PLAN_MISSING,
   STALE_REASON_PLAN_HASH_MISMATCH,
   STALE_REASON_PLAN_DEPENDENCY_MISSING,
+  STALE_REASON_PLAN_DEPENDENCY_INVALID,
+  isValidPlanHashFormat,
   PLAN_MAX_ENTRIES_PER_LIST,
   PLAN_MAX_STRING_LENGTH,
   PLAN_MAX_INPUT_JSON_CHARS,
@@ -457,6 +459,96 @@ test('planDependencyStatus: missing/unknown dependent planHash is NOT reusable (
     assert.equal(s.stale, true);
     assert.equal(s.reason, STALE_REASON_PLAN_DEPENDENCY_MISSING);
   }
+});
+
+// ---------------------------------------------------------------------------
+// 8b. R1 repair — fail-closed planHash identity format (CRITICAL INVALID fix)
+// A reusable dependency identity MUST be a syntactically valid planHash
+// (64 lowercase hex chars). Malformed identities MUST NOT imply reuse, even
+// when identical. Two identical malformed strings can NEVER become reusable.
+// ---------------------------------------------------------------------------
+
+test('isValidPlanHashFormat: accepts 64 lowercase hex, rejects everything else', () => {
+  assert.equal(isValidPlanHashFormat('a'.repeat(64)), true);
+  assert.equal(isValidPlanHashFormat('0'.repeat(64)), true);
+  assert.equal(isValidPlanHashFormat('f'.repeat(64)), true);
+  // uppercase hex is not lowercase → invalid
+  assert.equal(isValidPlanHashFormat('A'.repeat(64)), false);
+  // not hex
+  assert.equal(isValidPlanHashFormat('g'.repeat(64)), false);
+  // wrong length
+  assert.equal(isValidPlanHashFormat('a'.repeat(63)), false);
+  assert.equal(isValidPlanHashFormat('a'.repeat(65)), false);
+  // non-string / empty
+  assert.equal(isValidPlanHashFormat(''), false);
+  assert.equal(isValidPlanHashFormat(null), false);
+  assert.equal(isValidPlanHashFormat(undefined), false);
+  assert.equal(isValidPlanHashFormat('garbage'), false);
+});
+
+test('planDependencyStatus: valid 64-hex same → reusable; valid different → stale', () => {
+  const h1 = 'a'.repeat(64);
+  const h2 = 'b'.repeat(64);
+  assert.deepEqual(planDependencyStatus({ currentPlanHash: h1, dependentPlanHash: h1 }), {
+    reusable: true,
+    stale: false,
+    reason: null,
+  });
+  assert.deepEqual(planDependencyStatus({ currentPlanHash: h2, dependentPlanHash: h1 }), {
+    reusable: false,
+    stale: true,
+    reason: STALE_REASON_PLAN_HASH_MISMATCH,
+  });
+});
+
+test('planDependencyStatus: malformed identity is never reusable (CRITICAL INVARIANT)', () => {
+  // The exact bug: identical garbage strings must NOT become reusable.
+  const garbage = 'garbage';
+  assert.equal(isValidPlanHashFormat(garbage), false);
+  const s = planDependencyStatus({ currentPlanHash: garbage, dependentPlanHash: garbage });
+  assert.equal(s.reusable, false, 'two identical malformed strings must NEVER become reusable');
+  assert.equal(s.stale, true);
+  assert.equal(s.reason, STALE_REASON_PLAN_DEPENDENCY_INVALID);
+
+  // 63-char, 65-char, non-hex-64-char: all malformed → non-reusable
+  const cases = [
+    { label: '63-char', v: 'a'.repeat(63) },
+    { label: '65-char', v: 'a'.repeat(65) },
+    { label: 'non-hex 64-char', v: 'g'.repeat(64) },
+    { label: 'uppercase hex', v: 'A'.repeat(64) },
+    { label: 'garbage', v: 'garbage' },
+  ];
+  for (const c of cases) {
+    const sc = planDependencyStatus({ currentPlanHash: c.v, dependentPlanHash: c.v });
+    assert.equal(sc.reusable, false, `${c.label}: identical malformed must not be reusable`);
+    assert.equal(sc.stale, true, `${c.label}: must be stale`);
+    assert.equal(sc.reason, STALE_REASON_PLAN_DEPENDENCY_INVALID, `${c.label}: reason`);
+  }
+});
+
+test('planDependencyStatus: malformed current hash → invalid (not reusable)', () => {
+  const h = 'a'.repeat(64);
+  const s = planDependencyStatus({ currentPlanHash: 'garbage', dependentPlanHash: h });
+  assert.equal(s.reusable, false);
+  assert.equal(s.stale, true);
+  assert.equal(s.reason, STALE_REASON_PLAN_DEPENDENCY_INVALID);
+});
+
+test('planDependencyStatus: malformed dependent hash → invalid (not reusable)', () => {
+  const h = 'a'.repeat(64);
+  const s = planDependencyStatus({ currentPlanHash: h, dependentPlanHash: 'garbage' });
+  assert.equal(s.reusable, false);
+  assert.equal(s.stale, true);
+  assert.equal(s.reason, STALE_REASON_PLAN_DEPENDENCY_INVALID);
+});
+
+test('planDependencyStatus: both malformed but identical → still NOT reusable', () => {
+  // Explicit restatement of the critical invariant as an independent assertion.
+  const bad = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
+  const s = planDependencyStatus({ currentPlanHash: bad, dependentPlanHash: bad });
+  assert.equal(s.reusable, false);
+  assert.equal(s.stale, true);
+  assert.equal(s.reason, STALE_REASON_PLAN_DEPENDENCY_INVALID);
 });
 
 test('comparePlans: changed vs unchanged detection with exact hashes', () => {
