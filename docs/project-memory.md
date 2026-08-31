@@ -235,12 +235,12 @@
 
 ## P1 Multi-provider Retrieval — GATE-3 Qualification（APPROVED）
 
-- **GATE-3 accepted / qualified**：官方 `global_search` API（`zhihu-open-platform / global_search`）是当前 P1 multi-provider retrieval 设计中 Official Search（`zhihu_search`）之外的**第二个**query-keyed retrieval-ranked channel。该结论由 P1-T03 (Issue #35) discovery evidence 支持，经独立 EVIDENCE_REVIEWER PASS 后 ff-only merge master。
+- **GATE-3 accepted / qualified**：官方 `global_search` API（`zhihu-open-platform / global_search`）是当前 P1 multi-provider retrieval 设计中 Official Search（`zhihu_search`）之外的**第二个**query-keyed retrieval-ranked channel。
 - **Auth boundary**：`global_search` 使用与 `zhihu_search` 相同的 Bearer Access Secret credential family（`Authorization: Bearer <access_secret>`，知乎开放平台统一 Bearer 鉴权），无新 OAuth / Session credential 语义需求；D-9 因此未被本次 qualification 触发。
-- **Evidence basis**：qualification 由两类第一方证据支持——(1) 当前 first-party docs（developer.zhihu.com 文档控制台 JSON，无认证公开端点），(2) sampled read-only live smoke（合成查询，HTTP 200 / Code 0 / ranked Items / HasMore 存在）。详见 repo-tracked 报告 `discovery/p1-t03-retrieval-provider-qualification/README.md`。
+- **Evidence basis**：first-party docs 与 MCP 文档建立 `global_search` 的 retrieval-ranking 合同；sampled read-only live HTTP smoke 确认当前端点成功返回，观察到 Items 数组 / HasMore 布尔字段的响应形状。详见 repo-tracked 报告 `discovery/p1-t03-retrieval-provider-qualification/README.md`。
 - **Durable limitation — 不推断未文档化内容**：不得推断未文档化的 pagination / completeness 语义（API 文档仅定义 `HasMore` 布尔字段，无 offset / page / cursor 请求参数）、全局错误码分类（`global_search` 文档无自身错误码段落，不得从 `zhihu_search` 的 10001/20001/30001/90001 跨文档移植）、或数值 ranking-score 含义（排名顺序有据，数值语义未文档化）。
 - **Surface asymmetry（值得保留）**：当前 `global_search` HTTP API 文档**未暴露**文档化的 `RankingScore` 数值字段（`zhihu_search` 有），而官方 MCP 文档暴露 `ranking_score` 属性。该不对称是已记录的发现事实，不得忽视或掩盖。
-- **T17 / adapter implementation 是独立事项**：GATE-3 qualification 本身**不隐含** T17（Additional retrieval provider adapter）的激活或实现授权。T17 仍为 CONDITIONAL_NOT_ACTIVE，需要独立的 START_GATE + 证据 review + conditional activation 才能开始。
+- **T17 / adapter implementation 是独立事项**：GATE-3 qualification 本身**不隐含** T17（Additional retrieval provider adapter）的激活或实现授权；任何 T17 实现仍需独立的 legal conditional activation + START_GATE。
 
 ## 历史 review 结论（沉淀）
 
