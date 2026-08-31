@@ -1,0 +1,44 @@
+{
+  "ticket": "P1-T03 / Issue #35 (GATE-3)",
+  "probe": "read-only-smoke of official global_search API",
+  "endpoint": "https://developer.zhihu.com/api/v1/content/global_search",
+  "method": "GET",
+  "query_synthetic": "zhihu toolkit rrf channel probe",
+  "count_requested": 5,
+  "secret_file_used": "<REDACTED>",
+  "secret_material_recorded": "NONE (by contract)",
+  "ran_at_utc": "2026-08-31T05:59:38.445Z",
+  "surfaces": {
+    "http": {
+      "status": 200,
+      "ok": true
+    },
+    "envelope": {
+      "code_observed": 0,
+      "message_observed": "<redacted-string-presence-only>"
+    },
+    "retrieval_channel": {
+      "items_is_array": true,
+      "items_len_observed": 3,
+      "ranked_list_observed": true,
+      "hasmore_observed": false,
+      "item_fields_present": [
+        "Title",
+        "ContentType",
+        "ContentID",
+        "ContentText",
+        "Url",
+        "CommentCount",
+        "VoteUpCount",
+        "AuthorName",
+        "AuthorAvatar",
+        "AuthorBadge",
+        "AuthorBadgeText",
+        "EditTime",
+        "AuthorityLevel"
+      ]
+    }
+  },
+  "VERDICT": "SMOKE_PASS_SAMPLED",
+  "SAMPLED_SCOPE_NOTE": "single synthetic query, single invocation; all semantics beyond observed response shape are UNKNOWN"
+}
