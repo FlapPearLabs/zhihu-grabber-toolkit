@@ -98,11 +98,13 @@ const STRING_LIST_FIELDS = ['queryVariants', 'aspects', 'entities', 'opposingFra
  * - CREDENTIAL_SHAPE: credential field/assignment shapes (incl. the repo-known z_c0 auth cookie).
  * - PRIVATE_PATH_SHAPE: user-machine-private filesystem paths (POSIX /Users|/home, home-relative ~,
  *   Windows profile roots). System paths like /etc/hosts and plain URLs are NOT machine-private.
+ *   Detection is anchored to a string/token boundary, so a profile path is rejected when it
+ *   appears ANYWHERE — including mid-sentence and across newlines — not only at position 0.
  */
 const CREDENTIAL_SHAPE =
   /(?:z_c0\s*=|(?:password|passwd|secret|token|api[_-]?key|access[_-]?key|authorization|cookie|session[_-]?id)\s*[:=])/i;
 const PRIVATE_PATH_SHAPE =
-  /(?:\/Users\/|\/home\/|^[A-Za-z]:[/\\](?:Users|Documents and Settings)[/\\]|^~[/\w.-])/;
+  /(?:\/Users\/|\/home\/|[A-Za-z]:[\\/](?:Users|Documents and Settings)[\\/]|(?:^|[\s"'<>\u2018\u2019\u201c\u201d])~[/\w.-])/;
 
 function sha256(text) {
   return crypto.createHash('sha256').update(String(text)).digest('hex');

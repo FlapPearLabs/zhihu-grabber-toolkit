@@ -83,9 +83,11 @@ export const PLANNER_FAILURE_RUNTIME_UNAVAILABLE = 'runtime_unavailable';
 export const PLANNER_FAILURE_PLANNER_INVALID = PLAN_FAILURE_PLANNER_INVALID;
 
 /**
- * D-3-delegated deterministic USER_REQUEST bound (implementation validation
+ * Spec §10.1 delegated deterministic USER_REQUEST bound (implementation validation
  * bound, fail-closed; not a product threshold). A research request is a short
- * natural-language paragraph; 2000 chars is generous and bounded.
+ * natural-language paragraph; 2000 chars is generous and bounded. (Authority for
+ * USER_REQUEST validation is Spec §10.1, not D-3 — D-3 is the persisted-plan
+ * schema/validation decision.)
  */
 export const PLANNER_MAX_REQUEST_CHARS = 2000;
 
@@ -104,7 +106,7 @@ export const PLANNER_TIMEOUT_MS = 120_000;
 const CREDENTIAL_SHAPE =
   /(?:z_c0\s*=|(?:password|passwd|secret|token|api[_-]?key|access[_-]?key|authorization|cookie|session[_-]?id)\s*[:=])/i;
 const PRIVATE_PATH_SHAPE =
-  /(?:\/Users\/|\/home\/|^[A-Za-z]:[/\\](?:Users|Documents and Settings)[/\\]|^~[/\w.-])/;
+  /(?:\/Users\/|\/home\/|[A-Za-z]:[\\/](?:Users|Documents and Settings)[\\/]|(?:^|[\s"'<>\u2018\u2019\u201c\u201d])~[/\w.-])/;
 
 /** Encoding hygiene: C0 controls (except \t \n \r), DEL/C1, and Cf/Cs invisibles. */
 const ENCODING_SHAPE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]|[\p{Cf}\p{Cs}]/u;

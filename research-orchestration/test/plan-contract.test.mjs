@@ -727,3 +727,31 @@ test('legitimate non-private strings remain valid (boundary is narrow, not a con
   const v = validatePlanInput(plan);
   assert.equal(v.ok, true, `URLs and system (non-machine-private) paths stay valid: ${JSON.stringify(v.issues ?? [])}`);
 });
+
+
+test('repair P1-1: mid-sentence/multiline Windows profile path in plan string field -> planner_invalid + nothing persisted', () => {
+  const workDir = tmpDir('priv-path-repair');
+  const cases = [
+    ['queryVariants', ['研究 C:\\Users\\alice\\secret.txt 里的项目']],
+    ['aspects', ['C:\\Documents and Settings\\bob\\notes.md 内容']],
+    ['entities', ['第一行\nD:\\Users\\carol\\private.txt']],
+  ];
+  for (const [field, value] of cases) {
+    const plan = { ...basePlan(), [field]: value };
+    const v = validatePlanInput(plan);
+    assert.equal(v.ok, false, `mid-string Windows profile path in ${field} must be rejected: ${JSON.stringify(value)}`);
+    assert.equal(v.reason, PLANNER_INVALID);
+    assert.ok(v.issues.some((i) => /machine-private|private path/i.test(i.message)), 'issue must name the boundary');
+    const persisted = persistPlan(workDir, plan);
+    assert.equal(persisted.ok, false, `persistPlan must refuse the plan: ${JSON.stringify(value)}`);
+    assert.equal(persisted.reason, PLANNER_INVALID);
+    assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false, 'no artifact written for invalid plan');
+  }
+});
+
+test('repair P1-1: legitimate non-private tilde / drive-like text stays valid (no over-rejection)', () => {
+  const plan = basePlan();
+  plan.queryVariants = ['分析温度~25度时的用户讨论', '会议在 3:30 开始的安排', 'file~1.txt backup'];
+  const v = validatePlanInput(plan);
+  assert.equal(v.ok, true, `legitimate tilde/drive-like text must stay valid: ${JSON.stringify(v.issues ?? [])}`);
+});

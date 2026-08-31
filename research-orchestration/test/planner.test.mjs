@@ -432,3 +432,42 @@ test('P1-T18: usageSink collects non-sensitive token/timing evidence when report
   assert.equal(typeof usageSink[0].ms, 'number');
   assert.equal(JSON.stringify(usageSink).includes(CREDENTIAL.key), false);
 });
+
+
+// ---------------------------------------------------------------------------
+// 6b. P1-T18 REPAIR (P1-1): Windows machine-private profile paths in USER_REQUEST
+//     are rejected at ANY token/path boundary (mid-sentence + multiline),
+//     fail-closed BEFORE any egress.
+// ---------------------------------------------------------------------------
+
+test('P1-T18 repair P1-1: mid-sentence/multiline Windows profile path in USER_REQUEST -> user_request_invalid, fetch never invoked', async () => {
+  const cases = [
+    '研究 C:\\Users\\alice\\secret.txt 里的项目',
+    '请比较 C:\\Documents and Settings\\bob\\notes.md 和公开资料',
+    '第一行\nD:\\Users\\carol\\private.txt',
+  ];
+  for (const input of cases) {
+    const workDir = tmpWorkDir();
+    const capture = [];
+    const res = await proposeResearchPlan({
+      userRequest: input, workDir,
+      fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT), { capture }), credential: CREDENTIAL,
+    });
+    assert.equal(res.ok, false, `USER_REQUEST with private path must be rejected: ${input}`);
+    assert.equal(res.reason, PLANNER_FAILURE_USER_REQUEST_INVALID, `reason must be user_request_invalid: ${input}`);
+    assert.equal(capture.length, 0, `no egress when USER_REQUEST is invalid: ${input}`);
+    assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false, `nothing persisted: ${input}`);
+  }
+});
+
+test('P1-T18 repair P1-1: legitimate USER_REQUEST with tilde / drive-colon text stays valid (no over-rejection)', async () => {
+  const workDir = tmpWorkDir();
+  const capture = [];
+  const res = await proposeResearchPlan({
+    userRequest: '分析温度~25度时的用户讨论，以及会议在 3:30 开始的安排',
+    workDir,
+    fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT), { capture }), credential: CREDENTIAL,
+  });
+  assert.equal(res.ok, true, 'legitimate tilde/drive-like request must be accepted');
+  assert.equal(capture.length, 1, 'valid request proceeds to egress');
+});
