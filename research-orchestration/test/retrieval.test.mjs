@@ -579,7 +579,11 @@ test('D8: non-JSON-safe seam-accepted metadata (BigInt / cyclic fact) → FAIL C
     const run = runMultiQueryRetrieval({ plan: PLAN, seam, workDir });
     assert.equal(run.ok, false, `${label}: non-JSON-safe seam-accepted metadata must fail closed, never escape runMultiQueryRetrieval`);
     assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, `${label}: contract failure identity`);
-    assert.equal(run.details.reason, 'pool_serialization_failed', `${label}: stable serialization failure reason`);
+    // P1-2 mechanism note: the shared rrf boundary (projectSafeJson) now rejects
+    // non-JSON-safe metadata during fusion projection — BEFORE pool assembly /
+    // JSON.stringify — so the stable identity is the fusion-contract violation,
+    // not a serialization failure. Same fail-closed contract, earlier intercept.
+    assert.equal(run.details.reason, 'rrf_fusion_contract_violation', `${label}: stable projection/fusion failure reason (boundary intercepts before serialization)`);
     assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), `${label}: no artifact written when serialization fails`);
   }
 });
@@ -1098,4 +1102,100 @@ test('H7: malformed registry entries (null / non-object / missing or non-string 
     assert.equal(run.details.registryIssue, 'malformed_entry');
     assert.equal(retrieveCalls, 0, 'no provider retrieval IO for a malformed registry');
   }
+});
+
+// ---------------------------------------------------------------------------
+// I. P1-T06 integration-level adversarial matrix — review 5077286260
+//    (P1-4 source_url credentials / P2-1 whole-result pre-validation / P2-2
+//    non-plain + prototype-mutating structures / P1-3 issue-path projection)
+// ---------------------------------------------------------------------------
+
+test('I1: provider item with a credential-bearing source_url record (P1-4) → FAIL CLOSED (retrieval_provider_contract_invalid); the URL never reaches the pool or the output; no artifact', () => {
+  // A structurally VALID §5.1 source_url record (passes the seam's own
+  // structural gate: https + url string + securityClass) whose query carries a
+  // credential-sensitive key — the rrf boundary (projectSourceUrlRecord) must
+  // reject it during projection, BEFORE it can reach the persisted pool.
+  const adapter = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [
+    ['100', 1, { source_url: { url: 'https://example.invalid/?token=super-secret', securityClass: 'official-secret' } }],
+  ], { query: input.query }));
+  const seam = createProviderSeam({ adapters: [adapter] });
+  const workDir = tmpWorkDir();
+  const run = runMultiQueryRetrieval({ plan: PLAN, seam, workDir });
+  assert.equal(run.ok, false, 'credential-bearing source_url must fail closed');
+  assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+  assert.equal(run.details.reason, 'rrf_fusion_contract_violation', 'the shared rrf boundary rejects the URL during projection');
+  assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact written');
+  const serialized = JSON.stringify(run);
+  assert.ok(!serialized.includes('super-secret'), 'credential value must never surface');
+  assert.ok(!serialized.includes('token='), 'credential-shaped URL must never surface');
+});
+
+test('I2: a method-compatible injected seam returning null / undefined / primitive results (P2-1) → FAIL CLOSED (retrieval_provider_contract_invalid) via the whole-result pre-validation; no raw TypeError escapes, no artifact', () => {
+  // Hand-rolled seam that does NOT validate (bypasses createProviderSeam's
+  // contract gate) — exercises retrieval.mjs's own safeValidateProviderResult
+  // defense-in-depth immediately after seam.retrieve() returns.
+  function rawResultSeam(result) {
+    return {
+      listProviders() {
+        return [{ providerId: 'fixture-a', capability: CAPABILITY_SEARCH }];
+      },
+      retrieve() {
+        return result;
+      },
+    };
+  }
+  for (const [label, result] of [
+    ['null', null],
+    ['undefined', undefined],
+    ['number primitive', 42],
+    ['string primitive', 'plain-string'],
+  ]) {
+    const workDir = tmpWorkDir();
+    const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam: rawResultSeam(result), workDir });
+    assert.equal(run.ok, false, `${label} result must fail closed`);
+    assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, `${label}: contract failure identity`);
+    assert.equal(run.details.reason, 'provider_contract_violation', `${label}: stable reason, no raw payload echo`);
+    assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), `${label}: no artifact written`);
+  }
+});
+
+test('I3: seam-accepted facts carrying non-plain / prototype-mutating structures (P2-2) → FAIL CLOSED (retrieval_provider_contract_invalid); never collapsed, never persisted, no artifact', () => {
+  const classFactsAdapter = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [
+    ['100', 1, { facts: { d: new Date() } }],
+  ], { query: input.query }));
+  const protoFactsAdapter = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [
+    ['100', 1, { facts: JSON.parse('{"__proto__": {"polluted": true}}') }],
+  ], { query: input.query }));
+  for (const [label, adapter] of [['class-instance facts', classFactsAdapter], ['__proto__-key facts', protoFactsAdapter]]) {
+    const seam = createProviderSeam({ adapters: [adapter] });
+    const workDir = tmpWorkDir();
+    const run = runMultiQueryRetrieval({ plan: PLAN, seam, workDir });
+    assert.equal(run.ok, false, `${label} must fail closed`);
+    assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+    assert.equal(run.details.reason, 'rrf_fusion_contract_violation', `${label}: shared boundary rejects during projection`);
+    assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), `${label}: no artifact written`);
+  }
+});
+
+test('I4: plan-validation issues carrying caller-controlled unknown property names are projected to the stable <unknown> placeholder (P1-3); known schema paths are preserved; the raw name is never echoed', () => {
+  const EVIL = '/home/private-user/x';
+  const plan = {
+    schemaVersion: 1,
+    queryVariants: ['q'],
+    aspects: ['a'],
+    entities: [],
+    opposingFramings: [],
+    // BOTH an unknown caller-controlled key AND a known-schema violation
+    // (empty term) so the projection must preserve the known path while
+    // replacing the unknown segment with '<unknown>'.
+    terminologyVariants: [{ term: '', variants: ['v'], [EVIL]: 1 }],
+    sourceGroupIntents: [],
+  };
+  const run = runMultiQueryRetrieval({ plan, seam: { retrieve() {}, listProviders() {} }, workDir: tmpWorkDir() });
+  assert.equal(run.ok, false);
+  assert.equal(run.reason, RETRIEVAL_FAILURE_PLAN_INVALID);
+  const serialized = JSON.stringify(run);
+  assert.ok(!serialized.includes(EVIL), 'caller-controlled unknown property name must never be echoed');
+  assert.ok(serialized.includes('<unknown>'), 'the stable placeholder is used instead of the raw name');
+  assert.ok(serialized.includes('terminologyVariants[0].term'), 'known plan-contract schema paths are preserved');
 });

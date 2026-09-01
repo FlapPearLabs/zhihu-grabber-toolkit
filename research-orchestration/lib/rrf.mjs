@@ -51,7 +51,16 @@
  *     (P1-4), so a within-channel duplicate fails closed regardless of order;
  *   - rejected observations are canonicalized by a stable key (channel triple +
  *     questionId + rank/route + failure code/class) before returning, so the
- *     rejected list is permutation-invariant under channel/item order (P1-5).
+ *     rejected list is permutation-invariant under channel/item order (P1-5);
+ *   - P1-1 persisted-artifact boundary (review 5077286260): EVERY provider/
+ *     caller-controlled value that can reach pool.candidates / pool.rejected /
+ *     returned failures is projected into a safe canonical shape or fails
+ *     closed (FUSION_UNSAFE_PROVIDER_DATA): candidate contribution fields
+ *     (rankOrigin / route / source_url / facts), rejected observation fields
+ *     (identity / rank / route), and failure identities (code/class are
+ *     bounded privacy-safe strings). No uncontrolled raw passthrough; safe
+ *     data is preserved deterministically; the whole artifact additionally
+ *     crosses assertArtifactSafe() in retrieval.mjs as defense in depth.
  *
  * This module is PURE: no IO, no seam, no credentials, no clock.
  */
@@ -72,6 +81,11 @@ export const FUSION_ERROR_ITEM_IDENTITY_INVALID = 'FUSION_ITEM_IDENTITY_INVALID'
 export const FUSION_ERROR_FAILURE_IDENTITY_INVALID = 'FUSION_FAILURE_IDENTITY_INVALID';
 /** Hard fail-closed error code: within-channel duplicate candidate (P1-4). */
 export const FUSION_ERROR_DUPLICATE_IN_CHANNEL = 'FUSION_DUPLICATE_IN_CHANNEL';
+/**
+ * Hard fail-closed error code: provider/caller-controlled data cannot be safely
+ * projected into the persisted pool (P1-1 boundary, review 5077286260).
+ */
+export const FUSION_ERROR_UNSAFE_PROVIDER_DATA = 'FUSION_UNSAFE_PROVIDER_DATA';
 
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -79,6 +93,263 @@ function isPlainObject(value) {
 
 function isNonEmptyString(value) {
   return typeof value === 'string' && value.length > 0;
+}
+
+// ---------------------------------------------------------------------------
+// P1-T06 persisted-artifact boundary (shared with retrieval.mjs)
+//
+// ONE explicit T06 boundary for every provider/caller-controlled value that can
+// reach pool.channels / pool.candidates / pool.rejected / returned machine-
+// readable failures (review 5077286260). Each field is either projected into a
+// safe canonical shape or fails closed — no uncontrolled raw passthrough:
+//   - strings: bounded length + free of credential-shaped content + free of
+//     machine-private path content (RULES §11) — isBoundarySafeString;
+//   - object keys: dedicated credential-sensitive KEY-NAME deny rule (bare
+//     `token` / `cookie` / `z_c0` / ... keys are rejected even without a
+//     value-assignment shape, incl. case/separator variants) + magic /
+//     prototype-mutating keys (`__proto__` / `prototype` / `constructor`) —
+//     isBoundarySafeKey;
+//   - nested values: JSON-domain only (null / string / finite number / boolean /
+//     array / strict PLAIN object); BigInt / cyclic / function / symbol /
+//     undefined / non-plain object classes fail closed — projectSafeJson;
+//   - provenance.route / rankOrigin: null stays null, a present value must be a
+//     safe string — projectRouteString;
+//   - source_url: null or a canonical { url, securityClass } record whose URL is
+//     https and free of credential-bearing userinfo / query data and machine-
+//     private path content — projectSourceUrlRecord;
+//   - the WHOLE pool artifact is mechanically walked before persistence
+//     (defense in depth) — assertArtifactSafe.
+// Every helper is exception-safe (hostile getters / toString can never escape as
+// a raw throw) and deterministic (safe input is preserved exactly).
+// ---------------------------------------------------------------------------
+
+/** Bounded length for any provider/caller-controlled string entering the persisted artifact. */
+export const BOUNDARY_MAX_STRING_LENGTH = 500;
+
+/** Credential-shaped content (field/assignment shapes incl. the repo-known z_c0 auth cookie). */
+export const CREDENTIAL_SHAPE =
+  /(?:z_c0\s*=|(?:password|passwd|secret|token|api[_-]?key|access[_-]?key|authorization|cookie|session[_-]?id)\s*[:=])/i;
+/** Machine-private filesystem path content (POSIX /Users|/home, Windows profile roots, home-relative ~). */
+export const PRIVATE_PATH_SHAPE =
+  /(?:\/Users\/|\/home\/|[A-Za-z]:[\\/](?:Users|Documents and Settings)[\\/]|(?:^|[\s"'<>\u2018\u2019\u201c\u201d])~[/\w.-])/;
+
+/**
+ * Credential-sensitive KEY-NAME deny rule (P1-2, review 5077286260): a bare
+ * object key such as `token`, `cookie`, `z_c0`, `api_key` is credential-bearing
+ * even without a `name=value` assignment shape. Matches case variants and
+ * `-`/`_` separators (normalized exact names) plus standalone-word patterns.
+ */
+const SENSITIVE_KEY_NAMES = Object.freeze([
+  'token', 'secret', 'password', 'passwd', 'cookie', 'authorization',
+  'api_key', 'api-key', 'apikey', 'access_key', 'access-key', 'accesskey',
+  'session_id', 'session-id', 'sessionid', 'z_c0', 'zc0',
+  'credential', 'credentials',
+]);
+const SENSITIVE_KEY_NAMES_NORMALIZED = new Set(
+  SENSITIVE_KEY_NAMES.map((name) => name.toLowerCase().replace(/[^a-z0-9]/g, '')),
+);
+const SENSITIVE_KEY_PATTERN =
+  /(?:^|[_\-\s])(?:z[_\-]?c0|token|secret|password|passwd|cookie|authorization|api[_\-]?key|access[_\-]?key|session[_\-]?id)(?:[_\-\s]|$)/i;
+
+function isSensitiveKeyName(key) {
+  if (typeof key !== 'string') return true;
+  const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (SENSITIVE_KEY_NAMES_NORMALIZED.has(normalized)) return true;
+  return SENSITIVE_KEY_PATTERN.test(key);
+}
+
+/** A key may enter the persisted artifact only when it is neither credential-sensitive nor magic/prototype-mutating. */
+export function isBoundarySafeKey(key) {
+  return !isSensitiveKeyName(key) && key !== '__proto__' && key !== 'prototype' && key !== 'constructor';
+}
+
+/** A provider/caller-controlled string may enter the persisted artifact only when bounded + privacy-safe. */
+export function isBoundarySafeString(value) {
+  return typeof value === 'string'
+    && value.length <= BOUNDARY_MAX_STRING_LENGTH
+    && !CREDENTIAL_SHAPE.test(value)
+    && !PRIVATE_PATH_SHAPE.test(value);
+}
+
+/**
+ * Strict plain-object check (P2-2, review 5077286260): only objects whose
+ * prototype is Object.prototype or null are JSON-domain plain objects. Class
+ * instances / custom-prototype objects must NOT be silently collapsed to `{}`.
+ */
+function isPlainObjectStrict(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+/**
+ * Deterministic deep projection of a provider/caller-controlled value into the
+ * JSON-domain persisted-artifact subset: null / string (bounded + privacy-safe) /
+ * finite number / boolean / array / strict plain object with safe keys. Fails
+ * closed ({ ok:false }) on BigInt / cyclic refs / function / symbol / undefined /
+ * non-plain object classes / magic or credential-sensitive keys / unsafe strings /
+ * over-depth. Exception-safe: hostile getters cannot escape as a raw throw.
+ * Safe input is preserved exactly (deterministic deep copy).
+ */
+export function projectSafeJson(value, { maxDepth = 8 } = {}) {
+  try {
+    return projectSafeJsonInner(value, 0, maxDepth, new Set());
+  } catch {
+    return { ok: false };
+  }
+}
+
+function projectSafeJsonInner(value, depth, maxDepth, ancestors) {
+  if (depth > maxDepth) return { ok: false };
+  if (value === null) return { ok: true, value: null };
+  const type = typeof value;
+  if (type === 'string') return isBoundarySafeString(value) ? { ok: true, value } : { ok: false };
+  if (type === 'number') return Number.isFinite(value) ? { ok: true, value } : { ok: false };
+  if (type === 'boolean') return { ok: true, value };
+  if (type === 'bigint' || type === 'undefined' || type === 'function' || type === 'symbol') {
+    return { ok: false };
+  }
+  if (ancestors.has(value)) return { ok: false }; // cyclic reference
+  ancestors.add(value);
+  if (Array.isArray(value)) {
+    const out = [];
+    for (const element of value) {
+      const safe = projectSafeJsonInner(element, depth + 1, maxDepth, ancestors);
+      if (!safe.ok) {
+        ancestors.delete(value);
+        return { ok: false };
+      }
+      out.push(safe.value);
+    }
+    ancestors.delete(value);
+    return { ok: true, value: out };
+  }
+  if (!isPlainObjectStrict(value)) {
+    ancestors.delete(value);
+    return { ok: false };
+  }
+  const out = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (!isBoundarySafeKey(key)) {
+      ancestors.delete(value);
+      return { ok: false };
+    }
+    const safe = projectSafeJsonInner(entry, depth + 1, maxDepth, ancestors);
+    if (!safe.ok) {
+      ancestors.delete(value);
+      return { ok: false };
+    }
+    out[key] = safe.value;
+  }
+  ancestors.delete(value);
+  return { ok: true, value: out };
+}
+
+/**
+ * provenance.route / provenance.rankOrigin persistence boundary: null stays
+ * null (absent route is never invented); a present value must be a bounded
+ * privacy-safe string, otherwise fail closed.
+ */
+export function projectRouteString(value) {
+  if (value === undefined || value === null) return { ok: true, value: null };
+  return isBoundarySafeString(value) ? { ok: true, value } : { ok: false };
+}
+
+/** rejected-observation rank persistence boundary: null or a finite number (JSON-safe). */
+export function projectRejectedRank(value) {
+  if (value === undefined || value === null) return { ok: true, value: null };
+  if (typeof value === 'number' && Number.isFinite(value)) return { ok: true, value };
+  return { ok: false };
+}
+
+/**
+ * source_url persistence boundary (§5.1, P1-4 review 5077286260): null stays
+ * null; a present record is canonicalized to { url, securityClass } ONLY when
+ * the URL is https and free of credential-bearing userinfo / query data and
+ * machine-private path content. The URL is never silently rewritten — an unsafe
+ * URL fails closed instead. Non-contract metadata fields are dropped (they are
+ * not §5.1-required source identity).
+ */
+export function projectSourceUrlRecord(value) {
+  if (value === undefined || value === null) return { ok: true, value: null };
+  if (!isPlainObjectStrict(value)) return { ok: false };
+  const url = value.url;
+  if (typeof url !== 'string' || url.length === 0 || !url.startsWith('https://')) return { ok: false };
+  if (!isBoundarySafeString(url)) return { ok: false };
+  const securityClass = value.securityClass;
+  if (typeof securityClass !== 'string' || securityClass.length === 0) return { ok: false };
+  if (!isBoundarySafeString(securityClass)) return { ok: false };
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return { ok: false };
+  }
+  if (parsed.username !== '' || parsed.password !== '') return { ok: false };
+  for (const [name, entry] of parsed.searchParams.entries()) {
+    if (!isBoundarySafeKey(name) || !isBoundarySafeString(entry)) return { ok: false };
+  }
+  return { ok: true, value: { url, securityClass } };
+}
+
+/** Defensive depth cap for the whole-artifact walk (projections already bound provider-controlled depth). */
+const MAX_ARTIFACT_DEPTH = 20;
+
+/**
+ * Artifact-wide defense-in-depth (P1-1, review 5077286260): mechanically walk
+ * the WHOLE pool before persistence — JSON-domain types only, safe keys,
+ * bounded privacy-safe strings, no cycles — so no provider/caller-controlled
+ * value can reach the artifact even if a future code path forgets a field-level
+ * projection. Exception-safe; returns { ok:true } or { ok:false, reason }.
+ */
+export function assertArtifactSafe(value) {
+  try {
+    return assertArtifactSafeInner(value, 0, new Set());
+  } catch {
+    return { ok: false, reason: 'walk_threw' };
+  }
+}
+
+function assertArtifactSafeInner(value, depth, ancestors) {
+  if (depth > MAX_ARTIFACT_DEPTH) return { ok: false, reason: 'depth_exceeded' };
+  if (value === null) return { ok: true };
+  const type = typeof value;
+  if (type === 'string') return isBoundarySafeString(value) ? { ok: true } : { ok: false, reason: 'unsafe_string' };
+  if (type === 'number') return Number.isFinite(value) ? { ok: true } : { ok: false, reason: 'non_finite_number' };
+  if (type === 'boolean') return { ok: true };
+  if (type === 'bigint' || type === 'undefined' || type === 'function' || type === 'symbol') {
+    return { ok: false, reason: `unsupported_type_${type}` };
+  }
+  if (ancestors.has(value)) return { ok: false, reason: 'cyclic' };
+  ancestors.add(value);
+  if (Array.isArray(value)) {
+    for (const element of value) {
+      const verdict = assertArtifactSafeInner(element, depth + 1, ancestors);
+      if (!verdict.ok) {
+        ancestors.delete(value);
+        return verdict;
+      }
+    }
+    ancestors.delete(value);
+    return { ok: true };
+  }
+  if (!isPlainObjectStrict(value)) {
+    ancestors.delete(value);
+    return { ok: false, reason: 'non_plain_object' };
+  }
+  for (const [key, entry] of Object.entries(value)) {
+    if (!isBoundarySafeKey(key)) {
+      ancestors.delete(value);
+      return { ok: false, reason: 'unsafe_key' };
+    }
+    const verdict = assertArtifactSafeInner(entry, depth + 1, ancestors);
+    if (!verdict.ok) {
+      ancestors.delete(value);
+      return verdict;
+    }
+  }
+  ancestors.delete(value);
+  return { ok: true };
 }
 
 /**
@@ -128,7 +399,18 @@ export function projectFailure(failure) {
   if (!isPlainObject(failure) || !isNonEmptyString(failure.code) || !isNonEmptyString(failure.class)) {
     return { ok: false };
   }
+  // P1-1: a failure identity may only persist/surface when its code/class strings
+  // are themselves bounded + privacy-safe — a path/credential-shaped code must
+  // never reach the artifact or the returned failure output.
+  if (!isBoundarySafeString(failure.code) || !isBoundarySafeString(failure.class)) return { ok: false };
   return { ok: true, failure: { code: failure.code, class: failure.class } };
+}
+
+/** P1-1: provider-controlled data that cannot cross the persisted-artifact boundary fails closed. */
+function throwUnsafeProviderData(field, channel) {
+  const err = new Error(`provider-controlled ${field} cannot be safely projected into the persisted pool for channel ${safeFormat(channel)}`);
+  err.code = FUSION_ERROR_UNSAFE_PROVIDER_DATA;
+  throw err;
 }
 
 /** Canonical channel key: [query, providerId, capability] — exact §5.4 identity triple. */
@@ -256,11 +538,22 @@ export function rrfFusion(rankings) {
           err.code = FUSION_ERROR_FAILURE_IDENTITY_INVALID;
           throw err;
         }
+        // P1-1 (review 5077286260): EVERY provider-controlled field of a rejected
+        // observation crosses the SAME persisted-artifact boundary — identity /
+        // rank / route are projected (or fail closed); the failure is the
+        // canonical { code, class } identity. Raw provider metadata never reaches
+        // `rejected`, the pool artifact, or the returned result.
+        const projectedIdentity = projectSafeJson(item.identity ?? null);
+        if (!projectedIdentity.ok) throwUnsafeProviderData('rejected identity', ranking.channel);
+        const projectedRank = projectRejectedRank(item.provenance?.rank);
+        if (!projectedRank.ok) throwUnsafeProviderData('rejected rank', ranking.channel);
+        const projectedRoute = projectRouteString(item.provenance?.route);
+        if (!projectedRoute.ok) throwUnsafeProviderData('rejected route', ranking.channel);
         rejected.push({
           channel: ranking.channel,
-          identity: item.identity ?? null,
-          rank: item.provenance?.rank ?? null,
-          route: item.provenance?.route ?? null,
+          identity: projectedIdentity.value,
+          rank: projectedRank.value,
+          route: projectedRoute.value,
           failure: projected.failure,
         });
         continue;
@@ -304,14 +597,27 @@ export function rrfFusion(rankings) {
         throw err;
       }
 
+      // P1-1 (review 5077286260): provider-controlled contribution fields
+      // (rankOrigin / route / source_url / facts) cross the persisted-artifact
+      // boundary here — projected into safe canonical shapes or fail closed.
+      // `rank` already passed the integer gate and is therefore JSON-safe.
+      const projectedRankOrigin = projectRouteString(item.provenance?.rankOrigin);
+      if (!projectedRankOrigin.ok) throwUnsafeProviderData('rankOrigin', ranking.channel);
+      const projectedRoute = projectRouteString(item.provenance?.route);
+      if (!projectedRoute.ok) throwUnsafeProviderData('route', ranking.channel);
+      const projectedSourceUrl = projectSourceUrlRecord(item.source_url);
+      if (!projectedSourceUrl.ok) throwUnsafeProviderData('source_url', ranking.channel);
+      const projectedFacts = projectSafeJson(item.facts ?? {});
+      if (!projectedFacts.ok) throwUnsafeProviderData('facts', ranking.channel);
+
       record.contributions.push({
         key,
         channel: ranking.channel,
         rank,
-        rankOrigin: item.provenance?.rankOrigin ?? null,
-        route: item.provenance?.route ?? null,
-        source_url: item.source_url ?? null,
-        facts: item.facts ?? {},
+        rankOrigin: projectedRankOrigin.value,
+        route: projectedRoute.value,
+        source_url: projectedSourceUrl.value,
+        facts: projectedFacts.value,
       });
     }
   }

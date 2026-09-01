@@ -41,13 +41,36 @@
  *     pool.rejected entries carry `failure: { code, class }` ONLY, never raw
  *     detail / stderr / arbitrary metadata / path-bearing / credential-shaped
  *     diagnostics (P1-1, review 5076691874);
+ *   - ONE complete mechanically enforced provider/caller-controlled OUTPUT +
+ *     PERSISTENCE boundary (review 5077286260): every provider/caller-controlled
+ *     field that can reach pool.channels / pool.candidates / pool.rejected /
+ *     returned machine-readable failures is projected into a safe canonical
+ *     shape or fails closed via the shared lib/rrf.mjs boundary
+ *     (projectSafeJson / projectRouteString / projectSourceUrlRecord /
+ *     projectFailure / assertArtifactSafe) — no uncontrolled raw passthrough;
+ *   - whole provider results are mechanically validated immediately after
+ *     seam.retrieve() returns, BEFORE branching on ok (P2-1, review
+ *     5077286260): null / undefined / primitive / malformed / contradictory
+ *     results fail closed (retrieval_provider_contract_invalid), reusing the
+ *     T05 §5.1 result validator — no raw TypeError/exception escape;
+ *   - plan-validation issues are projected to stable schema paths before being
+ *     returned (P1-3, review 5077286260): known plan-contract paths are
+ *     preserved; caller-controlled unknown property names are replaced by the
+ *     stable '<unknown>' placeholder and never echoed raw;
+ *   - the entire pool artifact crosses an artifact-wide safety walk
+ *     (assertArtifactSafe) BEFORE persistence as defense in depth — JSON-domain
+ *     types, safe keys, bounded privacy-safe strings, no cycles; a violation
+ *     fails closed (retrieval_provider_contract_invalid) with no artifact
+ *     written;
  *   - completeness evidence crosses a deterministic T06 persistence boundary
  *     (P1-2, review 5076691874): the required completeness status is always
  *     preserved; evidence is persisted ONLY when it is mechanically safe
- *     (JSON-safe, depth/length-bounded, free of machine-private path /
- *     credential-shaped strings); evidence that cannot safely enter the
+ *     (JSON-domain + safe keys incl. the bare credential-sensitive KEY-NAME
+ *     deny rule, depth/length-bounded, free of machine-private path /
+ *     credential-shaped strings, no non-plain/prototype-mutating objects —
+ *     P1-2/P2-2 review 5077286260); evidence that cannot safely enter the
  *     persisted artifact FAILS CLOSED (retrieval_provider_contract_invalid) —
- *     never bare-stored, never silently dropped;
+ *     never bare-stored, never silently dropped, never distorted;
  *   - seam.listProviders() is GUARDED (P2, review 5076691874): a throwing
  *     registry inspection, a malformed non-array registry, or malformed
  *     registry entries return a stable retrieval_provider_contract_invalid
@@ -76,7 +99,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { CAPABILITY_SEARCH, COMPLETENESS_STATES } from './provider-seam.mjs';
+import { CAPABILITY_SEARCH, COMPLETENESS_STATES, validateProviderResult } from './provider-seam.mjs';
 import {
   SEAM_ERROR_UNSUPPORTED_CAPABILITY,
   SEAM_ERROR_NO_SILENT_PROVIDER_FALLBACK,
@@ -89,7 +112,9 @@ import {
   RRF_K,
   RRF_RANK_SOURCE,
   RRF_TIE_BREAK,
+  assertArtifactSafe,
   projectFailure,
+  projectSafeJson,
   rrfFusion,
 } from './rrf.mjs';
 
@@ -136,93 +161,26 @@ function failure(reason, details = null) {
 }
 
 /**
- * P1-2 T06 completeness-evidence boundary helpers.
+ * P1-2/P2-2 T06 completeness-evidence persistence boundary.
  *
  * The seam guarantees completeness is a { status, evidence } plain object whose
  * status is a known state and whose evidence is a plain object — but evidence
- * CONTENT is provider-controlled and may embed JSON-safe machine-private paths
- * or credential-shaped strings (RULES §11 path-redaction). Bare-storing
- * result.completeness would let those diagnostics enter the persisted pool, so
- * evidence must cross a deterministic safety projection: preserve it ONLY when
- * it is mechanically safe, otherwise FAIL CLOSED — never silently drop the
- * contract-required completeness semantics, never let the unsafe diagnostic
- * reach the returned/persisted artifact.
- *
- * The two shape guards reuse the repo's established machine-private vocabulary
- * (plan-contract.mjs CREDENTIAL_SHAPE / PRIVATE_PATH_SHAPE): credential
- * field/assignment shapes (incl. the z_c0 auth cookie) and user-machine-private
- * filesystem paths (POSIX /Users|/home, home-relative ~, Windows profile
- * roots). System paths like /etc/hosts and plain URLs are NOT machine-private.
+ * CONTENT is provider-controlled and may embed machine-private paths,
+ * credential-shaped strings, or bare credential-sensitive KEY NAMES (RULES §11
+ * path-redaction; review 5077286260). Bare-storing result.completeness would let
+ * those diagnostics enter the persisted pool, so evidence must cross a
+ * deterministic safety projection: preserve it ONLY when the WHOLE tree is
+ * mechanically safe (JSON-domain primitives/arrays/plain objects, safe keys,
+ * bounded privacy-safe strings), otherwise FAIL CLOSED — never bare-store,
+ * never silently drop, never distort non-plain / prototype-mutating structures.
  */
-const CREDENTIAL_SHAPE =
-  /(?:z_c0\s*=|(?:password|passwd|secret|token|api[_-]?key|access[_-]?key|authorization|cookie|session[_-]?id)\s*[:=])/i;
-const PRIVATE_PATH_SHAPE =
-  /(?:\/Users\/|\/home\/|[A-Za-z]:[\\/](?:Users|Documents and Settings)[\\/]|(?:^|[\s"'<>\u2018\u2019\u201c\u201d])~[/\w.-])/;
-
-/** Mechanical bounds for evidence that can safely enter the persisted pool. */
 const EVIDENCE_MAX_DEPTH = 8;
-const EVIDENCE_MAX_STRING_LENGTH = 500;
-
-function isSafeEvidenceString(value) {
-  return value.length <= EVIDENCE_MAX_STRING_LENGTH
-    && !CREDENTIAL_SHAPE.test(value)
-    && !PRIVATE_PATH_SHAPE.test(value);
-}
 
 /**
- * Recursively validate + deep-copy one evidence node. Every string value (and
- * every object key) must be bounded and free of machine-private path /
- * credential-shaped content; numbers must be finite; BigInt / cyclic /
- * over-deep structures fail closed. Returns { ok:true, value } (a fully safe
- * deep copy) or { ok:false }.
- */
-function safeEvidenceValue(value, depth = 0, ancestors = new Set()) {
-  if (depth > EVIDENCE_MAX_DEPTH) return { ok: false };
-  if (value === null) return { ok: true, value: null };
-  if (typeof value === 'string') return isSafeEvidenceString(value) ? { ok: true, value } : { ok: false };
-  if (typeof value === 'number') return Number.isFinite(value) ? { ok: true, value } : { ok: false };
-  if (typeof value === 'boolean') return { ok: true, value };
-  if (typeof value === 'bigint') return { ok: false };
-  if (typeof value === 'object') {
-    if (ancestors.has(value)) return { ok: false }; // cyclic reference
-    ancestors.add(value);
-    if (Array.isArray(value)) {
-      const out = [];
-      for (const element of value) {
-        const safe = safeEvidenceValue(element, depth + 1, ancestors);
-        if (!safe.ok) {
-          ancestors.delete(value);
-          return { ok: false };
-        }
-        out.push(safe.value);
-      }
-      ancestors.delete(value);
-      return { ok: true, value: out };
-    }
-    const out = {};
-    for (const [key, entry] of Object.entries(value)) {
-      if (!isSafeEvidenceString(key)) {
-        ancestors.delete(value);
-        return { ok: false };
-      }
-      const safe = safeEvidenceValue(entry, depth + 1, ancestors);
-      if (!safe.ok) {
-        ancestors.delete(value);
-        return { ok: false };
-      }
-      out[key] = safe.value;
-    }
-    ancestors.delete(value);
-    return { ok: true, value: out };
-  }
-  return { ok: false }; // undefined / function / symbol
-}
-
-/**
- * P1-2 deterministic T06 persistence boundary for provider completeness:
- * preserve the required status; preserve evidence ONLY when mechanically safe;
- * fail closed (with a stable reason) when the required semantics cannot safely
- * enter the persisted artifact. Returns
+ * Project provider completeness across the T06 persistence boundary: preserve
+ * the required status; preserve evidence ONLY when mechanically safe; fail
+ * closed (with a stable reason) when the required semantics cannot safely enter
+ * the persisted artifact. Returns
  * { ok:true, completeness: { status, evidence } } or { ok:false, reason }.
  */
 function projectCompleteness(completeness) {
@@ -232,9 +190,60 @@ function projectCompleteness(completeness) {
   }
   const evidence = completeness.evidence;
   if (!isPlainObject(evidence)) return { ok: false, reason: 'completeness_evidence_missing' };
-  const safe = safeEvidenceValue(evidence);
+  const safe = projectSafeJson(evidence, { maxDepth: EVIDENCE_MAX_DEPTH });
   if (!safe.ok) return { ok: false, reason: 'completeness_evidence_unsafe' };
   return { ok: true, completeness: { status: completeness.status, evidence: safe.value } };
+}
+
+/**
+ * P1-3 (review 5077286260): project plan-validation issues to a stable safe
+ * representation before returning them. validatePlanInput() embeds caller-
+ * controlled unknown property names directly into issues[].path; T06 must never
+ * echo an arbitrary unknown name (it may be path/credential-shaped). Known
+ * plan-contract schema paths (field names + array indices + known sub-fields)
+ * are preserved; any path with a caller-controlled segment is replaced by the
+ * stable '<unknown>' placeholder. Messages are validator-generated static
+ * templates and are kept as-is. T04 strict schema validation is NOT weakened.
+ */
+const PLAN_ISSUE_KNOWN_FIELDS = new Set([
+  'schemaVersion', 'queryVariants', 'aspects', 'entities', 'opposingFramings',
+  'terminologyVariants', 'sourceGroupIntents', 'term', 'variants', 'intent',
+  'constraints', 'groupKey',
+]);
+const PLAN_ISSUE_PATH_SEGMENT = /^[A-Za-z]+(?:\[\d+\])?$/;
+
+function projectPlanIssues(issues) {
+  if (!Array.isArray(issues)) return [];
+  return issues.map((issue) => {
+    const issuePath = issue?.path;
+    const known = issuePath === ''
+      || (typeof issuePath === 'string'
+        && issuePath.split('.').every((segment) => (
+          PLAN_ISSUE_PATH_SEGMENT.test(segment)
+          && PLAN_ISSUE_KNOWN_FIELDS.has(segment.replace(/\[\d+\]$/, ''))
+        )));
+    return {
+      path: known ? issuePath : '<unknown>',
+      message: typeof issue?.message === 'string' ? issue.message : 'validation_failed',
+    };
+  });
+}
+
+/**
+ * P2-1 (review 5077286260): mechanically validate the WHOLE provider result
+ * immediately after seam.retrieve() returns — BEFORE branching on result.ok.
+ * Reuses the T05 §5.1 result validator (validateProviderResult): a throwing
+ * validator (hostile toString/getters in the T05 reason template) or an invalid
+ * verdict maps to the stable retrieval_provider_contract_invalid with no raw
+ * payload echo. Throws nothing.
+ */
+function safeValidateProviderResult(result) {
+  try {
+    const verdict = validateProviderResult(result);
+    return verdict && verdict.valid === true ? { ok: true } : { ok: false };
+  } catch {
+    return { ok: false };
+  }
 }
 
 /**
@@ -398,13 +407,15 @@ export function runMultiQueryRetrieval(opts = {}) {
   // 2. plan validity + planHash identity (Spec §4.3 dependency identity).
   const validated = validatePlanInput(plan);
   if (!validated.ok) {
-    return failure(RETRIEVAL_FAILURE_PLAN_INVALID, { issues: validated.issues });
+    // P1-3: issue paths are projected to stable schema paths — a caller-
+    // controlled unknown key is never echoed raw.
+    return failure(RETRIEVAL_FAILURE_PLAN_INVALID, { issues: projectPlanIssues(validated.issues) });
   }
   let planIdentity;
   try {
     planIdentity = planHash(validated.plan);
   } catch (err) {
-    return failure(RETRIEVAL_FAILURE_PLAN_INVALID, { issues: err?.issues ?? null });
+    return failure(RETRIEVAL_FAILURE_PLAN_INVALID, { issues: projectPlanIssues(err?.issues ?? null) });
   }
   if (expectedPlanHash != null) {
     // P1-3: a caller-supplied plan identity is only comparable when it is a
@@ -450,6 +461,19 @@ export function runMultiQueryRetrieval(opts = {}) {
           channel,
           code: SEAM_CONTRACT_ERROR_CODES.includes(err?.code) ? err.code : null,
           reason: 'provider_contract_violation',
+        });
+      }
+      // P2-1 (review 5077286260): mechanically validate the WHOLE provider
+      // result immediately after seam.retrieve() returns — BEFORE branching on
+      // result.ok. A method-compatible injected seam returning null/undefined/
+      // primitive/malformed/contradictory results fails closed here with a
+      // stable retrieval_provider_contract_invalid; no raw TypeError can
+      // escape, and no raw result payload is echoed.
+      if (!safeValidateProviderResult(result).ok) {
+        return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
+          channel,
+          reason: 'provider_contract_violation',
+          note: 'provider result violates the §5.1 contract (malformed or contradictory)',
         });
       }
       if (result.ok === true) {
@@ -565,6 +589,19 @@ export function runMultiQueryRetrieval(opts = {}) {
       scope: 'single-pass',
     },
   };
+
+  // P1-1 (review 5077286260): artifact-wide defense-in-depth — mechanically
+  // walk the WHOLE pool BEFORE persistence so no provider/caller-controlled
+  // value can reach the artifact even if a future field skips its projection.
+  // A violation fails closed with a stable issue identity; no artifact is
+  // written on the fail-closed path.
+  const artifactVerdict = assertArtifactSafe(pool);
+  if (!artifactVerdict.ok) {
+    return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
+      reason: 'artifact_safety_violation',
+      issue: artifactVerdict.reason,
+    });
+  }
 
   // P1-2: seam-accepted provider metadata may be non-JSON-safe (BigInt, cyclic
   // references). Serialize inside the guard so a throw becomes a stable

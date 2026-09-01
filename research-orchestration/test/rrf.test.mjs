@@ -51,6 +51,17 @@ import {
   FUSION_ERROR_FAILURE_IDENTITY_INVALID,
   FUSION_ERROR_DUPLICATE_IN_CHANNEL,
   rrfFusion,
+  // P1-T06 shared persisted-artifact boundary (review 5077286260) — direct
+  // unit coverage of the boundary vocabulary that retrieval.mjs also consumes.
+  BOUNDARY_MAX_STRING_LENGTH,
+  isBoundarySafeKey,
+  isBoundarySafeString,
+  projectSafeJson,
+  projectRouteString,
+  projectRejectedRank,
+  projectSourceUrlRecord,
+  assertArtifactSafe,
+  projectFailure,
 } from '../lib/rrf.mjs';
 
 // ---------------------------------------------------------------------------
@@ -520,4 +531,166 @@ test('E9: per-item failure carrying machine-private diagnostics is projected to 
   assert.ok(!serialized.includes(SECRET_PATH), 'path-bearing detail must never survive into `rejected` (RULES §11)');
   assert.ok(!serialized.includes(CREDISH), 'credential-shaped diagnostics must never survive into `rejected`');
   assert.ok(!serialized.includes('provider_error_type') && !serialized.includes('http_403'), 'arbitrary payload fields are dropped');
+});
+
+// ---------------------------------------------------------------------------
+// F. P1-T06 shared persisted-artifact boundary — DIRECT unit coverage
+//    (review 5077286260). These helpers are consumed by retrieval.mjs too; the
+//    boundary contract is verified here at the vocabulary level so the
+//    integration tests in retrieval.test.mjs only need to prove the wiring.
+// ---------------------------------------------------------------------------
+
+test('F1: isBoundarySafeKey — bare credential-sensitive KEY NAMES are rejected without any value-assignment shape (P1-2 review 5077286260); case/separator variants included; magic keys rejected; safe keys pass', () => {
+  for (const key of ['token', 'cookie', 'z_c0', 'secret', 'password', 'passwd', 'authorization',
+    'api_key', 'api-key', 'apikey', 'access_key', 'access-key', 'accesskey', 'session_id', 'credential']) {
+    assert.equal(isBoundarySafeKey(key), false, `bare credential key name must be rejected: ${key}`);
+  }
+  for (const key of ['Token', 'COOKIE', 'Zc0', 'zc0', 'apiKey', 'accessKey', 'sessionId', 'my_token', 'my-token']) {
+    assert.equal(isBoundarySafeKey(key), false, `credential key variant must be rejected: ${key}`);
+  }
+  for (const key of ['__proto__', 'prototype', 'constructor']) {
+    assert.equal(isBoundarySafeKey(key), false, `magic / prototype-mutating key must be rejected: ${key}`);
+  }
+  for (const key of ['questionId', 'title', 'content', 'author', 'tokens', 'tokenCount', 'boundary', 'url', 'securityClass']) {
+    assert.equal(isBoundarySafeKey(key), true, `non-credential key must pass: ${key}`);
+  }
+});
+
+test('F2: isBoundarySafeString — credential assignment shapes / machine-private paths / over-length strings are rejected; safe strings pass (P1-1 / RULES §11)', () => {
+  for (const s of ['z_c0=abc123', 'token=super-secret', 'cookie: abc', 'Authorization: Bearer x', 'api_key = x']) {
+    assert.equal(isBoundarySafeString(s), false, `credential-shaped string must be rejected: ${s}`);
+  }
+  for (const s of ['/home/private-user/token.txt', '/Users/victim/secret/cache.json', 'C:\\Users\\victim\\secret\\x.json', '~/.ssh/id_rsa']) {
+    assert.equal(isBoundarySafeString(s), false, `machine-private path must be rejected: ${s}`);
+  }
+  assert.equal(isBoundarySafeString('a'.repeat(BOUNDARY_MAX_STRING_LENGTH + 1)), false, 'over-length string must be rejected');
+  assert.equal(isBoundarySafeString('a'.repeat(BOUNDARY_MAX_STRING_LENGTH)), true, 'bounded-length string must pass');
+  for (const s of ['fixture', 'https://example.invalid/a?b=1', 'zhihu.com/answer/123', 'ordinary text']) {
+    assert.equal(isBoundarySafeString(s), true, `safe string must pass: ${s}`);
+  }
+});
+
+test('F3: projectSafeJson — safe JSON-domain data is preserved EXACTLY as a deterministic deep copy; unsafe values fail closed (P2-2 review 5077286260)', () => {
+  const safe = { a: [1, 'x', true, null, 1.5], b: { nested: { ok: 'https://example.invalid/' } } };
+  const verdict = projectSafeJson(safe);
+  assert.equal(verdict.ok, true);
+  assert.deepEqual(verdict.value, safe, 'safe input is preserved exactly');
+  assert.notEqual(verdict.value, safe, 'a deep copy, not the same reference');
+
+  const cyclic = {};
+  cyclic.self = cyclic;
+  const cases = [
+    ['BigInt', { n: 10n }],
+    ['cyclic', cyclic],
+    ['undefined value', { u: undefined }],
+    ['function value', { f: () => {} }],
+    ['symbol value', { s: Symbol('x') }],
+    ['non-plain object (Date)', { d: new Date() }],
+    ['non-plain object (class instance)', { c: new (class Foo {})() }],
+    ['magic own key', JSON.parse('{"__proto__": 1}')],
+    ['constructor key', JSON.parse('{"constructor": {"prototype": 1}}')],
+    ['credential key', { token: 'x' }],
+    ['credential-shaped string value', { v: 'token=abc' }],
+    ['private-path string value', { v: '/home/user/x' }],
+    ['over-length string value', { v: 'a'.repeat(501) }],
+    ['non-finite number', { n: Infinity }],
+    ['over-default-depth', { a: { b: { c: { d: { e: { f: { g: { h: { i: { j: 1 } } } } } } } } } }],
+  ];
+  for (const [label, value] of cases) {
+    assert.equal(projectSafeJson(value).ok, false, `${label}: must fail closed`);
+  }
+
+  assert.equal(projectSafeJson({ a: { b: { c: 1 } } }, { maxDepth: 2 }).ok, false, 'over-depth with explicit maxDepth must fail closed');
+  assert.equal(projectSafeJson({ a: { b: { c: 1 } } }, { maxDepth: 3 }).ok, true, 'within explicit maxDepth must pass');
+});
+
+test('F4: projectRouteString / projectRejectedRank — absent values stay null; safe values preserved; unsafe values fail closed', () => {
+  assert.deepEqual(projectRouteString(null), { ok: true, value: null });
+  assert.deepEqual(projectRouteString(undefined), { ok: true, value: null });
+  assert.deepEqual(projectRouteString('fixture_order'), { ok: true, value: 'fixture_order' });
+  assert.equal(projectRouteString('/Users/victim/x').ok, false, 'private-path route must fail closed');
+  assert.equal(projectRouteString('token=abc').ok, false, 'credential-shaped route must fail closed');
+  assert.equal(projectRouteString(5).ok, false, 'non-string route must fail closed');
+
+  assert.deepEqual(projectRejectedRank(null), { ok: true, value: null });
+  assert.deepEqual(projectRejectedRank(undefined), { ok: true, value: null });
+  assert.deepEqual(projectRejectedRank(3), { ok: true, value: 3 });
+  assert.equal(projectRejectedRank(Infinity).ok, false, 'non-finite rank must fail closed');
+  assert.equal(projectRejectedRank(NaN).ok, false, 'NaN rank must fail closed');
+  assert.equal(projectRejectedRank('3').ok, false, 'non-number rank must fail closed');
+  assert.equal(projectRejectedRank(10n).ok, false, 'BigInt rank must fail closed');
+});
+
+test('F5: projectSourceUrlRecord — https + no credential userinfo/query + no machine-private path pass; unsafe URLs FAIL CLOSED and are never rewritten (P1-4 review 5077286260)', () => {
+  const safe = { url: 'https://example.invalid/a?b=1', securityClass: 'official-secret' };
+  assert.deepEqual(projectSourceUrlRecord(safe), { ok: true, value: { url: safe.url, securityClass: safe.securityClass } });
+  assert.deepEqual(
+    projectSourceUrlRecord({ url: 'https://example.invalid/', securityClass: 'official-secret', note: 'dropped' }),
+    { ok: true, value: { url: 'https://example.invalid/', securityClass: 'official-secret' } },
+    'non-contract metadata fields are dropped; the record is canonicalized to { url, securityClass }',
+  );
+  assert.deepEqual(projectSourceUrlRecord(null), { ok: true, value: null });
+  assert.deepEqual(projectSourceUrlRecord(undefined), { ok: true, value: null });
+
+  const unsafe = [
+    ['credential query key', { url: 'https://example.invalid/?token=super-secret', securityClass: 'official-secret' }],
+    ['credential query key variant', { url: 'https://example.invalid/?api_key=abc', securityClass: 'official-secret' }],
+    ['userinfo credentials', { url: 'https://user:pass@example.invalid/', securityClass: 'official-secret' }],
+    ['non-https', { url: 'http://example.invalid/', securityClass: 'official-secret' }],
+    ['machine-private path in URL', { url: 'https://example.invalid/home/private-user/x', securityClass: 'official-secret' }],
+    ['missing securityClass', { url: 'https://example.invalid/' }],
+    ['non-string url', { url: 5, securityClass: 'official-secret' }],
+    ['non-plain record', new Date()],
+  ];
+  for (const [label, record] of unsafe) {
+    assert.equal(projectSourceUrlRecord(record).ok, false, `${label}: must fail closed`);
+  }
+});
+
+test('F6: assertArtifactSafe — the whole-artifact walk accepts safe canonical artifacts and rejects unsafe keys/strings/cycles/non-plain/BigInt with stable reasons (P1-1 defense-in-depth)', () => {
+  const safeArtifact = {
+    schemaVersion: 1,
+    type: 'retrieval-pool',
+    channels: [{ ok: true, channel: { query: 'q', providerId: 'p', capability: 'search' }, failure: null }],
+    candidates: [{ key: 'q::p::100', rank: 1, facts: { count: 2 } }],
+    rejected: [],
+    criteria: { fusion: 'rrf', rrfK: 60 },
+  };
+  assert.deepEqual(assertArtifactSafe(safeArtifact), { ok: true });
+
+  const cyclic = {};
+  cyclic.self = cyclic;
+  const cases = [
+    ['credential key', { token: 'x' }, 'unsafe_key'],
+    ['magic own key', JSON.parse('{"__proto__": 1}'), 'unsafe_key'],
+    ['credential-shaped string', { v: 'z_c0=abc' }, 'unsafe_string'],
+    ['private-path string', { v: '/Users/victim/x' }, 'unsafe_string'],
+    ['over-length string', { v: 'a'.repeat(501) }, 'unsafe_string'],
+    ['cyclic', cyclic, 'cyclic'],
+    ['BigInt', { n: 10n }, 'unsupported_type_bigint'],
+    ['non-plain object', { d: new Date() }, 'non_plain_object'],
+    ['non-finite number', { n: Infinity }, 'non_finite_number'],
+  ];
+  for (const [label, value, reason] of cases) {
+    const verdict = assertArtifactSafe(value);
+    assert.equal(verdict.ok, false, `${label}: must fail closed`);
+    assert.equal(verdict.reason, reason, `${label}: stable machine-readable reason`);
+  }
+});
+
+test('F7: projectFailure — code/class must be bounded privacy-safe strings; path/credential-shaped or over-length identities are rejected (P1-1)', () => {
+  assert.deepEqual(
+    projectFailure({ code: 'OK', class: 'boundary' }),
+    { ok: true, failure: { code: 'OK', class: 'boundary' } },
+  );
+  for (const failure of [
+    { code: '/home/private-user/x', class: 'boundary' },
+    { code: 'token=abc', class: 'boundary' },
+    { code: 'OK', class: 'z_c0=secret' },
+    { code: 'a'.repeat(501), class: 'boundary' },
+    { code: 5, class: 'boundary' },
+    { code: 'OK' },
+  ]) {
+    assert.equal(projectFailure(failure).ok, false, 'unsafe failure identity must be rejected');
+  }
 });
