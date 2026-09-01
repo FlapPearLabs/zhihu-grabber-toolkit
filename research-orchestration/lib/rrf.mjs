@@ -38,6 +38,13 @@
  *     per-item failure that is present-but-malformed (not a { code, class }
  *     identity) is a CONTRACT VIOLATION → hard error (never treated as "no
  *     failure", never fused);
+ *   - P1-1: the rejected per-item failure is projected through the SAME
+ *     canonical projectFailure() as top-level channel failure identities — the
+ *     `rejected` entries carry `failure: { code, class }` ONLY. Raw detail /
+ *     stderr / arbitrary metadata / path-bearing / credential-shaped diagnostics
+ *     are dropped at the boundary so they can never reach the returned/persisted
+ *     pool artifact, regardless of how much extra payload the upstream item
+ *     failure carried.
  *   - a duplicate of an already-contributed candidate within the same channel is
  *     a CONTRACT VIOLATION → hard error (FUSION_DUPLICATE_IN_CHANNEL): "keep the
  *     first / reject the second" would make scores depend on item array order
@@ -101,6 +108,27 @@ function safeFormat(value) {
  */
 function isValidFailureIdentity(failure) {
   return isPlainObject(failure) && isNonEmptyString(failure.code) && isNonEmptyString(failure.class);
+}
+
+/**
+ * P1-1 CANONICAL safe failure projection (shared with retrieval.mjs): reduce a
+ * provider failure to its machine-readable identity fields ONLY ({ code, class }
+ * — T05 seam P2-1 shape). Raw detail / provider_error_type / arbitrary payloads
+ * — including path-bearing, credential-shaped, or non-JSON-safe (BigInt /
+ * cyclic) metadata — are dropped at the T06 boundary so no raw diagnostic can
+ * reach failure output, the pool artifact, or the serialization guard. Absent
+ * failure → { ok:true, failure:null }; a PRESENT failure that is not a
+ * shape-valid { code, class } identity → { ok:false } (contract violation).
+ * This is the one projection used for BOTH top-level channel failure identities
+ * (retrieval.mjs) AND per-item rejected failure identities (rrf.mjs), so every
+ * persisted failure has the exact same safe shape.
+ */
+export function projectFailure(failure) {
+  if (failure === undefined || failure === null) return { ok: true, failure: null };
+  if (!isPlainObject(failure) || !isNonEmptyString(failure.code) || !isNonEmptyString(failure.class)) {
+    return { ok: false };
+  }
+  return { ok: true, failure: { code: failure.code, class: failure.class } };
 }
 
 /** Canonical channel key: [query, providerId, capability] — exact §5.4 identity triple. */
@@ -215,12 +243,25 @@ export function rrfFusion(rankings) {
         }
         // Items already carrying a provider failure are never fused (T05 P2-1):
         // they surface in `rejected` with their machine-readable identity.
+        // P1-1: project through the canonical projectFailure() so the rejected
+        // entry retains `{ code, class }` ONLY — any raw detail / stderr /
+        // path-bearing / credential-shaped payload the upstream failure carried
+        // is dropped here, matching the top-level channel-record projection.
+        // isValidFailureIdentity above guarantees the projection succeeds.
+        const projected = projectFailure(item.failure);
+        if (!projected.ok) {
+          // Unreachable after the shape gate — fail closed rather than emit an
+          // undefined projection (nothing half-fused).
+          const err = new Error(`per-item failure identity could not be safely projected in channel ${safeFormat(ranking.channel)}`);
+          err.code = FUSION_ERROR_FAILURE_IDENTITY_INVALID;
+          throw err;
+        }
         rejected.push({
           channel: ranking.channel,
           identity: item.identity ?? null,
           rank: item.provenance?.rank ?? null,
           route: item.provenance?.route ?? null,
-          failure: item.failure,
+          failure: projected.failure,
         });
         continue;
       }

@@ -21,6 +21,11 @@
  *     (item-order-independence contract, P1-4);
  *   - items carrying a per-item provider failure are rejected (not fused) with
  *     their failure identity preserved and channel provenance recorded;
+ *   - per-item failure identity is projected through the SAME canonical
+ *     projectFailure() as top-level channel records: `rejected` entries carry
+ *     `failure: { code, class }` ONLY — raw detail / stderr / path-bearing /
+ *     credential-shaped diagnostics are dropped at the boundary (P1-1, review
+ *     5076691874);
  *   - rejected observations are canonicalized by stable keys — channel/item
  *     order permutations yield an identical rejected list (P1-5);
  *   - malformed rank values that are NOT JSON-safe (BigInt / cyclic) still throw
@@ -472,4 +477,47 @@ test('E8: malformed rank values that are NOT JSON-safe (BigInt / cyclic) still t
     (err) => err.code === FUSION_ERROR_CHANNEL_IDENTITY_INVALID,
     'malformed cyclic channel identity must throw CHANNEL_IDENTITY_INVALID (safe formatting)',
   );
+});
+
+test('E9: per-item failure carrying machine-private diagnostics is projected to { code, class } ONLY in `rejected` — raw detail / stderr / credential-shaped / non-JSON-safe payload never survives (P1-1, review 5076691874)', () => {
+  const SECRET_PATH = 'C:\\Users\\victim\\secret\\boundary-cache.json';
+  const CREDISH = 'z_c0=someSecretCookieValue';
+  const cyclicDetail = {};
+  cyclicDetail.self = cyclicDetail;
+  const fused = rrfFusion([
+    {
+      channel: channel('q1', 'fixture-a'),
+      items: [
+        { identity: { kind: 'candidate', questionId: '10' }, provenance: { route: 'fixture', rank: 1 }, source_url: null, facts: {} },
+        {
+          identity: { kind: 'candidate', questionId: '99' },
+          provenance: { route: 'fixture', rank: 2 },
+          source_url: null,
+          facts: {},
+          failure: {
+            code: 'SOURCE_URL_BOUNDARY_REJECTED',
+            class: 'boundary',
+            detail: SECRET_PATH,
+            stderr: CREDISH,
+            provider_error_type: 'http_403',
+            nested: cyclicDetail,
+            counter: 10n,
+          },
+        },
+      ],
+    },
+  ]);
+  assert.deepEqual(candidateIds(fused), ['10'], 'the failed item is never fused');
+  assert.equal(fused.rejected.length, 1);
+  assert.deepEqual(
+    fused.rejected[0].failure,
+    { code: 'SOURCE_URL_BOUNDARY_REJECTED', class: 'boundary' },
+    'the same canonical projection as top-level channel records — { code, class } ONLY, even when the upstream failure carried extra diagnostics',
+  );
+  assert.equal(fused.rejected[0].channel.providerId, 'fixture-a');
+  assert.equal(fused.rejected[0].identity.questionId, '99');
+  const serialized = JSON.stringify(fused);
+  assert.ok(!serialized.includes(SECRET_PATH), 'path-bearing detail must never survive into `rejected` (RULES §11)');
+  assert.ok(!serialized.includes(CREDISH), 'credential-shaped diagnostics must never survive into `rejected`');
+  assert.ok(!serialized.includes('provider_error_type') && !serialized.includes('http_403'), 'arbitrary payload fields are dropped');
 });

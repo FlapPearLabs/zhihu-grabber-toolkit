@@ -18,6 +18,18 @@
  *   - P1-1 safe projection counterexamples: failure detail carrying private
  *     paths / BigInt / cyclic metadata is projected to { code, class } only — in
  *     mixed-success AND all-failed runs — and never reaches output or the pool;
+ *   - P1-1 per-item projection (review 5076691874): a successful provider result
+ *     with a rejected item whose failure embeds machine-private diagnostics →
+ *     pool.rejected retains the allowed safe machine identity { code, class }
+ *     ONLY;
+ *   - P1-2 completeness evidence boundary (review 5076691874): ok AND failed
+ *     channel completeness evidence embedding machine-private paths /
+ *     credential-shaped diagnostics → FAIL CLOSED
+ *     (retrieval_provider_contract_invalid), no artifact, no leak; safe
+ *     evidence is preserved as-is (status + evidence, never bare-dropped);
+ *   - P2 registry guard (review 5076691874): throwing / non-array / malformed
+ *     seam.listProviders() → stable retrieval_provider_contract_invalid before
+ *     any provider retrieval IO — no raw throw, no registry payload echo;
  *   - P1-2: contradictory ok:true + top-level failure → FAIL CLOSED
  *     (retrieval_provider_contract_invalid), never fused;
  *   - P1-3: malformed caller-supplied planHash (path/credential-shaped) → FAIL
@@ -63,6 +75,7 @@ import {
   AUTH_CLASS_SESSION,
   COMPLETENESS_UNKNOWN,
   COMPLETENESS_COMPLETE,
+  COMPLETENESS_PARTIAL,
   SEAM_ERROR_UNKNOWN_PROVIDER_CONTRACT,
   createProviderSeam,
 } from '../lib/provider-seam.mjs';
@@ -913,4 +926,176 @@ test('G3: malformed channels/descriptors carrying machine-private-looking values
     assert.ok(!serialized.includes(SECRET_PATH), `raw malformed channel/descriptor value must never be echoed (${reason})`);
   }
   assert.equal(search.__calls(), 0, 'zero provider IO for all malformed channel inputs (fail closed before execution)');
+});
+
+// ---------------------------------------------------------------------------
+// H. review 5076691874 repairs — per-item projection / completeness boundary / registry guard
+// ---------------------------------------------------------------------------
+
+test('H1: ok channel — completeness evidence embedding a machine-private path → FAIL CLOSED (retrieval_provider_contract_invalid); no artifact, no leak (P1-2 review 5076691874)', () => {
+  const SECRET_PATH = 'C:\\Users\\victim\\secret\\official-search-cache.json';
+  const unsafeOk = fixtureSearchAdapter('fixture-a', (input) => ({
+    ...searchResult('fixture-a', [['100', 1]], { query: input.query }),
+    completeness: { status: COMPLETENESS_UNKNOWN, evidence: { reason: SECRET_PATH } },
+  }));
+  const seam = createProviderSeam({ adapters: [unsafeOk] });
+  const workDir = tmpWorkDir();
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir });
+
+  assert.equal(run.ok, false, 'unsafe completeness evidence must fail closed — never bare-stored into the pool');
+  assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+  assert.equal(run.details.reason, 'provider_contract_violation');
+  assert.equal(run.details.completenessIssue, 'completeness_evidence_unsafe', 'stable completeness issue identity');
+  const serialized = JSON.stringify(run);
+  assert.ok(!serialized.includes(SECRET_PATH), 'machine-private path must never reach failure output (RULES §11)');
+  assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact when completeness evidence is unsafe');
+});
+
+test('H2: failed channel — completeness evidence embedding a credential-shaped diagnostic → FAIL CLOSED (retrieval_provider_contract_invalid); never persists the credential shape (P1-2 review 5076691874)', () => {
+  const CREDISH = 'z_c0=someSecretCookieValue';
+  const unsafeFail = fixtureSearchAdapter('fixture-a', () => ({
+    ok: false,
+    provider_id: 'fixture-a',
+    capability: CAPABILITY_SEARCH,
+    auth_class: AUTH_CLASS_OFFICIAL_SECRET,
+    retrieved_at: FIXED_NOW(),
+    items: [],
+    failure: { code: 'PROVIDER_REPORTED_FAILURE', class: 'provider' },
+    completeness: { status: COMPLETENESS_UNKNOWN, evidence: { reason: CREDISH } },
+  }));
+  const seam = createProviderSeam({ adapters: [unsafeFail] });
+  const workDir = tmpWorkDir();
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir });
+
+  assert.equal(run.ok, false, 'unsafe completeness evidence on a failed channel must fail closed too — completeness semantics are never silently dropped');
+  assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+  assert.equal(run.details.completenessIssue, 'completeness_evidence_unsafe');
+  const serialized = JSON.stringify(run);
+  assert.ok(!serialized.includes(CREDISH), 'credential-shaped diagnostic must never reach output or the pool');
+  assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact written');
+});
+
+test('H3: safe completeness evidence is preserved as-is on ok AND failed channel records — status + evidence deepEqual (P1-2 control)', () => {
+  const okA = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1]], { query: input.query }));
+  const failingB = fixtureSearchAdapter('fixture-b', () => ({
+    ok: false,
+    provider_id: 'fixture-b',
+    capability: CAPABILITY_SEARCH,
+    auth_class: AUTH_CLASS_OFFICIAL_SECRET,
+    retrieved_at: FIXED_NOW(),
+    items: [],
+    failure: { code: 'PROVIDER_REPORTED_FAILURE', class: 'provider' },
+    completeness: { status: COMPLETENESS_PARTIAL, evidence: { basis: 'fixture', reason: 'pagination_signal_lost' } },
+  }));
+  const seam = createProviderSeam({ adapters: [okA, failingB] });
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, channels: [{ providerId: 'fixture-a' }, { providerId: 'fixture-b' }], workDir: tmpWorkDir() });
+  assert.equal(run.ok, true);
+
+  const okRec = run.pool.channels.find((c) => c.channel.providerId === 'fixture-a');
+  assert.deepEqual(
+    okRec.completeness,
+    { status: COMPLETENESS_UNKNOWN, evidence: { signal: 'absent', reason: 'fixture_no_pagination_signal' } },
+    'safe ok-channel evidence preserved verbatim',
+  );
+  const failedRec = run.pool.channels.find((c) => c.channel.providerId === 'fixture-b');
+  assert.deepEqual(
+    failedRec.completeness,
+    { status: COMPLETENESS_PARTIAL, evidence: { basis: 'fixture', reason: 'pagination_signal_lost' } },
+    'safe failed-channel evidence preserved verbatim',
+  );
+  assert.deepEqual(failedRec.failure, { code: 'PROVIDER_REPORTED_FAILURE', class: 'provider' });
+});
+
+test('H4: successful provider result with a rejected item whose failure embeds machine-private diagnostics → pool.rejected retains { code, class } ONLY (P1-1 review 5076691874)', () => {
+  const SECRET_PATH = 'C:\\Users\\victim\\secret\\boundary-reject.json';
+  const CREDISH = 'z_c0=someSecretCookieValue';
+  const withUnsafeItemFailure = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [
+    ['100', 1],
+    ['99', 2, { failure: { code: 'SOURCE_URL_BOUNDARY_REJECTED', class: 'boundary', detail: SECRET_PATH, stderr: CREDISH } }],
+  ], { query: input.query }));
+  const seam = createProviderSeam({ adapters: [withUnsafeItemFailure] });
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir: tmpWorkDir() });
+
+  assert.equal(run.ok, true, 'the run stays valid — the rejected observation is projected, not fatal');
+  assert.deepEqual(candidateIds(run.pool), ['100'], 'the rejected item is never fused');
+  assert.equal(run.pool.rejected.length, 1);
+  assert.deepEqual(
+    run.pool.rejected[0].failure,
+    { code: 'SOURCE_URL_BOUNDARY_REJECTED', class: 'boundary' },
+    'pool.rejected only retains the allowed safe machine identity { code, class }',
+  );
+  const serialized = JSON.stringify(run.pool);
+  assert.ok(!serialized.includes(SECRET_PATH), 'path-bearing diagnostic must never reach the persisted pool');
+  assert.ok(!serialized.includes(CREDISH), 'credential-shaped diagnostic must never reach the persisted pool');
+});
+
+test('H5: throwing seam.listProviders() → FAIL CLOSED (retrieval_provider_contract_invalid); no raw throw, no provider retrieval IO (P2 review 5076691874)', () => {
+  const THROW_MSG = 'registry exploded: ENOENT secret/cache.json';
+  let retrieveCalls = 0;
+  const seam = {
+    listProviders() {
+      throw new Error(THROW_MSG);
+    },
+    retrieve() {
+      retrieveCalls += 1;
+      return searchResult('fixture-a', [['100', 1]]);
+    },
+  };
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir: tmpWorkDir() });
+
+  assert.equal(run.ok, false, 'a throwing registry inspection must never produce a raw throw');
+  assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+  assert.equal(run.details.reason, 'provider_contract_violation');
+  assert.equal(run.details.registryIssue, 'inspection_threw', 'stable registry issue identity');
+  assert.equal(retrieveCalls, 0, 'no provider retrieval IO after a throwing registry inspection');
+  const serialized = JSON.stringify(run);
+  assert.ok(!serialized.includes(THROW_MSG), 'raw registry-inspection error must never be echoed');
+});
+
+test('H6: malformed non-array registry (object / null / string) → FAIL CLOSED (retrieval_provider_contract_invalid); no provider retrieval IO (P2 review 5076691874)', () => {
+  for (const [label, registry] of [['object', { a: 1 }], ['null', null], ['string', 'not-a-registry']]) {
+    let retrieveCalls = 0;
+    const seam = {
+      listProviders() {
+        return registry;
+      },
+      retrieve() {
+        retrieveCalls += 1;
+        return searchResult('fixture-a', [['100', 1]]);
+      },
+    };
+    const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir: tmpWorkDir() });
+    assert.equal(run.ok, false, `${label} registry must fail closed, never a raw throw`);
+    assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, label);
+    assert.equal(run.details.registryIssue, 'not_an_array', label);
+    assert.equal(retrieveCalls, 0, `${label}: no provider retrieval IO`);
+  }
+});
+
+test('H7: malformed registry entries (null / non-object / missing or non-string identity fields) → FAIL CLOSED (retrieval_provider_contract_invalid); no provider retrieval IO (P2 review 5076691874)', () => {
+  const malformedRegistries = [
+    [null],
+    [42],
+    [{ providerId: 'fixture-a' }], // capability missing
+    [{ capability: CAPABILITY_SEARCH }], // providerId missing
+    [{ providerId: 'fixture-a', capability: 7 }], // non-string capability
+    [{ providerId: '', capability: CAPABILITY_SEARCH }], // empty providerId
+  ];
+  for (const registry of malformedRegistries) {
+    let retrieveCalls = 0;
+    const seam = {
+      listProviders() {
+        return registry;
+      },
+      retrieve() {
+        retrieveCalls += 1;
+        return searchResult('fixture-a', [['100', 1]]);
+      },
+    };
+    const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir: tmpWorkDir() });
+    assert.equal(run.ok, false, `registry ${JSON.stringify(registry)} must fail closed, never a raw throw`);
+    assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+    assert.equal(run.details.registryIssue, 'malformed_entry');
+    assert.equal(retrieveCalls, 0, 'no provider retrieval IO for a malformed registry');
+  }
 });

@@ -36,6 +36,22 @@
  *     { code, class } identity at the T06 boundary; raw detail / path-bearing /
  *     non-JSON-safe (BigInt/cyclic) payloads never reach output, the pool
  *     artifact, or serialization — including the all-failed early return (P1-1);
+ *   - per-item rejected failure identities are projected through the SAME
+ *     canonical projectFailure() as top-level channel failure identities —
+ *     pool.rejected entries carry `failure: { code, class }` ONLY, never raw
+ *     detail / stderr / arbitrary metadata / path-bearing / credential-shaped
+ *     diagnostics (P1-1, review 5076691874);
+ *   - completeness evidence crosses a deterministic T06 persistence boundary
+ *     (P1-2, review 5076691874): the required completeness status is always
+ *     preserved; evidence is persisted ONLY when it is mechanically safe
+ *     (JSON-safe, depth/length-bounded, free of machine-private path /
+ *     credential-shaped strings); evidence that cannot safely enter the
+ *     persisted artifact FAILS CLOSED (retrieval_provider_contract_invalid) —
+ *     never bare-stored, never silently dropped;
+ *   - seam.listProviders() is GUARDED (P2, review 5076691874): a throwing
+ *     registry inspection, a malformed non-array registry, or malformed
+ *     registry entries return a stable retrieval_provider_contract_invalid
+ *     BEFORE any provider IO — no raw throw, no provider retrieval;
  *   - a caller-supplied planHash must match the plan-contract 64-lowercase-hex
  *     format; a malformed value fails closed and is NEVER echoed back (P1-3);
  *   - rejected observations are canonicalized by stable keys before persisting
@@ -60,7 +76,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { CAPABILITY_SEARCH } from './provider-seam.mjs';
+import { CAPABILITY_SEARCH, COMPLETENESS_STATES } from './provider-seam.mjs';
 import {
   SEAM_ERROR_UNSUPPORTED_CAPABILITY,
   SEAM_ERROR_NO_SILENT_PROVIDER_FALLBACK,
@@ -73,6 +89,7 @@ import {
   RRF_K,
   RRF_RANK_SOURCE,
   RRF_TIE_BREAK,
+  projectFailure,
   rrfFusion,
 } from './rrf.mjs';
 
@@ -119,21 +136,145 @@ function failure(reason, details = null) {
 }
 
 /**
- * P1-1 safe projection: reduce a provider failure to its machine-readable
- * identity fields ONLY ({ code, class } — T05 seam P2-1 shape). Raw detail /
- * provider_error_type / arbitrary payloads — including path-bearing or
- * non-JSON-safe (BigInt / cyclic) metadata — are dropped at the T06 boundary so
- * no raw diagnostic can reach failure output, the pool artifact, or the
- * serialization guard. Absent failure → { ok:true, failure:null }; a PRESENT
- * failure that is not a shape-valid { code, class } identity → { ok:false }
- * (contract violation, mirroring the rrf per-item rule).
+ * P1-2 T06 completeness-evidence boundary helpers.
+ *
+ * The seam guarantees completeness is a { status, evidence } plain object whose
+ * status is a known state and whose evidence is a plain object — but evidence
+ * CONTENT is provider-controlled and may embed JSON-safe machine-private paths
+ * or credential-shaped strings (RULES §11 path-redaction). Bare-storing
+ * result.completeness would let those diagnostics enter the persisted pool, so
+ * evidence must cross a deterministic safety projection: preserve it ONLY when
+ * it is mechanically safe, otherwise FAIL CLOSED — never silently drop the
+ * contract-required completeness semantics, never let the unsafe diagnostic
+ * reach the returned/persisted artifact.
+ *
+ * The two shape guards reuse the repo's established machine-private vocabulary
+ * (plan-contract.mjs CREDENTIAL_SHAPE / PRIVATE_PATH_SHAPE): credential
+ * field/assignment shapes (incl. the z_c0 auth cookie) and user-machine-private
+ * filesystem paths (POSIX /Users|/home, home-relative ~, Windows profile
+ * roots). System paths like /etc/hosts and plain URLs are NOT machine-private.
  */
-function projectFailure(failure) {
-  if (failure === undefined || failure === null) return { ok: true, failure: null };
-  if (!isPlainObject(failure) || !isNonEmptyString(failure.code) || !isNonEmptyString(failure.class)) {
-    return { ok: false };
+const CREDENTIAL_SHAPE =
+  /(?:z_c0\s*=|(?:password|passwd|secret|token|api[_-]?key|access[_-]?key|authorization|cookie|session[_-]?id)\s*[:=])/i;
+const PRIVATE_PATH_SHAPE =
+  /(?:\/Users\/|\/home\/|[A-Za-z]:[\\/](?:Users|Documents and Settings)[\\/]|(?:^|[\s"'<>\u2018\u2019\u201c\u201d])~[/\w.-])/;
+
+/** Mechanical bounds for evidence that can safely enter the persisted pool. */
+const EVIDENCE_MAX_DEPTH = 8;
+const EVIDENCE_MAX_STRING_LENGTH = 500;
+
+function isSafeEvidenceString(value) {
+  return value.length <= EVIDENCE_MAX_STRING_LENGTH
+    && !CREDENTIAL_SHAPE.test(value)
+    && !PRIVATE_PATH_SHAPE.test(value);
+}
+
+/**
+ * Recursively validate + deep-copy one evidence node. Every string value (and
+ * every object key) must be bounded and free of machine-private path /
+ * credential-shaped content; numbers must be finite; BigInt / cyclic /
+ * over-deep structures fail closed. Returns { ok:true, value } (a fully safe
+ * deep copy) or { ok:false }.
+ */
+function safeEvidenceValue(value, depth = 0, ancestors = new Set()) {
+  if (depth > EVIDENCE_MAX_DEPTH) return { ok: false };
+  if (value === null) return { ok: true, value: null };
+  if (typeof value === 'string') return isSafeEvidenceString(value) ? { ok: true, value } : { ok: false };
+  if (typeof value === 'number') return Number.isFinite(value) ? { ok: true, value } : { ok: false };
+  if (typeof value === 'boolean') return { ok: true, value };
+  if (typeof value === 'bigint') return { ok: false };
+  if (typeof value === 'object') {
+    if (ancestors.has(value)) return { ok: false }; // cyclic reference
+    ancestors.add(value);
+    if (Array.isArray(value)) {
+      const out = [];
+      for (const element of value) {
+        const safe = safeEvidenceValue(element, depth + 1, ancestors);
+        if (!safe.ok) {
+          ancestors.delete(value);
+          return { ok: false };
+        }
+        out.push(safe.value);
+      }
+      ancestors.delete(value);
+      return { ok: true, value: out };
+    }
+    const out = {};
+    for (const [key, entry] of Object.entries(value)) {
+      if (!isSafeEvidenceString(key)) {
+        ancestors.delete(value);
+        return { ok: false };
+      }
+      const safe = safeEvidenceValue(entry, depth + 1, ancestors);
+      if (!safe.ok) {
+        ancestors.delete(value);
+        return { ok: false };
+      }
+      out[key] = safe.value;
+    }
+    ancestors.delete(value);
+    return { ok: true, value: out };
   }
-  return { ok: true, failure: { code: failure.code, class: failure.class } };
+  return { ok: false }; // undefined / function / symbol
+}
+
+/**
+ * P1-2 deterministic T06 persistence boundary for provider completeness:
+ * preserve the required status; preserve evidence ONLY when mechanically safe;
+ * fail closed (with a stable reason) when the required semantics cannot safely
+ * enter the persisted artifact. Returns
+ * { ok:true, completeness: { status, evidence } } or { ok:false, reason }.
+ */
+function projectCompleteness(completeness) {
+  if (!isPlainObject(completeness)) return { ok: false, reason: 'completeness_missing' };
+  if (!COMPLETENESS_STATES.includes(completeness.status)) {
+    return { ok: false, reason: 'completeness_status_invalid' };
+  }
+  const evidence = completeness.evidence;
+  if (!isPlainObject(evidence)) return { ok: false, reason: 'completeness_evidence_missing' };
+  const safe = safeEvidenceValue(evidence);
+  if (!safe.ok) return { ok: false, reason: 'completeness_evidence_unsafe' };
+  return { ok: true, completeness: { status: completeness.status, evidence: safe.value } };
+}
+
+/**
+ * P2 (review 5076691874) — guarded provider-registry inspection. The registry
+ * is a seam-controlled boundary: a throwing listProviders(), a malformed
+ * non-array registry, or malformed registry entries must never produce a raw
+ * throw or reach provider retrieval IO — they return a stable
+ * retrieval_provider_contract_invalid with a stable issue identity (no raw
+ * err.message / payload echo). Only shape-valid entries ({ providerId,
+ * capability } as non-empty strings — the fields this module consumes) proceed.
+ * Throws nothing; returns { ok:true, registered } or { ok:false, reason, details }.
+ */
+function safeListProviders(seam) {
+  let registered;
+  try {
+    registered = seam.listProviders();
+  } catch {
+    return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
+      reason: 'provider_contract_violation',
+      registryIssue: 'inspection_threw',
+      note: 'provider registry inspection threw; no provider IO was performed',
+    });
+  }
+  if (!Array.isArray(registered)) {
+    return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
+      reason: 'provider_contract_violation',
+      registryIssue: 'not_an_array',
+      note: 'provider registry must be an array of { providerId, capability } entries; no provider IO was performed',
+    });
+  }
+  for (const entry of registered) {
+    if (!isPlainObject(entry) || !isNonEmptyString(entry.providerId) || !isNonEmptyString(entry.capability)) {
+      return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
+        reason: 'provider_contract_violation',
+        registryIssue: 'malformed_entry',
+        note: 'provider registry entry must be { providerId, capability } with non-empty string values; no provider IO was performed',
+      });
+    }
+  }
+  return { ok: true, registered };
 }
 
 /**
@@ -147,6 +288,8 @@ function projectFailure(failure) {
  *     (retrieval_invalid_input) before any provider introspection/IO — a
  *     malformed explicit value is never treated as "no explicit channels"
  *     (P1-1);
+ *   - registry inspection is GUARDED (P2): throwing / non-array / malformed
+ *     registry → retrieval_provider_contract_invalid before any provider IO;
  *   - explicit descriptors: { providerId, capability? } — capability must be
  *     `search` (retrieval-ranked only); providerId must be registered for the
  *     search capability; duplicates fail closed.
@@ -162,7 +305,9 @@ function resolveChannels(seam, channels) {
     });
   }
 
-  const registered = seam.listProviders();
+  const registeredResult = safeListProviders(seam);
+  if (!registeredResult.ok) return registeredResult;
+  const registered = registeredResult.registered;
   const searchProviders = registered
     .filter((e) => e.capability === CAPABILITY_SEARCH)
     .map((e) => e.providerId);
@@ -318,13 +463,26 @@ export function runMultiQueryRetrieval(opts = {}) {
             note: 'ok:true result must not carry a top-level failure identity',
           });
         }
+        // P1-2 (review 5076691874): completeness evidence crosses the T06
+        // persistence boundary BEFORE it can reach the pool — required status
+        // preserved, evidence preserved only when mechanically safe, unsafe
+        // evidence fails closed (never bare-stored, never silently dropped).
+        const projectedCompleteness = projectCompleteness(result.completeness);
+        if (!projectedCompleteness.ok) {
+          return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
+            channel,
+            reason: 'provider_contract_violation',
+            note: 'completeness evidence cannot safely enter the persisted pool (P1-2)',
+            completenessIssue: projectedCompleteness.reason,
+          });
+        }
         channelRecords.push({
           channel,
           ok: true,
           auth_class: result.auth_class, // P2-3: adapter-bound provenance (§5.1)
           itemCount: Array.isArray(result.items) ? result.items.length : 0,
           retrievedAt: result.retrieved_at,
-          completeness: result.completeness,
+          completeness: projectedCompleteness.completeness,
         });
         rankings.push({ channel, items: result.items });
       } else {
@@ -341,12 +499,23 @@ export function runMultiQueryRetrieval(opts = {}) {
             note: 'provider failure identity malformed (needs machine-readable { code, class })',
           });
         }
+        // P1-2: same completeness persistence boundary as the ok path — the
+        // failed-channel record must not bare-store unsafe provider evidence.
+        const projectedCompleteness = projectCompleteness(result.completeness);
+        if (!projectedCompleteness.ok) {
+          return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
+            channel,
+            reason: 'provider_contract_violation',
+            note: 'completeness evidence cannot safely enter the persisted pool (P1-2)',
+            completenessIssue: projectedCompleteness.reason,
+          });
+        }
         channelRecords.push({
           channel,
           ok: false,
           auth_class: result.auth_class, // P2-3: adapter-bound provenance (§5.1)
           retrievedAt: result.retrieved_at,
-          completeness: result.completeness,
+          completeness: projectedCompleteness.completeness,
           failure: projected.failure,
         });
       }
