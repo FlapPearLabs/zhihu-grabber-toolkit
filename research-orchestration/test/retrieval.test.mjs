@@ -90,7 +90,7 @@ function tmpWorkDir(prefix = 'retrieval-t06') {
 
 /**
  * §5.1-shape fixture result for a search-capability adapter.
- * entries: [questionId, rank, extra?] — extra may carry { failure, source_url, facts, provenance }.
+ * entries: [questionId, rank, extra?] — extra may carry { failure, source_url, facts, provenance, kind }.
  */
 function searchResult(providerId, entries, { ok = true, failure = null, query = 'q' } = {}) {
   const result = {
@@ -100,7 +100,7 @@ function searchResult(providerId, entries, { ok = true, failure = null, query = 
     auth_class: AUTH_CLASS_OFFICIAL_SECRET,
     retrieved_at: FIXED_NOW(),
     items: entries.map(([questionId, rank, extra = {}]) => ({
-      identity: { kind: 'candidate', questionId },
+      identity: { kind: extra.kind ?? 'candidate', questionId },
       provenance: { route: 'fixture', rank, rankOrigin: 'fixture_order', ...(extra.provenance ?? {}) },
       source_url: extra.source_url ?? null,
       facts: extra.facts ?? {},
@@ -341,6 +341,40 @@ test('C1: pool records full channel provenance (query + provider + capability) o
   assert.deepEqual(run.pool.candidates[0].ranks[0].channel, expectedTriple);
 });
 
+test('C2: retrieval route (provenance.route) survives into the persisted pool ranks (retrieval-pool.json) — P1-2', () => {
+  const seam = createProviderSeam({
+    adapters: [
+      fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1, { provenance: { route: 'zhihu-answer-grabber:search', rankOrigin: 'official_order' } }]], { query: input.query })),
+    ],
+  });
+  const workDir = tmpWorkDir();
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir });
+  assert.equal(run.ok, true);
+  const rank = run.pool.candidates[0].ranks[0];
+  assert.equal(rank.route, 'zhihu-answer-grabber:search', 'route captured from provenance.route');
+  assert.equal(rank.rankOrigin, 'official_order');
+  const onDisk = JSON.parse(fs.readFileSync(path.join(workDir, RETRIEVAL_POOL_FILENAME), 'utf8'));
+  assert.equal(onDisk.candidates[0].ranks[0].route, 'zhihu-answer-grabber:search', 'route persisted in retrieval-pool.json');
+});
+
+test('C3: fused candidate identity is canonical (kind="candidate") and permutation-invariant when channels return differing kinds — P1-3', () => {
+  const build = (descriptors) => {
+    const seam = createProviderSeam({
+      adapters: [
+        fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1, { kind: 'candidate' }]], { query: input.query })),
+        fixtureSearchAdapter('fixture-b', (input) => searchResult('fixture-b', [['100', 2, { kind: 'source-group' }]], { query: input.query })),
+      ],
+    });
+    return runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, channels: descriptors, workDir: tmpWorkDir() });
+  };
+  const r1 = build([{ providerId: 'fixture-a' }, { providerId: 'fixture-b' }]);
+  const r2 = build([{ providerId: 'fixture-b' }, { providerId: 'fixture-a' }]);
+  assert.equal(r1.ok && r2.ok, true);
+  assert.deepEqual(r1.pool.candidates, r2.pool.candidates, 'permuted channel descriptor order → identical fused candidates');
+  assert.equal(r1.pool.candidates[0].identity.kind, 'candidate', 'canonical T06 candidate kind, not "first encountered"');
+  assert.equal(r1.pool.candidates[0].identity.questionId, '100');
+});
+
 // ---------------------------------------------------------------------------
 // D. provider failure propagation / fail-closed semantics
 // ---------------------------------------------------------------------------
@@ -544,6 +578,26 @@ test('F5: missing/invalid module inputs → FAIL CLOSED (retrieval_invalid_input
     assert.equal(run.ok, false, JSON.stringify(Object.keys(args)));
     assert.equal(run.reason, RETRIEVAL_FAILURE_INVALID_INPUT);
   }
+});
+
+test('F7: top-level malformed channels (object/null/string/number) → FAIL CLOSED (retrieval_invalid_input) BEFORE any provider call — P1-1', () => {
+  const search = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1]], { query: input.query }));
+  const seam = createProviderSeam({ adapters: [search] });
+  for (const channels of [{ providerId: 'ghost' }, null, 'zhihu-official-search', 42]) {
+    const run = runMultiQueryRetrieval({ plan: PLAN, seam, channels, workDir: tmpWorkDir() });
+    assert.equal(run.ok, false, `channels: ${JSON.stringify(channels)}`);
+    assert.equal(run.reason, RETRIEVAL_FAILURE_INVALID_INPUT, `channels: ${JSON.stringify(channels)}`);
+  }
+  assert.equal(search.__calls(), 0, 'zero provider retrieve calls for top-level malformed channels (fail-closed before any IO)');
+});
+
+test('F8: empty channels array is legal (omitted-equivalent) and routes the unambiguous single search provider — P1-1', () => {
+  const search = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1]], { query: input.query }));
+  const seam = createProviderSeam({ adapters: [search] });
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, channels: [], workDir: tmpWorkDir() });
+  assert.equal(run.ok, true);
+  assert.deepEqual(run.pool.channels.map((c) => c.channel.providerId), ['fixture-a']);
+  assert.equal(search.__calls(), 1, 'single unambiguous provider routed exactly once');
 });
 
 test('F6: pool criteria documents the RRF contract (k / rank source / tie break / single pass)', () => {

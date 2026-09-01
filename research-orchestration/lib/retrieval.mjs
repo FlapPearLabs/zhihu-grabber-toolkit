@@ -27,6 +27,9 @@
  *   - malformed provider result (seam UNKNOWN_PROVIDER_CONTRACT / fused-item
  *     rank/identity contract violation) → FAIL CLOSED
  *     (retrieval_provider_contract_invalid);
+ *   - malformed top-level `channels` (non-array) → FAIL CLOSED
+ *     (retrieval_invalid_input) BEFORE any provider IO — only omitted/empty may
+ *     trigger the unambiguous single-provider default (P1-1);
  *   - Session capture wrapper is NOT a retrieval-ranked channel: only
  *     capability=search channels can ever be executed here, and a channel
  *     descriptor naming any other capability fails closed;
@@ -83,22 +86,34 @@ function failure(reason, details = null) {
 
 /**
  * Resolve the deterministic channel set BEFORE any provider IO:
+ *   - `channels` omitted/empty array: the only legal default is a seam with
+ *     EXACTLY ONE registered search provider (unambiguous); zero →
+ *     no_valid_channel; many → no_valid_channel (D-2 routing stays OPEN — the
+ *     controller must disambiguate explicitly; NO_SILENT_PROVIDER_FALLBACK,
+ *     never guess);
+ *   - `channels` a malformed non-array (object/null/string/…) → FAIL CLOSED
+ *     (retrieval_invalid_input) before any provider introspection/IO — a
+ *     malformed explicit value is never treated as "no explicit channels"
+ *     (P1-1);
  *   - explicit descriptors: { providerId, capability? } — capability must be
  *     `search` (retrieval-ranked only); providerId must be registered for the
- *     search capability; duplicates fail closed;
- *   - empty descriptors: the only legal default is a seam with EXACTLY ONE
- *     registered search provider (unambiguous); zero → no_valid_channel;
- *     many → no_valid_channel (D-2 routing stays OPEN — the controller must
- *     disambiguate explicitly; NO_SILENT_PROVIDER_FALLBACK, never guess).
+ *     search capability; duplicates fail closed.
  * Throws nothing; returns { ok:true, providers } or { ok:false, reason, details }.
  */
 function resolveChannels(seam, channels) {
+  if (channels !== undefined && !Array.isArray(channels)) {
+    return failure(RETRIEVAL_FAILURE_INVALID_INPUT, {
+      reason: 'channels must be an array of { providerId, capability? } descriptors, or omitted/empty for the unambiguous single-provider default',
+      channels,
+    });
+  }
+
   const registered = seam.listProviders();
   const searchProviders = registered
     .filter((e) => e.capability === CAPABILITY_SEARCH)
     .map((e) => e.providerId);
 
-  if (!Array.isArray(channels) || channels.length === 0) {
+  if (channels === undefined || channels.length === 0) {
     if (searchProviders.length === 0) {
       return failure(RETRIEVAL_FAILURE_NO_VALID_CHANNEL, {
         reason: 'no_search_channels_registered',
@@ -156,8 +171,10 @@ function resolveChannels(seam, channels) {
  * @param {object} opts.seam        provider seam (createProviderSeam result);
  *                                  only capability=search channels are used
  * @param {Array}  [opts.channels]  explicit channel descriptors
- *                                  [{ providerId, capability? }]; default = the
- *                                  seam's single unambiguous search provider
+ *                                  [{ providerId, capability? }]; omitted/empty =
+ *                                  the seam's single unambiguous search provider;
+ *                                  a malformed non-array fails closed
+ *                                  (retrieval_invalid_input) before any IO
  * @param {string} opts.workDir     work directory for the pool artifact
  * @returns {object} { ok:true, pool, poolHash, file } | { ok:false, reason, details? }
  */

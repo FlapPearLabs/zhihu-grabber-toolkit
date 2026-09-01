@@ -50,12 +50,13 @@ function channel(query, providerId, capability = 'search') {
 /**
  * Build a ranking in the exact provider-result item shape consumed by fusion:
  * items carry identity.questionId + provenance.rank (+ optional rankOrigin).
+ * extra.kind overrides the default item identity kind ('candidate').
  */
 function ranking(query, providerId, entries, { capability = 'search' } = {}) {
   return {
     channel: channel(query, providerId, capability),
     items: entries.map(([questionId, rank, extra = {}]) => ({
-      identity: { kind: 'candidate', questionId },
+      identity: { kind: extra.kind ?? 'candidate', questionId },
       provenance: { route: 'fixture', rank, rankOrigin: 'fixture_order', ...(extra.provenance ?? {}) },
       source_url: extra.source_url ?? null,
       facts: extra.facts ?? {},
@@ -168,6 +169,22 @@ test('B3: every fused rank preserves the full channel identity (query + provider
   assert.equal(rb.rankOrigin, 'origin-b');
 });
 
+test('B4: retrieval route (provenance.route) is preserved into every fused rank; an absent route stays NULL (distinguishable, never invented) — P1-2', () => {
+  const fused = rrfFusion([
+    ranking('q1', 'fixture-a', [['10', 1, { provenance: { route: 'zhihu-answer-grabber:search', rankOrigin: 'official_order' } }]]),
+    ranking('q2', 'fixture-b', [['10', 2, { provenance: { route: null, rankOrigin: 'fixture_order' } }]]),
+  ]);
+  assert.equal(fused.candidates.length, 1);
+  const candidate = fused.candidates[0];
+  assert.equal(candidate.ranks.length, 2);
+  const [ra, rb] = candidate.ranks;
+  assert.equal(ra.route, 'zhihu-answer-grabber:search', 'route captured from provenance.route');
+  assert.equal(ra.channel.providerId, 'fixture-a');
+  assert.equal(ra.rankOrigin, 'official_order');
+  assert.equal(rb.route, null, 'absent upstream route stays NULL — UNKNOWN distinguishable from an established route');
+  assert.equal(rb.channel.providerId, 'fixture-b');
+});
+
 // ---------------------------------------------------------------------------
 // C. determinism
 // ---------------------------------------------------------------------------
@@ -210,6 +227,29 @@ test('C3: repeated fusion calls on the same inputs are deep-equal (fixtures = re
     ranking('q2', 'fixture-b', [['20', 1], ['10', 3]]),
   ];
   assert.deepEqual(rrfFusion(input), rrfFusion(input));
+});
+
+test('C4: candidate identity.kind is canonical ("candidate") and order-independent under differing/missing upstream kinds — P1-3', () => {
+  const orderA = [
+    ranking('q1', 'fixture-a', [['10', 1, { kind: 'candidate' }]]),
+    ranking('q2', 'fixture-b', [['10', 2, { kind: 'source-group' }]]),
+  ];
+  const orderB = [
+    ranking('q2', 'fixture-b', [['10', 2, { kind: 'source-group' }]]),
+    ranking('q1', 'fixture-a', [['10', 1, { kind: 'candidate' }]]),
+  ];
+  const missingKind = [
+    ranking('q2', 'fixture-b', [['10', 2, { kind: 'source-group' }]]),
+    ranking('q1', 'fixture-a', [['10', 1]]), // kind absent upstream
+  ];
+  const fA = rrfFusion(orderA);
+  const fB = rrfFusion(orderB);
+  const fM = rrfFusion(missingKind);
+  assert.deepEqual(fA, fB, 'fusion is permutation-invariant under differing identity kinds');
+  for (const f of [fA, fB, fM]) {
+    assert.equal(f.candidates[0].identity.kind, 'candidate', 'canonical T06 candidate kind, not "first encountered"');
+    assert.equal(f.candidates[0].identity.questionId, '10');
+  }
 });
 
 // ---------------------------------------------------------------------------

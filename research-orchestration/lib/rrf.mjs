@@ -20,7 +20,13 @@
  *   - item array order within a ranking is irrelevant (rank comes from
  *     provenance.rank, never from array position);
  *   - facts/sourceUrl of a fused candidate are taken from the canonical-first
- *     contributing channel (channelKey ascending) — permutation-invariant.
+ *     contributing channel (channelKey ascending) — permutation-invariant;
+ *   - candidate identity is canonical: every fused candidate identity.kind is
+ *     'candidate' (T06 candidate contract), independent of any upstream item
+ *     kind — permutation-invariant under differing/missing upstream kinds;
+ *   - retrieval-route provenance (provenance.route) is preserved on every fused
+ *     rank (and every rejected observation); an absent upstream route stays
+ *     NULL and is never invented.
  *
  * Fail-closed semantics:
  *   - malformed channel identity, or a FUSIBLE item with a missing/invalid
@@ -101,10 +107,10 @@ function assertValidChannel(channel) {
  *   (identity.questionId + provenance.rank + optional per-item failure).
  * @returns {{ candidates: Array, rejected: Array }}
  *   candidates: deterministically ordered fused candidates
- *     [{ identity: {kind, questionId}, rrfScore, ranks: [{channel, rank, rankOrigin}],
- *       sourceUrl, facts }]
+ *     [{ identity: {kind: 'candidate', questionId}, rrfScore,
+ *        ranks: [{channel, rank, rankOrigin, route}], sourceUrl, facts }]
  *   rejected: explicitly rejected observations
- *     [{ channel, identity, rank, failure: {code, class} }]
+ *     [{ channel, identity, rank, route, failure: {code, class} }]
  * @throws {Error} with .code = FUSION_* when input is malformed (fail closed).
  */
 export function rrfFusion(rankings) {
@@ -136,6 +142,7 @@ export function rrfFusion(rankings) {
           channel: ranking.channel,
           identity: item.identity ?? null,
           rank: item.provenance?.rank ?? null,
+          route: item.provenance?.route ?? null,
           failure: item.failure,
         });
         continue;
@@ -160,7 +167,10 @@ export function rrfFusion(rankings) {
       if (!record) {
         record = {
           questionId,
-          identity: { kind: identity.kind ?? 'candidate', questionId },
+          // Canonical T06 candidate identity (P1-3): fusion keys by questionId;
+          // kind is normalized to the candidate contract so the fused identity is
+          // order-independent — an upstream kind variant is never "first wins".
+          identity: { kind: 'candidate', questionId },
           contributions: [],
         };
         byCandidate.set(questionId, record);
@@ -172,6 +182,7 @@ export function rrfFusion(rankings) {
           channel: ranking.channel,
           identity,
           rank,
+          route: item.provenance?.route ?? null,
           failure: { code: FUSION_REJECT_DUPLICATE_IN_CHANNEL, class: 'contract' },
         });
         continue;
@@ -182,6 +193,7 @@ export function rrfFusion(rankings) {
         channel: ranking.channel,
         rank,
         rankOrigin: item.provenance?.rankOrigin ?? null,
+        route: item.provenance?.route ?? null,
         source_url: item.source_url ?? null,
         facts: item.facts ?? {},
       });
@@ -203,6 +215,7 @@ export function rrfFusion(rankings) {
         channel: c.channel,
         rank: c.rank,
         rankOrigin: c.rankOrigin,
+        route: c.route,
       })),
       source_url: first.source_url,
       facts: first.facts,
