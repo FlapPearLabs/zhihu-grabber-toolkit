@@ -1464,3 +1464,80 @@ test('J8: ALL-provider-failed early return with a machine-private PATH-SHAPED pr
   assert.ok(serialized.includes('<redacted>'), 'the stable redaction placeholder surfaces instead');
   assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact written');
 });
+
+test('J9: INTERMEDIATE failure paths with a machine-private PATH-SHAPED channel providerId (independent review P1 on f742cb3) → EVERY failure echo of the channel projects providerId through projectFailureIdentity to <redacted>; the absolute path never surfaces on retrieve-throw / identity-drift / unsafe-retrieved_at paths; no artifact', () => {
+  const REGISTRY_PATH = '/home/private-user/provider';
+  // Explicit single channel so the run proceeds to provider IO (no
+  // multiple_search_providers early return); the channel identity is
+  // path-shaped and must be redacted on EVERY intermediate failure path.
+  const CHANNELS = [{ providerId: `${REGISTRY_PATH}-a` }];
+  const REGISTRY_ENTRY = { providerId: `${REGISTRY_PATH}-a`, capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET };
+
+  function makeSeam(retrieveImpl) {
+    return {
+      listProviders() {
+        return [REGISTRY_ENTRY];
+      },
+      retrieve(_capability, _params, ctx) {
+        return retrieveImpl(ctx);
+      },
+    };
+  }
+
+  function assertRedactedChannel(run, workDir, label) {
+    assert.equal(run.ok, false, `${label}: must fail closed`);
+    assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, `${label}: contract failure identity`);
+    assert.equal(run.details.reason, 'provider_contract_violation', `${label}: stable reason`);
+    assert.equal(run.details.channel.providerId, '<redacted>', `${label}: path-shaped channel providerId is redacted`);
+    assert.equal(run.details.channel.capability, CAPABILITY_SEARCH, `${label}: capability identity retained`);
+    assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), `${label}: no artifact written`);
+    const serialized = JSON.stringify(run);
+    assert.ok(!serialized.includes(REGISTRY_PATH), `${label}: the absolute registry path never surfaces`);
+    assert.ok(serialized.includes('<redacted>'), `${label}: the stable redaction placeholder surfaces instead`);
+  }
+
+  // (a) seam.retrieve() throws → catch path (retrieval.mjs ~:527).
+  {
+    const workDir = tmpWorkDir();
+    const run = runMultiQueryRetrieval({
+      plan: PLAN_SINGLE,
+      seam: makeSeam(() => {
+        throw new Error('boom');
+      }),
+      channels: CHANNELS,
+      workDir,
+    });
+    assertRedactedChannel(run, workDir, 'retrieve-throw');
+  }
+
+  // (b) structurally valid result with DRIFTED provider_id → identity bind
+  //     check (retrieval.mjs ~:554); the drifted value is safe-shaped but the
+  //     CHANNEL identity is path-shaped and must still be redacted.
+  {
+    const workDir = tmpWorkDir();
+    const drift = { ...searchResult('fixture-b', [['100', 1]]) };
+    const run = runMultiQueryRetrieval({
+      plan: PLAN_SINGLE,
+      seam: makeSeam(() => drift),
+      channels: CHANNELS,
+      workDir,
+    });
+    assertRedactedChannel(run, workDir, 'identity-drift');
+    const serialized = JSON.stringify(run);
+    assert.ok(!serialized.includes('fixture-b'), 'identity-drift: drifted provider_id never surfaces');
+  }
+
+  // (c) structurally valid, identity-bound result with UNSAFE (path-shaped)
+  //     retrieved_at → retrieved_at gate (retrieval.mjs ~:567).
+  {
+    const workDir = tmpWorkDir();
+    const unsafe = { ...searchResult(`${REGISTRY_PATH}-a`, [['100', 1]]), retrieved_at: '/home/private-user/ts' };
+    const run = runMultiQueryRetrieval({
+      plan: PLAN_SINGLE,
+      seam: makeSeam(() => unsafe),
+      channels: CHANNELS,
+      workDir,
+    });
+    assertRedactedChannel(run, workDir, 'unsafe-retrieved_at');
+  }
+});

@@ -338,6 +338,18 @@ function projectFailureIdentity(value) {
 }
 
 /**
+ * P1 (independent review on f742cb3): EVERY failure path that echoes a channel
+ * must project the seam-controlled providerId through projectFailureIdentity —
+ * the same projection the all-failed early return applies — so a machine-
+ * private path-shaped adapter name can never surface on ANY failure path
+ * (retrieve throw, whole-result pre-validation, identity bind, retrieved_at
+ * gate, completeness gate, failure-identity gate).
+ */
+function safeChannelProjection(channel) {
+  return { ...channel, providerId: projectFailureIdentity(channel.providerId) };
+}
+
+/**
  * Resolve the deterministic channel set BEFORE any provider IO:
  *   - `channels` omitted/empty array: the only legal default is a seam with
  *     EXACTLY ONE registered search provider (unambiguous); zero →
@@ -512,7 +524,7 @@ export function runMultiQueryRetrieval(opts = {}) {
         // the known seam contract-error identities are machine-readable and safe
         // to surface; anything else becomes a stable reason with no code.
         return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
-          channel,
+          channel: safeChannelProjection(channel),
           code: SEAM_CONTRACT_ERROR_CODES.includes(err?.code) ? err.code : null,
           reason: 'provider_contract_violation',
         });
@@ -525,7 +537,7 @@ export function runMultiQueryRetrieval(opts = {}) {
       // escape, and no raw result payload is echoed.
       if (!safeValidateProviderResult(result).ok) {
         return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
-          channel,
+          channel: safeChannelProjection(channel),
           reason: 'provider_contract_violation',
           note: 'provider result violates the §5.1 contract (malformed or contradictory)',
         });
@@ -539,7 +551,7 @@ export function runMultiQueryRetrieval(opts = {}) {
         || result.capability !== CAPABILITY_SEARCH
         || result.auth_class !== provider.authClass) {
         return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
-          channel,
+          channel: safeChannelProjection(channel),
           reason: 'provider_contract_violation',
           note: 'provider result identity does not bind to the resolved registry/channel (provider_id + capability + auth_class)',
         });
@@ -552,7 +564,7 @@ export function runMultiQueryRetrieval(opts = {}) {
       const retrievedAt = result.retrieved_at;
       if (!isBoundarySafeString(retrievedAt)) {
         return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
-          channel,
+          channel: safeChannelProjection(channel),
           reason: 'provider_contract_violation',
           note: 'retrieved_at cannot safely enter the persisted pool',
         });
@@ -563,7 +575,7 @@ export function runMultiQueryRetrieval(opts = {}) {
         // present (absent ≠ present-but-null).
         if (Object.prototype.hasOwnProperty.call(result, 'failure')) {
           return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
-            channel,
+            channel: safeChannelProjection(channel),
             reason: 'provider_contract_violation',
             note: 'ok:true result must not carry a top-level failure identity',
           });
@@ -575,7 +587,7 @@ export function runMultiQueryRetrieval(opts = {}) {
         const projectedCompleteness = projectCompleteness(result.completeness);
         if (!projectedCompleteness.ok) {
           return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
-            channel,
+            channel: safeChannelProjection(channel),
             reason: 'provider_contract_violation',
             note: 'completeness evidence cannot safely enter the persisted pool (P1-2)',
             completenessIssue: projectedCompleteness.reason,
@@ -599,7 +611,7 @@ export function runMultiQueryRetrieval(opts = {}) {
         const projected = projectFailure(result.failure);
         if (!projected.ok) {
           return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
-            channel,
+            channel: safeChannelProjection(channel),
             reason: 'provider_contract_violation',
             note: 'provider failure identity malformed (needs machine-readable { code, class })',
           });
@@ -609,7 +621,7 @@ export function runMultiQueryRetrieval(opts = {}) {
         const projectedCompleteness = projectCompleteness(result.completeness);
         if (!projectedCompleteness.ok) {
           return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
-            channel,
+            channel: safeChannelProjection(channel),
             reason: 'provider_contract_violation',
             note: 'completeness evidence cannot safely enter the persisted pool (P1-2)',
             completenessIssue: projectedCompleteness.reason,
