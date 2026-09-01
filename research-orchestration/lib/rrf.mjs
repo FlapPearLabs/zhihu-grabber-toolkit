@@ -105,6 +105,17 @@ function isNonEmptyString(value) {
   return typeof value === 'string' && value.length > 0;
 }
 
+/**
+ * Canonical Zhihu question-ID (Codex 3rd-round P2 on f742cb3): the fusion key
+ * must be a canonical decimal integer WITHOUT leading zeros — "abc" is
+ * malformed, and "00123" vs "123" would otherwise split one question into two
+ * Map keys. /^[1-9]\d*$/ accepts canonical decimal IDs only.
+ */
+const CANONICAL_QUESTION_ID = /^[1-9]\d*$/;
+function isCanonicalQuestionId(value) {
+  return typeof value === 'string' && CANONICAL_QUESTION_ID.test(value);
+}
+
 // ---------------------------------------------------------------------------
 // P1-T06 persisted-artifact boundary (shared with retrieval.mjs)
 //
@@ -216,6 +227,34 @@ export function isBoundarySafeString(value) {
 }
 
 /**
+ * Codex 3rd-round P2 on f742cb3 (review 5078133293): a URL is a STRUCTURED
+ * value — its path segment (https://example.com/home/article, .../tmp/report)
+ * is public resource addressing, NOT a machine-private filesystem path, so
+ * PRIVATE_PATH_SHAPE must not reject a legitimate public URL before the shared
+ * classifyUrl trust classifier can accept it. The URL-specific boundary is:
+ *   - bounded length;
+ *   - no credential-shaped content anywhere (query/fragment/userinfo);
+ *   - parseable by new URL() — a bare machine-private path (/home/x, C:\x,
+ *     ~/.ssh/...) fails to parse and still fails closed;
+ *   - https: only;
+ *   - no userinfo credentials.
+ * Host trust (public vs localhost/loopback/private/link-local/CGNAT/...) is
+ * still decided ONLY by the shared classifyUrl classifier (see
+ * projectSourceUrlRecord) — this is not a weaker parallel URL policy.
+ */
+export function isBoundarySafeUrlString(value) {
+  if (typeof value !== 'string' || value.length === 0 || value.length > BOUNDARY_MAX_STRING_LENGTH) return false;
+  if (CREDENTIAL_SHAPE.test(value)) return false;
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return false; // bare filesystem path / unparseable → fail closed
+  }
+  return parsed.protocol === 'https:' && parsed.username === '' && parsed.password === '';
+}
+
+/**
  * Strict plain-object check (P2-2, review 5077286260): only objects whose
  * prototype is Object.prototype or null are JSON-domain plain objects. Class
  * instances / custom-prototype objects must NOT be silently collapsed to `{}`.
@@ -301,10 +340,14 @@ export function projectRouteString(value) {
 
 /** rejected-observation rank persistence boundary: null or a SAFE integer (JSON-safe).
  *  Review 5078133293 (P2): ranks beyond Number.MAX_SAFE_INTEGER have already been
- *  rounded by JavaScript — only a safe integer can be a verifiable RRF rank. */
+ *  rounded by JavaScript — only a safe integer can be a verifiable RRF rank.
+ *  Codex 3rd-round P2 on f742cb3: retrieval ranks are 1-BASED — a rejected-item
+ *  rank must ALSO be a positive safe integer (rank 0 / negative values are
+ *  invalid provenance and fail closed, matching the fusible rank gate); absent
+ *  rank stays null. */
 export function projectRejectedRank(value) {
   if (value === undefined || value === null) return { ok: true, value: null };
-  if (typeof value === 'number' && Number.isSafeInteger(value)) return { ok: true, value };
+  if (typeof value === 'number' && Number.isSafeInteger(value) && value >= 1) return { ok: true, value };
   return { ok: false };
 }
 
@@ -324,7 +367,12 @@ export function projectSourceUrlRecord(value) {
   if (!isPlainObjectStrict(value)) return { ok: false };
   const url = value.url;
   if (typeof url !== 'string' || url.length === 0) return { ok: false };
-  if (!isBoundarySafeString(url)) return { ok: false };
+  // Codex 3rd-round P2 on f742cb3: a URL's path segment is public resource
+  // addressing, not a machine-private filesystem path — use the URL-specific
+  // boundary (https-only, no userinfo, parseable, no credential-shaped
+  // content) instead of the generic string boundary whose PRIVATE_PATH_SHAPE
+  // would reject legitimate public URLs like https://example.com/home/article.
+  if (!isBoundarySafeUrlString(url)) return { ok: false };
   // Review 5078267886 (P1): URL trust is decided by the repository's SHARED
   // classifier (the same classifyUrl official-search-provider.mjs /
   // session-capture-provider.mjs use). No weaker parallel URL policy: a URL
@@ -379,7 +427,14 @@ function assertArtifactSafeInner(value, depth, ancestors) {
   if (depth > MAX_ARTIFACT_DEPTH) return { ok: false, reason: 'depth_exceeded' };
   if (value === null) return { ok: true };
   const type = typeof value;
-  if (type === 'string') return isBoundarySafeString(value) ? { ok: true } : { ok: false, reason: 'unsafe_string' };
+  if (type === 'string') {
+    // Codex 3rd-round P2 on f742cb3: a URL-shaped string is a structured value
+    // whose path segment is NOT a machine-private filesystem path — the
+    // artifact-wide walk accepts it via the URL-specific boundary as well.
+    return (isBoundarySafeString(value) || isBoundarySafeUrlString(value))
+      ? { ok: true }
+      : { ok: false, reason: 'unsafe_string' };
+  }
   if (type === 'number') return Number.isFinite(value) ? { ok: true } : { ok: false, reason: 'non_finite_number' };
   if (type === 'boolean') return { ok: true };
   if (type === 'bigint' || type === 'undefined' || type === 'function' || type === 'symbol') {
@@ -626,8 +681,13 @@ export function rrfFusion(rankings) {
 
       // FUSIBLE item: mechanical contract checks (fail closed, nothing half-fused).
       const identity = item?.identity;
-      if (!isPlainObject(identity) || !isNonEmptyString(identity.questionId)) {
-        const err = new Error(`fusible item without a valid questionId identity in channel ${safeFormat(ranking.channel)}`);
+      // Codex 3rd-round P2 on f742cb3: the fusion key must be a CANONICAL Zhihu
+      // decimal question ID — malformed identities ("abc") and non-canonical
+      // spellings ("00123" vs "123", which would split one question into two
+      // Map keys) fail closed instead of producing separate unverifiable
+      // candidates.
+      if (!isPlainObject(identity) || !isCanonicalQuestionId(identity.questionId)) {
+        const err = new Error(`fusible item without a valid canonical questionId identity in channel ${safeFormat(ranking.channel)}`);
         err.code = FUSION_ERROR_ITEM_IDENTITY_INVALID;
         throw err;
       }

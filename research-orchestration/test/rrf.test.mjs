@@ -408,6 +408,18 @@ test('E6: fusible item without a valid questionId identity → hard fail-closed 
       { identity: null, provenance: { route: 'r', rank: 1 }, source_url: null, facts: {} },
     ],
   }]), (err) => err.code === FUSION_ERROR_ITEM_IDENTITY_INVALID);
+  // Codex 3rd-round P2 on f742cb3: the fusion key must be a CANONICAL Zhihu
+  // decimal question ID — a malformed ("abc") or non-canonical ("00123" vs
+  // "123", which would split one question into two Map keys) identity fails
+  // closed instead of producing separate unverifiable candidates.
+  for (const badId of ['abc', '00123', '12 3', '1.5', '0', '-1']) {
+    assert.throws(() => rrfFusion([{
+      channel: channel('q1', 'fixture-a'),
+      items: [
+        { identity: { kind: 'candidate', questionId: badId }, provenance: { route: 'r', rank: 1 }, source_url: null, facts: {} },
+      ],
+    }]), (err) => err.code === FUSION_ERROR_ITEM_IDENTITY_INVALID, `non-canonical questionId ${JSON.stringify(badId)} must fail closed`);
+  }
 });
 
 test('E5: items carrying a per-item provider failure are rejected (not fused) with their failure identity + channel provenance; the rest of the ranking still fuses', () => {
@@ -634,6 +646,11 @@ test('F4: projectRouteString / projectRejectedRank — absent values stay null; 
   assert.equal(projectRejectedRank(NaN).ok, false, 'NaN rank must fail closed');
   assert.equal(projectRejectedRank('3').ok, false, 'non-number rank must fail closed');
   assert.equal(projectRejectedRank(10n).ok, false, 'BigInt rank must fail closed');
+  // Codex 3rd-round P2 on f742cb3: retrieval ranks are 1-BASED — a rejected-item
+  // rank of 0 or a negative value is invalid provenance and must fail closed,
+  // matching the fusible rank gate (rank < 1 → fail closed).
+  assert.equal(projectRejectedRank(0).ok, false, 'rank 0 must fail closed (1-based ranks)');
+  assert.equal(projectRejectedRank(-1).ok, false, 'negative rank must fail closed (1-based ranks)');
   // Review 5078133293 (P2): ranks beyond Number.MAX_SAFE_INTEGER have already
   // been rounded by JS (9007199254740993 → ...992) and must fail closed — a
   // non-safe integer can never be a verifiable RRF rank.
@@ -660,7 +677,6 @@ test('F5: projectSourceUrlRecord — REUSES the repository classifyUrl trust cla
     ['credential query key variant', { url: 'https://example.invalid/?api_key=abc', securityClass: 'external_unverified' }],
     ['userinfo credentials', { url: 'https://user:pass@example.invalid/', securityClass: 'external_unverified' }],
     ['non-https', { url: 'http://example.invalid/', securityClass: 'external_unverified' }],
-    ['machine-private path in URL', { url: 'https://example.invalid/home/private-user/x', securityClass: 'external_unverified' }],
     ['missing securityClass', { url: 'https://example.invalid/' }],
     ['non-string url', { url: 5, securityClass: 'external_unverified' }],
     ['non-plain record', new Date()],
@@ -688,6 +704,36 @@ test('F5: projectSourceUrlRecord — REUSES the repository classifyUrl trust cla
   for (const [label, record] of unsafe) {
     assert.equal(projectSourceUrlRecord(record).ok, false, `${label}: must fail closed`);
   }
+  // Codex 3rd-round P2 on f742cb3: a URL's PATH SEGMENT is public resource
+  // addressing, NOT a machine-private filesystem path — https://…/home/… and
+  // https://…/tmp/… are legitimate public source URLs and must NOT be rejected
+  // by PRIVATE_PATH_SHAPE (that guard applies to bare path STRINGS, which are
+  // covered by F2 and by the bare-path url case below).
+  const urlPathSafe = [
+    ['public URL with /home path segment', 'https://example.invalid/home/article', 'external_unverified'],
+    ['public URL with /tmp path segment', 'https://example.invalid/tmp/report', 'external_unverified'],
+    ['public URL with /private-user path segment', 'https://example.invalid/home/private-user/x', 'external_unverified'],
+  ];
+  for (const [label, url, securityClass] of urlPathSafe) {
+    assert.deepEqual(
+      projectSourceUrlRecord({ url, securityClass }),
+      { ok: true, value: { url, securityClass } },
+      `${label}: URL path segments are not machine-private filesystem paths`,
+    );
+  }
+  // A BARE filesystem-path STRING supplied as the url value (not a parseable
+  // URL) still fails closed — the URL-specific boundary requires new URL() to
+  // parse it, and the generic string boundary rejects it as a private path.
+  assert.equal(
+    projectSourceUrlRecord({ url: '/home/private-user/secret.json', securityClass: 'external_unverified' }).ok,
+    false,
+    'bare machine-private path string as url must fail closed',
+  );
+  assert.equal(
+    projectSourceUrlRecord({ url: 'C:\\Users\\victim\\secret.json', securityClass: 'external_unverified' }).ok,
+    false,
+    'bare Windows path string as url must fail closed',
+  );
 });
 
 test('F6: assertArtifactSafe — the whole-artifact walk accepts safe canonical artifacts and rejects unsafe keys/strings/cycles/non-plain/BigInt with stable reasons (P1-1 defense-in-depth)', () => {
@@ -700,6 +746,19 @@ test('F6: assertArtifactSafe — the whole-artifact walk accepts safe canonical 
     criteria: { fusion: 'rrf', rrfK: 60 },
   };
   assert.deepEqual(assertArtifactSafe(safeArtifact), { ok: true });
+  // Codex 3rd-round P2 on f742cb3: a URL-shaped string whose path segment
+  // looks filesystem-like is a structured value (public resource addressing),
+  // NOT a machine-private path — the artifact walk accepts it.
+  assert.deepEqual(
+    assertArtifactSafe({ sourceUrl: { url: 'https://example.invalid/home/article', securityClass: 'external_unverified' } }),
+    { ok: true },
+    'URL-shaped string with /home path passes the artifact walk',
+  );
+  assert.deepEqual(
+    assertArtifactSafe({ v: 'https://example.invalid/tmp/report' }),
+    { ok: true },
+    'URL-shaped string with /tmp path passes the artifact walk',
+  );
 
   const cyclic = {};
   cyclic.self = cyclic;
