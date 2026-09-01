@@ -135,6 +135,7 @@ import {
   assertArtifactSafe,
   isBoundarySafeString,
   FUSION_CONTRACT_ERROR_CODES,
+  projectAllowedErrorCode,
   projectFailure,
   projectSafeJson,
   rrfFusion,
@@ -548,7 +549,7 @@ export function runMultiQueryRetrieval(opts = {}) {
         // to surface; anything else becomes a stable reason with no code.
         return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
           channel: safeChannelProjection(channel),
-          code: SEAM_CONTRACT_ERROR_CODES.includes(err?.code) ? err.code : null,
+          code: projectAllowedErrorCode(err, SEAM_CONTRACT_ERROR_CODES),
           reason: 'provider_contract_violation',
         });
       }
@@ -710,7 +711,7 @@ export function runMultiQueryRetrieval(opts = {}) {
     // surface — an arbitrary / credential-shaped / path-bearing thrown code
     // becomes null — and a raw err.message is never emitted.
     return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
-      code: FUSION_CONTRACT_ERROR_CODES.includes(err?.code) ? err.code : null,
+      code: projectAllowedErrorCode(err, FUSION_CONTRACT_ERROR_CODES),
       reason: 'rrf_fusion_contract_violation',
     });
   }

@@ -144,6 +144,35 @@ export const FUSION_CONTRACT_ERROR_CODES = Object.freeze([
   FUSION_ERROR_UNSAFE_PROVIDER_DATA,
 ]);
 
+/**
+ * Atomic, single-read projection of a machine-readable error code (P1-T06
+ * security repair, review 5080250592 FIX 1): a caller/provider-controlled
+ * `err.code` is read EXACTLY ONCE, inside a try/catch, and the result is
+ * snapshotted to a local — so a stateful or throwing getter cannot leak a
+ * SECOND (private-path / credential-shaped) value, and there is never a
+ * check-then-reread (`allowlist.includes(err.code) ? err.code : null` reads
+ * `err.code` twice). Only an allowlisted stable string survives; everything
+ * else (getter throw, non-string, not-allowlisted) yields null. Used for BOTH
+ * the SEAM_CONTRACT_ERROR_CODES and FUSION_CONTRACT_ERROR_CODES projections.
+ *
+ * @param {*} err            the thrown/observed error (may be null/undefined,
+ *                           may carry a stateful/throwing `code` getter)
+ * @param {readonly string[]} allowedCodes  the allowlist of stable code strings
+ * @returns {string|null} the allowlisted snapshot, or null
+ */
+export function projectAllowedErrorCode(err, allowedCodes) {
+  let snapshot;
+  try {
+    snapshot = err?.code;
+  } catch {
+    // getter threw while reading — never re-read, never propagate
+    return null;
+  }
+  if (typeof snapshot !== 'string') return null;
+  if (!allowedCodes.includes(snapshot)) return null;
+  return snapshot;
+}
+
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
@@ -576,14 +605,21 @@ function isValidFailureIdentity(failure) {
  */
 export function projectFailure(failure) {
   if (failure === undefined || failure === null) return { ok: true, failure: null };
-  if (!isPlainObject(failure) || !isNonEmptyString(failure.code) || !isNonEmptyString(failure.class)) {
-    return { ok: false };
-  }
+  if (!isPlainObject(failure)) return { ok: false };
+  const code = failure.code;
+  const klass = failure.class;
+  if (!isNonEmptyString(code) || !isNonEmptyString(klass)) return { ok: false };
+  // P2 (review 5080250592 FIX 2): a machine-readable failure identity requires a
+  // NON-WHITESPACE code + class — '' / '   ' / '\t' are not meaningful identities
+  // and must fail closed (alongside the existing bounded-length + privacy/path
+  // boundary checks below). isNonEmptyString already rejects non-strings/empty;
+  // the trim gate rejects whitespace-only.
+  if (code.trim().length === 0 || klass.trim().length === 0) return { ok: false };
   // P1-1: a failure identity may only persist/surface when its code/class strings
   // are themselves bounded + privacy-safe — a path/credential-shaped code must
   // never reach the artifact or the returned failure output.
-  if (!isBoundarySafeString(failure.code) || !isBoundarySafeString(failure.class)) return { ok: false };
-  return { ok: true, failure: { code: failure.code, class: failure.class } };
+  if (!isBoundarySafeString(code) || !isBoundarySafeString(klass)) return { ok: false };
+  return { ok: true, failure: { code, class: klass } };
 }
 
 /** P1-1: provider-controlled data that cannot cross the persisted-artifact boundary fails closed. */

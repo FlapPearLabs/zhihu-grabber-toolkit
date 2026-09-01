@@ -1827,3 +1827,77 @@ test('R12-B4 (retrieval boundary): BLOCK4 allowlist — a fusion contract failur
   assert.equal(FUSION_CONTRACT_ERROR_CODES.includes('/home/private-user/x'), false, 'path-shaped code can never be a member');
   assert.equal(FUSION_CONTRACT_ERROR_CODES.includes('token=sekrit'), false, 'credential-shaped code can never be a member');
 });
+
+// ---------------------------------------------------------------------------
+// R13 — P1-T06 security repair (review 5080250592 FIX 1, seam path)
+// End-to-end coverage that the atomic projection also holds on the SEAM
+// catch branch (not just the shared helper unit test in rrf.test.mjs).
+// ---------------------------------------------------------------------------
+test('R13-F3: seam-thrown error with a STATEFUL code getter is projected atomically — only the FIRST (allowed) read surfaces, the second private-path read can never leak (review 5080250592 FIX 1, seam path)', () => {
+  let reads = 0;
+  const statefulErr = {};
+  Object.defineProperty(statefulErr, 'code', {
+    get() {
+      reads += 1;
+      return reads === 1 ? SEAM_ERROR_UNKNOWN_PROVIDER_CONTRACT : '/home/private-user/x';
+    },
+  });
+  const seam = {
+    listProviders() {
+      return [{ providerId: 'fixture-a', capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET }];
+    },
+    retrieve() {
+      throw statefulErr;
+    },
+  };
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir: tmpWorkDir() });
+  assert.equal(run.ok, false, 'seam-thrown contract violation fails closed');
+  assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, 'the run fails at the provider-contract boundary');
+  assert.equal(run.details.code, SEAM_ERROR_UNKNOWN_PROVIDER_CONTRACT, 'only the FIRST (allowed) code read surfaces');
+  assert.notEqual(run.details.code, '/home/private-user/x', 'the second private-path read can NEVER surface');
+  assert.equal(reads, 1, 'err.code was read EXACTLY ONCE — no check-then-reread across the seam catch');
+  const serialized = JSON.stringify(run);
+  assert.ok(!serialized.includes('/home/private-user/x'), 'the private path is never serialized');
+});
+
+// ---------------------------------------------------------------------------
+// R13 — P1-T06 security repair (review 5080250592 FIX 2, e2e path)
+// End-to-end coverage that the meaningful-failure-identity gate (whitespace
+// rejection) also holds through the full all-provider-failed retrieval path.
+// ---------------------------------------------------------------------------
+test('R13-F4: ALL-provider-failed e2e with a WHITESPACE-ONLY failure identity (review 5080250592 FIX 2) → the meaningless identity is rejected at the T06 boundary and the run fails closed with a stable contract failure; the whitespace code never surfaces and no artifact is written', () => {
+  const seam = {
+    listProviders() {
+      return [
+        { providerId: 'fixture-a', capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET },
+        { providerId: 'fixture-b', capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET },
+      ];
+    },
+    retrieve(_capability, _params, ctx) {
+      return {
+        ok: false,
+        provider_id: ctx.providerId,
+        capability: CAPABILITY_SEARCH,
+        auth_class: AUTH_CLASS_OFFICIAL_SECRET,
+        retrieved_at: FIXED_NOW(),
+        items: [],
+        failure: { code: '   ', class: 'provider' },
+        completeness: { status: COMPLETENESS_UNKNOWN, evidence: { signal: 'absent', reason: 'no_pagination_signal' } },
+      };
+    },
+  };
+  const workDir = tmpWorkDir();
+  const run = runMultiQueryRetrieval({
+    plan: PLAN_SINGLE,
+    seam,
+    channels: [{ providerId: 'fixture-a' }, { providerId: 'fixture-b' }],
+    workDir,
+  });
+  assert.equal(run.ok, false, 'whitespace-only failure identity must fail closed');
+  assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, 'stable contract failure, not a meaningless identity');
+  assert.ok(run.details?.note?.includes('malformed'), 'the boundary reports the identity as malformed');
+  assert.notEqual(run.details?.code, '   ', 'the whitespace code is NEVER surfaced as a machine-readable code');
+  const serialized = JSON.stringify(run);
+  assert.ok(!serialized.includes('"code":"   "'), 'the raw whitespace code is never serialized as a failure code');
+  assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact written on fail-closed');
+});

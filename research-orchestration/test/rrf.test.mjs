@@ -68,6 +68,7 @@ import {
   projectSourceUrlRecord,
   assertArtifactSafe,
   projectFailure,
+  projectAllowedErrorCode,
 } from '../lib/rrf.mjs';
 
 // ---------------------------------------------------------------------------
@@ -1005,4 +1006,71 @@ test('R12-B4: FUSION_CONTRACT_ERROR_CODES allowlists EVERY FUSION_* contract err
   assert.equal(FUSION_CONTRACT_ERROR_CODES.includes('/home/private-user/x'), false, 'path-shaped code can never be a member');
   assert.equal(FUSION_CONTRACT_ERROR_CODES.includes('token=abc'), false, 'credential-shaped code can never be a member');
   assert.equal(FUSION_CONTRACT_ERROR_CODES.includes('z_c0=secret'), false, 'credential-shaped code can never be a member');
+});
+
+// ---------------------------------------------------------------------------
+// R13 — P1-T06 security repair (review 5080250592 FIX 1 + FIX 2)
+// Unit-level counterexamples for the atomic error-code projection and the
+// meaningful-failure-identity gate.
+// ---------------------------------------------------------------------------
+
+test('R13-F1: projectAllowedErrorCode reads err.code EXACTLY ONCE and snapshots it — stateful/throwing getters cannot leak a second private value (review 5080250592 FIX 1)', () => {
+  // A. stateful getter: first read = allowed code, second hypothetical read =
+  //    /home/private-user/x. The returned value must be the FIRST (allowed) read,
+  //    proving the getter is read once and the snapshot (not a reread) is used.
+  let reads = 0;
+  const stateful = {};
+  Object.defineProperty(stateful, 'code', {
+    get() {
+      reads += 1;
+      return reads === 1 ? FUSION_ERROR_DUPLICATE_CHANNEL : '/home/private-user/x';
+    },
+  });
+  assert.equal(
+    projectAllowedErrorCode(stateful, FUSION_CONTRACT_ERROR_CODES),
+    FUSION_ERROR_DUPLICATE_CHANNEL,
+    'stateful getter: only the first read is used — never the private path',
+  );
+  assert.equal(reads, 1, 'err.code was read exactly once (no check-then-reread)');
+  // B. throwing getter -> stable null, no raw throw escapes.
+  const throwing = {};
+  Object.defineProperty(throwing, 'code', { get() { throw new Error('boom'); } });
+  assert.equal(projectAllowedErrorCode(throwing, FUSION_CONTRACT_ERROR_CODES), null, 'throwing getter -> stable null (no raw throw)');
+  // C. stable malicious codes -> null (never proxied).
+  assert.equal(projectAllowedErrorCode({ code: 'token=sekrit' }, FUSION_CONTRACT_ERROR_CODES), null, 'credential-shaped code -> null');
+  assert.equal(projectAllowedErrorCode({ code: '/home/private-user/x' }, FUSION_CONTRACT_ERROR_CODES), null, 'path-shaped code -> null');
+  // D. stable known allowlisted code -> preserved.
+  assert.equal(
+    projectAllowedErrorCode({ code: FUSION_ERROR_DUPLICATE_CHANNEL }, FUSION_CONTRACT_ERROR_CODES),
+    FUSION_ERROR_DUPLICATE_CHANNEL,
+    'allowlisted stable code is preserved',
+  );
+  // additional non-string / absent cases -> null.
+  assert.equal(projectAllowedErrorCode({ code: 42 }, FUSION_CONTRACT_ERROR_CODES), null, 'non-string code -> null');
+  assert.equal(projectAllowedErrorCode({ code: null }, FUSION_CONTRACT_ERROR_CODES), null, 'null code -> null');
+  assert.equal(projectAllowedErrorCode(undefined, FUSION_CONTRACT_ERROR_CODES), null, 'undefined err -> null');
+});
+
+test('R13-F2: projectFailure rejects whitespace-only code/class — machine-readable failure identity requires NON-WHITESPACE code + class (review 5080250592 FIX 2)', () => {
+  const wsCases = [
+    { code: '', class: 'provider' },
+    { code: '   ', class: 'provider' },
+    { code: '\t', class: 'provider' },
+    { code: 'PROVIDER_REPORTED_FAILURE', class: '' },
+    { code: 'PROVIDER_REPORTED_FAILURE', class: '   ' },
+    { code: 'PROVIDER_REPORTED_FAILURE', class: '\t' },
+  ];
+  for (const bad of wsCases) {
+    assert.equal(projectFailure(bad).ok, false, 'whitespace-only rejected: ' + JSON.stringify(bad));
+  }
+  // meaningful identity preserved verbatim.
+  const good = { code: 'PROVIDER_REPORTED_FAILURE', class: 'provider' };
+  const r = projectFailure(good);
+  assert.equal(r.ok, true, 'meaningful code+class preserved');
+  assert.deepEqual(r.failure, { code: 'PROVIDER_REPORTED_FAILURE', class: 'provider' });
+  // existing guards retained: null -> no failure; missing class -> rejected;
+  // credential-shaped code -> rejected.
+  assert.equal(projectFailure(null).ok, true, 'null -> no failure');
+  assert.equal(projectFailure({ code: 'X' }).ok, false, 'missing class -> rejected');
+  assert.equal(projectFailure({ code: 'token=sekrit', class: 'provider' }).ok, false, 'credential-shaped code -> rejected');
 });
