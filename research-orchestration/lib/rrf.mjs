@@ -32,9 +32,12 @@
  *   - malformed channel identity, or a FUSIBLE item with a missing/invalid
  *     1-based integer rank or missing/empty questionId → hard error (throws with
  *     a machine-readable .code; nothing half-fused);
- *   - items already carrying a per-item provider failure (T05 seam P2-1 shape)
- *     are REJECTED (never fused) and surfaced in `rejected` with their
- *     machine-readable failure identity + contributing channel;
+ *   - items carrying a per-item provider failure (T05 seam P2-1 shape) are
+ *     REJECTED (never fused) and surfaced in `rejected` with their
+ *     machine-readable failure identity + contributing channel; an EXPLICIT
+ *     per-item failure that is present-but-malformed (not a { code, class }
+ *     identity) is a CONTRACT VIOLATION → hard error (never treated as "no
+ *     failure", never fused);
  *   - a duplicate of an already-contributed candidate within the same channel is
  *     explicitly REJECTED with a machine-readable failure identity — it is never
  *     silently re-ranked (the first occurrence keeps its rank).
@@ -55,6 +58,7 @@ export const RRF_TIE_BREAK = 'score-desc-questionId-asc';
 export const FUSION_ERROR_CHANNEL_IDENTITY_INVALID = 'FUSION_CHANNEL_IDENTITY_INVALID';
 export const FUSION_ERROR_RANK_INVALID = 'FUSION_RANK_INVALID';
 export const FUSION_ERROR_ITEM_IDENTITY_INVALID = 'FUSION_ITEM_IDENTITY_INVALID';
+export const FUSION_ERROR_FAILURE_IDENTITY_INVALID = 'FUSION_FAILURE_IDENTITY_INVALID';
 
 /** Rejection failure identity (explicit, machine-readable; never silent). */
 export const FUSION_REJECT_DUPLICATE_IN_CHANNEL = 'DUPLICATE_CANDIDATE_IN_CHANNEL';
@@ -65,6 +69,15 @@ function isPlainObject(value) {
 
 function isNonEmptyString(value) {
   return typeof value === 'string' && value.length > 0;
+}
+
+/**
+ * A valid per-item failure identity is a machine-readable { code, class }
+ * record (T05 seam P2-1 shape). Anything else present on `failure` is a
+ * contract violation — distinguishable from an ABSENT failure.
+ */
+function isValidFailureIdentity(failure) {
+  return isPlainObject(failure) && isNonEmptyString(failure.code) && isNonEmptyString(failure.class);
 }
 
 /** Canonical channel key: [query, providerId, capability] — exact §5.4 identity triple. */
@@ -133,11 +146,19 @@ export function rrfFusion(rankings) {
     const key = channelKey(ranking.channel);
 
     for (const item of ranking.items) {
-      const hasFailure = isPlainObject(item?.failure);
-
-      // Items already carrying a provider failure are never fused (T05 P2-1):
-      // they surface in `rejected` with their machine-readable identity.
-      if (hasFailure) {
+      // Distinguish failure ABSENT vs PRESENT-BUT-MALFORMED (P1-3): an explicit
+      // `failure` key must carry a machine-readable { code, class } identity.
+      // A malformed explicit failure is a contract violation → fail closed
+      // (never treated as "no failure", never fused, nothing half-fused).
+      const failurePresent = item != null && Object.prototype.hasOwnProperty.call(item, 'failure');
+      if (failurePresent) {
+        if (!isValidFailureIdentity(item.failure)) {
+          const err = new Error(`per-item failure present but not a machine-readable { code, class } identity in channel ${JSON.stringify(ranking.channel)}`);
+          err.code = FUSION_ERROR_FAILURE_IDENTITY_INVALID;
+          throw err;
+        }
+        // Items already carrying a provider failure are never fused (T05 P2-1):
+        // they surface in `rejected` with their machine-readable identity.
         rejected.push({
           channel: ranking.channel,
           identity: item.identity ?? null,

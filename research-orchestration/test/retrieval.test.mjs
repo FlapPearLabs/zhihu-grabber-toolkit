@@ -15,6 +15,13 @@
  *   - channel provenance preservation (pool + per-candidate ranks record the
  *     query + provider + capability triple);
  *   - provider failure propagation (machine-readable, NO_SILENT_PROVIDER_FALLBACK);
+ *   - path-redaction counterexamples: absolute workDir / adapter err.message /
+ *     raw malformed channel/descriptor values never leak into failure output
+ *     (RULES §11) — failure details carry stable sanitized reasons only;
+ *   - non-JSON-safe seam-accepted metadata (BigInt / cyclic facts) → FAIL CLOSED
+ *     (retrieval_provider_contract_invalid), NO artifact written;
+ *   - present-but-malformed explicit per-item failure → FAIL CLOSED
+ *     (retrieval_provider_contract_invalid), never fused as valid;
  *   - zero valid retrieval channels → FAIL CLOSED;
  *   - malformed provider result → FAIL CLOSED where contract requires
  *     (seam UNKNOWN_PROVIDER_CONTRACT / fused-item rank contract);
@@ -51,6 +58,7 @@ import {
   RETRIEVAL_FAILURE_CHANNEL_UNREGISTERED,
   RETRIEVAL_FAILURE_CHANNEL_DUPLICATE,
   RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID,
+  RETRIEVAL_FAILURE_POOL_WRITE,
   runMultiQueryRetrieval,
 } from '../lib/retrieval.mjs';
 import { planHash, validatePlanInput } from '../lib/plan-contract.mjs';
@@ -479,6 +487,50 @@ test('D6: per-item provider failure is recorded in pool.rejected with its failur
   }
 });
 
+test('D7: seam adapter throwing an Error whose message embeds an absolute path → FAIL CLOSED with a stable reason; the path is never echoed (P1-1 path-redaction counterexample)', () => {
+  const THROWING_PATH = 'C:\\Users\\victim\\secret\\cache.json';
+  const throwing = fixtureSearchAdapter('fixture-a', () => {
+    const err = new Error(`ENOENT: no such file or directory, open '${THROWING_PATH}'`);
+    err.code = 'ENOENT';
+    throw err;
+  });
+  const seam = createProviderSeam({ adapters: [throwing] });
+  const run = runMultiQueryRetrieval({ plan: PLAN, seam, workDir: tmpWorkDir() });
+  assert.equal(run.ok, false);
+  assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+  assert.equal(run.details.reason, 'provider_contract_violation', 'stable reason, never the raw adapter err.message');
+  assert.equal(run.details.code, 'ENOENT', 'machine-readable error code retained for diagnostics');
+  const serialized = JSON.stringify(run);
+  assert.ok(!serialized.includes(THROWING_PATH), 'adapter err.message must never surface (RULES §11 path-redaction)');
+});
+
+test('D8: non-JSON-safe seam-accepted metadata (BigInt / cyclic fact) → FAIL CLOSED (retrieval_provider_contract_invalid); NO artifact written (P1-2)', () => {
+  const bigIntFact = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1, { facts: { count: 10n } }]], { query: input.query }));
+  const cyclic = {};
+  cyclic.self = cyclic;
+  const cyclicFact = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1, { facts: cyclic }]], { query: input.query }));
+  for (const [label, adapter] of [['bigint', bigIntFact], ['cyclic', cyclicFact]]) {
+    const seam = createProviderSeam({ adapters: [adapter] });
+    const workDir = tmpWorkDir();
+    const run = runMultiQueryRetrieval({ plan: PLAN, seam, workDir });
+    assert.equal(run.ok, false, `${label}: non-JSON-safe seam-accepted metadata must fail closed, never escape runMultiQueryRetrieval`);
+    assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, `${label}: contract failure identity`);
+    assert.equal(run.details.reason, 'pool_serialization_failed', `${label}: stable serialization failure reason`);
+    assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), `${label}: no artifact written when serialization fails`);
+  }
+});
+
+test('D9: present-but-malformed explicit per-item failure (failure:"timeout") → FAIL CLOSED (retrieval_provider_contract_invalid); never fused as valid (P1-3)', () => {
+  const malformedFailure = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1, { failure: 'timeout' }]], { query: input.query }));
+  const seam = createProviderSeam({ adapters: [malformedFailure] });
+  const workDir = tmpWorkDir();
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir });
+  assert.equal(run.ok, false, 'malformed explicit per-item failure must fail closed, never fuse as a valid candidate');
+  assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+  assert.equal(run.details.reason, 'rrf_fusion_contract_violation');
+  assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact on fusion contract failure');
+});
+
 // ---------------------------------------------------------------------------
 // E. Session capture cannot masquerade as a retrieval-ranked channel
 // ---------------------------------------------------------------------------
@@ -616,4 +668,41 @@ test('G1: pool artifact carries no absolute machine paths (work-relative only)',
   const serialized = JSON.stringify(run.pool);
   assert.ok(!/[A-Za-z]:[\\/]/.test(serialized), 'no Windows absolute paths');
   assert.ok(!serialized.includes('/Users/') && !serialized.includes('/home/'), 'no POSIX machine-private paths');
+});
+
+test('G2: pool write failure → RETRIEVAL_FAILURE_POOL_WRITE with sanitized reason; the absolute workDir never leaks into failure output (P1-1 path-redaction counterexample)', () => {
+  const seam = createProviderSeam({ adapters: [fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1]], { query: input.query }))] });
+  // workDir points at an existing FILE → mkdirSync throws EEXIST with the
+  // absolute path embedded in err.message (deterministic, platform-independent).
+  const base = tmpWorkDir();
+  const blocker = path.join(base, 'not-a-directory');
+  fs.writeFileSync(blocker, 'x');
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir: blocker });
+  assert.equal(run.ok, false);
+  assert.equal(run.reason, RETRIEVAL_FAILURE_POOL_WRITE);
+  assert.equal(run.details.reason, 'pool_write_failed', 'stable sanitized reason, never the raw fs err.message');
+  assert.equal(run.details.file, RETRIEVAL_POOL_FILENAME, 'work-relative artifact name only');
+  const serialized = JSON.stringify(run);
+  assert.ok(!serialized.includes(blocker), 'absolute workDir must never leak into failure output (RULES §11)');
+  assert.ok(!/[A-Za-z]:[\\/]/.test(serialized), 'no Windows absolute paths in failure output');
+});
+
+test('G3: malformed channels/descriptors carrying machine-private-looking values are never echoed into failure details (P1-1 path-redaction counterexample)', () => {
+  const search = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1]], { query: input.query }));
+  const seam = createProviderSeam({ adapters: [search] });
+  const SECRET_PATH = 'C:\\Users\\victim\\secret\\token.txt';
+  const cases = [
+    { channels: SECRET_PATH, reason: RETRIEVAL_FAILURE_INVALID_INPUT },
+    { channels: [SECRET_PATH], reason: RETRIEVAL_FAILURE_INVALID_INPUT },
+    { channels: [{ providerId: SECRET_PATH }], reason: RETRIEVAL_FAILURE_CHANNEL_UNREGISTERED },
+    { channels: [{ providerId: 'fixture-a', capability: SECRET_PATH }], reason: RETRIEVAL_FAILURE_CHANNEL_NOT_RETRIEVAL_RANKED },
+  ];
+  for (const { channels, reason } of cases) {
+    const run = runMultiQueryRetrieval({ plan: PLAN, seam, channels, workDir: tmpWorkDir() });
+    assert.equal(run.ok, false, `channels case must fail closed: ${reason}`);
+    assert.equal(run.reason, reason);
+    const serialized = JSON.stringify(run);
+    assert.ok(!serialized.includes(SECRET_PATH), `raw malformed channel/descriptor value must never be echoed (${reason})`);
+  }
+  assert.equal(search.__calls(), 0, 'zero provider IO for all malformed channel inputs (fail closed before execution)');
 });

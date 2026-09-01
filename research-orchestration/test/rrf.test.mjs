@@ -19,7 +19,10 @@
  *   - within-channel duplicate candidate → explicitly rejected with a
  *     machine-readable failure identity (never silently re-ranked);
  *   - items carrying a per-item provider failure are rejected (not fused) with
- *     their failure identity preserved and channel provenance recorded.
+ *     their failure identity preserved and channel provenance recorded;
+ *   - an explicit per-item failure that is present-but-malformed (not a
+ *     { code, class } identity) fails closed (FAILURE_IDENTITY_INVALID) — it is
+ *     never treated as "no failure" and never fused (P1-3).
  *
  * This module is PURE (no IO, no seam): every input is an explicit ranking
  * list; orchestration lives in retrieval.mjs.
@@ -35,6 +38,7 @@ import {
   FUSION_ERROR_CHANNEL_IDENTITY_INVALID,
   FUSION_ERROR_ITEM_IDENTITY_INVALID,
   FUSION_ERROR_RANK_INVALID,
+  FUSION_ERROR_FAILURE_IDENTITY_INVALID,
   FUSION_REJECT_DUPLICATE_IN_CHANNEL,
   rrfFusion,
 } from '../lib/rrf.mjs';
@@ -50,13 +54,15 @@ function channel(query, providerId, capability = 'search') {
 /**
  * Build a ranking in the exact provider-result item shape consumed by fusion:
  * items carry identity.questionId + provenance.rank (+ optional rankOrigin).
- * extra.kind overrides the default item identity kind ('candidate').
+ * extra.kind overrides the default item identity kind ('candidate'); when kind
+ * is ABSENT the identity is constructed WITHOUT a kind field at all (P2-1), so
+ * "missing-kind" cases genuinely test a kind-less upstream identity.
  */
 function ranking(query, providerId, entries, { capability = 'search' } = {}) {
   return {
     channel: channel(query, providerId, capability),
     items: entries.map(([questionId, rank, extra = {}]) => ({
-      identity: { kind: extra.kind ?? 'candidate', questionId },
+      identity: extra.kind === undefined ? { questionId } : { kind: extra.kind, questionId },
       provenance: { route: 'fixture', rank, rankOrigin: 'fixture_order', ...(extra.provenance ?? {}) },
       source_url: extra.source_url ?? null,
       facts: extra.facts ?? {},
@@ -238,17 +244,17 @@ test('C4: candidate identity.kind is canonical ("candidate") and order-independe
     ranking('q2', 'fixture-b', [['10', 2, { kind: 'source-group' }]]),
     ranking('q1', 'fixture-a', [['10', 1, { kind: 'candidate' }]]),
   ];
+  // P2-1: the helper now truly omits kind when absent (no implicit 'candidate').
   const missingKind = [
     ranking('q2', 'fixture-b', [['10', 2, { kind: 'source-group' }]]),
-    ranking('q1', 'fixture-a', [['10', 1]]), // kind absent upstream
+    ranking('q1', 'fixture-a', [['10', 1]]), // kind ABSENT upstream (no default)
   ];
   const fA = rrfFusion(orderA);
   const fB = rrfFusion(orderB);
   const fM = rrfFusion(missingKind);
   assert.deepEqual(fA, fB, 'fusion is permutation-invariant under differing identity kinds');
   for (const f of [fA, fB, fM]) {
-    assert.equal(f.candidates[0].identity.kind, 'candidate', 'canonical T06 candidate kind, not "first encountered"');
-    assert.equal(f.candidates[0].identity.questionId, '10');
+    assert.deepEqual(f.candidates[0].identity, { kind: 'candidate', questionId: '10' }, 'canonical T06 candidate kind, not "first encountered", even when upstream kind is missing');
   }
 });
 
@@ -364,4 +370,35 @@ test('E5: items carrying a per-item provider failure are rejected (not fused) wi
   assert.equal(fused.rejected[0].failure.class, 'boundary');
   assert.deepEqual(fused.rejected[0].channel, channel('q1', 'fixture-a'));
   assert.equal(fused.rejected[0].identity.questionId, '99');
+});
+
+test('E7: explicit per-item failure that is present-but-malformed (not a { code, class } identity) → hard fail-closed error (FAILURE_IDENTITY_INVALID); never treated as "no failure", never fused (P1-3)', () => {
+  const base = { channel: channel('q1', 'fixture-a') };
+  const cases = [
+    ['timeout', 'plain string failure'],
+    [null, 'explicit null failure'],
+    [{ code: 'X' }, 'missing class'],
+    [{ class: 'provider' }, 'missing code'],
+    [{}, 'empty object'],
+  ];
+  for (const [failure, label] of cases) {
+    const item = {
+      identity: { kind: 'candidate', questionId: '10' },
+      provenance: { route: 'fixture', rank: 1 },
+      source_url: null,
+      facts: {},
+      failure,
+    };
+    assert.throws(
+      () => rrfFusion([{ ...base, items: [item] }]),
+      (err) => err.code === FUSION_ERROR_FAILURE_IDENTITY_INVALID,
+      `${label}: present-but-malformed explicit failure must throw FAILURE_IDENTITY_INVALID, never fuse`,
+    );
+  }
+  // control: an ABSENT failure key is not a contract violation — the item fuses.
+  const fused = rrfFusion([{
+    ...base,
+    items: [{ identity: { kind: 'candidate', questionId: '10' }, provenance: { route: 'fixture', rank: 1 }, source_url: null, facts: {} }],
+  }]);
+  assert.deepEqual(candidateIds(fused), ['10'], 'absent failure is distinguishable from present-but-malformed');
 });

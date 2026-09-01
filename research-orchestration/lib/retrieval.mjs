@@ -102,9 +102,11 @@ function failure(reason, details = null) {
  */
 function resolveChannels(seam, channels) {
   if (channels !== undefined && !Array.isArray(channels)) {
+    // P1-1: never echo the raw (possibly arbitrary/machine-private) channels
+    // value; report a stable type descriptor only.
     return failure(RETRIEVAL_FAILURE_INVALID_INPUT, {
       reason: 'channels must be an array of { providerId, capability? } descriptors, or omitted/empty for the unambiguous single-provider default',
-      channels,
+      receivedType: channels === null ? 'null' : Array.isArray(channels) ? 'array' : typeof channels,
     });
   }
 
@@ -134,24 +136,28 @@ function resolveChannels(seam, channels) {
   const seen = new Set();
   for (const descriptor of channels) {
     if (!isPlainObject(descriptor) || !isNonEmptyString(descriptor.providerId)) {
+      // P1-1: never echo the raw (possibly arbitrary/machine-private) descriptor;
+      // report a stable type descriptor + which required field was invalid.
       return failure(RETRIEVAL_FAILURE_INVALID_INPUT, {
         reason: 'channel descriptor must be { providerId, capability? }',
-        descriptor,
+        receivedType: descriptor === null ? 'null' : Array.isArray(descriptor) ? 'array' : typeof descriptor,
+        providerIdInvalid: !isNonEmptyString(descriptor?.providerId),
       });
     }
     if (descriptor.capability != null && descriptor.capability !== CAPABILITY_SEARCH) {
+      // P1-1: no raw descriptor/capability echo; stable invalid-input reason only.
       return failure(RETRIEVAL_FAILURE_CHANNEL_NOT_RETRIEVAL_RANKED, {
-        channel: { providerId: descriptor.providerId, capability: descriptor.capability },
+        reason: 'capability_must_be_search',
         note: 'Session capture / non-search capabilities cannot be retrieval-ranked channels (§5.4)',
       });
     }
     if (seen.has(descriptor.providerId)) {
-      return failure(RETRIEVAL_FAILURE_CHANNEL_DUPLICATE, { providerId: descriptor.providerId });
+      return failure(RETRIEVAL_FAILURE_CHANNEL_DUPLICATE, { reason: 'duplicate_channel_descriptor' });
     }
     seen.add(descriptor.providerId);
     if (!searchProviders.includes(descriptor.providerId)) {
       return failure(RETRIEVAL_FAILURE_CHANNEL_UNREGISTERED, {
-        requested: descriptor.providerId,
+        reason: 'provider_not_registered_for_search_capability',
         available: searchProviders,
       });
     }
@@ -222,10 +228,12 @@ export function runMultiQueryRetrieval({ plan, planHash: expectedPlanHash, seam,
         // Routing/contract/exceptions from the seam: FAIL CLOSED. A provider
         // failure is a result, never a routing event — but a CONTRACT violation
         // (UNKNOWN_PROVIDER_CONTRACT etc.) cannot be judged → whole run fails.
+        // P1-1: never echo a raw adapter/fs err.message (it may embed a
+        // machine-private path); emit a stable code + stable reason only.
         return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
           channel,
           code: err?.code ?? null,
-          message: err instanceof Error ? err.message : String(err),
+          reason: 'provider_contract_violation',
         });
       }
       if (result.ok === true) {
@@ -266,10 +274,12 @@ export function runMultiQueryRetrieval({ plan, planHash: expectedPlanHash, seam,
   try {
     fused = rrfFusion(rankings);
   } catch (err) {
-    // Provider item violated the retrieval/rank contract → fail closed.
+    // Provider item violated the retrieval/rank contract → fail closed. This
+    // also covers a present-but-malformed per-item failure (P1-3). P1-1: emit
+    // only the stable FUSION code, never a raw err.message.
     return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
       code: err?.code ?? null,
-      message: err instanceof Error ? err.message : String(err),
+      reason: 'rrf_fusion_contract_violation',
     });
   }
 
@@ -289,14 +299,31 @@ export function runMultiQueryRetrieval({ plan, planHash: expectedPlanHash, seam,
       scope: 'single-pass',
     },
   };
-  const content = `${JSON.stringify(pool, null, 2)}\n`;
+
+  // P1-2: seam-accepted provider metadata may be non-JSON-safe (BigInt, cyclic
+  // references). Serialize inside the guard so a throw becomes a stable
+  // fail-closed contract failure — it must NEVER escape runMultiQueryRetrieval,
+  // and no artifact is written when serialization fails (write happens after).
+  let content;
+  try {
+    content = `${JSON.stringify(pool, null, 2)}\n`;
+  } catch (err) {
+    return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
+      code: err?.code ?? null,
+      reason: 'pool_serialization_failed',
+    });
+  }
+
   const poolHash = sha256(content);
   try {
     fs.mkdirSync(workDir, { recursive: true });
     fs.writeFileSync(path.join(workDir, RETRIEVAL_POOL_FILENAME), content);
   } catch (err) {
+    // P1-1: fs errors embed absolute workDir paths in err.message; return a
+    // stable sanitized reason only (RULES §11 path-redaction).
     return failure(RETRIEVAL_FAILURE_POOL_WRITE, {
-      reason: err instanceof Error ? err.message : String(err),
+      reason: 'pool_write_failed',
+      file: RETRIEVAL_POOL_FILENAME,
     });
   }
 
