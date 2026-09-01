@@ -570,11 +570,12 @@ test('F2: isBoundarySafeString — credential assignment shapes / machine-privat
   for (const s of ['z_c0=abc123', 'token=super-secret', 'cookie: abc', 'Authorization: Bearer x', 'api_key = x']) {
     assert.equal(isBoundarySafeString(s), false, `credential-shaped string must be rejected: ${s}`);
   }
-  // Review 5078133293 (P1): ALL machine-private absolute path roots are
-  // rejected — POSIX /root /workspace /tmp (incl. /var/tmp /private/tmp via
-  // substring) and ANY Windows drive root, not just /Users | /home | profiles.
+  // Review 5078133293 (P1, 2nd round): the FULL standard POSIX top-level
+  // directory set is covered, not just /Users | /home | /root | /workspace
+  // | /tmp — /mnt /opt /srv /etc /usr /var ... and ANY Windows drive root.
   for (const s of ['/home/private-user/token.txt', '/Users/victim/secret/cache.json', 'C:\\Users\\victim\\secret\\x.json', '~/.ssh/id_rsa',
-    '/root/private/run.log', '/workspace/user/run.log', '/tmp/private/run.log', '/var/tmp/x.log', '/private/tmp/x.log', 'C:\\workspace\\user.txt', 'D:/workspace/user.txt']) {
+    '/root/private/run.log', '/workspace/user/run.log', '/tmp/private/run.log', '/var/tmp/x.log', '/private/tmp/x.log', 'C:\\workspace\\user.txt', 'D:/workspace/user.txt',
+    '/mnt/alice/private.log', '/opt/acme/internal.json', '/srv/private/cache', '/etc/nginx/secrets.conf', '/usr/local/bin/leak', '/var/lib/docker/x', '/media/user/usb.txt']) {
     assert.equal(isBoundarySafeString(s), false, `machine-private path must be rejected: ${s}`);
   }
   assert.equal(isBoundarySafeString('a'.repeat(BOUNDARY_MAX_STRING_LENGTH + 1)), false, 'over-length string must be rejected');

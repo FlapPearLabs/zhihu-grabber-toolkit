@@ -642,7 +642,11 @@ export function runMultiQueryRetrieval(opts = {}) {
       failedChannels: channelRecords
         .filter((c) => c.ok === false)
         .map((c) => ({
-          channel: c.channel,
+          // P1 (review 5078133293, 2nd round): this early return bypasses
+          // assertArtifactSafe, so the seam-controlled providerId is projected
+          // through projectFailureIdentity like every other registry identity —
+          // a machine-private path-shaped adapter name can never surface.
+          channel: { ...c.channel, providerId: projectFailureIdentity(c.channel.providerId) },
           auth_class: c.auth_class,
           retrievedAt: c.retrievedAt,
           completeness: c.completeness,

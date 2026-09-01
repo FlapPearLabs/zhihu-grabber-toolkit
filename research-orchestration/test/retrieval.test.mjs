@@ -1417,3 +1417,50 @@ test('J7: provider rank beyond Number.MAX_SAFE_INTEGER (P2 review 5078133293) â†
   assert.equal(run.details.reason, 'rrf_fusion_contract_violation');
   assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact written');
 });
+
+test('J8: ALL-provider-failed early return with a machine-private PATH-SHAPED providerId (P1 review 5078133293, 2nd round) â†’ the channel identity is projected through projectFailureIdentity to <redacted>; the absolute path never surfaces in the failure result', () => {
+  const REGISTRY_PATH = '/home/private-user/provider';
+  function failResult(providerId) {
+    return {
+      ok: false,
+      provider_id: providerId,
+      capability: CAPABILITY_SEARCH,
+      auth_class: AUTH_CLASS_OFFICIAL_SECRET,
+      retrieved_at: FIXED_NOW(),
+      items: [],
+      failure: { code: 'PROVIDER_REPORTED_FAILURE', class: 'provider' },
+      completeness: { status: COMPLETENESS_UNKNOWN, evidence: { signal: 'absent', reason: 'no_pagination_signal' } },
+    };
+  }
+  const seam = {
+    listProviders() {
+      return [
+        { providerId: `${REGISTRY_PATH}-a`, capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET },
+        { providerId: `${REGISTRY_PATH}-b`, capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET },
+      ];
+    },
+    retrieve(_capability, _params, ctx) {
+      return failResult(ctx.providerId);
+    },
+  };
+  const workDir = tmpWorkDir();
+  const run = runMultiQueryRetrieval({
+    plan: PLAN_SINGLE,
+    seam,
+    channels: [{ providerId: `${REGISTRY_PATH}-a` }, { providerId: `${REGISTRY_PATH}-b` }],
+    workDir,
+  });
+  assert.equal(run.ok, false, 'all-failed must fail closed');
+  assert.equal(run.reason, RETRIEVAL_FAILURE_NO_VALID_CHANNEL);
+  const failed = run.details.failedChannels;
+  assert.equal(failed.length, 2, 'BOTH failing channels reported');
+  for (const fc of failed) {
+    assert.equal(fc.channel.providerId, '<redacted>', 'path-shaped providerId is redacted in the all-failed channel identity');
+    assert.equal(fc.channel.capability, CAPABILITY_SEARCH, 'capability identity retained');
+    assert.equal(fc.auth_class, AUTH_CLASS_OFFICIAL_SECRET, 'registry-bound auth_class retained');
+  }
+  const serialized = JSON.stringify(run);
+  assert.ok(!serialized.includes(REGISTRY_PATH), 'the absolute registry path never surfaces in the failure result');
+  assert.ok(serialized.includes('<redacted>'), 'the stable redaction placeholder surfaces instead');
+  assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact written');
+});

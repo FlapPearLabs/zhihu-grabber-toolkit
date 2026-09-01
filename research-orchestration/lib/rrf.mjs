@@ -139,13 +139,17 @@ export const BOUNDARY_MAX_STRING_LENGTH = 500;
 /** Credential-shaped content (field/assignment shapes incl. the repo-known z_c0 auth cookie). */
 export const CREDENTIAL_SHAPE =
   /(?:z_c0\s*=|(?:password|passwd|secret|token|api[_-]?key|access[_-]?key|authorization|cookie|session[_-]?id)\s*[:=])/i;
-/** Machine-private filesystem path content (POSIX user/machine roots, Windows
- *  drive roots, home-relative ~). Review 5078133293 (P1): the deny set must
- *  cover ALL common machine-private absolute path roots — /root, /workspace,
- *  /tmp (incl. /var/tmp & /private/tmp via substring), and ANY Windows drive
- *  root (C:\... / D:/...), not just /Users | /home | profile roots. */
+/** Machine-private filesystem path content (POSIX system/workspace roots,
+ *  Windows drive roots, home-relative ~). Review 5078133293 (P1, two rounds):
+ *  enumerating a handful of roots is not enough — the deny set must cover the
+ *  FULL standard POSIX top-level directory set (/bin /boot /dev /etc /home
+ *  /lib /lib64 /media /mnt /opt /proc /root /run /sbin /srv /sys /tmp /usr
+ *  /var, macOS /Applications /Library /System /Volumes /Users /private
+ *  /cores /Network /nix /data, container/CI roots /workspace) plus ANY Windows
+ *  drive root (C:\... / D:/...), so values like /mnt/alice/private.log,
+ *  /opt/acme/internal.json or /srv/private/cache can never pass. */
 export const PRIVATE_PATH_SHAPE =
-  /(?:\/Users\/|\/home\/|\/root\/|\/workspace\/|\/tmp\/|\b[A-Za-z]:[\\/]|(?:^|[\s"'<>\u2018\u2019\u201c\u201d])~[/\w.-])/;
+  /(?:\/(?:Users|home|root|workspace|tmp|etc|opt|srv|mnt|media|proc|sys|dev|run|boot|lib|lib64|usr|var|bin|sbin|Applications|Library|System|Volumes|private|cores|Network|nix|data)(?:[\\/]|$)|(?<![A-Za-z])[A-Za-z]:[\\/]|(?:^|[\s"'<>\u2018\u2019\u201c\u201d])~[/\w.-])/;
 
 /**
  * Credential-sensitive KEY-NAME deny rule (P1-2 review 5077286260 + P1 compound/
