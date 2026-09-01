@@ -297,6 +297,7 @@ function safeListProviders(seam) {
       note: 'provider registry must be an array of { providerId, capability, authClass } entries; no provider IO was performed',
     });
   }
+  const seenIdentities = new Set();
   for (const entry of registered) {
     if (!isPlainObject(entry) || !isNonEmptyString(entry.providerId) || !isNonEmptyString(entry.capability)
       || !AUTH_CLASSES.includes(entry.authClass)) {
@@ -306,8 +307,34 @@ function safeListProviders(seam) {
         note: 'provider registry entry must be { providerId, capability, authClass } with non-empty strings and authClass in AUTH_CLASSES; no provider IO was performed',
       });
     }
+    // P2 (review 5078133293): duplicate (providerId, capability) identities are
+    // an ambiguous provider contract — a method-compatible seam returning the
+    // same identity twice (especially with DIFFERENT authClass values) makes
+    // explicit descriptors silently pick the first duplicate and default
+    // routing misreport provider counts. Reject before any provider IO.
+    const identityKey = `${entry.providerId}\u0000${entry.capability}`;
+    if (seenIdentities.has(identityKey)) {
+      return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
+        reason: 'provider_contract_violation',
+        registryIssue: 'duplicate_identity',
+        note: 'provider registry contains duplicate (providerId, capability) identities — ambiguous provider contract; no provider IO was performed',
+      });
+    }
+    seenIdentities.add(identityKey);
   }
   return { ok: true, registered };
+}
+
+/**
+ * P1 (review 5078133293): registry identity strings are seam-controlled and may
+ * be machine-private path-shaped (e.g. an adapter registered as
+ * '/home/private-user/provider' or 'C:\\workspace\\provider'). Only a
+ * boundary-safe string may surface in failure details; anything else becomes
+ * the stable '<redacted>' placeholder — raw registry identifiers never leak
+ * through `registered` / `candidates` / `available`.
+ */
+function projectFailureIdentity(value) {
+  return isBoundarySafeString(value) ? value : '<redacted>';
 }
 
 /**
@@ -351,13 +378,13 @@ function resolveChannels(seam, channels) {
     if (searchProviders.length === 0) {
       return failure(RETRIEVAL_FAILURE_NO_VALID_CHANNEL, {
         reason: 'no_search_channels_registered',
-        registered: registered.map((e) => ({ providerId: e.providerId, capability: e.capability })),
+        registered: registered.map((e) => ({ providerId: projectFailureIdentity(e.providerId), capability: projectFailureIdentity(e.capability) })),
       });
     }
     if (searchProviders.length > 1) {
       return failure(RETRIEVAL_FAILURE_NO_VALID_CHANNEL, {
         reason: 'multiple_search_providers_without_explicit_channels',
-        candidates: searchProviders.map((e) => e.providerId),
+        candidates: searchProviders.map((e) => projectFailureIdentity(e.providerId)),
         note: 'D-2 routing is OPEN — explicit channel descriptors required (NO_SILENT_PROVIDER_FALLBACK)',
       });
     }
@@ -391,7 +418,7 @@ function resolveChannels(seam, channels) {
     if (!entry) {
       return failure(RETRIEVAL_FAILURE_CHANNEL_UNREGISTERED, {
         reason: 'provider_not_registered_for_search_capability',
-        available: searchProviders.map((e) => e.providerId),
+        available: searchProviders.map((e) => projectFailureIdentity(e.providerId)),
       });
     }
     providers.push(entry);

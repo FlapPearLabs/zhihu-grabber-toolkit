@@ -139,9 +139,13 @@ export const BOUNDARY_MAX_STRING_LENGTH = 500;
 /** Credential-shaped content (field/assignment shapes incl. the repo-known z_c0 auth cookie). */
 export const CREDENTIAL_SHAPE =
   /(?:z_c0\s*=|(?:password|passwd|secret|token|api[_-]?key|access[_-]?key|authorization|cookie|session[_-]?id)\s*[:=])/i;
-/** Machine-private filesystem path content (POSIX /Users|/home, Windows profile roots, home-relative ~). */
+/** Machine-private filesystem path content (POSIX user/machine roots, Windows
+ *  drive roots, home-relative ~). Review 5078133293 (P1): the deny set must
+ *  cover ALL common machine-private absolute path roots — /root, /workspace,
+ *  /tmp (incl. /var/tmp & /private/tmp via substring), and ANY Windows drive
+ *  root (C:\... / D:/...), not just /Users | /home | profile roots. */
 export const PRIVATE_PATH_SHAPE =
-  /(?:\/Users\/|\/home\/|[A-Za-z]:[\\/](?:Users|Documents and Settings)[\\/]|(?:^|[\s"'<>\u2018\u2019\u201c\u201d])~[/\w.-])/;
+  /(?:\/Users\/|\/home\/|\/root\/|\/workspace\/|\/tmp\/|\b[A-Za-z]:[\\/]|(?:^|[\s"'<>\u2018\u2019\u201c\u201d])~[/\w.-])/;
 
 /**
  * Credential-sensitive KEY-NAME deny rule (P1-2 review 5077286260 + P1 compound/
@@ -291,10 +295,12 @@ export function projectRouteString(value) {
   return isBoundarySafeString(value) ? { ok: true, value } : { ok: false };
 }
 
-/** rejected-observation rank persistence boundary: null or a finite number (JSON-safe). */
+/** rejected-observation rank persistence boundary: null or a SAFE integer (JSON-safe).
+ *  Review 5078133293 (P2): ranks beyond Number.MAX_SAFE_INTEGER have already been
+ *  rounded by JavaScript — only a safe integer can be a verifiable RRF rank. */
 export function projectRejectedRank(value) {
   if (value === undefined || value === null) return { ok: true, value: null };
-  if (typeof value === 'number' && Number.isFinite(value)) return { ok: true, value };
+  if (typeof value === 'number' && Number.isSafeInteger(value)) return { ok: true, value };
   return { ok: false };
 }
 
@@ -326,6 +332,12 @@ export function projectSourceUrlRecord(value) {
   const securityClass = value.securityClass;
   if (typeof securityClass !== 'string' || securityClass.length === 0) return { ok: false };
   if (!isBoundarySafeString(securityClass)) return { ok: false };
+  // Review 5078133293 (P2): the PERSISTED securityClass is bound to the shared
+  // classifier's verdict — a provider-declared class that differs from
+  // classifyUrl's result (e.g. 'trusted' / 'zhimg_cdn' on a plain public https
+  // source that the classifier marks 'external_unverified') is a false
+  // classification and FAILS CLOSED; the classifier result is never overridden.
+  if (classified.securityClass !== securityClass) return { ok: false };
   let parsed;
   try {
     parsed = new URL(url);
@@ -616,7 +628,11 @@ export function rrfFusion(rankings) {
         throw err;
       }
       const rank = item?.provenance?.rank;
-      if (!Number.isInteger(rank) || rank < 1) {
+      // Review 5078133293 (P2): beyond integer/1-based shape, the rank must be a
+      // SAFE integer — JS has already rounded anything beyond
+      // Number.MAX_SAFE_INTEGER (e.g. 9007199254740993 → ...992), so distinct
+      // upstream ranks could collapse and produce an unverifiable RRF score.
+      if (!Number.isSafeInteger(rank) || rank < 1) {
         const err = new Error(`fusible item carries no valid 1-based ${RRF_RANK_SOURCE} (got ${safeFormat(rank)}) in channel ${safeFormat(ranking.channel)}`);
         err.code = FUSION_ERROR_RANK_INVALID;
         throw err;

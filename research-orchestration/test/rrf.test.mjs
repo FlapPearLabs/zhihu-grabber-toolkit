@@ -570,7 +570,11 @@ test('F2: isBoundarySafeString — credential assignment shapes / machine-privat
   for (const s of ['z_c0=abc123', 'token=super-secret', 'cookie: abc', 'Authorization: Bearer x', 'api_key = x']) {
     assert.equal(isBoundarySafeString(s), false, `credential-shaped string must be rejected: ${s}`);
   }
-  for (const s of ['/home/private-user/token.txt', '/Users/victim/secret/cache.json', 'C:\\Users\\victim\\secret\\x.json', '~/.ssh/id_rsa']) {
+  // Review 5078133293 (P1): ALL machine-private absolute path roots are
+  // rejected — POSIX /root /workspace /tmp (incl. /var/tmp /private/tmp via
+  // substring) and ANY Windows drive root, not just /Users | /home | profiles.
+  for (const s of ['/home/private-user/token.txt', '/Users/victim/secret/cache.json', 'C:\\Users\\victim\\secret\\x.json', '~/.ssh/id_rsa',
+    '/root/private/run.log', '/workspace/user/run.log', '/tmp/private/run.log', '/var/tmp/x.log', '/private/tmp/x.log', 'C:\\workspace\\user.txt', 'D:/workspace/user.txt']) {
     assert.equal(isBoundarySafeString(s), false, `machine-private path must be rejected: ${s}`);
   }
   assert.equal(isBoundarySafeString('a'.repeat(BOUNDARY_MAX_STRING_LENGTH + 1)), false, 'over-length string must be rejected');
@@ -629,43 +633,56 @@ test('F4: projectRouteString / projectRejectedRank — absent values stay null; 
   assert.equal(projectRejectedRank(NaN).ok, false, 'NaN rank must fail closed');
   assert.equal(projectRejectedRank('3').ok, false, 'non-number rank must fail closed');
   assert.equal(projectRejectedRank(10n).ok, false, 'BigInt rank must fail closed');
+  // Review 5078133293 (P2): ranks beyond Number.MAX_SAFE_INTEGER have already
+  // been rounded by JS (9007199254740993 → ...992) and must fail closed — a
+  // non-safe integer can never be a verifiable RRF rank.
+  assert.equal(projectRejectedRank(Number.MAX_SAFE_INTEGER + 1).ok, false, 'rank beyond MAX_SAFE_INTEGER must fail closed');
+  assert.equal(projectRejectedRank(Number.MAX_SAFE_INTEGER).ok, true, 'MAX_SAFE_INTEGER itself is a valid rank');
 });
 
 test('F5: projectSourceUrlRecord — REUSES the repository classifyUrl trust classifier (https + public host only; localhost/loopback/private/link-local rejected) + T06 credential/path hygiene; unsafe URLs FAIL CLOSED and are never rewritten (P1-4 review 5077286260 / P1 review 5078267886)', () => {
-  const safe = { url: 'https://example.invalid/a?b=1', securityClass: 'official-secret' };
+  // Review 5078133293 (P2): the PERSISTED securityClass must BIND to the shared
+  // classifier verdict — a public https source is classified 'external_unverified'
+  // by classifyUrl, so a provider-declared class must match it exactly.
+  const safe = { url: 'https://example.invalid/a?b=1', securityClass: 'external_unverified' };
   assert.deepEqual(projectSourceUrlRecord(safe), { ok: true, value: { url: safe.url, securityClass: safe.securityClass } });
   assert.deepEqual(
-    projectSourceUrlRecord({ url: 'https://example.invalid/', securityClass: 'official-secret', note: 'dropped' }),
-    { ok: true, value: { url: 'https://example.invalid/', securityClass: 'official-secret' } },
+    projectSourceUrlRecord({ url: 'https://example.invalid/', securityClass: 'external_unverified', note: 'dropped' }),
+    { ok: true, value: { url: 'https://example.invalid/', securityClass: 'external_unverified' } },
     'non-contract metadata fields are dropped; the record is canonicalized to { url, securityClass }',
   );
   assert.deepEqual(projectSourceUrlRecord(null), { ok: true, value: null });
   assert.deepEqual(projectSourceUrlRecord(undefined), { ok: true, value: null });
 
   const unsafe = [
-    ['credential query key', { url: 'https://example.invalid/?token=super-secret', securityClass: 'official-secret' }],
-    ['credential query key variant', { url: 'https://example.invalid/?api_key=abc', securityClass: 'official-secret' }],
-    ['userinfo credentials', { url: 'https://user:pass@example.invalid/', securityClass: 'official-secret' }],
-    ['non-https', { url: 'http://example.invalid/', securityClass: 'official-secret' }],
-    ['machine-private path in URL', { url: 'https://example.invalid/home/private-user/x', securityClass: 'official-secret' }],
+    ['credential query key', { url: 'https://example.invalid/?token=super-secret', securityClass: 'external_unverified' }],
+    ['credential query key variant', { url: 'https://example.invalid/?api_key=abc', securityClass: 'external_unverified' }],
+    ['userinfo credentials', { url: 'https://user:pass@example.invalid/', securityClass: 'external_unverified' }],
+    ['non-https', { url: 'http://example.invalid/', securityClass: 'external_unverified' }],
+    ['machine-private path in URL', { url: 'https://example.invalid/home/private-user/x', securityClass: 'external_unverified' }],
     ['missing securityClass', { url: 'https://example.invalid/' }],
-    ['non-string url', { url: 5, securityClass: 'official-secret' }],
+    ['non-string url', { url: 5, securityClass: 'external_unverified' }],
     ['non-plain record', new Date()],
+    // Review 5078133293 (P2): a provider-declared securityClass that DIFFERS
+    // from the shared classifier verdict (e.g. 'trusted' / 'zhimg_cdn' on a
+    // plain public https source) is a false classification → FAIL CLOSED.
+    ['mismatched securityClass (trusted)', { url: 'https://example.invalid/x', securityClass: 'trusted' }],
+    ['mismatched securityClass (zhimg_cdn)', { url: 'https://example.invalid/x', securityClass: 'zhimg_cdn' }],
     // Review 5078267886 (P1): the SHARED classifyUrl classifier rejects
     // localhost / loopback / private / link-local / CGNAT / multicast /
     // reserved hosts — no weaker parallel URL policy in T06.
-    ['localhost hostname', { url: 'https://localhost/x', securityClass: 'official-secret' }],
-    ['subdomain localhost', { url: 'https://api.localhost/x', securityClass: 'official-secret' }],
-    ['IPv4 loopback', { url: 'https://127.0.0.1/x', securityClass: 'official-secret' }],
-    ['IPv4 private 10/8', { url: 'https://10.0.0.1/x', securityClass: 'official-secret' }],
-    ['IPv4 private 172.16/12', { url: 'https://172.16.5.9/x', securityClass: 'official-secret' }],
-    ['IPv4 private 192.168/16', { url: 'https://192.168.1.1/x', securityClass: 'official-secret' }],
-    ['IPv4 link-local 169.254/16', { url: 'https://169.254.169.254/x', securityClass: 'official-secret' }],
-    ['IPv4 CGNAT 100.64/10', { url: 'https://100.64.0.1/x', securityClass: 'official-secret' }],
-    ['IPv6 loopback ::1', { url: 'https://[::1]/x', securityClass: 'official-secret' }],
-    ['IPv6 ULA fc00::/7', { url: 'https://[fc00::1]/x', securityClass: 'official-secret' }],
-    ['IPv6 link-local fe80::/10', { url: 'https://[fe80::1]/x', securityClass: 'official-secret' }],
-    ['zhihu redirect host as final target', { url: 'https://link.zhihu.com/x', securityClass: 'official-secret' }],
+    ['localhost hostname', { url: 'https://localhost/x', securityClass: 'external_unverified' }],
+    ['subdomain localhost', { url: 'https://api.localhost/x', securityClass: 'external_unverified' }],
+    ['IPv4 loopback', { url: 'https://127.0.0.1/x', securityClass: 'external_unverified' }],
+    ['IPv4 private 10/8', { url: 'https://10.0.0.1/x', securityClass: 'external_unverified' }],
+    ['IPv4 private 172.16/12', { url: 'https://172.16.5.9/x', securityClass: 'external_unverified' }],
+    ['IPv4 private 192.168/16', { url: 'https://192.168.1.1/x', securityClass: 'external_unverified' }],
+    ['IPv4 link-local 169.254/16', { url: 'https://169.254.169.254/x', securityClass: 'external_unverified' }],
+    ['IPv4 CGNAT 100.64/10', { url: 'https://100.64.0.1/x', securityClass: 'external_unverified' }],
+    ['IPv6 loopback ::1', { url: 'https://[::1]/x', securityClass: 'external_unverified' }],
+    ['IPv6 ULA fc00::/7', { url: 'https://[fc00::1]/x', securityClass: 'external_unverified' }],
+    ['IPv6 link-local fe80::/10', { url: 'https://[fe80::1]/x', securityClass: 'external_unverified' }],
+    ['zhihu redirect host as final target', { url: 'https://link.zhihu.com/x', securityClass: 'external_unverified' }],
   ];
   for (const [label, record] of unsafe) {
     assert.equal(projectSourceUrlRecord(record).ok, false, `${label}: must fail closed`);

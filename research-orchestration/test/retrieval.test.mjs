@@ -1335,3 +1335,85 @@ test('J4: ALL providers failed → the no_valid_channel early return RETAINS saf
   const serialized = JSON.stringify(run);
   assert.ok(!serialized.includes(SECRET_DETAIL), 'path-bearing failure detail must never surface');
 });
+
+test('J5: provider registry with DUPLICATE (providerId, capability) identities — including entries carrying DIFFERENT authClass values (P2 review 5078133293) → FAIL CLOSED (retrieval_provider_contract_invalid) before any provider IO; no artifact', () => {
+  const seam = {
+    listProviders() {
+      return [
+        { providerId: 'fixture-a', capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET },
+        { providerId: 'fixture-a', capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_SESSION },
+      ];
+    },
+    retrieve() {
+      throw new Error('provider IO must not be performed on a duplicate registry identity');
+    },
+  };
+  const workDir = tmpWorkDir();
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir });
+  assert.equal(run.ok, false, 'duplicate registry identity must fail closed');
+  assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+  assert.equal(run.details.reason, 'provider_contract_violation');
+  assert.equal(run.details.registryIssue, 'duplicate_identity');
+  assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact written');
+});
+
+test('J6: shape-valid registry identities that are machine-private PATH-SHAPED (P1 review 5078133293) are REDACTED to the stable <redacted> placeholder in failure details — the absolute path never surfaces; no artifact', () => {
+  const REGISTRY_PATH = '/home/private-user/provider';
+  const seam = {
+    listProviders() {
+      return [
+        { providerId: `${REGISTRY_PATH}-a`, capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET },
+        { providerId: `${REGISTRY_PATH}-b`, capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET },
+      ];
+    },
+    retrieve() {
+      throw new Error('provider IO must not be performed before channel resolution');
+    },
+  };
+  const workDir = tmpWorkDir();
+  // no explicit channels → multiple search providers → the failure details expose `candidates`
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir });
+  assert.equal(run.ok, false);
+  assert.equal(run.reason, RETRIEVAL_FAILURE_NO_VALID_CHANNEL);
+  assert.equal(run.details.reason, 'multiple_search_providers_without_explicit_channels');
+  assert.deepEqual(run.details.candidates, ['<redacted>', '<redacted>'], 'path-shaped registry identities are redacted, never echoed raw');
+  const serialized = JSON.stringify(run);
+  assert.ok(!serialized.includes(REGISTRY_PATH), 'the absolute registry path never surfaces');
+  assert.ok(serialized.includes('<redacted>'), 'the stable redaction placeholder is what surfaces instead');
+  assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact written');
+});
+
+test('J7: provider rank beyond Number.MAX_SAFE_INTEGER (P2 review 5078133293) → FAIL CLOSED (retrieval_provider_contract_invalid) at the fusion rank gate — a JS-rounded rank can never be a verifiable RRF score; no artifact', () => {
+  function rawSeam(items) {
+    return {
+      listProviders() {
+        return [{ providerId: 'fixture-a', capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET }];
+      },
+      retrieve() {
+        return {
+          ok: true,
+          provider_id: 'fixture-a',
+          capability: CAPABILITY_SEARCH,
+          auth_class: AUTH_CLASS_OFFICIAL_SECRET,
+          retrieved_at: FIXED_NOW(),
+          items,
+          completeness: { status: COMPLETENESS_UNKNOWN, evidence: { signal: 'absent', reason: 'no_pagination_signal' } },
+        };
+      },
+    };
+  }
+  // 9007199254740993 has ALREADY been rounded by JavaScript to ...992 — beyond
+  // MAX_SAFE_INTEGER, so two distinct upstream ranks could collapse onto one
+  // value; the rank gate must reject it (Number.isInteger alone would accept).
+  const UNSAFE_RANK = Number.MAX_SAFE_INTEGER + 1;
+  const workDir = tmpWorkDir();
+  const run = runMultiQueryRetrieval({
+    plan: PLAN_SINGLE,
+    seam: rawSeam([{ identity: { questionId: '100' }, provenance: { rank: UNSAFE_RANK } }]),
+    workDir,
+  });
+  assert.equal(run.ok, false, 'non-safe-integer rank must fail closed');
+  assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+  assert.equal(run.details.reason, 'rrf_fusion_contract_violation');
+  assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact written');
+});
