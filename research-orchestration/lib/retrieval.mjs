@@ -27,6 +27,21 @@
  *   - malformed provider result (seam UNKNOWN_PROVIDER_CONTRACT / fused-item
  *     rank/identity contract violation) → FAIL CLOSED
  *     (retrieval_provider_contract_invalid);
+ *   - contradictory ok:true + top-level failure → FAIL CLOSED
+ *     (retrieval_provider_contract_invalid) — narrow hasOwnProperty guard (P1-2);
+ *   - within-channel duplicate questionId → FAIL CLOSED
+ *     (retrieval_provider_contract_invalid) via the rrf hard error, independent
+ *     of item array order (item-order-independence, P1-4);
+ *   - provider failure diagnostics are SAFE-PROJECTED to their machine-readable
+ *     { code, class } identity at the T06 boundary; raw detail / path-bearing /
+ *     non-JSON-safe (BigInt/cyclic) payloads never reach output, the pool
+ *     artifact, or serialization — including the all-failed early return (P1-1);
+ *   - a caller-supplied planHash must match the plan-contract 64-lowercase-hex
+ *     format; a malformed value fails closed and is NEVER echoed back (P1-3);
+ *   - rejected observations are canonicalized by stable keys before persisting
+ *     (permutation-invariant, P1-5);
+ *   - auth_class is persisted as adapter-bound channel provenance (§5.1), never
+ *     part of the RRF channel key (P2-3);
  *   - malformed top-level `channels` (non-array) → FAIL CLOSED
  *     (retrieval_invalid_input) BEFORE any provider IO — only omitted/empty may
  *     trigger the unambiguous single-provider default (P1-1);
@@ -46,7 +61,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { CAPABILITY_SEARCH } from './provider-seam.mjs';
-import { planHash, validatePlanInput } from './plan-contract.mjs';
+import {
+  SEAM_ERROR_UNSUPPORTED_CAPABILITY,
+  SEAM_ERROR_NO_SILENT_PROVIDER_FALLBACK,
+  SEAM_ERROR_UNKNOWN_PROVIDER_CONTRACT,
+  SEAM_ERROR_ADAPTER_CONTRACT_INVALID,
+} from './provider-seam.mjs';
+import { isValidPlanHashFormat, planHash, validatePlanInput } from './plan-contract.mjs';
 import { sha256 } from './state.mjs';
 import {
   RRF_K,
@@ -60,6 +81,19 @@ export const RETRIEVAL_POOL_FILENAME = 'retrieval-pool.json';
 
 /** Pool schema version (strict; additive evolution needs a new version). */
 export const RETRIEVAL_POOL_SCHEMA_VERSION = 1;
+
+/**
+ * Seam contract-error identities that are machine-readable and safe to surface
+ * (P1-1): the only `err.code` values a throwing seam/adapter may proxy. Any
+ * other code (ENOENT, paths, arbitrary adapter payloads) is unvalidated and
+ * must NOT reach failure output.
+ */
+const SEAM_CONTRACT_ERROR_CODES = Object.freeze([
+  SEAM_ERROR_UNSUPPORTED_CAPABILITY,
+  SEAM_ERROR_NO_SILENT_PROVIDER_FALLBACK,
+  SEAM_ERROR_UNKNOWN_PROVIDER_CONTRACT,
+  SEAM_ERROR_ADAPTER_CONTRACT_INVALID,
+]);
 
 /** Machine-readable failure identities (fail-closed, controller-checkable). */
 export const RETRIEVAL_FAILURE_INVALID_INPUT = 'retrieval_invalid_input';
@@ -82,6 +116,24 @@ function isNonEmptyString(value) {
 
 function failure(reason, details = null) {
   return details === null ? { ok: false, reason } : { ok: false, reason, details };
+}
+
+/**
+ * P1-1 safe projection: reduce a provider failure to its machine-readable
+ * identity fields ONLY ({ code, class } — T05 seam P2-1 shape). Raw detail /
+ * provider_error_type / arbitrary payloads — including path-bearing or
+ * non-JSON-safe (BigInt / cyclic) metadata — are dropped at the T06 boundary so
+ * no raw diagnostic can reach failure output, the pool artifact, or the
+ * serialization guard. Absent failure → { ok:true, failure:null }; a PRESENT
+ * failure that is not a shape-valid { code, class } identity → { ok:false }
+ * (contract violation, mirroring the rrf per-item rule).
+ */
+function projectFailure(failure) {
+  if (failure === undefined || failure === null) return { ok: true, failure: null };
+  if (!isPlainObject(failure) || !isNonEmptyString(failure.code) || !isNonEmptyString(failure.class)) {
+    return { ok: false };
+  }
+  return { ok: true, failure: { code: failure.code, class: failure.class } };
 }
 
 /**
@@ -184,7 +236,12 @@ function resolveChannels(seam, channels) {
  * @param {string} opts.workDir     work directory for the pool artifact
  * @returns {object} { ok:true, pool, poolHash, file } | { ok:false, reason, details? }
  */
-export function runMultiQueryRetrieval({ plan, planHash: expectedPlanHash, seam, channels = [], workDir } = {}) {
+export function runMultiQueryRetrieval(opts = {}) {
+  // P2-1: destructuring defaults only cover `undefined` — a null / non-object
+  // options value would throw a TypeError before validation. Normalize first so
+  // ANY non-object input falls through to the fail-closed module-input check.
+  const options = isPlainObject(opts) ? opts : {};
+  const { plan, planHash: expectedPlanHash, seam, channels = [], workDir } = options;
   // 1. module-input validation (fail closed; no IO before this).
   if (!isPlainObject(plan) || !isPlainObject(seam) || typeof seam.retrieve !== 'function'
     || typeof seam.listProviders !== 'function' || !isNonEmptyString(workDir)) {
@@ -204,11 +261,23 @@ export function runMultiQueryRetrieval({ plan, planHash: expectedPlanHash, seam,
   } catch (err) {
     return failure(RETRIEVAL_FAILURE_PLAN_INVALID, { issues: err?.issues ?? null });
   }
-  if (expectedPlanHash != null && expectedPlanHash !== planIdentity) {
-    return failure(RETRIEVAL_FAILURE_PLAN_IDENTITY_MISMATCH, {
-      provided: expectedPlanHash,
-      computed: planIdentity,
-    });
+  if (expectedPlanHash != null) {
+    // P1-3: a caller-supplied plan identity is only comparable when it is a
+    // syntactically valid planHash (64 lowercase hex, plan-contract). A malformed
+    // value is never echoed back — it may be path/credential-shaped — only stable
+    // malformed/mismatch info is returned.
+    if (!isValidPlanHashFormat(expectedPlanHash)) {
+      return failure(RETRIEVAL_FAILURE_PLAN_IDENTITY_MISMATCH, {
+        reason: 'expected_plan_hash_malformed',
+        expectedFormat: '64-lowercase-hex-sha256',
+      });
+    }
+    if (expectedPlanHash !== planIdentity) {
+      return failure(RETRIEVAL_FAILURE_PLAN_IDENTITY_MISMATCH, {
+        reason: 'plan_identity_mismatch',
+        computed: planIdentity,
+      });
+    }
   }
 
   // 3. deterministic channel set resolution (pre-validated BEFORE any execution).
@@ -229,17 +298,30 @@ export function runMultiQueryRetrieval({ plan, planHash: expectedPlanHash, seam,
         // failure is a result, never a routing event — but a CONTRACT violation
         // (UNKNOWN_PROVIDER_CONTRACT etc.) cannot be judged → whole run fails.
         // P1-1: never echo a raw adapter/fs err.message (it may embed a
-        // machine-private path); emit a stable code + stable reason only.
+        // machine-private path); and never proxy an unvalidated err.code — only
+        // the known seam contract-error identities are machine-readable and safe
+        // to surface; anything else becomes a stable reason with no code.
         return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
           channel,
-          code: err?.code ?? null,
+          code: SEAM_CONTRACT_ERROR_CODES.includes(err?.code) ? err.code : null,
           reason: 'provider_contract_violation',
         });
       }
       if (result.ok === true) {
+        // P1-2: contradictory ok:true + top-level failure can never fuse — fail
+        // closed. hasOwnProperty keeps this narrow: even failure:null counts as
+        // present (absent ≠ present-but-null).
+        if (Object.prototype.hasOwnProperty.call(result, 'failure')) {
+          return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
+            channel,
+            reason: 'provider_contract_violation',
+            note: 'ok:true result must not carry a top-level failure identity',
+          });
+        }
         channelRecords.push({
           channel,
           ok: true,
+          auth_class: result.auth_class, // P2-3: adapter-bound provenance (§5.1)
           itemCount: Array.isArray(result.items) ? result.items.length : 0,
           retrievedAt: result.retrieved_at,
           completeness: result.completeness,
@@ -247,19 +329,34 @@ export function runMultiQueryRetrieval({ plan, planHash: expectedPlanHash, seam,
         rankings.push({ channel, items: result.items });
       } else {
         // Machine-readable provider failure identity, recorded — never silently
-        // substituted, never retried.
+        // substituted, never retried. P1-1: the failure is SAFE-PROJECTED at the
+        // T06 boundary (identity fields only) so raw detail / path-bearing /
+        // non-JSON-safe payloads never reach output, the artifact, or the
+        // serialization guard — including on the all-failed early return below.
+        const projected = projectFailure(result.failure);
+        if (!projected.ok) {
+          return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
+            channel,
+            reason: 'provider_contract_violation',
+            note: 'provider failure identity malformed (needs machine-readable { code, class })',
+          });
+        }
         channelRecords.push({
           channel,
           ok: false,
+          auth_class: result.auth_class, // P2-3: adapter-bound provenance (§5.1)
           retrievedAt: result.retrieved_at,
           completeness: result.completeness,
-          failure: result.failure,
+          failure: projected.failure,
         });
       }
     }
   }
 
-  // 5. zero valid retrieval channel results → FAIL CLOSED.
+  // 5. zero valid retrieval channel results → FAIL CLOSED. c.failure is already
+  //    the P1-1 safe projection ({ code, class } only), so this early return is
+  //    JSON-serializable by construction — no raw detail / BigInt / cyclic
+  //    payload can escape even though it bypasses the pool serialization guard.
   const validChannels = channelRecords.filter((c) => c.ok === true);
   if (validChannels.length === 0) {
     return failure(RETRIEVAL_FAILURE_NO_VALID_CHANNEL, {

@@ -16,10 +16,15 @@
  *     order within a ranking produce identical fusion output;
  *   - a ranking item without a valid 1-based provenance.rank is rejected with a
  *     hard fail-closed error (malformed input, nothing half-fused);
- *   - within-channel duplicate candidate → explicitly rejected with a
- *     machine-readable failure identity (never silently re-ranked);
+ *   - within-channel duplicate candidate → FAIL CLOSED with a hard
+ *     machine-readable error (FUSION_DUPLICATE_IN_CHANNEL), order-independent
+ *     (item-order-independence contract, P1-4);
  *   - items carrying a per-item provider failure are rejected (not fused) with
  *     their failure identity preserved and channel provenance recorded;
+ *   - rejected observations are canonicalized by stable keys — channel/item
+ *     order permutations yield an identical rejected list (P1-5);
+ *   - malformed rank values that are NOT JSON-safe (BigInt / cyclic) still throw
+ *     RANK_INVALID — the machine-readable code survives safe formatting (P2-2);
  *   - an explicit per-item failure that is present-but-malformed (not a
  *     { code, class } identity) fails closed (FAILURE_IDENTITY_INVALID) — it is
  *     never treated as "no failure" and never fused (P1-3).
@@ -39,7 +44,7 @@ import {
   FUSION_ERROR_ITEM_IDENTITY_INVALID,
   FUSION_ERROR_RANK_INVALID,
   FUSION_ERROR_FAILURE_IDENTITY_INVALID,
-  FUSION_REJECT_DUPLICATE_IN_CHANNEL,
+  FUSION_ERROR_DUPLICATE_IN_CHANNEL,
   rrfFusion,
 } from '../lib/rrf.mjs';
 
@@ -258,6 +263,37 @@ test('C4: candidate identity.kind is canonical ("candidate") and order-independe
   }
 });
 
+test('C5: rejected observations are canonicalized by stable keys — channel order + item order permutations yield an identical rejected list (P1-5)', () => {
+  const build = (rankings) => rrfFusion(rankings).rejected;
+  const forward = [
+    ranking('qa', 'fixture-a', [
+      ['10', 1],
+      ['99', 2, { failure: { code: 'SOURCE_URL_BOUNDARY_REJECTED', class: 'boundary' } }],
+    ]),
+    ranking('qb', 'fixture-b', [
+      ['77', 1, { failure: { code: 'CANDIDATE_IDENTITY_INVALID', class: 'contract' } }],
+    ]),
+  ];
+  // reversed channel order AND reversed item order inside the failure-bearing ranking
+  const reversed = [
+    ranking('qb', 'fixture-b', [
+      ['77', 1, { failure: { code: 'CANDIDATE_IDENTITY_INVALID', class: 'contract' } }],
+    ]),
+    ranking('qa', 'fixture-a', [
+      ['99', 2, { failure: { code: 'SOURCE_URL_BOUNDARY_REJECTED', class: 'boundary' } }],
+      ['10', 1],
+    ]),
+  ];
+  const a = build(forward);
+  const b = build(reversed);
+  assert.deepEqual(a, b, 'rejected list is permutation-invariant under channel + item order');
+  // canonical stable-key order: (qa, fixture-a, 99) sorts before (qb, fixture-b, 77)
+  assert.equal(a.length, 2);
+  assert.deepEqual(a.map((r) => r.channel.providerId), ['fixture-a', 'fixture-b']);
+  assert.equal(a[0].failure.code, 'SOURCE_URL_BOUNDARY_REJECTED');
+  assert.equal(a[1].failure.code, 'CANDIDATE_IDENTITY_INVALID');
+});
+
 // ---------------------------------------------------------------------------
 // D. deterministic tie semantics
 // ---------------------------------------------------------------------------
@@ -311,18 +347,29 @@ test('E2: malformed channel identity (missing query/providerId/capability) is re
   }
 });
 
-test('E3: within-channel duplicate candidate → second occurrence explicitly rejected with a machine-readable failure identity; first occurrence still fuses (never silently re-ranked)', () => {
+test('E3: within-channel duplicate candidate → FAIL CLOSED with FUSION_DUPLICATE_IN_CHANNEL regardless of item array order (P1-4)', () => {
+  // "keep the first / reject the second" would make scores depend on array order
+  // (rank 1 vs rank 5) — a within-channel duplicate is a malformed ranking.
+  const permutations = [
+    [['10', 1], ['10', 5]],
+    [['10', 5], ['10', 1]],
+    [['10', 1], ['10', 1]],
+  ];
+  for (const entries of permutations) {
+    assert.throws(
+      () => rrfFusion([ranking('q1', 'fixture-a', entries)]),
+      (err) => err.code === FUSION_ERROR_DUPLICATE_IN_CHANNEL,
+      `duplicate entries ${JSON.stringify(entries)} must throw FUSION_DUPLICATE_IN_CHANNEL, never silently re-rank`,
+    );
+  }
+  // control: the same questionId in DIFFERENT channels is NOT a duplicate.
   const fused = rrfFusion([
-    ranking('q1', 'fixture-a', [['10', 1], ['10', 5]]),
+    ranking('q1', 'fixture-a', [['10', 1]]),
+    ranking('q1', 'fixture-b', [['10', 5]]),
   ]);
-  assert.equal(fused.candidates.length, 1);
-  assert.equal(fused.candidates[0].identity.questionId, '10');
-  assert.equal(fused.candidates[0].ranks.length, 1, 'only the first occurrence contributes its rank');
-  assert.equal(fused.candidates[0].ranks[0].rank, 1);
-  assert.equal(fused.rejected.length, 1);
-  assert.equal(fused.rejected[0].failure.code, FUSION_REJECT_DUPLICATE_IN_CHANNEL);
-  assert.deepEqual(fused.rejected[0].channel, channel('q1', 'fixture-a'));
-  assert.equal(fused.rejected[0].identity.questionId, '10');
+  assert.deepEqual(candidateIds(fused), ['10']);
+  assert.equal(fused.candidates[0].ranks.length, 2, 'distinct channels contribute independently');
+  assert.deepEqual(fused.rejected, []);
 });
 
 test('E4: a rejected input never produces a partial pool — throws propagate as hard errors', () => {
@@ -401,4 +448,28 @@ test('E7: explicit per-item failure that is present-but-malformed (not a { code,
     items: [{ identity: { kind: 'candidate', questionId: '10' }, provenance: { route: 'fixture', rank: 1 }, source_url: null, facts: {} }],
   }]);
   assert.deepEqual(candidateIds(fused), ['10'], 'absent failure is distinguishable from present-but-malformed');
+});
+
+test('E8: malformed rank values that are NOT JSON-safe (BigInt / cyclic) still throw RANK_INVALID — the machine-readable code survives safe formatting (P2-2)', () => {
+  const cyclic = {};
+  cyclic.self = cyclic;
+  const badRanks = [1n, cyclic];
+  for (const badRank of badRanks) {
+    assert.throws(
+      () => rrfFusion([{
+        channel: channel('q1', 'fixture-a'),
+        items: [{ identity: { kind: 'candidate', questionId: '10' }, provenance: { route: 'fixture', rank: badRank }, source_url: null, facts: {} }],
+      }]),
+      (err) => err.code === FUSION_ERROR_RANK_INVALID,
+      'RANK_INVALID must be thrown even when the offending value cannot be JSON-serialized (JSON.stringify would throw before the code was assigned)',
+    );
+  }
+  // a cyclic malformed channel identity is rendered safely too
+  const cyclicChannel = {};
+  cyclicChannel.self = cyclicChannel;
+  assert.throws(
+    () => rrfFusion([{ channel: cyclicChannel, items: [] }]),
+    (err) => err.code === FUSION_ERROR_CHANNEL_IDENTITY_INVALID,
+    'malformed cyclic channel identity must throw CHANNEL_IDENTITY_INVALID (safe formatting)',
+  );
 });

@@ -15,6 +15,17 @@
  *   - channel provenance preservation (pool + per-candidate ranks record the
  *     query + provider + capability triple);
  *   - provider failure propagation (machine-readable, NO_SILENT_PROVIDER_FALLBACK);
+ *   - P1-1 safe projection counterexamples: failure detail carrying private
+ *     paths / BigInt / cyclic metadata is projected to { code, class } only — in
+ *     mixed-success AND all-failed runs — and never reaches output or the pool;
+ *   - P1-2: contradictory ok:true + top-level failure → FAIL CLOSED
+ *     (retrieval_provider_contract_invalid), never fused;
+ *   - P1-3: malformed caller-supplied planHash (path/credential-shaped) → FAIL
+ *     CLOSED with stable malformed/mismatch info; the supplied value is never echoed;
+ *   - P1-4: within-channel duplicate questionId → FAIL CLOSED
+ *     (retrieval_provider_contract_invalid), independent of item array order;
+ *   - P1-5: pool.rejected is canonical (stable-key order) — channel descriptor
+ *     + item order permutations yield an identical rejected list;
  *   - path-redaction counterexamples: absolute workDir / adapter err.message /
  *     raw malformed channel/descriptor values never leak into failure output
  *     (RULES §11) — failure details carry stable sanitized reasons only;
@@ -22,6 +33,12 @@
  *     (retrieval_provider_contract_invalid), NO artifact written;
  *   - present-but-malformed explicit per-item failure → FAIL CLOSED
  *     (retrieval_provider_contract_invalid), never fused as valid;
+ *   - P2-1: null / non-object options → FAIL CLOSED (retrieval_invalid_input),
+ *     never a TypeError from destructuring;
+ *   - P2-2: non-JSON-safe malformed rank (BigInt) → FAIL CLOSED with the FUSION
+ *     code surviving safe formatting (retrieval_provider_contract_invalid);
+ *   - P2-3: auth_class persisted as adapter-bound channel provenance on ok AND
+ *     failed channel records; never part of the RRF channel key;
  *   - zero valid retrieval channels → FAIL CLOSED;
  *   - malformed provider result → FAIL CLOSED where contract requires
  *     (seam UNKNOWN_PROVIDER_CONTRACT / fused-item rank contract);
@@ -46,6 +63,7 @@ import {
   AUTH_CLASS_SESSION,
   COMPLETENESS_UNKNOWN,
   COMPLETENESS_COMPLETE,
+  SEAM_ERROR_UNKNOWN_PROVIDER_CONTRACT,
   createProviderSeam,
 } from '../lib/provider-seam.mjs';
 import {
@@ -383,6 +401,37 @@ test('C3: fused candidate identity is canonical (kind="candidate") and permutati
   assert.equal(r1.pool.candidates[0].identity.questionId, '100');
 });
 
+test('C4: auth_class persisted as adapter-bound channel provenance on ok AND failed channel records; never part of the RRF channel key (P2-3)', () => {
+  const failingA = fixtureSearchAdapter('fixture-a', () => ({
+    ok: false,
+    provider_id: 'fixture-a',
+    capability: CAPABILITY_SEARCH,
+    auth_class: AUTH_CLASS_OFFICIAL_SECRET,
+    retrieved_at: FIXED_NOW(),
+    items: [],
+    failure: { code: 'PROVIDER_REPORTED_FAILURE', class: 'provider' },
+    completeness: { status: COMPLETENESS_UNKNOWN, evidence: { reason: 'provider_failure' } },
+  }));
+  const okB = fixtureSearchAdapter('fixture-b', (input) => searchResult('fixture-b', [['100', 1]], { query: input.query }));
+  const seam = createProviderSeam({ adapters: [failingA, okB] });
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, channels: [{ providerId: 'fixture-a' }, { providerId: 'fixture-b' }], workDir: tmpWorkDir() });
+  assert.equal(run.ok, true);
+
+  const failedRec = run.pool.channels.find((c) => c.channel.providerId === 'fixture-a');
+  assert.equal(failedRec.ok, false);
+  assert.equal(failedRec.auth_class, AUTH_CLASS_OFFICIAL_SECRET, 'auth_class survives on failure channel records');
+  const okRec = run.pool.channels.find((c) => c.channel.providerId === 'fixture-b');
+  assert.equal(okRec.ok, true);
+  assert.equal(okRec.auth_class, AUTH_CLASS_OFFICIAL_SECRET, 'auth_class survives on ok channel records');
+
+  // auth_class is adapter-bound provenance and must NOT enter the RRF channel key:
+  // the fused rank channel identity stays the §5.4 triple.
+  assert.equal(run.pool.candidates.length, 1);
+  const rankChannel = run.pool.candidates[0].ranks[0].channel;
+  assert.deepEqual(rankChannel, { query: PLAN_SINGLE.queryVariants[0], providerId: 'fixture-b', capability: CAPABILITY_SEARCH });
+  assert.ok(!('auth_class' in rankChannel), 'auth_class must not enter the RRF channel identity/key');
+});
+
 // ---------------------------------------------------------------------------
 // D. provider failure propagation / fail-closed semantics
 // ---------------------------------------------------------------------------
@@ -413,8 +462,8 @@ test('D1: provider failure is propagated machine-readable; sibling channels stil
 
   const failedChannel = run.pool.channels.find((c) => c.channel.providerId === 'fixture-a');
   assert.equal(failedChannel.ok, false);
-  assert.equal(failedChannel.failure.code, 'PROVIDER_REPORTED_FAILURE');
-  assert.equal(failedChannel.failure.provider_error_type, 'http_403');
+  assert.deepEqual(failedChannel.failure, { code: 'PROVIDER_REPORTED_FAILURE', class: 'provider' }, 'P1-1 safe projection: only the machine-readable { code, class } identity survives');
+  assert.ok(!('provider_error_type' in failedChannel.failure), 'arbitrary failure payload fields are dropped at the T06 boundary');
   assert.equal(failedChannel.channel.capability, CAPABILITY_SEARCH);
 
   assert.deepEqual(candidateIds(run.pool), ['100'], 'only valid channel contributes candidates');
@@ -459,6 +508,7 @@ test('D4: malformed provider result (seam UNKNOWN_PROVIDER_CONTRACT) → FAIL CL
   const run = runMultiQueryRetrieval({ plan: PLAN, seam: seamBad, workDir: tmpWorkDir() });
   assert.equal(run.ok, false);
   assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+  assert.equal(run.details.code, SEAM_ERROR_UNKNOWN_PROVIDER_CONTRACT, 'known seam contract-error identity is machine-readable and safe to surface');
 });
 
 test('D5: provider items missing a valid rank → FAIL CLOSED (retrieval_provider_contract_invalid)', () => {
@@ -487,7 +537,7 @@ test('D6: per-item provider failure is recorded in pool.rejected with its failur
   }
 });
 
-test('D7: seam adapter throwing an Error whose message embeds an absolute path → FAIL CLOSED with a stable reason; the path is never echoed (P1-1 path-redaction counterexample)', () => {
+test('D7: seam adapter throwing an Error whose message embeds an absolute path → FAIL CLOSED with a stable reason; path AND arbitrary err.code are never echoed (P1-1 path-redaction counterexample)', () => {
   const THROWING_PATH = 'C:\\Users\\victim\\secret\\cache.json';
   const throwing = fixtureSearchAdapter('fixture-a', () => {
     const err = new Error(`ENOENT: no such file or directory, open '${THROWING_PATH}'`);
@@ -499,9 +549,10 @@ test('D7: seam adapter throwing an Error whose message embeds an absolute path �
   assert.equal(run.ok, false);
   assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
   assert.equal(run.details.reason, 'provider_contract_violation', 'stable reason, never the raw adapter err.message');
-  assert.equal(run.details.code, 'ENOENT', 'machine-readable error code retained for diagnostics');
+  assert.equal(run.details.code, null, 'an arbitrary adapter err.code is NOT a validated seam contract identity — never proxied (P1-1)');
   const serialized = JSON.stringify(run);
   assert.ok(!serialized.includes(THROWING_PATH), 'adapter err.message must never surface (RULES §11 path-redaction)');
+  assert.ok(!serialized.includes('ENOENT'), 'unvalidated adapter err.code must never surface (P1-1)');
 });
 
 test('D8: non-JSON-safe seam-accepted metadata (BigInt / cyclic fact) → FAIL CLOSED (retrieval_provider_contract_invalid); NO artifact written (P1-2)', () => {
@@ -528,6 +579,137 @@ test('D9: present-but-malformed explicit per-item failure (failure:"timeout") �
   assert.equal(run.ok, false, 'malformed explicit per-item failure must fail closed, never fuse as a valid candidate');
   assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
   assert.equal(run.details.reason, 'rrf_fusion_contract_violation');
+  assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact on fusion contract failure');
+});
+
+test('D10: mixed-success — failure detail carrying private paths / BigInt / cyclic metadata is projected to { code, class } only; the run stays valid (P1-1 safe projection)', () => {
+  const SECRET_PATH = 'C:\\Users\\victim\\secret\\official-search-cache.json';
+  const cyclicDetail = {};
+  cyclicDetail.self = cyclicDetail;
+  const failingA = fixtureSearchAdapter('fixture-a', () => ({
+    ok: false,
+    provider_id: 'fixture-a',
+    capability: CAPABILITY_SEARCH,
+    auth_class: AUTH_CLASS_OFFICIAL_SECRET,
+    retrieved_at: FIXED_NOW(),
+    items: [],
+    failure: {
+      code: 'PROVIDER_REPORTED_FAILURE',
+      class: 'provider',
+      provider_error_type: 'http_403',
+      detail: SECRET_PATH,
+      counter: 10n,
+      nested: cyclicDetail,
+    },
+    completeness: { status: COMPLETENESS_UNKNOWN, evidence: { reason: 'provider_failure' } },
+  }));
+  const okB = fixtureSearchAdapter('fixture-b', (input) => searchResult('fixture-b', [['100', 1]], { query: input.query }));
+  const seam = createProviderSeam({ adapters: [failingA, okB] });
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, channels: [{ providerId: 'fixture-a' }, { providerId: 'fixture-b' }], workDir: tmpWorkDir() });
+  assert.equal(run.ok, true, 'one valid channel keeps the run valid — projected failure must not poison serialization');
+
+  const failedChannel = run.pool.channels.find((c) => c.channel.providerId === 'fixture-a');
+  assert.deepEqual(failedChannel.failure, { code: 'PROVIDER_REPORTED_FAILURE', class: 'provider' }, 'only the machine-readable { code, class } identity survives');
+  const serialized = JSON.stringify(run.pool);
+  assert.ok(!serialized.includes(SECRET_PATH), 'path-bearing detail must never reach the pool');
+  assert.ok(!serialized.includes('provider_error_type'), 'arbitrary payload fields are dropped');
+  assert.ok(!serialized.includes('http_403'), 'payload values are dropped');
+});
+
+test('D11: all channels failing with path-bearing / non-JSON-safe failure detail → FAIL CLOSED (retrieval_no_valid_channel) with safely projected identities; output stays JSON-serializable (P1-1)', () => {
+  const SECRET_PATH = 'C:\\Users\\victim\\secret\\all-failed-cache.json';
+  const cyclicDetail = {};
+  cyclicDetail.self = cyclicDetail;
+  const makeFailing = (providerId) => fixtureSearchAdapter(providerId, () => ({
+    ok: false,
+    provider_id: providerId,
+    capability: CAPABILITY_SEARCH,
+    auth_class: AUTH_CLASS_OFFICIAL_SECRET,
+    retrieved_at: FIXED_NOW(),
+    items: [],
+    failure: { code: 'PROVIDER_REPORTED_FAILURE', class: 'provider', detail: SECRET_PATH, counter: 10n, nested: cyclicDetail },
+    completeness: { status: COMPLETENESS_UNKNOWN, evidence: { reason: 'provider_failure' } },
+  }));
+  const failingA = makeFailing('fixture-a');
+  const failingB = makeFailing('fixture-b');
+  const seam = createProviderSeam({ adapters: [failingA, failingB] });
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, channels: [{ providerId: 'fixture-a' }, { providerId: 'fixture-b' }], workDir: tmpWorkDir() });
+  assert.equal(run.ok, false);
+  assert.equal(run.reason, RETRIEVAL_FAILURE_NO_VALID_CHANNEL);
+  // the all-failed early return bypasses the pool serialization guard — safe
+  // projection must make it JSON-serializable anyway (no BigInt / cyclic throw).
+  const serialized = JSON.stringify(run);
+  assert.ok(!serialized.includes(SECRET_PATH), 'path-bearing detail must never leak into failure output');
+  assert.ok(serialized.includes('PROVIDER_REPORTED_FAILURE'), 'machine-readable failure identity survives');
+  assert.ok(run.details?.failedChannels?.length === 2, 'both failing channels reported');
+  for (const fc of run.details.failedChannels) {
+    assert.deepEqual(fc.failure, { code: 'PROVIDER_REPORTED_FAILURE', class: 'provider' });
+  }
+});
+
+test('D12: contradictory ok:true + top-level failure → FAIL CLOSED (retrieval_provider_contract_invalid), never fused (P1-2)', () => {
+  const SECRET_PATH = 'C:\\Users\\victim\\secret\\ok-failure.json';
+  const contradictoryObj = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1]], {
+    query: input.query,
+    ok: true,
+    failure: { code: 'PROVIDER_REPORTED_FAILURE', class: 'provider', detail: SECRET_PATH },
+  }));
+  // even failure:null is "present" (hasOwnProperty) — absent ≠ present-but-null
+  const contradictoryNull = fixtureSearchAdapter('fixture-b', () => ({ ...searchResult('fixture-b', [['100', 1]]), failure: null }));
+  for (const adapter of [contradictoryObj, contradictoryNull]) {
+    const seam = createProviderSeam({ adapters: [adapter] });
+    const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir: tmpWorkDir() });
+    assert.equal(run.ok, false, 'contradictory ok:true + failure must fail closed, never fuse');
+    assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+    assert.equal(run.details.reason, 'provider_contract_violation');
+    const serialized = JSON.stringify(run);
+    assert.ok(!serialized.includes(SECRET_PATH), 'contradictory result detail must never leak');
+  }
+});
+
+test('D13: within-channel duplicate questionId → FAIL CLOSED (retrieval_provider_contract_invalid); independent of item array order (P1-4)', () => {
+  const dupFirst = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1], ['100', 5]], { query: input.query }));
+  const dupSecond = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 5], ['100', 1]], { query: input.query }));
+  for (const adapter of [dupFirst, dupSecond]) {
+    const seam = createProviderSeam({ adapters: [adapter] });
+    const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir: tmpWorkDir() });
+    assert.equal(run.ok, false);
+    assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+    assert.equal(run.details.reason, 'rrf_fusion_contract_violation', 'rrf hard FUSION_DUPLICATE_IN_CHANNEL surfaced as a fail-closed contract failure');
+  }
+});
+
+test('D14: pool.rejected is canonical — permuted channel descriptors + permuted item order produce an identical rejected list (P1-5)', () => {
+  const build = (descriptors, aOrder) => {
+    const seam = createProviderSeam({
+      adapters: [
+        fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', aOrder, { query: input.query })),
+        fixtureSearchAdapter('fixture-b', (input) => searchResult('fixture-b', [['77', 1, { failure: { code: 'CANDIDATE_IDENTITY_INVALID', class: 'contract' } }]], { query: input.query })),
+      ],
+    });
+    return runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, channels: descriptors, workDir: tmpWorkDir() });
+  };
+  const r1 = build(
+    [{ providerId: 'fixture-a' }, { providerId: 'fixture-b' }],
+    [['10', 1], ['99', 2, { failure: { code: 'SOURCE_URL_BOUNDARY_REJECTED', class: 'boundary' } }]],
+  );
+  const r2 = build(
+    [{ providerId: 'fixture-b' }, { providerId: 'fixture-a' }],
+    [['99', 2, { failure: { code: 'SOURCE_URL_BOUNDARY_REJECTED', class: 'boundary' } }], ['10', 1]],
+  );
+  assert.equal(r1.ok && r2.ok, true);
+  assert.deepEqual(r1.pool.rejected, r2.pool.rejected, 'rejected list is permutation-invariant across channel descriptor + item order');
+  assert.deepEqual(r1.pool.rejected.map((r) => r.channel.providerId), ['fixture-a', 'fixture-b'], 'canonical stable-key order');
+});
+
+test('D15: provider item with a non-JSON-safe malformed rank (BigInt) → FAIL CLOSED with the FUSION code surviving safe formatting (retrieval_provider_contract_invalid) (P2-2)', () => {
+  const bigIntRank = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1n]], { query: input.query }));
+  const seam = createProviderSeam({ adapters: [bigIntRank] });
+  const workDir = tmpWorkDir();
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir });
+  assert.equal(run.ok, false);
+  assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+  assert.equal(run.details.reason, 'rrf_fusion_contract_violation', 'RANK_INVALID code survives — JSON.stringify of the BigInt rank must not erase it');
   assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact on fusion contract failure');
 });
 
@@ -594,6 +776,25 @@ test('F3: planHash identity mismatch → FAIL CLOSED (retrieval_plan_identity_mi
   const run = runMultiQueryRetrieval({ plan: PLAN, planHash: 'f'.repeat(64), seam, workDir: tmpWorkDir() });
   assert.equal(run.ok, false);
   assert.equal(run.reason, RETRIEVAL_FAILURE_PLAN_IDENTITY_MISMATCH);
+  assert.equal(run.details.reason, 'plan_identity_mismatch');
+  assert.ok(!('provided' in run.details), 'the supplied planHash value is never echoed (P1-3)');
+});
+
+test('F9: malformed caller-supplied planHash (path/credential-shaped) → FAIL CLOSED with stable malformed info; the supplied value is never echoed (P1-3)', () => {
+  const search = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1]], { query: input.query }));
+  const seam = createProviderSeam({ adapters: [search] });
+  const PATHISH = 'C:\\Users\\victim\\secret\\plan-hash.txt';
+  const CREDISH = 'z_c0=someSecretCookieValue';
+  for (const bad of [PATHISH, CREDISH, 'not-a-hash', 'ABCDEF']) {
+    const run = runMultiQueryRetrieval({ plan: PLAN, planHash: bad, seam, workDir: tmpWorkDir() });
+    assert.equal(run.ok, false, `planHash: ${bad}`);
+    assert.equal(run.reason, RETRIEVAL_FAILURE_PLAN_IDENTITY_MISMATCH);
+    assert.equal(run.details.reason, 'expected_plan_hash_malformed');
+    assert.equal(run.details.expectedFormat, '64-lowercase-hex-sha256');
+    const serialized = JSON.stringify(run);
+    assert.ok(!serialized.includes(bad), `the supplied malformed planHash must never be echoed (${bad})`);
+  }
+  assert.equal(search.__calls(), 0, 'no provider IO for a malformed plan identity');
 });
 
 test('F4: invalid plan → FAIL CLOSED (retrieval_plan_invalid); nothing persisted, nothing executed', () => {
@@ -628,6 +829,13 @@ test('F5: missing/invalid module inputs → FAIL CLOSED (retrieval_invalid_input
   ]) {
     const run = runMultiQueryRetrieval(args);
     assert.equal(run.ok, false, JSON.stringify(Object.keys(args)));
+    assert.equal(run.reason, RETRIEVAL_FAILURE_INVALID_INPUT);
+  }
+  // P2-1: null / non-object options must fail closed (retrieval_invalid_input),
+  // never throw a TypeError from destructuring.
+  for (const badOpts of [null, undefined, 'not-an-object', 42]) {
+    const run = runMultiQueryRetrieval(badOpts);
+    assert.equal(run.ok, false, `opts: ${String(badOpts)}`);
     assert.equal(run.reason, RETRIEVAL_FAILURE_INVALID_INPUT);
   }
 });

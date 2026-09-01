@@ -39,8 +39,12 @@
  *     identity) is a CONTRACT VIOLATION → hard error (never treated as "no
  *     failure", never fused);
  *   - a duplicate of an already-contributed candidate within the same channel is
- *     explicitly REJECTED with a machine-readable failure identity — it is never
- *     silently re-ranked (the first occurrence keeps its rank).
+ *     a CONTRACT VIOLATION → hard error (FUSION_DUPLICATE_IN_CHANNEL): "keep the
+ *     first / reject the second" would make scores depend on item array order
+ *     (P1-4), so a within-channel duplicate fails closed regardless of order;
+ *   - rejected observations are canonicalized by a stable key (channel triple +
+ *     questionId + rank/route + failure code/class) before returning, so the
+ *     rejected list is permutation-invariant under channel/item order (P1-5).
  *
  * This module is PURE: no IO, no seam, no credentials, no clock.
  */
@@ -59,9 +63,8 @@ export const FUSION_ERROR_CHANNEL_IDENTITY_INVALID = 'FUSION_CHANNEL_IDENTITY_IN
 export const FUSION_ERROR_RANK_INVALID = 'FUSION_RANK_INVALID';
 export const FUSION_ERROR_ITEM_IDENTITY_INVALID = 'FUSION_ITEM_IDENTITY_INVALID';
 export const FUSION_ERROR_FAILURE_IDENTITY_INVALID = 'FUSION_FAILURE_IDENTITY_INVALID';
-
-/** Rejection failure identity (explicit, machine-readable; never silent). */
-export const FUSION_REJECT_DUPLICATE_IN_CHANNEL = 'DUPLICATE_CANDIDATE_IN_CHANNEL';
+/** Hard fail-closed error code: within-channel duplicate candidate (P1-4). */
+export const FUSION_ERROR_DUPLICATE_IN_CHANNEL = 'FUSION_DUPLICATE_IN_CHANNEL';
 
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -69,6 +72,26 @@ function isPlainObject(value) {
 
 function isNonEmptyString(value) {
   return typeof value === 'string' && value.length > 0;
+}
+
+/**
+ * Safely render an arbitrary value inside a fail-closed error message (P2-2).
+ * BigInt / cyclic references / hostile serializers must never prevent the
+ * machine-readable error .code from being attached: JSON.stringify first, then
+ * String(), then a stable placeholder — this NEVER throws.
+ */
+function safeFormat(value) {
+  try {
+    const json = JSON.stringify(value);
+    if (json !== undefined) return json;
+  } catch {
+    // fall through to String()
+  }
+  try {
+    return String(value);
+  } catch {
+    return '[unrepresentable value]';
+  }
 }
 
 /**
@@ -96,6 +119,39 @@ function compareChannelKey(a, b) {
 }
 
 /**
+ * Canonical stable key for one rejected observation (P1-5): channel triple +
+ * questionId + rank/route + failure code/class (+ full identity serialization to
+ * keep identical-questionId/differing-kind observations distinguishable). Sorting
+ * rejected observations by this key makes the rejected list permutation-invariant.
+ * Only primitives are compared; identity is serialized with a safe fallback.
+ */
+function rejectedKey(rejected) {
+  const identity = isPlainObject(rejected.identity) ? rejected.identity : null;
+  const questionId = identity !== null && isNonEmptyString(identity.questionId) ? identity.questionId : null;
+  const rank = typeof rejected.rank === 'number' && Number.isFinite(rejected.rank) ? rejected.rank : null;
+  const route = typeof rejected.route === 'string' ? rejected.route : null;
+  const code = isNonEmptyString(rejected.failure?.code) ? rejected.failure.code : '';
+  const klass = isNonEmptyString(rejected.failure?.class) ? rejected.failure.class : '';
+  let identityKey;
+  try {
+    identityKey = JSON.stringify(identity);
+  } catch {
+    identityKey = `[unserializable:${typeof identity}]`;
+  }
+  return JSON.stringify([
+    rejected.channel?.query ?? '',
+    rejected.channel?.providerId ?? '',
+    rejected.channel?.capability ?? '',
+    questionId,
+    rank,
+    route,
+    code,
+    klass,
+    identityKey,
+  ]);
+}
+
+/**
  * Validate one channel identity (§5.4): non-empty query + providerId + capability.
  * Throw FUSION_CHANNEL_IDENTITY_INVALID otherwise (fail closed).
  */
@@ -104,7 +160,7 @@ function assertValidChannel(channel) {
     || !isNonEmptyString(channel.query)
     || !isNonEmptyString(channel.providerId)
     || !isNonEmptyString(channel.capability)) {
-    const err = new Error(`malformed fusion channel identity (query + providerId + capability required): ${JSON.stringify(channel)}`);
+    const err = new Error(`malformed fusion channel identity (query + providerId + capability required): ${safeFormat(channel)}`);
     err.code = FUSION_ERROR_CHANNEL_IDENTITY_INVALID;
     throw err;
   }
@@ -133,13 +189,13 @@ export function rrfFusion(rankings) {
     throw err;
   }
 
-  const rejected = []; // deterministic: input channel order × item order
+  const rejected = []; // collected in traversal order; canonicalized below (P1-5)
   const byCandidate = new Map(); // questionId -> accumulated record
 
   for (const ranking of rankings) {
     assertValidChannel(ranking?.channel);
     if (!Array.isArray(ranking.items)) {
-      const err = new Error(`ranking items must be an array for channel ${JSON.stringify(ranking.channel)}`);
+      const err = new Error(`ranking items must be an array for channel ${safeFormat(ranking.channel)}`);
       err.code = FUSION_ERROR_CHANNEL_IDENTITY_INVALID;
       throw err;
     }
@@ -153,7 +209,7 @@ export function rrfFusion(rankings) {
       const failurePresent = item != null && Object.prototype.hasOwnProperty.call(item, 'failure');
       if (failurePresent) {
         if (!isValidFailureIdentity(item.failure)) {
-          const err = new Error(`per-item failure present but not a machine-readable { code, class } identity in channel ${JSON.stringify(ranking.channel)}`);
+          const err = new Error(`per-item failure present but not a machine-readable { code, class } identity in channel ${safeFormat(ranking.channel)}`);
           err.code = FUSION_ERROR_FAILURE_IDENTITY_INVALID;
           throw err;
         }
@@ -172,13 +228,13 @@ export function rrfFusion(rankings) {
       // FUSIBLE item: mechanical contract checks (fail closed, nothing half-fused).
       const identity = item?.identity;
       if (!isPlainObject(identity) || !isNonEmptyString(identity.questionId)) {
-        const err = new Error(`fusible item without a valid questionId identity in channel ${JSON.stringify(ranking.channel)}`);
+        const err = new Error(`fusible item without a valid questionId identity in channel ${safeFormat(ranking.channel)}`);
         err.code = FUSION_ERROR_ITEM_IDENTITY_INVALID;
         throw err;
       }
       const rank = item?.provenance?.rank;
       if (!Number.isInteger(rank) || rank < 1) {
-        const err = new Error(`fusible item carries no valid 1-based ${RRF_RANK_SOURCE} (got ${JSON.stringify(rank)}) in channel ${JSON.stringify(ranking.channel)}`);
+        const err = new Error(`fusible item carries no valid 1-based ${RRF_RANK_SOURCE} (got ${safeFormat(rank)}) in channel ${safeFormat(ranking.channel)}`);
         err.code = FUSION_ERROR_RANK_INVALID;
         throw err;
       }
@@ -197,16 +253,14 @@ export function rrfFusion(rankings) {
         byCandidate.set(questionId, record);
       }
 
-      // Duplicate within the same channel: explicitly rejected, never re-ranked.
+      // Duplicate within the same channel (P1-4): "keep the first / reject the
+      // second" would make scores depend on item array order (rank 1 vs rank 5),
+      // which violates the item-order-independence contract. FAIL CLOSED instead —
+      // the detection is order-independent (a duplicate anywhere throws).
       if (record.contributions.some((c) => c.key === key)) {
-        rejected.push({
-          channel: ranking.channel,
-          identity,
-          rank,
-          route: item.provenance?.route ?? null,
-          failure: { code: FUSION_REJECT_DUPLICATE_IN_CHANNEL, class: 'contract' },
-        });
-        continue;
+        const err = new Error(`duplicate questionId '${questionId}' within the same channel ${safeFormat(ranking.channel)}; within-channel duplicates fail closed (item-order-independence, P1-4)`);
+        err.code = FUSION_ERROR_DUPLICATE_IN_CHANNEL;
+        throw err;
       }
 
       record.contributions.push({
@@ -247,6 +301,16 @@ export function rrfFusion(rankings) {
   candidates.sort((a, b) => {
     if (a.rrfScore !== b.rrfScore) return b.rrfScore - a.rrfScore;
     return a.identity.questionId < b.identity.questionId ? -1 : 1;
+  });
+
+  // P1-5: canonicalize rejected observations by stable key so the rejected list
+  // is permutation-invariant (channel order / item order never change it).
+  rejected.sort((a, b) => {
+    const ka = rejectedKey(a);
+    const kb = rejectedKey(b);
+    if (ka < kb) return -1;
+    if (ka > kb) return 1;
+    return 0;
   });
 
   return { candidates, rejected };
