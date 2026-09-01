@@ -74,6 +74,10 @@
 // localhost/loopback/private/link-local/CGNAT/multicast/reserved hosts are
 // rejected by the SHARED classifier, never by a weaker parallel policy.
 import { classifyUrl } from '../../zhihu-answer-grabber/src/markdown-security.js';
+// Codex 4th-round P2 on 0e3e2bea: RRF fuses RETRIEVAL-RANKED channels only —
+// the exported rrfFusion API must reject any other capability (e.g. a `capture`
+// channel) instead of letting non-retrieval observations affect RRF scores.
+import { CAPABILITY_SEARCH } from './provider-seam.mjs';
 
 /** Standard RRF constant (k = 60). */
 export const RRF_K = 60;
@@ -582,15 +586,18 @@ function rejectedKey(rejected) {
 }
 
 /**
- * Validate one channel identity (§5.4): non-empty query + providerId + capability.
- * Throw FUSION_CHANNEL_IDENTITY_INVALID otherwise (fail closed).
+ * Validate one channel identity (§5.4): non-empty query + providerId, and the
+ * capability must be RETRIEVAL-RANKED (search). Throw FUSION_CHANNEL_IDENTITY_INVALID
+ * otherwise (fail closed) — Codex 4th-round P2 on 0e3e2bea: runMultiQueryRetrieval
+ * filters descriptors to `search`, but the exported rrfFusion API must not accept
+ * a `capture` channel and fuse non-retrieval observations into RRF scores.
  */
 function assertValidChannel(channel) {
   if (!isPlainObject(channel)
     || !isNonEmptyString(channel.query)
     || !isNonEmptyString(channel.providerId)
-    || !isNonEmptyString(channel.capability)) {
-    const err = new Error(`malformed fusion channel identity (query + providerId + capability required): ${safeFormat(channel)}`);
+    || channel.capability !== CAPABILITY_SEARCH) {
+    const err = new Error(`malformed fusion channel identity (non-empty query + providerId + retrieval-ranked ${CAPABILITY_SEARCH} capability required): ${safeFormat(channel)}`);
     err.code = FUSION_ERROR_CHANNEL_IDENTITY_INVALID;
     throw err;
   }
@@ -759,6 +766,13 @@ export function rrfFusion(rankings) {
     for (const c of record.contributions) rrfScore += 1 / (RRF_K + c.rank);
 
     const first = record.contributions[0]; // canonical-first contributing channel
+    // Codex 4th-round P2 on 0e3e2bea: the canonical-first contribution's
+    // source_url may be null while a LATER channel supplies a valid
+    // boundary-checked URL — assigning first.source_url would let channel-key
+    // order erase an available source reference. Deterministically select the
+    // FIRST NON-NULL validated source_url across the (channelKey-sorted)
+    // contributions; absent any source, null is preserved.
+    const sourceUrl = record.contributions.find((c) => c.source_url !== null)?.source_url ?? null;
     candidates.push({
       identity: record.identity,
       rrfScore,
@@ -768,7 +782,7 @@ export function rrfFusion(rankings) {
         rankOrigin: c.rankOrigin,
         route: c.route,
       })),
-      source_url: first.source_url,
+      source_url: sourceUrl,
       facts: first.facts,
     });
   }

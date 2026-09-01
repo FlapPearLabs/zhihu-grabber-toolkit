@@ -133,7 +133,7 @@ test('A3: empty input yields an empty fused pool (no candidates, no error)', () 
   assert.deepEqual(rrfFusion([]), { candidates: [], rejected: [] });
 });
 
-test('A4: candidate sourceUrl/facts come from the first contributing channel in channel-list order (deterministic)', () => {
+test('A4: candidate sourceUrl/facts come from the contributing channels (deterministic) — facts from the canonical-first channel; source_url is the FIRST NON-NULL validated source across contributions (Codex 4th-round P2 on 0e3e2bea: a null first source_url must not erase a later valid source reference)', () => {
   const fused = rrfFusion([
     ranking('q1', 'fixture-a', [['10', 1, {
       source_url: { url: 'https://www.zhihu.com/question/10', securityClass: 'external_unverified' },
@@ -143,7 +143,25 @@ test('A4: candidate sourceUrl/facts come from the first contributing channel in 
   ]);
   const candidate = fused.candidates[0];
   assert.equal(candidate.facts.title, 'first', 'facts from first contributing channel');
-  assert.equal(candidate.source_url.url, 'https://www.zhihu.com/question/10');
+  assert.equal(candidate.source_url.url, 'https://www.zhihu.com/question/10', 'first non-null source_url retained');
+});
+
+test('A5: canonical-first contribution has source_url NULL but a LATER channel supplies a valid source — the non-null validated URL is retained (Codex 4th-round P2 on 0e3e2bea)', () => {
+  const fused = rrfFusion([
+    ranking('q1', 'fixture-a', [['10', 1]]),
+    ranking('q2', 'fixture-b', [['10', 2, {
+      source_url: { url: 'https://www.zhihu.com/question/10', securityClass: 'external_unverified' },
+    }]]),
+  ]);
+  const candidate = fused.candidates[0];
+  assert.equal(candidate.source_url.url, 'https://www.zhihu.com/question/10', 'later non-null source_url is not erased by channel-key order');
+});
+
+test('A6: rrfFusion REJECTS a non-retrieval-ranked channel (capture) — a direct caller cannot fuse non-retrieval observations into RRF scores (Codex 4th-round P2 on 0e3e2bea; §5.4 retrieval-ranked channels only)', () => {
+  assert.throws(() => rrfFusion([{
+    channel: channel('q1', 'fixture-a', 'capture'),
+    items: [{ identity: { kind: 'candidate', questionId: '10' }, provenance: { route: 'r', rank: 1 }, source_url: null, facts: {} }],
+  }]), (err) => err.code === FUSION_ERROR_CHANNEL_IDENTITY_INVALID, 'capture channel must fail closed at the RRF boundary');
 });
 
 // ---------------------------------------------------------------------------

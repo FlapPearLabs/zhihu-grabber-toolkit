@@ -1541,3 +1541,46 @@ test('J9: INTERMEDIATE failure paths with a machine-private PATH-SHAPED channel 
     assertRedactedChannel(run, workDir, 'unsafe-retrieved_at');
   }
 });
+
+test('J10: ALL-provider-failed early return with a machine-private PATH-SHAPED plan QUERY (Codex 4th-round P1 on 0e3e2bea) → channel.query is projected through projectFailureIdentity to <redacted>; the absolute path never surfaces, even though the plan validator only rejects profile-root paths', () => {
+  // The plan validator's PRIVATE_PATH_SHAPE covers /Users /home Windows-profile
+  // roots and ~ — but NOT the full POSIX set (/root /etc /opt ...). A query like
+  // /root/private/research passes plan validation yet carries a machine-private
+  // path; the all-failed early return must project it identically to providerId.
+  const PATH_QUERY = '/root/private/research';
+  const failResult = {
+    ok: false,
+    provider_id: 'fixture-a',
+    capability: CAPABILITY_SEARCH,
+    auth_class: AUTH_CLASS_OFFICIAL_SECRET,
+    retrieved_at: FIXED_NOW(),
+    items: [],
+    failure: { code: 'PROVIDER_REPORTED_FAILURE', class: 'provider' },
+    completeness: { status: COMPLETENESS_UNKNOWN, evidence: { signal: 'absent', reason: 'no_pagination_signal' } },
+  };
+  const seam = {
+    listProviders() {
+      return [{ providerId: 'fixture-a', capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET }];
+    },
+    retrieve() {
+      return failResult;
+    },
+  };
+  const workDir = tmpWorkDir();
+  const run = runMultiQueryRetrieval({
+    plan: { ...PLAN_SINGLE, queryVariants: [PATH_QUERY] },
+    seam,
+    channels: [{ providerId: 'fixture-a' }],
+    workDir,
+  });
+  assert.equal(run.ok, false, 'all-failed must fail closed');
+  assert.equal(run.reason, RETRIEVAL_FAILURE_NO_VALID_CHANNEL);
+  const failed = run.details.failedChannels;
+  assert.equal(failed.length, 1, 'the failing channel is reported');
+  assert.equal(failed[0].channel.query, '<redacted>', 'path-shaped plan query is redacted in the all-failed channel identity');
+  assert.equal(failed[0].channel.providerId, 'fixture-a', 'safe providerId identity retained');
+  const serialized = JSON.stringify(run);
+  assert.ok(!serialized.includes(PATH_QUERY), 'the absolute query path never surfaces in the failure result');
+  assert.ok(serialized.includes('<redacted>'), 'the stable redaction placeholder surfaces instead');
+  assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact written');
+});

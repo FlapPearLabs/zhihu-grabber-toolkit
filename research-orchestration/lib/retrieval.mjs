@@ -658,7 +658,15 @@ export function runMultiQueryRetrieval(opts = {}) {
           // assertArtifactSafe, so the seam-controlled providerId is projected
           // through projectFailureIdentity like every other registry identity —
           // a machine-private path-shaped adapter name can never surface.
-          channel: { ...c.channel, providerId: projectFailureIdentity(c.channel.providerId) },
+          // Codex 4th-round P1 on 0e3e2bea: the plan query is ALSO caller/
+          // plan-derived and can carry a machine-private path that the plan
+          // validator's narrower path set (profile roots only) does not catch
+          // (e.g. /root/private/research) — project it identically.
+          channel: {
+            ...c.channel,
+            providerId: projectFailureIdentity(c.channel.providerId),
+            query: projectFailureIdentity(c.channel.query),
+          },
           auth_class: c.auth_class,
           retrievedAt: c.retrievedAt,
           completeness: c.completeness,
