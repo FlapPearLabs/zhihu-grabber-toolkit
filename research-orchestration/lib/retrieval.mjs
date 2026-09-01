@@ -53,6 +53,26 @@
  *     5077286260): null / undefined / primitive / malformed / contradictory
  *     results fail closed (retrieval_provider_contract_invalid), reusing the
  *     T05 §5.1 result validator — no raw TypeError/exception escape;
+ *   - provider result identity is bound to the EXACT resolved registry/channel
+ *     — provider_id + capability + auth_class must equal the registry-resolved
+ *     identity, never the provider's self-declared values; a drifted result
+ *     fails closed, and the persisted auth_class is the registry-bound value
+ *     (P1, review 5078267886); registry entries must carry a valid authClass;
+ *   - retrieved_at crosses the SAME bounded privacy-safe string gate as every
+ *     provider-controlled string before entering channel records (P1 review
+ *     5078267886);
+ *   - the all-provider-failed early return retains channel + auth_class +
+ *     retrievedAt + completeness + failure — every field already safely
+ *     projected — so retrieval coverage remains auditable (P2, review
+ *     5078267886);
+ *   - source_url URL trust reuses the repository's existing classifyUrl
+ *     classifier (no weaker parallel URL policy): https-only, no userinfo,
+ *     localhost/loopback/private/link-local/CGNAT/multicast/reserved hosts
+ *     rejected (P1, review 5078267886);
+ *   - the credential-sensitive KEY-NAME deny rule also covers compound /
+ *     camelCase forms (accessToken / refreshToken / clientSecret /
+ *     sessionCookie / accessKeyId / ...) — direct + e2e counterexamples (P1,
+ *     review 5078267886);
  *   - plan-validation issues are projected to stable schema paths before being
  *     returned (P1-3, review 5077286260): known plan-contract paths are
  *     preserved; caller-controlled unknown property names are replaced by the
@@ -99,7 +119,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { CAPABILITY_SEARCH, COMPLETENESS_STATES, validateProviderResult } from './provider-seam.mjs';
+import { CAPABILITY_SEARCH, COMPLETENESS_STATES, AUTH_CLASSES, validateProviderResult } from './provider-seam.mjs';
 import {
   SEAM_ERROR_UNSUPPORTED_CAPABILITY,
   SEAM_ERROR_NO_SILENT_PROVIDER_FALLBACK,
@@ -113,6 +133,7 @@ import {
   RRF_RANK_SOURCE,
   RRF_TIE_BREAK,
   assertArtifactSafe,
+  isBoundarySafeString,
   projectFailure,
   projectSafeJson,
   rrfFusion,
@@ -247,14 +268,16 @@ function safeValidateProviderResult(result) {
 }
 
 /**
- * P2 (review 5076691874) — guarded provider-registry inspection. The registry
- * is a seam-controlled boundary: a throwing listProviders(), a malformed
- * non-array registry, or malformed registry entries must never produce a raw
- * throw or reach provider retrieval IO — they return a stable
+ * P2 (review 5076691874) + P1 registry-identity completeness (review
+ * 5078267886) — guarded provider-registry inspection. The registry is a
+ * seam-controlled boundary: a throwing listProviders(), a malformed non-array
+ * registry, or malformed registry entries must never produce a raw throw or
+ * reach provider retrieval IO — they return a stable
  * retrieval_provider_contract_invalid with a stable issue identity (no raw
  * err.message / payload echo). Only shape-valid entries ({ providerId,
- * capability } as non-empty strings — the fields this module consumes) proceed.
- * Throws nothing; returns { ok:true, registered } or { ok:false, reason, details }.
+ * capability } as non-empty strings + authClass in AUTH_CLASSES — the full
+ * identity this module consumes) proceed. Throws nothing; returns
+ * { ok:true, registered } or { ok:false, reason, details }.
  */
 function safeListProviders(seam) {
   let registered;
@@ -271,15 +294,16 @@ function safeListProviders(seam) {
     return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
       reason: 'provider_contract_violation',
       registryIssue: 'not_an_array',
-      note: 'provider registry must be an array of { providerId, capability } entries; no provider IO was performed',
+      note: 'provider registry must be an array of { providerId, capability, authClass } entries; no provider IO was performed',
     });
   }
   for (const entry of registered) {
-    if (!isPlainObject(entry) || !isNonEmptyString(entry.providerId) || !isNonEmptyString(entry.capability)) {
+    if (!isPlainObject(entry) || !isNonEmptyString(entry.providerId) || !isNonEmptyString(entry.capability)
+      || !AUTH_CLASSES.includes(entry.authClass)) {
       return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
         reason: 'provider_contract_violation',
         registryIssue: 'malformed_entry',
-        note: 'provider registry entry must be { providerId, capability } with non-empty string values; no provider IO was performed',
+        note: 'provider registry entry must be { providerId, capability, authClass } with non-empty strings and authClass in AUTH_CLASSES; no provider IO was performed',
       });
     }
   }
@@ -317,9 +341,11 @@ function resolveChannels(seam, channels) {
   const registeredResult = safeListProviders(seam);
   if (!registeredResult.ok) return registeredResult;
   const registered = registeredResult.registered;
-  const searchProviders = registered
-    .filter((e) => e.capability === CAPABILITY_SEARCH)
-    .map((e) => e.providerId);
+  // P1 (review 5078267886): keep the FULL resolved registry identity —
+  // { providerId, capability, authClass } — so provider result identity
+  // (provider_id + capability + auth_class) can be bound to the EXACT resolved
+  // registry/channel instead of trusting the provider's self-declared values.
+  const searchProviders = registered.filter((e) => e.capability === CAPABILITY_SEARCH);
 
   if (channels === undefined || channels.length === 0) {
     if (searchProviders.length === 0) {
@@ -331,7 +357,7 @@ function resolveChannels(seam, channels) {
     if (searchProviders.length > 1) {
       return failure(RETRIEVAL_FAILURE_NO_VALID_CHANNEL, {
         reason: 'multiple_search_providers_without_explicit_channels',
-        candidates: searchProviders,
+        candidates: searchProviders.map((e) => e.providerId),
         note: 'D-2 routing is OPEN — explicit channel descriptors required (NO_SILENT_PROVIDER_FALLBACK)',
       });
     }
@@ -361,13 +387,14 @@ function resolveChannels(seam, channels) {
       return failure(RETRIEVAL_FAILURE_CHANNEL_DUPLICATE, { reason: 'duplicate_channel_descriptor' });
     }
     seen.add(descriptor.providerId);
-    if (!searchProviders.includes(descriptor.providerId)) {
+    const entry = searchProviders.find((e) => e.providerId === descriptor.providerId);
+    if (!entry) {
       return failure(RETRIEVAL_FAILURE_CHANNEL_UNREGISTERED, {
         reason: 'provider_not_registered_for_search_capability',
-        available: searchProviders,
+        available: searchProviders.map((e) => e.providerId),
       });
     }
-    providers.push(descriptor.providerId);
+    providers.push(entry);
   }
   return { ok: true, providers };
 }
@@ -444,11 +471,11 @@ export function runMultiQueryRetrieval(opts = {}) {
   const channelRecords = [];
   const rankings = [];
   for (const query of validated.plan.queryVariants) {
-    for (const providerId of resolved.providers) {
-      const channel = { query, providerId, capability: CAPABILITY_SEARCH };
+    for (const provider of resolved.providers) {
+      const channel = { query, providerId: provider.providerId, capability: CAPABILITY_SEARCH };
       let result;
       try {
-        result = seam.retrieve(CAPABILITY_SEARCH, { query }, { providerId });
+        result = seam.retrieve(CAPABILITY_SEARCH, { query }, { providerId: provider.providerId });
       } catch (err) {
         // Routing/contract/exceptions from the seam: FAIL CLOSED. A provider
         // failure is a result, never a routing event — but a CONTRACT violation
@@ -474,6 +501,33 @@ export function runMultiQueryRetrieval(opts = {}) {
           channel,
           reason: 'provider_contract_violation',
           note: 'provider result violates the §5.1 contract (malformed or contradictory)',
+        });
+      }
+      // P1 (review 5078267886): bind the provider result identity to the EXACT
+      // resolved registry/channel — provider_id + capability + auth_class must
+      // equal the registry-resolved identity (NOT the provider's self-declared
+      // values). A drifted result fails closed; the persisted auth_class is the
+      // registry-bound value, never the result's.
+      if (result.provider_id !== provider.providerId
+        || result.capability !== CAPABILITY_SEARCH
+        || result.auth_class !== provider.authClass) {
+        return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
+          channel,
+          reason: 'provider_contract_violation',
+          note: 'provider result identity does not bind to the resolved registry/channel (provider_id + capability + auth_class)',
+        });
+      }
+      // P2/P1 (review 5078267886): retrieved_at is provider-controlled and must
+      // cross the SAME bounded privacy-safe string gate as every other
+      // provider-controlled string entering channel records (it is persisted on
+      // ok AND failed records, and is retained on the all-failed early return so
+      // retrieval coverage stays auditable).
+      const retrievedAt = result.retrieved_at;
+      if (!isBoundarySafeString(retrievedAt)) {
+        return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
+          channel,
+          reason: 'provider_contract_violation',
+          note: 'retrieved_at cannot safely enter the persisted pool',
         });
       }
       if (result.ok === true) {
@@ -503,9 +557,9 @@ export function runMultiQueryRetrieval(opts = {}) {
         channelRecords.push({
           channel,
           ok: true,
-          auth_class: result.auth_class, // P2-3: adapter-bound provenance (§5.1)
+          auth_class: provider.authClass, // P2-3: registry-bound adapter provenance (§5.1)
           itemCount: Array.isArray(result.items) ? result.items.length : 0,
-          retrievedAt: result.retrieved_at,
+          retrievedAt,
           completeness: projectedCompleteness.completeness,
         });
         rankings.push({ channel, items: result.items });
@@ -537,8 +591,8 @@ export function runMultiQueryRetrieval(opts = {}) {
         channelRecords.push({
           channel,
           ok: false,
-          auth_class: result.auth_class, // P2-3: adapter-bound provenance (§5.1)
-          retrievedAt: result.retrieved_at,
+          auth_class: provider.authClass, // P2-3: registry-bound adapter provenance (§5.1)
+          retrievedAt,
           completeness: projectedCompleteness.completeness,
           failure: projected.failure,
         });
@@ -546,16 +600,27 @@ export function runMultiQueryRetrieval(opts = {}) {
     }
   }
 
-  // 5. zero valid retrieval channel results → FAIL CLOSED. c.failure is already
-  //    the P1-1 safe projection ({ code, class } only), so this early return is
-  //    JSON-serializable by construction — no raw detail / BigInt / cyclic
-  //    payload can escape even though it bypasses the pool serialization guard.
+  // 5. zero valid retrieval channel results → FAIL CLOSED. Every field retained
+  //    here is already safely projected at the T06 boundary (channel identity is
+  //    registry/plan-derived, auth_class is the registry-bound value, retrievedAt
+  //    is a bounded privacy-safe string, completeness + failure are canonical
+  //    projections), so this early return is JSON-serializable by construction —
+  //    no raw detail / BigInt / cyclic payload can escape even though it bypasses
+  //    the pool serialization guard (P2, review 5078267886: all-provider-failed
+  //    results retain channel + auth_class + retrievedAt + completeness + failure
+  //    so retrieval coverage remains auditable).
   const validChannels = channelRecords.filter((c) => c.ok === true);
   if (validChannels.length === 0) {
     return failure(RETRIEVAL_FAILURE_NO_VALID_CHANNEL, {
       failedChannels: channelRecords
         .filter((c) => c.ok === false)
-        .map((c) => ({ channel: c.channel, failure: c.failure })),
+        .map((c) => ({
+          channel: c.channel,
+          auth_class: c.auth_class,
+          retrievedAt: c.retrievedAt,
+          completeness: c.completeness,
+          failure: c.failure,
+        })),
     });
   }
 

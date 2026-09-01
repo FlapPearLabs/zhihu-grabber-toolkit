@@ -1137,7 +1137,10 @@ test('I2: a method-compatible injected seam returning null / undefined / primiti
   function rawResultSeam(result) {
     return {
       listProviders() {
-        return [{ providerId: 'fixture-a', capability: CAPABILITY_SEARCH }];
+        // Full registry identity (P1 review 5078267886: entries must carry
+        // authClass) so the injected seam reaches seam.retrieve() and the
+        // P2-1 whole-result pre-validation is what rejects the raw result.
+        return [{ providerId: 'fixture-a', capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET }];
       },
       retrieve() {
         return result;
@@ -1198,4 +1201,137 @@ test('I4: plan-validation issues carrying caller-controlled unknown property nam
   assert.ok(!serialized.includes(EVIL), 'caller-controlled unknown property name must never be echoed');
   assert.ok(serialized.includes('<unknown>'), 'the stable placeholder is used instead of the raw name');
   assert.ok(serialized.includes('terminologyVariants[0].term'), 'known plan-contract schema paths are preserved');
+});
+
+
+// ---------------------------------------------------------------------------
+// J. P1-T06 second repair round (external review 5078267886 / Codex 5078133293)
+//    — e2e counterexamples: compound credential keys (P1), URL trust classifier
+//    reuse (P1), provider result identity binding (P1), all-provider-failed
+//    coverage auditability (P2).
+// ---------------------------------------------------------------------------
+
+test('J1: seam-accepted facts carrying a COMPOUND / camelCase credential key (accessToken / refreshToken / clientSecret / sessionCookie) (P1 review 5078267886) → FAIL CLOSED (retrieval_provider_contract_invalid); never persisted, no artifact, no key/value leak', () => {
+  for (const [label, key] of [
+    ['accessToken', 'accessToken'],
+    ['refreshToken', 'refreshToken'],
+    ['clientSecret', 'clientSecret'],
+    ['sessionCookie', 'sessionCookie'],
+    ['accessKeyId', 'accessKeyId'],
+    ['secretAccessKey', 'secretAccessKey'],
+    ['jwtToken', 'jwtToken'],
+  ]) {
+    const SECRET_VALUE = `super-${label}-value`;
+    const adapter = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [
+      ['100', 1, { facts: { [key]: SECRET_VALUE } }],
+    ], { query: input.query }));
+    const seam = createProviderSeam({ adapters: [adapter] });
+    const workDir = tmpWorkDir();
+    const run = runMultiQueryRetrieval({ plan: PLAN, seam, workDir });
+    assert.equal(run.ok, false, `${label}: compound credential key must fail closed`);
+    assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, `${label}: contract failure identity`);
+    assert.equal(run.details.reason, 'rrf_fusion_contract_violation', `${label}: shared rrf boundary rejects during projection`);
+    assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), `${label}: no artifact written`);
+    const serialized = JSON.stringify(run);
+    assert.ok(!serialized.includes(SECRET_VALUE), `${label}: credential value must never surface`);
+    assert.ok(!serialized.includes(key), `${label}: credential key name must never surface`);
+  }
+});
+
+test('J2: provider source_url on a localhost / loopback / private / link-local host is structurally valid at the seam but REJECTED by the repository classifyUrl trust classifier (P1 review 5078267886) → FAIL CLOSED, never persisted, no artifact', () => {
+  for (const [label, url] of [
+    ['localhost', 'https://localhost/internal'],
+    ['IPv4 loopback', 'https://127.0.0.1/internal'],
+    ['IPv4 private 10/8', 'https://10.0.0.1/internal'],
+    ['IPv4 private 192.168/16', 'https://192.168.1.1/internal'],
+    ['IPv4 link-local', 'https://169.254.169.254/latest/meta-data'],
+    ['IPv6 loopback', 'https://[::1]/internal'],
+  ]) {
+    const adapter = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [
+      ['100', 1, { source_url: { url, securityClass: 'official-secret' } }],
+    ], { query: input.query }));
+    const seam = createProviderSeam({ adapters: [adapter] });
+    const workDir = tmpWorkDir();
+    const run = runMultiQueryRetrieval({ plan: PLAN, seam, workDir });
+    assert.equal(run.ok, false, `${label}: unsafe host source_url must fail closed`);
+    assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, `${label}: contract failure identity`);
+    assert.equal(run.details.reason, 'rrf_fusion_contract_violation', `${label}: shared rrf boundary (classifyUrl reuse) rejects during projection`);
+    assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), `${label}: no artifact written`);
+    const serialized = JSON.stringify(run);
+    assert.ok(!serialized.includes(url), `${label}: unsafe URL must never surface`);
+  }
+});
+
+test('J3: provider result identity NOT bound to the resolved registry/channel — drifted provider_id / capability / auth_class (P1 review 5078267886) → FAIL CLOSED (retrieval_provider_contract_invalid) even when the §5.1 structure is valid; the drifted identity is never echoed', () => {
+  // Injected seam bypassing createProviderSeam's own binding gate
+  // (assertResultIdentityBound) — exercises retrieval.mjs's OWN binding check
+  // right after the whole-result pre-validation, on a structurally VALID result.
+  function rawSeam(result) {
+    return {
+      listProviders() {
+        return [{ providerId: 'fixture-a', capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET }];
+      },
+      retrieve() {
+        return result;
+      },
+    };
+  }
+  const drifts = [
+    ['provider_id drift', { provider_id: 'fixture-b' }],
+    ['capability drift', { capability: CAPABILITY_CAPTURE }],
+    ['auth_class drift', { auth_class: AUTH_CLASS_SESSION }],
+  ];
+  for (const [label, patch] of drifts) {
+    const base = searchResult('fixture-a', [['100', 1]]);
+    const result = { ...base, ...patch };
+    const workDir = tmpWorkDir();
+    const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam: rawSeam(result), workDir });
+    assert.equal(run.ok, false, `${label}: drifted result identity must fail closed`);
+    assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, `${label}: contract failure identity`);
+    assert.equal(run.details.reason, 'provider_contract_violation', `${label}: stable reason, no raw echo`);
+    assert.ok(String(run.details.note).includes('bind'), `${label}: binding note present`);
+    assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), `${label}: no artifact written`);
+    const serialized = JSON.stringify(run);
+    assert.ok(!serialized.includes('fixture-b'), `${label}: drifted provider_id never surfaces`);
+    assert.ok(!serialized.includes(AUTH_CLASS_SESSION), `${label}: drifted auth_class never surfaces`);
+    assert.ok(!serialized.includes(CAPABILITY_CAPTURE), `${label}: drifted capability never surfaces`);
+  }
+});
+
+test('J4: ALL providers failed → the no_valid_channel early return RETAINS safely projected channel + auth_class + retrievedAt + completeness + failure for every failed channel (P2 review 5078267886); retrieval coverage stays auditable; raw failure detail never leaks', () => {
+  const SECRET_DETAIL = '/home/private-user/secret/cache.json';
+  function failResult(providerId) {
+    return {
+      ok: false,
+      provider_id: providerId,
+      capability: CAPABILITY_SEARCH,
+      auth_class: AUTH_CLASS_OFFICIAL_SECRET,
+      retrieved_at: FIXED_NOW(),
+      items: [],
+      failure: { code: 'PROVIDER_REPORTED_FAILURE', class: 'provider', detail: SECRET_DETAIL },
+      completeness: { status: COMPLETENESS_UNKNOWN, evidence: { signal: 'absent', reason: 'no_pagination_signal' } },
+    };
+  }
+  const adapterA = fixtureSearchAdapter('fixture-a', () => failResult('fixture-a'));
+  const adapterB = fixtureSearchAdapter('fixture-b', () => failResult('fixture-b'));
+  const seam = createProviderSeam({ adapters: [adapterA, adapterB] });
+  const workDir = tmpWorkDir();
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, channels: [{ providerId: 'fixture-a' }, { providerId: 'fixture-b' }], workDir });
+
+  assert.equal(run.ok, false, 'all-failed must fail closed');
+  assert.equal(run.reason, RETRIEVAL_FAILURE_NO_VALID_CHANNEL);
+  const failed = run.details.failedChannels;
+  assert.equal(failed.length, 2, 'BOTH failing channels reported with full projected identity');
+  for (const fc of failed) {
+    assert.ok(fc.channel && fc.channel.providerId && fc.channel.capability, 'channel identity retained');
+    assert.equal(fc.channel.capability, CAPABILITY_SEARCH);
+    assert.equal(fc.auth_class, AUTH_CLASS_OFFICIAL_SECRET, 'registry-bound auth_class retained');
+    assert.equal(fc.retrievedAt, FIXED_NOW(), 'retrievedAt retained');
+    assert.deepEqual(fc.completeness, { status: COMPLETENESS_UNKNOWN, evidence: { signal: 'absent', reason: 'no_pagination_signal' } }, 'projected completeness retained');
+    assert.deepEqual(fc.failure, { code: 'PROVIDER_REPORTED_FAILURE', class: 'provider' }, 'failure retained as the canonical { code, class } identity — raw detail projected away');
+    assert.ok(!('detail' in fc.failure), 'raw failure detail never survives projection');
+  }
+  assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact written on all-failed');
+  const serialized = JSON.stringify(run);
+  assert.ok(!serialized.includes(SECRET_DETAIL), 'path-bearing failure detail must never surface');
 });

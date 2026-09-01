@@ -548,6 +548,16 @@ test('F1: isBoundarySafeKey — bare credential-sensitive KEY NAMES are rejected
   for (const key of ['Token', 'COOKIE', 'Zc0', 'zc0', 'apiKey', 'accessKey', 'sessionId', 'my_token', 'my-token']) {
     assert.equal(isBoundarySafeKey(key), false, `credential key variant must be rejected: ${key}`);
   }
+  // Review 5078267886 (P1): compound / camelCase credential keys must be
+  // rejected too — normalization to [a-z0-9] covers snake/kebab/camel spellings.
+  for (const key of ['accessToken', 'access_token', 'access-token', 'refreshToken', 'refresh_token',
+    'clientSecret', 'client_secret', 'clientId', 'client_id', 'sessionCookie', 'session_cookie',
+    'sessionToken', 'session_token', 'authToken', 'auth_token', 'idToken', 'id_token', 'apiToken',
+    'api_token', 'secretKey', 'secret_key', 'privateKey', 'private_key', 'bearerToken', 'bearer_token',
+    'oauthToken', 'oauth_token', 'csrfToken', 'csrf_token', 'xsrfToken', 'xsrf_token', 'accessKeyId',
+    'access_key_id', 'secretAccessKey', 'secret_access_key', 'jwt', 'jwtToken', 'jwt_token']) {
+    assert.equal(isBoundarySafeKey(key), false, `compound credential key must be rejected: ${key}`);
+  }
   for (const key of ['__proto__', 'prototype', 'constructor']) {
     assert.equal(isBoundarySafeKey(key), false, `magic / prototype-mutating key must be rejected: ${key}`);
   }
@@ -621,7 +631,7 @@ test('F4: projectRouteString / projectRejectedRank — absent values stay null; 
   assert.equal(projectRejectedRank(10n).ok, false, 'BigInt rank must fail closed');
 });
 
-test('F5: projectSourceUrlRecord — https + no credential userinfo/query + no machine-private path pass; unsafe URLs FAIL CLOSED and are never rewritten (P1-4 review 5077286260)', () => {
+test('F5: projectSourceUrlRecord — REUSES the repository classifyUrl trust classifier (https + public host only; localhost/loopback/private/link-local rejected) + T06 credential/path hygiene; unsafe URLs FAIL CLOSED and are never rewritten (P1-4 review 5077286260 / P1 review 5078267886)', () => {
   const safe = { url: 'https://example.invalid/a?b=1', securityClass: 'official-secret' };
   assert.deepEqual(projectSourceUrlRecord(safe), { ok: true, value: { url: safe.url, securityClass: safe.securityClass } });
   assert.deepEqual(
@@ -641,6 +651,21 @@ test('F5: projectSourceUrlRecord — https + no credential userinfo/query + no m
     ['missing securityClass', { url: 'https://example.invalid/' }],
     ['non-string url', { url: 5, securityClass: 'official-secret' }],
     ['non-plain record', new Date()],
+    // Review 5078267886 (P1): the SHARED classifyUrl classifier rejects
+    // localhost / loopback / private / link-local / CGNAT / multicast /
+    // reserved hosts — no weaker parallel URL policy in T06.
+    ['localhost hostname', { url: 'https://localhost/x', securityClass: 'official-secret' }],
+    ['subdomain localhost', { url: 'https://api.localhost/x', securityClass: 'official-secret' }],
+    ['IPv4 loopback', { url: 'https://127.0.0.1/x', securityClass: 'official-secret' }],
+    ['IPv4 private 10/8', { url: 'https://10.0.0.1/x', securityClass: 'official-secret' }],
+    ['IPv4 private 172.16/12', { url: 'https://172.16.5.9/x', securityClass: 'official-secret' }],
+    ['IPv4 private 192.168/16', { url: 'https://192.168.1.1/x', securityClass: 'official-secret' }],
+    ['IPv4 link-local 169.254/16', { url: 'https://169.254.169.254/x', securityClass: 'official-secret' }],
+    ['IPv4 CGNAT 100.64/10', { url: 'https://100.64.0.1/x', securityClass: 'official-secret' }],
+    ['IPv6 loopback ::1', { url: 'https://[::1]/x', securityClass: 'official-secret' }],
+    ['IPv6 ULA fc00::/7', { url: 'https://[fc00::1]/x', securityClass: 'official-secret' }],
+    ['IPv6 link-local fe80::/10', { url: 'https://[fe80::1]/x', securityClass: 'official-secret' }],
+    ['zhihu redirect host as final target', { url: 'https://link.zhihu.com/x', securityClass: 'official-secret' }],
   ];
   for (const [label, record] of unsafe) {
     assert.equal(projectSourceUrlRecord(record).ok, false, `${label}: must fail closed`);

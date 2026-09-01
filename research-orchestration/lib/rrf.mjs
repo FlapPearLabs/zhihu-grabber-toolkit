@@ -62,8 +62,18 @@
  *     data is preserved deterministically; the whole artifact additionally
  *     crosses assertArtifactSafe() in retrieval.mjs as defense in depth.
  *
- * This module is PURE: no IO, no seam, no credentials, no clock.
+ * This module is PURE: no IO, no seam, no credentials, no clock. URL trust
+ * classification reuses the repository's existing classifier
+ * (zhihu-answer-grabber/src/markdown-security.js classifyUrl — the SAME one
+ * official-search-provider.mjs / session-capture-provider.mjs use); it is also
+ * pure (no IO/network).
  */
+
+// Review 5078267886 (P1): source_url must reuse the repository's existing URL
+// trust classifier (classifyUrl) — https-only, no userinfo,
+// localhost/loopback/private/link-local/CGNAT/multicast/reserved hosts are
+// rejected by the SHARED classifier, never by a weaker parallel policy.
+import { classifyUrl } from '../../zhihu-answer-grabber/src/markdown-security.js';
 
 /** Standard RRF constant (k = 60). */
 export const RRF_K = 60;
@@ -134,16 +144,42 @@ export const PRIVATE_PATH_SHAPE =
   /(?:\/Users\/|\/home\/|[A-Za-z]:[\\/](?:Users|Documents and Settings)[\\/]|(?:^|[\s"'<>\u2018\u2019\u201c\u201d])~[/\w.-])/;
 
 /**
- * Credential-sensitive KEY-NAME deny rule (P1-2, review 5077286260): a bare
- * object key such as `token`, `cookie`, `z_c0`, `api_key` is credential-bearing
- * even without a `name=value` assignment shape. Matches case variants and
+ * Credential-sensitive KEY-NAME deny rule (P1-2 review 5077286260 + P1 compound/
+ * camelCase extension review 5078267886): a bare object key such as `token`,
+ * `cookie`, `z_c0`, `api_key` is credential-bearing even without a
+ * `name=value` assignment shape. Matches case variants and
  * `-`/`_` separators (normalized exact names) plus standalone-word patterns.
+ * Review 5078267886 (P1): the deny set must also cover COMPOUND / camelCase
+ * credential keys (accessToken / refreshToken / clientSecret / sessionCookie /
+ * accessKeyId / secretAccessKey / ...) — normalization to [a-z0-9] makes the
+ * exact-name set cover snake/kebab/camel spellings alike. Safe lookalikes
+ * (tokens / tokenCount / questionId / securityClass ...) are NOT in the set.
  */
 const SENSITIVE_KEY_NAMES = Object.freeze([
+  // bare bases (R4)
   'token', 'secret', 'password', 'passwd', 'cookie', 'authorization',
   'api_key', 'api-key', 'apikey', 'access_key', 'access-key', 'accesskey',
   'session_id', 'session-id', 'sessionid', 'z_c0', 'zc0',
   'credential', 'credentials',
+  // compound / camelCase forms (R5) — each spelling normalizes to one exact name
+  'access_token', 'access-token', 'accessToken',
+  'refresh_token', 'refresh-token', 'refreshToken',
+  'client_secret', 'client-secret', 'clientSecret',
+  'client_id', 'client-id', 'clientId',
+  'session_cookie', 'session-cookie', 'sessionCookie',
+  'session_token', 'session-token', 'sessionToken',
+  'auth_token', 'auth-token', 'authToken',
+  'id_token', 'id-token', 'idToken',
+  'api_token', 'api-token', 'apiToken',
+  'secret_key', 'secret-key', 'secretKey',
+  'private_key', 'private-key', 'privateKey',
+  'bearer_token', 'bearer-token', 'bearerToken',
+  'oauth_token', 'oauth-token', 'oauthToken',
+  'csrf_token', 'csrf-token', 'csrfToken',
+  'xsrf_token', 'xsrf-token', 'xsrfToken',
+  'access_key_id', 'access-key-id', 'accessKeyId',
+  'secret_access_key', 'secret-access-key', 'secretAccessKey',
+  'jwt', 'jwt_token', 'jwt-token', 'jwtToken',
 ]);
 const SENSITIVE_KEY_NAMES_NORMALIZED = new Set(
   SENSITIVE_KEY_NAMES.map((name) => name.toLowerCase().replace(/[^a-z0-9]/g, '')),
@@ -263,19 +299,30 @@ export function projectRejectedRank(value) {
 }
 
 /**
- * source_url persistence boundary (§5.1, P1-4 review 5077286260): null stays
- * null; a present record is canonicalized to { url, securityClass } ONLY when
- * the URL is https and free of credential-bearing userinfo / query data and
- * machine-private path content. The URL is never silently rewritten — an unsafe
- * URL fails closed instead. Non-contract metadata fields are dropped (they are
- * not §5.1-required source identity).
+ * source_url persistence boundary (§5.1, P1-4 review 5077286260 + P1 URL-trust
+ * reuse review 5078267886): null stays null; a present record is canonicalized
+ * to { url, securityClass } ONLY when the URL passes the repository's existing
+ * URL trust classifier (classifyUrl — https-only, no credential userinfo,
+ * localhost/loopback/private/link-local/CGNAT/multicast/reserved hosts
+ * rejected) AND the T06 credential/path hygiene checks (credential-shaped
+ * query data, machine-private path content, bounded length). The URL is never
+ * silently rewritten — an unsafe URL fails closed instead. Non-contract
+ * metadata fields are dropped (they are not §5.1-required source identity).
  */
 export function projectSourceUrlRecord(value) {
   if (value === undefined || value === null) return { ok: true, value: null };
   if (!isPlainObjectStrict(value)) return { ok: false };
   const url = value.url;
-  if (typeof url !== 'string' || url.length === 0 || !url.startsWith('https://')) return { ok: false };
+  if (typeof url !== 'string' || url.length === 0) return { ok: false };
   if (!isBoundarySafeString(url)) return { ok: false };
+  // Review 5078267886 (P1): URL trust is decided by the repository's SHARED
+  // classifier (the same classifyUrl official-search-provider.mjs /
+  // session-capture-provider.mjs use). No weaker parallel URL policy: a URL
+  // the shared classifier rejects (non-https / userinfo / localhost /
+  // loopback / private / link-local / CGNAT / multicast / reserved /
+  // link.zhihu.com as final target) fails closed here. Never rewritten.
+  const classified = classifyUrl(url);
+  if (classified === null) return { ok: false };
   const securityClass = value.securityClass;
   if (typeof securityClass !== 'string' || securityClass.length === 0) return { ok: false };
   if (!isBoundarySafeString(securityClass)) return { ok: false };
@@ -285,6 +332,8 @@ export function projectSourceUrlRecord(value) {
   } catch {
     return { ok: false };
   }
+  // Defense in depth (classifyUrl already rejects userinfo; keep the explicit
+  // check so this boundary never regresses if the classifier changes).
   if (parsed.username !== '' || parsed.password !== '') return { ok: false };
   for (const [name, entry] of parsed.searchParams.entries()) {
     if (!isBoundarySafeKey(name) || !isBoundarySafeString(entry)) return { ok: false };
