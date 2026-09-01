@@ -50,12 +50,18 @@ import {
   FUSION_ERROR_RANK_INVALID,
   FUSION_ERROR_FAILURE_IDENTITY_INVALID,
   FUSION_ERROR_DUPLICATE_IN_CHANNEL,
+  FUSION_ERROR_UNSAFE_PROVIDER_DATA,
+  // Round-6 final convergence repair (BLOCK3 / BLOCK4): duplicate-channel
+  // identity error code + the FUSION_* allowlist the retrieval layer proxies.
+  FUSION_ERROR_DUPLICATE_CHANNEL,
+  FUSION_CONTRACT_ERROR_CODES,
   rrfFusion,
   // P1-T06 shared persisted-artifact boundary (review 5077286260) — direct
   // unit coverage of the boundary vocabulary that retrieval.mjs also consumes.
   BOUNDARY_MAX_STRING_LENGTH,
   isBoundarySafeKey,
   isBoundarySafeString,
+  isBoundarySafeUrlString,
   projectSafeJson,
   projectRouteString,
   projectRejectedRank,
@@ -798,6 +804,44 @@ test('F6: assertArtifactSafe — the whole-artifact walk accepts safe canonical 
   }
 });
 
+test('F8: assertArtifactSafe trustedPlanStrings — an EXACT plan-validated query string (validated.plan.queryVariants) crosses the plan-contract boundary (T04) instead of the broader provider-content lens; the option is NOT a general caller-defined trust bypass, and untrusted / plan-UNSAFE strings still fail closed (R11, Codex 5th-round P2 on 526ca71; renamed in the final convergence repair)', () => {
+  const SYSTEM_PATH_QUERY = '/etc/hosts 文件的作用';
+  // Untrusted: the full provider-content boundary rejects the system-path query.
+  assert.deepEqual(
+    assertArtifactSafe({ v: SYSTEM_PATH_QUERY }),
+    { ok: false, reason: 'unsafe_string' },
+    'untrusted system-path string still fails the provider-content lens',
+  );
+  // Trusted (exact T04-validated plan query): the plan-contract boundary accepts it.
+  assert.deepEqual(
+    assertArtifactSafe({ v: SYSTEM_PATH_QUERY }, { trustedPlanStrings: new Set([SYSTEM_PATH_QUERY]) }),
+    { ok: true },
+    'exact trusted plan query crosses the plan-contract boundary',
+  );
+  // Trusted does NOT mean blanket trust: credential-shaped strings are rejected
+  // even when listed (the plan boundary rejects them too).
+  assert.deepEqual(
+    assertArtifactSafe({ v: 'password=sekrit' }, { trustedPlanStrings: new Set(['password=sekrit']) }),
+    { ok: false, reason: 'unsafe_string' },
+    'credential-shaped string is rejected even when listed as trusted',
+  );
+  // ... and machine-private profile-root paths are rejected even when listed.
+  assert.deepEqual(
+    assertArtifactSafe({ v: '/home/private-user/x' }, { trustedPlanStrings: new Set(['/home/private-user/x']) }),
+    { ok: false, reason: 'unsafe_string' },
+    'machine-private profile-root path is rejected even when listed as trusted',
+  );
+  // A nested trusted string inside the walked structure is accepted at any depth.
+  assert.deepEqual(
+    assertArtifactSafe(
+      { channels: [{ channel: { query: SYSTEM_PATH_QUERY, providerId: 'p', capability: 'search' } }] },
+      { trustedPlanStrings: new Set([SYSTEM_PATH_QUERY]) },
+    ),
+    { ok: true },
+    'trusted plan query is accepted at any nesting depth',
+  );
+});
+
 test('F7: projectFailure — code/class must be bounded privacy-safe strings; path/credential-shaped or over-length identities are rejected (P1-1)', () => {
   assert.deepEqual(
     projectFailure({ code: 'OK', class: 'boundary' }),
@@ -813,4 +857,152 @@ test('F7: projectFailure — code/class must be bounded privacy-safe strings; pa
   ]) {
     assert.equal(projectFailure(failure).ok, false, 'unsafe failure identity must be rejected');
   }
+});
+
+// ---------------------------------------------------------------------------
+// R12. final convergence repair counterexamples
+// (Round-6 BLOCK1 3905300503 / BLOCK2 3905300513 / BLOCK3 3905300520 /
+//  BLOCK4 3905300529 + C2 static FUSION messages)
+// ---------------------------------------------------------------------------
+
+/** Capture a thrown error (or null when nothing was thrown). */
+function capture(fn) {
+  try {
+    fn();
+  } catch (err) {
+    return err;
+  }
+  return null;
+}
+
+test('R12-B1: assertValidChannel canonicalizes to the exact §5.4 triple — extra caller-supplied channel fields (token / diagnostic-path keys / metadata) never reach fused ranks or rejected entries; a path-shaped providerId or a plan-UNSAFE query fails closed at channel validation (Round-6 BLOCK1, 3905300503)', () => {
+  const fused = rrfFusion([
+    {
+      channel: {
+        query: 'q1', providerId: 'fixture-a', capability: 'search',
+        token: 'sekrit', diagnostic_path: '/home/private-user/x', meta: { a: 1 },
+      },
+      items: [{ identity: { questionId: '10' }, provenance: { route: 'fixture', rank: 1, rankOrigin: 'fixture_order' }, source_url: null, facts: {} }],
+    },
+  ]);
+  assert.equal(fused.candidates.length, 1, 'canonicalization does not reject a valid channel');
+  const rankChannel = fused.candidates[0].ranks[0].channel;
+  assert.deepEqual(rankChannel, { query: 'q1', providerId: 'fixture-a', capability: 'search' }, 'rank channel is the canonical triple ONLY');
+  assert.deepEqual(Object.keys(rankChannel).sort(), ['capability', 'providerId', 'query'], 'no extra keys survive canonicalization');
+  // A rejected observation's channel is canonicalized identically.
+  const withRejected = rrfFusion([
+    {
+      channel: { query: 'q1', providerId: 'fixture-a', capability: 'search', token: 'sekrit' },
+      items: [{ identity: { questionId: '10' }, provenance: { route: 'fixture', rank: 1 }, source_url: null, facts: {}, failure: { code: 'X', class: 'y' } }],
+    },
+  ]);
+  assert.deepEqual(withRejected.rejected[0].channel, { query: 'q1', providerId: 'fixture-a', capability: 'search' }, 'rejected channel is the canonical triple ONLY');
+  // A path-shaped providerId cannot cross the provider-content boundary.
+  assert.throws(
+    () => rrfFusion([{ channel: { query: 'q1', providerId: '/home/private-user/p', capability: 'search' }, items: [] }]),
+    (err) => err.code === FUSION_ERROR_CHANNEL_IDENTITY_INVALID,
+    'path-shaped providerId fails closed at channel validation (provider-content boundary)',
+  );
+  // A plan-UNSAFE (credential-shaped) query cannot cross the T04 plan boundary.
+  assert.throws(
+    () => rrfFusion([{ channel: { query: 'password=sekrit', providerId: 'fixture-a', capability: 'search' }, items: [] }]),
+    (err) => err.code === FUSION_ERROR_CHANNEL_IDENTITY_INVALID,
+    'credential-shaped query fails closed at channel validation (T04 plan boundary)',
+  );
+});
+
+test('R12-B3: duplicate channel identity across rankings (same query + providerId + capability) fails closed with FUSION_DUPLICATE_CHANNEL BEFORE any item traversal — including fully disjoint candidate sets (Round-6 BLOCK3, 3905300520)', () => {
+  // Disjoint candidate sets: the repeated channel triple is ambiguous for RRF
+  // accumulation regardless of the item content.
+  assert.throws(
+    () => rrfFusion([ranking('q1', 'fixture-a', [['10', 1]]), ranking('q1', 'fixture-a', [['20', 1]])]),
+    (err) => err.code === FUSION_ERROR_DUPLICATE_CHANNEL,
+    'disjoint duplicate channels fail closed with FUSION_DUPLICATE_CHANNEL',
+  );
+  // Overlapping candidate sets: same fail-closed class.
+  assert.throws(
+    () => rrfFusion([ranking('q1', 'fixture-a', [['10', 1]]), ranking('q1', 'fixture-a', [['10', 1]])]),
+    (err) => err.code === FUSION_ERROR_DUPLICATE_CHANNEL,
+    'overlapping duplicate channels fail closed with FUSION_DUPLICATE_CHANNEL',
+  );
+  // Distinct channel triples (different query / provider / capability) stay legal.
+  const fused = rrfFusion([
+    ranking('q1', 'fixture-a', [['10', 1]]),
+    ranking('q2', 'fixture-a', [['10', 2]]),
+    ranking('q1', 'fixture-b', [['10', 3]]),
+  ]);
+  assert.equal(fused.candidates.length, 1, 'distinct channel triples still fuse normally');
+});
+
+test('R12-B2: isBoundarySafeUrlString applies ONE level of percent-decoding to pathname/fragment/query before credential checks — encoded credential shapes and malformed encoding fail closed (Round-6 BLOCK2, 3905300513)', () => {
+  for (const url of [
+    'https://example.invalid/a/token%3Dsekrit', // credential encoded in the PATH
+    'https://example.invalid/a#token%3Dsekrit', // credential encoded in the FRAGMENT
+    'https://example.invalid/?token%3Dsekrit', // credential encoded in a QUERY NAME
+    'https://example.invalid/?name%3Dz_c0%3Dabc', // credential encoded in a QUERY VALUE
+  ]) {
+    assert.equal(isBoundarySafeUrlString(url), false, `${url}: percent-encoded credential shape must fail closed`);
+  }
+  assert.equal(isBoundarySafeUrlString('https://example.invalid/%zz'), false, 'malformed percent-encoding fails closed');
+  assert.equal(isBoundarySafeUrlString('https://example.invalid/%E4%B8%AD%E6%96%87/article'), true, 'legitimate encoded content still passes');
+  assert.equal(isBoundarySafeUrlString('https://example.invalid/home/article'), true, 'plain public URL still passes');
+});
+
+test('R12-C2: every FUSION_* error MESSAGE is STATIC — raw provider/caller-controlled values are never embedded; the machine-readable .code carries the identity (final convergence repair C2)', () => {
+  // Channel identity invalid (missing fields): no raw channel payload.
+  let err = capture(() => rrfFusion([{ channel: { query: 'q1' }, items: [] }]));
+  assert.equal(err.code, FUSION_ERROR_CHANNEL_IDENTITY_INVALID);
+  assert.equal(err.message, 'malformed fusion channel identity (non-empty query + providerId + retrieval-ranked search capability required)');
+  // Channel identity invalid (boundary): the credential-shaped query is never echoed.
+  err = capture(() => rrfFusion([{ channel: { query: 'password=sekrit', providerId: 'fixture-a' }, items: [] }]));
+  assert.equal(err.code, FUSION_ERROR_CHANNEL_IDENTITY_INVALID);
+  assert.ok(!err.message.includes('password=sekrit'), 'credential-shaped query never embedded in the message');
+  // Items not an array: static message.
+  err = capture(() => rrfFusion([{ channel: { query: 'q1', providerId: 'fixture-a', capability: 'search' }, items: 'nope' }]));
+  assert.equal(err.code, FUSION_ERROR_CHANNEL_IDENTITY_INVALID);
+  assert.equal(err.message, 'ranking items must be an array for a fusion channel');
+  // Item identity invalid: the raw questionId 'abc' is never embedded.
+  err = capture(() => rrfFusion([{ channel: { query: 'q1', providerId: 'fixture-a', capability: 'search' }, items: [{ identity: { questionId: 'abc' }, provenance: { route: 'r', rank: 1 }, source_url: null, facts: {} }] }]));
+  assert.equal(err.code, FUSION_ERROR_ITEM_IDENTITY_INVALID);
+  assert.ok(!err.message.includes('abc'), 'raw malformed identity never embedded');
+  // Rank invalid: the raw rank is never embedded.
+  err = capture(() => rrfFusion([{ channel: { query: 'q1', providerId: 'fixture-a', capability: 'search' }, items: [{ identity: { questionId: '10' }, provenance: { route: 'r', rank: 0 }, source_url: null, facts: {} }] }]));
+  assert.equal(err.code, FUSION_ERROR_RANK_INVALID);
+  assert.equal(err.message, 'fusible item carries no valid 1-based provenance.rank');
+  // Within-channel duplicate: the questionId is never embedded.
+  err = capture(() => rrfFusion([{ channel: { query: 'q1', providerId: 'fixture-a', capability: 'search' }, items: [
+    { identity: { questionId: '42' }, provenance: { route: 'r', rank: 1 }, source_url: null, facts: {} },
+    { identity: { questionId: '42' }, provenance: { route: 'r', rank: 5 }, source_url: null, facts: {} },
+  ] }]));
+  assert.equal(err.code, FUSION_ERROR_DUPLICATE_IN_CHANNEL);
+  assert.ok(!err.message.includes('42'), 'questionId never embedded in the duplicate-in-channel message');
+  // Duplicate channel: neither the query nor the candidate ids are embedded.
+  err = capture(() => rrfFusion([ranking('q1', 'fixture-a', [['10', 1]]), ranking('q1', 'fixture-a', [['20', 1]])]));
+  assert.equal(err.code, FUSION_ERROR_DUPLICATE_CHANNEL);
+  assert.ok(!err.message.includes('q1') && !err.message.includes('10') && !err.message.includes('20'), 'duplicate-channel message is fully static');
+  // Unsafe provider data: the field name is a module literal; the raw
+  // URL/credential is never embedded.
+  err = capture(() => rrfFusion([{ channel: { query: 'q1', providerId: 'fixture-a', capability: 'search' }, items: [{ identity: { questionId: '10' }, provenance: { route: 'r', rank: 1 }, source_url: { url: 'https://example.invalid/?token=sekrit', securityClass: 'external_unverified' }, facts: {} }] }]));
+  assert.equal(err.code, FUSION_ERROR_UNSAFE_PROVIDER_DATA);
+  assert.ok(!err.message.includes('https://example.invalid') && !err.message.includes('token=sekrit'), 'raw URL/credential never embedded in the unsafe-data message');
+});
+
+test('R12-B4: FUSION_CONTRACT_ERROR_CODES allowlists EVERY FUSION_* contract error code and can never admit path/credential-shaped codes (Round-6 BLOCK4, 3905300529)', () => {
+  for (const code of [
+    FUSION_ERROR_CHANNEL_IDENTITY_INVALID,
+    FUSION_ERROR_RANK_INVALID,
+    FUSION_ERROR_ITEM_IDENTITY_INVALID,
+    FUSION_ERROR_FAILURE_IDENTITY_INVALID,
+    FUSION_ERROR_DUPLICATE_IN_CHANNEL,
+    FUSION_ERROR_DUPLICATE_CHANNEL,
+    FUSION_ERROR_UNSAFE_PROVIDER_DATA,
+  ]) {
+    assert.ok(FUSION_CONTRACT_ERROR_CODES.includes(code), `${code} must be allowlisted`);
+  }
+  assert.equal(FUSION_CONTRACT_ERROR_CODES.length, 7, 'the allowlist is complete and frozen');
+  // Counterexamples: a path/credential-shaped code thrown by a buggy future
+  // path is NULLED by the retrieval catch — it can never be a member here.
+  assert.equal(FUSION_CONTRACT_ERROR_CODES.includes('/home/private-user/x'), false, 'path-shaped code can never be a member');
+  assert.equal(FUSION_CONTRACT_ERROR_CODES.includes('token=abc'), false, 'credential-shaped code can never be a member');
+  assert.equal(FUSION_CONTRACT_ERROR_CODES.includes('z_c0=secret'), false, 'credential-shaped code can never be a member');
 });

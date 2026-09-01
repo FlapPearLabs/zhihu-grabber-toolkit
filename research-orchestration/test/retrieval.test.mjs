@@ -57,6 +57,17 @@
  *   - Session capture wrapper can NEVER masquerade as a retrieval-ranked channel;
  *   - persisted pool artifact: deterministic bytes + poolHash, planHash recorded,
  *     work-relative only.
+ *   - R12 final convergence repair (Round-6 BLOCK1/BLOCK2/BLOCK3/BLOCK4 + C1):
+ *     BLOCK1 canonical channel triple (extra descriptor fields never leak);
+ *     BLOCK2 one-level percent-decoding of URL path/fragment/query before
+ *     credential checks (encoded credential shapes + malformed encoding fail
+ *     closed; legitimate encoded content passes); BLOCK3 duplicate channel
+ *     identity is structurally prevented pre-fusion (registry duplicate
+ *     identity / duplicate descriptors fail closed before any IO); BLOCK4
+ *     allowlisted fusion codes surface machine-readably while arbitrary
+ *     path/credential-shaped codes are nulled; C1 the plan-owned query crosses
+ *     the T04 plan boundary on the ALL-failed path too (T04-valid queries are
+ *     preserved, matching the successful path).
  *
  * All tests are deterministic and network-free: seam adapters are fixtures
  * (provider results per §5.1 shape), mirroring provider-seam.test.mjs conventions.
@@ -93,6 +104,11 @@ import {
   runMultiQueryRetrieval,
 } from '../lib/retrieval.mjs';
 import { planHash, validatePlanInput } from '../lib/plan-contract.mjs';
+import {
+  FUSION_ERROR_DUPLICATE_IN_CHANNEL,
+  FUSION_ERROR_DUPLICATE_CHANNEL,
+  FUSION_CONTRACT_ERROR_CODES,
+} from '../lib/rrf.mjs';
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -1542,11 +1558,16 @@ test('J9: INTERMEDIATE failure paths with a machine-private PATH-SHAPED channel 
   }
 });
 
-test('J10: ALL-provider-failed early return with a machine-private PATH-SHAPED plan QUERY (Codex 4th-round P1 on 0e3e2bea) → channel.query is projected through projectFailureIdentity to <redacted>; the absolute path never surfaces, even though the plan validator only rejects profile-root paths', () => {
+test('J10: ALL-provider-failed early return with a T04-valid PATH-SHAPED plan QUERY (C1 final convergence repair) → the plan-owned query crosses the T04 PLAN boundary (projectPlanQuery), NOT the provider-content lens; a machine-private /root/... query that passes plan validation is PRESERVED verbatim on the all-failed path — matching its preservation on the successful path (R11-P2-1)', () => {
   // The plan validator's PRIVATE_PATH_SHAPE covers /Users /home Windows-profile
   // roots and ~ — but NOT the full POSIX set (/root /etc /opt ...). A query like
   // /root/private/research passes plan validation yet carries a machine-private
-  // path; the all-failed early return must project it identically to providerId.
+  // path. C1: plan-owned content is judged by the plan boundary alone — a
+  // T04-valid query stays verbatim in the all-failed channel identity; only a
+  // query that FAILS the T04 boundary (credential shape / profile-root path)
+  // would be projected to <redacted> (defense-in-depth: validation and
+  // projection share the same boundary, so the redaction branch is unreachable
+  // through the public seam today).
   const PATH_QUERY = '/root/private/research';
   const failResult = {
     ok: false,
@@ -1577,10 +1598,232 @@ test('J10: ALL-provider-failed early return with a machine-private PATH-SHAPED p
   assert.equal(run.reason, RETRIEVAL_FAILURE_NO_VALID_CHANNEL);
   const failed = run.details.failedChannels;
   assert.equal(failed.length, 1, 'the failing channel is reported');
-  assert.equal(failed[0].channel.query, '<redacted>', 'path-shaped plan query is redacted in the all-failed channel identity');
+  assert.equal(failed[0].channel.query, PATH_QUERY, 'T04-valid plan query is PRESERVED in the all-failed channel identity (plan boundary, not provider-content lens)');
   assert.equal(failed[0].channel.providerId, 'fixture-a', 'safe providerId identity retained');
   const serialized = JSON.stringify(run);
-  assert.ok(!serialized.includes(PATH_QUERY), 'the absolute query path never surfaces in the failure result');
-  assert.ok(serialized.includes('<redacted>'), 'the stable redaction placeholder surfaces instead');
+  assert.ok(serialized.includes(PATH_QUERY), 'the plan-owned query is part of the plan contract — its identity is retained on the all-failed path');
   assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact written');
+});
+
+test('R11-P2-1: a T04-valid system-path plan query (e.g. "/etc/hosts 文件的作用") is preserved in the pool — the artifact walk applies the plan-validation query contract, NOT the broader provider-content lens (Codex 5th-round P2 on 526ca71); the successful run no longer misreports retrieval_provider_contract_invalid', () => {
+  const SYSTEM_PATH_QUERY = '/etc/hosts 文件的作用';
+  const seam = createProviderSeam({
+    adapters: [fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1]], { query: input.query }))],
+  });
+  const workDir = tmpWorkDir('retrieval-r11');
+  const run = runMultiQueryRetrieval({
+    plan: { ...PLAN_SINGLE, queryVariants: [SYSTEM_PATH_QUERY] },
+    seam,
+    workDir,
+  });
+  assert.equal(run.ok, true, 'T04-valid system-path query must NOT fail the successful run');
+  assert.equal(run.pool.channels[0].channel.query, SYSTEM_PATH_QUERY, 'plan query is preserved verbatim in the channel record');
+  const persisted = JSON.parse(fs.readFileSync(path.join(workDir, RETRIEVAL_POOL_FILENAME), 'utf8'));
+  assert.equal(persisted.channels[0].channel.query, SYSTEM_PATH_QUERY, 'persisted pool keeps the plan query');
+  // C1 (final convergence repair): the ALL-FAILED path applies the SAME plan
+  // boundary — the T04-valid query is preserved there too, so the two paths
+  // never disagree about plan-owned identity (dual-path consistency).
+  const failResult = {
+    ok: false,
+    provider_id: 'fixture-a',
+    capability: CAPABILITY_SEARCH,
+    auth_class: AUTH_CLASS_OFFICIAL_SECRET,
+    retrieved_at: FIXED_NOW(),
+    items: [],
+    failure: { code: 'PROVIDER_REPORTED_FAILURE', class: 'provider' },
+    completeness: { status: COMPLETENESS_UNKNOWN, evidence: { signal: 'absent', reason: 'no_pagination_signal' } },
+  };
+  const failedSeam = {
+    listProviders() {
+      return [{ providerId: 'fixture-a', capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET }];
+    },
+    retrieve() {
+      return failResult;
+    },
+  };
+  const failedRun = runMultiQueryRetrieval({
+    plan: { ...PLAN_SINGLE, queryVariants: [SYSTEM_PATH_QUERY] },
+    seam: failedSeam,
+    channels: [{ providerId: 'fixture-a' }],
+    workDir: tmpWorkDir('retrieval-r11'),
+  });
+  assert.equal(failedRun.ok, false, 'all-failed must fail closed');
+  assert.equal(failedRun.details.failedChannels[0].channel.query, SYSTEM_PATH_QUERY, 'the SAME T04-valid plan query is preserved on the all-failed provenance too');
+});
+
+test('R11-P2-2: a registry entry with an UNKNOWN capability identity (capability: "bogus") → FAIL CLOSED (retrieval_provider_contract_invalid, registryIssue malformed_entry) before any provider IO, even WITH explicit channel descriptors (Codex 5th-round P2 on 526ca71; capability must be in the T05 vocabulary)', () => {
+  const seam = {
+    listProviders() {
+      return [{ providerId: 'p', capability: 'bogus', authClass: AUTH_CLASS_SESSION }];
+    },
+    retrieve() {
+      throw new Error('provider IO must never be reached for an unknown capability identity');
+    },
+  };
+  const run = runMultiQueryRetrieval({
+    plan: PLAN_SINGLE,
+    seam,
+    channels: [{ providerId: 'p' }],
+    workDir: tmpWorkDir('retrieval-r11'),
+  });
+  assert.equal(run.ok, false, 'unknown registry capability must fail closed');
+  assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+  assert.equal(run.details.registryIssue, 'malformed_entry');
+});
+
+test('R11-P2-2b: unknown registry capability fails closed even WITHOUT explicit channels — default routing never sees the entry, and no provider IO occurs', () => {
+  const seam = {
+    listProviders() {
+      return [{ providerId: 'p', capability: 'bogus', authClass: AUTH_CLASS_SESSION }];
+    },
+    retrieve() {
+      throw new Error('provider IO must never be reached for an unknown capability identity');
+    },
+  };
+  const run = runMultiQueryRetrieval({
+    plan: PLAN_SINGLE,
+    seam,
+    workDir: tmpWorkDir('retrieval-r11'),
+  });
+  assert.equal(run.ok, false, 'unknown registry capability must fail closed before routing');
+  assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+  assert.equal(run.details.registryIssue, 'malformed_entry');
+});
+
+test('R11-P2-2c: a T05-valid non-retrieval registry capability (capture) remains a VALID registry entry — only retrieval ROUTING is refused; the registry itself is not a contract violation', () => {
+  const capAdapter = fixtureCaptureAdapter('cap-provider');
+  const seam = createProviderSeam({
+    adapters: [
+      capAdapter,
+      fixtureSearchAdapter('search-provider', (input) => searchResult('search-provider', [['100', 1]], { query: input.query })),
+    ],
+  });
+  const workDir = tmpWorkDir('retrieval-r11');
+  const run = runMultiQueryRetrieval({
+    plan: PLAN_SINGLE,
+    seam,
+    channels: [{ providerId: 'search-provider' }],
+    workDir,
+  });
+  assert.equal(run.ok, true, 'capture registry entry is T05-valid; explicit search channel still resolves');
+  assert.equal(run.pool.channels[0].channel.providerId, 'search-provider');
+  assert.equal(capAdapter.__calls(), 0, 'capture adapter is never invoked for a retrieval run');
+});
+
+// ---------------------------------------------------------------------------
+// R12 — final convergence repair (Round-6 BLOCK1/BLOCK2/BLOCK3/BLOCK4 + C1/C2)
+// retrieval-boundary counterexamples: the seam feeds the REAL fusion path, so
+// these tests exercise the boundary the layer above rrfFusion actually sees.
+// ---------------------------------------------------------------------------
+
+test('R12-B1 (retrieval boundary): BLOCK1 canonical channel identity — explicit channel descriptors carrying EXTRA fields (query / capability / junk) never leak into channel provenance; the pool channel record is the canonical { query, providerId, capability } triple only (3905300503)', () => {
+  const seam = createProviderSeam({
+    adapters: [fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1]], { query: input.query }))],
+  });
+  const workDir = tmpWorkDir('retrieval-r12');
+  const run = runMultiQueryRetrieval({
+    plan: PLAN_SINGLE,
+    seam,
+    channels: [{ providerId: 'fixture-a', capability: CAPABILITY_SEARCH, query: 'hijack-query', foo: 'bar' }],
+    workDir,
+  });
+  assert.equal(run.ok, true, 'extra descriptor fields must not break routing');
+  const canonical = { query: PLAN_SINGLE.queryVariants[0], providerId: 'fixture-a', capability: CAPABILITY_SEARCH };
+  assert.deepEqual(run.pool.channels[0].channel, canonical, 'channel provenance is canonical-only — extra descriptor fields are dropped at the boundary');
+  const persisted = JSON.parse(fs.readFileSync(path.join(workDir, RETRIEVAL_POOL_FILENAME), 'utf8'));
+  assert.deepEqual(persisted.channels[0].channel, canonical, 'persisted artifact keeps the canonical triple only');
+  const serialized = JSON.stringify(run);
+  assert.ok(!serialized.includes('hijack-query') && !serialized.includes('foo'), 'extra descriptor fields never surface anywhere in the result');
+});
+
+test('R12-B2 (retrieval boundary): BLOCK2 ONE-level percent-decoding — an encoded credential shape in the URL path / fragment / query name / query value fails closed during fusion projection; malformed percent-encoding fails closed; legitimate encoded content still passes (3905300513)', () => {
+  const encodedCredentialUrls = [
+    'https://example.invalid/a/token%3Dsekrit', // credential encoded in the PATH
+    'https://example.invalid/a#token%3Dsekrit', // credential encoded in the FRAGMENT
+    'https://example.invalid/?token%3Dsekrit', // credential encoded in a QUERY NAME
+    'https://example.invalid/?name%3Dz_c0%3Dabc', // credential encoded in a QUERY VALUE
+    'https://example.invalid/%zz', // malformed percent-encoding → fail closed
+  ];
+  for (const url of encodedCredentialUrls) {
+    const seam = createProviderSeam({
+      adapters: [fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1, { source_url: { url, securityClass: 'official-secret' } }]], { query: input.query }))],
+    });
+    const workDir = tmpWorkDir('retrieval-r12');
+    const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir });
+    assert.equal(run.ok, false, `${url}: encoded credential shape must fail closed`);
+    assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, `${url}: contract failure identity`);
+    assert.equal(run.details.reason, 'rrf_fusion_contract_violation', `${url}: rejected during fusion projection`);
+    assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), `${url}: no artifact written`);
+    const serialized = JSON.stringify(run);
+    assert.ok(!serialized.includes('token=sekrit') && !serialized.includes('z_c0='), `${url}: the credential never surfaces in any decoded form`);
+  }
+  // Legitimate percent-encoded content must still pass the boundary. The
+  // securityClass must equal the shared classifier's verdict for a public https
+  // URL (external_unverified — classifier-bound, never provider-declared).
+  const safeSeam = createProviderSeam({
+    adapters: [fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1, { source_url: { url: 'https://example.invalid/%E4%B8%AD%E6%96%87/article', securityClass: 'external_unverified' } }]], { query: input.query }))],
+  });
+  const safeRun = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam: safeSeam, workDir: tmpWorkDir('retrieval-r12') });
+  assert.equal(safeRun.ok, true, 'legitimate encoded content still passes');
+  assert.equal(candidateIds(safeRun.pool).length, 1, 'the safe item is fused');
+});
+
+test('R12-B3 (retrieval boundary): BLOCK3 duplicate channel identity is structurally PREVENTED before fusion — registry duplicate identities and duplicate channel descriptors fail closed pre-IO; the fusion-layer FUSION_DUPLICATE_CHANNEL code is allowlisted so any future reachable duplicate surfaces machine-readably (3905300520)', () => {
+  // (a) duplicate channel descriptors fail closed before any provider IO.
+  const seamA = createProviderSeam({ adapters: [fixtureSearchAdapter('fixture-a', () => { throw new Error('provider IO must never be reached for duplicate descriptors'); })] });
+  const dupDescriptors = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam: seamA, channels: [{ providerId: 'fixture-a' }, { providerId: 'fixture-a' }], workDir: tmpWorkDir('retrieval-r12') });
+  assert.equal(dupDescriptors.ok, false);
+  assert.equal(dupDescriptors.reason, RETRIEVAL_FAILURE_CHANNEL_DUPLICATE, 'duplicate descriptors fail closed before fusion');
+  // (b) duplicate (providerId, capability) registry identities fail closed pre-IO.
+  const seamB = {
+    listProviders() {
+      return [
+        { providerId: 'x', capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET },
+        { providerId: 'x', capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_SESSION },
+      ];
+    },
+    retrieve() {
+      throw new Error('provider IO must never be reached for a duplicate registry identity');
+    },
+  };
+  const dupRegistry = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam: seamB, workDir: tmpWorkDir('retrieval-r12') });
+  assert.equal(dupRegistry.ok, false);
+  assert.equal(dupRegistry.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+  assert.equal(dupRegistry.details.registryIssue, 'duplicate_identity', 'ambiguous registry identity fails closed before any IO');
+  // (c) the fusion-layer duplicate-channel code is allowlisted — if a future
+  // path ever reaches it, the retrieval catch surfaces it machine-readably.
+  assert.ok(FUSION_CONTRACT_ERROR_CODES.includes(FUSION_ERROR_DUPLICATE_CHANNEL), 'FUSION_DUPLICATE_CHANNEL is allowlisted for machine-readable surfacing');
+});
+
+test('R12-B4 (retrieval boundary): BLOCK4 allowlist — a fusion contract failure surfaces its machine-readable allowlisted code; an arbitrary path/credential-shaped adapter code is nulled, never proxied (3905300529)', () => {
+  // (a) positive surface: within-channel duplicate → the allowlisted
+  // FUSION_DUPLICATE_IN_CHANNEL code surfaces machine-readably.
+  const dupAdapter = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1], ['100', 5]], { query: input.query }));
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam: createProviderSeam({ adapters: [dupAdapter] }), workDir: tmpWorkDir('retrieval-r12') });
+  assert.equal(run.ok, false);
+  assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+  assert.equal(run.details.reason, 'rrf_fusion_contract_violation');
+  assert.equal(run.details.code, FUSION_ERROR_DUPLICATE_IN_CHANNEL, 'allowlisted fusion code surfaces machine-readably');
+  assert.ok(FUSION_CONTRACT_ERROR_CODES.includes(run.details.code), 'the surfaced code is a member of the allowlist');
+  // (b) negative: a path/credential-shaped code thrown by an adapter is nulled
+  // at the boundary — never proxied, never surfaced.
+  for (const [label, code] of [['credential-shaped', 'token=sekrit'], ['path-shaped', '/home/private-user/x']]) {
+    const throwing = fixtureSearchAdapter('fixture-a', () => {
+      const err = new Error('boom');
+      err.code = code;
+      throw err;
+    });
+    const badRun = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam: createProviderSeam({ adapters: [throwing] }), workDir: tmpWorkDir('retrieval-r12') });
+    assert.equal(badRun.ok, false, `${label}: adapter throw fails closed`);
+    assert.equal(badRun.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, `${label}: contract failure identity`);
+    assert.equal(badRun.details.code, null, `${label} code is never proxied`);
+    const serialized = JSON.stringify(badRun);
+    assert.ok(!serialized.includes(code), `${label} code never surfaces`);
+  }
+  // (c) allowlist integrity at the retrieval boundary: complete + frozen + no
+  // path/credential-shaped member can ever be admitted.
+  assert.equal(FUSION_CONTRACT_ERROR_CODES.length, 7, 'the allowlist is complete');
+  assert.ok(Object.isFrozen(FUSION_CONTRACT_ERROR_CODES), 'the allowlist is frozen — no runtime mutation');
+  assert.equal(FUSION_CONTRACT_ERROR_CODES.includes('/home/private-user/x'), false, 'path-shaped code can never be a member');
+  assert.equal(FUSION_CONTRACT_ERROR_CODES.includes('token=sekrit'), false, 'credential-shaped code can never be a member');
 });

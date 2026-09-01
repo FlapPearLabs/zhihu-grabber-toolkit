@@ -119,14 +119,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { CAPABILITY_SEARCH, COMPLETENESS_STATES, AUTH_CLASSES, validateProviderResult } from './provider-seam.mjs';
+import { CAPABILITY_SEARCH, COMPLETENESS_STATES, AUTH_CLASSES, validateProviderResult, CAPABILITIES } from './provider-seam.mjs';
 import {
   SEAM_ERROR_UNSUPPORTED_CAPABILITY,
   SEAM_ERROR_NO_SILENT_PROVIDER_FALLBACK,
   SEAM_ERROR_UNKNOWN_PROVIDER_CONTRACT,
   SEAM_ERROR_ADAPTER_CONTRACT_INVALID,
 } from './provider-seam.mjs';
-import { isValidPlanHashFormat, planHash, validatePlanInput } from './plan-contract.mjs';
+import { isValidPlanHashFormat, isPlanBoundarySafeString, planHash, validatePlanInput } from './plan-contract.mjs';
 import { sha256 } from './state.mjs';
 import {
   RRF_K,
@@ -134,6 +134,7 @@ import {
   RRF_TIE_BREAK,
   assertArtifactSafe,
   isBoundarySafeString,
+  FUSION_CONTRACT_ERROR_CODES,
   projectFailure,
   projectSafeJson,
   rrfFusion,
@@ -275,7 +276,8 @@ function safeValidateProviderResult(result) {
  * reach provider retrieval IO — they return a stable
  * retrieval_provider_contract_invalid with a stable issue identity (no raw
  * err.message / payload echo). Only shape-valid entries ({ providerId,
- * capability } as non-empty strings + authClass in AUTH_CLASSES — the full
+ * capability, authClass } as non-empty strings + capability in the T05
+ * capability vocabulary (CAPABILITIES) + authClass in AUTH_CLASSES — the full
  * identity this module consumes) proceed. Throws nothing; returns
  * { ok:true, registered } or { ok:false, reason, details }.
  */
@@ -299,12 +301,17 @@ function safeListProviders(seam) {
   }
   const seenIdentities = new Set();
   for (const entry of registered) {
+    // R11 (Codex 5th-round P2 on 526ca71, comment 3905192539): capability must
+    // be a member of the T05 vocabulary (CAPABILITIES), not merely non-empty —
+    // an unknown identity like "bogus" is an unknown provider contract and must
+    // fail closed as retrieval_provider_contract_invalid instead of being
+    // misrouted to no_valid_channel / unregistered later.
     if (!isPlainObject(entry) || !isNonEmptyString(entry.providerId) || !isNonEmptyString(entry.capability)
-      || !AUTH_CLASSES.includes(entry.authClass)) {
+      || !CAPABILITIES.includes(entry.capability) || !AUTH_CLASSES.includes(entry.authClass)) {
       return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
         reason: 'provider_contract_violation',
         registryIssue: 'malformed_entry',
-        note: 'provider registry entry must be { providerId, capability, authClass } with non-empty strings and authClass in AUTH_CLASSES; no provider IO was performed',
+        note: 'provider registry entry must be { providerId, capability, authClass } with non-empty strings, capability in the T05 capability vocabulary, and authClass in AUTH_CLASSES; no provider IO was performed',
       });
     }
     // P2 (review 5078133293): duplicate (providerId, capability) identities are
@@ -335,6 +342,22 @@ function safeListProviders(seam) {
  */
 function projectFailureIdentity(value) {
   return isBoundarySafeString(value) ? value : '<redacted>';
+}
+
+/**
+ * C1 (final convergence repair): project a PLAN-OWNED query on the
+ * all-provider-failed early return through the T04 PLAN boundary
+ * (isPlanBoundarySafeString), NOT the broader provider-content lens. A
+ * T04-valid query (e.g. `/etc/hosts 文件的作用` or `/root/private/research` —
+ * the plan validator's PRIVATE_PATH_SHAPE covers profile roots, not /root) is
+ * legitimate plan content and is PRESERVED, exactly like it is preserved on the
+ * successful path (R11-P2-1); only a value that does not cross the plan
+ * boundary (credential-shaped / machine-private profile-root path / over-length
+ * — unreachable via a validated plan, kept here as defense in depth) becomes the
+ * stable '<redacted>' placeholder.
+ */
+function projectPlanQuery(value) {
+  return isPlanBoundarySafeString(value) ? value : '<redacted>';
 }
 
 /**
@@ -658,14 +681,14 @@ export function runMultiQueryRetrieval(opts = {}) {
           // assertArtifactSafe, so the seam-controlled providerId is projected
           // through projectFailureIdentity like every other registry identity —
           // a machine-private path-shaped adapter name can never surface.
-          // Codex 4th-round P1 on 0e3e2bea: the plan query is ALSO caller/
-          // plan-derived and can carry a machine-private path that the plan
-          // validator's narrower path set (profile roots only) does not catch
-          // (e.g. /root/private/research) — project it identically.
+          // C1 (final convergence repair): the plan-owned query crosses the T04
+          // PLAN boundary (projectPlanQuery), not the provider-content lens — a
+          // T04-valid query is preserved verbatim on the all-failed path, matching
+          // its preservation on the successful path (R11-P2-1).
           channel: {
             ...c.channel,
             providerId: projectFailureIdentity(c.channel.providerId),
-            query: projectFailureIdentity(c.channel.query),
+            query: projectPlanQuery(c.channel.query),
           },
           auth_class: c.auth_class,
           retrievedAt: c.retrievedAt,
@@ -681,10 +704,13 @@ export function runMultiQueryRetrieval(opts = {}) {
     fused = rrfFusion(rankings);
   } catch (err) {
     // Provider item violated the retrieval/rank contract → fail closed. This
-    // also covers a present-but-malformed per-item failure (P1-3). P1-1: emit
-    // only the stable FUSION code, never a raw err.message.
+    // also covers a present-but-malformed per-item failure (P1-3) and a
+    // duplicate channel identity (Round-6 BLOCK3, 3905300520). P1-1 + Round-6
+    // BLOCK4 (3905300529): ONLY an allowlisted FUSION_* contract error code may
+    // surface — an arbitrary / credential-shaped / path-bearing thrown code
+    // becomes null — and a raw err.message is never emitted.
     return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
-      code: err?.code ?? null,
+      code: FUSION_CONTRACT_ERROR_CODES.includes(err?.code) ? err.code : null,
       reason: 'rrf_fusion_contract_violation',
     });
   }
@@ -711,7 +737,18 @@ export function runMultiQueryRetrieval(opts = {}) {
   // value can reach the artifact even if a future field skips its projection.
   // A violation fails closed with a stable issue identity; no artifact is
   // written on the fail-closed path.
-  const artifactVerdict = assertArtifactSafe(pool);
+  // R11 (Codex 5th-round P2 on 526ca71, comment 3905192528): channel queries
+  // are plan-owned content validated by the T04 plan contract at ingestion —
+  // the walk applies the SAME query-string contract as plan validation
+  // (trustedPlanStrings) instead of reclassifying valid plan content (e.g. a
+  // T04-valid system-path query like `/etc/hosts 文件的作用`) with the broader
+  // provider-content lens, which would falsely fail a successful run.
+  // `trustedPlanStrings` is NOT a general caller-defined trust bypass: it is
+  // exactly the validated plan's queryVariants and each member is still
+  // re-validated by the plan boundary.
+  const artifactVerdict = assertArtifactSafe(pool, {
+    trustedPlanStrings: new Set(validated.plan.queryVariants),
+  });
   if (!artifactVerdict.ok) {
     return failure(RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, {
       reason: 'artifact_safety_violation',

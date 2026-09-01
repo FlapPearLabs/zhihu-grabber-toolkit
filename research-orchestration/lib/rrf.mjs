@@ -49,6 +49,19 @@
  *     a CONTRACT VIOLATION → hard error (FUSION_DUPLICATE_IN_CHANNEL): "keep the
  *     first / reject the second" would make scores depend on item array order
  *     (P1-4), so a within-channel duplicate fails closed regardless of order;
+ *   - a duplicate CHANNEL identity across rankings (same query + providerId +
+ *     capability) is a CONTRACT VIOLATION → hard error (FUSION_DUPLICATE_CHANNEL)
+ *     detected BEFORE any item traversal — even disjoint candidate sets cannot
+ *     hide an ambiguous repeated channel triple (Round-6 BLOCK3, 3905300520);
+ *   - every channel is canonicalized to the exact §5.4 triple
+ *     { query, providerId, capability } at validation (Round-6 BLOCK1,
+ *     3905300503): extra caller-supplied channel fields (diagnostic /
+ *     token-shaped keys, arbitrary metadata) never reach provenance, rejected
+ *     entries, or error contexts; the plan-owned query is re-validated at the
+ *     T04 plan boundary and the providerId at the provider-content boundary;
+ *   - all FUSION_* error MESSAGES are static (Round-6 C2, final convergence
+ *     repair): raw provider/caller-controlled values are never embedded in a
+ *     thrown message — the machine-readable .code carries the identity;
  *   - rejected observations are canonicalized by a stable key (channel triple +
  *     questionId + rank/route + failure code/class) before returning, so the
  *     rejected list is permutation-invariant under channel/item order (P1-5);
@@ -78,6 +91,11 @@ import { classifyUrl } from '../../zhihu-answer-grabber/src/markdown-security.js
 // the exported rrfFusion API must reject any other capability (e.g. a `capture`
 // channel) instead of letting non-retrieval observations affect RRF scores.
 import { CAPABILITY_SEARCH } from './provider-seam.mjs';
+// R11 (Codex 5th-round P2 on 526ca71, comment 3905192528): plan-owned query
+// strings are validated by the PLAN-contract boundary (T04) — the artifact walk
+// must apply the same query-string contract as plan validation instead of
+// reclassifying valid plan content with the broader provider-content lens.
+import { isPlanBoundarySafeString } from './plan-contract.mjs';
 
 /** Standard RRF constant (k = 60). */
 export const RRF_K = 60;
@@ -96,10 +114,35 @@ export const FUSION_ERROR_FAILURE_IDENTITY_INVALID = 'FUSION_FAILURE_IDENTITY_IN
 /** Hard fail-closed error code: within-channel duplicate candidate (P1-4). */
 export const FUSION_ERROR_DUPLICATE_IN_CHANNEL = 'FUSION_DUPLICATE_IN_CHANNEL';
 /**
+ * Hard fail-closed error code: the SAME channel identity (query + providerId +
+ * capability) appears on more than one ranking — duplicate channels make RRF
+ * accumulation ambiguous (Round-6 BLOCK3, review 3905300520). Detected BEFORE
+ * any item traversal, including when the duplicate rankings carry fully
+ * disjoint candidate sets.
+ */
+export const FUSION_ERROR_DUPLICATE_CHANNEL = 'FUSION_DUPLICATE_CHANNEL';
+/**
  * Hard fail-closed error code: provider/caller-controlled data cannot be safely
  * projected into the persisted pool (P1-1 boundary, review 5077286260).
  */
 export const FUSION_ERROR_UNSAFE_PROVIDER_DATA = 'FUSION_UNSAFE_PROVIDER_DATA';
+
+/**
+ * Allowlist of machine-readable FUSION_* contract error codes (Round-6 BLOCK4,
+ * review 3905300529): the ONLY `err.code` values a caller may observe on a
+ * fail-closed fusion throw. retrieval.mjs proxies a fusion failure's code
+ * through this allowlist, so an arbitrary / credential-shaped / path-bearing
+ * thrown code can never surface in failure output.
+ */
+export const FUSION_CONTRACT_ERROR_CODES = Object.freeze([
+  FUSION_ERROR_CHANNEL_IDENTITY_INVALID,
+  FUSION_ERROR_RANK_INVALID,
+  FUSION_ERROR_ITEM_IDENTITY_INVALID,
+  FUSION_ERROR_FAILURE_IDENTITY_INVALID,
+  FUSION_ERROR_DUPLICATE_IN_CHANNEL,
+  FUSION_ERROR_DUPLICATE_CHANNEL,
+  FUSION_ERROR_UNSAFE_PROVIDER_DATA,
+]);
 
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -255,7 +298,22 @@ export function isBoundarySafeUrlString(value) {
   } catch {
     return false; // bare filesystem path / unparseable → fail closed
   }
-  return parsed.protocol === 'https:' && parsed.username === '' && parsed.password === '';
+  if (parsed.protocol !== 'https:' || parsed.username !== '' || parsed.password !== '') return false;
+  // Round-6 BLOCK2 (review 3905300513): a credential-shaped value hidden by
+  // percent-encoding must still fail closed. decodeURIComponent is applied
+  // EXACTLY ONCE (never recursively) to the raw pathname and fragment; query
+  // names/values are already decoded by the URLSearchParams API and are checked
+  // in their decoded form. Malformed percent-encoding fails closed.
+  try {
+    if (CREDENTIAL_SHAPE.test(decodeURIComponent(parsed.pathname))) return false;
+    if (CREDENTIAL_SHAPE.test(decodeURIComponent(parsed.hash))) return false;
+    for (const [name, entry] of parsed.searchParams.entries()) {
+      if (CREDENTIAL_SHAPE.test(name) || CREDENTIAL_SHAPE.test(entry)) return false;
+    }
+  } catch {
+    return false; // malformed percent-encoding → fail closed
+  }
+  return true;
 }
 
 /**
@@ -418,16 +476,27 @@ const MAX_ARTIFACT_DEPTH = 20;
  * bounded privacy-safe strings, no cycles — so no provider/caller-controlled
  * value can reach the artifact even if a future code path forgets a field-level
  * projection. Exception-safe; returns { ok:true } or { ok:false, reason }.
+ *
+ * `trustedPlanStrings` (R11, Codex 5th-round P2 on 526ca71; renamed + narrowed
+ * in the P1-T06 final convergence repair): an optional Set of EXACT strings that
+ * are plan-owned content already validated by the T04 plan contract at ingestion
+ * (validated.plan.queryVariants). It is NOT a general caller-defined trust
+ * bypass: trust is exact-match only and each string is STILL re-validated by the
+ * plan-contract boundary (isPlanBoundarySafeString), so a T04-valid system-path
+ * query like `/etc/hosts 文件的作用` is not reclassified as unsafe while a
+ * plan-UNSAFE string (credential-shaped / profile-root path / over-length) is
+ * rejected even when listed, and any other string is checked with the full
+ * provider-content lens.
  */
-export function assertArtifactSafe(value) {
+export function assertArtifactSafe(value, { trustedPlanStrings = null } = {}) {
   try {
-    return assertArtifactSafeInner(value, 0, new Set());
+    return assertArtifactSafeInner(value, 0, new Set(), trustedPlanStrings);
   } catch {
     return { ok: false, reason: 'walk_threw' };
   }
 }
 
-function assertArtifactSafeInner(value, depth, ancestors) {
+function assertArtifactSafeInner(value, depth, ancestors, trustedPlanStrings) {
   if (depth > MAX_ARTIFACT_DEPTH) return { ok: false, reason: 'depth_exceeded' };
   if (value === null) return { ok: true };
   const type = typeof value;
@@ -435,6 +504,13 @@ function assertArtifactSafeInner(value, depth, ancestors) {
     // Codex 3rd-round P2 on f742cb3: a URL-shaped string is a structured value
     // whose path segment is NOT a machine-private filesystem path — the
     // artifact-wide walk accepts it via the URL-specific boundary as well.
+    // R11 (Codex 5th-round P2 on 526ca71): an exact trusted PLAN query crosses
+    // the plan-contract boundary (T04), never the broader provider-content lens.
+    // `trustedPlanStrings` is NOT a general caller-defined trust bypass — see
+    // assertArtifactSafe's contract above.
+    if (trustedPlanStrings?.has(value)) {
+      return isPlanBoundarySafeString(value) ? { ok: true } : { ok: false, reason: 'unsafe_string' };
+    }
     return (isBoundarySafeString(value) || isBoundarySafeUrlString(value))
       ? { ok: true }
       : { ok: false, reason: 'unsafe_string' };
@@ -448,7 +524,7 @@ function assertArtifactSafeInner(value, depth, ancestors) {
   ancestors.add(value);
   if (Array.isArray(value)) {
     for (const element of value) {
-      const verdict = assertArtifactSafeInner(element, depth + 1, ancestors);
+      const verdict = assertArtifactSafeInner(element, depth + 1, ancestors, trustedPlanStrings);
       if (!verdict.ok) {
         ancestors.delete(value);
         return verdict;
@@ -466,7 +542,7 @@ function assertArtifactSafeInner(value, depth, ancestors) {
       ancestors.delete(value);
       return { ok: false, reason: 'unsafe_key' };
     }
-    const verdict = assertArtifactSafeInner(entry, depth + 1, ancestors);
+    const verdict = assertArtifactSafeInner(entry, depth + 1, ancestors, trustedPlanStrings);
     if (!verdict.ok) {
       ancestors.delete(value);
       return verdict;
@@ -474,26 +550,6 @@ function assertArtifactSafeInner(value, depth, ancestors) {
   }
   ancestors.delete(value);
   return { ok: true };
-}
-
-/**
- * Safely render an arbitrary value inside a fail-closed error message (P2-2).
- * BigInt / cyclic references / hostile serializers must never prevent the
- * machine-readable error .code from being attached: JSON.stringify first, then
- * String(), then a stable placeholder — this NEVER throws.
- */
-function safeFormat(value) {
-  try {
-    const json = JSON.stringify(value);
-    if (json !== undefined) return json;
-  } catch {
-    // fall through to String()
-  }
-  try {
-    return String(value);
-  } catch {
-    return '[unrepresentable value]';
-  }
 }
 
 /**
@@ -531,8 +587,12 @@ export function projectFailure(failure) {
 }
 
 /** P1-1: provider-controlled data that cannot cross the persisted-artifact boundary fails closed. */
-function throwUnsafeProviderData(field, channel) {
-  const err = new Error(`provider-controlled ${field} cannot be safely projected into the persisted pool for channel ${safeFormat(channel)}`);
+function throwUnsafeProviderData(field) {
+  // Round-6 C2 (final convergence repair): the FUSION_* error message is STATIC —
+  // `field` is a module-controlled literal, and the provider/caller-controlled
+  // channel value is NEVER embedded (safeFormat(channel) removed); the
+  // machine-readable .code carries the identity.
+  const err = new Error(`provider-controlled ${field} cannot be safely projected into the persisted pool`);
   err.code = FUSION_ERROR_UNSAFE_PROVIDER_DATA;
   throw err;
 }
@@ -591,17 +651,30 @@ function rejectedKey(rejected) {
  * otherwise (fail closed) — Codex 4th-round P2 on 0e3e2bea: runMultiQueryRetrieval
  * filters descriptors to `search`, but the exported rrfFusion API must not accept
  * a `capture` channel and fuse non-retrieval observations into RRF scores.
+ * Round-6 BLOCK1 (review 3905300503): returns a CANONICAL NEW channel object
+ * { query, providerId, capability } — never the caller's original reference —
+ * and re-validates each identity field at its boundary (the plan-owned query at
+ * the T04 plan boundary, the providerId at the provider-content boundary), so
+ * extra caller-supplied fields (diagnostic / token-shaped keys, arbitrary
+ * metadata) can never leak into channel provenance / rejected entries / error
+ * contexts.
  */
 function assertValidChannel(channel) {
   if (!isPlainObject(channel)
     || !isNonEmptyString(channel.query)
     || !isNonEmptyString(channel.providerId)
     || channel.capability !== CAPABILITY_SEARCH) {
-    const err = new Error(`malformed fusion channel identity (non-empty query + providerId + retrieval-ranked ${CAPABILITY_SEARCH} capability required): ${safeFormat(channel)}`);
+    // Round-6 C2: static message — no raw channel value embedded.
+    const err = new Error(`malformed fusion channel identity (non-empty query + providerId + retrieval-ranked ${CAPABILITY_SEARCH} capability required)`);
     err.code = FUSION_ERROR_CHANNEL_IDENTITY_INVALID;
     throw err;
   }
-  return channel;
+  if (!isPlanBoundarySafeString(channel.query) || !isBoundarySafeString(channel.providerId)) {
+    const err = new Error('malformed fusion channel identity (query/providerId do not cross their safety boundaries)');
+    err.code = FUSION_ERROR_CHANNEL_IDENTITY_INVALID;
+    throw err;
+  }
+  return { query: channel.query, providerId: channel.providerId, capability: channel.capability };
 }
 
 /**
@@ -628,15 +701,30 @@ export function rrfFusion(rankings) {
 
   const rejected = []; // collected in traversal order; canonicalized below (P1-5)
   const byCandidate = new Map(); // questionId -> accumulated record
+  const seenChannels = new Set(); // canonical channel triples (Round-6 BLOCK3, 3905300520)
 
   for (const ranking of rankings) {
-    assertValidChannel(ranking?.channel);
+    // Round-6 BLOCK1 (3905300503): the CANONICAL channel (the exact §5.4 triple
+    // re-validated at its boundary) is the ONLY identity used downstream — the
+    // caller's original channel reference (extra diagnostic/token-shaped keys,
+    // metadata) never reaches provenance, rejected entries, or error contexts.
+    const channel = assertValidChannel(ranking?.channel);
     if (!Array.isArray(ranking.items)) {
-      const err = new Error(`ranking items must be an array for channel ${safeFormat(ranking.channel)}`);
+      const err = new Error('ranking items must be an array for a fusion channel');
       err.code = FUSION_ERROR_CHANNEL_IDENTITY_INVALID;
       throw err;
     }
-    const key = channelKey(ranking.channel);
+    const key = channelKey(channel);
+    // Round-6 BLOCK3 (3905300520): a repeated channel identity is ambiguous for
+    // RRF accumulation and fails closed BEFORE any item traversal — even when
+    // the duplicate rankings carry fully disjoint candidate sets, the channel
+    // triple itself must be unique per ranking.
+    if (seenChannels.has(key)) {
+      const err = new Error('duplicate fusion channel identity across rankings (same query + providerId + capability); duplicate channels fail closed before item traversal');
+      err.code = FUSION_ERROR_DUPLICATE_CHANNEL;
+      throw err;
+    }
+    seenChannels.add(key);
 
     for (const item of ranking.items) {
       // Distinguish failure ABSENT vs PRESENT-BUT-MALFORMED (P1-3): an explicit
@@ -646,7 +734,7 @@ export function rrfFusion(rankings) {
       const failurePresent = item != null && Object.prototype.hasOwnProperty.call(item, 'failure');
       if (failurePresent) {
         if (!isValidFailureIdentity(item.failure)) {
-          const err = new Error(`per-item failure present but not a machine-readable { code, class } identity in channel ${safeFormat(ranking.channel)}`);
+          const err = new Error('per-item failure present but not a machine-readable { code, class } identity');
           err.code = FUSION_ERROR_FAILURE_IDENTITY_INVALID;
           throw err;
         }
@@ -661,7 +749,7 @@ export function rrfFusion(rankings) {
         if (!projected.ok) {
           // Unreachable after the shape gate — fail closed rather than emit an
           // undefined projection (nothing half-fused).
-          const err = new Error(`per-item failure identity could not be safely projected in channel ${safeFormat(ranking.channel)}`);
+          const err = new Error('per-item failure identity could not be safely projected');
           err.code = FUSION_ERROR_FAILURE_IDENTITY_INVALID;
           throw err;
         }
@@ -671,13 +759,13 @@ export function rrfFusion(rankings) {
         // canonical { code, class } identity. Raw provider metadata never reaches
         // `rejected`, the pool artifact, or the returned result.
         const projectedIdentity = projectSafeJson(item.identity ?? null);
-        if (!projectedIdentity.ok) throwUnsafeProviderData('rejected identity', ranking.channel);
+        if (!projectedIdentity.ok) throwUnsafeProviderData('rejected identity');
         const projectedRank = projectRejectedRank(item.provenance?.rank);
-        if (!projectedRank.ok) throwUnsafeProviderData('rejected rank', ranking.channel);
+        if (!projectedRank.ok) throwUnsafeProviderData('rejected rank');
         const projectedRoute = projectRouteString(item.provenance?.route);
-        if (!projectedRoute.ok) throwUnsafeProviderData('rejected route', ranking.channel);
+        if (!projectedRoute.ok) throwUnsafeProviderData('rejected route');
         rejected.push({
-          channel: ranking.channel,
+          channel,
           identity: projectedIdentity.value,
           rank: projectedRank.value,
           route: projectedRoute.value,
@@ -694,7 +782,7 @@ export function rrfFusion(rankings) {
       // Map keys) fail closed instead of producing separate unverifiable
       // candidates.
       if (!isPlainObject(identity) || !isCanonicalQuestionId(identity.questionId)) {
-        const err = new Error(`fusible item without a valid canonical questionId identity in channel ${safeFormat(ranking.channel)}`);
+        const err = new Error('fusible item without a valid canonical questionId identity');
         err.code = FUSION_ERROR_ITEM_IDENTITY_INVALID;
         throw err;
       }
@@ -704,7 +792,7 @@ export function rrfFusion(rankings) {
       // Number.MAX_SAFE_INTEGER (e.g. 9007199254740993 → ...992), so distinct
       // upstream ranks could collapse and produce an unverifiable RRF score.
       if (!Number.isSafeInteger(rank) || rank < 1) {
-        const err = new Error(`fusible item carries no valid 1-based ${RRF_RANK_SOURCE} (got ${safeFormat(rank)}) in channel ${safeFormat(ranking.channel)}`);
+        const err = new Error(`fusible item carries no valid 1-based ${RRF_RANK_SOURCE}`);
         err.code = FUSION_ERROR_RANK_INVALID;
         throw err;
       }
@@ -728,7 +816,7 @@ export function rrfFusion(rankings) {
       // which violates the item-order-independence contract. FAIL CLOSED instead —
       // the detection is order-independent (a duplicate anywhere throws).
       if (record.contributions.some((c) => c.key === key)) {
-        const err = new Error(`duplicate questionId '${questionId}' within the same channel ${safeFormat(ranking.channel)}; within-channel duplicates fail closed (item-order-independence, P1-4)`);
+        const err = new Error('duplicate questionId within the same channel; within-channel duplicates fail closed (item-order-independence, P1-4)');
         err.code = FUSION_ERROR_DUPLICATE_IN_CHANNEL;
         throw err;
       }
@@ -738,17 +826,17 @@ export function rrfFusion(rankings) {
       // boundary here — projected into safe canonical shapes or fail closed.
       // `rank` already passed the integer gate and is therefore JSON-safe.
       const projectedRankOrigin = projectRouteString(item.provenance?.rankOrigin);
-      if (!projectedRankOrigin.ok) throwUnsafeProviderData('rankOrigin', ranking.channel);
+      if (!projectedRankOrigin.ok) throwUnsafeProviderData('rankOrigin');
       const projectedRoute = projectRouteString(item.provenance?.route);
-      if (!projectedRoute.ok) throwUnsafeProviderData('route', ranking.channel);
+      if (!projectedRoute.ok) throwUnsafeProviderData('route');
       const projectedSourceUrl = projectSourceUrlRecord(item.source_url);
-      if (!projectedSourceUrl.ok) throwUnsafeProviderData('source_url', ranking.channel);
+      if (!projectedSourceUrl.ok) throwUnsafeProviderData('source_url');
       const projectedFacts = projectSafeJson(item.facts ?? {});
-      if (!projectedFacts.ok) throwUnsafeProviderData('facts', ranking.channel);
+      if (!projectedFacts.ok) throwUnsafeProviderData('facts');
 
       record.contributions.push({
         key,
-        channel: ranking.channel,
+        channel,
         rank,
         rankOrigin: projectedRankOrigin.value,
         route: projectedRoute.value,

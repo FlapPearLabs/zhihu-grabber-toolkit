@@ -118,6 +118,24 @@ function fail(issues) {
   return { ok: false, reason: PLAN_FAILURE_PLANNER_INVALID, issues };
 }
 
+/**
+ * R11 (Codex 5th-round P2 on 526ca71, comment 3905192528): the plan-boundary
+ * string check as a reusable boolean — the retrieval boundary must apply the
+ * SAME query-string contract as plan validation instead of reclassifying valid
+ * plan content with the (broader) provider-content lens. Single source of truth
+ * for "is this a plan-safe string": non-empty trimmed, <= PLAN_MAX_STRING_LENGTH,
+ * no credential shape, no machine-private (profile-root) path shape. Mirrors
+ * checkStringLeaf exactly; deterministic, never throws.
+ */
+export function isPlanBoundarySafeString(value) {
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  return trimmed.length > 0
+    && trimmed.length <= PLAN_MAX_STRING_LENGTH
+    && !CREDENTIAL_SHAPE.test(trimmed)
+    && !PRIVATE_PATH_SHAPE.test(trimmed);
+}
+
 function checkStringLeaf(value, issuePath, issues) {
   if (typeof value !== 'string') {
     issues.push({ path: issuePath, message: 'must be a string (no coercion)' });
