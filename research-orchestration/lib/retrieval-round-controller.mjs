@@ -186,6 +186,11 @@ export function evaluateRetrievalRound({
     err.code = CONTROLLER_ERROR_INVALID_INPUT;
     throw err;
   }
+  if (roundIndex <= coverageState.retrieval.retrievalRounds) {
+    const err = new Error(`roundIndex (${roundIndex}) must be strictly greater than current retrievalRounds (${coverageState.retrieval.retrievalRounds})`);
+    err.code = CONTROLLER_ERROR_INVALID_INPUT;
+    throw err;
+  }
 
   if (!isNonNegativeInteger(newCandidatesCount)) {
     const err = new Error(`newCandidatesCount must be a non-negative integer, got ${newCandidatesCount}`);
@@ -195,6 +200,11 @@ export function evaluateRetrievalRound({
 
   if (!isNonNegativeInteger(totalCandidatesCount)) {
     const err = new Error(`totalCandidatesCount must be a non-negative integer, got ${totalCandidatesCount}`);
+    err.code = CONTROLLER_ERROR_INVALID_INPUT;
+    throw err;
+  }
+  if (totalCandidatesCount < coverageState.retrieval.fusedCandidateCount) {
+    const err = new Error(`totalCandidatesCount (${totalCandidatesCount}) cannot be less than current fusedCandidateCount (${coverageState.retrieval.fusedCandidateCount})`);
     err.code = CONTROLLER_ERROR_INVALID_INPUT;
     throw err;
   }
@@ -228,7 +238,9 @@ export function evaluateRetrievalRound({
 
   // Cumulative accounting
   const existingExecutedRoutes = coverageState.retrieval.executedRoutes;
+  const existingProviderFailures = coverageState.retrieval.providerFailures;
   const cumulativeExecutedRoutesCount = existingExecutedRoutes.length + executedRoutesThisRound.length;
+  const cumulativeAttemptsCount = existingExecutedRoutes.length + executedRoutesThisRound.length + existingProviderFailures.length + providerFailuresThisRound.length;
 
   // Compute novelty gain: new / total
   const noveltyGain = totalCandidatesCount > 0 ? Number((newCandidatesCount / totalCandidatesCount).toFixed(6)) : 0;
@@ -251,6 +263,8 @@ export function evaluateRetrievalRound({
       saturationSemantics: null,
       shouldStop: true,
       nextRoundIndex: null,
+      executedRoutesThisRound,
+      providerFailuresThisRound,
     };
   }
 
@@ -266,11 +280,13 @@ export function evaluateRetrievalRound({
       saturationSemantics: null,
       shouldStop: true,
       nextRoundIndex: null,
+      executedRoutesThisRound,
+      providerFailuresThisRound,
     };
   }
 
   // 3. Check Budget Stop: Query budget exhausted
-  if (cumulativeExecutedRoutesCount >= resolvedConfig.maxQueryBudget) {
+  if (cumulativeAttemptsCount >= resolvedConfig.maxQueryBudget) {
     return {
       decision: DECISION_BUDGET_STOP,
       stopReason: 'query_budget_exhausted',
@@ -281,11 +297,14 @@ export function evaluateRetrievalRound({
       saturationSemantics: null,
       shouldStop: true,
       nextRoundIndex: null,
+      executedRoutesThisRound,
+      providerFailuresThisRound,
     };
   }
 
-  // 4. Check Saturation (only if roundIndex >= minRoundsBeforeSaturation and NO provider failures in this round)
-  if (roundIndex >= resolvedConfig.minRoundsBeforeSaturation && providerFailuresThisRound.length === 0) {
+  // 4. Check Saturation (only if roundIndex >= minRoundsBeforeSaturation and NO provider failures in this round and all planned routes attempted)
+  const totalPlannedRoutes = coverageState.retrieval.plannedRoutes.length;
+  if (roundIndex >= resolvedConfig.minRoundsBeforeSaturation && providerFailuresThisRound.length === 0 && cumulativeAttemptsCount >= totalPlannedRoutes) {
     if (newCandidatesCount === 0) {
       return {
         decision: DECISION_SATURATED,
@@ -297,6 +316,8 @@ export function evaluateRetrievalRound({
         saturationSemantics: SATURATION_SEMANTICS_DISCLAIMER,
         shouldStop: true,
         nextRoundIndex: null,
+        executedRoutesThisRound,
+        providerFailuresThisRound,
       };
     }
 
@@ -311,6 +332,8 @@ export function evaluateRetrievalRound({
         saturationSemantics: SATURATION_SEMANTICS_DISCLAIMER,
         shouldStop: true,
         nextRoundIndex: null,
+        executedRoutesThisRound,
+        providerFailuresThisRound,
       };
     }
   }
@@ -326,6 +349,8 @@ export function evaluateRetrievalRound({
     saturationSemantics: null,
     shouldStop: false,
     nextRoundIndex: roundIndex + 1,
+    executedRoutesThisRound,
+    providerFailuresThisRound,
   };
 }
 
@@ -333,16 +358,14 @@ export function evaluateRetrievalRound({
  * Helper to update coverageState with the evaluation of a completed retrieval round.
  */
 export function applyRoundEvaluationToCoverageState(coverageState, evaluationResult, {
-  executedRoutesThisRound = [],
-  providerFailuresThisRound = [],
   fusedCandidateCount = null,
   fusedGroupCount = null,
 } = {}) {
   const currentRoutes = coverageState.retrieval.executedRoutes;
   const currentFailures = coverageState.retrieval.providerFailures;
 
-  const combinedRoutes = [...currentRoutes, ...executedRoutesThisRound];
-  const combinedFailures = [...currentFailures, ...providerFailuresThisRound];
+  const combinedRoutes = [...currentRoutes, ...(evaluationResult.executedRoutesThisRound || [])];
+  const combinedFailures = [...currentFailures, ...(evaluationResult.providerFailuresThisRound || [])];
 
   return updateRetrievalCoverage(
     coverageState,
@@ -350,7 +373,6 @@ export function applyRoundEvaluationToCoverageState(coverageState, evaluationRes
       executedRoutes: combinedRoutes,
       providerFailures: combinedFailures,
       fusedCandidateCount: fusedCandidateCount ?? evaluationResult.totalCandidatesCount,
-      ...(fusedGroupCount !== null ? { fusedGroupCount } : {}),
       retrievalRounds: evaluationResult.roundIndex,
       stopReason: evaluationResult.stopReason,
       novelty_gain: evaluationResult.noveltyGain,

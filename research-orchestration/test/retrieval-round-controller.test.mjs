@@ -225,3 +225,93 @@ test('P1-T07: evaluateRetrievalRound rejects empty/no-op retrieval rounds', () =
     });
   }, (err) => err.code === 'controller_invalid_input' && err.message.includes('no-op'));
 });
+
+test('P1-T07: F4 - Saturation Requires Policy Execution Evidence', () => {
+  const state = createInitialCoverageState({ planHash: VALID_PLAN_HASH });
+  // Add 5 planned routes
+  state.retrieval.plannedRoutes = Array(5).fill({ providerId: 'p', capability: 's' });
+  
+  // Example: 5 required planned routes, 1 route executed, 0 new candidates, 4 routes never attempted
+  // Should NOT SATURATE!
+  const result = evaluateRetrievalRound({
+    coverageState: state,
+    roundIndex: 1, // min rounds is 1
+    newCandidatesCount: 0,
+    totalCandidatesCount: 10,
+    executedRoutesThisRound: [{ query: 'q', providerId: 'p', capability: 's', roundIndex: 1 }],
+    providerFailuresThisRound: []
+  });
+  
+  assert.notEqual(result.decision, DECISION_SATURATED, 'Should not saturate when execution evidence is missing for planned routes');
+  // It should probably continue, or budget stop if budget was 1, but budget is 10.
+});
+
+test('P1-T07: F6 - Round Monotonicity', () => {
+  let state = createInitialCoverageState({ planHash: VALID_PLAN_HASH });
+  state.retrieval.retrievalRounds = 2;
+  state.retrieval.fusedCandidateCount = 10;
+  
+  assert.throws(() => {
+    evaluateRetrievalRound({
+      coverageState: state,
+      roundIndex: 2, // not strictly greater
+      newCandidatesCount: 1,
+      totalCandidatesCount: 11,
+      executedRoutesThisRound: [{ query: 'q', providerId: 'p', capability: 's', roundIndex: 2 }]
+    });
+  }, (err) => err.code === CONTROLLER_ERROR_INVALID_INPUT && err.message.includes('must be strictly greater'));
+
+  assert.throws(() => {
+    evaluateRetrievalRound({
+      coverageState: state,
+      roundIndex: 3,
+      newCandidatesCount: 0,
+      totalCandidatesCount: 9, // regressed
+      executedRoutesThisRound: [{ query: 'q', providerId: 'p', capability: 's', roundIndex: 3 }]
+    });
+  }, (err) => err.code === CONTROLLER_ERROR_INVALID_INPUT && err.message.includes('cannot be less than current fusedCandidateCount'));
+});
+
+test('P1-T07: F7 - Query Budget Accounting counts providerFailures', () => {
+  let state = createInitialCoverageState({ planHash: VALID_PLAN_HASH });
+  
+  // Set budget to 2
+  // We execute 1 route, and have 1 provider failure => Total 2 ATTEMPTS.
+  // Next round should be BUDGET_STOP.
+  const result = evaluateRetrievalRound({
+    coverageState: state,
+    roundIndex: 1,
+    newCandidatesCount: 1,
+    totalCandidatesCount: 1,
+    executedRoutesThisRound: [{ query: 'q', providerId: 'p', capability: 's', roundIndex: 1 }],
+    providerFailuresThisRound: [{ code: 'ERR', class: 'NETWORK', query: 'q' }],
+    config: { maxQueryBudget: 2 }
+  });
+  
+  assert.equal(result.decision, DECISION_BUDGET_STOP, 'Should budget stop when total attempts reach maxQueryBudget');
+});
+
+test('P1-T07: F8 - Evaluation / Apply Binding', () => {
+  const state = createInitialCoverageState({ planHash: VALID_PLAN_HASH });
+  const executed = [{ query: 'q1', providerId: 'p', capability: 's', roundIndex: 1 }];
+  const failures = [{ code: 'ERR', class: 'NET', query: 'q2' }];
+  
+  const result = evaluateRetrievalRound({
+    coverageState: state,
+    roundIndex: 1,
+    newCandidatesCount: 1,
+    totalCandidatesCount: 1,
+    executedRoutesThisRound: executed,
+    providerFailuresThisRound: failures
+  });
+  
+  // applyRoundEvaluationToCoverageState must extract executed/failures from result!
+  // It shouldn't take them as arguments.
+  const updated = applyRoundEvaluationToCoverageState(state, result, {
+    fusedCandidateCount: 1,
+    fusedGroupCount: 1
+  });
+  
+  assert.equal(updated.retrieval.executedRoutes.length, 1);
+  assert.equal(updated.retrieval.providerFailures.length, 1);
+});

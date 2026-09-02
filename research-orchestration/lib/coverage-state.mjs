@@ -54,6 +54,7 @@ export const COVERAGE_STATE_SCHEMA_VERSION = 1;
 
 /** Ownership tokens for hook access control. */
 export const OWNER_T06_RETRIEVAL = 'T06';
+export const OWNER_T08_FUSION = 'T08';
 export const OWNER_RETRIEVAL_CONTROLLER = 'RETRIEVAL_CONTROLLER';
 export const OWNER_T09_SOURCE_COMPLETENESS = 'T09';
 export const OWNER_T12_SELECTION = 'T12';
@@ -306,7 +307,7 @@ export function validateCoverageState(state) {
     if (!isPlainObject(r) || typeof r.query !== 'string' || typeof r.providerId !== 'string' || typeof r.capability !== 'string') {
       return { ok: false, reason: 'invalid_executed_route_entry', error: 'executedRoute entry malformed' };
     }
-    if (!isBoundarySafeString(r.query) || !isBoundarySafeString(r.providerId) || !isBoundarySafeString(r.capability)) {
+    if (!isPlanBoundarySafeString(r.query) || !isBoundarySafeString(r.providerId) || !isBoundarySafeString(r.capability)) {
       return { ok: false, reason: 'unsafe_executed_route_string', error: 'executedRoute contains unsafe string' };
     }
   }
@@ -319,6 +320,9 @@ export function validateCoverageState(state) {
     }
     if (!f.code.trim() || !f.class.trim() || !isBoundarySafeString(f.code) || !isBoundarySafeString(f.class)) {
       return { ok: false, reason: 'unsafe_provider_failure', error: 'providerFailure code/class must be safe, non-empty strings' };
+    }
+    if (f.query !== undefined && (typeof f.query !== 'string' || !isPlanBoundarySafeString(f.query))) {
+      return { ok: false, reason: 'unsafe_provider_failure_query', error: 'providerFailure query must be a plan-safe string' };
     }
   }
   if (!isNonNegativeInteger(ret.fusedCandidateCount) || !isNonNegativeInteger(ret.fusedGroupCount) || !isNonNegativeInteger(ret.retrievalRounds)) {
@@ -369,8 +373,17 @@ export function validateCoverageState(state) {
       computedCapturedNotVerified += (g.selectedCount - g.verifiedCount);
     }
 
-    if (typeof g.paginationStatus !== 'string' || !isBoundarySafeString(g.paginationStatus)) {
+    if (g.paginationStatus !== 'complete' && g.paginationStatus !== 'partial' && g.paginationStatus !== 'unknown') {
       return { ok: false, reason: 'invalid_pagination_status', error: `paginationStatus malformed for ${gid}` };
+    }
+    if (g.paginationStatus === 'complete' && (!g.evidenceRef || typeof g.evidenceRef !== 'string')) {
+      return { ok: false, reason: 'missing_evidence_ref', error: `complete status requires evidenceRef for ${gid}` };
+    }
+    if (g.paginationStatus === 'complete' && g.partial) {
+      return { ok: false, reason: 'impossible_accounting', error: `contradictory complete and partial for ${gid}` };
+    }
+    if (g.paginationStatus === 'complete' && g.failed) {
+      return { ok: false, reason: 'impossible_accounting', error: `contradictory complete and failed for ${gid}` };
     }
     if (g.evidenceRef !== null && (typeof g.evidenceRef !== 'string' || !isBoundarySafeString(g.evidenceRef))) {
       return { ok: false, reason: 'invalid_evidence_ref', error: `evidenceRef malformed for ${gid}` };
@@ -430,6 +443,7 @@ export function validateCoverageState(state) {
       return { ok: false, reason: 'empty_corpus_cannot_be_100_percent', error: 'Cannot assert 100% analysis on an empty selected corpus' };
     }
     const selectedSorted = dedupeAndSortStrings(ac.selectedCorpusSourceSet);
+    const mappedSorted = dedupeAndSortStrings(ac.mappedSourceSet);
     const analyzedSorted = dedupeAndSortStrings(ac.analyzedSourceSet);
     if (selectedSorted.length !== analyzedSorted.length || !selectedSorted.every((id, idx) => id === analyzedSorted[idx])) {
       return {
@@ -438,16 +452,24 @@ export function validateCoverageState(state) {
         error: 'is100PercentAnalysis is true but selectedCorpusSourceSet !== analyzedSourceSet',
       };
     }
+    if (selectedSorted.length !== mappedSorted.length || !selectedSorted.every((id, idx) => id === mappedSorted[idx])) {
+      return {
+        ok: false,
+        reason: 'analysis_coverage_mapped_mismatch',
+        error: 'is100PercentAnalysis is true but selectedCorpusSourceSet !== mappedSourceSet',
+      };
+    }
     const eri = ac.evidenceRefIssues;
     if (
       (Array.isArray(eri?.missingRefs) && eri.missingRefs.length > 0) ||
+      (Array.isArray(eri?.duplicateRefs) && eri.duplicateRefs.length > 0) ||
       (Array.isArray(eri?.staleRefs) && eri.staleRefs.length > 0) ||
       (Array.isArray(eri?.invalidRefs) && eri.invalidRefs.length > 0)
     ) {
       return {
         ok: false,
         reason: 'evidence_ref_issues_block_100_percent',
-        error: 'is100PercentAnalysis cannot be true when missingRefs, staleRefs, or invalidRefs are non-empty',
+        error: 'is100PercentAnalysis cannot be true when evidence ref issues are non-empty',
       };
     }
   }
@@ -465,6 +487,9 @@ export function validateCoverageState(state) {
   }
   if (!isNonNegativeInteger(diag.selected_source_group_count)) {
     return { ok: false, reason: 'invalid_selected_source_group_count', error: 'selected_source_group_count must be non-negative integer' };
+  }
+  if (diag.selected_source_group_count > ret.fusedGroupCount) {
+    return { ok: false, reason: 'invalid_selected_source_group_count', error: `selected_source_group_count (${diag.selected_source_group_count}) cannot exceed fusedGroupCount (${ret.fusedGroupCount})` };
   }
 
   // Artifact safety walk (no credentials, cycles, proto pollution)
@@ -592,8 +617,10 @@ export function updateRetrievalCoverage(state, update, { caller } = {}) {
   if ('fusedCandidateCount' in update && isNonNegativeInteger(update.fusedCandidateCount)) {
     nextState.retrieval.fusedCandidateCount = update.fusedCandidateCount;
   }
-  if ('fusedGroupCount' in update && isNonNegativeInteger(update.fusedGroupCount)) {
-    nextState.retrieval.fusedGroupCount = update.fusedGroupCount;
+  if ('fusedGroupCount' in update) {
+    const err = new Error('Illegal write: updateRetrievalCoverage cannot write fusedGroupCount (owned by T08)');
+    err.code = COVERAGE_ERROR_ILLEGAL_WRITE;
+    throw err;
   }
   if ('providerFailures' in update && Array.isArray(update.providerFailures)) {
     nextState.retrieval.providerFailures = update.providerFailures;
@@ -606,6 +633,38 @@ export function updateRetrievalCoverage(state, update, { caller } = {}) {
   }
   if ('novelty_gain' in update && isRatio0to1(update.novelty_gain)) {
     nextState.diagnostics.novelty_gain = update.novelty_gain;
+  }
+
+  const validation = validateCoverageState(nextState);
+  if (!validation.ok) {
+    const err = new Error(`Updated state invalid: ${validation.error}`);
+    err.code = COVERAGE_ERROR_INVALID_STATE;
+    throw err;
+  }
+  return validation.validated;
+}
+
+/**
+ * Hook: Update Source Group Fusion.
+ * Owned by T08.
+ */
+export function updateSourceGroupFusion(state, update, { caller } = {}) {
+  assertCallerAuthorization(caller, [OWNER_T08_FUSION], 'updateSourceGroupFusion');
+
+  const current = canonicalizeCoverageState(state);
+  if (!isPlainObject(update)) {
+    const err = new Error('Update payload must be a plain object');
+    err.code = COVERAGE_ERROR_MALFORMED_UPDATE;
+    throw err;
+  }
+
+  const nextState = JSON.parse(JSON.stringify(current));
+
+  if ('fusedCandidateCount' in update && isNonNegativeInteger(update.fusedCandidateCount)) {
+    nextState.retrieval.fusedCandidateCount = update.fusedCandidateCount;
+  }
+  if ('fusedGroupCount' in update && isNonNegativeInteger(update.fusedGroupCount)) {
+    nextState.retrieval.fusedGroupCount = update.fusedGroupCount;
   }
 
   const validation = validateCoverageState(nextState);

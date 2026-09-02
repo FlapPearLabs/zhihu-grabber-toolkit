@@ -15,6 +15,7 @@ import {
   COVERAGE_STATE_SCHEMA_VERSION,
   COVERAGE_STATE_FILENAME,
   OWNER_T06_RETRIEVAL,
+  OWNER_T08_FUSION,
   OWNER_RETRIEVAL_CONTROLLER,
   OWNER_T09_SOURCE_COMPLETENESS,
   OWNER_T12_SELECTION,
@@ -31,6 +32,7 @@ import {
   validateCoverageState,
   canonicalizeCoverageState,
   updateRetrievalCoverage,
+  updateSourceGroupFusion,
   updateSourceCompleteness,
   updateSelectionAccounting,
   updatePerGroupAnalysis,
@@ -159,7 +161,6 @@ test('P1-T07: Hook 1 (updateRetrievalCoverage) - legal path and ownership check'
     state,
     {
       fusedCandidateCount: 10,
-      fusedGroupCount: 3,
       retrievalRounds: 1,
       novelty_gain: 0.8,
       executedRoutes: [{ query: 'q1', providerId: 'p1', capability: 'search', roundIndex: 1 }],
@@ -169,7 +170,6 @@ test('P1-T07: Hook 1 (updateRetrievalCoverage) - legal path and ownership check'
   );
 
   assert.equal(state.retrieval.fusedCandidateCount, 10);
-  assert.equal(state.retrieval.fusedGroupCount, 3);
   assert.equal(state.retrieval.retrievalRounds, 1);
   assert.equal(state.diagnostics.novelty_gain, 0.8);
   assert.equal(state.retrieval.executedRoutes.length, 1);
@@ -236,6 +236,7 @@ test('P1-T07: Hook 3 (updateSelectionAccounting) - legal path and ownership chec
   );
 
   // Legal update
+  state = updateSourceGroupFusion(state, { fusedGroupCount: 2 }, { caller: OWNER_T08_FUSION });
   state = updateSelectionAccounting(
     state,
     {
@@ -457,4 +458,111 @@ test('P1-T07: Final analysis assertion mappedSourceSet equality requirement', ()
   }, { caller: OWNER_T13_ANALYSIS });
   const finalState = reconcileFinalCoverage(state, { caller: OWNER_T15_FINAL, assertFullCoverage: true });
   assert.equal(finalState.analysisCoverage.is100PercentAnalysis, true);
+});
+
+test('P1-T07: F1 - Persisted 100% Analysis Validity fail-closed', () => {
+  const state = createInitialCoverageState({ planHash: VALID_PLAN_HASH });
+  
+  // Hostile mutation: set 100% analysis true but sets mismatch
+  state.analysisCoverage.selectedCorpusSourceSet = ['s1', 's2'];
+  state.analysisCoverage.analyzedSourceSet = ['s1']; // missing s2
+  state.analysisCoverage.is100PercentAnalysis = true;
+  
+  const res1 = validateCoverageState(state);
+  assert.equal(res1.ok, false, 'Should fail validation when analyzedSourceSet does not match selectedCorpusSourceSet');
+  
+  // Hostile mutation: selected == analyzed, but mapped does not match
+  state.analysisCoverage.analyzedSourceSet = ['s1', 's2'];
+  state.analysisCoverage.mappedSourceSet = ['s1'];
+  state.analysisCoverage.is100PercentAnalysis = true;
+  const res2 = validateCoverageState(state);
+  assert.equal(res2.ok, false, 'Should fail validation when mappedSourceSet does not match selected/analyzed');
+
+  // Hostile mutation: sets match but duplicateRefs issues exist
+  state.analysisCoverage.analyzedSourceSet = ['s1', 's2'];
+  state.analysisCoverage.mappedSourceSet = ['s1', 's2'];
+  state.analysisCoverage.evidenceRefIssues.duplicateRefs = ['ref-1'];
+  
+  const res3 = validateCoverageState(state);
+  assert.equal(res3.ok, false, 'Should fail validation when duplicateRefs is not empty');
+});
+
+test('P1-T07: F2 - Plan Query Trust Boundary (executedRoutes and providerFailures queries allow plan-safe strings)', () => {
+  const planSafeQuery = '/etc/hosts 文件的作用';
+  const state = createInitialCoverageState({ planHash: VALID_PLAN_HASH, plannedQueryVariants: [planSafeQuery] });
+  
+  const updated = updateRetrievalCoverage(
+    state,
+    {
+      fusedCandidateCount: 1,
+      retrievalRounds: 1,
+      novelty_gain: 0.1,
+      executedRoutes: [{ query: planSafeQuery, providerId: 'p1', capability: 'search', roundIndex: 1 }],
+      providerFailures: [{ query: planSafeQuery, code: 'TIMEOUT', class: 'NETWORK', providerId: 'p1', capability: 'search', roundIndex: 1 }]
+    },
+    { caller: OWNER_T06_RETRIEVAL }
+  );
+
+  const res = validateCoverageState(updated);
+  assert.equal(res.ok, true, `Should allow plan-safe query like '${planSafeQuery}' in executedRoutes and providerFailures`);
+});
+
+test('P1-T07: F3 - Source Completeness Evidence', () => {
+  const state = createInitialCoverageState({ planHash: VALID_PLAN_HASH });
+  
+// 1. Invalid status
+  assert.throws(() => {
+    updateSourceCompleteness(state, {
+      perGroupStatus: { 'group-1': { captured: true, verified: true, partial: false, failed: false, paginationStatus: 'invented-complete', evidenceRef: 'ref', selectedCount: 1, verifiedCount: 1 } },
+      diagnostics: { totalSelectedCount: 1, totalVerifiedCount: 1, capturedNotVerifiedCount: 0 }
+    }, { caller: OWNER_T09_SOURCE_COMPLETENESS });
+  }, (err) => err.message.includes('paginationStatus malformed for group-1') || err.message.includes('invalid_pagination_status'));
+
+  // 2. Complete without evidence
+  assert.throws(() => {
+    updateSourceCompleteness(state, {
+      perGroupStatus: { 'group-1': { captured: true, verified: true, partial: false, failed: false, paginationStatus: 'complete', evidenceRef: null, selectedCount: 1, verifiedCount: 1 } },
+      diagnostics: { totalSelectedCount: 1, totalVerifiedCount: 1, capturedNotVerifiedCount: 0 }
+    }, { caller: OWNER_T09_SOURCE_COMPLETENESS });
+  }, (err) => err.message.includes('complete status requires evidenceRef') || err.message.includes('missing_evidence_ref'));
+
+  // 3. Contradictory partial/failed/verified combinations
+  // - Cannot be complete and partial
+  assert.throws(() => {
+    updateSourceCompleteness(state, {
+      perGroupStatus: { 'group-1': { captured: true, verified: true, partial: true, failed: false, paginationStatus: 'complete', evidenceRef: 'ref-1', selectedCount: 1, verifiedCount: 1 } },
+      diagnostics: { totalSelectedCount: 1, totalVerifiedCount: 1, capturedNotVerifiedCount: 0 }
+    }, { caller: OWNER_T09_SOURCE_COMPLETENESS });
+  }, (err) => err.message.includes('contradictory') || err.message.includes('impossible_accounting'));
+  
+  // - Cannot be complete and failed
+  assert.throws(() => {
+    updateSourceCompleteness(state, {
+      perGroupStatus: { 'group-1': { captured: true, verified: false, partial: false, failed: true, paginationStatus: 'complete', evidenceRef: 'ref-1', selectedCount: 1, verifiedCount: 0 } },
+      diagnostics: { totalSelectedCount: 1, totalVerifiedCount: 0, capturedNotVerifiedCount: 1 }
+    }, { caller: OWNER_T09_SOURCE_COMPLETENESS });
+  }, (err) => err.message.includes('contradictory') || err.message.includes('impossible_accounting'));
+});
+
+test('P1-T07: F5 - updateSelectionAccounting requires fusedGroupCount dependency', () => {
+  let state = createInitialCoverageState({ planHash: VALID_PLAN_HASH });
+  // Set fusedGroupCount to 5 using T08 hook
+  state = updateSourceGroupFusion(state, { fusedGroupCount: 5 }, { caller: OWNER_T08_FUSION });
+
+  // Update selection accounting with a valid count
+  state = updateSelectionAccounting(state, { selected_source_group_count: 3 }, { caller: OWNER_T12_SELECTION });
+  assert.equal(state.diagnostics.selected_source_group_count, 3);
+
+  // Updating with count > fusedGroupCount should throw
+  assert.throws(() => {
+    updateSelectionAccounting(state, { selected_source_group_count: 6 }, { caller: OWNER_T12_SELECTION });
+  }, (err) => err.code === COVERAGE_ERROR_INVALID_STATE || err.message.includes('selected_source_group_count'));
+});
+
+test('P1-T07: F9 - updateRetrievalCoverage forbids fusedGroupCount', () => {
+  let state = createInitialCoverageState({ planHash: VALID_PLAN_HASH });
+  
+  assert.throws(() => {
+    updateRetrievalCoverage(state, { fusedGroupCount: 5 }, { caller: OWNER_RETRIEVAL_CONTROLLER });
+  }, (err) => err.code === COVERAGE_ERROR_ILLEGAL_WRITE && err.message.includes('fusedGroupCount'));
 });
