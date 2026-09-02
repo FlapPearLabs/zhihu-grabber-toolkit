@@ -59,6 +59,7 @@ import {
   // P1-T06 shared persisted-artifact boundary (review 5077286260) — direct
   // unit coverage of the boundary vocabulary that retrieval.mjs also consumes.
   BOUNDARY_MAX_STRING_LENGTH,
+  URL_DECODE_MAX_LAYERS,
   isBoundarySafeKey,
   isBoundarySafeString,
   isBoundarySafeUrlString,
@@ -607,18 +608,56 @@ test('F2: isBoundarySafeString — credential assignment shapes / machine-privat
   for (const s of ['z_c0=abc123', 'token=super-secret', 'cookie: abc', 'Authorization: Bearer x', 'api_key = x']) {
     assert.equal(isBoundarySafeString(s), false, `credential-shaped string must be rejected: ${s}`);
   }
-  // Review 5078133293 (P1, 2nd round): the FULL standard POSIX top-level
-  // directory set is covered, not just /Users | /home | /root | /workspace
-  // | /tmp — /mnt /opt /srv /etc /usr /var ... and ANY Windows drive root.
+  // P1-1 (review 5080578795): root ENUMERATION is replaced by a GENERIC
+  // filesystem-shaped absolute POSIX path rule (2+ path components,
+  // token-boundary anchored, URL-shaped values exempt) — the deny set can no
+  // longer be exhausted, so novel roots (/custom, /builds, ...) fail closed
+  // like the previously enumerated ones, and even a 2-component system path
+  // (/etc/hosts) fails the broader provider-content lens (the plan boundary's
+  // R11 carve-out accepts it; see plan-contract.test.mjs).
   for (const s of ['/home/private-user/token.txt', '/Users/victim/secret/cache.json', 'C:\\Users\\victim\\secret\\x.json', '~/.ssh/id_rsa',
     '/root/private/run.log', '/workspace/user/run.log', '/tmp/private/run.log', '/var/tmp/x.log', '/private/tmp/x.log', 'C:\\workspace\\user.txt', 'D:/workspace/user.txt',
-    '/mnt/alice/private.log', '/opt/acme/internal.json', '/srv/private/cache', '/etc/nginx/secrets.conf', '/usr/local/bin/leak', '/var/lib/docker/x', '/media/user/usb.txt']) {
+    '/mnt/alice/private.log', '/opt/acme/internal.json', '/srv/private/cache', '/etc/nginx/secrets.conf', '/usr/local/bin/leak', '/var/lib/docker/x', '/media/user/usb.txt',
+    '/custom/alice/secret.txt', '/builds/acme/private.log', '/etc/hosts 文件的作用']) {
     assert.equal(isBoundarySafeString(s), false, `machine-private path must be rejected: ${s}`);
   }
   assert.equal(isBoundarySafeString('a'.repeat(BOUNDARY_MAX_STRING_LENGTH + 1)), false, 'over-length string must be rejected');
   assert.equal(isBoundarySafeString('a'.repeat(BOUNDARY_MAX_STRING_LENGTH)), true, 'bounded-length string must pass');
-  for (const s of ['fixture', 'https://example.invalid/a?b=1', 'zhihu.com/answer/123', 'ordinary text']) {
+  for (const s of ['fixture', 'https://example.invalid/a?b=1', 'zhihu.com/answer/123', 'ordinary text',
+    // P1-1: URL-shaped values are structured values — the generic filesystem
+    // rule is deliberately NOT applied to them (URL boundary judges them), so
+    // legitimate public URLs pass even with /home-like path segments or
+    // path-shaped query values.
+    'https://example.invalid/home/article', 'https://example.invalid/?p=/home/alice/x']) {
     assert.equal(isBoundarySafeString(s), true, `safe string must pass: ${s}`);
+  }
+});
+
+test('F2-P1-2: isBoundarySafeUrlString — strictly bounded multi-layer percent-decode INSPECTION (max URL_DECODE_MAX_LAYERS layers): encoded credential shapes fail closed at EVERY layer and at the fixed limit when encoded bytes remain; malformed percent-encoding fails closed; safe encoded Unicode/ordinary content passes (P1-2, review 5080578795)', () => {
+  assert.equal(URL_DECODE_MAX_LAYERS, 3, 'the fixed bound is exactly 3 decode layers (raw → decode1 → decode2 → decode3)');
+  const rejects = [
+    'https://example.invalid/a/token%3Dsekrit', // 1 layer (raw → decode1)
+    'https://example.invalid/a/token%253Dsekrit', // 2 layers (raw → decode1 → decode2)
+    'https://example.invalid/a/token%25253Dsekrit', // 3 layers (raw → decode1 → decode2 → decode3)
+    'https://example.invalid/a/token%2525253Dsekrit', // beyond the fixed limit — encoded bytes remain at layer 3 → fail closed
+    'https://example.invalid/a#token%253Dsekrit', // multi-layer credential in the FRAGMENT
+    'https://example.invalid/?token%253Dsekrit', // multi-layer credential in a QUERY NAME
+    'https://example.invalid/?v=token%25253Dsekrit', // 3-layer credential in a QUERY VALUE
+    'https://example.invalid/%zz', // malformed percent-encoding in the path → fail closed
+    'https://example.invalid/?a=%zz', // malformed percent-encoding in a query value → fail closed
+  ];
+  for (const url of rejects) {
+    assert.equal(isBoundarySafeUrlString(url), false, `must fail closed: ${url}`);
+  }
+  const passes = [
+    'https://example.invalid/%E4%B8%AD%E6%96%87/article', // safe encoded Unicode
+    'https://example.invalid/time%3D3%3A30/article', // encoded = : in a NON-credential context
+    'https://example.invalid/a%2Fb', // encoded slash
+    'https://example.invalid/?q=100%25', // percent literal
+    'https://example.invalid/?redirect=https%3A%2F%2Fexample.com%2Fx', // encoded redirect URL (no credential word)
+  ];
+  for (const url of passes) {
+    assert.equal(isBoundarySafeUrlString(url), true, `must pass: ${url}`);
   }
 });
 
@@ -738,6 +777,11 @@ test('F5: projectSourceUrlRecord — REUSES the repository classifyUrl trust cla
     ['public URL with /home path segment', 'https://example.invalid/home/article', 'external_unverified'],
     ['public URL with /tmp path segment', 'https://example.invalid/tmp/report', 'external_unverified'],
     ['public URL with /private-user path segment', 'https://example.invalid/home/private-user/x', 'external_unverified'],
+    // P1-1 (review 5080578795): a NOVEL root inside a URL path is public
+    // resource addressing, NOT a local filesystem path — the generic path rule
+    // must never reject it (URL-shaped values are exempt by contract).
+    ['public URL with novel /custom root path', 'https://example.invalid/custom/alice/x', 'external_unverified'],
+    ['public URL with novel /builds root path', 'https://example.invalid/builds/acme/private.log', 'external_unverified'],
   ];
   for (const [label, url, securityClass] of urlPathSafe) {
     assert.deepEqual(

@@ -226,17 +226,70 @@ export const BOUNDARY_MAX_STRING_LENGTH = 500;
 /** Credential-shaped content (field/assignment shapes incl. the repo-known z_c0 auth cookie). */
 export const CREDENTIAL_SHAPE =
   /(?:z_c0\s*=|(?:password|passwd|secret|token|api[_-]?key|access[_-]?key|authorization|cookie|session[_-]?id)\s*[:=])/i;
-/** Machine-private filesystem path content (POSIX system/workspace roots,
- *  Windows drive roots, home-relative ~). Review 5078133293 (P1, two rounds):
- *  enumerating a handful of roots is not enough — the deny set must cover the
- *  FULL standard POSIX top-level directory set (/bin /boot /dev /etc /home
- *  /lib /lib64 /media /mnt /opt /proc /root /run /sbin /srv /sys /tmp /usr
- *  /var, macOS /Applications /Library /System /Volumes /Users /private
- *  /cores /Network /nix /data, container/CI roots /workspace) plus ANY Windows
- *  drive root (C:\... / D:/...), so values like /mnt/alice/private.log,
- *  /opt/acme/internal.json or /srv/private/cache can never pass. */
+/** Machine-private filesystem path content (POSIX absolute paths, Windows
+ *  drive roots, home-relative ~). P1-1 (review 5080578795): root ENUMERATION
+ *  is abandoned — the deny set must be GENERIC, because novel roots
+ *  (/custom/alice/secret.txt, /builds/acme/private.log, ...) can never be
+ *  exhaustively listed. Generic rule (provider-content lens): ANY
+ *  filesystem-shaped absolute POSIX path with 2+ path components
+ *  (/\<seg>/\<seg>[/...]), token-boundary anchored (the (?<![A-Za-z0-9:/])
+ *  lookbehind keeps https://…/… host/path segments out of the generic rule),
+ *  plus ANY Windows drive root (C:\... / D:/...) and the home-relative ~ rule
+ *  (both retained). URL-shaped values (URL_SHAPE) are structured values judged
+ *  by the URL boundary and are exempt from this rule. The plan boundary
+ *  (plan-contract.mjs / planner.mjs, T04 authority) is SEPARATE and unchanged:
+ *  plan-owned query strings are judged by isPlanBoundarySafeString, and this
+ *  provider-content lens never reclassifies them. */
 export const PRIVATE_PATH_SHAPE =
-  /(?:\/(?:Users|home|root|workspace|tmp|etc|opt|srv|mnt|media|proc|sys|dev|run|boot|lib|lib64|usr|var|bin|sbin|Applications|Library|System|Volumes|private|cores|Network|nix|data)(?:[\\/]|$)|(?<![A-Za-z])[A-Za-z]:[\\/]|(?:^|[\s"'<>\u2018\u2019\u201c\u201d])~[/\w.-])/;
+  /(?<![A-Za-z0-9:/])\/(?:[^/\\\s]+\/)+[^/\\\s]+|(?<![A-Za-z])[A-Za-z]:[\\/]|(?:^|[\s"'<>\u2018\u2019\u201c\u201d])~[/\w.-]/;
+
+/**
+ * URL-shaped value marker (P1-1, review 5080578795): a value starting with a
+ * scheme:// prefix is a STRUCTURED URL, judged by the URL boundary
+ * (isBoundarySafeUrlString) — the generic filesystem rule (PRIVATE_PATH_SHAPE)
+ * is deliberately NOT applied to it, so a legitimate public URL like
+ * https://example.com/home/article (or a query value that merely LOOKS like a
+ * path) is never rejected as a local path.
+ */
+const URL_SHAPE = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//;
+
+/**
+ * P1-2 (review 5080578795): strictly bounded multi-layer percent-decode for
+ * URL-part INSPECTION. decodeURIComponent is applied at most URL_DECODE_MAX_LAYERS
+ * times (raw → decode1 → decode2 → decode3), stopping early once no
+ * percent-encoded bytes remain; CREDENTIAL_SHAPE is checked at EVERY layer.
+ * Fail-closed conditions (returns null): a raw `%` not followed by two hex
+ * digits (malformed encoding, e.g. `%zz` or a trailing `%`), a decode that
+ * throws at any layer (malformed / invalid-UTF-8 sequence), or percent-encoded
+ * bytes still remaining at the fixed limit (the part may hide deeper encoded
+ * credential syntax). Fully-decoded safe content (Unicode / ordinary encoded
+ * values, incl. a decoded data percent like `100%`) passes. Inspection-only:
+ * the raw input is never rewritten, so persisted source identity stays
+ * byte-identical.
+ */
+export const URL_DECODE_MAX_LAYERS = 3;
+const ENCODED_BYTE_REMAINS = /%(?:[0-9A-Fa-f]{2})/;
+const BARE_PERCENT = /%(?![0-9A-Fa-f]{2})/;
+
+function inspectDecodedLayers(raw) {
+  if (BARE_PERCENT.test(raw)) return null; // malformed percent-encoding at the input
+  let current = raw;
+  const layers = [current];
+  try {
+    for (let i = 0; i < URL_DECODE_MAX_LAYERS; i += 1) {
+      if (!ENCODED_BYTE_REMAINS.test(current)) break; // nothing left to decode
+      current = decodeURIComponent(current);
+      layers.push(current);
+    }
+  } catch {
+    return null; // malformed percent-encoding at a decoded layer → fail closed
+  }
+  for (const layer of layers) {
+    if (CREDENTIAL_SHAPE.test(layer)) return null;
+  }
+  if (ENCODED_BYTE_REMAINS.test(layers[layers.length - 1])) return null;
+  return layers;
+}
 
 /**
  * Credential-sensitive KEY-NAME deny rule (P1-2 review 5077286260 + P1 compound/
@@ -299,7 +352,7 @@ export function isBoundarySafeString(value) {
   return typeof value === 'string'
     && value.length <= BOUNDARY_MAX_STRING_LENGTH
     && !CREDENTIAL_SHAPE.test(value)
-    && !PRIVATE_PATH_SHAPE.test(value);
+    && (URL_SHAPE.test(value) || !PRIVATE_PATH_SHAPE.test(value));
 }
 
 /**
@@ -328,19 +381,29 @@ export function isBoundarySafeUrlString(value) {
     return false; // bare filesystem path / unparseable → fail closed
   }
   if (parsed.protocol !== 'https:' || parsed.username !== '' || parsed.password !== '') return false;
-  // Round-6 BLOCK2 (review 3905300513): a credential-shaped value hidden by
-  // percent-encoding must still fail closed. decodeURIComponent is applied
-  // EXACTLY ONCE (never recursively) to the raw pathname and fragment; query
-  // names/values are already decoded by the URLSearchParams API and are checked
-  // in their decoded form. Malformed percent-encoding fails closed.
-  try {
-    if (CREDENTIAL_SHAPE.test(decodeURIComponent(parsed.pathname))) return false;
-    if (CREDENTIAL_SHAPE.test(decodeURIComponent(parsed.hash))) return false;
-    for (const [name, entry] of parsed.searchParams.entries()) {
-      if (CREDENTIAL_SHAPE.test(name) || CREDENTIAL_SHAPE.test(entry)) return false;
+  // P1-2 (review 5080578795): strictly bounded multi-layer percent-decode
+  // INSPECTION (supersedes Round-6 BLOCK2's single decodeURIComponent — the
+  // single layer left double/triple-encoded credential shapes undetected).
+  // Each URL part (pathname, fragment, query name, query value) is decoded
+  // from its RAW form at most URL_DECODE_MAX_LAYERS times and CREDENTIAL_SHAPE
+  // is checked at every layer; malformed percent-encoding fails closed, and at
+  // the fixed limit any remaining percent-encoded bytes fail closed too.
+  // Inspection only — the raw value is never rewritten. Query pairs are split
+  // from the RAW query (never via URLSearchParams, whose auto-decode would add
+  // an unaccounted first layer); `+` is not a credential separator and is left
+  // as-is.
+  if (inspectDecodedLayers(parsed.pathname) === null) return false;
+  if (inspectDecodedLayers(parsed.hash) === null) return false;
+  const queryBody = parsed.search.startsWith('?') ? parsed.search.slice(1) : parsed.search;
+  if (queryBody.length > 0) {
+    for (const pair of queryBody.split('&')) {
+      if (pair.length === 0) continue;
+      const eq = pair.indexOf('=');
+      const rawName = eq === -1 ? pair : pair.slice(0, eq);
+      const rawValue = eq === -1 ? '' : pair.slice(eq + 1);
+      if (inspectDecodedLayers(rawName) === null) return false;
+      if (inspectDecodedLayers(rawValue) === null) return false;
     }
-  } catch {
-    return false; // malformed percent-encoding → fail closed
   }
   return true;
 }

@@ -1736,13 +1736,22 @@ test('R12-B1 (retrieval boundary): BLOCK1 canonical channel identity — explici
   assert.ok(!serialized.includes('hijack-query') && !serialized.includes('foo'), 'extra descriptor fields never surface anywhere in the result');
 });
 
-test('R12-B2 (retrieval boundary): BLOCK2 ONE-level percent-decoding — an encoded credential shape in the URL path / fragment / query name / query value fails closed during fusion projection; malformed percent-encoding fails closed; legitimate encoded content still passes (3905300513)', () => {
+test('R12-B2 (retrieval boundary): BLOCK2 bounded multi-layer percent-decoding — an encoded credential shape in the URL path / fragment / query name / query value fails closed during fusion projection at EVERY decode layer and at the fixed 3-layer limit; malformed percent-encoding fails closed; legitimate encoded content still passes (3905300513 → P1-2 5080578795)', () => {
   const encodedCredentialUrls = [
+    // 1-layer encoded credentials (Round-6 BLOCK2 baseline, 3905300513)
     'https://example.invalid/a/token%3Dsekrit', // credential encoded in the PATH
     'https://example.invalid/a#token%3Dsekrit', // credential encoded in the FRAGMENT
     'https://example.invalid/?token%3Dsekrit', // credential encoded in a QUERY NAME
     'https://example.invalid/?name%3Dz_c0%3Dabc', // credential encoded in a QUERY VALUE
     'https://example.invalid/%zz', // malformed percent-encoding → fail closed
+    // P1-2 (5080578795): strictly bounded multi-layer decode — 2/3-layer and
+    // beyond-limit encoded credentials must ALL fail closed.
+    'https://example.invalid/a/token%253Dsekrit', // 2-layer encoded credential in the PATH
+    'https://example.invalid/a/token%25253Dsekrit', // 3-layer encoded credential in the PATH
+    'https://example.invalid/a/token%2525253Dsekrit', // beyond the 3-layer limit — encoded bytes remain → fail closed
+    'https://example.invalid/a#token%253Dsekrit', // 2-layer encoded credential in the FRAGMENT
+    'https://example.invalid/?token%253Dsekrit', // 2-layer encoded credential in a QUERY NAME
+    'https://example.invalid/?v=token%25253Dsekrit', // 3-layer encoded credential in a QUERY VALUE
   ];
   for (const url of encodedCredentialUrls) {
     const seam = createProviderSeam({
@@ -1766,6 +1775,22 @@ test('R12-B2 (retrieval boundary): BLOCK2 ONE-level percent-decoding — an enco
   const safeRun = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam: safeSeam, workDir: tmpWorkDir('retrieval-r12') });
   assert.equal(safeRun.ok, true, 'legitimate encoded content still passes');
   assert.equal(candidateIds(safeRun.pool).length, 1, 'the safe item is fused');
+  // P1-2 safe controls: encoded = : in a NON-credential context and an encoded
+  // redirect URL (no credential word) still pass the bounded multi-layer
+  // inspection — the fixed limit only fails closed on credential-adjacent
+  // encoded syntax, not on ordinary encoded content.
+  const safeSeam2 = createProviderSeam({
+    adapters: [fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1, { source_url: { url: 'https://example.invalid/time%3D3%3A30/article', securityClass: 'external_unverified' } }]], { query: input.query }))],
+  });
+  const safeRun2 = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam: safeSeam2, workDir: tmpWorkDir('retrieval-r12') });
+  assert.equal(safeRun2.ok, true, 'encoded = : in a non-credential context still passes');
+  assert.equal(candidateIds(safeRun2.pool).length, 1, 'the safe item is fused');
+  const safeSeam3 = createProviderSeam({
+    adapters: [fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1, { source_url: { url: 'https://example.invalid/?redirect=https%3A%2F%2Fexample.com%2Fx', securityClass: 'external_unverified' } }]], { query: input.query }))],
+  });
+  const safeRun3 = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam: safeSeam3, workDir: tmpWorkDir('retrieval-r12') });
+  assert.equal(safeRun3.ok, true, 'encoded redirect URL (no credential word) still passes');
+  assert.equal(candidateIds(safeRun3.pool).length, 1, 'the safe item is fused');
 });
 
 test('R12-B3 (retrieval boundary): BLOCK3 duplicate channel identity is structurally PREVENTED before fusion — registry duplicate identities and duplicate channel descriptors fail closed pre-IO; the fusion-layer FUSION_DUPLICATE_CHANNEL code is allowlisted so any future reachable duplicate surfaces machine-readably (3905300520)', () => {
