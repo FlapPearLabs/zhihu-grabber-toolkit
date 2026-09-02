@@ -180,8 +180,14 @@ function _createEmbeddingProviderInternal({
     for (const [k, expectedVal] of Object.entries(ACCEPTED_LOCAL_PROFILE)) {
       if (k in profileCheck) {
         const actualVal = profileCheck[k];
-        if (typeof expectedVal === 'object' ? JSON.stringify(actualVal) !== JSON.stringify(expectedVal) : actualVal !== expectedVal) {
-          const err = new Error(`Profile mismatch for ${k}: expected ${JSON.stringify(expectedVal)}, got ${JSON.stringify(actualVal)}`);
+        let matches = actualVal === expectedVal;
+        if (typeof expectedVal === 'object' && expectedVal !== null && actualVal && typeof actualVal === 'object') {
+          const keys1 = Object.keys(expectedVal);
+          const keys2 = Object.keys(actualVal);
+          matches = keys1.length === keys2.length && keys1.every(key => expectedVal[key] === actualVal[key]);
+        }
+        if (!matches) {
+          const err = new Error(`Profile mismatch for ${k}`);
           err.code = EMBEDDING_ERROR_PROFILE_MISMATCH;
           throw err;
         }
@@ -375,15 +381,21 @@ function _createEmbeddingProviderInternal({
       // 2. Compute uncached vectors if any
       if (uncachedTexts.length > 0) {
         const extractor = await getExtractor();
+        const inFlightComputations = new Map();
+
         for (let j = 0; j < uncachedTexts.length; j += 1) {
           const text = uncachedTexts[j];
           const origIdx = uncachedIndices[j];
 
           let rawOutput;
           try {
-            // Feature extraction call with mean pooling & normalization.
-            // 512-token truncation policy explicitly surfaced.
-            rawOutput = await extractor(text, { pooling: 'mean', normalize: false, truncation: true, max_length: 512 });
+            if (inFlightComputations.has(text)) {
+              rawOutput = await inFlightComputations.get(text);
+            } else {
+              const computePromise = extractor(text, { pooling: 'mean', normalize: false, truncation: true, max_length: 512 });
+              inFlightComputations.set(text, computePromise);
+              rawOutput = await computePromise;
+            }
           } catch (err) {
             const e = new Error(`Embedding computation failed for input ${origIdx}: ${err?.message ?? err}`);
             e.code = EMBEDDING_ERROR_DENSE_UNAVAILABLE;
