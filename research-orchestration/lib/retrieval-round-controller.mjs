@@ -210,6 +210,13 @@ export function evaluateRetrievalRound({
     err.code = CONTROLLER_ERROR_INVALID_INPUT;
     throw err;
   }
+  for (const r of executedRoutesThisRound) {
+    if (!r || typeof r !== 'object' || typeof r.query !== 'string' || typeof r.providerId !== 'string' || typeof r.capability !== 'string') {
+      const err = new Error('executedRoutesThisRound entries must be valid route objects (query, providerId, capability)');
+      err.code = CONTROLLER_ERROR_INVALID_INPUT;
+      throw err;
+    }
+  }
 
   if (!Array.isArray(providerFailuresThisRound)) {
     const err = new Error('providerFailuresThisRound must be an array');

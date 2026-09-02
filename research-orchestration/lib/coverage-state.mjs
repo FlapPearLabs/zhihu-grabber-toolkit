@@ -339,6 +339,7 @@ export function validateCoverageState(state) {
 
   let computedTotalSelected = 0;
   let computedTotalVerified = 0;
+  let computedCapturedNotVerified = 0;
 
   for (const [gid, g] of Object.entries(sc.perGroupStatus)) {
     if (!isBoundarySafeString(gid)) {
@@ -364,6 +365,9 @@ export function validateCoverageState(state) {
     }
     computedTotalSelected += g.selectedCount;
     computedTotalVerified += g.verifiedCount;
+    if (g.captured) {
+      computedCapturedNotVerified += (g.selectedCount - g.verifiedCount);
+    }
 
     if (typeof g.paginationStatus !== 'string' || !isBoundarySafeString(g.paginationStatus)) {
       return { ok: false, reason: 'invalid_pagination_status', error: `paginationStatus malformed for ${gid}` };
@@ -383,8 +387,8 @@ export function validateCoverageState(state) {
   if (sDiag.totalSelectedCount !== computedTotalSelected || sDiag.totalVerifiedCount !== computedTotalVerified) {
     return { ok: false, reason: 'accounting_mismatch', error: `aggregate counts do not match per-group sum` };
   }
-  if (sDiag.capturedNotVerifiedCount !== sDiag.totalSelectedCount - sDiag.totalVerifiedCount) {
-    return { ok: false, reason: 'inconsistent_captured_not_verified_count', error: `capturedNotVerifiedCount must equal totalSelectedCount - totalVerifiedCount` };
+  if (sDiag.capturedNotVerifiedCount !== computedCapturedNotVerified) {
+    return { ok: false, reason: 'inconsistent_captured_not_verified_count', error: `capturedNotVerifiedCount must sum selectedCount - verifiedCount only for captured groups` };
   }
 
   // 3. Analysis Coverage Validation (§9.3)
@@ -874,7 +878,14 @@ export function reconcileFinalCoverage(state, { caller, assertFullCoverage = fal
     selected.length === mapped.length &&
     selected.every((id, idx) => id === mapped[idx]);
 
-  const isSetEqual = isSelectedEqAnalyzed && isSelectedEqMapped;
+  // Ensure aggregate sets are perfectly derived from the union of per-group sets
+  const perGroupMapped = dedupeAndSortStrings(Object.values(current.analysisCoverage.perGroupMappedSourceSet).flat());
+  const perGroupAnalyzed = dedupeAndSortStrings(Object.values(current.analysisCoverage.perGroupAnalyzedSourceSet).flat());
+  
+  const isMappedEqPerGroupMapped = mapped.length === perGroupMapped.length && mapped.every((id, idx) => id === perGroupMapped[idx]);
+  const isAnalyzedEqPerGroupAnalyzed = analyzed.length === perGroupAnalyzed.length && analyzed.every((id, idx) => id === perGroupAnalyzed[idx]);
+
+  const isSetEqual = isSelectedEqAnalyzed && isSelectedEqMapped && isMappedEqPerGroupMapped && isAnalyzedEqPerGroupAnalyzed;
 
   const hasNoEvidenceIssues =
     current.analysisCoverage.evidenceRefIssues.missingRefs.length === 0 &&
@@ -928,7 +939,8 @@ export function persistCoverageState(workDir, state) {
     fs.mkdirSync(workDir, { recursive: true });
     const content = JSON.stringify(validation.validated, null, 2);
     fs.writeFileSync(filePath, content, 'utf8');
-    return { ok: true, path: filePath, hash: coverageStateHash(validation.validated) };
+    // Return work-relative filename only — never expose absolute workDir
+    return { ok: true, path: COVERAGE_STATE_FILENAME, hash: coverageStateHash(validation.validated) };
   } catch (e) {
     const err = new Error('Failed to persist coverage state');
     err.code = COVERAGE_ERROR_PERSISTENCE_FAILED;
@@ -954,7 +966,8 @@ export function loadCoverageState(workDir, expectedPlanHash = null) {
     if (expectedPlanHash !== null && validation.validated.planHash !== expectedPlanHash) {
       return { ok: false, reason: 'stale_plan_hash', path: COVERAGE_STATE_FILENAME };
     }
-    return { ok: true, state: validation.validated, hash: coverageStateHash(validation.validated), path: filePath };
+    // Return work-relative filename only — never expose absolute workDir
+    return { ok: true, state: validation.validated, hash: coverageStateHash(validation.validated), path: COVERAGE_STATE_FILENAME };
   } catch (e) {
     return { ok: false, reason: 'unparseable', error: 'unparseable', path: COVERAGE_STATE_FILENAME };
   }

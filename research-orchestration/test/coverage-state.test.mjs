@@ -344,12 +344,22 @@ test('P1-T07: Hook 6 (reconcileFinalCoverage) - 100% Analysis assertion contract
   );
 
   // 3. Set analyzed to only ['s1'] (partial) -> mismatch
-  state = updatePerGroupAnalysis(state, { analyzedSourceSet: ['s1'], mappedSourceSet: ['s1'] }, { caller: OWNER_T13_ANALYSIS });
+  state = updatePerGroupAnalysis(state, { 
+    analyzedSourceSet: ['s1'], 
+    mappedSourceSet: ['s1'],
+    perGroupMappedSourceSet: { 'group-a': ['s1'] },
+    perGroupAnalyzedSourceSet: { 'group-a': ['s1'] }
+  }, { caller: OWNER_T13_ANALYSIS });
   const reconciled2 = reconcileFinalCoverage(state, { caller: OWNER_T15_FINAL, assertFullCoverage: false });
   assert.equal(reconciled2.analysisCoverage.is100PercentAnalysis, false);
 
   // 4. Set analyzed to ['s1', 's2'] (exact set equality) + 0 evidence ref issues
-  state = updatePerGroupAnalysis(state, { analyzedSourceSet: ['s2', 's1'], mappedSourceSet: ['s1', 's2'] }, { caller: OWNER_T13_ANALYSIS });
+  state = updatePerGroupAnalysis(state, { 
+    analyzedSourceSet: ['s2', 's1'], 
+    mappedSourceSet: ['s1', 's2'],
+    perGroupMappedSourceSet: { 'group-a': ['s1', 's2'] },
+    perGroupAnalyzedSourceSet: { 'group-a': ['s2', 's1'] }
+  }, { caller: OWNER_T13_ANALYSIS });
   const reconciled3 = reconcileFinalCoverage(state, { caller: OWNER_T15_FINAL, assertFullCoverage: true });
   assert.equal(reconciled3.analysisCoverage.is100PercentAnalysis, true);
 
@@ -429,12 +439,22 @@ test('P1-T07: Source Completeness accounting invariant enforcement', () => {
 test('P1-T07: Final analysis assertion mappedSourceSet equality requirement', () => {
   let state = createInitialCoverageState({ planHash: 'a'.repeat(64) });
   state = updateSelectionAccounting(state, { selectedCorpusSourceSet: ['s1', 's2'] }, { caller: OWNER_T12_SELECTION });
-  state = updatePerGroupAnalysis(state, { mappedSourceSet: ['s1'], analyzedSourceSet: ['s1', 's2'] }, { caller: OWNER_T13_ANALYSIS });
+  state = updatePerGroupAnalysis(state, { 
+    mappedSourceSet: ['s1'], 
+    analyzedSourceSet: ['s1', 's2'],
+    perGroupMappedSourceSet: { 'g': ['s1'] },
+    perGroupAnalyzedSourceSet: { 'g': ['s1', 's2'] }
+  }, { caller: OWNER_T13_ANALYSIS });
   
   assert.throws(() => reconcileFinalCoverage(state, { caller: OWNER_T15_FINAL, assertFullCoverage: true }),
     (err) => err.code === COVERAGE_ERROR_INCOMPLETE_ANALYSIS);
 
-  state = updatePerGroupAnalysis(state, { mappedSourceSet: ['s1', 's2'], analyzedSourceSet: ['s1', 's2'] }, { caller: OWNER_T13_ANALYSIS });
+  state = updatePerGroupAnalysis(state, { 
+    mappedSourceSet: ['s1', 's2'], 
+    analyzedSourceSet: ['s1', 's2'],
+    perGroupMappedSourceSet: { 'g': ['s1', 's2'] },
+    perGroupAnalyzedSourceSet: { 'g': ['s1', 's2'] }
+  }, { caller: OWNER_T13_ANALYSIS });
   const finalState = reconcileFinalCoverage(state, { caller: OWNER_T15_FINAL, assertFullCoverage: true });
   assert.equal(finalState.analysisCoverage.is100PercentAnalysis, true);
 });
