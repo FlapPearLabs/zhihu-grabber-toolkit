@@ -211,3 +211,17 @@ test('P1-T07: Input validation fail closed in evaluateRetrievalRound', () => {
     (err) => err.code === CONTROLLER_ERROR_INVALID_INPUT
   );
 });
+test('P1-T07: evaluateRetrievalRound rejects empty/no-op retrieval rounds', () => {
+  const coverageState = createInitialCoverageState({ planHash: 'a'.repeat(64) });
+  assert.throws(() => {
+    evaluateRetrievalRound({
+      coverageState,
+      roundIndex: 1,
+      newCandidatesCount: 0,
+      totalCandidatesCount: 0,
+      executedRoutesThisRound: [],
+      providerFailuresThisRound: [],
+      config: { maxRetrievalRounds: 5, maxQueryBudget: 100, saturationNoveltyGainThreshold: 0.1, minRoundsBeforeSaturation: 1 }
+    });
+  }, (err) => err.code === 'controller_invalid_input' && err.message.includes('no-op'));
+});

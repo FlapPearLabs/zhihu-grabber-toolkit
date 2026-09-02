@@ -372,3 +372,55 @@ test('P1-T07: Fail-closed validation against malformed and unsafe states', () =>
   const res2 = validateCoverageState(badState2);
   assert.equal(res2.ok, false);
 });
+test('P1-T07: Artifact safety fail-closed for unsafe strings (e.g. credentials, absolute paths)', () => {
+  const badState = createInitialCoverageState({ planHash: 'a'.repeat(64), plannedQueryVariants: ['/etc/hosts'] });
+  
+  // Inject an unsafe string into a non-plan field
+  badState.diagnostics.unsafeField = 'C:\\\\Windows\\\\System32\\\\cmd.exe';
+  const res1 = validateCoverageState(badState);
+  assert.equal(res1.ok, false);
+  assert.equal(res1.reason, 'artifact_safety_violation');
+
+  // Inject a credential-shaped string
+  const badState2 = createInitialCoverageState({ planHash: 'a'.repeat(64) });
+  badState2.retrieval.stopReason = 'failed with api_key=12345';
+  const res2 = validateCoverageState(badState2);
+  assert.equal(res2.ok, false);
+});
+
+test('P1-T07: Source Completeness accounting invariant enforcement', () => {
+  let state = createInitialCoverageState({ planHash: 'a'.repeat(64) });
+  
+  // verifiedCount > selectedCount
+  assert.throws(() => {
+    updateSourceCompleteness(state, {
+      perGroupStatus: {
+        'g1': { captured: true, verified: true, partial: false, failed: false, paginationStatus: 'complete', evidenceRef: 'ref', selectedCount: 5, verifiedCount: 6 }
+      },
+      diagnostics: { totalSelectedCount: 5, totalVerifiedCount: 6, capturedNotVerifiedCount: 0 }
+    }, { caller: OWNER_T09_SOURCE_COMPLETENESS });
+  }, (err) => err.code === COVERAGE_ERROR_INVALID_STATE && err.message.includes('exceeds selectedCount'));
+
+  // inconsistent aggregate
+  assert.throws(() => {
+    updateSourceCompleteness(state, {
+      perGroupStatus: {
+        'g1': { captured: true, verified: true, partial: false, failed: false, paginationStatus: 'complete', evidenceRef: 'ref', selectedCount: 5, verifiedCount: 5 }
+      },
+      diagnostics: { totalSelectedCount: 10, totalVerifiedCount: 5, capturedNotVerifiedCount: 5 }
+    }, { caller: OWNER_T09_SOURCE_COMPLETENESS });
+  }, (err) => err.code === COVERAGE_ERROR_INVALID_STATE && err.message.includes('aggregate counts'));
+});
+
+test('P1-T07: Final analysis assertion mappedSourceSet equality requirement', () => {
+  let state = createInitialCoverageState({ planHash: 'a'.repeat(64) });
+  state = updateSelectionAccounting(state, { selectedCorpusSourceSet: ['s1', 's2'] }, { caller: OWNER_T12_SELECTION });
+  state = updatePerGroupAnalysis(state, { mappedSourceSet: ['s1'], analyzedSourceSet: ['s1', 's2'] }, { caller: OWNER_T13_ANALYSIS });
+  
+  assert.throws(() => reconcileFinalCoverage(state, { caller: OWNER_T15_FINAL, assertFullCoverage: true }),
+    (err) => err.code === COVERAGE_ERROR_INCOMPLETE_ANALYSIS);
+
+  state = updatePerGroupAnalysis(state, { mappedSourceSet: ['s1', 's2'], analyzedSourceSet: ['s1', 's2'] }, { caller: OWNER_T13_ANALYSIS });
+  const finalState = reconcileFinalCoverage(state, { caller: OWNER_T15_FINAL, assertFullCoverage: true });
+  assert.equal(finalState.analysisCoverage.is100PercentAnalysis, true);
+});

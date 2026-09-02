@@ -212,6 +212,12 @@ export function evaluateRetrievalRound({
   // Compute novelty gain: new / total
   const noveltyGain = totalCandidatesCount > 0 ? Number((newCandidatesCount / totalCandidatesCount).toFixed(6)) : 0;
 
+  if (executedRoutesThisRound.length === 0 && providerFailuresThisRound.length === 0) {
+    const err = new Error('Empty/no-op retrieval round does not prove saturation');
+    err.code = CONTROLLER_ERROR_INVALID_INPUT;
+    throw err;
+  }
+
   // 1. Check all provider failures in this round (zero executed routes and >0 failures)
   if (executedRoutesThisRound.length === 0 && providerFailuresThisRound.length > 0) {
     return {

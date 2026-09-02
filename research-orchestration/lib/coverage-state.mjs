@@ -40,7 +40,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
-import { isValidPlanHashFormat } from './plan-contract.mjs';
+import { isValidPlanHashFormat, isPlanBoundarySafeString } from './plan-contract.mjs';
 import {
   isBoundarySafeString,
   assertArtifactSafe,
@@ -261,8 +261,8 @@ export function validateCoverageState(state) {
   if (!isPlainObject(ret)) {
     return { ok: false, reason: 'retrieval_ledger_missing', error: 'retrieval ledger must be a plain object' };
   }
-  if (!Array.isArray(ret.plannedQueryVariants) || !ret.plannedQueryVariants.every((q) => typeof q === 'string' && isBoundarySafeString(q))) {
-    return { ok: false, reason: 'invalid_planned_query_variants', error: 'plannedQueryVariants must be an array of safe strings' };
+  if (!Array.isArray(ret.plannedQueryVariants) || !ret.plannedQueryVariants.every((q) => typeof q === 'string' && isPlanBoundarySafeString(q))) {
+    return { ok: false, reason: 'invalid_planned_query_variants', error: 'plannedQueryVariants must be an array of plan-safe strings' };
   }
   if (!Array.isArray(ret.executedRoutes)) {
     return { ok: false, reason: 'invalid_executed_routes', error: 'executedRoutes must be an array' };
@@ -290,6 +290,10 @@ export function validateCoverageState(state) {
   if (!isPlainObject(sc.perGroupStatus)) {
     return { ok: false, reason: 'invalid_per_group_status', error: 'perGroupStatus must be a plain object' };
   }
+
+  let computedTotalSelected = 0;
+  let computedTotalVerified = 0;
+
   for (const [gid, g] of Object.entries(sc.perGroupStatus)) {
     if (!isBoundarySafeString(gid)) {
       return { ok: false, reason: 'unsafe_group_id', error: `groupId ${gid} is unsafe` };
@@ -303,12 +307,32 @@ export function validateCoverageState(state) {
     if (!isNonNegativeInteger(g.selectedCount) || !isNonNegativeInteger(g.verifiedCount)) {
       return { ok: false, reason: 'invalid_group_counts', error: `group counts malformed for ${gid}` };
     }
+    if (g.verifiedCount > g.selectedCount) {
+      return { ok: false, reason: 'impossible_accounting', error: `verifiedCount (${g.verifiedCount}) exceeds selectedCount (${g.selectedCount}) for group ${gid}` };
+    }
+    computedTotalSelected += g.selectedCount;
+    computedTotalVerified += g.verifiedCount;
+
     if (typeof g.paginationStatus !== 'string' || !isBoundarySafeString(g.paginationStatus)) {
       return { ok: false, reason: 'invalid_pagination_status', error: `paginationStatus malformed for ${gid}` };
     }
     if (g.evidenceRef !== null && (typeof g.evidenceRef !== 'string' || !isBoundarySafeString(g.evidenceRef))) {
       return { ok: false, reason: 'invalid_evidence_ref', error: `evidenceRef malformed for ${gid}` };
     }
+  }
+
+  const sDiag = sc.diagnostics;
+  if (!isPlainObject(sDiag) || !isNonNegativeInteger(sDiag.capturedNotVerifiedCount) || !isNonNegativeInteger(sDiag.totalSelectedCount) || !isNonNegativeInteger(sDiag.totalVerifiedCount)) {
+    return { ok: false, reason: 'invalid_sc_diagnostics', error: 'sourceCompleteness diagnostics must contain non-negative integers' };
+  }
+  if (sDiag.totalVerifiedCount > sDiag.totalSelectedCount) {
+    return { ok: false, reason: 'impossible_accounting', error: `totalVerifiedCount (${sDiag.totalVerifiedCount}) exceeds totalSelectedCount (${sDiag.totalSelectedCount})` };
+  }
+  if (sDiag.totalSelectedCount !== computedTotalSelected || sDiag.totalVerifiedCount !== computedTotalVerified) {
+    return { ok: false, reason: 'accounting_mismatch', error: `aggregate counts do not match per-group sum` };
+  }
+  if (sDiag.capturedNotVerifiedCount !== sDiag.totalSelectedCount - sDiag.totalVerifiedCount) {
+    return { ok: false, reason: 'inconsistent_captured_not_verified_count', error: `capturedNotVerifiedCount must equal totalSelectedCount - totalVerifiedCount` };
   }
 
   // 3. Analysis Coverage Validation (§9.3)
@@ -362,10 +386,9 @@ export function validateCoverageState(state) {
   }
 
   // Artifact safety walk (no credentials, cycles, proto pollution)
-  try {
-    assertArtifactSafe(state, { allowPlanContractStrings: true });
-  } catch (err) {
-    return { ok: false, reason: 'artifact_safety_violation', error: err.message };
+  const safetyVerdict = assertArtifactSafe(state, { trustedPlanStrings: new Set(ret.plannedQueryVariants) });
+  if (!safetyVerdict.ok) {
+    return { ok: false, reason: 'artifact_safety_violation', error: safetyVerdict.reason };
   }
 
   return { ok: true, validated: canonicalizeCoverageState(state) };
@@ -731,16 +754,25 @@ export function reconcileFinalCoverage(state, { caller, assertFullCoverage = fal
 
   const current = canonicalizeCoverageState(state);
   const selected = current.analysisCoverage.selectedCorpusSourceSet;
+  const mapped = current.analysisCoverage.mappedSourceSet;
   const analyzed = current.analysisCoverage.analyzedSourceSet;
 
   const isSelectedNonEmpty = selected.length > 0;
-  const isSetEqual =
+  const isSelectedEqAnalyzed =
     isSelectedNonEmpty &&
     selected.length === analyzed.length &&
     selected.every((id, idx) => id === analyzed[idx]);
 
+  const isSelectedEqMapped =
+    isSelectedNonEmpty &&
+    selected.length === mapped.length &&
+    selected.every((id, idx) => id === mapped[idx]);
+
+  const isSetEqual = isSelectedEqAnalyzed && isSelectedEqMapped;
+
   const hasNoEvidenceIssues =
     current.analysisCoverage.evidenceRefIssues.missingRefs.length === 0 &&
+    current.analysisCoverage.evidenceRefIssues.duplicateRefs.length === 0 &&
     current.analysisCoverage.evidenceRefIssues.invalidRefs.length === 0 &&
     current.analysisCoverage.evidenceRefIssues.staleRefs.length === 0;
 
@@ -748,7 +780,7 @@ export function reconcileFinalCoverage(state, { caller, assertFullCoverage = fal
 
   if (assertFullCoverage && !canAssert100Percent) {
     const err = new Error(
-      `Cannot assert 100% Analysis Coverage: selected=${selected.length}, analyzed=${analyzed.length}, setEqual=${isSetEqual}, evidenceClean=${hasNoEvidenceIssues}`
+      `Cannot assert 100% Analysis Coverage: selected=${selected.length}, mapped=${mapped.length}, analyzed=${analyzed.length}, setEqual=${isSetEqual}, evidenceClean=${hasNoEvidenceIssues}`
     );
     err.code = COVERAGE_ERROR_INCOMPLETE_ANALYSIS;
     throw err;
@@ -781,7 +813,7 @@ export function coverageStateHash(state) {
 export function persistCoverageState(workDir, state) {
   const validation = validateCoverageState(state);
   if (!validation.ok) {
-    const err = new Error(`Cannot persist invalid coverage state: ${validation.error}`);
+    const err = new Error(`Cannot persist invalid coverage state: ${validation.reason}`);
     err.code = COVERAGE_ERROR_INVALID_STATE;
     throw err;
   }
@@ -792,7 +824,7 @@ export function persistCoverageState(workDir, state) {
     fs.writeFileSync(filePath, content, 'utf8');
     return { ok: true, path: filePath, hash: coverageStateHash(validation.validated) };
   } catch (e) {
-    const err = new Error(`Failed to persist coverage state: ${e.message}`);
+    const err = new Error('Failed to persist coverage state');
     err.code = COVERAGE_ERROR_PERSISTENCE_FAILED;
     throw err;
   }
@@ -801,20 +833,23 @@ export function persistCoverageState(workDir, state) {
 /**
  * Load coverage state from file.
  */
-export function loadCoverageState(workDir) {
+export function loadCoverageState(workDir, expectedPlanHash = null) {
   const filePath = path.join(workDir, COVERAGE_STATE_FILENAME);
   if (!fs.existsSync(filePath)) {
-    return { ok: false, reason: 'file_not_found', path: filePath };
+    return { ok: false, reason: 'file_not_found', path: COVERAGE_STATE_FILENAME };
   }
   try {
     const raw = fs.readFileSync(filePath, 'utf8');
     const parsed = JSON.parse(raw);
     const validation = validateCoverageState(parsed);
     if (!validation.ok) {
-      return { ok: false, reason: validation.reason, error: validation.error, path: filePath };
+      return { ok: false, reason: validation.reason, error: validation.reason, path: COVERAGE_STATE_FILENAME };
+    }
+    if (expectedPlanHash !== null && validation.validated.planHash !== expectedPlanHash) {
+      return { ok: false, reason: 'stale_plan_hash', path: COVERAGE_STATE_FILENAME };
     }
     return { ok: true, state: validation.validated, hash: coverageStateHash(validation.validated), path: filePath };
   } catch (e) {
-    return { ok: false, reason: 'unparseable', error: e.message, path: filePath };
+    return { ok: false, reason: 'unparseable', error: 'unparseable', path: COVERAGE_STATE_FILENAME };
   }
 }
