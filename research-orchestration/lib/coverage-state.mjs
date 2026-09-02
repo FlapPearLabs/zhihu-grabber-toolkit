@@ -178,10 +178,17 @@ export function canonicalizeCoverageState(state) {
       }))
     : [];
 
+  const plannedRoutes = Array.isArray(state.retrieval?.plannedRoutes)
+    ? state.retrieval.plannedRoutes.map((r) => ({
+        providerId: String(r.providerId ?? ''),
+        capability: String(r.capability ?? ''),
+      }))
+    : [];
+
   const providerFailures = Array.isArray(state.retrieval?.providerFailures)
     ? state.retrieval.providerFailures.map((f) => ({
-        code: String(f.code ?? 'UNKNOWN'),
-        class: String(f.class ?? 'UNKNOWN'),
+        code: f.code !== undefined ? String(f.code) : undefined,
+        class: f.class !== undefined ? String(f.class) : undefined,
         ...(f.query ? { query: String(f.query) } : {}),
         ...(f.providerId ? { providerId: String(f.providerId) } : {}),
         ...(f.capability ? { capability: String(f.capability) } : {}),
@@ -196,11 +203,26 @@ export function canonicalizeCoverageState(state) {
     invalidRefs: dedupeAndSortStrings(state.analysisCoverage?.evidenceRefIssues?.invalidRefs),
   };
 
+  const perGroupMappedSourceSet = {};
+  if (isPlainObject(state.analysisCoverage?.perGroupMappedSourceSet)) {
+    for (const [k, v] of Object.entries(state.analysisCoverage.perGroupMappedSourceSet).sort()) {
+      perGroupMappedSourceSet[k] = dedupeAndSortStrings(v);
+    }
+  }
+
+  const perGroupAnalyzedSourceSet = {};
+  if (isPlainObject(state.analysisCoverage?.perGroupAnalyzedSourceSet)) {
+    for (const [k, v] of Object.entries(state.analysisCoverage.perGroupAnalyzedSourceSet).sort()) {
+      perGroupAnalyzedSourceSet[k] = dedupeAndSortStrings(v);
+    }
+  }
+
   return {
     schemaVersion: COVERAGE_STATE_SCHEMA_VERSION,
     planHash: String(state.planHash ?? ''),
     retrieval: {
       plannedQueryVariants: dedupeAndSortStrings(state.retrieval?.plannedQueryVariants),
+      plannedRoutes,
       executedRoutes,
       fusedCandidateCount: Number(state.retrieval?.fusedCandidateCount ?? 0),
       fusedGroupCount: Number(state.retrieval?.fusedGroupCount ?? 0),
@@ -220,6 +242,8 @@ export function canonicalizeCoverageState(state) {
       selectedCorpusSourceSet: dedupeAndSortStrings(state.analysisCoverage?.selectedCorpusSourceSet),
       mappedSourceSet: dedupeAndSortStrings(state.analysisCoverage?.mappedSourceSet),
       analyzedSourceSet: dedupeAndSortStrings(state.analysisCoverage?.analyzedSourceSet),
+      perGroupMappedSourceSet,
+      perGroupAnalyzedSourceSet,
       evidenceRefIssues,
       is100PercentAnalysis: Boolean(state.analysisCoverage?.is100PercentAnalysis),
     },
@@ -264,6 +288,17 @@ export function validateCoverageState(state) {
   if (!Array.isArray(ret.plannedQueryVariants) || !ret.plannedQueryVariants.every((q) => typeof q === 'string' && isPlanBoundarySafeString(q))) {
     return { ok: false, reason: 'invalid_planned_query_variants', error: 'plannedQueryVariants must be an array of plan-safe strings' };
   }
+  if (!Array.isArray(ret.plannedRoutes)) {
+    return { ok: false, reason: 'invalid_planned_routes', error: 'plannedRoutes must be an array' };
+  }
+  for (const r of ret.plannedRoutes) {
+    if (!isPlainObject(r) || typeof r.providerId !== 'string' || typeof r.capability !== 'string') {
+      return { ok: false, reason: 'invalid_planned_route_entry', error: 'plannedRoute entry malformed' };
+    }
+    if (!isBoundarySafeString(r.providerId) || !isBoundarySafeString(r.capability)) {
+      return { ok: false, reason: 'unsafe_planned_route_string', error: 'plannedRoute contains unsafe string' };
+    }
+  }
   if (!Array.isArray(ret.executedRoutes)) {
     return { ok: false, reason: 'invalid_executed_routes', error: 'executedRoutes must be an array' };
   }
@@ -273,6 +308,17 @@ export function validateCoverageState(state) {
     }
     if (!isBoundarySafeString(r.query) || !isBoundarySafeString(r.providerId) || !isBoundarySafeString(r.capability)) {
       return { ok: false, reason: 'unsafe_executed_route_string', error: 'executedRoute contains unsafe string' };
+    }
+  }
+  if (!Array.isArray(ret.providerFailures)) {
+    return { ok: false, reason: 'invalid_provider_failures', error: 'providerFailures must be an array' };
+  }
+  for (const f of ret.providerFailures) {
+    if (!isPlainObject(f) || typeof f.code !== 'string' || typeof f.class !== 'string') {
+      return { ok: false, reason: 'invalid_provider_failure_entry', error: 'providerFailure entry malformed' };
+    }
+    if (!f.code.trim() || !f.class.trim() || !isBoundarySafeString(f.code) || !isBoundarySafeString(f.class)) {
+      return { ok: false, reason: 'unsafe_provider_failure', error: 'providerFailure code/class must be safe, non-empty strings' };
     }
   }
   if (!isNonNegativeInteger(ret.fusedCandidateCount) || !isNonNegativeInteger(ret.fusedGroupCount) || !isNonNegativeInteger(ret.retrievalRounds)) {
@@ -303,6 +349,12 @@ export function validateCoverageState(state) {
     }
     if (typeof g.captured !== 'boolean' || typeof g.verified !== 'boolean' || typeof g.partial !== 'boolean' || typeof g.failed !== 'boolean') {
       return { ok: false, reason: 'invalid_group_status_booleans', error: `group booleans malformed for ${gid}` };
+    }
+    if (g.verified && !g.captured) {
+      return { ok: false, reason: 'impossible_accounting', error: `Group ${gid} cannot be verified without being captured` };
+    }
+    if (g.failed && g.verified) {
+      return { ok: false, reason: 'impossible_accounting', error: `Group ${gid} cannot be both failed and verified` };
     }
     if (!isNonNegativeInteger(g.selectedCount) || !isNonNegativeInteger(g.verifiedCount)) {
       return { ok: false, reason: 'invalid_group_counts', error: `group counts malformed for ${gid}` };
@@ -348,6 +400,19 @@ export function validateCoverageState(state) {
   }
   if (!Array.isArray(ac.analyzedSourceSet) || !ac.analyzedSourceSet.every((s) => typeof s === 'string' && isBoundarySafeString(s))) {
     return { ok: false, reason: 'invalid_analyzed_source_set', error: 'analyzedSourceSet must be an array of safe strings' };
+  }
+  if (!isPlainObject(ac.perGroupMappedSourceSet) || !isPlainObject(ac.perGroupAnalyzedSourceSet)) {
+    return { ok: false, reason: 'invalid_per_group_analysis_sets', error: 'perGroupMappedSourceSet and perGroupAnalyzedSourceSet must be plain objects' };
+  }
+  for (const [gid, arr] of Object.entries(ac.perGroupMappedSourceSet)) {
+    if (!isBoundarySafeString(gid) || !Array.isArray(arr) || !arr.every((s) => typeof s === 'string' && isBoundarySafeString(s))) {
+      return { ok: false, reason: 'invalid_per_group_mapped_source_set', error: 'perGroupMappedSourceSet keys and arrays must be safe strings' };
+    }
+  }
+  for (const [gid, arr] of Object.entries(ac.perGroupAnalyzedSourceSet)) {
+    if (!isBoundarySafeString(gid) || !Array.isArray(arr) || !arr.every((s) => typeof s === 'string' && isBoundarySafeString(s))) {
+      return { ok: false, reason: 'invalid_per_group_analyzed_source_set', error: 'perGroupAnalyzedSourceSet keys and arrays must be safe strings' };
+    }
   }
   if (typeof ac.is100PercentAnalysis !== 'boolean') {
     return { ok: false, reason: 'invalid_is100percent_boolean', error: 'is100PercentAnalysis must be a boolean' };
@@ -397,7 +462,7 @@ export function validateCoverageState(state) {
 /**
  * Creates an initial valid ResearchCoverageState.
  */
-export function createInitialCoverageState({ planHash, plannedQueryVariants = [] }) {
+export function createInitialCoverageState({ planHash, plannedQueryVariants = [], plannedRoutes = [] }) {
   if (typeof planHash !== 'string' || !isValidPlanHashFormat(planHash)) {
     const err = new Error('planHash must be a valid 64-char lowercase hex string');
     err.code = COVERAGE_ERROR_INVALID_STATE;
@@ -409,6 +474,7 @@ export function createInitialCoverageState({ planHash, plannedQueryVariants = []
     planHash,
     retrieval: {
       plannedQueryVariants: Array.isArray(plannedQueryVariants) ? plannedQueryVariants : [],
+      plannedRoutes: Array.isArray(plannedRoutes) ? plannedRoutes : [],
       executedRoutes: [],
       fusedCandidateCount: 0,
       fusedGroupCount: 0,
@@ -428,6 +494,8 @@ export function createInitialCoverageState({ planHash, plannedQueryVariants = []
       selectedCorpusSourceSet: [],
       mappedSourceSet: [],
       analyzedSourceSet: [],
+      perGroupMappedSourceSet: {},
+      perGroupAnalyzedSourceSet: {},
       evidenceRefIssues: {
         missingRefs: [],
         duplicateRefs: [],
@@ -497,6 +565,9 @@ export function updateRetrievalCoverage(state, update, { caller } = {}) {
 
   if ('plannedQueryVariants' in update && Array.isArray(update.plannedQueryVariants)) {
     nextState.retrieval.plannedQueryVariants = update.plannedQueryVariants;
+  }
+  if ('plannedRoutes' in update && Array.isArray(update.plannedRoutes)) {
+    nextState.retrieval.plannedRoutes = update.plannedRoutes;
   }
   if ('executedRoutes' in update && Array.isArray(update.executedRoutes)) {
     nextState.retrieval.executedRoutes = update.executedRoutes;
@@ -604,7 +675,23 @@ export function updateSelectionAccounting(state, update, { caller } = {}) {
   const nextState = JSON.parse(JSON.stringify(current));
 
   if (Array.isArray(update.selectedCorpusSourceSet)) {
-    nextState.analysisCoverage.selectedCorpusSourceSet = update.selectedCorpusSourceSet;
+    const newSelected = dedupeAndSortStrings(update.selectedCorpusSourceSet);
+    const oldSelected = current.analysisCoverage.selectedCorpusSourceSet;
+    if (JSON.stringify(newSelected) !== JSON.stringify(oldSelected)) {
+      // Invalidate all dependent downstream analysis state
+      nextState.analysisCoverage.selectedCorpusSourceSet = newSelected;
+      nextState.analysisCoverage.mappedSourceSet = [];
+      nextState.analysisCoverage.analyzedSourceSet = [];
+      nextState.analysisCoverage.perGroupMappedSourceSet = {};
+      nextState.analysisCoverage.perGroupAnalyzedSourceSet = {};
+      nextState.analysisCoverage.evidenceRefIssues = {
+        missingRefs: [],
+        duplicateRefs: [],
+        staleRefs: [],
+        invalidRefs: [],
+      };
+      nextState.analysisCoverage.is100PercentAnalysis = false;
+    }
   }
   if ('selected_source_group_count' in update && isNonNegativeInteger(update.selected_source_group_count)) {
     nextState.diagnostics.selected_source_group_count = update.selected_source_group_count;
@@ -662,6 +749,12 @@ export function updatePerGroupAnalysis(state, update, { caller } = {}) {
   }
   if (Array.isArray(update.analyzedSourceSet)) {
     nextState.analysisCoverage.analyzedSourceSet = update.analyzedSourceSet;
+  }
+  if (isPlainObject(update.perGroupMappedSourceSet)) {
+    nextState.analysisCoverage.perGroupMappedSourceSet = update.perGroupMappedSourceSet;
+  }
+  if (isPlainObject(update.perGroupAnalyzedSourceSet)) {
+    nextState.analysisCoverage.perGroupAnalyzedSourceSet = update.perGroupAnalyzedSourceSet;
   }
   if (isPlainObject(update.evidenceRefIssues)) {
     nextState.analysisCoverage.evidenceRefIssues = {

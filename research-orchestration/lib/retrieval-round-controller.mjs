@@ -263,8 +263,8 @@ export function evaluateRetrievalRound({
     };
   }
 
-  // 4. Check Saturation (only if roundIndex >= minRoundsBeforeSaturation)
-  if (roundIndex >= resolvedConfig.minRoundsBeforeSaturation) {
+  // 4. Check Saturation (only if roundIndex >= minRoundsBeforeSaturation and NO provider failures in this round)
+  if (roundIndex >= resolvedConfig.minRoundsBeforeSaturation && providerFailuresThisRound.length === 0) {
     if (newCandidatesCount === 0) {
       return {
         decision: DECISION_SATURATED,

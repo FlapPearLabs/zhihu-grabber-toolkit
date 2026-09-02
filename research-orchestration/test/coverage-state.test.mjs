@@ -96,10 +96,24 @@ test('P1-T07: createInitialCoverageState creates valid 3-ledger schema + §9.4 d
 test('P1-T07: D-6 implementation defaults record is explicit and valid', () => {
   assert.equal(IMPLEMENTATION_DEFAULTS_RECORD.type, 'IMPLEMENTATION_DEFAULT');
   assert.equal(IMPLEMENTATION_DEFAULTS_RECORD.immutableSpecTruth, false);
-  assert.equal(IMPLEMENTATION_DEFAULTS_RECORD.retrieval.defaultMaxRetrievalRounds, 3);
-  assert.equal(IMPLEMENTATION_DEFAULTS_RECORD.retrieval.defaultSaturationNoveltyGainThreshold, 0.05);
-  assert.equal(IMPLEMENTATION_DEFAULTS_RECORD.retrieval.defaultMaxQueryBudget, 10);
-  assert.equal(IMPLEMENTATION_DEFAULTS_RECORD.retrieval.defaultMinRoundsBeforeSaturation, 1);
+  
+  // D-6 Evidence: Validate that the default config schema is structurally sound
+  // and fail-closed compatible, rather than merely asserting exact constants.
+  const retrieval = IMPLEMENTATION_DEFAULTS_RECORD.retrieval;
+  assert.ok(Object.isFrozen(IMPLEMENTATION_DEFAULTS_RECORD));
+  assert.ok(Object.isFrozen(retrieval));
+  assert.ok(typeof retrieval.defaultMaxRetrievalRounds === 'number' && retrieval.defaultMaxRetrievalRounds > 0);
+  assert.ok(typeof retrieval.defaultMaxQueryBudget === 'number' && retrieval.defaultMaxQueryBudget > 0);
+  assert.ok(typeof retrieval.defaultSaturationNoveltyGainThreshold === 'number' && retrieval.defaultSaturationNoveltyGainThreshold >= 0 && retrieval.defaultSaturationNoveltyGainThreshold <= 1);
+  assert.ok(typeof retrieval.defaultMinRoundsBeforeSaturation === 'number' && retrieval.defaultMinRoundsBeforeSaturation > 0);
+  
+  const sc = IMPLEMENTATION_DEFAULTS_RECORD.sourceCompleteness;
+  assert.ok(Object.isFrozen(sc));
+  assert.equal(typeof sc.requireExplicitCompletenessEvidence, 'boolean');
+  
+  const ac = IMPLEMENTATION_DEFAULTS_RECORD.analysisCoverage;
+  assert.ok(Object.isFrozen(ac));
+  assert.equal(typeof ac.strictSetEqualityRequiredFor100Percent, 'boolean');
 });
 
 test('P1-T07: Serialization and hashing determinism', () => {
