@@ -420,6 +420,7 @@ export function validateCoverageState(state) {
 
   // 100% Analysis mechanical assertion check:
   // If is100PercentAnalysis is true, selectedCorpusSourceSet and analyzedSourceSet MUST be mechanically equal and non-empty.
+  // Additionally, all evidence ref issue lists must be empty.
   if (ac.is100PercentAnalysis) {
     if (ac.selectedCorpusSourceSet.length === 0) {
       return { ok: false, reason: 'empty_corpus_cannot_be_100_percent', error: 'Cannot assert 100% analysis on an empty selected corpus' };
@@ -431,6 +432,18 @@ export function validateCoverageState(state) {
         ok: false,
         reason: 'analysis_coverage_set_mismatch',
         error: 'is100PercentAnalysis is true but selectedCorpusSourceSet !== analyzedSourceSet',
+      };
+    }
+    const eri = ac.evidenceRefIssues;
+    if (
+      (Array.isArray(eri?.missingRefs) && eri.missingRefs.length > 0) ||
+      (Array.isArray(eri?.staleRefs) && eri.staleRefs.length > 0) ||
+      (Array.isArray(eri?.invalidRefs) && eri.invalidRefs.length > 0)
+    ) {
+      return {
+        ok: false,
+        reason: 'evidence_ref_issues_block_100_percent',
+        error: 'is100PercentAnalysis cannot be true when missingRefs, staleRefs, or invalidRefs are non-empty',
       };
     }
   }

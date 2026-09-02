@@ -100,6 +100,20 @@ export function resolveRoundControllerConfig(customConfig = {}) {
     throw err;
   }
 
+  const ALLOWED_CONFIG_KEYS = new Set([
+    'maxRetrievalRounds',
+    'maxQueryBudget',
+    'saturationNoveltyGainThreshold',
+    'minRoundsBeforeSaturation',
+  ]);
+  for (const key of Object.keys(customConfig)) {
+    if (!ALLOWED_CONFIG_KEYS.has(key)) {
+      const err = new Error(`Unknown controller config key: ${key}`);
+      err.code = CONTROLLER_ERROR_INVALID_CONFIG;
+      throw err;
+    }
+  }
+
   const d = IMPLEMENTATION_DEFAULTS_RECORD.retrieval;
 
   const maxRetrievalRounds = customConfig.maxRetrievalRounds ?? d.defaultMaxRetrievalRounds;
