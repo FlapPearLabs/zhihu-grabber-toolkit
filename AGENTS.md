@@ -680,3 +680,103 @@ IMPLEMENTED
 连续 Goal Mode 下，ticket DONE 后自动 re-observe 并进入 next legal ticket；不得停下来问“是否继续”。
 
 真正允许停止的状态见 §3。最终 milestone 完成后只报告已授权 milestone 的完成，不自动进入明确排除的下一阶段。
+## 18. Contract-Driven Code Execution
+
+### 18.1 MANDATORY IMPLEMENTATION SKILL ENTRYPOINT
+For CODE tickets with substantive implementation:
+MANDATORY_ENGINEERING_ENTRYPOINT = `/implement`
+
+Executor must invoke/read the installed `/implement` skill before substantive implementation.
+
+Where the Ticket contains correctness-bearing behavior, state transitions, contracts, parsers, security boundaries, persistence, identity, or fail-closed semantics:
+`/tdd` is mandatory unless the behavior is objectively non-testable.
+"where practical" is NOT sufficient for these CODE contracts.
+
+If `/tdd` is skipped:
+the Executor must state the exact objective reason.
+
+### 18.2 CONTRACT-DRIVEN TDD
+Before implementation, derive hard test obligations from:
+- Acceptance Criteria
+- MUST / MUST NOT
+- STOP conditions
+- fail-closed requirements
+- ownership boundaries
+- `UNKNOWN != PASS`
+- exact accepted upstream decisions
+
+Each applicable hard invariant should have:
+positive + boundary + negative/counterexample
+
+Tests must be observed RED before implementation satisfying that invariant, then GREEN after the minimal repair.
+Green tests alone do not prove Ticket compliance.
+Self-review must actively search for a counterexample that passes current tests while violating authority.
+
+### 18.3 FROZEN AUTHORITY IS MECHANICALLY CONSUMED
+An accepted upstream decision must not be:
+- reinterpreted
+- generalized
+- improved
+- normalized differently
+- substituted
+- silently wrapped in new semantics
+
+If an implementation would require inventing missing semantics:
+STOP: `CONTRACT_GAP`
+
+### 18.4 STATIC-FIRST EXECUTION
+After each substantive edit:
+STATIC / MECHANICAL → DYNAMIC TESTS → MODEL REVIEW
+
+Static gates include applicable:
+- syntax/import
+- LSP diagnostics
+- typecheck
+- lint
+- dependency/lockfile policy
+- encoding/static safety
+- `git diff --check`
+
+Dynamic tests must not be used as the first detector for failures deterministic static tooling can catch.
+
+### 18.5 CURRENT-HEAD TERMINAL BARRIER
+External final reviewer does NOT mean:
+push candidate → immediate STOP
+
+Before external handoff, the current REMOTE exact HEAD must have:
+`REMOTE_HEAD_STABLE && CI_TERMINAL && CONFIGURED_AUTOMATED_REVIEW_STATE_KNOWN && CURRENT_HEAD_FINDINGS_RECONCILED`
+
+PR creation or push is not a terminal condition.
+Any new edit invalidates previous static/dynamic/review evidence for the old SHA.
+
+### 18.6 AUTOMATED REVIEWER STATE CLASSIFICATION
+Absence of a new automated review MUST NOT automatically be classified PENDING.
+
+Check:
+- review submissions
+- PR review comments
+- issue comments
+- check/status results
+- bot failure/error messages
+
+Classify explicitly as one of:
+`AUTOMATED_REVIEW_PENDING`
+`AUTOMATED_REVIEW_COMPLETE`
+`AUTOMATED_REVIEW_QUOTA_EXHAUSTED`
+`AUTOMATED_REVIEW_TRIGGER_FAILED`
+`AUTOMATED_REVIEW_UNAVAILABLE`
+
+A quota/error response is NOT PENDING.
+
+If the configured automated reviewer is unavailable and governance permits another explicit independent reviewer:
+route to that reviewer.
+Do not wait indefinitely.
+
+### 18.7 EXTERNAL REVIEW HANDOFF
+When the explicit reviewer route is `EXTERNAL_CHATGPT`:
+Executor must finish:
+static gates + dynamic gates + remote push verification + CI terminal classification + known automated-review classification
+before handoff.
+
+External reviewer remains independent.
+Executor self-review never counts as independent review.
