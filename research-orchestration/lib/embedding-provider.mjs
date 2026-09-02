@@ -196,32 +196,48 @@ function _createEmbeddingProviderInternal({
   }
 
   const embeddingCache = cache instanceof EmbeddingCache ? cache : new EmbeddingCache({ cacheDir });
-  let activeExtractor = extractorEngine;
+  let activeExtractor = extractorEngine ?? null;
+  let extractorInitPromise = null; // Memoized init promise to prevent concurrent double-init
 
   async function getExtractor() {
     if (activeExtractor) return activeExtractor;
-    const tf = await getTransformersModule();
-    const { pipeline, env } = tf;
-    env.allowRemoteModels = false; // HARD OFFLINE REQUIREMENT (NO_NEW_EGRESS)
-    env.localModelPath = modelDir;
-    env.cacheDir = modelDir;
-
-    try {
-      activeExtractor = await pipeline('feature-extraction', ACCEPTED_LOCAL_PROFILE.modelId, {
-        quantized: true,
-      });
-      return activeExtractor;
-    } catch (err) {
-      // Scrub the absolute path from error messages if transformers.js throws it
-      let msg = String(err?.message ?? err);
-      if (modelDir) {
-        msg = msg.split(modelDir).join('[LOCAL_MODEL_DIR]')
-                 .split(modelDir.replace(/\\/g, '/')).join('[LOCAL_MODEL_DIR]');
+    // Gate: always verify identity before loading model (even in cold-start)
+    // Skip identity check only when extractorEngine is injected (test path)
+    if (!extractorEngine) {
+      const idCheck = await checkIdentityJson();
+      if (!idCheck.ok) {
+        const err = new Error(`Identity gate failed before extractor load: ${idCheck.error}`);
+        err.code = idCheck.reason === 'revision_mismatch' ? 'EMBEDDING_REVISION_MISMATCH' : 'EMBEDDING_MODEL_UNKNOWN';
+        throw err;
       }
-      const e = new Error(`Failed to load local ONNX model: ${msg}`);
-      e.code = EMBEDDING_ERROR_MODEL_UNKNOWN;
-      throw e;
     }
+    // Memoize the init promise so concurrent callers share one pipeline() call
+    if (!extractorInitPromise) {
+      extractorInitPromise = (async () => {
+        const tf = await getTransformersModule();
+        const { pipeline, env } = tf;
+        env.allowRemoteModels = false; // HARD OFFLINE REQUIREMENT (NO_NEW_EGRESS)
+        env.localModelPath = modelDir;
+        env.cacheDir = modelDir;
+        try {
+          activeExtractor = await pipeline('feature-extraction', ACCEPTED_LOCAL_PROFILE.modelId, {
+            quantized: true,
+          });
+          return activeExtractor;
+        } catch (err) {
+          extractorInitPromise = null; // Allow retry on failure
+          let msg = String(err?.message ?? err);
+          if (modelDir) {
+            msg = msg.split(modelDir).join('[LOCAL_MODEL_DIR]')
+                     .split(modelDir.replace(/\\/g, '/')).join('[LOCAL_MODEL_DIR]');
+          }
+          const e = new Error(`Failed to load local ONNX model: ${msg}`);
+          e.code = 'EMBEDDING_MODEL_UNKNOWN';
+          throw e;
+        }
+      })();
+    }
+    return extractorInitPromise;
   }
 
   async function checkIdentityJson() {
@@ -252,7 +268,7 @@ function _createEmbeddingProviderInternal({
     }
   }
 
-  return {
+  return Object.freeze({
     // 8 Contract Fields (Spec §5.3)
     providerCategory: ACCEPTED_LOCAL_PROFILE.providerCategory,
     providerId: ACCEPTED_LOCAL_PROFILE.providerId,
@@ -462,5 +478,5 @@ function _createEmbeddingProviderInternal({
         },
       };
     },
-  };
+  });
 }

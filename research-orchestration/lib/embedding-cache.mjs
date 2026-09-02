@@ -132,10 +132,15 @@ export class EmbeddingCache {
         try {
           const raw = fs.readFileSync(filePath, 'utf8');
           const parsed = JSON.parse(raw);
+          // Key must match exactly — reject mismatched file content
+          if (parsed?.key !== key) return null;
           if (Array.isArray(parsed?.vector) && parsed.vector.length === 768) {
-            // Verify vector numbers
+            // Verify all elements are finite numbers
             const allNumbers = parsed.vector.every((x) => typeof x === 'number' && Number.isFinite(x));
             if (allNumbers) {
+              // Validate L2 unit norm (same contract as set())
+              const norm = Math.sqrt(parsed.vector.reduce((sum, v) => sum + v * v, 0));
+              if (Math.abs(norm - 1.0) > 1e-4) return null;
               if (this.memoryStore.size < this.maxMemoryEntries) {
                 this.memoryStore.set(key, [...parsed.vector]);
               }
@@ -164,14 +169,14 @@ export class EmbeddingCache {
       err.code = CACHE_ERROR_CORRUPTED_ENTRY;
       throw err;
     }
-    
+
     // Check all elements are finite numbers before doing math
     if (!vector.every(v => typeof v === 'number' && Number.isFinite(v))) {
       const err = new Error(`Invalid vector to cache (contains non-finite or non-numeric elements)`);
       err.code = CACHE_ERROR_CORRUPTED_ENTRY;
       throw err;
     }
-    
+
     // Check L2 norm (magnitude must be 1.0)
     const norm = Math.sqrt(vector.reduce((sum, v) => sum + v * v, 0));
     if (Math.abs(norm - 1.0) > 1e-4) {
@@ -180,12 +185,7 @@ export class EmbeddingCache {
       throw err;
     }
 
-    // Cache in memory
-    if (this.memoryStore.size < this.maxMemoryEntries) {
-      this.memoryStore.set(key, [...vector]);
-    }
-
-    // Persist to disk if configured
+    // Persist to disk FIRST — only promote to memory after successful disk write
     if (!this.inMemoryOnly && this.cacheDir) {
       const filePath = this._filePathForKey(key);
       if (filePath) {
@@ -200,13 +200,18 @@ export class EmbeddingCache {
             ...(metadata && typeof metadata === 'object' ? metadata : {}),
           };
           fs.writeFileSync(filePath, JSON.stringify(payload), 'utf8');
-        } catch (e) {
-          // Persistence failure
-          const err = new Error(`Failed to persist cache entry: ${e.message}`);
+        } catch {
+          // Redact absolute paths — expose only stable error code
+          const err = new Error(`Failed to persist cache entry at [LOCAL_CACHE_DIR]`);
           err.code = CACHE_ERROR_PERSISTENCE_FAILED;
           throw err;
         }
       }
+    }
+
+    // Add to memory only after successful persistence (or if memory-only mode)
+    if (this.memoryStore.size < this.maxMemoryEntries) {
+      this.memoryStore.set(key, [...vector]);
     }
   }
 
