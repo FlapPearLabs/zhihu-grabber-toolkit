@@ -132,3 +132,17 @@ test('P1-T10: Corrupted cache file is gracefully handled as cache miss', () => {
   // Should return null (cache miss) rather than crashing
   assert.equal(cache.get(key), null);
 });
+
+test('P1-T10: Cache rejects vectors not satisfying L2_UNIT_NORM', () => {
+  const cache = new EmbeddingCache({ inMemoryOnly: true });
+  const badVector = new Array(768).fill(1.0); // magnitude = sqrt(768) != 1.0
+  const key = 'a'.repeat(64);
+  assert.throws(() => cache.set(key, badVector), (err) => err.code === 'cache_corrupted_entry');
+});
+
+test('P1-T10: Cache fallback to memory on persistence failure throws', () => {
+  // Pass a file path where a directory is expected, so mkdirSync throws
+  assert.throws(() => {
+    new EmbeddingCache({ cacheDir: '?\0invalid/path*' });
+  }, (err) => err.code === 'cache_persistence_failed');
+});

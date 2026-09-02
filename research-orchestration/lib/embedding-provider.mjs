@@ -104,7 +104,9 @@ export function validateEmbeddingVector(vector, { expectedDimension = 768, allow
  */
 export function l2Normalize(vector) {
   if (!Array.isArray(vector) || vector.length === 0) {
-    throw new Error('Vector must be a non-empty array');
+    const err = new Error('Vector must be a non-empty array');
+    err.code = EMBEDDING_ERROR_VECTOR_INVALID;
+    throw err;
   }
   let sumSquares = 0;
   for (let i = 0; i < vector.length; i += 1) {
@@ -147,13 +149,32 @@ async function getTransformersModule() {
  * @param {Function} [options.extractorEngine] - Injected extractor for testing / headless runs
  * @param {object} [options.profileCheck] - Enforces exact match with ACCEPTED_LOCAL_PROFILE
  */
-export function createEmbeddingProvider({
+export function createTestEmbeddingProvider({
   modelDir = process.env.P1_T10_ONNX_MODEL_DIR ?? path.resolve('models-bge-base-zh-v1.5'),
   cacheDir = null,
   cache = null,
   extractorEngine = null,
   profileCheck = null,
 } = {}) {
+  return _createEmbeddingProviderInternal({ modelDir, cacheDir, cache, extractorEngine, profileCheck });
+}
+
+export function createEmbeddingProvider({
+  modelDir = process.env.P1_T10_ONNX_MODEL_DIR ?? path.resolve('models-bge-base-zh-v1.5'),
+  cacheDir = null,
+  cache = null,
+  profileCheck = null,
+} = {}) {
+  return _createEmbeddingProviderInternal({ modelDir, cacheDir, cache, extractorEngine: null, profileCheck });
+}
+
+function _createEmbeddingProviderInternal({
+  modelDir,
+  cacheDir,
+  cache,
+  extractorEngine,
+  profileCheck,
+}) {
   // Mechanical check: Reject any profile reselection attempt
   if (profileCheck && typeof profileCheck === 'object') {
     for (const [k, expectedVal] of Object.entries(ACCEPTED_LOCAL_PROFILE)) {
@@ -185,7 +206,13 @@ export function createEmbeddingProvider({
       });
       return activeExtractor;
     } catch (err) {
-      const e = new Error(`Failed to load local ONNX model from ${modelDir}: ${err?.message ?? err}`);
+      // Scrub the absolute path from error messages if transformers.js throws it
+      let msg = String(err?.message ?? err);
+      if (modelDir) {
+        msg = msg.split(modelDir).join('[LOCAL_MODEL_DIR]')
+                 .split(modelDir.replace(/\\/g, '/')).join('[LOCAL_MODEL_DIR]');
+      }
+      const e = new Error(`Failed to load local ONNX model: ${msg}`);
       e.code = EMBEDDING_ERROR_MODEL_UNKNOWN;
       throw e;
     }
@@ -194,7 +221,7 @@ export function createEmbeddingProvider({
   async function checkIdentityJson() {
     const identityPath = path.join(modelDir, 'identity.json');
     if (!fs.existsSync(identityPath)) {
-      return { ok: false, reason: 'identity_json_absent', error: `identity.json not found in ${modelDir}` };
+      return { ok: false, reason: 'identity_json_absent', error: 'identity.json not found in local model directory' };
     }
     try {
       const raw = fs.readFileSync(identityPath, 'utf8');
@@ -354,8 +381,9 @@ export function createEmbeddingProvider({
 
           let rawOutput;
           try {
-            // Feature extraction call with mean pooling & normalization
-            rawOutput = await extractor(text, { pooling: 'mean', normalize: false });
+            // Feature extraction call with mean pooling & normalization.
+            // 512-token truncation policy explicitly surfaced.
+            rawOutput = await extractor(text, { pooling: 'mean', normalize: false, truncation: true, max_length: 512 });
           } catch (err) {
             const e = new Error(`Embedding computation failed for input ${origIdx}: ${err?.message ?? err}`);
             e.code = EMBEDDING_ERROR_DENSE_UNAVAILABLE;

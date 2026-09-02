@@ -98,8 +98,9 @@ export class EmbeddingCache {
       try {
         fs.mkdirSync(this.cacheDir, { recursive: true });
       } catch (e) {
-        // Fallback to in-memory if directory cannot be created
-        this.inMemoryOnly = true;
+        const err = new Error(`Cannot initialize cache directory at ${this.cacheDir}`);
+        err.code = CACHE_ERROR_PERSISTENCE_FAILED;
+        throw err;
       }
     }
   }
@@ -121,7 +122,7 @@ export class EmbeddingCache {
 
     // 1. Check memory store
     if (this.memoryStore.has(key)) {
-      return this.memoryStore.get(key);
+      return [...this.memoryStore.get(key)];
     }
 
     // 2. Check disk store
@@ -136,9 +137,9 @@ export class EmbeddingCache {
             const allNumbers = parsed.vector.every((x) => typeof x === 'number' && Number.isFinite(x));
             if (allNumbers) {
               if (this.memoryStore.size < this.maxMemoryEntries) {
-                this.memoryStore.set(key, parsed.vector);
+                this.memoryStore.set(key, [...parsed.vector]);
               }
-              return parsed.vector;
+              return [...parsed.vector];
             }
           }
         } catch {
@@ -163,10 +164,18 @@ export class EmbeddingCache {
       err.code = CACHE_ERROR_CORRUPTED_ENTRY;
       throw err;
     }
+    
+    // Check L2 norm (magnitude must be 1.0)
+    const norm = Math.sqrt(vector.reduce((sum, v) => sum + v * v, 0));
+    if (Math.abs(norm - 1.0) > 1e-4) {
+      const err = new Error(`Cached vectors must satisfy L2_UNIT_NORM (magnitude = ${norm})`);
+      err.code = CACHE_ERROR_CORRUPTED_ENTRY;
+      throw err;
+    }
 
     // Cache in memory
     if (this.memoryStore.size < this.maxMemoryEntries) {
-      this.memoryStore.set(key, vector);
+      this.memoryStore.set(key, [...vector]);
     }
 
     // Persist to disk if configured

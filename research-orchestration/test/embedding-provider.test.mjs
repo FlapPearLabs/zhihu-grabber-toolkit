@@ -22,7 +22,7 @@ import {
   EMBEDDING_ERROR_INVALID_INPUT,
   validateEmbeddingVector,
   l2Normalize,
-  createEmbeddingProvider,
+  createEmbeddingProvider, createTestEmbeddingProvider,
 } from '../lib/embedding-provider.mjs';
 import { EmbeddingCache } from '../lib/embedding-cache.mjs';
 
@@ -161,7 +161,7 @@ test('P1-T10: Local Preflight checks identity.json and exact revision', async ()
 
   // 3. Injected extractor -> READY
   const mockExtractor = async (text) => mockVector768(text.length);
-  const prov3 = createEmbeddingProvider({ extractorEngine: mockExtractor });
+  const prov3 = createTestEmbeddingProvider({ extractorEngine: mockExtractor });
   const pre3 = await prov3.preflight();
   assert.equal(pre3.ok, true);
   assert.equal(pre3.status, 'READY');
@@ -176,7 +176,7 @@ test('P1-T10: Embed execution with deterministic cache and vector validation', a
   };
 
   const cache = new EmbeddingCache({ inMemoryOnly: true });
-  const provider = createEmbeddingProvider({ extractorEngine: mockExtractor, cache });
+  const provider = createTestEmbeddingProvider({ extractorEngine: mockExtractor, cache });
 
   // 1. First embed call: both computed
   const res1 = await provider.embed(['第一段文本', '第二段文本']);
@@ -211,7 +211,7 @@ test('P1-T10: Embed execution with deterministic cache and vector validation', a
 
 test('P1-T10: Fail-closed behavior on invalid input and extractor errors', async () => {
   const mockExtractor = async () => mockVector768(1);
-  const provider = createEmbeddingProvider({ extractorEngine: mockExtractor });
+  const provider = createTestEmbeddingProvider({ extractorEngine: mockExtractor });
 
   // Non-array input
   await assert.rejects(
@@ -229,7 +229,7 @@ test('P1-T10: Fail-closed behavior on invalid input and extractor errors', async
   const throwingExtractor = async () => {
     throw new Error('Native ONNX runtime fault');
   };
-  const failingProvider = createEmbeddingProvider({ extractorEngine: throwingExtractor });
+  const failingProvider = createTestEmbeddingProvider({ extractorEngine: throwingExtractor });
   await assert.rejects(
     () => failingProvider.embed(['测试文本']),
     (err) => err.code === EMBEDDING_ERROR_DENSE_UNAVAILABLE
@@ -237,9 +237,20 @@ test('P1-T10: Fail-closed behavior on invalid input and extractor errors', async
 
   // Extractor returning malformed vector
   const malformedExtractor = async () => [1, 2, 3]; // only 3 elements
-  const malformedProvider = createEmbeddingProvider({ extractorEngine: malformedExtractor });
+  const malformedProvider = createTestEmbeddingProvider({ extractorEngine: malformedExtractor });
   await assert.rejects(
     () => malformedProvider.embed(['测试文本']),
     (err) => err.code === EMBEDDING_ERROR_VECTOR_INVALID
   );
+});
+
+test('P1-T10: l2Normalize throws EMBEDDING_ERROR_VECTOR_INVALID on empty array', () => {
+  assert.throws(() => l2Normalize([]), (err) => err.code === EMBEDDING_ERROR_VECTOR_INVALID);
+});
+
+test('P1-T10: Preflight errors do not leak absolute paths', async () => {
+  const prov = createTestEmbeddingProvider({ modelDir: '/secret/path/to/models' });
+  const pre = await prov.preflight();
+  assert.equal(pre.ok, false);
+  assert.equal(pre.error.includes('/secret/path'), false);
 });
