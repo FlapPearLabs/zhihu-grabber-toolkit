@@ -98,7 +98,7 @@ export class EmbeddingCache {
       try {
         fs.mkdirSync(this.cacheDir, { recursive: true });
       } catch (e) {
-        const err = new Error(`Cannot initialize cache directory at ${this.cacheDir}`);
+        const err = new Error(`Cannot initialize cache directory at [LOCAL_CACHE_DIR]`);
         err.code = CACHE_ERROR_PERSISTENCE_FAILED;
         throw err;
       }
@@ -161,6 +161,13 @@ export class EmbeddingCache {
 
     if (!Array.isArray(vector) || vector.length !== 768) {
       const err = new Error(`Invalid vector to cache (expected 768 numbers, got ${vector?.length})`);
+      err.code = CACHE_ERROR_CORRUPTED_ENTRY;
+      throw err;
+    }
+    
+    // Check all elements are finite numbers before doing math
+    if (!vector.every(v => typeof v === 'number' && Number.isFinite(v))) {
+      const err = new Error(`Invalid vector to cache (contains non-finite or non-numeric elements)`);
       err.code = CACHE_ERROR_CORRUPTED_ENTRY;
       throw err;
     }
