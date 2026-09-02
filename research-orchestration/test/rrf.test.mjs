@@ -661,6 +661,122 @@ test('F2-P1-2: isBoundarySafeUrlString — strictly bounded multi-layer percent-
   }
 });
 
+test('F2-P1-1: isBoundarySafeString ROUTES URL-shaped values through the URL-specific boundary — URL_SHAPE itself NEVER means safe (External ChatGPT review 5085701188 P1-1, inline 3910800849): an encoded-credential / userinfo / raw-credential / non-https URL-shaped provider string fails closed instead of bypassing the path/credential lens; safe public URLs still pass', () => {
+  const rejects = [
+    'https://example.com/%74oken%3Dabc123', // 1-layer encoded credential in the path — the RAW credential lens cannot see it
+    'https://example.com/%2574oken%253Dabc123', // 2-layer encoded credential
+    'https://example.com/%252574oken%25253Dabc123', // 3-layer encoded credential (reaches the fixed decode limit)
+    'https://user:abc123@example.com/private', // userinfo credentials
+    'https://example.com/?token=abc', // raw credential query
+    'https://example.com/a#token%3Dsekrit', // encoded credential in the fragment
+    'http://example.com/home/article', // non-https URL-shaped → fails the URL boundary
+  ];
+  for (const s of rejects) {
+    assert.equal(isBoundarySafeString(s), false, `URL-shaped unsafe string must fail closed (no path-shape bypass): ${s}`);
+  }
+  const passes = [
+    'https://example.com/home/article', // public URL with /home-like path segment
+    'https://example.invalid/a?b=1',
+    'https://example.invalid/?p=/home/alice/x', // path-shaped QUERY VALUE inside a public URL
+    'https://example.invalid/%E4%B8%AD%E6%96%87/article', // safe encoded Unicode
+    'https://example.invalid/time%3D3%3A30/article', // encoded = : in a NON-credential context
+  ];
+  for (const s of passes) {
+    assert.equal(isBoundarySafeString(s), true, `safe public URL-shaped string still passes: ${s}`);
+  }
+});
+
+test('F2-P1-2b: NON-URL scheme:/path strings are NOT exempt from the generic filesystem rule — file:/… and diagnostic:/… absolute paths fail closed (External ChatGPT review 5085701188 P1-2, inline 3910800855): the primary trust separation is STRUCTURAL URL-shape routing, not a \':\' negative-lookbehind exception, and a safe public URL remains accepted only through URL-specific validation', () => {
+  const rejects = [
+    'file:/home/alice/private.txt',
+    'diagnostic:/home/alice/private.txt',
+    'file:/custom/alice/secret.txt',
+    'file:/builds/acme/private.log',
+  ];
+  for (const s of rejects) {
+    assert.equal(isBoundarySafeString(s), false, `scheme:/path carrying an absolute filesystem path must fail closed: ${s}`);
+  }
+  // Safe controls: a legit public URL-shaped value is judged by the URL boundary,
+  // and an EMBEDDED public-URL segment inside prose is not misread as a local path.
+  assert.equal(isBoundarySafeString('https://example.com/home/article'), true, 'public URL passes via URL-specific validation');
+  assert.equal(isBoundarySafeString('see https://example.com/home/article for details'), true, 'embedded public URL in prose is not a machine-private path');
+  assert.equal(isBoundarySafeString('the fix is documented at https://example.com/tmp/report now'), true, 'embedded /tmp segment in a public URL stays valid');
+});
+
+test('F1-P1-3: provider-controlled OBJECT KEYS cross the SAME coherent string boundary — credential assignment/value-shape keys, filesystem-path keys and URL-shaped unsafe keys fail closed in addition to the bare-name / magic deny rules; benign semantic keys preserved; camelCase protection never weakened (External ChatGPT review 5085701188 P1-3, inline 3910800862)', () => {
+  const rejects = [
+    'token=abc123', // credential ASSIGNMENT shape in a key (not a bare sensitive name)
+    'z_c0=abc',
+    'secret: x',
+    '/home/alice/private.txt', // absolute filesystem path as a key
+    '/custom/alice/private.txt', // novel-root absolute path as a key
+    'C:\\Users\\victim\\secret\\x.txt', // Windows path as a key
+    'https://example.com/%74oken%3Dabc123', // URL-shaped key with an encoded credential
+    'https://user:abc123@example.com/private', // URL-shaped key with userinfo
+  ];
+  for (const key of rejects) {
+    assert.equal(isBoundarySafeKey(key), false, `unsafe object key must fail closed: ${key}`);
+  }
+  const passes = ['questionId', 'signal', 'reason', 'securityClass', 'tokenCount', 'title', 'url', 'boundary'];
+  for (const key of passes) {
+    assert.equal(isBoundarySafeKey(key), true, `benign semantic key preserved: ${key}`);
+  }
+  for (const key of ['accessToken', 'refreshToken', 'clientSecret', 'sessionCookie', 'accessKeyId', 'secretAccessKey']) {
+    assert.equal(isBoundarySafeKey(key), false, `compound / camelCase credential key still rejected: ${key}`);
+  }
+});
+
+test('F3-P1: projectSafeJson direct boundary matrix — provider facts/completeness diagnostics carrying URL-encoded credentials / userinfo URLs / scheme:/path absolute paths, or unsafe object KEYS, fail closed; safe public-URL diagnostics and benign keys pass (External ChatGPT review 5085701188 P1-1/P1-3, inline 3910800849/3910800862)', () => {
+  const rejects = [
+    ['url-encoded credential diagnostic', { diagnostic: 'https://example.com/%74oken%3Dabc123' }],
+    ['userinfo URL diagnostic', { diagnostic: 'https://user:abc123@example.com/private' }],
+    ['file:/ absolute-path diagnostic', { diagnostic: 'file:/home/alice/private.txt' }],
+    ['diagnostic:/ absolute-path diagnostic', { diagnostic: 'diagnostic:/home/alice/private.txt' }],
+    ['credential-assignment key', { 'token=abc123': 'x' }],
+    ['filesystem-path key', { '/home/alice/private.txt': 'x' }],
+    ['novel-root filesystem-path key', { '/custom/alice/private.txt': 'x' }],
+    ['magic key', JSON.parse('{"__proto__": 1}')],
+    ['constructor key', JSON.parse('{"constructor": {"prototype": 1}}')],
+  ];
+  for (const [label, value] of rejects) {
+    assert.equal(projectSafeJson(value).ok, false, `${label}: must fail closed`);
+  }
+  const passes = [
+    ['safe public-URL diagnostic', { diagnostic: 'https://example.com/home/article' }],
+    ['ordinary benign text', { v: 'ordinary benign text' }],
+    ['benign semantic keys', { questionId: '123', signal: 'absent', reason: 'no_pagination_signal', securityClass: 'external_unverified', tokenCount: 2 }],
+  ];
+  for (const [label, value] of passes) {
+    assert.equal(projectSafeJson(value).ok, true, `${label}: must pass`);
+  }
+});
+
+test('F6-P1: assertArtifactSafe applies the SAME unified boundary — no `isBoundarySafeString(v) || isBoundarySafeUrlString(v)` OR that lets the weaker predicate win first (External ChatGPT review 5085701188 P1-1, inline 3910800849): URL-encoded-credential / userinfo / scheme:/path strings and unsafe keys fail closed with stable reasons; safe public URLs and ordinary content pass', () => {
+  const cases = [
+    ['url-encoded credential string', { v: 'https://example.com/%74oken%3Dabc123' }, 'unsafe_string'],
+    ['userinfo URL string', { v: 'https://user:abc123@example.com/private' }, 'unsafe_string'],
+    ['file:/ path string', { v: 'file:/home/alice/private.txt' }, 'unsafe_string'],
+    ['diagnostic:/ path string', { v: 'diagnostic:/home/alice/private.txt' }, 'unsafe_string'],
+    ['credential-assignment key', { 'token=abc123': 'x' }, 'unsafe_key'],
+    ['filesystem-path key', { '/home/alice/private.txt': 'x' }, 'unsafe_key'],
+  ];
+  for (const [label, value, reason] of cases) {
+    const verdict = assertArtifactSafe(value);
+    assert.equal(verdict.ok, false, `${label}: must fail closed`);
+    assert.equal(verdict.reason, reason, `${label}: stable machine-readable reason`);
+  }
+  assert.deepEqual(
+    assertArtifactSafe({ v: 'https://example.com/home/article' }),
+    { ok: true },
+    'safe public URL still passes the artifact walk',
+  );
+  assert.deepEqual(
+    assertArtifactSafe({ v: 'ordinary text', questionId: '1', tokenCount: 2, signal: 'absent' }),
+    { ok: true },
+    'ordinary safe content and benign keys still pass the artifact walk',
+  );
+});
+
 test('F3: projectSafeJson — safe JSON-domain data is preserved EXACTLY as a deterministic deep copy; unsafe values fail closed (P2-2 review 5077286260)', () => {
   const safe = { a: [1, 'x', true, null, 1.5], b: { nested: { ok: 'https://example.invalid/' } } };
   const verdict = projectSafeJson(safe);

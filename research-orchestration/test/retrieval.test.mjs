@@ -1926,3 +1926,87 @@ test('R13-F4: ALL-provider-failed e2e with a WHITESPACE-ONLY failure identity (r
   assert.ok(!serialized.includes('"code":"   "'), 'the raw whitespace code is never serialized as a failure code');
   assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no artifact written on fail-closed');
 });
+
+// ---------------------------------------------------------------------------
+// K. External ChatGPT review 5085701188 — P1 provider-boundary root closure
+//    E2E: every P1 class crossing provider facts / completeness evidence fails
+//    closed (retrieval_provider_contract_invalid) with NO pool artifact; safe
+//    public-URL diagnostics and benign keys are preserved verbatim.
+// ---------------------------------------------------------------------------
+
+test('K1 (External review 5085701188 P1-1/P1-2, inline 3910800849/3910800855): provider FACTS carrying a URL-encoded-credential / userinfo-URL / file:- or diagnostic:-scheme absolute-path diagnostic → FAIL CLOSED (retrieval_provider_contract_invalid) during fusion projection; no artifact, nothing leaks', () => {
+  const unsafeFacts = [
+    ['url-encoded credential', { diagnostic: 'https://example.com/%74oken%3Dabc123' }],
+    ['userinfo URL', { diagnostic: 'https://user:abc123@example.com/private' }],
+    ['file:/ absolute path', { diagnostic: 'file:/home/alice/private.txt' }],
+    ['diagnostic:/ absolute path', { diagnostic: 'diagnostic:/home/alice/private.txt' }],
+  ];
+  for (const [label, facts] of unsafeFacts) {
+    const seam = createProviderSeam({
+      adapters: [fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1, { facts }]], { query: input.query }))],
+    });
+    const workDir = tmpWorkDir();
+    const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir });
+    assert.equal(run.ok, false, `${label}: unsafe provider facts must fail closed, never fuse into the pool`);
+    assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, `${label}: contract failure identity`);
+    assert.equal(run.details.reason, 'rrf_fusion_contract_violation', `${label}: facts rejected at the shared rrf projection boundary (before pool assembly)`);
+    const serialized = JSON.stringify(run);
+    assert.ok(!serialized.includes('token=abc123') && !serialized.includes('alice'), `${label}: the unsafe content never surfaces in output`);
+    assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), `${label}: no artifact written`);
+  }
+});
+
+test('K2 (External review 5085701188 P1-1/P1-2/P1-3, inline 3910800849/3910800855/3910800862): provider completeness EVIDENCE carrying URL-encoded credentials / userinfo URLs / scheme:/path absolute paths / unsafe object KEYS → FAIL CLOSED (retrieval_provider_contract_invalid) at the completeness boundary; no artifact, nothing leaks', () => {
+  const unsafeEvidence = [
+    ['url-encoded credential', { diagnostic: 'https://example.com/%74oken%3Dabc123' }],
+    ['userinfo URL', { diagnostic: 'https://user:abc123@example.com/private' }],
+    ['file:/ absolute path', { reason: 'file:/home/alice/private.txt' }],
+    ['diagnostic:/ absolute path', { reason: 'diagnostic:/home/alice/private.txt' }],
+    ['credential-assignment key', { 'token=abc123': 'x' }],
+    ['filesystem-path key', { '/home/alice/private.txt': 'x' }],
+    ['novel-root path key', { '/custom/alice/private.txt': 'x' }],
+  ];
+  for (const [label, evidence] of unsafeEvidence) {
+    const seam = createProviderSeam({
+      adapters: [fixtureSearchAdapter('fixture-a', (input) => ({
+        ...searchResult('fixture-a', [['100', 1]], { query: input.query }),
+        completeness: { status: COMPLETENESS_UNKNOWN, evidence },
+      }))],
+    });
+    const workDir = tmpWorkDir();
+    const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir });
+    assert.equal(run.ok, false, `${label}: unsafe completeness evidence must fail closed — never bare-stored into the pool`);
+    assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID, `${label}: contract failure identity`);
+    assert.equal(run.details.completenessIssue, 'completeness_evidence_unsafe', `${label}: stable completeness issue identity`);
+    const serialized = JSON.stringify(run);
+    assert.ok(!serialized.includes('token=abc123') && !serialized.includes('alice'), `${label}: the unsafe content never surfaces in output`);
+    assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), `${label}: no artifact written`);
+  }
+});
+
+test('K3 (External review 5085701188 safe controls, inline 3910800849/3910800862): provider facts + completeness evidence carrying a SAFE public-URL diagnostic and benign semantic keys are preserved verbatim — the run succeeds and the artifact is written', () => {
+  const seam = createProviderSeam({
+    adapters: [fixtureSearchAdapter('fixture-a', (input) => ({
+      ...searchResult('fixture-a', [['100', 1, { facts: { diagnostic: 'https://example.com/home/article', questionId: '100', tokenCount: 3 } }]], { query: input.query }),
+      completeness: {
+        status: COMPLETENESS_UNKNOWN,
+        evidence: { signal: 'absent', reason: 'no_pagination_signal', diagnostic: 'https://example.com/home/article' },
+      },
+    }))],
+  });
+  const workDir = tmpWorkDir();
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir });
+  assert.equal(run.ok, true, 'safe public-URL diagnostics and benign keys must not fail the run');
+  assert.equal(run.pool.candidates.length, 1, 'the safe item is fused');
+  assert.deepEqual(
+    run.pool.candidates[0].facts,
+    { diagnostic: 'https://example.com/home/article', questionId: '100', tokenCount: 3 },
+    'safe facts preserved verbatim on the fused candidate',
+  );
+  assert.deepEqual(
+    run.pool.channels[0].completeness.evidence,
+    { signal: 'absent', reason: 'no_pagination_signal', diagnostic: 'https://example.com/home/article' },
+    'safe completeness evidence preserved verbatim',
+  );
+  assert.ok(fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'artifact written on the safe path');
+});

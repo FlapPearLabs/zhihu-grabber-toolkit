@@ -232,24 +232,41 @@ export const CREDENTIAL_SHAPE =
  *  (/custom/alice/secret.txt, /builds/acme/private.log, ...) can never be
  *  exhaustively listed. Generic rule (provider-content lens): ANY
  *  filesystem-shaped absolute POSIX path with 2+ path components
- *  (/\<seg>/\<seg>[/...]), token-boundary anchored (the (?<![A-Za-z0-9:/])
- *  lookbehind keeps https://…/… host/path segments out of the generic rule),
- *  plus ANY Windows drive root (C:\... / D:/...) and the home-relative ~ rule
- *  (both retained). URL-shaped values (URL_SHAPE) are structured values judged
- *  by the URL boundary and are exempt from this rule. The plan boundary
- *  (plan-contract.mjs / planner.mjs, T04 authority) is SEPARATE and unchanged:
- *  plan-owned query strings are judged by isPlanBoundarySafeString, and this
- *  provider-content lens never reclassifies them. */
+ *  (/\<seg>/\<seg>[/...]) PLUS any Windows drive root (C:\... / D:/...) and
+ *  the home-relative ~ rule.
+ *
+ *  P1-2 (External ChatGPT review 5085701188, inline 3910800855): the primary
+ *  trust separation is STRUCTURAL — URL-shaped values (scheme://…) are routed
+ *  to the URL boundary BEFORE this rule ever runs (see isBoundarySafeString),
+ *  so the old `(?<![A-Za-z0-9:/])` negative-lookbehind ':' exception (which
+ *  existed to keep https:// URLs out of the generic rule) is REMOVED. A
+ *  non-URL value like `file:/home/alice/private.txt` or
+ *  `diagnostic:/home/alice/private.txt` — scheme:/path with a SINGLE slash —
+ *  is not URL-shaped, and its absolute filesystem path must now FAIL CLOSED.
+ *  The remaining [A-Za-z0-9/] lookbehind is NOT the primary trust separation:
+ *  it only keeps an EMBEDDED public-URL segment (…https://example.com/home/…)
+ *  inside a prose string from being misread as a local path (secondary
+ *  disambiguation; the URL boundary already judged standalone URL-shaped
+ *  values before this rule).
+ *  The plan boundary (plan-contract.mjs / planner.mjs, T04 authority) is
+ *  SEPARATE and unchanged: plan-owned query strings are judged by
+ *  isPlanBoundarySafeString, and this provider-content lens never reclassifies
+ *  them. */
 export const PRIVATE_PATH_SHAPE =
-  /(?<![A-Za-z0-9:/])\/(?:[^/\\\s]+\/)+[^/\\\s]+|(?<![A-Za-z])[A-Za-z]:[\\/]|(?:^|[\s"'<>\u2018\u2019\u201c\u201d])~[/\w.-]/;
+  /(?<![A-Za-z0-9/])\/(?:[^/\\\s]+\/)+[^/\\\s]+|(?<![A-Za-z])[A-Za-z]:[\\/]|(?:^|[\s"'<>\u2018\u2019\u201c\u201d])~[/\w.-]/;
 
 /**
- * URL-shaped value marker (P1-1, review 5080578795): a value starting with a
- * scheme:// prefix is a STRUCTURED URL, judged by the URL boundary
- * (isBoundarySafeUrlString) — the generic filesystem rule (PRIVATE_PATH_SHAPE)
- * is deliberately NOT applied to it, so a legitimate public URL like
- * https://example.com/home/article (or a query value that merely LOOKS like a
- * path) is never rejected as a local path.
+ * URL-shaped value marker (P1-1, review 5080578795; External ChatGPT review
+ * 5085701188 P1-1 inline 3910800849): a value starting with a `scheme://`
+ * prefix is a STRUCTURED URL candidate. URL_SHAPE is a ROUTING marker ONLY —
+ * it NEVER means safe. A URL-shaped provider string must cross the URL-
+ * specific boundary (isBoundarySafeUrlString: parseable, https-only, no
+ * userinfo, bounded multi-layer encoded-credential inspection), exactly like a
+ * non-URL string must cross the credential / filesystem-path / bounded-length
+ * boundaries. It is deliberately NOT a path-shape bypass: without URL-specific
+ * validation, `https://user:abc123@example.com/private` (userinfo) or
+ * `https://example.com/%74oken%3Dabc123` (encoded credential) would pass the
+ * generic lens untouched.
  */
 const URL_SHAPE = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//;
 
@@ -342,17 +359,54 @@ function isSensitiveKeyName(key) {
   return SENSITIVE_KEY_PATTERN.test(key);
 }
 
-/** A key may enter the persisted artifact only when it is neither credential-sensitive nor magic/prototype-mutating. */
+/**
+ * P1-3 (External ChatGPT review 5085701188, inline 3910800862): a
+ * provider-controlled OBJECT KEY crosses the SAME coherent string boundary as
+ * a value — bounded length, credential assignment/value-shape content (a key
+ * like `token=abc123` carries a credential shape even though it is not a bare
+ * sensitive NAME), filesystem-path content (`/home/alice/private.txt` as a
+ * key), and URL routing when URL-shaped — PLUS the credential-sensitive
+ * KEY-NAME deny rule and the magic / prototype-mutating deny rule. Benign
+ * semantic keys (questionId / signal / reason / securityClass / tokenCount …)
+ * are unaffected, and the compound / camelCase credential-key protection is
+ * never weakened. A key may enter the persisted artifact only when it crosses
+ * every one of those boundaries.
+ */
 export function isBoundarySafeKey(key) {
-  return !isSensitiveKeyName(key) && key !== '__proto__' && key !== 'prototype' && key !== 'constructor';
+  if (typeof key !== 'string' || key.length > BOUNDARY_MAX_STRING_LENGTH) return false;
+  if (isSensitiveKeyName(key)) return false;
+  if (key === '__proto__' || key === 'prototype' || key === 'constructor') return false;
+  if (CREDENTIAL_SHAPE.test(key)) return false;
+  if (URL_SHAPE.test(key)) return isBoundarySafeUrlString(key);
+  return !PRIVATE_PATH_SHAPE.test(key);
 }
 
-/** A provider/caller-controlled string may enter the persisted artifact only when bounded + privacy-safe. */
+/**
+ * ONE coherent provider-controlled string boundary (P1-1, review 5080578795;
+ * External ChatGPT review 5085701188 P1-1/P1-2, inline 3910800849/3910800855):
+ * every provider/caller-controlled string is classified structurally FIRST —
+ *
+ *   provider-controlled string
+ *     ├─ URL-shaped (scheme://…) → URL-specific safety validation ONLY
+ *     │    (isBoundarySafeUrlString: parseable, https-only, no userinfo,
+ *     │     bounded multi-layer encoded-credential inspection at every URL
+ *     │     part; URL_SHAPE itself NEVER means safe; host trust stays with
+ *     │     the shared classifyUrl classifier at the source_url boundary)
+ *     └─ non-URL string → bounded length + credential boundary +
+ *          generic filesystem-path boundary (PRIVATE_PATH_SHAPE)
+ *
+ * A URL-shaped value is therefore never accepted through a path-shape bypass,
+ * and a non-URL value is never exempted from the filesystem rule by a ':'
+ * (`file:/home/…` / `diagnostic:/home/…` stay non-URL and fail closed). Safe
+ * public URLs and ordinary safe strings are preserved exactly. Plan-owned
+ * query strings are NOT judged here — they cross the T04 plan boundary
+ * (isPlanBoundarySafeString) and are never reclassified by this lens.
+ */
 export function isBoundarySafeString(value) {
-  return typeof value === 'string'
-    && value.length <= BOUNDARY_MAX_STRING_LENGTH
-    && !CREDENTIAL_SHAPE.test(value)
-    && (URL_SHAPE.test(value) || !PRIVATE_PATH_SHAPE.test(value));
+  if (typeof value !== 'string' || value.length > BOUNDARY_MAX_STRING_LENGTH) return false;
+  if (CREDENTIAL_SHAPE.test(value)) return false;
+  if (URL_SHAPE.test(value)) return isBoundarySafeUrlString(value);
+  return !PRIVATE_PATH_SHAPE.test(value);
 }
 
 /**
@@ -593,9 +647,6 @@ function assertArtifactSafeInner(value, depth, ancestors, trustedPlanStrings) {
   if (value === null) return { ok: true };
   const type = typeof value;
   if (type === 'string') {
-    // Codex 3rd-round P2 on f742cb3: a URL-shaped string is a structured value
-    // whose path segment is NOT a machine-private filesystem path — the
-    // artifact-wide walk accepts it via the URL-specific boundary as well.
     // R11 (Codex 5th-round P2 on 526ca71): an exact trusted PLAN query crosses
     // the plan-contract boundary (T04), never the broader provider-content lens.
     // `trustedPlanStrings` is NOT a general caller-defined trust bypass — see
@@ -603,9 +654,16 @@ function assertArtifactSafeInner(value, depth, ancestors, trustedPlanStrings) {
     if (trustedPlanStrings?.has(value)) {
       return isPlanBoundarySafeString(value) ? { ok: true } : { ok: false, reason: 'unsafe_string' };
     }
-    return (isBoundarySafeString(value) || isBoundarySafeUrlString(value))
-      ? { ok: true }
-      : { ok: false, reason: 'unsafe_string' };
+    // P1-1 (External ChatGPT review 5085701188, inline 3910800849): the
+    // artifact-wide walk applies the SAME unified boundary as field-level
+    // projection — isBoundarySafeString already routes URL-shaped values
+    // through the URL-specific boundary (isBoundarySafeUrlString). There is
+    // deliberately NO `isBoundarySafeString(v) || isBoundarySafeUrlString(v)`
+    // OR here: an OR lets the WEAKER predicate win first, so a URL-shaped
+    // value that fails URL-specific validation (encoded credential in path /
+    // query, userinfo, non-https) would still be accepted through the generic
+    // lens. A URL-shaped string must fail closed, never slip through.
+    return isBoundarySafeString(value) ? { ok: true } : { ok: false, reason: 'unsafe_string' };
   }
   if (type === 'number') return Number.isFinite(value) ? { ok: true } : { ok: false, reason: 'non_finite_number' };
   if (type === 'boolean') return { ok: true };
