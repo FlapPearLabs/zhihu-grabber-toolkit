@@ -38,8 +38,6 @@ import {
 
 import {
   isBoundarySafeString,
-  CREDENTIAL_SHAPE,
-  PRIVATE_PATH_SHAPE,
 } from './rrf.mjs';
 
 // Public surface preserved: the canonical vector validator now lives in
@@ -128,19 +126,15 @@ let loadedTransformersModule = null;
  * P1-2 repair: native errors may embed absolute model / cache / user paths and
  * credential-shaped substrings. We never persist or return the raw diagnostic.
  * A message that is already boundary-safe (no private-path / credential shape,
- * bounded length) is returned verbatim; otherwise it is replaced with a stable
- * placeholder so only a fixed safe identity/message surfaces.
+ * bounded length) is returned verbatim. Any unsafe message is replaced WHOLE
+ * with a stable neutral identity — never partially scrubbed, because a
+ * token-wise replace only redacts the matched prefix (the credential KEY or the
+ * drive root) and would still leak the secret VALUE or the user name.
  */
 function projectNativeErrorMessage(rawMessage) {
   const msg = String(rawMessage ?? '');
   if (msg.length === 0) return 'native extractor failed';
   if (isBoundarySafeString(msg)) return msg;
-  // Strip any machine-private path / credential-shaped tokens and collapse; if
-  // what remains is still unsafe, fall back to a stable neutral message.
-  const scrubbed = msg
-    .replace(PRIVATE_PATH_SHAPE, '[REDACTED_PATH]')
-    .replace(CREDENTIAL_SHAPE, '[REDACTED_CREDENTIAL]');
-  if (isBoundarySafeString(scrubbed)) return scrubbed;
   return 'native extractor failed (diagnostic redacted)';
 }
 

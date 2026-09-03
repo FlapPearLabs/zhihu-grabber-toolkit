@@ -376,3 +376,38 @@ test('P1-T10: P1-2 repair — native extractor errors never leak machine-private
     }
   );
 });
+
+test('P1-T10: P1-2 repair — credential-shaped and Windows-path diagnostics also fail closed', async () => {
+  // The boundary must NOT leak the secret VALUE (credential key= prefix alone
+  // is not enough) nor the Windows user name (drive root C:\ alone is not
+  // enough). Unsafe messages must collapse WHOLE to a stable neutral identity.
+  const cases = [
+    'api_key=sk-live-secret-value-1234567890',
+    'authorization: Bearer tok_abc123def456',
+    'Failed to load C:\\Users\\alice\\.cache\\huggingface\\model.onnx',
+    'token=secretvalue123',
+    'password: hunter2 secret',
+  ];
+
+  for (const message of cases) {
+    const throwingExtractor = async () => {
+      throw new Error(message);
+    };
+    const provider = createTestEmbeddingProvider({ extractorEngine: throwingExtractor });
+
+    await assert.rejects(
+      () => provider.embed(['测试文本']),
+      (err) => {
+        assert.equal(err.code, EMBEDDING_ERROR_DENSE_UNAVAILABLE);
+        assert.equal(err.message.includes('sk-live-secret'), false, 'credential value must not leak');
+        assert.equal(err.message.includes('tok_abc123'), false, 'bearer token must not leak');
+        assert.equal(err.message.includes('secretvalue123'), false, 'token value must not leak');
+        assert.equal(err.message.includes('hunter2'), false, 'password must not leak');
+        assert.equal(err.message.includes('alice'), false, 'windows user name must not leak');
+        // The stable neutral identity must be present.
+        assert.equal(err.message.includes('diagnostic redacted'), true, 'unsafe diagnostic must collapse to stable identity');
+        return true;
+      }
+    );
+  }
+});
