@@ -113,7 +113,10 @@ function compareQuestionId(a, b) {
 /**
  * Score one pool candidate group by retrieval relevance. `rrfScore` is the
  * deterministic T06-fused relevance against the plan's queries; it is the
- * canonical signal. A missing/non-finite rrfScore degrades to 0 (invalid group).
+ * canonical signal. A missing/non-finite rrfScore is an INVALID group: it
+ * scores 0 for transparency but is marked ineligible (see buildCandidateGroups)
+ * so it can never be silently auto-selected (fail-closed; never a fabricated
+ * "clear best").
  */
 export function scoreCandidateGroup(candidate) {
   const s = candidate?.rrfScore;
@@ -137,10 +140,15 @@ export function buildCandidateGroups(pool) {
       return { ok: false, reason: SELECTION_FAILURE_INVALID_POOL };
     }
     const score = scoreCandidateGroup(c);
+    // An invalid (missing/non-finite) rrfScore makes the group INELIGIBLE:
+    // it must never be selectable. Eligible groups are gated in selectSourceGroups;
+    // an all-invalid pool naturally lands in the no-valid-set fail-closed branch.
+    const rrfValid = typeof c.rrfScore === 'number' && Number.isFinite(c.rrfScore);
     groups.push({
       questionId: String(c.identity.questionId),
-      rrfScore: score,
+      rrfScore: rrfValid ? c.rrfScore : null,
       score,
+      eligible: rrfValid,
       sourceUrl: c.source_url ?? null,
       provenance: Array.isArray(c.ranks) ? c.ranks : [],
     });
@@ -256,9 +264,11 @@ export function selectSourceGroups(pool, plan, opts = {}) {
   }
 
   // 4. Eligible candidate groups (minimum validity gate; D-5 bound).
+  // A group is eligible only if its rrfScore is finite (valid) AND it clears
+  // the minScore bound. Invalid groups are never selectable (fail-closed).
   const eligible = built.groups
     .map((g, idx) => ({ ...g, rankIndex: idx }))
-    .filter((g) => g.score >= minScore);
+    .filter((g) => g.eligible && g.score >= minScore);
 
   // 5. Clarification resolution (at most one; never silently guesses).
   if (opts.clarification != null) {
@@ -392,6 +402,14 @@ function resolveClarification({ eligible, normalizedPlan, planIdentity, poolPlan
   if (forceIds === null) {
     return failureVerdict(SELECTION_FAILURE_INVALID_CLARIFICATION, {
       planHash: planIdentity, poolPlanHash, rationale: 'clarification provided without a valid forceGroupIds array',
+    });
+  }
+  // An empty forceGroupIds means the user selected nothing — that must NOT
+  // produce an empty SUCCESS verdict. Fail closed (same code as unknown/ineligible ids).
+  if (forceIds.length === 0) {
+    return failureVerdict(SELECTION_FAILURE_INVALID_CLARIFICATION, {
+      planHash: planIdentity, poolPlanHash,
+      rationale: 'clarification forceGroupIds is empty — user selected no group (fail-closed)',
     });
   }
   const forced = [];

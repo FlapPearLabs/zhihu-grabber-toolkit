@@ -375,10 +375,18 @@ test('helpers: scoreCandidateGroup + buildCandidateGroups + intendedGroupCount',
   assert.equal(scoreCandidateGroup(cand('1', 0.5)), 0.5);
   assert.equal(scoreCandidateGroup({ identity: { kind: 'candidate', questionId: '1' } }), 0);
 
-  const built = buildCandidateGroups(makePool([cand('200', 0.030), cand('100', 0.100)], 'a'.repeat(64)));
+  const built = buildCandidateGroups(makePool([
+    cand('200', 0.030),
+    cand('100', 0.100),
+    { identity: { kind: 'candidate', questionId: '300' } }, // missing rrfScore → invalid
+  ], 'a'.repeat(64)));
   assert.equal(built.ok, true);
-  assert.equal(built.groups.length, 2);
-  assert.deepEqual(built.groups.map((g) => g.questionId), ['100', '200']); // sorted score desc
+  assert.equal(built.groups.length, 3);
+  assert.deepEqual(built.groups.map((g) => g.questionId), ['100', '200', '300']); // sorted score desc
+  // Invalid (missing rrfScore) group is marked ineligible; valid groups are eligible.
+  assert.equal(built.groups.find((g) => g.questionId === '300').eligible, false);
+  assert.equal(built.groups.find((g) => g.questionId === '300').rrfScore, null);
+  assert.equal(built.groups.find((g) => g.questionId === '100').eligible, true);
 
   // malformed pool → fail-closed.
   const bad = buildCandidateGroups({ candidates: [{ identity: { kind: 'candidate', questionId: 'abc' } }] });
@@ -405,4 +413,81 @@ test('helpers: bindGroupsToPlanIntents exact groupKey + positional fallback', ()
   assert.equal(bindings.get('555').intentIndex, 0); // exact groupKey
   assert.equal(bindings.get('111').intentIndex, 1); // positional fallback
   assert.equal(unmet, 0);
+});
+
+// ---------------------------------------------------------------------------
+// P1-1 (review finding): empty clarification forceGroupIds must NOT yield an
+// empty SUCCESS verdict — fail closed instead.
+// ---------------------------------------------------------------------------
+test('P1-1: clarification with empty forceGroupIds → NONE fail-closed (no silent empty success)', () => {
+  const plan = makePlan();
+  const ph = validPlanHash(plan);
+  const pool = makePool([cand('100', 0.100), cand('200', 0.099)], ph);
+  const d = selectSourceGroups(pool, plan, {
+    ambiguityMargin: 0.01,
+    clarification: { forceGroupIds: [] }, // user selected nothing
+  });
+  assert.equal(d.verdict, SELECT_VERDICT_NONE);
+  assert.equal(d.reason, SELECTION_FAILURE_INVALID_CLARIFICATION);
+  assert.equal(d.selectedGroups.length, 0);
+  assert.equal(d.clarificationCount, 0);
+});
+
+// ---------------------------------------------------------------------------
+// P1-2 (review finding): missing/non-finite rrfScore makes a group INELIGIBLE;
+// an all-invalid pool lands in the no-valid-set fail-closed branch.
+// ---------------------------------------------------------------------------
+test('P1-2: candidate missing rrfScore → ineligible → NONE fail-closed', () => {
+  const plan = makePlan();
+  const ph = validPlanHash(plan);
+  const pool = {
+    schemaVersion: 1, type: 'retrieval-pool', planHash: ph,
+    candidates: [{ identity: { kind: 'candidate', questionId: '100' }, ranks: [], source_url: 'x', facts: {} }],
+  };
+  const d = selectSourceGroups(pool, plan);
+  assert.equal(d.verdict, SELECT_VERDICT_NONE);
+  assert.equal(d.reason, SELECTION_FAILURE_NO_VALID_GROUP);
+  assert.equal(d.selectedGroups.length, 0);
+});
+
+test('P1-2: candidate with non-finite rrfScore (NaN/Infinity) → ineligible → NONE fail-closed', () => {
+  const plan = makePlan();
+  const ph = validPlanHash(plan);
+  const pool = makePool([
+    { identity: { kind: 'candidate', questionId: '100' }, rrfScore: NaN, ranks: [], source_url: 'x', facts: {} },
+    { identity: { kind: 'candidate', questionId: '200' }, rrfScore: Infinity, ranks: [], source_url: 'x', facts: {} },
+  ], ph);
+  const d = selectSourceGroups(pool, plan);
+  assert.equal(d.verdict, SELECT_VERDICT_NONE);
+  assert.equal(d.reason, SELECTION_FAILURE_NO_VALID_GROUP);
+  assert.equal(d.selectedGroups.length, 0);
+});
+
+test('P1-2: all-invalid pool (missing + non-finite scores) → NONE fail-closed', () => {
+  const plan = makePlan();
+  const ph = validPlanHash(plan);
+  const pool = makePool([
+    { identity: { kind: 'candidate', questionId: '100' }, ranks: [], source_url: 'x', facts: {} }, // missing
+    { identity: { kind: 'candidate', questionId: '200' }, rrfScore: NaN, ranks: [], source_url: 'x', facts: {} }, // non-finite
+  ], ph);
+  const d = selectSourceGroups(pool, plan);
+  assert.equal(d.verdict, SELECT_VERDICT_NONE);
+  assert.equal(d.reason, SELECTION_FAILURE_NO_VALID_GROUP);
+  assert.equal(d.selectedGroups.length, 0);
+});
+
+test('P1-2: valid + invalid mix → only the valid group is eligible/selectable', () => {
+  const plan = makePlan(); // sourceGroupIntents length 1 → k = 1
+  const ph = validPlanHash(plan);
+  const pool = makePool([
+    cand('100', 0.100),
+    { identity: { kind: 'candidate', questionId: '200' }, ranks: [], source_url: 'x', facts: {} }, // missing rrfScore → invalid
+  ], ph);
+  const d = selectSourceGroups(pool, plan);
+  assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+  assert.equal(d.reason, 'clear_best');
+  assert.equal(d.selectedGroups.length, 1);
+  assert.equal(d.selectedGroups[0].questionId, '100');
+  // The invalid group must not appear as a selected/eligible candidate.
+  assert.equal(d.candidates.length, 1);
 });
