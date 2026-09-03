@@ -133,8 +133,8 @@ function canonicalizeNumericDict(value) {
 function canonicalizePerGroupStringSetDict(value) {
   const out = {};
   if (isPlainObject(value)) {
-    for (const [k, v] of Object.entries(value).sort()) {
-      out[k] = dedupeAndSortStrings(v);
+    for (const k of Object.keys(value).sort()) {
+      out[k] = dedupeAndSortStrings(value[k]);
     }
   }
   return out;
@@ -153,6 +153,20 @@ function applyNewRateDiagnostics(nextState, update) {
   if ('new_contradiction_rate' in update && isRatio0to1(update.new_contradiction_rate)) {
     nextState.diagnostics.new_contradiction_rate = update.new_contradiction_rate;
   }
+}
+
+function deepCloneCoverageState(current) {
+  return JSON.parse(JSON.stringify(current));
+}
+
+function assertValidatedOrThrow(nextState) {
+  const validation = validateCoverageState(nextState);
+  if (!validation.ok) {
+    const err = new Error(`Updated state invalid: ${validation.error}`);
+    err.code = COVERAGE_ERROR_INVALID_STATE;
+    throw err;
+  }
+  return validation.validated;
 }
 
 /**
@@ -612,7 +626,7 @@ export function updateRetrievalCoverage(state, update, { caller } = {}) {
     throw err;
   }
 
-  const nextState = JSON.parse(JSON.stringify(current));
+  const nextState = deepCloneCoverageState(current);
 
   if ('plannedQueryVariants' in update && Array.isArray(update.plannedQueryVariants)) {
     nextState.retrieval.plannedQueryVariants = update.plannedQueryVariants;
@@ -644,13 +658,7 @@ export function updateRetrievalCoverage(state, update, { caller } = {}) {
     nextState.diagnostics.novelty_gain = update.novelty_gain;
   }
 
-  const validation = validateCoverageState(nextState);
-  if (!validation.ok) {
-    const err = new Error(`Updated state invalid: ${validation.error}`);
-    err.code = COVERAGE_ERROR_INVALID_STATE;
-    throw err;
-  }
-  return validation.validated;
+  return assertValidatedOrThrow(nextState);
 }
 
 /**
@@ -667,7 +675,7 @@ export function updateSourceGroupFusion(state, update, { caller } = {}) {
     throw err;
   }
 
-  const nextState = JSON.parse(JSON.stringify(current));
+  const nextState = deepCloneCoverageState(current);
 
   if ('fusedCandidateCount' in update && isNonNegativeInteger(update.fusedCandidateCount)) {
     nextState.retrieval.fusedCandidateCount = update.fusedCandidateCount;
@@ -676,13 +684,7 @@ export function updateSourceGroupFusion(state, update, { caller } = {}) {
     nextState.retrieval.fusedGroupCount = update.fusedGroupCount;
   }
 
-  const validation = validateCoverageState(nextState);
-  if (!validation.ok) {
-    const err = new Error(`Updated state invalid: ${validation.error}`);
-    err.code = COVERAGE_ERROR_INVALID_STATE;
-    throw err;
-  }
-  return validation.validated;
+  return assertValidatedOrThrow(nextState);
 }
 
 /**
@@ -706,7 +708,7 @@ export function updateSourceCompleteness(state, update, { caller } = {}) {
     throw err;
   }
 
-  const nextState = JSON.parse(JSON.stringify(current));
+  const nextState = deepCloneCoverageState(current);
 
   if (isPlainObject(update.perGroupStatus)) {
     nextState.sourceCompleteness.perGroupStatus = {
@@ -727,13 +729,7 @@ export function updateSourceCompleteness(state, update, { caller } = {}) {
     }
   }
 
-  const validation = validateCoverageState(nextState);
-  if (!validation.ok) {
-    const err = new Error(`Updated state invalid: ${validation.error}`);
-    err.code = COVERAGE_ERROR_INVALID_STATE;
-    throw err;
-  }
-  return validation.validated;
+  return assertValidatedOrThrow(nextState);
 }
 
 /**
@@ -757,7 +753,7 @@ export function updateSelectionAccounting(state, update, { caller } = {}) {
     throw err;
   }
 
-  const nextState = JSON.parse(JSON.stringify(current));
+  const nextState = deepCloneCoverageState(current);
 
   if (Array.isArray(update.selectedCorpusSourceSet)) {
     const newSelected = dedupeAndSortStrings(update.selectedCorpusSourceSet);
@@ -797,13 +793,7 @@ export function updateSelectionAccounting(state, update, { caller } = {}) {
     nextState.diagnostics.per_group_selection_coverage = update.per_group_selection_coverage;
   }
 
-  const validation = validateCoverageState(nextState);
-  if (!validation.ok) {
-    const err = new Error(`Updated state invalid: ${validation.error}`);
-    err.code = COVERAGE_ERROR_INVALID_STATE;
-    throw err;
-  }
-  return validation.validated;
+  return assertValidatedOrThrow(nextState);
 }
 
 /**
@@ -827,7 +817,7 @@ export function updatePerGroupAnalysis(state, update, { caller } = {}) {
     throw err;
   }
 
-  const nextState = JSON.parse(JSON.stringify(current));
+  const nextState = deepCloneCoverageState(current);
 
   if (Array.isArray(update.mappedSourceSet)) {
     nextState.analysisCoverage.mappedSourceSet = update.mappedSourceSet;
@@ -849,13 +839,7 @@ export function updatePerGroupAnalysis(state, update, { caller } = {}) {
   }
   applyNewRateDiagnostics(nextState, update);
 
-  const validation = validateCoverageState(nextState);
-  if (!validation.ok) {
-    const err = new Error(`Updated state invalid: ${validation.error}`);
-    err.code = COVERAGE_ERROR_INVALID_STATE;
-    throw err;
-  }
-  return validation.validated;
+  return assertValidatedOrThrow(nextState);
 }
 
 /**
@@ -885,20 +869,14 @@ export function updateSynthesisDiagnostics(state, update, { caller } = {}) {
     throw err;
   }
 
-  const nextState = JSON.parse(JSON.stringify(current));
+  const nextState = deepCloneCoverageState(current);
 
   if ('claim_source_diversity' in update && isRatio0to1(update.claim_source_diversity)) {
     nextState.diagnostics.claim_source_diversity = update.claim_source_diversity;
   }
   applyNewRateDiagnostics(nextState, update);
 
-  const validation = validateCoverageState(nextState);
-  if (!validation.ok) {
-    const err = new Error(`Updated state invalid: ${validation.error}`);
-    err.code = COVERAGE_ERROR_INVALID_STATE;
-    throw err;
-  }
-  return validation.validated;
+  return assertValidatedOrThrow(nextState);
 }
 
 /**
@@ -949,7 +927,7 @@ export function reconcileFinalCoverage(state, { caller, assertFullCoverage = fal
     throw err;
   }
 
-  const nextState = JSON.parse(JSON.stringify(current));
+  const nextState = deepCloneCoverageState(current);
   nextState.analysisCoverage.is100PercentAnalysis = canAssert100Percent;
 
   const validation = validateCoverageState(nextState);

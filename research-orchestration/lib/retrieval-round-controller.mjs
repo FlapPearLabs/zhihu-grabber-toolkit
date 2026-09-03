@@ -355,10 +355,18 @@ export function evaluateRetrievalRound({
 
 /**
  * Helper to update coverageState with the evaluation of a completed retrieval round.
+ * Route / failure data must come from the evaluation result itself — the options
+ * object only allows the fusedCandidateCount reconciliation override.
  */
-export function applyRoundEvaluationToCoverageState(coverageState, evaluationResult, {
-  fusedCandidateCount = null,
-} = {}) {
+export function applyRoundEvaluationToCoverageState(coverageState, evaluationResult, options = {}) {
+  for (const key of Object.keys(options)) {
+    if (key !== 'fusedCandidateCount') {
+      const err = new Error(`Unknown option "${key}" for applyRoundEvaluationToCoverageState (route/failure data must come from evaluationResult; selection accounting is owned by T08)`);
+      err.code = CONTROLLER_ERROR_INVALID_INPUT;
+      throw err;
+    }
+  }
+  const { fusedCandidateCount = null } = options;
   const currentRoutes = coverageState.retrieval.executedRoutes;
   const currentFailures = coverageState.retrieval.providerFailures;
 

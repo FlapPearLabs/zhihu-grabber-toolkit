@@ -180,7 +180,6 @@ test('P1-T07: applyRoundEvaluationToCoverageState deterministically updates cove
   });
 
   state = applyRoundEvaluationToCoverageState(state, evalResult1, {
-    executedRoutesThisRound: [route1],
     fusedCandidateCount: 10,
   });
 
@@ -242,7 +241,7 @@ test('P1-T07: F4 - Saturation Requires Policy Execution Evidence', () => {
   });
 
   assert.notEqual(result.decision, DECISION_SATURATED, 'Should not saturate when execution evidence is missing for planned routes');
-  // It should probably continue, or budget stop if budget was 1, but budget is 10.
+  assert.equal(result.decision, DECISION_CONTINUE, 'round 1 of 10 with unattempted planned routes must CONTINUE');
 });
 
 test('P1-T07: F6 - Round Monotonicity', () => {
@@ -305,12 +304,18 @@ test('P1-T07: F8 - Evaluation / Apply Binding', () => {
   });
 
   // applyRoundEvaluationToCoverageState must extract executed/failures from result!
-  // It shouldn't take them as arguments.
+  // It shouldn't take them as arguments — unknown options must fail closed.
   const updated = applyRoundEvaluationToCoverageState(state, result, {
     fusedCandidateCount: 1,
-    fusedGroupCount: 1
   });
 
   assert.equal(updated.retrieval.executedRoutes.length, 1);
   assert.equal(updated.retrieval.providerFailures.length, 1);
+  assert.throws(
+    () => applyRoundEvaluationToCoverageState(state, result, {
+      fusedGroupCount: 1,
+    }),
+    (err) => err.code === 'controller_invalid_input' && err.message.includes('owned by T08'),
+    'fusedGroupCount is T08-owned and must be rejected as an unknown option'
+  );
 });

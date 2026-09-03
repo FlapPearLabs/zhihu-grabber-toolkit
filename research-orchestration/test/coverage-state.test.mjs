@@ -99,8 +99,9 @@ test('P1-T07: D-6 implementation defaults record is explicit and valid', () => {
   assert.equal(IMPLEMENTATION_DEFAULTS_RECORD.type, 'IMPLEMENTATION_DEFAULT');
   assert.equal(IMPLEMENTATION_DEFAULTS_RECORD.immutableSpecTruth, false);
 
-  // D-6 Evidence: Validate that the default config schema is structurally sound
-  // and fail-closed compatible, rather than merely asserting exact constants.
+  // D-6 Evidence: thresholds stay implementation-validation defaults (range-checked,
+  // never frozen into spec truth); fail-closed boolean flags are pinned to their
+  // strict accepted values.
   const retrieval = IMPLEMENTATION_DEFAULTS_RECORD.retrieval;
   assert.ok(Object.isFrozen(IMPLEMENTATION_DEFAULTS_RECORD));
   assert.ok(Object.isFrozen(retrieval));
@@ -111,11 +112,11 @@ test('P1-T07: D-6 implementation defaults record is explicit and valid', () => {
 
   const sc = IMPLEMENTATION_DEFAULTS_RECORD.sourceCompleteness;
   assert.ok(Object.isFrozen(sc));
-  assert.equal(typeof sc.requireExplicitCompletenessEvidence, 'boolean');
+  assert.equal(sc.requireExplicitCompletenessEvidence, true);
 
   const ac = IMPLEMENTATION_DEFAULTS_RECORD.analysisCoverage;
   assert.ok(Object.isFrozen(ac));
-  assert.equal(typeof ac.strictSetEqualityRequiredFor100Percent, 'boolean');
+  assert.equal(ac.strictSetEqualityRequiredFor100Percent, true);
 });
 
 test('P1-T07: Serialization and hashing determinism', () => {
