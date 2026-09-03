@@ -27,6 +27,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 
 import {
   EmbeddingCache,
@@ -44,9 +45,16 @@ export const ACCEPTED_LOCAL_PROFILE = Object.freeze({
   embeddingVersion: 'v1',
   inputNormalizationVersion: 'T01_INPUT_NORM_V1',
   outputNormalizationVersion: 'L2_UNIT_NORM',
+  truncationPolicy: 'MAX_POSITION_EMBEDDINGS_512',
   egressPolicy: Object.freeze({
     category: 'LOCAL',
     noNewEgress: true,
+  }),
+  artifacts: Object.freeze({
+    'onnx/model_quantized.onnx': 'b665f3bba56c3119bc76ba131ebcc544d720a7408cb11581bdf354aaa0198d43',
+    'tokenizer.json': '7dfbf1966ebf99d471c3796e9b457329d2b2182b817e144f1e904b957745c839',
+    'config.json': '855206771223efad2dfb8e212a716b20c4c71c8094309ca2da79d31bacb03276',
+    'tokenizer_config.json': '9261e7d79b44c8195c1cada2b453e55b00aeb81e907a6664974b4d7776172ab3',
   }),
 });
 
@@ -91,9 +99,14 @@ export function validateEmbeddingVector(vector, { expectedDimension = 768, allow
   }
 
   const norm = Math.sqrt(sumSquares);
-  // If vector is all zeros or norm is completely off from unit length
+  // If vector is all zeros
   if (norm < 1e-6) {
     return { ok: false, reason: 'zero_magnitude_vector', error: 'Vector has near-zero magnitude' };
+  }
+
+  // T10-F6: Actually enforce unit norm tolerance
+  if (Math.abs(norm - 1.0) > allowTolerance) {
+    return { ok: false, reason: 'norm_out_of_tolerance', error: `Vector norm ${norm} deviates from 1.0 by more than ${allowTolerance}` };
   }
 
   return { ok: true, norm, dimension: vector.length };
@@ -127,6 +140,18 @@ export function l2Normalize(vector) {
   return vector.map((x) => x / norm);
 }
 
+export const _TEST_SEAMS = {
+  createTestDouble: ({ extractorEngine, cache, cacheDir, modelDir } = {}) => {
+    return _createEmbeddingProviderInternal({
+      modelDir: modelDir ?? path.resolve('models-bge-base-zh-v1.5'),
+      cacheDir,
+      cache,
+      isCertifiedProduction: false,
+      testExtractorEngine: extractorEngine,
+    });
+  },
+};
+
 let loadedTransformersModule = null;
 async function getTransformersModule() {
   if (loadedTransformersModule) return loadedTransformersModule;
@@ -146,35 +171,31 @@ async function getTransformersModule() {
  * @param {object} [options]
  * @param {string} [options.modelDir] - Local directory containing model weights & identity.json
  * @param {EmbeddingCache} [options.cache] - Custom or shared cache instance
- * @param {Function} [options.extractorEngine] - Injected extractor for testing / headless runs
  * @param {object} [options.profileCheck] - Enforces exact match with ACCEPTED_LOCAL_PROFILE
  */
-export function createTestEmbeddingProvider({
-  modelDir = process.env.P1_T10_ONNX_MODEL_DIR ?? path.resolve('models-bge-base-zh-v1.5'),
-  cacheDir = null,
-  cache = null,
-  extractorEngine = null,
-  profileCheck = null,
-} = {}) {
-  return _createEmbeddingProviderInternal({ modelDir, cacheDir, cache, extractorEngine, profileCheck });
-}
-
 export function createEmbeddingProvider({
   modelDir = process.env.P1_T10_ONNX_MODEL_DIR ?? path.resolve('models-bge-base-zh-v1.5'),
   cacheDir = null,
   cache = null,
   profileCheck = null,
 } = {}) {
-  return _createEmbeddingProviderInternal({ modelDir, cacheDir, cache, extractorEngine: null, profileCheck });
+  return _createEmbeddingProviderInternal({
+    modelDir,
+    cacheDir,
+    cache,
+    profileCheck,
+    isCertifiedProduction: true,
+  });
 }
 
 function _createEmbeddingProviderInternal({
   modelDir,
   cacheDir,
   cache,
-  extractorEngine,
   profileCheck,
-}) {
+  isCertifiedProduction = true,
+  testExtractorEngine = null,
+} = {}) {
   // Mechanical check: Reject any profile reselection attempt
   if (profileCheck && typeof profileCheck === 'object') {
     for (const [k, expectedVal] of Object.entries(ACCEPTED_LOCAL_PROFILE)) {
@@ -195,21 +216,24 @@ function _createEmbeddingProviderInternal({
     }
   }
 
+  const isTestDouble = !isCertifiedProduction;
+  const providerCategory = isTestDouble ? 'TEST' : ACCEPTED_LOCAL_PROFILE.providerCategory;
+  const providerId = isTestDouble ? 'transformersjs-local-onnx-test-double' : ACCEPTED_LOCAL_PROFILE.providerId;
+  const egressPolicy = isTestDouble ? Object.freeze({ category: 'TEST', noNewEgress: true }) : ACCEPTED_LOCAL_PROFILE.egressPolicy;
+
   const embeddingCache = cache instanceof EmbeddingCache ? cache : new EmbeddingCache({ cacheDir });
-  let activeExtractor = extractorEngine ?? null;
+  let activeExtractor = null;
   let extractorInitPromise = null; // Memoized init promise to prevent concurrent double-init
 
   async function getExtractor() {
+    if (testExtractorEngine) return testExtractorEngine;
     if (activeExtractor) return activeExtractor;
     // Gate: always verify identity before loading model (even in cold-start)
-    // Skip identity check only when extractorEngine is injected (test path)
-    if (!extractorEngine) {
-      const idCheck = await checkIdentityJson();
-      if (!idCheck.ok) {
-        const err = new Error(`Identity gate failed before extractor load: ${idCheck.error}`);
-        err.code = idCheck.reason === 'revision_mismatch' ? 'EMBEDDING_REVISION_MISMATCH' : 'EMBEDDING_MODEL_UNKNOWN';
-        throw err;
-      }
+    const idCheck = await checkIdentityJson();
+    if (!idCheck.ok) {
+      const err = new Error(`Identity gate failed before extractor load: ${idCheck.error}`);
+      err.code = idCheck.reason === 'revision_mismatch' ? 'EMBEDDING_REVISION_MISMATCH' : 'EMBEDDING_MODEL_UNKNOWN';
+      throw err;
     }
     // Memoize the init promise so concurrent callers share one pipeline() call
     if (!extractorInitPromise) {
@@ -262,6 +286,26 @@ function _createEmbeddingProviderInternal({
           error: `Model revision mismatch: expected ${ACCEPTED_LOCAL_PROFILE.modelRevision}, found ${parsed.revisionSha}`,
         };
       }
+      // T10-F1: Verify ACTUAL model artifact identity hashes
+      for (const [filename, expectedSha] of Object.entries(ACCEPTED_LOCAL_PROFILE.artifacts)) {
+        const filePath = path.join(modelDir, filename);
+        if (!fs.existsSync(filePath)) {
+          return {
+            ok: false,
+            reason: 'artifact_absent',
+            error: `Required artifact missing: ${filename}`,
+          };
+        }
+        const fileBuffer = fs.readFileSync(filePath);
+        const actualSha = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+        if (actualSha !== expectedSha) {
+          return {
+            ok: false,
+            reason: 'artifact_tampered',
+            error: `Artifact hash mismatch for ${filename}. Expected ${expectedSha}, got ${actualSha}`,
+          };
+        }
+      }
       return { ok: true, identity: parsed };
     } catch (e) {
       return { ok: false, reason: 'identity_json_malformed', error: e.message };
@@ -270,36 +314,40 @@ function _createEmbeddingProviderInternal({
 
   return Object.freeze({
     // 8 Contract Fields (Spec §5.3)
-    providerCategory: ACCEPTED_LOCAL_PROFILE.providerCategory,
-    providerId: ACCEPTED_LOCAL_PROFILE.providerId,
+    providerCategory,
+    providerId,
     modelId: ACCEPTED_LOCAL_PROFILE.modelId,
     modelRevision: ACCEPTED_LOCAL_PROFILE.modelRevision,
     vectorDimension: ACCEPTED_LOCAL_PROFILE.vectorDimension,
     embeddingVersion: ACCEPTED_LOCAL_PROFILE.embeddingVersion,
     inputNormalizationVersion: ACCEPTED_LOCAL_PROFILE.inputNormalizationVersion,
     outputNormalizationVersion: ACCEPTED_LOCAL_PROFILE.outputNormalizationVersion,
-    egressPolicy: ACCEPTED_LOCAL_PROFILE.egressPolicy,
+    truncationPolicy: ACCEPTED_LOCAL_PROFILE.truncationPolicy,
+    egressPolicy,
+    isCertifiedProduction,
+    isTestDouble,
 
     /**
      * Local preflight verification (Boolean mode & structured output).
      */
     async preflight() {
-      // If extractorEngine was injected, verify its contract
-      if (extractorEngine) {
+      if (testExtractorEngine) {
         return {
           ok: true,
           status: 'READY',
+          isTestDouble: true,
+          isCertifiedProduction: false,
           providerCategory: this.providerCategory,
           providerId: this.providerId,
           modelId: this.modelId,
           modelRevision: this.modelRevision,
           vectorDimension: this.vectorDimension,
+          truncationPolicy: this.truncationPolicy,
           egressPolicy: this.egressPolicy,
-          injected: true,
         };
       }
 
-      // Check model identity on disk
+      // Local check: Do we have the identity.json and artifacts?
       const idCheck = await checkIdentityJson();
       if (!idCheck.ok) {
         return {
@@ -316,11 +364,14 @@ function _createEmbeddingProviderInternal({
         return {
           ok: true,
           status: 'READY',
+          isCertifiedProduction: true,
+          isTestDouble: false,
           providerCategory: this.providerCategory,
           providerId: this.providerId,
           modelId: this.modelId,
           modelRevision: this.modelRevision,
           vectorDimension: this.vectorDimension,
+          truncationPolicy: this.truncationPolicy,
           egressPolicy: this.egressPolicy,
           revisionSha: idCheck.identity.revisionSha,
         };

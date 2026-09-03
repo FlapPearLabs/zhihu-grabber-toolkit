@@ -40,10 +40,11 @@ export function normalizeInputForHashing(text, normalizationVersion = 'T01_INPUT
     throw new Error('Input text must be a string');
   }
   if (normalizationVersion === 'T01_INPUT_NORM_V1') {
-    // Unicode NFKC normalization + trim
-    return text.normalize('NFKC').trim();
+    // T10-F2: Cache identity must hash the exact effective model input semantics.
+    // Do not invent NFKC + trim unless explicitly in T01 contract.
+    return text;
   }
-  return text.trim();
+  return text;
 }
 
 /**

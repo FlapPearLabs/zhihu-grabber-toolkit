@@ -52,9 +52,9 @@ test('P1-T10: computeEmbeddingCacheKey determinism and privacy invariants', () =
   assert.match(key1, /^[0-9a-f]{64}$/);
   assert.equal(key1, key2, 'Same input and profile must yield exact same cache key');
 
-  // 2. Trailing whitespace / unicode normalization
+  // 2. Cache identity preserves raw text distinctions (T10-F2: no invented NFKC / trim)
   const keyTrimmed = computeEmbeddingCacheKey({ text: '  这是一段测试文本  ', ...profile });
-  assert.equal(key1, keyTrimmed, 'NFKC / trimmed text must produce identical cache key');
+  assert.notEqual(key1, keyTrimmed, 'Distinct raw texts must not collide in cache key');
 
   // 3. Different text -> different key
   const keyDiffText = computeEmbeddingCacheKey({ text: '另一段完全不同的文本', ...profile });
