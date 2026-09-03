@@ -242,6 +242,14 @@
 - **Surface asymmetry（值得保留）**：当前 `global_search` HTTP API 文档**未暴露**文档化的 `RankingScore` 数值字段（`zhihu_search` 有），而官方 MCP 文档暴露 `ranking_score` 属性。该不对称是已记录的发现事实，不得忽视或掩盖。
 - **T17 / adapter implementation 是独立事项**：GATE-3 qualification 本身**不隐含** T17（Additional retrieval provider adapter）的激活或实现授权；任何 T17 实现仍需独立的 legal conditional activation + START_GATE。
 
+## P1-T10 EmbeddingProvider — native diagnostic default-deny（durable security invariant）
+
+- **POST_MERGE_T10_REPAIR（2026-09-03，Issue #42 / PR #64）确立的持久安全不变量**：native（Transformers.js / ONNX Runtime）错误消息是 **untrusted open-ended leak surface**，必须 **DEFAULT-DENY** —— 原始 native 诊断消息**永不**进入任何公共错误面（`embed()` / `preflight()` / 任何 `err.message`），只返回稳定中性身份（`native extractor failed`）。
+- **为什么是 default-deny 而非 deny-list**：`CREDENTIAL_SHAPE` / `PRIVATE_PATH_SHAPE` 这类 deny-shape 无法穷尽泄漏形态——POSIX 绝对路径 → URL 尾部私密路径 → `file:///` URI → UNC 路径 → `file://host` 两斜杠形式 → URL userinfo → 裸 `Bearer <token>`（空格分隔、无 `[:=]`）。每补一个 shape 就漏下一个；deny-list 是 whack-a-mole，default-deny 才是一劳永逸。
+- **正确姿态（后续 T11+ 复用）**：native / 第三方库错误消息一律「除非证明安全否则整体中性化」，不逐 token 部分脱敏（部分脱敏只替换匹配前缀，仍泄漏 secret VALUE / 用户名）；`err.message` 的读取必须异常安全（throwing getter 不得逃逸，snapshot 在 try/catch 内完成）。
+- **caller-controlled identity 不回显**：identity.json（本地文件，内容可被篡改）里的 `modelId` / `revisionSha` 等 caller-controlled 值**不得**回显进 mismatch 错误文案，只报告稳定 mismatch 事实。
+- **modelDir 语义**：`createEmbeddingProvider({ modelDir })` 的 `modelDir` 指向 **T01 采集根 `<dir>`**（对应 `fetch-model.mjs --dir`），模型文件落在 `<dir>/<modelId>/<filename>`（`modelId = Xenova/bge-base-zh-v1.5` 含 `/` 为嵌套子目录）；identity.json 在 `<dir>/identity.json` 与 `<dir>/<modelId>/identity.json` 双份。artifact/identity 解析**嵌套优先**、平铺回退（兼容旧布局），不改变 accepted model/profile/revision。
+
 ## 历史 review 结论（沉淀）
 
 - DOCUMENT gate（V2 Spec）：PASS（2026-08-09，Spec APPROVED）。
