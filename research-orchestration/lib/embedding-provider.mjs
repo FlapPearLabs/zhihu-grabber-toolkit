@@ -318,7 +318,11 @@ function _createEmbeddingProviderInternal({
       }
       return { ok: true, identity: parsed };
     } catch (e) {
-      return { ok: false, reason: 'identity_json_malformed', error: e.message };
+      // Filesystem read errors (EACCES/EPERM on an existing identity.json) may
+      // embed an absolute path in e.message — project through the same boundary
+      // as native extractor errors (RULES §11). JSON.parse errors carry no path
+      // and pass through verbatim.
+      return { ok: false, reason: 'identity_json_malformed', error: projectNativeErrorMessage(e?.message) };
     }
   }
 
