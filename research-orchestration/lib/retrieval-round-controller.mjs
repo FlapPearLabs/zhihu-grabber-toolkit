@@ -43,7 +43,6 @@ import {
   OWNER_RETRIEVAL_CONTROLLER,
   IMPLEMENTATION_DEFAULTS_RECORD,
   updateRetrievalCoverage,
-  canonicalizeCoverageState,
   validateCoverageState,
 } from './coverage-state.mjs';
 

@@ -22,6 +22,7 @@
  *
  * Ownership Boundaries (Strict Hook Enforcement):
  *   - T06 / Controller: Retrieval Coverage updates (updateRetrievalCoverage)
+ *   - T08: Source-group fusion accounting (updateSourceGroupFusion)
  *   - T09: Source Completeness updates (updateSourceCompleteness)
  *   - T12: Selection Accounting updates (updateSelectionAccounting)
  *   - T13: Per-group mapped/analyzed source-set identity + per-group diagnostics (updatePerGroupAnalysis)
@@ -117,6 +118,41 @@ function dedupeAndSortStrings(arr) {
     }
   }
   return Array.from(set).sort();
+}
+
+function canonicalizeNumericDict(value) {
+  const out = {};
+  if (isPlainObject(value)) {
+    for (const k of Object.keys(value).sort()) {
+      out[k] = Number(value[k]);
+    }
+  }
+  return out;
+}
+
+function canonicalizePerGroupStringSetDict(value) {
+  const out = {};
+  if (isPlainObject(value)) {
+    for (const [k, v] of Object.entries(value).sort()) {
+      out[k] = dedupeAndSortStrings(v);
+    }
+  }
+  return out;
+}
+
+function applyNewRateDiagnostics(nextState, update) {
+  if ('new_aspect_rate' in update && isRatio0to1(update.new_aspect_rate)) {
+    nextState.diagnostics.new_aspect_rate = update.new_aspect_rate;
+  }
+  if ('new_claim_rate' in update && isRatio0to1(update.new_claim_rate)) {
+    nextState.diagnostics.new_claim_rate = update.new_claim_rate;
+  }
+  if ('new_expert_rate' in update && isRatio0to1(update.new_expert_rate)) {
+    nextState.diagnostics.new_expert_rate = update.new_expert_rate;
+  }
+  if ('new_contradiction_rate' in update && isRatio0to1(update.new_contradiction_rate)) {
+    nextState.diagnostics.new_contradiction_rate = update.new_contradiction_rate;
+  }
 }
 
 /**
