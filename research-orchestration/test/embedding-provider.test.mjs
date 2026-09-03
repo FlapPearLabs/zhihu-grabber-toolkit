@@ -458,3 +458,30 @@ test('P1-T10: P1-2 repair — native diagnostics default-deny (never leak)', asy
     );
   }
 });
+
+test('P1-T10: P1-2 repair — throwing message getter fails closed', async () => {
+  // A native error object whose `message` property has a THROWING getter must
+  // not escape: the exception-safe snapshot catches it and returns the neutral
+  // identity, never propagating the getter's own (path-bearing) error.
+  const hostileExtractor = async () => {
+    const hostile = {};
+    Object.defineProperty(hostile, 'message', {
+      get() {
+        throw new Error('failed at /home/alice/private.txt');
+      },
+    });
+    throw hostile;
+  };
+  const provider = createTestEmbeddingProvider({ extractorEngine: hostileExtractor });
+
+  await assert.rejects(
+    () => provider.embed(['测试文本']),
+    (err) => {
+      assert.equal(err.code, EMBEDDING_ERROR_DENSE_UNAVAILABLE);
+      assert.equal(err.message.includes('/home/alice/'), false, 'getter error path must not leak');
+      assert.equal(err.message.includes('private.txt'), false, 'getter error detail must not leak');
+      assert.equal(err.message.includes('native extractor failed'), true);
+      return true;
+    }
+  );
+});
