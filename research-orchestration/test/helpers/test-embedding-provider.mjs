@@ -27,3 +27,19 @@ export function createTestEmbeddingProvider({
     modelDir,
   });
 }
+
+/**
+ * Deterministic unit-norm 768-dimensional vector for embedding tests.
+ * Shared by embedding-cache.test.mjs and embedding-provider.test.mjs.
+ */
+export function mockVector768(seed = 1) {
+  const vec = [];
+  let sumSq = 0;
+  for (let i = 0; i < 768; i += 1) {
+    const v = Math.sin(seed + i);
+    vec.push(v);
+    sumSq += v * v;
+  }
+  const norm = Math.sqrt(sumSq);
+  return vec.map((x) => x / norm);
+}

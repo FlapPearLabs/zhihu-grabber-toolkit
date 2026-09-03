@@ -18,21 +18,10 @@ import {
   CACHE_ERROR_INVALID_KEY,
   CACHE_ERROR_CORRUPTED_ENTRY,
 } from '../lib/embedding-cache.mjs';
+import { mockVector768 } from './helpers/test-embedding-provider.mjs';
 
 function tmpDir(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), `embed-cache-${prefix}-`));
-}
-
-function mockVector768(seed = 1) {
-  const vec = [];
-  let sumSq = 0;
-  for (let i = 0; i < 768; i += 1) {
-    const v = Math.sin(seed + i);
-    vec.push(v);
-    sumSq += v * v;
-  }
-  const norm = Math.sqrt(sumSq);
-  return vec.map((x) => x / norm);
 }
 
 test('P1-T10: computeEmbeddingCacheKey determinism and privacy invariants', () => {

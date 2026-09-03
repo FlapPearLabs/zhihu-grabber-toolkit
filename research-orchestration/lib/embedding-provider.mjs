@@ -33,7 +33,12 @@ import {
   EmbeddingCache,
   computeEmbeddingCacheKey,
   normalizeInputForHashing,
+  validateEmbeddingVector,
 } from './embedding-cache.mjs';
+
+// Public surface preserved: the canonical vector validator now lives in
+// embedding-cache.mjs (single implementation shared with the cache).
+export { validateEmbeddingVector };
 
 /** Frozen T01 Accepted Profile (Spec §5.3 / Issue #42) */
 export const ACCEPTED_LOCAL_PROFILE = Object.freeze({
@@ -67,50 +72,6 @@ export const EMBEDDING_ERROR_PROFILE_MISMATCH = 'EMBEDDING_PROFILE_MISMATCH';
 export const EMBEDDING_ERROR_DENSE_UNAVAILABLE = 'DENSE_CAPABILITY_UNAVAILABLE';
 export const EMBEDDING_ERROR_OFFLINE_VIOLATION = 'EMBEDDING_OFFLINE_VIOLATION';
 export const EMBEDDING_ERROR_INVALID_INPUT = 'EMBEDDING_INVALID_INPUT';
-
-/**
- * Validates that an embedding vector conforms strictly to 768-dimensional finite numbers.
- * Fails closed if malformed, empty, NaN, Infinity, wrong dimension, or non-numeric.
- */
-export function validateEmbeddingVector(vector, { expectedDimension = 768, allowTolerance = 1e-3 } = {}) {
-  if (!Array.isArray(vector)) {
-    return { ok: false, reason: 'vector_not_array', error: 'Vector must be an array' };
-  }
-
-  if (vector.length !== expectedDimension) {
-    return {
-      ok: false,
-      reason: 'dimension_mismatch',
-      error: `Expected dimension ${expectedDimension}, got ${vector.length}`,
-    };
-  }
-
-  let sumSquares = 0;
-  for (let i = 0; i < vector.length; i += 1) {
-    const val = vector[i];
-    if (typeof val !== 'number' || !Number.isFinite(val) || Number.isNaN(val)) {
-      return {
-        ok: false,
-        reason: 'non_finite_element',
-        error: `Element at index ${i} is not a finite number: ${val}`,
-      };
-    }
-    sumSquares += val * val;
-  }
-
-  const norm = Math.sqrt(sumSquares);
-  // If vector is all zeros
-  if (norm < 1e-6) {
-    return { ok: false, reason: 'zero_magnitude_vector', error: 'Vector has near-zero magnitude' };
-  }
-
-  // T10-F6: Actually enforce unit norm tolerance
-  if (Math.abs(norm - 1.0) > allowTolerance) {
-    return { ok: false, reason: 'norm_out_of_tolerance', error: `Vector norm ${norm} deviates from 1.0 by more than ${allowTolerance}` };
-  }
-
-  return { ok: true, norm, dimension: vector.length };
-}
 
 /**
  * Computes L2 unit normalization for a raw vector array.
@@ -171,7 +132,9 @@ async function getTransformersModule() {
  * @param {object} [options]
  * @param {string} [options.modelDir] - Local directory containing model weights & identity.json
  * @param {EmbeddingCache} [options.cache] - Custom or shared cache instance
- * @param {object} [options.profileCheck] - Enforces exact match with ACCEPTED_LOCAL_PROFILE
+ * @param {object} [options.profileCheck] - Rejects explicit reselection overrides:
+ *   any key present in profileCheck whose value differs from ACCEPTED_LOCAL_PROFILE
+ *   (top-level fields; object-valued fields compared one level deep) fails closed.
  */
 export function createEmbeddingProvider({
   modelDir = process.env.P1_T10_ONNX_MODEL_DIR ?? path.resolve('models-bge-base-zh-v1.5'),
@@ -232,7 +195,7 @@ function _createEmbeddingProviderInternal({
     const idCheck = await checkIdentityJson();
     if (!idCheck.ok) {
       const err = new Error(`Identity gate failed before extractor load: ${idCheck.error}`);
-      err.code = idCheck.reason === 'revision_mismatch' ? 'EMBEDDING_REVISION_MISMATCH' : 'EMBEDDING_MODEL_UNKNOWN';
+      err.code = idCheck.reason === 'revision_mismatch' ? EMBEDDING_ERROR_REVISION_MISMATCH : EMBEDDING_ERROR_MODEL_UNKNOWN;
       throw err;
     }
     // Memoize the init promise so concurrent callers share one pipeline() call
@@ -256,7 +219,7 @@ function _createEmbeddingProviderInternal({
                      .split(modelDir.replace(/\\/g, '/')).join('[LOCAL_MODEL_DIR]');
           }
           const e = new Error(`Failed to load local ONNX model: ${msg}`);
-          e.code = 'EMBEDDING_MODEL_UNKNOWN';
+          e.code = EMBEDDING_ERROR_MODEL_UNKNOWN;
           throw e;
         }
       })();
@@ -415,22 +378,25 @@ function _createEmbeddingProviderInternal({
       const results = new Array(texts.length);
       const uncachedIndices = [];
       const uncachedTexts = [];
+      const uncachedKeys = [];
 
       let cachedCount = 0;
+
+      const keyFor = (text) => computeEmbeddingCacheKey({
+        text,
+        providerId: this.providerId,
+        modelId: this.modelId,
+        modelRevision: this.modelRevision,
+        embeddingVersion: this.embeddingVersion,
+        inputNormalizationVersion: this.inputNormalizationVersion,
+        outputNormalizationVersion: this.outputNormalizationVersion,
+      });
 
       // 1. Cache lookup
       for (let i = 0; i < texts.length; i += 1) {
         const text = texts[i];
         if (useCache) {
-          const key = computeEmbeddingCacheKey({
-            text,
-            providerId: this.providerId,
-            modelId: this.modelId,
-            modelRevision: this.modelRevision,
-            embeddingVersion: this.embeddingVersion,
-            inputNormalizationVersion: this.inputNormalizationVersion,
-            outputNormalizationVersion: this.outputNormalizationVersion,
-          });
+          const key = keyFor(text);
           const cachedVector = embeddingCache.get(key);
           if (cachedVector) {
             const valResult = validateEmbeddingVector(cachedVector, { expectedDimension: this.vectorDimension });
@@ -440,6 +406,7 @@ function _createEmbeddingProviderInternal({
               continue;
             }
           }
+          uncachedKeys.push(key);
         }
         uncachedIndices.push(i);
         uncachedTexts.push(text);
@@ -477,8 +444,6 @@ function _createEmbeddingProviderInternal({
             rawArray = Array.from(rawOutput.data);
           } else if (typeof rawOutput?.tolist === 'function') {
             rawArray = rawOutput.tolist();
-          } else if (rawOutput?.tolist) {
-            rawArray = Array.from(rawOutput);
           } else {
             rawArray = Array.from(rawOutput ?? []);
           }
@@ -500,18 +465,9 @@ function _createEmbeddingProviderInternal({
 
           results[origIdx] = normalizedVector;
 
-          // Write to cache
+          // Write to cache (key already computed during lookup)
           if (useCache) {
-            const key = computeEmbeddingCacheKey({
-              text,
-              providerId: this.providerId,
-              modelId: this.modelId,
-              modelRevision: this.modelRevision,
-              embeddingVersion: this.embeddingVersion,
-              inputNormalizationVersion: this.inputNormalizationVersion,
-              outputNormalizationVersion: this.outputNormalizationVersion,
-            });
-            embeddingCache.set(key, normalizedVector, {
+            embeddingCache.set(uncachedKeys[j], normalizedVector, {
               providerId: this.providerId,
               modelId: this.modelId,
               modelRevision: this.modelRevision,

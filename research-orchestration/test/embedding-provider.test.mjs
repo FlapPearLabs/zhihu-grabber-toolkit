@@ -26,22 +26,10 @@ import {
   createEmbeddingProvider,
 } from '../lib/embedding-provider.mjs';
 import { EmbeddingCache } from '../lib/embedding-cache.mjs';
-import { createTestEmbeddingProvider } from './helpers/test-embedding-provider.mjs';
+import { createTestEmbeddingProvider, mockVector768 } from './helpers/test-embedding-provider.mjs';
 
 function tmpDir(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), `embed-prov-${prefix}-`));
-}
-
-function mockVector768(seed = 1) {
-  const vec = [];
-  let sumSq = 0;
-  for (let i = 0; i < 768; i += 1) {
-    const v = Math.sin(seed + i);
-    vec.push(v);
-    sumSq += v * v;
-  }
-  const norm = Math.sqrt(sumSq);
-  return vec.map((x) => x / norm);
 }
 
 test('P1-T10: Accepted profile mechanical identity (8 contract fields + truncationPolicy)', () => {
