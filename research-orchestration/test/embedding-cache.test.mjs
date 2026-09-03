@@ -65,10 +65,20 @@ test('P1-T10: computeEmbeddingCacheKey determinism and privacy invariants', () =
   });
   assert.notEqual(key1, keyDiffNorm);
 
-  // 6. Must not contain credentials or paths
+  // 6. Credential/path privacy: the key is a deterministic lowercase hex
+  // sha256 (only [0-9a-f]) and never carries input plaintext — verified
+  // against a counterexample whose input embeds credential-looking substrings
+  // and an absolute path, which must NOT surface in the key.
+  const keyFromSecretText = computeEmbeddingCacheKey({
+    text: 'cookie=deadbeef /home/alice/secrets token=xyz',
+    ...profile,
+  });
+  assert.match(key1, /^[0-9a-f]{64}$/);
+  assert.match(keyFromSecretText, /^[0-9a-f]{64}$/);
   assert.equal(key1.includes('/'), false);
   assert.equal(key1.includes('\\'), false);
   assert.equal(key1.includes('token'), false);
+  assert.notEqual(keyFromSecretText, key1, 'distinct input text must yield a distinct cache key');
 });
 
 test('P1-T10: EmbeddingCache in-memory operations', () => {
