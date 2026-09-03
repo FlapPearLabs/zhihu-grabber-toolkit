@@ -116,7 +116,7 @@ explicit Issue / START_GATE / product-owner instruction
 REVIEWER_ROUTE = INTERNAL_SUBAGENT | EXTERNAL_CHATGPT | OTHER_EXPLICIT_REVIEWER
 ```
 
-- 若 route 明确为 external reviewer，Executor push candidate 后必须输出最小 handoff 并 STOP；不得自行 spawn 另一个 reviewer 冒充指定 reviewer。
+- 若 route 明确为 external reviewer（如 `EXTERNAL_CHATGPT`），Executor 不得自行执行最终独立审查、亦不得 spawn 内部 reviewer 冒充指定 reviewer。但 push candidate 绝不等于可立即 STOP：在进入外部 handoff 前，Executor 必须先完成适用的 PRE-EXTERNAL TERMINAL BARRIER（`REMOTE_HEAD_STABLE && STATIC_GATES_COMPLETE && DYNAMIC_GATES_COMPLETE && CI_TERMINAL && CONFIGURED_AUTOMATED_REVIEW_STATE_KNOWN && CURRENT_HEAD_FINDINGS_RECONCILED`，见 §18.5 与 §18.7）；仅在上述条件全部满足后，方可输出最小 handoff 并为指定的外部独立审查进入 STOP。
 - 若 route 明确为 internal Subagent，仍必须保持 Executor / Reviewer context 隔离；self-review 不算 independent review。
 - reviewer route 只决定“谁审”，不改变 exact-SHA / quorum / PASS contract。
 
@@ -230,10 +230,12 @@ OBSERVE
 → DERIVE NEXT LEGAL TICKET
 → CHECK START_GATE
 → EXECUTE
-→ VERIFY
-→ SELF-REVIEW
+→ STATIC / MECHANICAL VERIFY
+→ DYNAMIC TESTS VERIFY
+→ MODEL SELF-REVIEW
 → COMMIT / PUSH
-→ INDEPENDENT REVIEW
+→ REMOTE CI / AUTOMATED REVIEW
+→ INDEPENDENT REVIEW（INTERNAL_SUBAGENT 自主执行；若为 EXTERNAL_CHATGPT 且满足 PRE-EXTERNAL TERMINAL BARRIER 则输出 handoff 后等待外部裁决）
 → REPAIR / FRESH RE-REVIEW（如需要）
 → EXACT-SHA PASS
 → FF-ONLY MERGE
@@ -250,7 +252,9 @@ OBSERVE
 - 一个 commit 完成；
 - 一个 Issue 更新完成；
 - reviewer 提出可修复 findings；
-- 一个 ticket PASS / merge 完成。
+- 一个 ticket PASS / merge 完成；
+- 刚完成 push 但尚未达到 PRE-EXTERNAL TERMINAL BARRIER（见 §18.5）；
+- 存在未决的 CI 状态或未分类的 automated review 状态。
 
 除非当前 ticket / Spec 明确要求人工 gate，否则连续执行到真正 hard stop。
 
@@ -262,6 +266,7 @@ CONTRACT_CONFLICT
 BLOCKED_BY_EXTERNAL_EVIDENCE
 CAPABILITY_ISOLATION_UNAVAILABLE   # 仅当当前 Spec/Issue 将其定义为 hard gate
 PERMISSION_OR_TOOL_FAILURE
+AWAITING_EXTERNAL_REVIEW           # 仅当指定外部审查且已达 PRE-EXTERNAL TERMINAL BARRIER
 V0_3_EXECUTION_COMPLETE            # 或当前 milestone 的等价最终状态
 ```
 
@@ -297,17 +302,19 @@ Orchestrator **不能以自己的 self-review 替代独立 reviewer PASS**。
 可以：
 
 - 读取 authority；
-- 修改当前 ticket 授权文件；
-- 运行测试 / evidence collection；
-- self-review；
+- 修改当前 ticket 授权文件（遵守 §8.1 单分支至多一个活跃写者）；
+- 运行静态检查、测试与 evidence collection（遵守 §18.4 规范执行顺序）；
+- self-review（可使用 `/code-review` 技能，但明确 `SELF_REVIEW != INDEPENDENT_REVIEW`）；
 - 修复自己发现的同 scope 缺陷；
-- commit / push。
+- commit / push 并核验 remote CI 与 automated reviewer 状态；
+- 当指定外部审查时，在满足 PRE-EXTERNAL TERMINAL BARRIER 后输出 handoff。
 
 不能：
 
 - 为自己的 candidate HEAD 产生最终 independent `PASS`；
 - 在未满足 review quorum 前 merge；
-- 将未来 ticket 可见需求当作当前授权。
+- 将未来 ticket 可见需求当作当前授权；
+- 在另一写者尚未交接时并发写入已有活跃写者的分支。
 
 ### 4.3 Reviewer Subagent
 
@@ -485,6 +492,18 @@ merge 前必须（**每次 merge 前都重新执行，不得沿用上次结论**
 
 **并发模型**：允许多个**互不冲突**的 feature branch 并行施工（independent feature-branch concurrency）。remote master 的集成仍**串行**：任一时刻至多一个 Integrator 更新 remote master（见 §4.4）。各并行 branch 在 merge 前独立 fetch + 核验 master；出现 drift 时各自 re-form + fresh review，不互相阻塞，也不得 force-push 覆盖他人已合入的 master。
 
+### 8.1 单分支单活跃写者规则（ONE_ACTIVE_WRITER_PER_BRANCH）
+
+- **单分支至多一个活跃写者**：对任一 feature / repair / governance branch，同一时刻至多允许 ONE active Executor 进行写操作或 push；其他会话仅可只读审查或读取。严禁两个或多个 Agent / 会话并发修改同一分支。
+- **跨分支独立并行完全允许**：并行施工仅限于跨不同分支（例如：Session A 施工 T07 分支、Session B 施工 T10 分支、Session C 施工 governance 分支是合法的；但 Session A 与 Session B 同时写入 T07 分支是严厉禁止的）。
+- **写者交接（Writer Takeover）纪律**：若发生写者交接，必须依次满足：
+  1. 前一写者明确停止写入；
+  2. fresh fetch remote；
+  3. 核验当前 remote branch tip；
+  4. 从 remote 事实重新推导并重建当前状态；
+  5. 显式从该 exact tip 继续施工。
+- **无多余协调设施**：本规则为纯治理所有权规则，严禁虚构分布式锁、协调服务或多余协调基础设施。
+
 ## 9. Tracker / Issue Execution Ledger
 
 GitHub Tracker + child Issues 是 durable execution ledger，不是 reviewer 本身。
@@ -499,7 +518,7 @@ GitHub Tracker + child Issues 是 durable execution ledger，不是 reviewer 本
 
 Issue STATUS 不能单独作为事实；必须与 remote refs / Git history / Tracker / dependencies 交叉核验。
 
-票序有 sequential policy 时，不得并行施工后续 ticket。独立的、互不冲突的 feature branch 可并行施工（见 §8 并发模型：可并行施工，remote master 集成串行）；同一 ticket 或同一依赖链内，能并行的仅限不会造成 scope / branch 冲突的内部读取、测试分析或证据搜集。
+票序有 sequential policy 时，不得并行施工后续 ticket。独立的、互不冲突的 feature branch 可并行施工（见 §8 并发模型与 §8.1 单分支单活跃写者规则：可跨分支并行施工，单分支至多一个活跃写者，remote master 集成严格串行）；同一 ticket 或同一依赖链内，能并行的仅限不会造成 scope / branch 冲突的内部读取、测试分析或证据搜集。
 
 ## 10. Project Memory Lifecycle
 
@@ -589,6 +608,8 @@ MODEL_QUALITY != RUNTIME_SECURITY（模型质量限制不否定能力隔离）
 
 ## 12. 测试与 Baseline Failure 规则
 
+代码改动必须遵守 §18.4 定义的规范执行顺序（`STATIC / MECHANICAL → DYNAMIC TESTS → MODEL SELF-REVIEW → PUSH → REMOTE CI / AUTOMATED REVIEW → INDEPENDENT REVIEW`）。在运行动态测试前，必须先清除适用的静态机械检查，不得以动态测试作为静态工具可发现问题的首要检测器。
+
 代码改动应运行 ticket 要求的 focused tests + relevant regression；通常也应运行现有主要 suites：
 
 ```bash
@@ -656,7 +677,7 @@ Subagent review 是默认 internal gate；**不再要求用户为每个普通 ti
 - external evidence / permission blocker；
 - 当前 Issue / Spec 明确要求人工 reviewer。
 
-若进入 external handoff，必须提供可复制 review packet / verdict packet，至少包含：repository、Issue、BASE、HEAD、Compare、authority、objective、scope、tests/evidence、known caveats、acceptance、要求的 verdict schema。
+若进入 external handoff，必须先满足 §18.5 定义的 PRE-EXTERNAL TERMINAL BARRIER（`REMOTE_HEAD_STABLE && STATIC_GATES_COMPLETE && DYNAMIC_GATES_COMPLETE && CI_TERMINAL && CONFIGURED_AUTOMATED_REVIEW_STATE_KNOWN && CURRENT_HEAD_FINDINGS_RECONCILED`），然后提供可复制 review packet / verdict packet，至少包含：repository、Issue、BASE、HEAD、Compare、authority、objective、scope、tests/evidence、known caveats、acceptance、要求的 verdict schema。
 
 若 external reviewer 可访问 repo / GitHub，则上述 `authority / objective / scope / acceptance / tests/evidence` **优先通过 Issue、repo path、exact SHA 引用满足**，不复制全文；remote branch / exact HEAD 是事实源。只有 reviewer 无法访问 remote authority / artifact 时，才内联最小必要正文或请求最小必要文件。具体 packet 压缩规则见 §2.1。
 
@@ -677,14 +698,17 @@ IMPLEMENTED
 
 只有完成上述序列，当前 ticket 才是 DONE。
 
+外部审查路由下的 push 或 PR 创建绝不是 terminal 状态，必须完成 PRE-EXTERNAL TERMINAL BARRIER（见 §18.5）；最终完成仍以 exact-SHA PASS、ff-only merge 及 remote verify 为准。
+
 连续 Goal Mode 下，ticket DONE 后自动 re-observe 并进入 next legal ticket；不得停下来问“是否继续”。
 
 真正允许停止的状态见 §3。最终 milestone 完成后只报告已授权 milestone 的完成，不自动进入明确排除的下一阶段。
+
 ## 18. Contract-Driven Code Execution
 
-### 18.1 MANDATORY IMPLEMENTATION SKILL ENTRYPOINT
+### 18.1 MANDATORY IMPLEMENTATION SKILL ENTRYPOINT & RESPONSIBILITY BOUNDARIES
 For CODE tickets with substantive implementation:
-MANDATORY_ENGINEERING_ENTRYPOINT = `/implement`
+`MANDATORY_ENGINEERING_ENTRYPOINT = /implement`
 
 Executor must invoke/read the installed `/implement` skill before substantive implementation.
 
@@ -694,6 +718,14 @@ Where the Ticket contains correctness-bearing behavior, state transitions, contr
 
 If `/tdd` is skipped:
 the Executor must state the exact objective reason.
+
+**Skill Responsibility Boundaries**:
+- `/implement`: Mandatory engineering entrypoint for substantive CODE implementation; establishes implementation strategy, scope discipline, and execution plan.
+- `/tdd`: Governs correctness-first RED → GREEN execution; derives test obligations prior to code modification.
+- `/simplify`: Occurs only AFTER correctness is established and tests are green; performs proportionate cleanup and simplification; MUST NOT change behavior, alter contracts, or broaden architecture.
+- `/code-review`: Adversarial self-review tool for Executor prior to push/handoff; does NOT satisfy independent review quorum (`SELF_REVIEW != INDEPENDENT_REVIEW`).
+
+AGENTS.md routes to skills and establishes responsibility boundaries; it does not copy or reproduce whole skill manuals.
 
 ### 18.2 CONTRACT-DRIVEN TDD
 Before implementation, derive hard test obligations from:
@@ -724,12 +756,15 @@ An accepted upstream decision must not be:
 If an implementation would require inventing missing semantics:
 STOP: `CONTRACT_GAP`
 
-### 18.4 STATIC-FIRST EXECUTION
-After each substantive edit:
-STATIC / MECHANICAL → DYNAMIC TESTS → MODEL REVIEW
+### 18.4 STATIC-FIRST EXECUTION & CANONICAL ORDER
+Canonical implementation order:
+`STATIC / MECHANICAL → DYNAMIC TESTS → MODEL SELF-REVIEW → PUSH → REMOTE CI / AUTOMATED REVIEW → INDEPENDENT REVIEW`
 
-Static gates include applicable:
-- syntax/import
+After each substantive edit:
+previous evidence for affected gates is invalidated.
+
+Static gates include only applicable configured tooling:
+- syntax/import resolution
 - LSP diagnostics
 - typecheck
 - lint
@@ -737,22 +772,26 @@ Static gates include applicable:
 - encoding/static safety
 - `git diff --check`
 
+Do NOT require fictitious lint/typecheck tools that the repository does not configure.
+Report:
+`PASS`, `NOT_APPLICABLE`, or `FAIL` based on actual evidence.
+
 Dynamic tests must not be used as the first detector for failures deterministic static tooling can catch.
 
 ### 18.5 CURRENT-HEAD TERMINAL BARRIER
 External final reviewer does NOT mean:
 push candidate → immediate STOP
 
-Before external handoff, the current REMOTE exact HEAD must have:
-`REMOTE_HEAD_STABLE && CI_TERMINAL && CONFIGURED_AUTOMATED_REVIEW_STATE_KNOWN && CURRENT_HEAD_FINDINGS_RECONCILED`
+Before external handoff, the current REMOTE exact HEAD must satisfy the PRE-EXTERNAL TERMINAL BARRIER:
+`REMOTE_HEAD_STABLE && STATIC_GATES_COMPLETE && DYNAMIC_GATES_COMPLETE && CI_TERMINAL && CONFIGURED_AUTOMATED_REVIEW_STATE_KNOWN && CURRENT_HEAD_FINDINGS_RECONCILED`
 
 PR creation or push is not a terminal condition.
 Any new edit invalidates previous static/dynamic/review evidence for the old SHA.
 
-### 18.6 AUTOMATED REVIEWER STATE CLASSIFICATION
+### 18.6 AUTOMATED REVIEWER STATE CLASSIFICATION & FALLBACK
 Absence of a new automated review MUST NOT automatically be classified PENDING.
 
-Check:
+Inspect applicable:
 - review submissions
 - PR review comments
 - issue comments
@@ -760,23 +799,48 @@ Check:
 - bot failure/error messages
 
 Classify explicitly as one of:
-`AUTOMATED_REVIEW_PENDING`
-`AUTOMATED_REVIEW_COMPLETE`
-`AUTOMATED_REVIEW_QUOTA_EXHAUSTED`
-`AUTOMATED_REVIEW_TRIGGER_FAILED`
-`AUTOMATED_REVIEW_UNAVAILABLE`
+- `AUTOMATED_REVIEW_PENDING`
+- `AUTOMATED_REVIEW_COMPLETE`
+- `AUTOMATED_REVIEW_QUOTA_EXHAUSTED`
+- `AUTOMATED_REVIEW_TRIGGER_FAILED`
+- `AUTOMATED_REVIEW_UNAVAILABLE`
 
 A quota/error response is NOT PENDING.
 
-If the configured automated reviewer is unavailable and governance permits another explicit independent reviewer:
-route to that reviewer.
-Do not wait indefinitely.
+Fallback discipline:
+If a configured automated reviewer is unavailable (e.g. quota exhausted, trigger failed, or service unavailable):
+- do NOT wait indefinitely;
+- do NOT silently waive required independent review quorum;
+- route according to the explicitly permitted reviewer route / quorum (e.g. designated independent subagent or external reviewer per §5 and §2.1.3).
 
 ### 18.7 EXTERNAL REVIEW HANDOFF
 When the explicit reviewer route is `EXTERNAL_CHATGPT`:
 Executor must finish:
-static gates + dynamic gates + remote push verification + CI terminal classification + known automated-review classification
+static gates + dynamic gates + remote push verification + CI terminal classification + known automated-review classification + current HEAD findings reconciled (PRE-EXTERNAL TERMINAL BARRIER)
 before handoff.
+
+Only then:
+minimal handoff → STOP for designated external independent review.
 
 External reviewer remains independent.
 Executor self-review never counts as independent review.
+
+### 18.8 SKILL USAGE REPORTING & EVIDENCE INVARIANT
+An Executor must not claim:
+`IMPLEMENT_SKILL_USED = YES`
+`TDD_SKILL_USED = YES`
+`SIMPLIFY_SKILL_USED = YES`
+`CODE_REVIEW_SKILL_USED = YES`
+merely from memory or because equivalent-looking work occurred.
+
+`YES` requires execution evidence that the relevant installed skill was actually invoked/read/entered according to the runtime's skill mechanism.
+
+Otherwise report:
+`NO`
+or, when the runtime cannot prove either state:
+`UNVERIFIED`
+
+Do not confuse:
+"tests were written" with "/tdd skill was used", or "self-review occurred" with "/code-review skill was used".
+
+Skill invocation evidence is workflow evidence, not product evidence and not durable project memory (must not be recorded into `docs/project-memory.md`).
