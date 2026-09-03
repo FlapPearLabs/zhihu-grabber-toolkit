@@ -182,12 +182,11 @@ test('P1-T07: applyRoundEvaluationToCoverageState deterministically updates cove
   state = applyRoundEvaluationToCoverageState(state, evalResult1, {
     executedRoutesThisRound: [route1],
     fusedCandidateCount: 10,
-    fusedGroupCount: 3,
   });
 
   assert.equal(state.retrieval.retrievalRounds, 1);
   assert.equal(state.retrieval.fusedCandidateCount, 10);
-  assert.equal(state.retrieval.fusedGroupCount, 3);
+  assert.equal(state.retrieval.fusedGroupCount, 0, 'fusedGroupCount is owned by T08 and must not be mutated by retrieval controller');
   assert.equal(state.retrieval.executedRoutes.length, 1);
   assert.equal(state.retrieval.stopReason, null);
   assert.equal(state.diagnostics.novelty_gain, 1);

@@ -359,7 +359,6 @@ export function evaluateRetrievalRound({
  */
 export function applyRoundEvaluationToCoverageState(coverageState, evaluationResult, {
   fusedCandidateCount = null,
-  fusedGroupCount = null,
 } = {}) {
   const currentRoutes = coverageState.retrieval.executedRoutes;
   const currentFailures = coverageState.retrieval.providerFailures;
