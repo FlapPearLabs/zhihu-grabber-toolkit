@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+import * as prodModule from '../lib/embedding-provider.mjs';
 import {
   ACCEPTED_LOCAL_PROFILE,
   EMBEDDING_ERROR_PROVIDER_UNREACHABLE,
@@ -22,9 +23,10 @@ import {
   EMBEDDING_ERROR_INVALID_INPUT,
   validateEmbeddingVector,
   l2Normalize,
-  createEmbeddingProvider, createTestEmbeddingProvider,
+  createEmbeddingProvider,
 } from '../lib/embedding-provider.mjs';
 import { EmbeddingCache } from '../lib/embedding-cache.mjs';
+import { createTestEmbeddingProvider } from './helpers/test-embedding-provider.mjs';
 
 function tmpDir(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), `embed-prov-${prefix}-`));
@@ -42,7 +44,7 @@ function mockVector768(seed = 1) {
   return vec.map((x) => x / norm);
 }
 
-test('P1-T10: Accepted profile mechanical identity (8 contract fields)', () => {
+test('P1-T10: Accepted profile mechanical identity (8 contract fields + truncationPolicy)', () => {
   const provider = createEmbeddingProvider();
 
   assert.equal(provider.providerCategory, 'LOCAL');
@@ -53,7 +55,10 @@ test('P1-T10: Accepted profile mechanical identity (8 contract fields)', () => {
   assert.equal(provider.embeddingVersion, 'v1');
   assert.equal(provider.inputNormalizationVersion, 'T01_INPUT_NORM_V1');
   assert.equal(provider.outputNormalizationVersion, 'L2_UNIT_NORM');
+  assert.equal(provider.truncationPolicy, 'MAX_POSITION_EMBEDDINGS_512');
   assert.deepEqual(provider.egressPolicy, { category: 'LOCAL', noNewEgress: true });
+  assert.equal(provider.isCertifiedProduction, true);
+  assert.equal(provider.isTestDouble, false);
 });
 
 test('P1-T10: Profile reselection rejection fail-closed', () => {
@@ -72,7 +77,7 @@ test('P1-T10: Profile reselection rejection fail-closed', () => {
   );
 });
 
-test('P1-T10: Vector validation (768-dim, finite numbers, unit norm)', () => {
+test('P1-T10: Vector validation (768-dim, finite numbers, unit norm, tolerance enforcement)', () => {
   const valid = mockVector768(1);
   const checkValid = validateEmbeddingVector(valid);
   assert.equal(checkValid.ok, true);
@@ -120,6 +125,12 @@ test('P1-T10: Vector validation (768-dim, finite numbers, unit norm)', () => {
   const checkZero = validateEmbeddingVector(zeroVec);
   assert.equal(checkZero.ok, false);
   assert.equal(checkZero.reason, 'zero_magnitude_vector');
+
+  // T10-F6: Vector whose norm deviates from 1.0 by more than allowTolerance
+  const notUnit = Array(768).fill(1); // norm is sqrt(768) ≈ 27.7
+  const checkNotUnit = validateEmbeddingVector(notUnit);
+  assert.equal(checkNotUnit.ok, false);
+  assert.equal(checkNotUnit.reason, 'norm_out_of_tolerance');
 });
 
 test('P1-T10: L2 normalization helper', () => {
@@ -158,14 +169,64 @@ test('P1-T10: Local Preflight checks identity.json and exact revision', async ()
   assert.equal(pre2.ok, false);
   assert.equal(pre2.status, 'FAILED');
   assert.equal(pre2.failureCode, EMBEDDING_ERROR_REVISION_MISMATCH);
+});
 
-  // 3. Injected extractor -> READY
+test('P1-T10: T10-F1 - Preflight checks actual artifact files and sha256 fail-closed', async () => {
+  const dir = tmpDir('artifact-check');
+  fs.writeFileSync(
+    path.join(dir, 'identity.json'),
+    JSON.stringify({
+      modelId: 'Xenova/bge-base-zh-v1.5',
+      revisionSha: '71e50dc531959f9e04ebf190ea25b00261a0a186',
+    }),
+    'utf8'
+  );
+
+  // 1. Missing artifact file
+  const prov1 = createEmbeddingProvider({ modelDir: dir });
+  const pre1 = await prov1.preflight();
+  assert.equal(pre1.ok, false);
+  assert.equal(pre1.status, 'FAILED');
+  assert.equal(pre1.failureCode, EMBEDDING_ERROR_MODEL_UNKNOWN);
+  assert.equal(pre1.error.includes('Required artifact missing'), true);
+
+  // 2. Tampered artifact file (sha256 mismatch)
+  fs.mkdirSync(path.join(dir, 'onnx'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'onnx', 'model_quantized.onnx'), 'TAMPERED_CONTENT', 'utf8');
+  fs.writeFileSync(path.join(dir, 'tokenizer.json'), 'TAMPERED_CONTENT', 'utf8');
+  fs.writeFileSync(path.join(dir, 'config.json'), 'TAMPERED_CONTENT', 'utf8');
+  fs.writeFileSync(path.join(dir, 'tokenizer_config.json'), 'TAMPERED_CONTENT', 'utf8');
+
+  const prov2 = createEmbeddingProvider({ modelDir: dir });
+  const pre2 = await prov2.preflight();
+  assert.equal(pre2.ok, false);
+  assert.equal(pre2.status, 'FAILED');
+  assert.equal(pre2.failureCode, EMBEDDING_ERROR_MODEL_UNKNOWN);
+  assert.equal(pre2.error.includes('Artifact hash mismatch'), true);
+});
+
+test('P1-T10: T10-F3 - Test extractor capability isolation', async () => {
+  // 1. Production module does NOT export createTestEmbeddingProvider
+  assert.equal('createTestEmbeddingProvider' in prodModule, false);
+
+  // 2. Test double created from test helper explicitly marks itself as TEST, cannot present as certified LOCAL
   const mockExtractor = async (text) => mockVector768(text.length);
-  const prov3 = createTestEmbeddingProvider({ extractorEngine: mockExtractor });
-  const pre3 = await prov3.preflight();
-  assert.equal(pre3.ok, true);
-  assert.equal(pre3.status, 'READY');
-  assert.equal(pre3.providerId, 'transformersjs-local-onnx');
+  const testProv = createTestEmbeddingProvider({ extractorEngine: mockExtractor });
+
+  assert.equal(testProv.isCertifiedProduction, false);
+  assert.equal(testProv.isTestDouble, true);
+  assert.equal(testProv.providerCategory, 'TEST');
+  assert.equal(testProv.providerId, 'transformersjs-local-onnx-test-double');
+  assert.deepEqual(testProv.egressPolicy, { category: 'TEST', noNewEgress: true });
+
+  const pre = await testProv.preflight();
+  assert.equal(pre.ok, true);
+  assert.equal(pre.status, 'READY');
+  assert.equal(pre.isCertifiedProduction, false);
+  assert.equal(pre.isTestDouble, true);
+  assert.equal(pre.providerCategory, 'TEST');
+  assert.equal(pre.providerId, 'transformersjs-local-onnx-test-double');
+  assert.equal(pre.truncationPolicy, 'MAX_POSITION_EMBEDDINGS_512');
 });
 
 test('P1-T10: Embed execution with deterministic cache and vector validation', async () => {
@@ -249,7 +310,7 @@ test('P1-T10: l2Normalize throws EMBEDDING_ERROR_VECTOR_INVALID on empty array',
 });
 
 test('P1-T10: Preflight errors do not leak absolute paths', async () => {
-  const prov = createTestEmbeddingProvider({ modelDir: '/secret/path/to/models' });
+  const prov = createEmbeddingProvider({ modelDir: '/secret/path/to/models' });
   const pre = await prov.preflight();
   assert.equal(pre.ok, false);
   assert.equal(pre.error.includes('/secret/path'), false);
