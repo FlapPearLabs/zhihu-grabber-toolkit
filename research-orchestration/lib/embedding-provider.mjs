@@ -36,11 +36,6 @@ import {
   validateEmbeddingVector,
 } from './embedding-cache.mjs';
 
-import {
-  CREDENTIAL_SHAPE,
-  PRIVATE_PATH_SHAPE,
-} from './rrf.mjs';
-
 // Public surface preserved: the canonical vector validator now lives in
 // embedding-cache.mjs (single implementation shared with the cache).
 export { validateEmbeddingVector };
@@ -122,35 +117,29 @@ let loadedTransformersModule = null;
 
 /**
  * Projects a native (Transformers.js / ONNX Runtime) error into a stable
- * safe message (RULES §11 / AGENTS.md §5.2). Native diagnostics are untrusted:
- * they may embed absolute model / cache / user paths, credential-shaped
- * substrings, a URL-prefixed message whose tail carries a private path, or a
- * POSIX `file:///…` URI (which the shared PRIVATE_PATH_SHAPE does not catch
- * because its absolute-path lookbehind rejects `/home` preceded by `/`).
+ * safe message (RULES §11 / AGENTS.md §5.2).
  *
- * P1-2 repair (post-merge): the message is read through an exception-safe
- * snapshot (a throwing `message` getter cannot escape), then scanned with the
- * diagnostic-specific rules WITHOUT the persisted-artifact URL routing — a
- * native diagnostic is never a URL. Any unsafe message (credential shape,
- * private path shape, or a file:/// scheme reference) collapses WHOLE to a
- * stable neutral identity (no partial token scrub, which would leak the
- * credential VALUE or the user name).
+ * P1-2 repair (post-merge): native diagnostics are UNTRUSTED. They may embed
+ * absolute model / cache / user paths, credential-shaped substrings, UNC
+ * paths, file:// URIs, URL userinfo, or bare `Bearer <token>` forms — an
+ * open-ended set that no deny-list can exhaust. A deny-list posture (scan for
+ * known-shape substrings, pass the rest) repeatedly leaks the next novel shape
+ * (POSIX path, then URL tail, then file:///, then UNC, then userinfo, …).
+ *
+ * Correct posture: DEFAULT-DENY. The raw native message is NEVER surfaced.
+ * Only a fixed stable failure identity is returned. The message is read
+ * through an exception-safe snapshot so a throwing `message` getter cannot
+ * escape either. This trades away the (low) diagnostic value of third-party
+ * error prose for a hard no-leak guarantee.
  */
-const FILE_URI_SHAPE = /file:\/\/\//i;
-
 function projectNativeErrorMessage(rawErr) {
-  let msg;
   try {
-    msg = String(rawErr?.message ?? '');
+    const msg = String(rawErr?.message ?? '');
+    void msg; // the raw message is intentionally never returned
   } catch {
-    return 'native extractor failed (diagnostic redacted)';
+    // getter threw while reading the message — never re-read, never propagate
   }
-  if (msg.length === 0) return 'native extractor failed';
-  if (msg.length > 500) return 'native extractor failed (diagnostic redacted)';
-  if (CREDENTIAL_SHAPE.test(msg)) return 'native extractor failed (diagnostic redacted)';
-  if (PRIVATE_PATH_SHAPE.test(msg)) return 'native extractor failed (diagnostic redacted)';
-  if (FILE_URI_SHAPE.test(msg)) return 'native extractor failed (diagnostic redacted)';
-  return msg;
+  return 'native extractor failed';
 }
 
 async function getTransformersModule() {
@@ -291,18 +280,22 @@ function _createEmbeddingProviderInternal({
     try {
       const raw = fs.readFileSync(identityPath, 'utf8');
       const parsed = JSON.parse(raw);
+      // The `found` values are caller-controlled (identity.json content) and may
+      // embed machine-private paths / credentials — never echo them verbatim
+      // into a public error surface (RULES §11). Report only the stable mismatch
+      // fact against the accepted profile.
       if (parsed.modelId !== ACCEPTED_LOCAL_PROFILE.modelId) {
         return {
           ok: false,
           reason: 'model_id_mismatch',
-          error: `Model ID mismatch: expected ${ACCEPTED_LOCAL_PROFILE.modelId}, found ${parsed.modelId}`,
+          error: 'Model ID mismatch against accepted profile',
         };
       }
       if (parsed.revisionSha !== ACCEPTED_LOCAL_PROFILE.modelRevision) {
         return {
           ok: false,
           reason: 'revision_mismatch',
-          error: `Model revision mismatch: expected ${ACCEPTED_LOCAL_PROFILE.modelRevision}, found ${parsed.revisionSha}`,
+          error: 'Model revision mismatch against accepted profile',
         };
       }
       // T10-F1: Verify ACTUAL model artifact identity hashes

@@ -159,6 +159,32 @@ test('P1-T10: Local Preflight checks identity.json and exact revision', async ()
   assert.equal(pre2.failureCode, EMBEDDING_ERROR_REVISION_MISMATCH);
 });
 
+test('P1-T10: P1-2 repair — identity.json mismatch never echoes caller-controlled values', async () => {
+  // A tampered identity.json may carry a machine-private path / credential as
+  // its modelId or revisionSha. The mismatch error must report only the stable
+  // fact, never echo the caller-controlled `found` value (RULES §11).
+  const dir = tmpDir('mismatch-redact');
+
+  // Nested identity.json (T01 layout) with a path-bearing modelId.
+  const nestedDir = path.join(dir, ACCEPTED_LOCAL_PROFILE.modelId);
+  fs.mkdirSync(nestedDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(nestedDir, 'identity.json'),
+    JSON.stringify({
+      modelId: '/home/alice/private/model',
+      revisionSha: ACCEPTED_LOCAL_PROFILE.modelRevision,
+    }),
+    'utf8'
+  );
+
+  const prov = createEmbeddingProvider({ modelDir: dir });
+  const pre = await prov.preflight();
+  assert.equal(pre.ok, false);
+  assert.equal(pre.failureCode, EMBEDDING_ERROR_MODEL_UNKNOWN);
+  assert.equal(pre.error.includes('/home/alice/'), false, 'caller-controlled modelId must not echo');
+  assert.equal(pre.error.includes('private'), false, 'caller-controlled path must not echo');
+});
+
 test('P1-T10: T10-F1 - Preflight checks actual artifact files and sha256 fail-closed', async () => {
   const dir = tmpDir('artifact-check');
   fs.writeFileSync(
@@ -377,23 +403,32 @@ test('P1-T10: P1-2 repair — native extractor errors never leak machine-private
   );
 });
 
-test('P1-T10: P1-2 repair — credential-shaped and Windows-path diagnostics also fail closed', async () => {
-  // The boundary must NOT leak the secret VALUE (credential key= prefix alone
-  // is not enough) nor the Windows user name (drive root C:\ alone is not
-  // enough). Unsafe messages must collapse WHOLE to a stable neutral identity.
+test('P1-T10: P1-2 repair — native diagnostics default-deny (never leak)', async () => {
+  // Native diagnostics are UNTRUSTED and an open-ended leak surface. The
+  // default-deny posture returns a fixed neutral identity for EVERY native
+  // message — never the raw diagnostic. These cases span the leak classes
+  // found across review rounds (POSIX/Windows paths, credentials, URL tails,
+  // file:// URIs, UNC, URL userinfo, bare Bearer tokens); all must collapse to
+  // the same neutral identity with no raw token surfaced.
   const cases = [
     'api_key=sk-live-secret-value-1234567890',
     'authorization: Bearer tok_abc123def456',
     'Failed to load C:\\Users\\alice\\.cache\\huggingface\\model.onnx',
     'token=secretvalue123',
     'password: hunter2 secret',
-    // URL-prefixed diagnostic whose tail carries a private path (Codex P1:
-    // the persisted-artifact URL routing must NOT apply to native diagnostics).
     'https://huggingface.co/model?status=failed /home/alice/.cache/model.onnx',
-    // POSIX file:/// URI form — the shared PRIVATE_PATH_SHAPE lookbehind rejects
-    // /home when preceded by /, so it needs a diagnostic-specific file:// scan.
     'failed to load file:///home/alice/private/model.onnx',
     'file:///Users/bob/.cache/huggingface/model.onnx',
+    // UNC path
+    '\\\\server\\share\\Users\\alice\\model.onnx',
+    // file:// host form (two-slash)
+    'file://server/share/Users/alice/private/model.onnx',
+    // URL userinfo
+    'https://alice:s3cr3t@example.test/model',
+    // bare Bearer token (space-separated, no '=' colon shape)
+    'Bearer sk-live-secret',
+    // even a benign-looking native message must not be surfaced verbatim
+    'native runtime fault',
   ];
 
   for (const message of cases) {
@@ -406,13 +441,18 @@ test('P1-T10: P1-2 repair — credential-shaped and Windows-path diagnostics als
       () => provider.embed(['测试文本']),
       (err) => {
         assert.equal(err.code, EMBEDDING_ERROR_DENSE_UNAVAILABLE);
-        assert.equal(err.message.includes('sk-live-secret'), false, 'credential value must not leak');
-        assert.equal(err.message.includes('tok_abc123'), false, 'bearer token must not leak');
-        assert.equal(err.message.includes('secretvalue123'), false, 'token value must not leak');
-        assert.equal(err.message.includes('hunter2'), false, 'password must not leak');
-        assert.equal(err.message.includes('alice'), false, 'windows user name must not leak');
-        // The stable neutral identity must be present.
-        assert.equal(err.message.includes('diagnostic redacted'), true, 'unsafe diagnostic must collapse to stable identity');
+        // No raw token may surface (covers every secret value / path / username above).
+        assert.equal(err.message.includes('sk-live-secret'), false);
+        assert.equal(err.message.includes('tok_abc123'), false);
+        assert.equal(err.message.includes('secretvalue123'), false);
+        assert.equal(err.message.includes('hunter2'), false);
+        assert.equal(err.message.includes('s3cr3t'), false);
+        assert.equal(err.message.includes('alice'), false);
+        assert.equal(err.message.includes('bob'), false);
+        assert.equal(err.message.includes('server'), false);
+        assert.equal(err.message.includes('model.onnx'), false);
+        // The fixed neutral identity must be present.
+        assert.equal(err.message.includes('native extractor failed'), true);
         return true;
       }
     );
