@@ -390,6 +390,10 @@ test('P1-T10: P1-2 repair — credential-shaped and Windows-path diagnostics als
     // URL-prefixed diagnostic whose tail carries a private path (Codex P1:
     // the persisted-artifact URL routing must NOT apply to native diagnostics).
     'https://huggingface.co/model?status=failed /home/alice/.cache/model.onnx',
+    // POSIX file:/// URI form — the shared PRIVATE_PATH_SHAPE lookbehind rejects
+    // /home when preceded by /, so it needs a diagnostic-specific file:// scan.
+    'failed to load file:///home/alice/private/model.onnx',
+    'file:///Users/bob/.cache/huggingface/model.onnx',
   ];
 
   for (const message of cases) {

@@ -124,16 +124,20 @@ let loadedTransformersModule = null;
  * Projects a native (Transformers.js / ONNX Runtime) error into a stable
  * safe message (RULES §11 / AGENTS.md §5.2). Native diagnostics are untrusted:
  * they may embed absolute model / cache / user paths, credential-shaped
- * substrings, or a URL-prefixed message whose tail carries a private path.
+ * substrings, a URL-prefixed message whose tail carries a private path, or a
+ * POSIX `file:///…` URI (which the shared PRIVATE_PATH_SHAPE does not catch
+ * because its absolute-path lookbehind rejects `/home` preceded by `/`).
  *
  * P1-2 repair (post-merge): the message is read through an exception-safe
  * snapshot (a throwing `message` getter cannot escape), then scanned with the
- * diagnostic-specific CREDENTIAL_SHAPE + PRIVATE_PATH_SHAPE rules WITHOUT the
- * persisted-artifact URL routing — a native diagnostic is never a URL, so a
- * "https://…?status=failed /home/alice/.cache/x" tail must still be rejected.
- * Any unsafe message collapses WHOLE to a stable neutral identity (no partial
- * token scrub, which would leak the credential VALUE or the user name).
+ * diagnostic-specific rules WITHOUT the persisted-artifact URL routing — a
+ * native diagnostic is never a URL. Any unsafe message (credential shape,
+ * private path shape, or a file:/// scheme reference) collapses WHOLE to a
+ * stable neutral identity (no partial token scrub, which would leak the
+ * credential VALUE or the user name).
  */
+const FILE_URI_SHAPE = /file:\/\/\//i;
+
 function projectNativeErrorMessage(rawErr) {
   let msg;
   try {
@@ -145,6 +149,7 @@ function projectNativeErrorMessage(rawErr) {
   if (msg.length > 500) return 'native extractor failed (diagnostic redacted)';
   if (CREDENTIAL_SHAPE.test(msg)) return 'native extractor failed (diagnostic redacted)';
   if (PRIVATE_PATH_SHAPE.test(msg)) return 'native extractor failed (diagnostic redacted)';
+  if (FILE_URI_SHAPE.test(msg)) return 'native extractor failed (diagnostic redacted)';
   return msg;
 }
 
