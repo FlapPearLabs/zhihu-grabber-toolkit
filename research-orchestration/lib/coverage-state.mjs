@@ -185,26 +185,9 @@ export function canonicalizeCoverageState(state) {
   }
 
   // Canonicalize diagnostics dictionaries sorted by key
-  const selectedContentByGroup = {};
-  if (isPlainObject(state.diagnostics?.selected_content_by_group)) {
-    for (const k of Object.keys(state.diagnostics.selected_content_by_group).sort()) {
-      selectedContentByGroup[k] = Number(state.diagnostics.selected_content_by_group[k]);
-    }
-  }
-
-  const selectedContentTypeDistribution = {};
-  if (isPlainObject(state.diagnostics?.selected_content_type_distribution)) {
-    for (const k of Object.keys(state.diagnostics.selected_content_type_distribution).sort()) {
-      selectedContentTypeDistribution[k] = Number(state.diagnostics.selected_content_type_distribution[k]);
-    }
-  }
-
-  const perGroupSelectionCoverage = {};
-  if (isPlainObject(state.diagnostics?.per_group_selection_coverage)) {
-    for (const k of Object.keys(state.diagnostics.per_group_selection_coverage).sort()) {
-      perGroupSelectionCoverage[k] = Number(state.diagnostics.per_group_selection_coverage[k]);
-    }
-  }
+  const selectedContentByGroup = canonicalizeNumericDict(state.diagnostics?.selected_content_by_group);
+  const selectedContentTypeDistribution = canonicalizeNumericDict(state.diagnostics?.selected_content_type_distribution);
+  const perGroupSelectionCoverage = canonicalizeNumericDict(state.diagnostics?.per_group_selection_coverage);
 
   const executedRoutes = Array.isArray(state.retrieval?.executedRoutes)
     ? state.retrieval.executedRoutes.map((r) => ({
@@ -240,19 +223,9 @@ export function canonicalizeCoverageState(state) {
     invalidRefs: dedupeAndSortStrings(state.analysisCoverage?.evidenceRefIssues?.invalidRefs),
   };
 
-  const perGroupMappedSourceSet = {};
-  if (isPlainObject(state.analysisCoverage?.perGroupMappedSourceSet)) {
-    for (const [k, v] of Object.entries(state.analysisCoverage.perGroupMappedSourceSet).sort()) {
-      perGroupMappedSourceSet[k] = dedupeAndSortStrings(v);
-    }
-  }
+  const perGroupMappedSourceSet = canonicalizePerGroupStringSetDict(state.analysisCoverage?.perGroupMappedSourceSet);
 
-  const perGroupAnalyzedSourceSet = {};
-  if (isPlainObject(state.analysisCoverage?.perGroupAnalyzedSourceSet)) {
-    for (const [k, v] of Object.entries(state.analysisCoverage.perGroupAnalyzedSourceSet).sort()) {
-      perGroupAnalyzedSourceSet[k] = dedupeAndSortStrings(v);
-    }
-  }
+  const perGroupAnalyzedSourceSet = canonicalizePerGroupStringSetDict(state.analysisCoverage?.perGroupAnalyzedSourceSet);
 
   return {
     schemaVersion: COVERAGE_STATE_SCHEMA_VERSION,
@@ -874,18 +847,7 @@ export function updatePerGroupAnalysis(state, update, { caller } = {}) {
       ...update.evidenceRefIssues,
     };
   }
-  if ('new_aspect_rate' in update && isRatio0to1(update.new_aspect_rate)) {
-    nextState.diagnostics.new_aspect_rate = update.new_aspect_rate;
-  }
-  if ('new_claim_rate' in update && isRatio0to1(update.new_claim_rate)) {
-    nextState.diagnostics.new_claim_rate = update.new_claim_rate;
-  }
-  if ('new_expert_rate' in update && isRatio0to1(update.new_expert_rate)) {
-    nextState.diagnostics.new_expert_rate = update.new_expert_rate;
-  }
-  if ('new_contradiction_rate' in update && isRatio0to1(update.new_contradiction_rate)) {
-    nextState.diagnostics.new_contradiction_rate = update.new_contradiction_rate;
-  }
+  applyNewRateDiagnostics(nextState, update);
 
   const validation = validateCoverageState(nextState);
   if (!validation.ok) {
@@ -928,18 +890,7 @@ export function updateSynthesisDiagnostics(state, update, { caller } = {}) {
   if ('claim_source_diversity' in update && isRatio0to1(update.claim_source_diversity)) {
     nextState.diagnostics.claim_source_diversity = update.claim_source_diversity;
   }
-  if ('new_aspect_rate' in update && isRatio0to1(update.new_aspect_rate)) {
-    nextState.diagnostics.new_aspect_rate = update.new_aspect_rate;
-  }
-  if ('new_claim_rate' in update && isRatio0to1(update.new_claim_rate)) {
-    nextState.diagnostics.new_claim_rate = update.new_claim_rate;
-  }
-  if ('new_expert_rate' in update && isRatio0to1(update.new_expert_rate)) {
-    nextState.diagnostics.new_expert_rate = update.new_expert_rate;
-  }
-  if ('new_contradiction_rate' in update && isRatio0to1(update.new_contradiction_rate)) {
-    nextState.diagnostics.new_contradiction_rate = update.new_contradiction_rate;
-  }
+  applyNewRateDiagnostics(nextState, update);
 
   const validation = validateCoverageState(nextState);
   if (!validation.ok) {
