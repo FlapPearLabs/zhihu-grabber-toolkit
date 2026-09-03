@@ -37,7 +37,8 @@ import {
 } from './embedding-cache.mjs';
 
 import {
-  isBoundarySafeString,
+  CREDENTIAL_SHAPE,
+  PRIVATE_PATH_SHAPE,
 } from './rrf.mjs';
 
 // Public surface preserved: the canonical vector validator now lives in
@@ -120,22 +121,31 @@ export const _TEST_SEAMS = {
 let loadedTransformersModule = null;
 
 /**
- * Projects a native (Transformers.js / ONNX Runtime) error message through the
- * repository machine-private-path safety boundary (RULES §11).
+ * Projects a native (Transformers.js / ONNX Runtime) error into a stable
+ * safe message (RULES §11 / AGENTS.md §5.2). Native diagnostics are untrusted:
+ * they may embed absolute model / cache / user paths, credential-shaped
+ * substrings, or a URL-prefixed message whose tail carries a private path.
  *
- * P1-2 repair: native errors may embed absolute model / cache / user paths and
- * credential-shaped substrings. We never persist or return the raw diagnostic.
- * A message that is already boundary-safe (no private-path / credential shape,
- * bounded length) is returned verbatim. Any unsafe message is replaced WHOLE
- * with a stable neutral identity — never partially scrubbed, because a
- * token-wise replace only redacts the matched prefix (the credential KEY or the
- * drive root) and would still leak the secret VALUE or the user name.
+ * P1-2 repair (post-merge): the message is read through an exception-safe
+ * snapshot (a throwing `message` getter cannot escape), then scanned with the
+ * diagnostic-specific CREDENTIAL_SHAPE + PRIVATE_PATH_SHAPE rules WITHOUT the
+ * persisted-artifact URL routing — a native diagnostic is never a URL, so a
+ * "https://…?status=failed /home/alice/.cache/x" tail must still be rejected.
+ * Any unsafe message collapses WHOLE to a stable neutral identity (no partial
+ * token scrub, which would leak the credential VALUE or the user name).
  */
-function projectNativeErrorMessage(rawMessage) {
-  const msg = String(rawMessage ?? '');
+function projectNativeErrorMessage(rawErr) {
+  let msg;
+  try {
+    msg = String(rawErr?.message ?? '');
+  } catch {
+    return 'native extractor failed (diagnostic redacted)';
+  }
   if (msg.length === 0) return 'native extractor failed';
-  if (isBoundarySafeString(msg)) return msg;
-  return 'native extractor failed (diagnostic redacted)';
+  if (msg.length > 500) return 'native extractor failed (diagnostic redacted)';
+  if (CREDENTIAL_SHAPE.test(msg)) return 'native extractor failed (diagnostic redacted)';
+  if (PRIVATE_PATH_SHAPE.test(msg)) return 'native extractor failed (diagnostic redacted)';
+  return msg;
 }
 
 async function getTransformersModule() {
@@ -144,7 +154,7 @@ async function getTransformersModule() {
     loadedTransformersModule = await import('@xenova/transformers');
     return loadedTransformersModule;
   } catch (err) {
-    const e = new Error(`@xenova/transformers module unreachable or not installed: ${projectNativeErrorMessage(err?.message)}`);
+    const e = new Error(`@xenova/transformers module unreachable or not installed: ${projectNativeErrorMessage(err)}`);
     e.code = EMBEDDING_ERROR_PROVIDER_UNREACHABLE;
     throw e;
   }
@@ -237,7 +247,7 @@ function _createEmbeddingProviderInternal({
           return activeExtractor;
         } catch (err) {
           extractorInitPromise = null; // Allow retry on failure
-          const safe = projectNativeErrorMessage(err?.message);
+          const safe = projectNativeErrorMessage(err);
           const e = new Error(`Failed to load local ONNX model: ${safe}`);
           e.code = EMBEDDING_ERROR_MODEL_UNKNOWN;
           throw e;
@@ -316,7 +326,7 @@ function _createEmbeddingProviderInternal({
       // embed an absolute path in e.message — project through the same boundary
       // as native extractor errors (RULES §11). JSON.parse errors carry no path
       // and pass through verbatim.
-      return { ok: false, reason: 'identity_json_malformed', error: projectNativeErrorMessage(e?.message) };
+      return { ok: false, reason: 'identity_json_malformed', error: projectNativeErrorMessage(e) };
     }
   }
 
@@ -476,7 +486,7 @@ function _createEmbeddingProviderInternal({
               rawOutput = await computePromise;
             }
           } catch (err) {
-            const safe = projectNativeErrorMessage(err?.message);
+            const safe = projectNativeErrorMessage(err);
             const e = new Error(`Embedding computation failed for input ${origIdx}: ${safe}`);
             e.code = EMBEDDING_ERROR_DENSE_UNAVAILABLE;
             throw e;

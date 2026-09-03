@@ -387,6 +387,9 @@ test('P1-T10: P1-2 repair — credential-shaped and Windows-path diagnostics als
     'Failed to load C:\\Users\\alice\\.cache\\huggingface\\model.onnx',
     'token=secretvalue123',
     'password: hunter2 secret',
+    // URL-prefixed diagnostic whose tail carries a private path (Codex P1:
+    // the persisted-artifact URL routing must NOT apply to native diagnostics).
+    'https://huggingface.co/model?status=failed /home/alice/.cache/model.onnx',
   ];
 
   for (const message of cases) {
