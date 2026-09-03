@@ -36,6 +36,12 @@ import {
   validateEmbeddingVector,
 } from './embedding-cache.mjs';
 
+import {
+  isBoundarySafeString,
+  CREDENTIAL_SHAPE,
+  PRIVATE_PATH_SHAPE,
+} from './rrf.mjs';
+
 // Public surface preserved: the canonical vector validator now lives in
 // embedding-cache.mjs (single implementation shared with the cache).
 export { validateEmbeddingVector };
@@ -114,13 +120,37 @@ export const _TEST_SEAMS = {
 };
 
 let loadedTransformersModule = null;
+
+/**
+ * Projects a native (Transformers.js / ONNX Runtime) error message through the
+ * repository machine-private-path safety boundary (RULES §11).
+ *
+ * P1-2 repair: native errors may embed absolute model / cache / user paths and
+ * credential-shaped substrings. We never persist or return the raw diagnostic.
+ * A message that is already boundary-safe (no private-path / credential shape,
+ * bounded length) is returned verbatim; otherwise it is replaced with a stable
+ * placeholder so only a fixed safe identity/message surfaces.
+ */
+function projectNativeErrorMessage(rawMessage) {
+  const msg = String(rawMessage ?? '');
+  if (msg.length === 0) return 'native extractor failed';
+  if (isBoundarySafeString(msg)) return msg;
+  // Strip any machine-private path / credential-shaped tokens and collapse; if
+  // what remains is still unsafe, fall back to a stable neutral message.
+  const scrubbed = msg
+    .replace(PRIVATE_PATH_SHAPE, '[REDACTED_PATH]')
+    .replace(CREDENTIAL_SHAPE, '[REDACTED_CREDENTIAL]');
+  if (isBoundarySafeString(scrubbed)) return scrubbed;
+  return 'native extractor failed (diagnostic redacted)';
+}
+
 async function getTransformersModule() {
   if (loadedTransformersModule) return loadedTransformersModule;
   try {
     loadedTransformersModule = await import('@xenova/transformers');
     return loadedTransformersModule;
   } catch (err) {
-    const e = new Error(`@xenova/transformers module unreachable or not installed: ${err?.message ?? err}`);
+    const e = new Error(`@xenova/transformers module unreachable or not installed: ${projectNativeErrorMessage(err?.message)}`);
     e.code = EMBEDDING_ERROR_PROVIDER_UNREACHABLE;
     throw e;
   }
@@ -213,12 +243,8 @@ function _createEmbeddingProviderInternal({
           return activeExtractor;
         } catch (err) {
           extractorInitPromise = null; // Allow retry on failure
-          let msg = String(err?.message ?? err);
-          if (modelDir) {
-            msg = msg.split(modelDir).join('[LOCAL_MODEL_DIR]')
-                     .split(modelDir.replace(/\\/g, '/')).join('[LOCAL_MODEL_DIR]');
-          }
-          const e = new Error(`Failed to load local ONNX model: ${msg}`);
+          const safe = projectNativeErrorMessage(err?.message);
+          const e = new Error(`Failed to load local ONNX model: ${safe}`);
           e.code = EMBEDDING_ERROR_MODEL_UNKNOWN;
           throw e;
         }
@@ -228,10 +254,31 @@ function _createEmbeddingProviderInternal({
   }
 
   async function checkIdentityJson() {
-    const identityPath = path.join(modelDir, 'identity.json');
+    // Accepted T01 acquisition layout (discovery/p1-t01-embedding-qualification/
+    // fetch-model.mjs) writes artifacts under <dir>/<modelId>/<filename> (modelId
+    // "Xenova/bge-base-zh-v1.5" is a nested subdir) and mirrors identity.json at
+    // both <dir>/identity.json and <dir>/<modelId>/identity.json.
+    //
+    // P1-1 repair: resolve identity.json and artifacts against the modelId
+    // subdirectory first, falling back to the flat (modelDir-root) layout so the
+    // previously-accepted flat layout keeps working. This never changes the
+    // accepted model / profile / revision — only the on-disk resolution.
+    const modelSubdir = path.join(modelDir, ACCEPTED_LOCAL_PROFILE.modelId);
+
+    let identityPath = path.join(modelSubdir, 'identity.json');
+    if (!fs.existsSync(identityPath)) {
+      identityPath = path.join(modelDir, 'identity.json');
+    }
     if (!fs.existsSync(identityPath)) {
       return { ok: false, reason: 'identity_json_absent', error: 'identity.json not found in local model directory' };
     }
+
+    function artifactPathFor(filename) {
+      const nested = path.join(modelSubdir, filename);
+      if (fs.existsSync(nested)) return nested;
+      return path.join(modelDir, filename);
+    }
+
     try {
       const raw = fs.readFileSync(identityPath, 'utf8');
       const parsed = JSON.parse(raw);
@@ -251,7 +298,7 @@ function _createEmbeddingProviderInternal({
       }
       // T10-F1: Verify ACTUAL model artifact identity hashes
       for (const [filename, expectedSha] of Object.entries(ACCEPTED_LOCAL_PROFILE.artifacts)) {
-        const filePath = path.join(modelDir, filename);
+        const filePath = artifactPathFor(filename);
         if (!fs.existsSync(filePath)) {
           return {
             ok: false,
@@ -431,7 +478,8 @@ function _createEmbeddingProviderInternal({
               rawOutput = await computePromise;
             }
           } catch (err) {
-            const e = new Error(`Embedding computation failed for input ${origIdx}: ${err?.message ?? err}`);
+            const safe = projectNativeErrorMessage(err?.message);
+            const e = new Error(`Embedding computation failed for input ${origIdx}: ${safe}`);
             e.code = EMBEDDING_ERROR_DENSE_UNAVAILABLE;
             throw e;
           }

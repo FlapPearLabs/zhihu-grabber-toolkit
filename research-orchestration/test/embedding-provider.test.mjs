@@ -303,3 +303,76 @@ test('P1-T10: Preflight errors do not leak absolute paths', async () => {
   assert.equal(pre.ok, false);
   assert.equal(pre.error.includes('/secret/path'), false);
 });
+
+test('P1-T10: P1-1 repair — accepted T01 acquisition layout reaches READY', async () => {
+  // Reproduce the EXACT layout written by the accepted T01 acquisition authority
+  // (discovery/p1-t01-embedding-qualification/fetch-model.mjs):
+  //   <dir>/identity.json                       (mirror)
+  //   <dir>/<modelId>/{config.json, tokenizer.json, tokenizer_config.json,
+  //                   onnx/model_quantized.onnx, identity.json}
+  // where <modelId> = "Xenova/bge-base-zh-v1.5" (contains a slash → nested subdir).
+  const dir = tmpDir('t01-layout');
+  const modelRel = ACCEPTED_LOCAL_PROFILE.modelId; // "Xenova/bge-base-zh-v1.5"
+  const modelRoot = path.join(dir, modelRel);
+
+  fs.mkdirSync(path.join(modelRoot, 'onnx'), { recursive: true });
+
+  const identity = {
+    schemaVersion: 2,
+    batteryStep: 'P1_T01_MODEL_ACQUISITION',
+    modelId: ACCEPTED_LOCAL_PROFILE.modelId,
+    requestedRevision: ACCEPTED_LOCAL_PROFILE.modelRevision,
+    revisionSha: ACCEPTED_LOCAL_PROFILE.modelRevision,
+    acquisition: { exactRevisionPinned: true },
+    files: [],
+  };
+  // T01 writes identity.json BOTH at <dir>/identity.json (mirror) AND <dir>/<modelId>/identity.json.
+  fs.writeFileSync(path.join(dir, 'identity.json'), JSON.stringify(identity), 'utf8');
+  fs.writeFileSync(path.join(modelRoot, 'identity.json'), JSON.stringify(identity), 'utf8');
+
+  // Artifacts are placed under <dir>/<modelId>/<filename>, matching fetch-model's
+  // `join(dir, model)` target. Content is irrelevant for the layout check (identity
+  // gate hashes them; a READY verdict requires the extractor which we cannot load
+  // offline, so we assert the LAYOUT is mechanically recognized by checking the
+  // preflight no longer reports artifact_absent for the nested layout).
+  for (const filename of Object.keys(ACCEPTED_LOCAL_PROFILE.artifacts)) {
+    fs.writeFileSync(path.join(modelRoot, filename), 'placeholder', 'utf8');
+  }
+
+  // modelDir points at <dir> (the acquisition root), matching fetch-model --dir.
+  const prov = createEmbeddingProvider({ modelDir: dir });
+  const pre = await prov.preflight();
+
+  // With the layout fixed, the identity gate must RESOLVE the nested artifacts
+  // (no 'Required artifact missing'). Placeholder content cannot match the real
+  // sha256, so the gate proceeds to the hash check and reports a tamper — which
+  // proves the nested layout was mechanically found (the pre-repair code would
+  // have reported 'Required artifact missing' instead).
+  assert.equal(pre.ok, false);
+  assert.equal(pre.error.includes('Required artifact missing'), false,
+    'artifact resolution must recognize the accepted T01 nested layout');
+  assert.equal(pre.error.includes('Artifact hash mismatch'), true,
+    'nested artifacts must be found and hashed (placeholder → tamper)');
+});
+
+test('P1-T10: P1-2 repair — native extractor errors never leak machine-private paths', async () => {
+  // Native Transformers.js / ONNX failures can carry absolute model/cache/user
+  // paths in err.message. embed() must project them through the repository's
+  // machine-private-path boundary — a stable safe identity/message, never the
+  // raw native diagnostic.
+  const leakingMessage = 'Failed to load /home/alice/.cache/huggingface/models--Xenova--bge-base-zh-v1.5/snapshots/abc/model.onnx: ENOENT';
+  const throwingExtractor = async () => {
+    throw new Error(leakingMessage);
+  };
+  const provider = createTestEmbeddingProvider({ extractorEngine: throwingExtractor });
+
+  await assert.rejects(
+    () => provider.embed(['测试文本']),
+    (err) => {
+      assert.equal(err.code, EMBEDDING_ERROR_DENSE_UNAVAILABLE);
+      assert.equal(err.message.includes('/home/alice/'), false, 'absolute path must not leak');
+      assert.equal(err.message.includes('.cache/huggingface'), false, 'cache path must not leak');
+      return true;
+    }
+  );
+});
