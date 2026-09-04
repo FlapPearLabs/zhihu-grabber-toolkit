@@ -1170,3 +1170,93 @@ test('R2-F8 questionId canonicality: non-canonical questionId rejected at the T0
     (err) => err instanceof MultiGroupError,
   );
 });
+
+// ---------------------------------------------------------------------------
+// R3 fresh-review round B repair — findings F-B1..F-B3 (RED at 1c6a9e8)
+// ---------------------------------------------------------------------------
+
+test('R3-FB1 coordinated identity theft: questionId co-rewrite with real sibling artifacts is corrupt → fresh (decision binding)', () => {
+  const workDir = tmpDir('r3fb1');
+  const decision = makeSelectionDecision(['100', '200']);
+  const state = makeState(workDir, ['100', '200'], { decision });
+  runGroupFlow(state, '100', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  runGroupFlow(state, '200', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  persistMultiGroupState(workDir, state);
+
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  // steal group 200's identity WHOLESALE into group 100's record: the record is
+  // self-consistent at load level (canonical qid, matching refs/hashes/mirror)
+  const stolen = JSON.parse(JSON.stringify(parsed.groups['200']));
+  stolen.groupId = '100';
+  parsed.groups['100'] = stolen;
+  fs.writeFileSync(stateFile, JSON.stringify(parsed, null, 2));
+
+  const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+  assert.equal(resume.fresh, true);
+  assert.equal(resume.boundary, 'incompatible');
+  const manifest = deriveResearchCorpusManifest({ state: resume.state, selectionDecision: decision });
+  const g100 = manifest.groups.find((x) => x.groupId === '100');
+  assert.ok(!g100 || (g100.questionId === '100' && g100.answersRel === 'zhihu/100/answers.json'));
+});
+
+test('R3-FB2 authority-mirror coherence: verified/handoffValid/failed flag lies are corrupt → fresh', () => {
+  const workDir = tmpDir('r3fb2');
+  const decision = makeSelectionDecision(['100']);
+  const state = makeState(workDir, ['100'], { decision });
+  runGroupFlow(state, '100', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  persistMultiGroupState(workDir, state);
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+
+  const expectFresh = () => {
+    const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+    assert.equal(resume.fresh, true);
+    assert.equal(resume.boundary, 'no_state');
+    assert.deepEqual(deriveVerifiedGroupRefs(resume.state), []);
+  };
+
+  // A: verified=true but the mirror says valid:false with a foreign questionId
+  const a = JSON.parse(JSON.stringify(parsed));
+  a.groups['100'].verification = { valid: false, questionId: '999', capturedAnswerCount: 1, reportedAnswerCount: 1 };
+  fs.writeFileSync(stateFile, JSON.stringify(a, null, 2));
+  expectFresh();
+
+  // B: handoffValid=true but verified=false (dependent validity without its root)
+  const b = JSON.parse(JSON.stringify(parsed));
+  b.groups['100'].verified = false;
+  fs.writeFileSync(stateFile, JSON.stringify(b, null, 2));
+  expectFresh();
+
+  // C: failed=true AND verified=true (T07-forbidden pair must never load)
+  const c = JSON.parse(JSON.stringify(parsed));
+  c.groups['100'].failed = true;
+  fs.writeFileSync(stateFile, JSON.stringify(c, null, 2));
+  expectFresh();
+});
+
+test('R3-FB3 non-canonical questionId + shallow path alias in persisted group is corrupt → fresh', () => {
+  const workDir = tmpDir('r3fb3');
+  const decision = makeSelectionDecision(['100']);
+  const state = makeState(workDir, ['100'], { decision });
+  runGroupFlow(state, '100', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  persistMultiGroupState(workDir, state);
+
+  // plant real artifacts at the aliased location with the SAME bytes (hashes stay valid)
+  fs.mkdirSync(path.join(workDir, 'x801'), { recursive: true });
+  fs.writeFileSync(path.join(workDir, 'x801', 'answers.json'), fs.readFileSync(path.join(workDir, 'zhihu', '100', 'answers.json')));
+  fs.writeFileSync(path.join(workDir, 'x801', 'handoff.json'), fs.readFileSync(path.join(workDir, 'zhihu', '100', 'handoff.json')));
+
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  parsed.groups['100'].questionId = '../x801';
+  parsed.groups['100'].evidenceRef = 'zhihu/../x801/answers.json';
+  parsed.groups['100'].handoffRef = 'zhihu/../x801/handoff.json';
+  parsed.groups['100'].verification = { valid: true, questionId: '../x801', capturedAnswerCount: 3, reportedAnswerCount: 3 };
+  fs.writeFileSync(stateFile, JSON.stringify(parsed, null, 2));
+
+  const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+  assert.equal(resume.fresh, true);
+  assert.equal(resume.boundary, 'no_state');
+  assert.deepEqual(deriveVerifiedGroupRefs(resume.state), []);
+});

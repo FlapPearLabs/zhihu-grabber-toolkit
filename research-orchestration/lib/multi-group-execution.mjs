@@ -157,6 +157,16 @@ export function computeSelectionIdentity(selectedGroups) {
  * identical selection keeps the same decision identity (composed groups are reused),
  * while ANY content change (rationale, scores, membership) still produces a
  * different identity. All other decision fields are covered verbatim.
+ *
+ * Sort-stability semantics: the comparators only compare the key fields; ties
+ * (duplicate keys) rely on Array.prototype.sort stability (ES2019+), so a
+ * reordered-but-otherwise-identical array with unique keys canonicalizes to the
+ * same identity. Duplicate keys carrying DIVERGENT payloads remain
+ * order-dependent (stability preserves input order among equal keys) — such
+ * inputs over-invalidate (reuse is denied, resume falls back to re-selection),
+ * which is the fail-closed direction and is NOT a defect: a decision containing
+ * duplicate keyed entries with differing content is itself malformed authority
+ * input (R2-F5 rejects supersets; create rejects duplicate groupIds outright).
  */
 function computeSelectionDecisionIdentity(decision) {
   if (!decision || typeof decision !== 'object') return sha256(canonicalJson(null));
@@ -731,6 +741,10 @@ function isValidGroupEntry(key, g) {
   }
   if (g.groupId !== key) return false;
   if (typeof g.questionId !== 'string' || g.questionId.length === 0) return false;
+  // R3-FB3: questionId canonicality at load (T06/T08 authority) — also kills
+  // shallow path-alias bindings (questionId like '../x801' would make the
+  // evidenceRef equality check self-consistent over an aliased location).
+  if (!isCanonicalQuestionId(g.questionId)) return false;
   if (!GROUP_STAGE_VALUES.includes(g.stage)) return false;
   for (const flag of ['captured', 'verified', 'handoffValid', 'failed', 'partial']) {
     if (!isStrictBoolean(g[flag])) return false;
@@ -764,6 +778,17 @@ function isValidGroupEntry(key, g) {
     if (g.handoffRef !== `zhihu/${g.questionId}/handoff.json`) return false;
     if (typeof g.artifactHashes.handoffJson !== 'string' || g.artifactHashes.handoffJson.length === 0) return false;
   }
+  // R3-FB2: flag/mirror coherence — the verification mirror is the only validity
+  // authority record; a verified flag contradicting it (or coverage-forbidden flag
+  // pairs) is corruption, never a usable state.
+  if (g.verified) {
+    if (!g.captured) return false;
+    if (!isPlainObjectValue(g.verification)) return false;
+    if (g.verification.valid !== true) return false;
+    if (g.verification.questionId !== g.questionId) return false;
+  }
+  if (g.handoffValid && !g.verified) return false;
+  if (g.failed && g.verified) return false;
   return true;
 }
 
@@ -883,6 +908,27 @@ export function resumeMultiGroupExecution({ workDir, planHash, selectionDecision
       boundary: RESUME_BOUNDARY_SELECTION_DECISION,
       invalidatedGroupIds: [],
     };
+  }
+
+  // R3-FB1: the persisted per-group questionId identities are re-bound to the
+  // DECISION — the cross-file authority resume already carries (non-circular).
+  // A persisted record claiming another group's identity (even with real sibling
+  // artifacts and self-consistent hashes) is corruption → fresh, never reuse.
+  const decisionQuestionByGroup = new Map();
+  for (const sg of (Array.isArray(selectionDecision?.selectedGroups) ? selectionDecision.selectedGroups : [])) {
+    if (sg && typeof sg === 'object' && typeof sg.groupId === 'string') {
+      decisionQuestionByGroup.set(sg.groupId, typeof sg.questionId === 'string' ? sg.questionId : null);
+    }
+  }
+  for (const groupId of Object.keys(existing.groups)) {
+    if (existing.groups[groupId].questionId !== decisionQuestionByGroup.get(groupId)) {
+      return {
+        state: createMultiGroupExecutionState({ planHash, selectionDecision }),
+        fresh: true,
+        boundary: RESUME_BOUNDARY_INCOMPATIBLE,
+        invalidatedGroupIds: [],
+      };
+    }
   }
 
   const state = existing;

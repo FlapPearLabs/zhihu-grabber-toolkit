@@ -361,3 +361,61 @@ F8  P3  T09 boundary did not validate questionId canonicality (a non-canonical i
 R2 TDD = RED at exact 1bf2250 (44 tests / 36 pass / 8 fail — /tmp/t09_red_r2.log)
          → append-only repair → GREEN 44/44 → full regression (see lane packet).
 ```
+```
+
+## FRESH REVIEW ROUND B — FINDINGS + REPAIR (R3-FB1..FB3)
+
+Fresh review @ exact 1c6a9e8 (post-R2 repair SHA). VERDICT: CHANGES_REQUESTED
+(1×P2 + 2×P3). All three findings are defensive-coherence gaps in the persisted
+state trust surface; none changes the happy path.
+
+ID  PRI  FINDING + REPAIR
+--  ---  --------------------------------------------------------------------------------
+FB1 P2   Cross-file circular trust: a persisted group's questionId was validated only
+         against itself (loop trust). An attacker who steals/re-writes group records
+         wholesale (e.g. swaps group 200's captured record under groupId '100',
+         co-rewriting questionId) produced a self-consistent load, and the resume path
+         then composed handoffs against the WRONG question — cross-file identity lie.
+         REPAIR: resume re-binds every persisted per-group questionId to the DECISION
+         it already carries (selectionDecision.selectedGroups — the cross-file,
+         non-circular authority). Any group whose questionId !== decision's recorded
+         questionId → whole state incompatible → fresh (boundary 'incompatible').
+         Load-layer answer remains fail-closed-first; resume decides compatibility.
+FB2 P2   Flag/mirror incoherence loaded cleanly: verified=true alongside a verification
+         mirror that is null / {valid:false} / {valid:true,questionId:'other'}; or
+         handoffValid=true with verified=false; or failed=true with verified=true
+         (coverage-forbidden pair, cf. T07 complete⊥failed). None were rejected —
+         the mirror is the validity authority, so a contradicting flag is corruption.
+         REPAIR: isValidGroupEntry coherence gate — verified ⇒ captured ∧
+         verification plain-object ∧ verification.valid===true ∧
+         verification.questionId === g.questionId; handoffValid ⇒ verified;
+         failed ∧ verified → corrupt.
+FB3 P3   questionId canonicality missing at load (T06/T08 authority): a persisted
+         entry with questionId '../x801' passed the non-empty string check, made the
+         R2-F3 evidenceRef equality self-consistent ('zhihu/../x801/answers.json' —
+         shallow path alias slips past assertWorkRelative), and wedged the coverage
+         hook permanently.
+         REPAIR: isValidGroupEntry rejects non-canonical questionId via T08's
+         isCanonicalQuestionId at load (authority reuse; no new rule invented).
+
+R3 TDD = RED at exact 1c6a9e8 (47 tests / 44 pass / 3 fail — /tmp/t09_red_r3.log;
+         the 3 failures are exactly FB1/FB2/FB3; the 44 pre-existing tests show zero
+         perturbation)
+         → append-only repair (this round) → GREEN 47/47
+         → full regression 467/467 (420 pre-existing + 47 focused; /tmp/t09_regression_r3.log)
+
+Repair edits (append-only, single repair commit):
+  1. resumeMultiGroupExecution: decision cross-binding gate after the
+     selectionDecisionHash boundary (decisionQuestionByGroup map; mismatch → fresh,
+     RESUME_BOUNDARY_INCOMPATIBLE).
+  2. isValidGroupEntry: isCanonicalQuestionId(g.questionId) gate (R3-FB3).
+  3. isValidGroupEntry: flag/mirror coherence gate (R3-FB2).
+  4. computeSelectionDecisionIdentity docstring: sort-stability semantics recorded
+     (ES2019 stable sort; duplicate keys with divergent payloads → order-dependent
+     → over-invalidation → fail-closed, not a defect).
+
+Note (R2-F5 superset + FB1 interplay): the load-layer selection-set equality check
+(F5 repair) already rejects a wholesale injected superset; FB1 closes the
+equal-size-swap variant that kept the set identical but rewrote per-group
+questionIds. Together: persisted groups map must equal the recorded selection set
+AND every per-group questionId must equal the decision's recorded questionId.
