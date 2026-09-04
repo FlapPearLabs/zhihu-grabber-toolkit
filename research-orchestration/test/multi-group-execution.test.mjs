@@ -1406,3 +1406,75 @@ test('R5-D4 unreadable capture artifact (directory at answers path): value-free 
   assert.equal(g.stage, GROUP_STAGE_FAILED);
   assert.deepEqual(g.failure, { code: 'CAPTURE_ARTIFACT_MISSING', class: 'contract' });
 });
+
+test('R6-E1 legal valid=false supersede after a verify process failure round-trips: stage restored to captured — persisted state must load and reuse (no over-rejection)', () => {
+  const workDir = tmpDir('r6e1');
+  const decision = makeSelectionDecision(['100', '200']);
+  const state = makeState(workDir, ['100', '200'], { decision });
+  // sibling 200: fully composed
+  runGroupFlow(state, '200', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  // group 100: capture ok → verify process crash (failed, stage='failed') → retry:
+  // a COMPLETED verify run returning legal valid=false supersedes the stale failure
+  // (failed=false, failure=null) — the live flow leaves the group captured-not-verified.
+  // (Driven per-primitive: handoff is unreachable for a not-verified group.)
+  executeGroupCapture({ state, groupId: '100', workDir, captureAdapter: makeCaptureAdapter() });
+  executeGroupVerify({ state, groupId: '100', workDir, runner: makeGroupRunner({ failVerifyFor: ['100'] }) });
+  executeGroupVerify({ state, groupId: '100', workDir, runner: makeGroupRunner({ verifyValidFalseFor: ['100'] }) });
+  persistMultiGroupState(workDir, state);
+
+  // This state IS module-produced: persist accepts it; load must too, and resume
+  // must reuse the composed sibling — a load rejection here discards valid work
+  // on every crash→retry→persist cycle (D3 over-rejection regression).
+  const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+  assert.equal(resume.fresh, false);
+  assert.equal(resume.boundary, 'resume');
+  const refs = deriveVerifiedGroupRefs(resume.state);
+  assert.equal(refs.length, 1);
+  assert.equal(refs[0].groupId, '200');
+  assert.equal(resume.state.groups['100'].stage, GROUP_STAGE_CAPTURED);
+  assert.equal(resume.state.groups['100'].failed, false);
+  assert.equal(resume.state.groups['100'].verified, false);
+});
+
+test('R6-E2 captured=false with paginationStatus=complete: not-producible forgery is corrupt → fresh, never a coverage wedge', () => {
+  const workDir = tmpDir('r6e2');
+  const decision = makeSelectionDecision(['100']);
+  const state = makeState(workDir, ['100'], { decision });
+  persistMultiGroupState(workDir, state);
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  // Only capture SUCCESS writes 'complete', always together with captured=true;
+  // failure downgrades and stale resets write 'unknown'. A never-captured group
+  // claiming complete pagination is not producible — and if it loads, resume
+  // reuses it and the coverage hook throws coverage_invalid_state mid-controller.
+  parsed.groups['100'].paginationStatus = 'complete';
+  fs.writeFileSync(stateFile, JSON.stringify(parsed, null, 2));
+
+  const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+  assert.equal(resume.fresh, true);
+  assert.equal(resume.boundary, 'no_state');
+  assert.deepEqual(deriveVerifiedGroupRefs(resume.state), []);
+});
+
+test('R6-E3 valid=true mirror without the verified flag: not-producible mirror shape is corrupt → fresh', () => {
+  const workDir = tmpDir('r6e3');
+  const decision = makeSelectionDecision(['100']);
+  const state = makeState(workDir, ['100'], { decision });
+  // captured-not-verified group (legal): capture ok → verify returns legal
+  // valid=false. Driven per-primitive: handoff is unreachable for a
+  // not-verified group.
+  executeGroupCapture({ state, groupId: '100', workDir, captureAdapter: makeCaptureAdapter() });
+  executeGroupVerify({ state, groupId: '100', workDir, runner: makeGroupRunner({ verifyValidFalseFor: ['100'] }) });
+  persistMultiGroupState(workDir, state);
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  // live flows only ever write {valid:false} mirrors for non-verified groups —
+  // a valid=true mirror without verified=true is not producible.
+  parsed.groups['100'].verification = { valid: true, questionId: '100', capturedAnswerCount: 3, reportedAnswerCount: 3 };
+  fs.writeFileSync(stateFile, JSON.stringify(parsed, null, 2));
+
+  const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+  assert.equal(resume.fresh, true);
+  assert.equal(resume.boundary, 'no_state');
+  assert.deepEqual(deriveVerifiedGroupRefs(resume.state), []);
+});

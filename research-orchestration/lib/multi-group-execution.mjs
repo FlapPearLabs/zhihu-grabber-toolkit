@@ -415,6 +415,11 @@ export function executeGroupVerify({ state, groupId, workDir, runner }) {
     g.verified = false;
     g.failed = false;
     g.failure = null;
+    // R6-E1: the supersede leaves the group captured-not-verified — restore the
+    // stage out of 'failed' so the persisted tuple stays inside the load gate's
+    // production mapping (a crash→retry→persist cycle must round-trip, never be
+    // rejected as corruption on reload, which would discard valid sibling work).
+    g.stage = GROUP_STAGE_CAPTURED;
     g.verification = {
       valid: false,
       questionId: parsed && typeof parsed.questionId === 'string' ? parsed.questionId : null,
@@ -803,6 +808,11 @@ function isValidGroupEntry(key, g) {
     // accounting input (I7 hygiene; keys absent/non-integer/negative → corrupt).
     if (g.verification.capturedAnswerCount !== null && !(Number.isInteger(g.verification.capturedAnswerCount) && g.verification.capturedAnswerCount >= 0)) return false;
     if (g.verification.reportedAnswerCount !== null && !(Number.isInteger(g.verification.reportedAnswerCount) && g.verification.reportedAnswerCount >= 0)) return false;
+    // R6-E3: live flows write only {valid:false} mirrors for non-verified groups
+    // (legal-invalid diagnostic) or null before the first verify runs — a
+    // valid=true mirror without verified=true is not producible (Round E
+    // observation folded into this repair; currently lazy, hardened here).
+    if (!g.verified && g.verification.valid === true) return false;
   }
   if (g.failure !== null) {
     if (!isPlainObjectValue(g.failure)) return false;
@@ -845,6 +855,13 @@ function isValidGroupEntry(key, g) {
   // resume cleanly and then wedge the coverage hook (coverage_invalid_state)
   // instead of failing closed here (CE-18: derived updates must always apply).
   if (g.partial !== (g.paginationStatus === PAGINATION_PARTIAL)) return false;
+  // R6-E2: only capture SUCCESS writes 'complete'/'partial', always together with
+  // captured=true; failure downgrades and stale resets write 'unknown'. A
+  // never-captured group claiming a pagination outcome is not producible — and if
+  // it loaded, resume would reuse it and the coverage hook would throw
+  // coverage_invalid_state mid-controller (RC2 wedge family, forged variant;
+  // also subsumes the lazy partial=true ∧ captured=false forgery).
+  if (!g.captured && g.paginationStatus !== PAGINATION_UNKNOWN) return false;
   // R5-D3: stage ↔ flag production mapping — every live flow keeps stage and the
   // validity flags in exactly one of these relationships (capture/verify/handoff
   // advance the stage; every failure path marks stage='failed' and voids

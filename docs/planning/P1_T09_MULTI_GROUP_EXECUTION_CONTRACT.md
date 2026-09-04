@@ -547,3 +547,69 @@ mirror = NOT CAUGHT (=D1); D2-probe count divergence = NOT CAUGHT (=D2); D3-prob
 stage/flags = NOT CAUGHT (=D3); forged verifiedGroupRefs + garbage manifest +
 researchComplete=true = CAUGHT (whole file rejected by the FB2 gate — fabricated
 refs never consumed); directory-at-answers-path = NOT CAUGHT (=D4, EISDIR escape).
+```
+
+## FRESH REVIEW ROUND E — CONVERGENCE FINDINGS + REPAIR (R6-E1..E3)
+
+Fresh review @ exact db10418 (post-R5 repair SHA). VERDICT: CHANGES_REQUESTED —
+2×P2 + 1×P3 observation. 16 of 18 prior findings strictly CLOSED_VERIFIED;
+RC2 → PARTIAL (wedge family forged variant still open) and D3 → PARTIAL (register
+mapping incomplete — one over-rejection). Round D's D4/D1/D2 and all Round A/B/C
+repairs withstood scrutiny. Reviewer probes also re-confirmed: __proto__ via raw
+JSON round-trip = defense held (E2-probe).
+
+ID  PRI  FINDING + REPAIR
+--  ---  --------------------------------------------------------------------------------
+E1  P2   OVER-REJECTION (D3 regression): executeGroupVerify's legal valid=false
+         supersede branch (R2-F1b) cleared failed/failure but left stage='failed' →
+         the module legally produces {stage:'failed', failed:false, captured:true}
+         (verify crash → retry → legal invalid). persist accepts; the D3 load gate
+         rejects stage='failed' ∧ ¬failed → whole state loads as null → resume
+         fresh → the composed SIBLING group is discarded on every
+         crash→retry→persist cycle. Violates Round D's repair mandate ("must accept
+         every state the module itself can produce") and the contract's reuse
+         guarantees.
+         REPAIR: the supersede branch restores g.stage = GROUP_STAGE_CAPTURED (the
+         group is by definition captured at that point — verify's precondition).
+         Production mapping now complete: every live-flow tuple passes the gate.
+E2  P2   RC2 wedge family, forged variant: no gate bound paginationStatus:'complete'
+         to captured:true. {captured:false, paginationStatus:'complete',
+         stage:'pending'} is not producible (only capture SUCCESS writes
+         complete/partial, always with captured=true; failure downgrades and stale
+         resets write 'unknown'), but loaded → resumed → reused →
+         buildSourceCompletenessUpdate emitted evidenceRef:null → the T07 validator
+         threw coverage_invalid_state mid-controller — a permanent wedge (CE-18
+         broken for this forgery).
+         REPAIR: isValidGroupEntry clause — !captured ⇒ paginationStatus==='unknown'
+         (also subsumes the lazy partial=true ∧ captured=false forgery).
+E3  P3   (non-blocking observation, folded in) FB2 gated the mirror only when
+         verified=true; a forged {verified:false, stage:'captured',
+         verification:{valid:true,...}} loaded with LAZY acceptance (refs stay 0
+         until full recomposition; mirror overwritten on re-verify; no validity
+         lie). Live flows write only {valid:false} mirrors (or null) for
+         non-verified groups, so a valid=true mirror without verified=true is not
+         producible.
+         REPAIR (hardening, in the same repair commit): verification block rejects
+         !verified ∧ verification.valid===true.
+
+R6 TDD = RED at exact db10418 (57 tests / 54 pass / 3 fail — /tmp/t09_red_r6.log;
+         failures exactly E1/E2/E3 with intended assertions; the 54 pre-existing
+         tests show zero perturbation. Note: the first RED attempt failed for a
+         HARNESS reason (runGroupFlow invoked handoff on a not-verified group →
+         precondition throw before any assertion); the harness was corrected to
+         per-primitive driving and RED was re-captured cleanly at the same exact
+         SHA with the lib changes stashed — the committed RED evidence is the
+         corrected run.)
+         → append-only repair (this round) → GREEN 57/57
+         → full regression 477/477 (420 pre-existing + 57 focused; /tmp/t09_regression_r6.log)
+
+Repair edits (append-only, single repair commit):
+  1. executeGroupVerify supersede branch: restore stage to GROUP_STAGE_CAPTURED (E1).
+  2. isValidGroupEntry: !captured ⇒ paginationStatus==='unknown' production clause (E2).
+  3. isValidGroupEntry verification block: !verified ∧ mirror.valid===true → corrupt (E3).
+
+Round E reviewer probes (evidence /tmp/t09_round_e_probes.mjs, run against exact
+db10418): E1-probe crash→retry→persist→resume = NOT CAUGHT (sibling discarded —
+=E1); E4-probe captured=false+complete = NOT CAUGHT (coverage wedge — =E2);
+E3-probe forged valid=true mirror = lazy acceptance (=E3, hardened);
+__proto__-via-JSON probe = CAUGHT (defense held).
