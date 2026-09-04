@@ -613,3 +613,59 @@ db10418): E1-probe crash→retry→persist→resume = NOT CAUGHT (sibling discar
 =E1); E4-probe captured=false+complete = NOT CAUGHT (coverage wedge — =E2);
 E3-probe forged valid=true mirror = lazy acceptance (=E3, hardened);
 __proto__-via-JSON probe = CAUGHT (defense held).
+```
+
+## FRESH REVIEW ROUND F — CONVERGENCE FINDINGS + REPAIR (R7-F1..F2)
+
+Fresh review @ exact 8c80c8f (post-R6 repair SHA). VERDICT: CHANGES_REQUESTED —
+1×P2 + 1×P3, both narrow. ALL 21 prior findings (F1..F8, FB1..FB3, RC1..RC3,
+D1..D4, E1..E3) verified CLOSED_VERIFIED. The E1 repair survived the reviewer's
+independent over-rejection sweep: 6 producible failure/retry tuples
+(A1 handoff-gate-failure + sibling, A2 crash-mirror, A3 recapture-after-mirror,
+A4 capture-failure-after-capture, A5 partial capture, A6 never-captured failure,
+A1b recompose-after-resume) ALL persist→load→resume ACCEPTED with composed
+siblings preserved.
+
+ID  PRI  FINDING + REPAIR
+--  ---  --------------------------------------------------------------------------------
+F1  P2   Third variant of the wedge family: the load gate enforced two of the three
+         pagination production invariants (RC2 partial↔status; E2 !captured⇒unknown)
+         but not failed ⇒ paginationStatus==='unknown'. markGroupFailed ALWAYS
+         downgrades to unknown+partial=false, and every complete/partial writer
+         clears failed synchronously — so the forged tuple {captured:true,
+         verified:false, stage:'failed', failed:true, failure:{code,class},
+         paginationStatus:'complete', partial:false} (over hash-valid artifacts)
+         is not producible, yet it loaded → resume reused it →
+         buildSourceCompletenessUpdate emitted failed ∧ complete → the T07
+         validator threw coverage_invalid_state mid-controller (CE-18; reviewer
+         probe B, empirically confirmed; the fully-composed variant of the same
+         forgery was already caught by the failed⊥verified gate — defense held).
+         REPAIR: isValidGroupEntry clause — failed ⇒ paginationStatus==='unknown'
+         (also closes the failed∧partial variant; reviewer over-rejection scan
+         confirms every producible failed tuple carries 'unknown').
+F2  P3   The persisted verification mirror accepted arbitrary extra keys (live
+         flows write exactly four production keys). Lazy — no consumer reads
+         mirror extras, no validity/accounting effect — but inconsistent with the
+         failure {code,class} strictness and the CE-22 exact-production-shape
+         philosophy.
+         REPAIR: mirror whitelisted to GROUP_VERIFICATION_KEYS = [valid,
+         questionId, capturedAnswerCount, reportedAnswerCount] (rejects nothing
+         producible).
+
+R7 TDD = RED at exact 8c80c8f (59 tests / 57 pass / 2 fail — /tmp/t09_red_r7.log;
+         failures exactly F1 (both tamper variants) and F2 with intended
+         assertions; the 57 pre-existing tests show zero perturbation)
+         → append-only repair (this round) → GREEN 59/59
+         → full regression 479/479 (420 pre-existing + 59 focused; /tmp/t09_regression_r7.log)
+
+Repair edits (append-only, single repair commit):
+  1. isValidGroupEntry: failed ⇒ paginationStatus==='unknown' production clause (F1).
+  2. GROUP_VERIFICATION_KEYS constant + mirror key whitelist in the
+     verification block (F2).
+
+Round F reviewer probes (evidence /tmp/t09_round_f_probes.mjs, run against exact
+8c80c8f): probe B failed∧complete = NOT CAUGHT (=F1, wedge confirmed
+empirically); probe A 7-check over-rejection sweep = ALL ACCEPTED (defense held —
+no producible tuple rejected); probe C mirror extra key = lazy (=F2); probe D
+E1-roundtrip independent re-drive = CAUGHT (reuse, sibling preserved); probe E
+E2/E3 direct re-probes = CAUGHT at load.

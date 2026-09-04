@@ -1478,3 +1478,62 @@ test('R6-E3 valid=true mirror without the verified flag: not-producible mirror s
   assert.equal(resume.boundary, 'no_state');
   assert.deepEqual(deriveVerifiedGroupRefs(resume.state), []);
 });
+
+test('R7-F1 failed group with a pagination outcome: markGroupFailed always downgrades to unknown — forged failed∧complete/partial tuples are corrupt → fresh, never a coverage wedge', () => {
+  const workDir = tmpDir('r7f1');
+  const decision = makeSelectionDecision(['100']);
+  const state = makeState(workDir, ['100'], { decision });
+  // capture ok (paginationStatus='complete') → verify legal valid=false:
+  // captured-not-verified, stage='captured', failed=false
+  executeGroupCapture({ state, groupId: '100', workDir, captureAdapter: makeCaptureAdapter() });
+  executeGroupVerify({ state, groupId: '100', workDir, runner: makeGroupRunner({ verifyValidFalseFor: ['100'] }) });
+  persistMultiGroupState(workDir, state);
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+
+  const expectFresh = () => {
+    const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+    assert.equal(resume.fresh, true);
+    assert.equal(resume.boundary, 'no_state');
+    assert.deepEqual(deriveVerifiedGroupRefs(resume.state), []);
+  };
+
+  // A: failed=true + paginationStatus='complete' — markGroupFailed NEVER produces
+  // this (it writes unknown+partial=false; every complete/partial writer clears
+  // failed synchronously). If it loads, the T07 hook wedges the controller.
+  const a = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  a.groups['100'].failed = true;
+  a.groups['100'].stage = GROUP_STAGE_FAILED;
+  a.groups['100'].failure = { code: 'VERIFY_PROCESS_FAILED', class: 'process' };
+  fs.writeFileSync(stateFile, JSON.stringify(a, null, 2));
+  expectFresh();
+
+  // B: failed=true + partial=true + paginationStatus='partial' — same family.
+  const b = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  b.groups['100'].failed = true;
+  b.groups['100'].stage = GROUP_STAGE_FAILED;
+  b.groups['100'].failure = { code: 'VERIFY_PROCESS_FAILED', class: 'process' };
+  b.groups['100'].partial = true;
+  b.groups['100'].paginationStatus = 'partial';
+  fs.writeFileSync(stateFile, JSON.stringify(b, null, 2));
+  expectFresh();
+});
+
+test('R7-F2 mirror key whitelist: extra payload keys in the persisted verification mirror are corrupt → fresh', () => {
+  const workDir = tmpDir('r7f2');
+  const decision = makeSelectionDecision(['100']);
+  const state = makeState(workDir, ['100'], { decision });
+  executeGroupCapture({ state, groupId: '100', workDir, captureAdapter: makeCaptureAdapter() });
+  executeGroupVerify({ state, groupId: '100', workDir, runner: makeGroupRunner({ verifyValidFalseFor: ['100'] }) });
+  persistMultiGroupState(workDir, state);
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  // live flows write exactly the four production keys — an extra rider key is
+  // not producible (same strictness as the failure {code,class} whitelist).
+  parsed.groups['100'].verification.extraKey = 'inert-rider';
+  fs.writeFileSync(stateFile, JSON.stringify(parsed, null, 2));
+
+  const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+  assert.equal(resume.fresh, true);
+  assert.equal(resume.boundary, 'no_state');
+  assert.deepEqual(deriveVerifiedGroupRefs(resume.state), []);
+});

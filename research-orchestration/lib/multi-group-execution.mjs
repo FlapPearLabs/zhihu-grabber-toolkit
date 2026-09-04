@@ -87,6 +87,9 @@ const PAGINATION_UNKNOWN = 'unknown';
 const GROUP_STAGE_VALUES = [GROUP_STAGE_PENDING, GROUP_STAGE_CAPTURED, GROUP_STAGE_VERIFIED, GROUP_STAGE_HANDED_OFF, GROUP_STAGE_FAILED];
 const PAGINATION_STATUS_VALUES = [PAGINATION_COMPLETE, PAGINATION_PARTIAL, PAGINATION_UNKNOWN];
 const GROUP_ARTIFACT_HASH_KEYS = ['answersJson', 'handoffJson'];
+// R7-F2: the verification mirror is written with exactly these four production
+// keys in every live flow — the persisted mirror is whitelisted to the same set.
+const GROUP_VERIFICATION_KEYS = ['valid', 'questionId', 'capturedAnswerCount', 'reportedAnswerCount'];
 const GROUP_ENTRY_KEYS = [
   'groupId', 'questionId', 'stage', 'captured', 'verified', 'handoffValid', 'failed', 'partial',
   'paginationStatus', 'evidenceRef', 'handoffRef', 'artifactHashes', 'capturedAnswerCount',
@@ -801,6 +804,12 @@ function isValidGroupEntry(key, g) {
   if (g.capturedAnswerCount !== null && !(Number.isInteger(g.capturedAnswerCount) && g.capturedAnswerCount >= 0)) return false;
   if (g.verification !== null) {
     if (!isPlainObjectValue(g.verification)) return false;
+    // R7-F2: the persisted mirror is whitelisted to its exact four production
+    // keys — extra rider keys are not producible (same strictness as the
+    // failure {code,class} whitelist).
+    for (const k of Object.keys(g.verification)) {
+      if (!GROUP_VERIFICATION_KEYS.includes(k)) return false;
+    }
     // R4-RC3 + R5-D1: mirror count fields are built via intOrNull in every live
     // flow (integer AND non-negative, else null) and consumed by manifest
     // accounting (reportedAnswerCount) and capturedAnswerCount adoption — non-
@@ -862,6 +871,13 @@ function isValidGroupEntry(key, g) {
   // coverage_invalid_state mid-controller (RC2 wedge family, forged variant;
   // also subsumes the lazy partial=true ∧ captured=false forgery).
   if (!g.captured && g.paginationStatus !== PAGINATION_UNKNOWN) return false;
+  // R7-F1: failure downgrades ALWAYS write the neutral pagination pair
+  // (markGroupFailed: unknown + partial=false), and every 'complete'/'partial'
+  // writer clears failed in the same synchronous mutation — a failed group
+  // claiming a pagination outcome is not producible, and if it loaded, resume
+  // would reuse it and the coverage hook would wedge (coverage_invalid_state;
+  // third variant of the RC2/E2 wedge family).
+  if (g.failed && g.paginationStatus !== PAGINATION_UNKNOWN) return false;
   // R5-D3: stage ↔ flag production mapping — every live flow keeps stage and the
   // validity flags in exactly one of these relationships (capture/verify/handoff
   // advance the stage; every failure path marks stage='failed' and voids
