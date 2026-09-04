@@ -36,6 +36,7 @@ import path from 'node:path';
 import { isValidPlanHashFormat } from './plan-contract.mjs';
 import { assertArtifactSafe } from './rrf.mjs';
 import { validateProviderResult } from './provider-seam.mjs';
+import { isCanonicalQuestionId } from './source-group-selection.mjs';
 import {
   updateSourceCompleteness,
   OWNER_T09_SOURCE_COMPLETENESS,
@@ -149,6 +150,24 @@ export function computeSelectionIdentity(selectedGroups) {
   return sha256(canonicalJson({ groupIds: ids }));
 }
 
+/**
+ * Selection DECISION identity (R2-F4): canonical over the decision CONTENT with the
+ * incidental array ORDER of selectedGroups (keyed by groupId) and candidates (keyed
+ * by questionId) normalized. Honors the recorded reuse contract: a reordered-but-
+ * identical selection keeps the same decision identity (composed groups are reused),
+ * while ANY content change (rationale, scores, membership) still produces a
+ * different identity. All other decision fields are covered verbatim.
+ */
+function computeSelectionDecisionIdentity(decision) {
+  if (!decision || typeof decision !== 'object') return sha256(canonicalJson(null));
+  const key = (v) => String(v ?? '');
+  const sortedSelected = [...(Array.isArray(decision.selectedGroups) ? decision.selectedGroups : [])]
+    .sort((a, b) => (key(a?.groupId) < key(b?.groupId) ? -1 : key(a?.groupId) > key(b?.groupId) ? 1 : 0));
+  const sortedCandidates = [...(Array.isArray(decision.candidates) ? decision.candidates : [])]
+    .sort((a, b) => (key(a?.questionId) < key(b?.questionId) ? -1 : key(a?.questionId) > key(b?.questionId) ? 1 : 0));
+  return sha256(canonicalJson({ ...decision, selectedGroups: sortedSelected, candidates: sortedCandidates }));
+}
+
 // ---------------------------------------------------------------------------
 // state creation
 // ---------------------------------------------------------------------------
@@ -207,6 +226,16 @@ export function createMultiGroupExecutionState({ planHash, selectionDecision }) 
     if (typeof groupId !== 'string' || groupId.length === 0 || typeof questionId !== 'string' || questionId.length === 0) {
       throw new MultiGroupError('MULTI_GROUP_SELECTION_INVALID', 'selected group identity missing/invalid (fail closed)');
     }
+    // R2-F6: prototype-dangerous keys can silently vanish from a plain-object
+    // groups map (e.g. '__proto__' assignment hits the accessor setter) — reject.
+    if (groupId === '__proto__' || groupId === 'constructor' || groupId === 'prototype') {
+      throw new MultiGroupError('MULTI_GROUP_GROUP_ID_FORBIDDEN', 'selected group id is a prototype-dangerous key (fail closed)');
+    }
+    // R2-F8: questionId canonicality is T06/T08 authority — align the T09 boundary
+    // with it (non-canonical identities would otherwise wedge at persistence).
+    if (!isCanonicalQuestionId(questionId)) {
+      throw new MultiGroupError('MULTI_GROUP_SELECTION_INVALID', 'selected group questionId is not a canonical question id (fail closed)');
+    }
     if (seen.has(groupId)) {
       throw new MultiGroupError('MULTI_GROUP_DUPLICATE_GROUP_ID', 'duplicate groupId in SelectedSourceGroups (fail closed)');
     }
@@ -223,7 +252,7 @@ export function createMultiGroupExecutionState({ planHash, selectionDecision }) 
     type: MULTI_GROUP_STATE_TYPE,
     planHash,
     selectionIdentity: computeSelectionIdentity(selected),
-    selectionDecisionHash: sha256(canonicalJson(selectionDecision)),
+    selectionDecisionHash: computeSelectionDecisionIdentity(selectionDecision),
     groups,
     verifiedGroupRefs: [],
     manifest: null,
@@ -239,6 +268,11 @@ function markGroupFailed(g, code, failureClass) {
   g.failed = true;
   g.stage = GROUP_STAGE_FAILED;
   g.failure = { code: String(code), class: String(failureClass) };
+  // R2-F1: a failed group's completeness/partiality claims are void. The T07
+  // validator rejects contradictory complete&&failed, and the derived Source
+  // Completeness payload must ALWAYS be applicable (CE-18) — downgrade.
+  g.paginationStatus = PAGINATION_UNKNOWN;
+  g.partial = false;
 }
 
 /**
@@ -342,7 +376,12 @@ export function executeGroupVerify({ state, groupId, workDir, runner }) {
   if (!parsed || parsed.valid !== true) {
     // captured != verified: legal outcome, NOT a group failure. The group simply
     // remains outside VerifiedGroupRefs (derivation enforces this).
+    // R2-F1b: a COMPLETED verify run supersedes any prior process/identity failure
+    // marks — a stale failure identity must never leak into coverage accounting
+    // (and combined with a recorded 'complete' pagination it would contradict T07).
     g.verified = false;
+    g.failed = false;
+    g.failure = null;
     g.verification = {
       valid: false,
       questionId: parsed && typeof parsed.questionId === 'string' ? parsed.questionId : null,
@@ -712,6 +751,19 @@ function isValidGroupEntry(key, g) {
     if (typeof g.failure.code !== 'string' || g.failure.code.length === 0) return false;
     if (typeof g.failure.class !== 'string' || g.failure.class.length === 0) return false;
   }
+  // R2-F2/F3 cross-field coherence: a captured group MUST carry its OWN recorded
+  // answers identity (hash + the exact production work-relative ref shape);
+  // handoffValid likewise. Without this, I4 revalidation is vacuous (a missing
+  // expected hash skips the comparison entirely) and cross-group artifact swaps
+  // load cleanly into the manifest.
+  if (g.captured) {
+    if (g.evidenceRef !== `zhihu/${g.questionId}/answers.json`) return false;
+    if (typeof g.artifactHashes.answersJson !== 'string' || g.artifactHashes.answersJson.length === 0) return false;
+  }
+  if (g.handoffValid) {
+    if (g.handoffRef !== `zhihu/${g.questionId}/handoff.json`) return false;
+    if (typeof g.artifactHashes.handoffJson !== 'string' || g.artifactHashes.handoffJson.length === 0) return false;
+  }
   return true;
 }
 
@@ -733,8 +785,14 @@ function isValidPersistedMultiGroupShape(parsed) {
   const groupIds = Object.keys(parsed.groups);
   if (groupIds.length === 0) return false;
   for (const id of groupIds) {
+    // R2-F6: prototype-dangerous keys never belong in a persisted groups map
+    if (id === '__proto__' || id === 'constructor' || id === 'prototype') return false;
     if (!isValidGroupEntry(id, parsed.groups[id])) return false;
   }
+  // R2-F5: the persisted groups map must be EXACTLY the recorded selection set —
+  // any superset/subset/rename is corruption (loads as null → fresh; resume's
+  // composition derivation must never even see it, let alone throw from it).
+  if (computeSelectionIdentity(groupIds.map((id) => ({ groupId: id }))) !== parsed.selectionIdentity) return false;
   if (!Array.isArray(parsed.verifiedGroupRefs)) return false;
   for (const ref of parsed.verifiedGroupRefs) {
     if (!isPlainObjectValue(ref) || typeof ref.groupId !== 'string' || ref.groupId.length === 0) return false;
@@ -783,7 +841,7 @@ function resetGroupToPending(g) {
  */
 export function resumeMultiGroupExecution({ workDir, planHash, selectionDecision }) {
   const selectionIdentity = computeSelectionIdentity(selectionDecision?.selectedGroups);
-  const selectionDecisionHash = sha256(canonicalJson(selectionDecision ?? null));
+  const selectionDecisionHash = computeSelectionDecisionIdentity(selectionDecision ?? null);
 
   const existing = loadMultiGroupState(workDir);
   if (!existing) {
@@ -835,7 +893,16 @@ export function resumeMultiGroupExecution({ workDir, planHash, selectionDecision
 
     // I4: FILE EXISTS != VALID CACHE — answers.json is the root dependency.
     if (g.captured) {
-      const answersCheck = validateArtifactCheckpoint(workDir, g.evidenceRef, g.artifactHashes.answersJson ?? null);
+      const expectedAnswersHash = g.artifactHashes.answersJson ?? null;
+      // R2-F2 (defense in depth; load already rejects this shape): a captured group
+      // without a recorded answers hash has NO revalidatable identity —
+      // validateArtifactCheckpoint would skip the comparison entirely. Stale.
+      if (!expectedAnswersHash) {
+        resetGroupToPending(g);
+        invalidatedGroupIds.push(groupId);
+        continue;
+      }
+      const answersCheck = validateArtifactCheckpoint(workDir, g.evidenceRef, expectedAnswersHash);
       if (!answersCheck.ok) {
         // stale root → whole group + dependents (verification, handoff) invalidated
         resetGroupToPending(g);
@@ -844,11 +911,18 @@ export function resumeMultiGroupExecution({ workDir, planHash, selectionDecision
       }
       // handoff.json is a DEPENDENT artifact of the verified answers
       if (g.handoffValid) {
-        const handoffCheck = validateArtifactCheckpoint(workDir, g.handoffRef, g.artifactHashes.handoffJson ?? null);
-        if (!handoffCheck.ok) {
+        if (!g.handoffRef || !g.artifactHashes.handoffJson) {
+          // R2-F2: handoff validity without a revalidatable recorded identity is stale
           g.handoffValid = false;
           g.stage = GROUP_STAGE_VERIFIED; // verified stays (answers unchanged)
           invalidatedGroupIds.push(groupId);
+        } else {
+          const handoffCheck = validateArtifactCheckpoint(workDir, g.handoffRef, g.artifactHashes.handoffJson);
+          if (!handoffCheck.ok) {
+            g.handoffValid = false;
+            g.stage = GROUP_STAGE_VERIFIED; // verified stays (answers unchanged)
+            invalidatedGroupIds.push(groupId);
+          }
         }
       }
     }

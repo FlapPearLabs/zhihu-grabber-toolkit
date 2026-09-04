@@ -248,7 +248,8 @@ test('create: valid selection produces per-group pending state with identity bin
 
   assert.equal(state.type, MULTI_GROUP_STATE_TYPE);
   assert.equal(state.planHash, planHash);
-  assert.equal(state.selectionDecisionHash, sha(crypto.createHash('sha256').update('{}').digest('hex')) === '' ? null : state.selectionDecisionHash); // hash exists, exact value checked below
+  assert.match(state.selectionDecisionHash, /^[0-9a-f]{64}$/);
+  assert.notEqual(state.selectionDecisionHash, state.selectionIdentity); // decision identity is NOT the bare set identity
   assert.ok(isValidPlanHashFormat(state.selectionIdentity) || /^[0-9a-f]{64}$/.test(state.selectionIdentity));
   assert.deepEqual(Object.keys(state.groups).sort(), ['100', '200']);
   assert.equal(state.groups['100'].stage, GROUP_STAGE_PENDING);
@@ -1009,4 +1010,163 @@ test('CE-22 STATE_SHAPE_GROUP_ENTRY: semantically malformed group entries are ne
   e.groups['100'].failure = { code: 'X', class: 'provider', detail: 'raw provider stack' };
   fs.writeFileSync(stateFile, JSON.stringify(e, null, 2));
   expectFresh();
+});
+
+// ---------------------------------------------------------------------------
+// R2 fresh-review repair round — findings F1..F8 (RED at 1bf2250, repair follows)
+// ---------------------------------------------------------------------------
+
+test('R2-F1 complete&&failed coverage contradiction: capture-complete then verify-process-failure derives a T07-legal payload', () => {
+  const workDir = tmpDir('r2f1');
+  const state = makeState(workDir, ['100']);
+  executeGroupCapture({ state, groupId: '100', workDir, captureAdapter: makeCaptureAdapter() });
+  executeGroupVerify({ state, groupId: '100', workDir, runner: makeGroupRunner({ failVerifyFor: ['100'] }) });
+
+  const g = state.groups['100'];
+  assert.equal(g.failed, true);
+  // the failed group's completeness claim is void — complete must downgrade
+  assert.equal(g.paginationStatus, 'unknown');
+
+  // the derived payload must satisfy the T07 validator (CE-18): apply never throws
+  const coverageState = createInitialCoverageState({ planHash: sha('plan-a') });
+  const next = applySourceCompletenessToCoverageState(coverageState, state);
+  const entry = canonicalizeCoverageState(next).sourceCompleteness.perGroupStatus['100'];
+  assert.equal(entry.failed, true);
+  assert.equal(entry.paginationStatus, 'unknown');
+  assert.equal(entry.verified, false);
+});
+
+test('R2-F1b stale failure superseded: a completed verify run (legal valid=false) clears prior process-failure marks', () => {
+  const workDir = tmpDir('r2f1b');
+  const state = makeState(workDir, ['100']);
+  const crashRunner = makeGroupRunner({ failVerifyFor: ['100'] });
+  executeGroupCapture({ state, groupId: '100', workDir, captureAdapter: makeCaptureAdapter() });
+  executeGroupVerify({ state, groupId: '100', workDir, runner: crashRunner });
+  assert.equal(state.groups['100'].failed, true);
+
+  // retry verify WITHOUT re-capture: the completed run supersedes the stale failure
+  executeGroupVerify({ state, groupId: '100', workDir, runner: makeGroupRunner({ verifyValidFalseFor: ['100'] }) });
+  assert.equal(state.groups['100'].failed, false);
+  assert.equal(state.groups['100'].failure, null);
+  assert.equal(state.groups['100'].verified, false); // still legal diagnostic (I1)
+
+  const coverageState = createInitialCoverageState({ planHash: sha('plan-a') });
+  const next = applySourceCompletenessToCoverageState(coverageState, state);
+  const entry = canonicalizeCoverageState(next).sourceCompleteness.perGroupStatus['100'];
+  assert.equal(entry.failed, false);
+  assert.equal(entry.captured, true);
+  assert.equal(entry.verified, false);
+});
+
+test('R2-F2 missing recorded hash: captured state with empty artifactHashes is corrupt → fresh, never silently reused', () => {
+  const workDir = tmpDir('r2f2');
+  const decision = makeSelectionDecision(['100']);
+  const state = makeState(workDir, ['100'], { decision });
+  runGroupFlow(state, '100', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  persistMultiGroupState(workDir, state);
+
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  parsed.groups['100'].artifactHashes = {}; // strip recorded identity entirely
+  fs.writeFileSync(stateFile, JSON.stringify(parsed, null, 2));
+
+  // disk bytes are also swapped — without a recorded hash, I4 revalidation is vacuous
+  writeAnswers(workDir, '100', answersFixture('100').replace('正文', '被篡改的正文'));
+
+  const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+  assert.equal(resume.fresh, true);
+  assert.equal(resume.boundary, 'no_state');
+  assert.equal(resume.state.groups['100'].stage, GROUP_STAGE_PENDING);
+  assert.deepEqual(deriveVerifiedGroupRefs(resume.state), []);
+});
+
+test('R2-F3 cross-group artifact swap: evidenceRef naming another group is corrupt → fresh, never stitched', () => {
+  const workDir = tmpDir('r2f3');
+  const decision = makeSelectionDecision(['100', '200']);
+  const state = makeState(workDir, ['100', '200'], { decision });
+  runGroupFlow(state, '100', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  runGroupFlow(state, '200', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  persistMultiGroupState(workDir, state);
+
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  // group 100's refs/hashes re-bound to group 200's REAL artifacts (self-consistent hashes!)
+  parsed.groups['100'].evidenceRef = 'zhihu/200/answers.json';
+  parsed.groups['100'].handoffRef = 'zhihu/200/handoff.json';
+  parsed.groups['100'].artifactHashes.answersJson = parsed.groups['200'].artifactHashes.answersJson;
+  parsed.groups['100'].artifactHashes.handoffJson = parsed.groups['200'].artifactHashes.handoffJson;
+  fs.writeFileSync(stateFile, JSON.stringify(parsed, null, 2));
+
+  const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+  assert.equal(resume.fresh, true);
+  assert.equal(resume.boundary, 'no_state');
+  const manifest = deriveResearchCorpusManifest({ state: resume.state, selectionDecision: decision });
+  const group100 = manifest.groups.find((x) => x.groupId === '100');
+  assert.ok(!group100 || group100.answersRel === 'zhihu/100/answers.json');
+});
+
+test('R2-F4 reordered identical decision reuses composed groups (contract VALID_SUCCESS_CASES honored)', () => {
+  const workDir = tmpDir('r2f4');
+  const decision = makeSelectionDecision(['100', '200', '300']);
+  const state = makeState(workDir, ['100', '200', '300'], { decision });
+  for (const gid of ['100', '200', '300']) {
+    runGroupFlow(state, gid, workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  }
+  persistMultiGroupState(workDir, state);
+
+  const reordered = JSON.parse(JSON.stringify(decision));
+  reordered.selectedGroups.reverse();
+  reordered.candidates.reverse();
+
+  const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: reordered });
+  assert.equal(resume.fresh, false);
+  assert.equal(resume.boundary, 'resume');
+  assert.deepEqual(resume.invalidatedGroupIds, []);
+  assert.equal(deriveVerifiedGroupRefs(resume.state).length, 3);
+  assert.equal(resume.state.researchComplete, true);
+});
+
+test('R2-F5 groups superset injection: shape-valid foreign group makes state corrupt → fresh (resume never wedged)', () => {
+  const workDir = tmpDir('r2f5');
+  const decision = makeSelectionDecision(['100']);
+  const state = makeState(workDir, ['100'], { decision });
+  runGroupFlow(state, '100', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  persistMultiGroupState(workDir, state);
+
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  // inject a fully shape-valid foreign group entry (beyond the selection set)
+  parsed.groups['999'] = {
+    groupId: '999', questionId: '999', stage: GROUP_STAGE_PENDING, captured: false, verified: false,
+    handoffValid: false, failed: false, partial: false, paginationStatus: 'unknown',
+    evidenceRef: null, handoffRef: null, artifactHashes: {}, capturedAnswerCount: null,
+    verification: null, failure: null,
+  };
+  fs.writeFileSync(stateFile, JSON.stringify(parsed, null, 2));
+
+  const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+  assert.equal(resume.fresh, true);
+  assert.equal(resume.boundary, 'no_state');
+  assert.deepEqual(Object.keys(resume.state.groups), ['100']);
+});
+
+test('R2-F6 prototype-dangerous groupId: create rejects __proto__/constructor/prototype keys (fail closed)', () => {
+  for (const evil of ['__proto__', 'constructor', 'prototype']) {
+    const decision = makeSelectionDecision(['100']);
+    decision.selectedGroups[0].groupId = evil;
+    assert.throws(
+      () => createMultiGroupExecutionState({ planHash: sha('plan-a'), selectionDecision: decision }),
+      (err) => err instanceof MultiGroupError && err.code === 'MULTI_GROUP_GROUP_ID_FORBIDDEN',
+      `expected rejection for groupId=${evil}`,
+    );
+  }
+});
+
+test('R2-F8 questionId canonicality: non-canonical questionId rejected at the T09 boundary (T06/T08 authority aligned)', () => {
+  const decision = makeSelectionDecision(['100']);
+  decision.selectedGroups[0].questionId = 'not-a-zhihu-id';
+  assert.throws(
+    () => createMultiGroupExecutionState({ planHash: sha('plan-a'), selectionDecision: decision }),
+    (err) => err instanceof MultiGroupError,
+  );
 });

@@ -305,3 +305,59 @@ RETROACTIVE_CODEGRAPH_GROUNDING = PASS (reused healthy exact-base index + increm
   REVIEWER_USAGE   = fresh reviewer must ground via graph QUERY against this index plus
                      direct reads at the exact candidate SHA; no reviewer-owned reindex.
 ```
+
+---
+
+## FRESH REVIEW ROUND A — FINDINGS + REPAIR (R2-F1..F8)
+
+```text
+REVIEWED_HEAD_A = 1bf225054fa5805fc84a3d18e8ab6c457369d6b9
+VERDICT_A       = CHANGES_REQUESTED (independent fresh reviewer; own CodeGraph grounding
+                  PASS; 9 executed probes, 5 confirmed defects; probes in /tmp/t09_fresh_review/)
+
+F1  P1  complete&&failed coverage contradiction — capture-complete then verify
+        process/identity failure left paginationStatus='complete' on a failed group;
+        the derived Source Completeness payload then violated the T07 validator
+        (coverage_invalid_state), contradicting CE-18. Also: the legal verify
+        valid=false branch did not supersede stale failure marks.
+        REPAIR: markGroupFailed downgrades paginationStatus→unknown (and partial→false);
+        a completed verify run (valid OR legal-invalid) clears stale failed/failure.
+F2  P2  missing recorded hash made I4 revalidation vacuous (validateArtifactCheckpoint
+        skips comparison when expectedHash is falsy) — captured state with empty
+        artifactHashes survived resume over tampered disk bytes.
+        REPAIR: load rejects captured-without-answersJson-hash (and handoffValid-
+        without-handoffJson/handoffRef) as corrupt; resume additionally treats a
+        missing expected hash as stale (defense in depth).
+F3  P2  cross-group artifact swap (evidenceRef/handoffRef pointing at another group's
+        REAL artifacts with self-consistent hashes) passed load+resume+manifest.
+        REPAIR: load cross-field coherence — captured ⇒ evidenceRef ===
+        zhihu/<questionId>/answers.json + recorded hash; handoffValid ⇒ handoffRef ===
+        zhihu/<questionId>/handoff.json + recorded hash. Invalid → corrupt → fresh.
+F4  P2  reordered-identical decision hit the selectionDecisionHash boundary (byte-hash
+        was array-order sensitive) → full discard, contradicting VALID_SUCCESS_CASES
+        ('reordered identical selection → valid groups reused') and the I10 promise.
+        REPAIR: selectionDecisionHash domain refined to an order-canonical decision
+        identity (selectedGroups sorted by groupId, candidates sorted by questionId;
+        every other decision field covered verbatim). Content change still drifts;
+        reorder now reuses composed groups. Identity-chain note updated accordingly.
+F5  P2  shape-valid foreign group injected into the persisted groups map (superset of
+        the selection) passed load and wedged resume at the composition derivation
+        (MULTI_GROUP_REF_IDENTITY_INVALID throw) instead of corrupt→fresh.
+        REPAIR: load validates groups map === recorded selectionIdentity (order-
+        independent set equality); inconsistent map = corruption → null → fresh.
+F6  P3  '__proto__' groupId silently vanished from the groups map at create
+        (prototype accessor assignment) — selection vs execution-state divergence.
+        REPAIR: create rejects __proto__/constructor/prototype groupIds
+        (MULTI_GROUP_GROUP_ID_FORBIDDEN); load rejects such keys in persisted maps.
+F7  P3  test quality — tautological assertion removed (now asserts the 64-hex decision
+        identity and its distinctness from the set identity); R2 tests add the two
+        missing coverage blind spots (complete-then-verify-failure → coverage apply;
+        reordered-decision resume reuse).
+F8  P3  T09 boundary did not validate questionId canonicality (a non-canonical identity
+        wedged at persistence instead of failing at create).
+        REPAIR: create rejects non-canonical questionId via T08's exported
+        isCanonicalQuestionId (authority reuse — no new rule invented).
+
+R2 TDD = RED at exact 1bf2250 (44 tests / 36 pass / 8 fail — /tmp/t09_red_r2.log)
+         → append-only repair → GREEN 44/44 → full regression (see lane packet).
+```
