@@ -133,6 +133,11 @@ export const SELECTION_FAILURE_POOL_PLANHASH_MALFORMED = 'selection_pool_planhas
  * persist (the artifact-safety gate rejected its content; offending values are
  * never echoed). */
 export const SELECTION_FAILURE_UNSAFE_DECISION = 'selection_decision_unsafe';
+/** R3 reviewer repair (round E): fail-closed identity for a persistence IO
+ * failure (EACCES / ENOSPC / ENOTDIR, ...) — the raw fs error message embeds
+ * the absolute workDir path and is NEVER surfaced (T06 path-redaction rule,
+ * same-point pattern as retrieval.mjs). */
+export const SELECTION_FAILURE_WRITE_FAILED = 'selection_decision_write_failed';
 
 /** D-5 delegated defaults (implementation-validation bounds; overridden per call). */
 export const DEFAULT_MIN_GROUP_SCORE = 0;
@@ -304,12 +309,16 @@ function buildCandidateGroupsInner(pool) {
       rationale: 'retrieval-pool artifact schemaVersion is not supported by this selector (fail-closed)',
     };
   }
-  if (!Array.isArray(pool.candidates)) {
+  // R3 reviewer repair (round E): the candidates array is read EXACTLY ONCE
+  // into a local (same single-read doctrine as every other pool field) — a
+  // stateful getter cannot diverge between the array gate and the iteration.
+  const candidatesRaw = pool.candidates;
+  if (!Array.isArray(candidatesRaw)) {
     return { ok: false, reason: SELECTION_FAILURE_INVALID_POOL };
   }
   const groups = [];
   const seenQuestionIds = new Set();
-  for (const c of pool.candidates) {
+  for (const c of candidatesRaw) {
     // R3 reviewer repair (F1): pool consumption is EXCEPTION-SAFE. Every
     // caller-controlled field is read EXACTLY ONCE into a local inside this
     // try-block — a hostile getter (or any exotic object behavior) can never
@@ -1102,9 +1111,17 @@ export function persistSelectionDecision(workDir, decision, { trustedPlanStrings
   if (!artifactSafety.ok) {
     return { ok: false, reason: SELECTION_FAILURE_UNSAFE_DECISION };
   }
-  fs.mkdirSync(workDir, { recursive: true });
-  const file = path.join(workDir, SELECTION_DECISION_FILENAME);
-  fs.writeFileSync(file, `${serialized}\n`);
+  // R3 reviewer repair (round E): the fs section is exception-safe too — an
+  // IO failure returns the stable value-free selection_decision_write_failed
+  // rejection; the raw fs error (whose message embeds the absolute workDir
+  // path) is never surfaced (T06 path-redaction rule, same-point pattern as
+  // retrieval.mjs).
+  try {
+    fs.mkdirSync(workDir, { recursive: true });
+    fs.writeFileSync(path.join(workDir, SELECTION_DECISION_FILENAME), `${serialized}\n`);
+  } catch {
+    return { ok: false, reason: SELECTION_FAILURE_WRITE_FAILED };
+  }
   return { ok: true, file: SELECTION_DECISION_FILENAME };
 }
 

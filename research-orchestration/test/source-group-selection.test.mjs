@@ -1409,6 +1409,51 @@ describe('external repair R3: canonical pool-consumption boundary (P1-A) + clari
       }
     });
 
+    test('A15: persistSelectionDecision fs failure → stable value-free rejection (never a raw throw, never a path-bearing message)', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100)], ph);
+      const d = selectSourceGroups(pool, plan);
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+
+      // workDir is an existing FILE → mkdir/write must fail → the contract
+      // requires { ok:false, reason }, not a raw throw whose message embeds
+      // the absolute path.
+      const fileAsDir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 't08-r3e-')), 'not-a-dir');
+      fs.writeFileSync(fileAsDir, 'x');
+      try {
+        let result;
+        try {
+          result = persistSelectionDecision(fileAsDir, d);
+        } catch (err) {
+          assert.fail(`persistSelectionDecision threw on fs failure instead of a stable rejection: ${err.message}`);
+        }
+        assert.equal(result.ok, false);
+        assert.equal(result.reason, 'selection_decision_write_failed');
+        assert.ok(!('file' in result));
+      } finally {
+        fs.rmSync(path.dirname(fileAsDir), { recursive: true, force: true });
+      }
+    });
+
+    test('A16: pool.candidates is read EXACTLY ONCE (stateful getter cannot diverge between the array gate and iteration)', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      let reads = 0;
+      const pool = makePool([], ph);
+      Object.defineProperty(pool, 'candidates', {
+        get() {
+          reads += 1;
+          return reads === 1 ? [cand('100', 0.100)] : [cand('999', 0.100)];
+        },
+      });
+      const d = selectSourceGroups(pool, plan);
+      assert.equal(reads, 1);
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+      assert.deepEqual(d.selectedGroups.map((g) => g.questionId), ['100']);
+      assert.ok(!JSON.stringify(d).includes('999'));
+    });
+
     test('A7-guard: a clean T08 decision still persists (artifact-safety gate has no false positives on canonical output)', () => {
       const plan = makePlan();
       const ph = validPlanHash(plan);
