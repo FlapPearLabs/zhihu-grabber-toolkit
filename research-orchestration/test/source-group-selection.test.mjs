@@ -46,6 +46,7 @@ import {
   SELECTION_FAILURE_PLAN_POOL_MISMATCH,
   SELECTION_FAILURE_INVALID_CLARIFICATION,
   SELECTION_FAILURE_NO_VALID_GROUP,
+  SELECTION_FAILURE_INVALID_POOL,
   SELECT_REASON_CLEAR_BEST,
   SELECT_REASON_CLARIFICATION_FORCED,
   selectSourceGroups,
@@ -963,5 +964,101 @@ describe('canonical questionId gate consistency with T06', () => {
     assert.equal(isCanonicalQuestionId(123), false);
     assert.equal(isCanonicalQuestionId(null), false);
     assert.equal(isCanonicalQuestionId(undefined), false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Third-party review round 3 (findings F-A / F-B on candidate a0f88e5):
+//
+// F-A — NO-ECHO VIOLATION on the invalid-pool failure path: the failure
+//       verdict at the buildCandidateGroups gate persisted the RAW, UNVALIDATED
+//       pool.planHash into the decision artifact BEFORE the F2 format
+//       validation. Any malformed-pool input with a hostile planHash (e.g. a
+//       credential-shaped or object value) was echoed whole into the persisted
+//       decision. Fix: on the invalid-pool path, poolPlanHash is recorded as
+//       null (same hygiene as the malformed-planHash path); the valid-but-
+//       different (mismatch) path keeps recording the VALIDATED value.
+// F-B — DUPLICATE POOL IDENTITY: buildCandidateGroups did not reject duplicate
+//       candidate questionIds; a hand-crafted pool with two identical ids
+//       produced a duplicate-group AUTO artifact. Fix: fail closed with the
+//       EXISTING stable reason code selection_invalid_pool and a FIXED
+//       value-free rationale (no ids echoed).
+// ---------------------------------------------------------------------------
+describe('third-party review round 3: invalid-pool no-echo (F-A) + duplicate pool identity fail-closed (F-B)', () => {
+  describe('F-A: no-echo poolPlanHash on the invalid-pool failure path', () => {
+    test('F-A-T1: credential-shaped planHash + non-array candidates → poolPlanHash null, no secret echo', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const pool = { schemaVersion: 1, type: 'retrieval-pool', planHash: 'token=SECRET_VALUE', candidates: 'not-an-array' };
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_POOL);
+      assert.equal(d.planHash, ph); // plan identity still computed
+      // The RAW unvalidated pool.planHash is NEVER persisted into the decision.
+      assert.equal(d.poolPlanHash, null);
+      assert.ok(!JSON.stringify(d).includes('SECRET_VALUE'));
+      assert.ok(!JSON.stringify(d).includes('token='));
+    });
+
+    test('F-A-T2: object planHash + empty candidates → no object echo anywhere in the decision', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const pool = { schemaVersion: 1, type: 'retrieval-pool', planHash: { evil: true }, candidates: [] };
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      // The untrusted object value is never recorded in the decision artifact.
+      assert.equal(d.poolPlanHash, null);
+      const serialized = JSON.stringify(d);
+      assert.ok(!serialized.includes('evil'));
+      assert.ok(!serialized.includes('[object Object]'));
+    });
+
+    test('F-A-T3 (guard): valid-format planHash + non-array candidates → poolPlanHash null on the invalid-pool path too', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const wrongButValid = 'c'.repeat(64); // valid 64-hex, does NOT match the plan hash
+      assert.notEqual(wrongButValid, ph);
+      const pool = { schemaVersion: 1, type: 'retrieval-pool', planHash: wrongButValid, candidates: 'not-an-array' };
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_POOL);
+      // Consistent hygiene: even a format-VALID value is not recorded when the
+      // pool itself is invalid (only the valid-but-different mismatch path
+      // records the validated value).
+      assert.equal(d.poolPlanHash, null);
+    });
+  });
+
+  describe('F-B: duplicate candidate group identity fails closed', () => {
+    test('F-B-T1: two candidates with the same questionId → selection_invalid_pool, fixed rationale, no id echo', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const a = cand('555', 0.100);
+      const b = { ...cand('555', 0.090), source_url: 'https://www.zhihu.com/question/555/answer/other' };
+      const pool = makePool([a, b], ph); // valid planHash MATCH — failure comes from the duplicate identity
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_POOL);
+      assert.equal(d.selectedGroups.length, 0);
+      // Fixed value-free rationale; the duplicate id is never echoed.
+      assert.ok(d.rationale.includes('duplicate'));
+      assert.ok(d.rationale.includes('fail-closed'));
+      assert.ok(!d.rationale.includes('555'));
+      assert.ok(!JSON.stringify(d).includes('555'));
+    });
+
+    test('F-B-T2 (guard): two DIFFERENT questionIds → unaffected normal semantics', () => {
+      const plan = makePlan({ sourceGroupIntents: [] }); // no intents → take all eligible
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100), cand('200', 0.090)], ph);
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+      assert.deepEqual(d.selectedGroups.map((g) => g.questionId), ['100', '200']);
+    });
   });
 });

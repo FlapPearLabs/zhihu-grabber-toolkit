@@ -179,10 +179,24 @@ export function buildCandidateGroups(pool) {
     return { ok: false, reason: SELECTION_FAILURE_INVALID_POOL };
   }
   const groups = [];
+  const seenQuestionIds = new Set();
   for (const c of pool.candidates) {
     if (!isPlainObject(c) || !isPlainObject(c.identity) || !isCanonicalQuestionId(c.identity.questionId)) {
       return { ok: false, reason: SELECTION_FAILURE_INVALID_POOL };
     }
+    // Third-party review F-B: a candidate group's canonical identity is its
+    // questionId — two candidates sharing one identity is a malformed pool
+    // (a duplicate would produce a duplicate-group AUTO artifact). Fail
+    // closed with the existing stable reason code and a FIXED value-free
+    // rationale; the duplicate id is never echoed.
+    if (seenQuestionIds.has(c.identity.questionId)) {
+      return {
+        ok: false,
+        reason: SELECTION_FAILURE_INVALID_POOL,
+        rationale: 'duplicate candidate group identity in retrieval pool (fail-closed)',
+      };
+    }
+    seenQuestionIds.add(c.identity.questionId);
     const score = scoreCandidateGroup(c);
     // An invalid (missing/non-finite) rrfScore makes the group INELIGIBLE:
     // it must never be selectable. Eligible groups are gated in selectSourceGroups;
@@ -339,9 +353,18 @@ export function selectSourceGroups(pool, plan, opts = {}) {
   }
 
   // 2. Pool validity.
+  // Third-party review F-A: on the invalid-pool failure path the RAW,
+  // UNVALIDATED pool.planHash is NEVER persisted into the decision artifact
+  // (it is recorded as null, same hygiene as the malformed-planHash path
+  // below). Only the valid-but-different (mismatch) path records the
+  // VALIDATED value.
   const built = buildCandidateGroups(pool);
   if (!built.ok) {
-    return failureVerdict(built.reason, { planHash: planIdentity, poolPlanHash: pool?.planHash ?? null });
+    return failureVerdict(built.reason, {
+      planHash: planIdentity,
+      poolPlanHash: null,
+      ...(built.rationale ? { rationale: built.rationale } : {}),
+    });
   }
 
   // 3. Plan/pool identity consistency (Spec §4.3 dependency identity).
