@@ -1313,6 +1313,102 @@ describe('external repair R3: canonical pool-consumption boundary (P1-A) + clari
       assert.equal(d.poolPlanHash, null);
     });
 
+    test('A12: hostile getter on clarification.forceGroupIds (throwing 2nd read) → NO raw throw; answer pinned to the single first read', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100), cand('200', 0.099)], ph);
+      let calls = 0;
+      const clarification = {};
+      Object.defineProperty(clarification, 'forceGroupIds', {
+        get() {
+          calls += 1;
+          if (calls >= 2) throw new Error('hostile forceGroupIds');
+          return ['100'];
+        },
+      });
+      let d;
+      try {
+        d = selectSourceGroups(pool, plan, { ambiguityMargin: 0.01, clarification });
+      } catch (err) {
+        assert.fail(`clarification hostile getter escaped as a raw throw: ${err.message}`);
+      }
+      // Single-read pinning: the hostile 2nd read is unreachable, the answer
+      // is the validated FIRST-read value, and the getter was read exactly once.
+      assert.equal(calls, 1);
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+      assert.deepEqual(d.clarification.forcedGroupIds, ['100']);
+      assert.equal(d.selectedGroups[0].selectionReason, SELECT_REASON_CLARIFICATION_FORCED);
+    });
+
+    test('A13: stateful forceGroupIds (array → undefined across reads) → NO TypeError; pinned to the single first read', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100), cand('200', 0.099)], ph);
+      let calls = 0;
+      const clarification = {};
+      Object.defineProperty(clarification, 'forceGroupIds', {
+        get() {
+          calls += 1;
+          return calls === 1 ? ['100'] : undefined;
+        },
+      });
+      let d;
+      try {
+        d = selectSourceGroups(pool, plan, { ambiguityMargin: 0.01, clarification });
+      } catch (err) {
+        assert.fail(`stateful clarification getter escaped as a raw throw: ${err.message}`);
+      }
+      assert.equal(calls, 1);
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+      assert.deepEqual(d.clarification.forcedGroupIds, ['100']);
+    });
+
+    test('A14: persist TOCTOU via stateful getters → written bytes are ALWAYS exactly the walker-approved pinned bytes', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100)], ph);
+      const d = selectSourceGroups(pool, plan);
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 't08-r3d-'));
+      try {
+        // (i) hostile URL on the FIRST read (what stringify pins) → the walk
+        // sees the same hostile bytes → REJECT, nothing written.
+        let readsA = 0;
+        const rejectCase = { ...d };
+        Object.defineProperty(rejectCase, 'rationale', {
+          get() {
+            readsA += 1;
+            return readsA % 2 === 1 ? 'http://db.internal/secret' : 'safe rationale';
+          },
+        });
+        const rejected = persistSelectionDecision(tmp, rejectCase);
+        assert.equal(rejected.ok, false);
+        assert.equal(rejected.reason, 'selection_decision_unsafe');
+        assert.equal(fs.existsSync(path.join(tmp, SELECTION_DECISION_FILENAME)), false);
+
+        // (ii) safe value on the FIRST read, hostile swap on later reads →
+        // the pinned SAFE bytes are walked and written; later reads are
+        // unreachable, so the hostile value can never appear on disk
+        // (walked bytes == written bytes — the TOCTOU is closed).
+        let readsB = 0;
+        const pinCase = { ...d };
+        Object.defineProperty(pinCase, 'rationale', {
+          get() {
+            readsB += 1;
+            return readsB % 2 === 1 ? 'safe rationale' : 'http://db.internal/secret';
+          },
+        });
+        const pinned = persistSelectionDecision(tmp, pinCase);
+        assert.equal(pinned.ok, true);
+        const written = fs.readFileSync(path.join(tmp, SELECTION_DECISION_FILENAME), 'utf8');
+        assert.ok(written.includes('safe rationale'));
+        assert.ok(!written.includes('db.internal'));
+      } finally {
+        fs.rmSync(tmp, { recursive: true, force: true });
+      }
+    });
+
     test('A7-guard: a clean T08 decision still persists (artifact-safety gate has no false positives on canonical output)', () => {
       const plan = makePlan();
       const ph = validPlanHash(plan);
@@ -1442,6 +1538,19 @@ describe('external repair R3: canonical pool-consumption boundary (P1-A) + clari
       assert.equal(d.verdict, SELECT_VERDICT_NONE);
       assert.equal(d.reason, SELECTION_FAILURE_INVALID_CLARIFICATION);
       assert.equal(d.selectedGroups.length, 0);
+    });
+
+    test('B6: the persisted forcedGroupIds is a PINNED copy — later caller mutation of the input array never shows through', () => {
+      const { plan, pool } = b1Context();
+      const forceGroupIds = ['200'];
+      const d = selectSourceGroups(pool, plan, { ambiguityMargin: 0.01, clarification: { forceGroupIds } });
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+      assert.deepEqual(d.clarification.forcedGroupIds, ['200']);
+      // Caller mutates the ORIGINAL array after the fact — the persisted
+      // decision (in memory and on disk) must be unaffected.
+      forceGroupIds.push('999');
+      assert.deepEqual(d.clarification.forcedGroupIds, ['200']);
+      assert.ok(!JSON.stringify(d).includes('999'));
     });
 
     test('B5: invalid clarification branches keep the fixed value-free rationale and never persist a forced-set echo', () => {

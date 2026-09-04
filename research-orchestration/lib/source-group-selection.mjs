@@ -254,7 +254,7 @@ function projectCanonicalRankRecord(item) {
  *   - `source_url`: null or a canonical `{url, securityClass}` record via
  *     projectSourceUrlRecord (shared classifyUrl trust; no weaker parallel
  *     URL/credential policy);
- *   - `ranks`: non-empty array of canonical rank records (isCanonicalRankRecord).
+ *   - `ranks`: non-empty array of canonical rank records (projectCanonicalRankRecord).
  * Any violation fails closed with the stable value-free
  * `selection_invalid_pool` identity and a FIXED rationale — raw offending
  * values are never echoed. Pool consumption is EXCEPTION-SAFE (T06 doctrine):
@@ -890,12 +890,34 @@ function invalidClarificationVerdict(planIdentity, poolPlanHash) {
  *      the forced set neither expand/contract the selected set nor admit a
  *      group outside the ambiguity boundary.
  */
-function resolveClarification({ eligible, normalizedPlan, planIdentity, poolPlanHash, planHashMatch, ambiguity, opts }) {
-  const force = opts.clarification;
-  const forceIds = Array.isArray(force?.forceGroupIds) ? force.forceGroupIds : null;
-  if (forceIds === null || forceIds.length === 0) {
-    // Missing/non-array, or empty (user selected nothing) — an empty success
-    // verdict is never produced; fail closed with the fixed rationale.
+function resolveClarification(params) {
+  // R3 reviewer repair (round D P1): the clarification answer is caller-
+  // controlled content — ANY hostile getter anywhere in it (throwing or
+  // stateful) fails closed into the stable value-free invalid-clarification
+  // verdict instead of escaping as a raw throw out of the selector.
+  try {
+    return resolveClarificationInner(params);
+  } catch {
+    return invalidClarificationVerdict(params.planIdentity, params.poolPlanHash);
+  }
+}
+
+function resolveClarificationInner({ eligible, normalizedPlan, planIdentity, poolPlanHash, planHashMatch, ambiguity, opts }) {
+  // R3 reviewer repair (round D P1 + P2): forceGroupIds is read EXACTLY ONCE
+  // and PINNED via Array.from before any validation — a stateful getter can
+  // no longer diverge between the validation reads and the persisted echo,
+  // a throwing getter lands in the catch above, and undefined/non-array
+  // fails closed below. The persisted forcedGroupIds is a pinned copy,
+  // never the caller's live array reference.
+  const force = opts?.clarification ?? null;
+  const forceRaw = force?.forceGroupIds;
+  if (!Array.isArray(forceRaw)) {
+    // Missing/non-array/undefined under a provided clarification object — an
+    // empty success verdict is never produced; fail closed.
+    return invalidClarificationVerdict(planIdentity, poolPlanHash);
+  }
+  const forceIds = Array.from(forceRaw);
+  if (forceIds.length === 0) {
     return invalidClarificationVerdict(planIdentity, poolPlanHash);
   }
   if (!forceIds.every((id) => typeof id === 'string')) {
@@ -989,7 +1011,7 @@ function resolveClarification({ eligible, normalizedPlan, planIdentity, poolPlan
       count: 0, // no more clarifications remain
       options: null,
       message: null,
-      forcedGroupIds: forceIds,
+      forcedGroupIds: [...forceIds],
     },
     clarificationCount: 1,
     normalizedPlan,
@@ -1059,13 +1081,30 @@ export function persistSelectionDecision(workDir, decision, { trustedPlanStrings
   if (!isPlainObject(decision) || !isNonEmptyString(workDir)) {
     return { ok: false, reason: SELECTION_FAILURE_INVALID_POOL };
   }
-  const artifactSafety = assertArtifactSafe(decision, { trustedPlanStrings });
+  // R3 reviewer repair (round D P1): PIN-THEN-WALK. The serialized bytes are
+  // produced FIRST and are the single source of truth; the artifact-safety
+  // walker then runs on JSON.parse(serialized) — pure plain data, so no
+  // getter/stateful divergence is even possible — and EXACTLY those bytes
+  // are written. This closes the walk→stringify TOCTOU (a stateful decision
+  // object can no longer show the walker one value and persist another) and
+  // turns any hostile read (throwing getter, cyclic reference, BigInt,
+  // toPrimitive poison) into the stable value-free unsafe-decision
+  // rejection. Nothing is written unless the walked bytes are safe.
+  let serialized;
+  let plainDecision;
+  try {
+    serialized = JSON.stringify(decision, null, 2);
+    plainDecision = JSON.parse(serialized);
+  } catch {
+    return { ok: false, reason: SELECTION_FAILURE_UNSAFE_DECISION };
+  }
+  const artifactSafety = assertArtifactSafe(plainDecision, { trustedPlanStrings });
   if (!artifactSafety.ok) {
     return { ok: false, reason: SELECTION_FAILURE_UNSAFE_DECISION };
   }
   fs.mkdirSync(workDir, { recursive: true });
   const file = path.join(workDir, SELECTION_DECISION_FILENAME);
-  fs.writeFileSync(file, `${JSON.stringify(decision, null, 2)}\n`);
+  fs.writeFileSync(file, `${serialized}\n`);
   return { ok: true, file: SELECTION_DECISION_FILENAME };
 }
 
