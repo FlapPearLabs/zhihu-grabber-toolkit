@@ -726,3 +726,65 @@ T09 lane. Its rules, as applied to this register and the third-party review:
    (P0/P1/P2_CORE block; P2_ADJACENT + P3 → external-review pool; verdicts may
    be PASS | PASS_WITH_NONBLOCKING_FINDINGS | CHANGES_REQUESTED) and is bounded
    to a single review round — it is not another unlimited hardening round.
+```
+
+## THIRD-PARTY ADVERSARIAL REVIEW — TASK #11 (SINGLE ROUND, OVERRIDE CLASSIFICATION)
+
+REVIEWED_CODE_SHA: 4789382 (branch tip c49530a verified docs-only ahead — delta
+touches only this register). External-grade reviewer, independent of the
+implementation and of all internal fresh-review rounds. 23 empirical probes run
+against exact-HEAD module + real flows; contract re-derived independently from
+the contract text (register treated as claims, not evidence).
+
+VERDICT: **PASS_WITH_NONBLOCKING_FINDINGS** — P0=0, P1=0, P2_CORE=0.
+
+BLOCKING_FINDINGS: none.
+
+EXTERNAL_REVIEW_POOL (non-blocking, per CONVERGENCE OVERRIDE):
+- N1 (P2_ADJACENT) create accepts arbitrarily long groupIds while the persist
+  safety walker (rrf.mjs BOUNDARY_MAX_STRING_LENGTH=500) rejects any groups-map
+  key >500 chars — a hostile handcrafted decision with a >501-char groupId
+  executes fully in-memory but can never be checkpointed (work lost on restart).
+  Non-blocking: unreachable via module-produced state (T08 carries
+  groupId===questionId canonical numeric), violates no hard invariant (I9 is
+  exactly why persist rejects), fails safe at the repo boundary (stable value-free
+  reason, nothing written, controller not wedged). Repair direction if ever
+  taken: align create's groupId bound with the persist walker (regression-risk
+  test passes — no legal runtime state has long groupIds).
+- N2 (P3) loadMultiGroupState nulls wrong-typed files so the resume
+  type/schemaVersion INCOMPATIBLE branch is dead code — same fail-closed outcome
+  (fresh, boundary 'no_state'); label-only semantics.
+- N3 (P3) re-capture of a previously verify-failed group does not clear the stale
+  {valid:false} mirror — inert (verified=false governs derivation; next verify
+  overwrites).
+- N4 (P3) persisted verifiedGroupRefs/manifest are shallow-checked and never
+  consumed before authoritative recomputation at resume (forged refs+manifest+
+  researchComplete healed) — confirms Round-G G3's deferred classification.
+
+SPOT_AUDIT (6 highest-risk closures): CE-20 plan binding / FB1 decision
+cross-binding / F5 set equality / D3 stage mapping / Round-F F1 failed⇒unknown /
+E1 supersede restoration — ALL SPOT_AUDIT_VERIFIED, each with an independent
+empirical probe (incl. CE-20 transitivity through the resume REUSE path:
+planHash/poolPlanHash are inside the decision-identity hash domain, so hash
+equality ⇒ CE-20-valid recorded decision).
+
+ADVERSARIAL_PROBES (23): IDENTITY 4/4 defense held (order-canonicalization,
+cross-mapped questionIds → selection_decision boundary, CE-20 transitivity,
+duplicate-keyed divergence fail-closed); PERSISTENCE 6 probes — torn writes/BOM/
+trailing garbage all load-null, __proto__ rejected, truncated hash → stale,
+null-count mirror accepted (over-rejection pass), content-swap with forged hashes
+correctly out of T09 scope (I8 verify authority), oversized groupId = N1;
+DERIVATION 4/4 held (mixed-validity accounting exact, finalize throws, partial
+ledger coherent, forged projections healed); RESUME boundary-label sweep correct
+across all drift classes; byte-identical manifest on invalidate→re-execute (I7
+determinism); OVER-REJECTION sweep 7/7 producible tuples accepted with composed
+siblings preserved.
+
+TESTS_OBSERVED: focused 59/59 + full regression 479/479, independently re-run at
+exact HEAD by the external reviewer (matching Round-G figures).
+
+Gate outcome: fresh review (Round G) + third-party review both
+PASS_WITH_NONBLOCKING_FINDINGS with zero blocking findings on the same code SHA
+4789382. Lane proceeds to Task #12 (PR + real CI + post-CI fresh contract
+review). External-review pool (G3 x2, N1–N4) is carried into the PR description
+for merge-gate visibility.
