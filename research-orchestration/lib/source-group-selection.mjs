@@ -87,8 +87,21 @@ import {
   validatePlanInput,
   planHash as computePlanHash,
   isValidPlanHashFormat,
+  isPlanBoundarySafeString,
 } from './plan-contract.mjs';
 import { updateSourceGroupFusion, OWNER_T08_FUSION } from './coverage-state.mjs';
+// R3 P1-A: T08 consumes the canonical T06 persisted-pool contract through the
+// ONE T06 authority surface (rrf.mjs exports) — never a second weaker
+// URL/credential/provenance policy. The pool artifact identity constants come
+// from retrieval.mjs (the T06 pool owner) so there is no duplicated literal.
+import {
+  isBoundarySafeString,
+  projectRouteString,
+  projectSourceUrlRecord,
+  assertArtifactSafe,
+} from './rrf.mjs';
+import { CAPABILITY_SEARCH } from './provider-seam.mjs';
+import { RETRIEVAL_POOL_SCHEMA_VERSION, RETRIEVAL_POOL_TYPE } from './retrieval.mjs';
 
 /** Canonical persisted selection-decision artifact name (work-dir-relative). */
 export const SELECTION_DECISION_FILENAME = 'source-group-selection-decision.json';
@@ -116,6 +129,10 @@ export const SELECTION_FAILURE_PLAN_GROUP_KEY_UNSATISFIED = 'selection_plan_grou
 /** Reform F2: fail-closed identities for the pool planHash hard dependency. */
 export const SELECTION_FAILURE_POOL_PLANHASH_MISSING = 'selection_pool_planhash_missing';
 export const SELECTION_FAILURE_POOL_PLANHASH_MALFORMED = 'selection_pool_planhash_malformed';
+/** R3 P1-A: fail-closed identity for a selection decision that cannot safely
+ * persist (the artifact-safety gate rejected its content; offending values are
+ * never echoed). */
+export const SELECTION_FAILURE_UNSAFE_DECISION = 'selection_decision_unsafe';
 
 /** D-5 delegated defaults (implementation-validation bounds; overridden per call). */
 export const DEFAULT_MIN_GROUP_SCORE = 0;
@@ -168,14 +185,84 @@ export function scoreCandidateGroup(candidate) {
 }
 
 /**
+ * R3 P1-A: canonical T06 rank-provenance record gate (the EXACT fused-rank
+ * shape rrf.mjs emits): exactly `{ channel, rank, rankOrigin, route }`;
+ * `rank` is a 1-based safe integer; `rankOrigin` / `route` cross the T06
+ * route-string boundary (null stays null, never invented); `channel` is the
+ * exact §5.4 triple `{ query, providerId, capability }` with the retrieval-
+ * ranked search capability, the plan-owned query re-validated at the T04 plan
+ * boundary (isPlanBoundarySafeString) and the providerId at the provider-
+ * content boundary (isBoundarySafeString) — the SAME owning authorities T06
+ * applies, never a second weaker policy.
+ */
+function isCanonicalRankRecord(item) {
+  if (!isPlainObject(item)) return false;
+  const keys = Object.keys(item);
+  if (keys.length !== 4 || !keys.every((k) => k === 'channel' || k === 'rank' || k === 'rankOrigin' || k === 'route')) {
+    return false;
+  }
+  if (!Number.isSafeInteger(item.rank) || item.rank < 1) return false;
+  if (!projectRouteString(item.rankOrigin).ok) return false;
+  if (!projectRouteString(item.route).ok) return false;
+  const channel = item.channel;
+  if (!isPlainObject(channel)) return false;
+  const channelKeys = Object.keys(channel);
+  if (channelKeys.length !== 3 || !channelKeys.every((k) => k === 'query' || k === 'providerId' || k === 'capability')) {
+    return false;
+  }
+  if (channel.capability !== CAPABILITY_SEARCH) return false;
+  if (!isPlanBoundarySafeString(channel.query)) return false;
+  if (!isBoundarySafeString(channel.providerId)) return false;
+  return true;
+}
+
+/**
  * Validate + normalize the candidate pool into an ordered, scored, eligible
  * group list. Returns { ok:false, reason } (fail-closed) when the pool is
  * malformed, or { ok:true, groups: [...] } where each group is
  * { questionId, rrfScore, score, sourceUrl, provenance, eligible } sorted by
  * score DESC then questionId ASC.
+ *
+ * R3 P1-A (external repair round 3): T08 CONSUMES a mechanically valid
+ * canonical T06 retrieval-pool artifact — it no longer partially validates
+ * `{questionId, rrfScore}` and raw-echoes the rest. Every field T08 consumes
+ * and persists (identity / source_url / ranks provenance) must satisfy the
+ * canonical T06 contract:
+ *   - pool top level: `type` + `schemaVersion` must match the canonical T06
+ *     pool artifact identity (single source of truth: retrieval.mjs);
+ *   - candidate identity: `kind === 'candidate'` + canonical questionId;
+ *   - `source_url`: null or a canonical `{url, securityClass}` record via
+ *     projectSourceUrlRecord (shared classifyUrl trust; no weaker parallel
+ *     URL/credential policy);
+ *   - `ranks`: non-empty array of canonical rank records (isCanonicalRankRecord).
+ * Any violation fails closed with the stable value-free
+ * `selection_invalid_pool` identity and a FIXED rationale — raw offending
+ * values are never echoed. Fields T08 does not consume (facts, rejected,
+ * channels) stay T06's own persisted-boundary responsibility; they never
+ * enter the T08 decision.
  */
 export function buildCandidateGroups(pool) {
-  if (!isPlainObject(pool) || !Array.isArray(pool.candidates)) {
+  if (!isPlainObject(pool)) {
+    return { ok: false, reason: SELECTION_FAILURE_INVALID_POOL };
+  }
+  // R3 P1-A (A5): the artifact identity must be the canonical T06 retrieval-
+  // pool contract; a wrong type or unsupported schemaVersion is not a
+  // consumable T06 pool (fail closed, fixed rationale, no raw values echoed).
+  if (pool.type !== RETRIEVAL_POOL_TYPE) {
+    return {
+      ok: false,
+      reason: SELECTION_FAILURE_INVALID_POOL,
+      rationale: 'retrieval-pool artifact type does not match the canonical T06 pool contract (fail-closed)',
+    };
+  }
+  if (pool.schemaVersion !== RETRIEVAL_POOL_SCHEMA_VERSION) {
+    return {
+      ok: false,
+      reason: SELECTION_FAILURE_INVALID_POOL,
+      rationale: 'retrieval-pool artifact schemaVersion is not supported by this selector (fail-closed)',
+    };
+  }
+  if (!Array.isArray(pool.candidates)) {
     return { ok: false, reason: SELECTION_FAILURE_INVALID_POOL };
   }
   const groups = [];
@@ -183,6 +270,16 @@ export function buildCandidateGroups(pool) {
   for (const c of pool.candidates) {
     if (!isPlainObject(c) || !isPlainObject(c.identity) || !isCanonicalQuestionId(c.identity.questionId)) {
       return { ok: false, reason: SELECTION_FAILURE_INVALID_POOL };
+    }
+    // R3 P1-A (A4): the canonical T06 candidate identity kind is exactly
+    // 'candidate' (fusion normalizes every fused identity to it). Any other
+    // kind is not a canonical pool candidate — fail closed.
+    if (c.identity.kind !== 'candidate') {
+      return {
+        ok: false,
+        reason: SELECTION_FAILURE_INVALID_POOL,
+        rationale: 'candidate identity kind violates the canonical T06 candidate contract (fail-closed)',
+      };
     }
     // Third-party review F-B: a candidate group's canonical identity is its
     // questionId — two candidates sharing one identity is a malformed pool
@@ -197,6 +294,28 @@ export function buildCandidateGroups(pool) {
       };
     }
     seenQuestionIds.add(c.identity.questionId);
+    // R3 P1-A (A1/A3): source_url crosses the ONE canonical T06 source-identity
+    // authority (projectSourceUrlRecord: null | {url, securityClass} bound to
+    // the shared classifyUrl verdict + credential/path hygiene). A raw string,
+    // a credential-bearing value, or any noncanonical shape fails closed.
+    if (!projectSourceUrlRecord(c.source_url).ok) {
+      return {
+        ok: false,
+        reason: SELECTION_FAILURE_INVALID_POOL,
+        rationale: 'candidate source_url violates the canonical T06 source-identity contract (fail-closed)',
+      };
+    }
+    // R3 P1-A (A2): ranks are the persisted provenance — they must be the
+    // canonical T06 rank-provenance shape (non-empty, exact records). Any
+    // extra caller-controlled field (e.g. a credential-shaped `diagnostic`
+    // payload) violates the contract and fails closed.
+    if (!Array.isArray(c.ranks) || c.ranks.length === 0 || !c.ranks.every(isCanonicalRankRecord)) {
+      return {
+        ok: false,
+        reason: SELECTION_FAILURE_INVALID_POOL,
+        rationale: 'candidate rank provenance violates the canonical T06 rank-provenance contract (fail-closed)',
+      };
+    }
     const score = scoreCandidateGroup(c);
     // An invalid (missing/non-finite) rrfScore makes the group INELIGIBLE:
     // it must never be selectable. Eligible groups are gated in selectSourceGroups;
@@ -207,8 +326,8 @@ export function buildCandidateGroups(pool) {
       rrfScore: rrfValid ? c.rrfScore : null,
       score,
       eligible: rrfValid,
-      sourceUrl: c.source_url ?? null,
-      provenance: Array.isArray(c.ranks) ? c.ranks : [],
+      sourceUrl: c.source_url,
+      provenance: c.ranks,
     });
   }
   groups.sort((a, b) => (b.score !== a.score ? b.score - a.score : compareQuestionId(a.questionId, b.questionId)));
@@ -422,14 +541,9 @@ export function selectSourceGroups(pool, plan, opts = {}) {
     });
   }
 
-  // 5. Clarification resolution (at most one; never silently guesses).
-  if (opts.clarification != null) {
-    return resolveClarification({
-      pool, eligible, normalizedPlan, planIdentity, poolPlanHash, planHashMatch, ambiguityMargin, opts,
-    });
-  }
-
-  // 6. No valid group set → fail closed.
+  // 5. No valid group set → fail closed (R3: checked BEFORE the clarification
+  // branch — a clarification is only meaningful where the selector has
+  // eligible groups and a resolvable ambiguity state).
   if (eligible.length === 0) {
     return finalize({
       verdict: SELECT_VERDICT_NONE,
@@ -445,7 +559,7 @@ export function selectSourceGroups(pool, plan, opts = {}) {
     });
   }
 
-  // 7. Determine the intended group count k and CONSTRUCT the set
+  // 6. Determine the intended group count k and CONSTRUCT the set
   // constraint-first (reform round 2 P1-1): required (groupKey) intents are
   // MANDATORY members resolved FIRST; the remaining free slots are filled
   // from eligible NON-required groups in the deterministic RRF order.
@@ -475,32 +589,15 @@ export function selectSourceGroups(pool, plan, opts = {}) {
   // reach here: the step 4b gate fails closed first). takeAll → 0.
   const intentShortfall = takeAll ? 0 : Math.max(0, remainingSlots - optionalPool.length);
 
-  // Explicit zero-count (e.g. groupCount=0) with available candidates and NO
-  // required keys → no set satisfies the requested scope → fail closed rather
-  // than a misleading empty "clear best". With required keys the mandatory
-  // members outrank k, so this branch is only reachable when the constraint-
-  // first construction above produced an empty set.
-  if (selected.length === 0) {
-    return finalize({
-      verdict: SELECT_VERDICT_NONE,
-      reason: SELECTION_FAILURE_NO_VALID_GROUP,
-      planIdentity, poolPlanHash, planHashMatch,
-      selectedGroups: [],
-      eligible,
-      clarification: null,
-      clarificationCount: 0,
-      normalizedPlan,
-      intentShortfall,
-      rationale: 'requested group count is zero while candidate groups are available',
-    });
-  }
-
-  // 8. Material ambiguity: fuzzy boundary evaluated ONLY where an actual free-
+  // 7. Material ambiguity: fuzzy boundary evaluated ONLY where an actual free-
   // selection boundary exists — optionalPool[remainingSlots-1] vs
   // optionalPool[remainingSlots] (eligible NON-required groups in RRF order).
   // remainingSlots === 0 (fully constrained set) or takeAll → no free boundary
   // → no ambiguity. A fuzzy gap BELOW the boundary among optional groups does
   // not trigger it: required membership never distorts the boundary logic.
+  // R3 P1-B: the ambiguity state is COMPUTED BEFORE the clarification branch
+  // so a clarification answer is validated against the selector's CURRENT
+  // material ambiguity under the same plan + pool + configuration.
   let ambiguous = false;
   let ambiguityMessage = null;
   if (!takeAll && remainingSlots > 0 && optionalPool.length > remainingSlots) {
@@ -514,6 +611,48 @@ export function selectSourceGroups(pool, plan, opts = {}) {
         + `excluded optional group ${firstExcluded.questionId} score ${firstExcluded.score}; `
         + `gap < ambiguity margin ${ambiguityMargin}) — auto-selecting would change the normalized research intent`;
     }
+  }
+
+  // 8. Clarification resolution (at most one; never silently guesses).
+  // R3 P1-B: clarification authority is RESOLUTION of the CURRENT material
+  // ambiguity — never an arbitrary rewrite of the source-group set. The
+  // recomputed ambiguity state (existence + required groups + the presented
+  // boundary-option universe + free-slot cardinality) is passed to
+  // resolveClarification, which fail-closes when no material ambiguity exists
+  // and requires the forced set to be a COMPLETE LEGAL RESOLUTION.
+  if (opts.clarification != null) {
+    return resolveClarification({
+      eligible, normalizedPlan, planIdentity, poolPlanHash, planHashMatch,
+      ambiguity: {
+        exists: ambiguous,
+        requiredGroups,
+        boundaryOptional: optionalPool.slice(0, remainingSlots + 1),
+        remainingSlots,
+      },
+      opts,
+    });
+  }
+
+  // 9. Explicit zero-count (e.g. groupCount=0) with available candidates and NO
+  // required keys → no set satisfies the requested scope → fail closed rather
+  // than a misleading empty "clear best". With required keys the mandatory
+  // members outrank k, so this branch is only reachable when the constraint-
+  // first construction above produced an empty set. (Mutually exclusive with
+  // the ambiguity verdict: a material ambiguity requires remainingSlots > 0
+  // and therefore a non-empty selected set.)
+  if (selected.length === 0) {
+    return finalize({
+      verdict: SELECT_VERDICT_NONE,
+      reason: SELECTION_FAILURE_NO_VALID_GROUP,
+      planIdentity, poolPlanHash, planHashMatch,
+      selectedGroups: [],
+      eligible,
+      clarification: null,
+      clarificationCount: 0,
+      normalizedPlan,
+      intentShortfall,
+      rationale: 'requested group count is zero while candidate groups are available',
+    });
   }
 
   if (ambiguous) {
@@ -639,8 +778,24 @@ function invalidClarificationVerdict(planIdentity, poolPlanHash) {
  * SELECT_VERDICT_NONE / selection_invalid_clarification with the SAME fixed
  * value-free rationale (CLARIFICATION_INVALID_RATIONALE), so the persisted
  * decision can never carry a caller-controlled value.
+ *
+ * External repair round 3 (P1-B) — CLARIFICATION RESOLUTION BINDING: a
+ * clarification is an answer to the selector's CURRENT material ambiguity
+ * under the same plan + pool + configuration; it is NEVER an arbitrary
+ * rewrite of the source-group set. Two additional fail-closed gates:
+ *   7. AMBIGUITY EXISTENCE — when the recomputed state has no material
+ *      ambiguity (clear best / take-all scope / zero free slots / no eligible
+ *      groups), there is nothing to resolve and the clarification fails
+ *      closed instead of silently creating a user-forced alternate set;
+ *   8. COMPLETE LEGAL RESOLUTION — the forced set must EXACTLY equal one
+ *      legal resolution of that ambiguity: ALL required groups + exactly
+ *      `remainingSlots` picks from the presented boundary-option universe
+ *      (requiredGroups ∪ boundaryOptional — the same option set the AMBIGUOUS
+ *      verdict presents). Together the cardinality and membership checks make
+ *      the forced set neither expand/contract the selected set nor admit a
+ *      group outside the ambiguity boundary.
  */
-function resolveClarification({ eligible, normalizedPlan, planIdentity, poolPlanHash, planHashMatch, opts }) {
+function resolveClarification({ eligible, normalizedPlan, planIdentity, poolPlanHash, planHashMatch, ambiguity, opts }) {
   const force = opts.clarification;
   const forceIds = Array.isArray(force?.forceGroupIds) ? force.forceGroupIds : null;
   if (forceIds === null || forceIds.length === 0) {
@@ -667,7 +822,13 @@ function resolveClarification({ eligible, normalizedPlan, planIdentity, poolPlan
     }
     forced.push(g);
   }
-  forced.sort((a, b) => (b.score !== a.score ? b.score - a.score : compareQuestionId(a.questionId, b.questionId)));
+  // R3 P1-B gate 7 (B3): no material ambiguity in the recomputed state →
+  // nothing to resolve. A clarification supplied directly on a clear-best (or
+  // take-all / zero-slot / empty) selection must never become a user-forced
+  // alternate group set.
+  if (!ambiguity.exists) {
+    return invalidClarificationVerdict(planIdentity, poolPlanHash);
+  }
 
   // Reform F1 groupKey hard gate on the forced set: the user-selected set must
   // exactly cover every required (non-empty groupKey) intent with distinct
@@ -688,6 +849,23 @@ function resolveClarification({ eligible, normalizedPlan, planIdentity, poolPlan
       rationale: groupKeyUnsatisfiedRationale(forcedGateShortfall),
     });
   }
+
+  // R3 P1-B gate 8 (B1/B2/B4): COMPLETE LEGAL RESOLUTION — the forced set
+  // must be exactly ALL required groups + exactly `remainingSlots` picks from
+  // the boundary-option universe. Cardinality: |forced| ===
+  // |requiredGroups| + remainingSlots (the free-slot cardinality cannot be
+  // changed). Membership: every forced id ∈ requiredGroups ∪ boundaryOptional
+  // (no group outside the ambiguity boundary can be admitted).
+  const legalUniverse = new Set([
+    ...ambiguity.requiredGroups.map((g) => g.questionId),
+    ...ambiguity.boundaryOptional.map((g) => g.questionId),
+  ]);
+  const legalSize = ambiguity.requiredGroups.length + ambiguity.remainingSlots;
+  if (forced.length !== legalSize || !forced.every((g) => legalUniverse.has(g.questionId))) {
+    return invalidClarificationVerdict(planIdentity, poolPlanHash);
+  }
+
+  forced.sort((a, b) => (b.score !== a.score ? b.score - a.score : compareQuestionId(a.questionId, b.questionId)));
 
   const { bindings, unmet } = bindGroupsToPlanIntents(forced, normalizedPlan);
   const selectedGroups = forced.map((g) => ({
@@ -764,13 +942,31 @@ function finalize({ verdict, reason, planIdentity, poolPlanHash, planHashMatch, 
 }
 
 /**
- * Persist the selection decision (work-dir-relative; no credentials). Returns
- * { ok:true, file }. Determinism: artifact content is canonical (no timestamp)
- * so its meaning is stable and it can be re-validated for staleness.
+ * Persist the selection decision (work-dir-relative; no credentials).
+ * Returns { ok:true, file } or { ok:false, reason }.
+ *
+ * R3 P1-A (A7): persistence is responsible for artifact safety. The decision
+ * crosses the repository's ONE artifact-safety authority — T06's
+ * assertArtifactSafe walker (the SAME walker retrieval.mjs applies to the
+ * pool at its persistence boundary) — before any write: JSON-domain types
+ * only, safe keys, bounded privacy-safe strings (credential/path-shaped
+ * content fails closed), no cycles. `trustedPlanStrings` mirrors the T06
+ * authority pattern exactly: an optional set of EXACT plan-owned strings
+ * (T04-validated plan queries, e.g. a system-path query that is legitimate
+ * plan content) which the walker re-validates at the plan-contract boundary;
+ * it is NOT a caller-defined trust bypass. The default (no trusted strings)
+ * is strict fail-closed. A rejected decision is never written and the
+ * rejection identity is stable and value-free — offending values are never
+ * echoed. Determinism: artifact content is canonical (no timestamp) so its
+ * meaning is stable and it can be re-validated for staleness.
  */
-export function persistSelectionDecision(workDir, decision) {
+export function persistSelectionDecision(workDir, decision, { trustedPlanStrings = null } = {}) {
   if (!isPlainObject(decision) || !isNonEmptyString(workDir)) {
     return { ok: false, reason: SELECTION_FAILURE_INVALID_POOL };
+  }
+  const artifactSafety = assertArtifactSafe(decision, { trustedPlanStrings });
+  if (!artifactSafety.ok) {
+    return { ok: false, reason: SELECTION_FAILURE_UNSAFE_DECISION };
   }
   fs.mkdirSync(workDir, { recursive: true });
   const file = path.join(workDir, SELECTION_DECISION_FILENAME);

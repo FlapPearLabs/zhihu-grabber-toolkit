@@ -148,6 +148,14 @@ export const RETRIEVAL_POOL_FILENAME = 'retrieval-pool.json';
 export const RETRIEVAL_POOL_SCHEMA_VERSION = 1;
 
 /**
+ * Canonical pool artifact type discriminator (R3 P1-A): single source of
+ * truth for the T06 retrieval-pool identity, exported so downstream
+ * consumers (P1-T08 source-group selection) gate the artifact type without
+ * duplicating the literal.
+ */
+export const RETRIEVAL_POOL_TYPE = 'retrieval-pool';
+
+/**
  * Seam contract-error identities that are machine-readable and safe to surface
  * (P1-1): the only `err.code` values a throwing seam/adapter may proxy. Any
  * other code (ENOENT, paths, arbitrary adapter payloads) is unvalidated and
@@ -719,7 +727,7 @@ export function runMultiQueryRetrieval(opts = {}) {
   // 7. pool artifact (work-relative only; no credentials; deterministic).
   const pool = {
     schemaVersion: RETRIEVAL_POOL_SCHEMA_VERSION,
-    type: 'retrieval-pool',
+    type: RETRIEVAL_POOL_TYPE,
     planHash: planIdentity,
     channels: channelRecords,
     candidates: fused.candidates,

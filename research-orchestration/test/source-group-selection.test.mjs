@@ -75,13 +75,27 @@ function makePlan(overrides = {}) {
   };
 }
 
-/** Build one pool candidate group. */
+/** Canonical T06 source_url record — shared classifyUrl verdict for public
+ * https zhihu question URLs is 'external_unverified' (markdown-security.js). */
+function sourceUrlRecord(qid) {
+  return { url: `https://www.zhihu.com/question/${qid}`, securityClass: 'external_unverified' };
+}
+
+/** One canonical T06 rank-provenance record (§5.4 channel triple + 1-based rank). */
+function canonicalRank() {
+  return { channel: { query: 'q', providerId: 'p', capability: 'search' }, rank: 1, rankOrigin: 'search', route: 'web' };
+}
+
+/** Build one pool candidate group. R3 P1-A: fixtures carry the CANONICAL T06
+ * shapes ({url, securityClass} record + ≥1 canonical rank record) — the
+ * pre-R3 raw-string source_url / empty-ranks fixtures were contract-wrong
+ * vessels that no canonical T06 pool can ever produce. */
 function cand(qid, rrfScore) {
   return {
     identity: { kind: 'candidate', questionId: qid },
     rrfScore,
-    ranks: [{ channel: { query: 'q', providerId: 'p', capability: 'search' }, rank: 1, rankOrigin: 'search', route: 'web' }],
-    source_url: `https://www.zhihu.com/question/${qid}`,
+    ranks: [canonicalRank()],
+    source_url: sourceUrlRecord(qid),
     facts: { title: `question ${qid}` },
   };
 }
@@ -248,17 +262,26 @@ test('clarification protocol: invalid forced id → NONE fail-closed', () => {
   assert.equal(d.clarificationCount, 0);
 });
 
-test('clarification protocol: second clarification input still resolves (count stays 1, never ambiguous)', () => {
+test('clarification protocol: forced resolution is bound to the CURRENT ambiguity resolution set (R3 P1-B contract correction)', () => {
+  // CONTRACT CORRECTION (R3 P1-B): the pre-R3 expectation accepted
+  // forceGroupIds ["200","300"] on a k=1 ambiguity (free boundary 100 vs 200)
+  // and returned a TWO-group forced set. That encoded the externally rejected
+  // behavior: the clarification EXPANDED the selected set and admitted a group
+  // ("300") outside the actual ambiguity boundary — an arbitrary rewrite of
+  // the source-group set, not a resolution of the material ambiguity. Under
+  // the R3 contract the forced set must be a COMPLETE LEGAL RESOLUTION:
+  // exactly the required groups (none here) + exactly remainingSlots (=1)
+  // picks from the presented boundary options ({100, 200}).
   const plan = makePlan();
   const ph = validPlanHash(plan);
   const pool = makePool([cand('100', 0.100), cand('200', 0.099), cand('300', 0.050)], ph);
   const d = selectSourceGroups(pool, plan, {
     ambiguityMargin: 0.01,
-    clarification: { forceGroupIds: ['200', '300'] },
+    clarification: { forceGroupIds: ['200'] },
   });
   assert.equal(d.verdict, SELECT_VERDICT_AUTO);
   assert.equal(d.clarificationCount, 1);
-  assert.deepEqual(d.selectedGroups.map((g) => g.questionId), ['200', '300']);
+  assert.deepEqual(d.selectedGroups.map((g) => g.questionId), ['200']);
 });
 
 test('decision record: persisted + reloadable + deterministic content', () => {
@@ -386,7 +409,9 @@ test('helpers: scoreCandidateGroup + buildCandidateGroups + intendedGroupCount',
   const built = buildCandidateGroups(makePool([
     cand('200', 0.030),
     cand('100', 0.100),
-    { identity: { kind: 'candidate', questionId: '300' } }, // missing rrfScore → invalid
+    // R3 P1-A fixture alignment: canonical vessel (T06 rank-provenance +
+    // source_url record), missing rrfScore → INELIGIBLE (the tested semantic).
+    { identity: { kind: 'candidate', questionId: '300' }, ranks: [canonicalRank()], source_url: sourceUrlRecord('300') },
   ], 'a'.repeat(64)));
   assert.equal(built.ok, true);
   assert.equal(built.groups.length, 3);
@@ -450,7 +475,7 @@ test('P1-2: candidate missing rrfScore → ineligible → NONE fail-closed', () 
   const ph = validPlanHash(plan);
   const pool = {
     schemaVersion: 1, type: 'retrieval-pool', planHash: ph,
-    candidates: [{ identity: { kind: 'candidate', questionId: '100' }, ranks: [], source_url: 'x', facts: {} }],
+    candidates: [{ identity: { kind: 'candidate', questionId: '100' }, ranks: [canonicalRank()], source_url: sourceUrlRecord('100'), facts: {} }],
   };
   const d = selectSourceGroups(pool, plan);
   assert.equal(d.verdict, SELECT_VERDICT_NONE);
@@ -462,8 +487,8 @@ test('P1-2: candidate with non-finite rrfScore (NaN/Infinity) → ineligible →
   const plan = makePlan();
   const ph = validPlanHash(plan);
   const pool = makePool([
-    { identity: { kind: 'candidate', questionId: '100' }, rrfScore: NaN, ranks: [], source_url: 'x', facts: {} },
-    { identity: { kind: 'candidate', questionId: '200' }, rrfScore: Infinity, ranks: [], source_url: 'x', facts: {} },
+    { identity: { kind: 'candidate', questionId: '100' }, rrfScore: NaN, ranks: [canonicalRank()], source_url: sourceUrlRecord('100'), facts: {} },
+    { identity: { kind: 'candidate', questionId: '200' }, rrfScore: Infinity, ranks: [canonicalRank()], source_url: sourceUrlRecord('200'), facts: {} },
   ], ph);
   const d = selectSourceGroups(pool, plan);
   assert.equal(d.verdict, SELECT_VERDICT_NONE);
@@ -475,8 +500,8 @@ test('P1-2: all-invalid pool (missing + non-finite scores) → NONE fail-closed'
   const plan = makePlan();
   const ph = validPlanHash(plan);
   const pool = makePool([
-    { identity: { kind: 'candidate', questionId: '100' }, ranks: [], source_url: 'x', facts: {} }, // missing
-    { identity: { kind: 'candidate', questionId: '200' }, rrfScore: NaN, ranks: [], source_url: 'x', facts: {} }, // non-finite
+    { identity: { kind: 'candidate', questionId: '100' }, ranks: [canonicalRank()], source_url: sourceUrlRecord('100'), facts: {} }, // missing
+    { identity: { kind: 'candidate', questionId: '200' }, rrfScore: NaN, ranks: [canonicalRank()], source_url: sourceUrlRecord('200'), facts: {} }, // non-finite
   ], ph);
   const d = selectSourceGroups(pool, plan);
   assert.equal(d.verdict, SELECT_VERDICT_NONE);
@@ -489,7 +514,7 @@ test('P1-2: valid + invalid mix → only the valid group is eligible/selectable'
   const ph = validPlanHash(plan);
   const pool = makePool([
     cand('100', 0.100),
-    { identity: { kind: 'candidate', questionId: '200' }, ranks: [], source_url: 'x', facts: {} }, // missing rrfScore → invalid
+    { identity: { kind: 'candidate', questionId: '200' }, ranks: [canonicalRank()], source_url: sourceUrlRecord('200'), facts: {} }, // missing rrfScore → invalid
   ], ph);
   const d = selectSourceGroups(pool, plan);
   assert.equal(d.verdict, SELECT_VERDICT_AUTO);
@@ -778,7 +803,7 @@ describe('repair round 2: constraint-first group-set construction + clarificatio
       const ph = validPlanHash(plan);
       const poolInvalid = makePool([
         cand('100', 0.100),
-        { identity: { kind: 'candidate', questionId: '555' }, rrfScore: NaN, ranks: [], source_url: 'x', facts: {} },
+        { identity: { kind: 'candidate', questionId: '555' }, rrfScore: NaN, ranks: [canonicalRank()], source_url: sourceUrlRecord('555'), facts: {} },
       ], ph);
       const dInvalid = selectSourceGroups(poolInvalid, plan);
       assert.equal(dInvalid.verdict, SELECT_VERDICT_NONE);
@@ -1037,7 +1062,7 @@ describe('third-party review round 3: invalid-pool no-echo (F-A) + duplicate poo
       const plan = makePlan();
       const ph = validPlanHash(plan);
       const a = cand('555', 0.100);
-      const b = { ...cand('555', 0.090), source_url: 'https://www.zhihu.com/question/555/answer/other' };
+      const b = { ...cand('555', 0.090), source_url: { url: 'https://www.zhihu.com/question/555/answer/other', securityClass: 'external_unverified' } };
       const pool = makePool([a, b], ph); // valid planHash MATCH — failure comes from the duplicate identity
       const d = selectSourceGroups(pool, plan);
 
@@ -1059,6 +1084,289 @@ describe('third-party review round 3: invalid-pool no-echo (F-A) + duplicate poo
 
       assert.equal(d.verdict, SELECT_VERDICT_AUTO);
       assert.deepEqual(d.selectedGroups.map((g) => g.questionId), ['100', '200']);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// External repair round 3 (review findings P1-A / P1-B on candidate 93f6aae):
+//
+// P1-A — UNVALIDATED POOL DATA REACHES THE PERSISTED SELECTION ARTIFACT:
+//        buildCandidateGroups consumed source_url / ranks (provenance) without
+//        proving they satisfy the canonical T06 persisted-pool contract, and
+//        persistSelectionDecision blind-serialized the decision. Caller-
+//        controlled / tampered values could cross pool → T08 →
+//        SelectedSourceGroups[] → persisted selection JSON — re-opening a
+//        security boundary T06 already closes.
+// P1-B — CLARIFICATION CAN ESCAPE THE ACTUAL AMBIGUITY SET: resolveClarification
+//        validated the forced ids mechanically but never proved they are a
+//        COMPLETE LEGAL RESOLUTION of the selector's current ambiguity — a
+//        clarification could rewrite the source-group set instead of
+//        resolving the material ambiguity.
+// ---------------------------------------------------------------------------
+describe('external repair R3: canonical pool-consumption boundary (P1-A) + clarification resolution binding (P1-B)', () => {
+  describe('P1-A: unvalidated pool data must not reach the persisted selection artifact', () => {
+    test('A1: credential-shaped raw source_url → FAIL CLOSED; secret never persists', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100), cand('200', 0.030)], ph);
+      pool.candidates[0].source_url = 'token=SECRET_VALUE';
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_POOL);
+      assert.equal(d.selectedGroups.length, 0);
+      const serialized = JSON.stringify(d);
+      assert.ok(!serialized.includes('SECRET_VALUE'));
+      assert.ok(!serialized.includes('token='));
+    });
+
+    test('A2: credential-shaped extra field nested in ranks → FAIL CLOSED; no secret in the decision', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100), cand('200', 0.030)], ph);
+      pool.candidates[0].ranks = [{ ...canonicalRank(), diagnostic: 'token=SECRET_VALUE' }];
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_POOL);
+      assert.equal(d.selectedGroups.length, 0);
+      const serialized = JSON.stringify(d);
+      assert.ok(!serialized.includes('SECRET_VALUE'));
+      assert.ok(!serialized.includes('diagnostic'));
+    });
+
+    test('A3: noncanonical source_url shape (raw URL string instead of the T06 {url, securityClass} record) → FAIL CLOSED', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100)], ph);
+      pool.candidates[0].source_url = 'https://www.zhihu.com/question/100';
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_POOL);
+      assert.equal(d.selectedGroups.length, 0);
+    });
+
+    test('A4: candidate identity kind != "candidate" → FAIL CLOSED (canonical T06 identity contract)', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const pool = makePool([
+        { ...cand('100', 0.100), identity: { kind: 'question', questionId: '100' } },
+        cand('200', 0.030),
+      ], ph);
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_POOL);
+      assert.equal(d.selectedGroups.length, 0);
+    });
+
+    test('A5: wrong pool type / unsupported schemaVersion → FAIL CLOSED', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+
+      const wrongType = makePool([cand('100', 0.100)], ph);
+      wrongType.type = 'retrieval-pool-tampered';
+      const dType = selectSourceGroups(wrongType, plan);
+      assert.equal(dType.verdict, SELECT_VERDICT_NONE);
+      assert.equal(dType.reason, SELECTION_FAILURE_INVALID_POOL);
+      assert.equal(dType.selectedGroups.length, 0);
+
+      const wrongVersion = makePool([cand('100', 0.100)], ph);
+      wrongVersion.schemaVersion = 2;
+      const dVersion = selectSourceGroups(wrongVersion, plan);
+      assert.equal(dVersion.verdict, SELECT_VERDICT_NONE);
+      assert.equal(dVersion.reason, SELECTION_FAILURE_INVALID_POOL);
+      assert.equal(dVersion.selectedGroups.length, 0);
+    });
+
+    test('A6 (guard): valid canonical T06 candidate source_url + ranks → succeeds; provenance preserved; no semantic regression', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const ranks = [
+        { channel: { query: '大语言模型', providerId: 'p', capability: 'search' }, rank: 2, rankOrigin: 'search', route: null },
+      ];
+      const pool = makePool([{ ...cand('100', 0.100), ranks }], ph);
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+      assert.equal(d.selectedGroups.length, 1);
+      assert.deepEqual(d.selectedGroups[0].sourceUrl, sourceUrlRecord('100'));
+      assert.deepEqual(d.selectedGroups[0].provenance, ranks);
+    });
+
+    test('A7: persistSelectionDecision with unsafe decision content → REJECT (artifact-safety gate), nothing written', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100)], ph);
+      const d = selectSourceGroups(pool, plan);
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 't08-r3-'));
+      try {
+        // (i) credential-shaped content injected into the decision body
+        const credTampered = { ...d, rationale: 'note: token=SECRET_VALUE' };
+        const credResult = persistSelectionDecision(tmp, credTampered);
+        assert.equal(credResult.ok, false);
+
+        // (ii) machine-private path content injected into the persisted provenance
+        const pathTampered = {
+          ...d,
+          selectedGroups: d.selectedGroups.map((g) => ({
+            ...g,
+            provenance: [{ channel: { query: 'q', providerId: 'p', capability: 'search' }, rank: 1, rankOrigin: '/home/alice/private.txt', route: 'web' }],
+          })),
+        };
+        const pathResult = persistSelectionDecision(tmp, pathTampered);
+        assert.equal(pathResult.ok, false);
+
+        // Nothing was persisted — the unsafe artifact never reached disk.
+        assert.equal(fs.existsSync(path.join(tmp, SELECTION_DECISION_FILENAME)), false);
+      } finally {
+        fs.rmSync(tmp, { recursive: true, force: true });
+      }
+    });
+
+    test('A7-guard: a clean T08 decision still persists (artifact-safety gate has no false positives on canonical output)', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100), cand('200', 0.030)], ph);
+      const d = selectSourceGroups(pool, plan);
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 't08-r3-'));
+      try {
+        const result = persistSelectionDecision(tmp, d);
+        assert.equal(result.ok, true);
+        assert.equal(loadSelectionDecision(tmp).ok, true);
+      } finally {
+        fs.rmSync(tmp, { recursive: true, force: true });
+      }
+    });
+  });
+
+  describe('P1-B: clarification must resolve the CURRENT material ambiguity (never rewrite the set)', () => {
+    const FIXED_RATIONALE = 'clarification contains an invalid or unavailable source-group identity';
+
+    /** B1 fixture: k = 1; ambiguity boundary 100 vs 200; 300 well below. */
+    function b1Context() {
+      const plan = makePlan(); // one intent, groupKey null → k = 1
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100), cand('200', 0.099), cand('300', 0.050)], ph);
+      return { plan, pool };
+    }
+
+    test('B1-legal: force ["200"] → valid resolution (AUTO, exactly ["200"])', () => {
+      const { plan, pool } = b1Context();
+      const d = selectSourceGroups(pool, plan, { ambiguityMargin: 0.01, clarification: { forceGroupIds: ['200'] } });
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+      assert.equal(d.clarificationCount, 1);
+      assert.deepEqual(d.selectedGroups.map((g) => g.questionId), ['200']);
+    });
+
+    test('B1-legal: force ["100"] → valid resolution (AUTO, exactly ["100"])', () => {
+      const { plan, pool } = b1Context();
+      const d = selectSourceGroups(pool, plan, { ambiguityMargin: 0.01, clarification: { forceGroupIds: ['100'] } });
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+      assert.equal(d.clarificationCount, 1);
+      assert.deepEqual(d.selectedGroups.map((g) => g.questionId), ['100']);
+    });
+
+    test('B1-illegal: force ["200","300"] → INVALID (expands the set beyond the ambiguity boundary)', () => {
+      const { plan, pool } = b1Context();
+      const d = selectSourceGroups(pool, plan, { ambiguityMargin: 0.01, clarification: { forceGroupIds: ['200', '300'] } });
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_CLARIFICATION);
+      assert.equal(d.selectedGroups.length, 0);
+      assert.equal(d.clarificationCount, 0);
+      assert.equal(d.rationale, FIXED_RATIONALE);
+    });
+
+    test('B1-illegal: force ["300"] → INVALID (outside the ambiguity boundary set)', () => {
+      const { plan, pool } = b1Context();
+      const d = selectSourceGroups(pool, plan, { ambiguityMargin: 0.01, clarification: { forceGroupIds: ['300'] } });
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_CLARIFICATION);
+      assert.equal(d.selectedGroups.length, 0);
+      assert.equal(d.rationale, FIXED_RATIONALE);
+    });
+
+    /** B2 fixture: required group 555 + one free slot; optional boundary 100 vs 200; 300 well below. */
+    function b2Context() {
+      const plan = makePlan({
+        sourceGroupIntents: [
+          { intent: '关注反方观点', constraints: [], groupKey: '555' },
+          { intent: '看主流讨论', constraints: [], groupKey: null },
+        ],
+      });
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('555', 0.200), cand('100', 0.100), cand('200', 0.099), cand('300', 0.020)], ph);
+      return { plan, pool };
+    }
+
+    test('B2-legal: ["555","100"] and ["555","200"] → valid COMPLETE legal resolutions', () => {
+      for (const forced of [['555', '100'], ['555', '200']]) {
+        const { plan, pool } = b2Context();
+        const d = selectSourceGroups(pool, plan, { ambiguityMargin: 0.01, clarification: { forceGroupIds: forced } });
+        assert.equal(d.verdict, SELECT_VERDICT_AUTO, `forced=${JSON.stringify(forced)}`);
+        assert.equal(d.clarificationCount, 1);
+        assert.deepEqual([...d.selectedGroups.map((g) => g.questionId)].sort(), [...forced].sort());
+      }
+    });
+
+    test('B2-illegal: ["555"] / ["555","100","200"] / ["555","300"] → all FAIL CLOSED (incomplete / superset / outside boundary)', () => {
+      for (const forced of [['555'], ['555', '100', '200'], ['555', '300']]) {
+        const { plan, pool } = b2Context();
+        const d = selectSourceGroups(pool, plan, { ambiguityMargin: 0.01, clarification: { forceGroupIds: forced } });
+        assert.equal(d.verdict, SELECT_VERDICT_NONE, `forced=${JSON.stringify(forced)}`);
+        assert.equal(d.selectedGroups.length, 0);
+      }
+    });
+
+    test('B2-illegal: ["100","200"] (drops the required group) → FAIL CLOSED via the groupKey hard gate', () => {
+      const { plan, pool } = b2Context();
+      const d = selectSourceGroups(pool, plan, { ambiguityMargin: 0.01, clarification: { forceGroupIds: ['100', '200'] } });
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, 'selection_plan_group_key_unsatisfied');
+      assert.equal(d.selectedGroups.length, 0);
+    });
+
+    test('B3: clarification on a CLEAR-BEST selection (no material ambiguity) → FAIL CLOSED (never a forced alternate set)', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100), cand('200', 0.020)], ph); // wide gap → clear best
+      const d = selectSourceGroups(pool, plan, { ambiguityMargin: 0.01, clarification: { forceGroupIds: ['100'] } });
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_CLARIFICATION);
+      assert.equal(d.selectedGroups.length, 0);
+      assert.equal(d.rationale, FIXED_RATIONALE);
+    });
+
+    test('B3b: clarification under takeAll scope (no intents) → FAIL CLOSED (no free boundary → no ambiguity to resolve)', () => {
+      const plan = makePlan({ sourceGroupIntents: [] });
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100), cand('200', 0.020)], ph);
+      const d = selectSourceGroups(pool, plan, { clarification: { forceGroupIds: ['100'] } });
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_CLARIFICATION);
+      assert.equal(d.selectedGroups.length, 0);
+    });
+
+    test('B4: clarification cannot change the intended free-slot cardinality (2 forced ids on 1 free slot → FAIL CLOSED)', () => {
+      const { plan, pool } = b1Context();
+      const d = selectSourceGroups(pool, plan, { ambiguityMargin: 0.01, clarification: { forceGroupIds: ['100', '200'] } });
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_CLARIFICATION);
+      assert.equal(d.selectedGroups.length, 0);
+    });
+
+    test('B5: invalid clarification branches keep the fixed value-free rationale and never persist a forced-set echo', () => {
+      const { plan, pool } = b1Context();
+      const d = selectSourceGroups(pool, plan, { ambiguityMargin: 0.01, clarification: { forceGroupIds: ['200', '300'] } });
+      const serialized = JSON.stringify(d);
+      assert.equal(d.rationale, FIXED_RATIONALE);
+      assert.equal(d.clarification, null);
+      assert.ok(!serialized.includes('"forcedGroupIds"'));
+      assert.ok(!serialized.includes('SECRET'));
     });
   });
 });
