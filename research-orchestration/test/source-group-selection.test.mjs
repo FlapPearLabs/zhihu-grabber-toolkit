@@ -25,7 +25,7 @@
  * Pure, offline, deterministic; fixtures inline (no network, no credentials).
  */
 
-import { test } from 'node:test';
+import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -306,16 +306,22 @@ test('planHash dependency: decision carries planHash + poolPlanHash; mismatch �
   assert.equal(stale.reason, 'selection_plan_hash_mismatch');
 });
 
-test('planHash dependency: missing pool planHash tolerates, status checks plan only', () => {
+test('planHash dependency: missing pool planHash → FAIL CLOSED (reform F2; no tolerant reuse)', () => {
   const plan = makePlan();
   const ph = validPlanHash(plan);
+  // Reform F2: the pool planHash is a hard dependency identity — a pool
+  // without one must fail closed, never be silently tolerated as AUTO.
   const pool = makePool([cand('100', 0.100)], undefined); // no pool planHash
   const d = selectSourceGroups(pool, plan);
+  assert.equal(d.verdict, SELECT_VERDICT_NONE);
+  assert.equal(d.reason, 'selection_pool_planhash_missing');
+  assert.equal(d.selectedGroups.length, 0);
   assert.equal(d.planHash, ph);
-  assert.equal(d.poolPlanHash, null);
-  // Status only asserts plan identity when pool identity absent.
+  // Reuse seam: a missing current pool identity is NOT reusable (stale).
   const st = selectionDecisionStatus({ decision: d, currentPlanHash: ph, currentPoolPlanHash: undefined });
-  assert.equal(st.reusable, true);
+  assert.equal(st.reusable, false);
+  assert.equal(st.stale, true);
+  assert.equal(st.reason, 'selection_dependency_missing');
 });
 
 test('consistency: k derived from sourceGroupIntents; groupKey binding', () => {
@@ -490,4 +496,185 @@ test('P1-2: valid + invalid mix → only the valid group is eligible/selectable'
   assert.equal(d.selectedGroups[0].questionId, '100');
   // The invalid group must not appear as a selected/eligible candidate.
   assert.equal(d.candidates.length, 1);
+});
+
+// ---------------------------------------------------------------------------
+// Reform round (external review F1/F2 repairs on the rejected candidate):
+// regression tests for the fail-closed contract. These are appended as a
+// separate block so the repair can be reviewed independently of the
+// carried-forward baseline.
+//
+// F1 — PLAN_INTENT_CONSTRAINT_FAIL_OPEN: an explicit plan-intent groupKey is a
+//      HARD constraint (exact binding required, never positionally rebound),
+//      and free-form plan constraints (schemaVersion 1 has no structured
+//      constraint semantics) must FAIL CLOSED instead of being silently
+//      treated as satisfied.
+// F2 — MISSING_POOL_PLANHASH_ACCEPTED: the pool planHash is a hard dependency
+//      identity (Spec §4.3); missing/malformed identities fail closed, and the
+//      reuse seam never treats an invalid identity as reusable.
+// ---------------------------------------------------------------------------
+describe('reform F1/F2: fail-closed plan-intent gates + pool planHash identity', () => {
+  describe('F1: plan intent groupKey is a hard constraint', () => {
+    test('F1-T1: explicit groupKey present among eligible candidates → AUTO with exact binding', () => {
+      const plan = makePlan({
+        sourceGroupIntents: [{ intent: '关注反方观点', constraints: [], groupKey: '555' }],
+      });
+      const ph = validPlanHash(plan);
+      // '555' is dominant AND matches the required groupKey → valid AUTO path.
+      const pool = makePool([cand('555', 0.100), cand('111', 0.030)], ph);
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+      assert.equal(d.reason, 'clear_best');
+      assert.ok(d.selectedGroups.some((g) => g.questionId === '555'));
+      const bound = d.selectedGroups.find((g) => g.questionId === '555');
+      assert.ok(bound.rationaleRef);
+      assert.equal(bound.rationaleRef.intentIndex, 0);
+      assert.equal(bound.rationaleRef.groupKey, '555');
+      assert.equal(d.planHashMatch, true);
+    });
+
+    test('F1-T2: explicit groupKey absent from the eligible pool → FAIL CLOSED', () => {
+      const plan = makePlan({
+        sourceGroupIntents: [{ intent: '关注反方观点', constraints: [], groupKey: '777' }],
+      });
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100), cand('200', 0.030)], ph);
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, 'selection_plan_group_key_unsatisfied');
+      assert.equal(d.selectedGroups.length, 0);
+      assert.equal(d.clarificationCount, 0);
+    });
+
+    test('F1-T3: best group differs from required groupKey → NOT positionally rebound; FAIL CLOSED', () => {
+      const plan = makePlan({
+        sourceGroupIntents: [{ intent: '关注反方观点', constraints: [], groupKey: '555' }],
+      });
+      const ph = validPlanHash(plan);
+      // '100' is the high-RRF best; the required '555' is not dominant. The old
+      // contract positionally rebound '100' to intent 0 and reported AUTO.
+      const pool = makePool([cand('100', 0.100), cand('555', 0.030), cand('300', 0.020)], ph);
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, 'selection_plan_group_key_unsatisfied');
+      // No success-shaped selectedGroups: the mismatch must not surface as AUTO.
+      assert.equal(d.selectedGroups.length, 0);
+    });
+
+    test('F1-T4: two required groupKeys, only one satisfiable → FAIL CLOSED (no AUTO with shortfall)', () => {
+      const plan = makePlan({
+        sourceGroupIntents: [
+          { intent: 'a', constraints: [], groupKey: '555' },
+          { intent: 'b', constraints: [], groupKey: '666' },
+        ],
+      });
+      const ph = validPlanHash(plan);
+      // Only '555' exists in the pool; '666' can never be satisfied.
+      const pool = makePool([cand('555', 0.100), cand('100', 0.050)], ph);
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, 'selection_plan_group_key_unsatisfied');
+      assert.equal(d.selectedGroups.length, 0);
+    });
+
+    test('F1-T5: any intent with non-empty constraints[] → FAIL CLOSED (no structured constraint semantics in schemaVersion 1)', () => {
+      const plan = makePlan({
+        sourceGroupIntents: [{ intent: '只看高质量回答', constraints: ['仅高赞回答'], groupKey: null }],
+      });
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100), cand('200', 0.030)], ph);
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, 'selection_constraint_unevaluable');
+      assert.equal(d.selectedGroups.length, 0);
+      // Fixed rationale text; constraint strings are not echoed back.
+      assert.ok(!d.rationale.includes('仅高赞回答'));
+    });
+  });
+
+  describe('F2: pool planHash is a hard dependency identity', () => {
+    test('F2-T1: pool.planHash missing/undefined/empty → FAIL CLOSED', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+
+      const missing = selectSourceGroups(makePool([cand('100', 0.100)], undefined), plan);
+      assert.equal(missing.verdict, SELECT_VERDICT_NONE);
+      assert.equal(missing.reason, 'selection_pool_planhash_missing');
+      assert.equal(missing.selectedGroups.length, 0);
+
+      const empty = selectSourceGroups(makePool([cand('100', 0.100)], ''), plan);
+      assert.equal(empty.verdict, SELECT_VERDICT_NONE);
+      assert.equal(empty.reason, 'selection_pool_planhash_missing');
+    });
+
+    test('F2-T2: pool.planHash malformed → FAIL CLOSED; decision records poolPlanHash null (no raw echo)', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+
+      for (const malformed of ['not-a-valid-hash', 'A'.repeat(64), `${ph}extra`]) {
+        const d = selectSourceGroups(makePool([cand('100', 0.100)], malformed), plan);
+        assert.equal(d.verdict, SELECT_VERDICT_NONE);
+        assert.equal(d.reason, 'selection_pool_planhash_malformed');
+        assert.equal(d.selectedGroups.length, 0);
+        // Untrusted raw value is NOT persisted into the decision.
+        assert.equal(d.poolPlanHash, null);
+      }
+    });
+
+    test('F2-T3: pool.planHash valid-format but different from plan planHash → FAIL CLOSED (preserved)', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100)], 'a'.repeat(64)); // valid format, wrong identity
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_PLAN_POOL_MISMATCH);
+      assert.equal(d.planHash, ph);
+      assert.equal(d.poolPlanHash, 'a'.repeat(64));
+      assert.equal(d.planHashMatch, false);
+    });
+
+    test('F2-T4: reuse seam — missing/malformed pool identities are never reusable', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const d = selectSourceGroups(makePool([cand('100', 0.100)], ph), plan);
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+
+      // Missing currentPoolPlanHash → NOT reusable (stale).
+      const missing = selectionDecisionStatus({ decision: d, currentPlanHash: ph, currentPoolPlanHash: undefined });
+      assert.equal(missing.reusable, false);
+      assert.equal(missing.stale, true);
+      assert.equal(missing.reason, 'selection_dependency_missing');
+
+      // Malformed currentPoolPlanHash → NOT reusable (invalid identity).
+      const invalidCurrent = selectionDecisionStatus({ decision: d, currentPlanHash: ph, currentPoolPlanHash: 'zzz' });
+      assert.equal(invalidCurrent.reusable, false);
+      assert.equal(invalidCurrent.stale, true);
+      assert.equal(invalidCurrent.reason, 'selection_dependency_invalid');
+
+      // Malformed decision.poolPlanHash → NOT reusable (invalid identity).
+      const tampered = { ...d, poolPlanHash: 'bogus' };
+      const invalidDecision = selectionDecisionStatus({ decision: tampered, currentPlanHash: ph, currentPoolPlanHash: ph });
+      assert.equal(invalidDecision.reusable, false);
+      assert.equal(invalidDecision.stale, true);
+      assert.equal(invalidDecision.reason, 'selection_dependency_invalid');
+    });
+
+    test('F2-T5: exact matching planHash + matching poolPlanHash → reusable=true', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const d = selectSourceGroups(makePool([cand('100', 0.100)], ph), plan);
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+
+      const st = selectionDecisionStatus({ decision: d, currentPlanHash: ph, currentPoolPlanHash: ph });
+      assert.equal(st.reusable, true);
+      assert.equal(st.stale, false);
+      assert.equal(st.reason, null);
+    });
+  });
 });

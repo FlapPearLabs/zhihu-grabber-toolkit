@@ -29,7 +29,13 @@
  * - Persisted Research Plan (P1-T04, plan-contract.mjs): supplies
  *   `sourceGroupIntents` (intent/constraints/groupKey) which (a) sets the
  *   intended group count k and (b) provides the consistency-checked rationale
- *   binding recorded in each SelectedSourceGroup.
+ *   binding recorded in each SelectedSourceGroup. Reform round (external
+ *   review F1): a non-empty `groupKey` is a HARD constraint — it must be
+ *   exactly bound to a distinct selected group and is NEVER positionally
+ *   rebound; free-form `constraints` strings have NO structured semantics
+ *   under plan schemaVersion 1, so any non-empty constraints[] fails closed
+ *   (`selection_constraint_unevaluable`) instead of being silently treated
+ *   as satisfied.
  * - ResearchCoverageState fusion hook (P1-T07, coverage-state.mjs:
  *   updateSourceGroupFusion, OWNER_T08_FUSION): T08 owns the source-group
  *   fusion accounting and records fusedCandidateCount / fusedGroupCount.
@@ -72,6 +78,12 @@ export const SELECTION_FAILURE_INVALID_POOL = 'selection_invalid_pool';
 export const SELECTION_FAILURE_PLAN_POOL_MISMATCH = 'selection_plan_pool_mismatch';
 export const SELECTION_FAILURE_INVALID_CLARIFICATION = 'selection_invalid_clarification';
 export const SELECTION_FAILURE_NO_VALID_GROUP = 'selection_no_valid_group';
+/** Reform F1: fail-closed identities for plan-intent hard gates. */
+export const SELECTION_FAILURE_CONSTRAINT_UNEVALUABLE = 'selection_constraint_unevaluable';
+export const SELECTION_FAILURE_PLAN_GROUP_KEY_UNSATISFIED = 'selection_plan_group_key_unsatisfied';
+/** Reform F2: fail-closed identities for the pool planHash hard dependency. */
+export const SELECTION_FAILURE_POOL_PLANHASH_MISSING = 'selection_pool_planhash_missing';
+export const SELECTION_FAILURE_POOL_PLANHASH_MALFORMED = 'selection_pool_planhash_malformed';
 
 /** D-5 delegated defaults (implementation-validation bounds; overridden per call). */
 export const DEFAULT_MIN_GROUP_SCORE = 0;
@@ -183,10 +195,13 @@ export function intendedGroupCount(plan, opts = {}) {
 
 /**
  * Bind selected groups to plan sourceGroupIntents for the consistency record.
- * - An intent with a non-null `groupKey` binds to a selected group whose
- *   questionId equals that groupKey (exact, deterministic).
- * - Remaining unbound intents are recorded as `unmet` (a consistency diagnostic;
- *   constraint matching is an OPEN design — recorded, not a hard fail).
+ * - An intent with a non-empty `groupKey` binds ONLY by exact questionId match
+ *   (strongest, deterministic). A non-empty-groupKey intent is NEVER
+ *   positionally bound: its groupKey is a hard constraint enforced by the
+ *   fail-closed groupKey gate in selectSourceGroups / resolveClarification.
+ * - Remaining selected groups are bound, in order, to intents whose groupKey
+ *   is null (rationale records only); those optional intents stay reported via
+ *   intentCoverage (unmet / shortfall diagnostics).
  * Returns { bindings: Map<questionId, {intentIndex, groupKey}>, unmet: number }.
  */
 export function bindGroupsToPlanIntents(selectedGroups, plan) {
@@ -201,11 +216,13 @@ export function bindGroupsToPlanIntents(selectedGroups, plan) {
       bindings.set(g.questionId, { intentIndex: hit, groupKey: intents[hit].groupKey });
     }
   }
-  // Second pass: positional binding for the still-unbound intents, in order.
+  // Second pass: bind remaining selected groups ONLY to intents whose
+  // groupKey is null (in plan order, as rationale records). An intent with a
+  // non-empty groupKey is never positionally bound.
   let nextIntent = 0;
   for (const g of selectedGroups) {
     if (bindings.has(g.questionId)) continue;
-    while (nextIntent < intents.length && usedIntent.has(nextIntent)) nextIntent += 1;
+    while (nextIntent < intents.length && (usedIntent.has(nextIntent) || isNonEmptyString(intents[nextIntent].groupKey))) nextIntent += 1;
     if (nextIntent < intents.length) {
       usedIntent.add(nextIntent);
       bindings.set(g.questionId, { intentIndex: nextIntent, groupKey: intents[nextIntent].groupKey ?? null });
@@ -213,6 +230,32 @@ export function bindGroupsToPlanIntents(selectedGroups, plan) {
     }
   }
   return { bindings, unmet: intents.length - usedIntent.size };
+}
+
+/**
+ * Reform F1 hard gate: count required (non-empty groupKey) plan intents that
+ * cannot be bound to a DISTINCT group id from the given set (greedy, per-intent
+ * in plan order; two intents may not share one group). Fixed rationale text
+ * reports only the count — groupKey values are never echoed.
+ */
+function countUnsatisfiedRequiredGroupKeys(plan, groupIds) {
+  const available = new Set(groupIds);
+  const used = new Set();
+  let unsatisfied = 0;
+  for (const it of plan.sourceGroupIntents) {
+    if (!isNonEmptyString(it.groupKey)) continue;
+    if (available.has(it.groupKey) && !used.has(it.groupKey)) {
+      used.add(it.groupKey);
+    } else {
+      unsatisfied += 1;
+    }
+  }
+  return unsatisfied;
+}
+
+/** Fixed fail-closed rationale for the required-groupKey gate (count only, no values). */
+function groupKeyUnsatisfiedRationale(unsatisfiedCount) {
+  return `plan requires ${unsatisfiedCount} explicit source-group key(s) not satisfied by the eligible candidate pool (fail-closed)`;
 }
 
 /**
@@ -246,6 +289,20 @@ export function selectSourceGroups(pool, plan, opts = {}) {
     return failureVerdict(SELECTION_FAILURE_PLANNER_INVALID, { rationale: 'plan hash computation failed' });
   }
 
+  // 1b. Reform F1 constraints gate (immediately after plan validation, before
+  // any pool work): constraints[] are FREE-FORM STRINGS with NO structured
+  // semantics under plan schemaVersion 1 — they cannot be mechanically
+  // evaluated, so they must fail closed instead of being silently treated as
+  // satisfied. Fixed rationale text; constraint strings are never echoed.
+  if (normalizedPlan.sourceGroupIntents.some((it) => Array.isArray(it.constraints) && it.constraints.length > 0)) {
+    return failureVerdict(SELECTION_FAILURE_CONSTRAINT_UNEVALUABLE, {
+      planHash: planIdentity,
+      rationale:
+        'plan intent constraints cannot be mechanically evaluated under plan schemaVersion 1 '
+        + '(no structured constraint semantics); failing closed instead of treating them as satisfied',
+    });
+  }
+
   // 2. Pool validity.
   const built = buildCandidateGroups(pool);
   if (!built.ok) {
@@ -253,9 +310,26 @@ export function selectSourceGroups(pool, plan, opts = {}) {
   }
 
   // 3. Plan/pool identity consistency (Spec §4.3 dependency identity).
+  // Reform F2: the pool planHash is a HARD dependency identity. A missing or
+  // malformed identity fails closed; untrusted raw values are never persisted
+  // into the decision (a malformed identity is recorded as null).
   const poolPlanHash = pool?.planHash ?? null;
-  const planHashMatch = isValidPlanHashFormat(poolPlanHash) && poolPlanHash === planIdentity;
-  if (isValidPlanHashFormat(poolPlanHash) && poolPlanHash !== planIdentity) {
+  if (!isNonEmptyString(poolPlanHash)) {
+    return failureVerdict(SELECTION_FAILURE_POOL_PLANHASH_MISSING, {
+      planHash: planIdentity,
+      poolPlanHash: null,
+      rationale: 'retrieval-pool artifact is missing its planHash dependency identity (fail-closed)',
+    });
+  }
+  if (!isValidPlanHashFormat(poolPlanHash)) {
+    return failureVerdict(SELECTION_FAILURE_POOL_PLANHASH_MALFORMED, {
+      planHash: planIdentity,
+      poolPlanHash: null,
+      rationale: 'retrieval-pool planHash dependency identity is malformed (fail-closed); raw value not recorded',
+    });
+  }
+  const planHashMatch = poolPlanHash === planIdentity;
+  if (!planHashMatch) {
     return failureVerdict(SELECTION_FAILURE_PLAN_POOL_MISMATCH, {
       planHash: planIdentity,
       poolPlanHash,
@@ -269,6 +343,26 @@ export function selectSourceGroups(pool, plan, opts = {}) {
   const eligible = built.groups
     .map((g, idx) => ({ ...g, rankIndex: idx }))
     .filter((g) => g.eligible && g.score >= minScore);
+
+  // 4b. Reform F1 groupKey hard gate (after eligible computation, BEFORE the
+  // clarification branch): every intent with a non-empty groupKey must be
+  // satisfiable by a DISTINCT eligible group. Any unsatisfied required key →
+  // fail closed (fixed rationale, count only).
+  const eligibleGateShortfall = countUnsatisfiedRequiredGroupKeys(normalizedPlan, eligible.map((g) => g.questionId));
+  if (eligibleGateShortfall > 0) {
+    return finalize({
+      verdict: SELECT_VERDICT_NONE,
+      reason: SELECTION_FAILURE_PLAN_GROUP_KEY_UNSATISFIED,
+      planIdentity, poolPlanHash, planHashMatch,
+      selectedGroups: [],
+      eligible,
+      clarification: null,
+      clarificationCount: 0,
+      normalizedPlan,
+      intentShortfall: 0,
+      rationale: groupKeyUnsatisfiedRationale(eligibleGateShortfall),
+    });
+  }
 
   // 5. Clarification resolution (at most one; never silently guesses).
   if (opts.clarification != null) {
@@ -360,6 +454,27 @@ export function selectSourceGroups(pool, plan, opts = {}) {
   }
 
   // 9. Clear best group set → deterministic auto-selection.
+  // Reform F1 gate (selected-set coverage): the AUTO set itself must exactly
+  // cover every required (non-empty groupKey) intent with distinct bindings —
+  // a required group that is eligible but not selected (e.g. outranked at k)
+  // must NEVER be positionally rebound or reported satisfied. Required-intent
+  // shortfall therefore can never reach an AUTO verdict.
+  const selectedGateShortfall = countUnsatisfiedRequiredGroupKeys(normalizedPlan, selected.map((g) => g.questionId));
+  if (selectedGateShortfall > 0) {
+    return finalize({
+      verdict: SELECT_VERDICT_NONE,
+      reason: SELECTION_FAILURE_PLAN_GROUP_KEY_UNSATISFIED,
+      planIdentity, poolPlanHash, planHashMatch,
+      selectedGroups: [],
+      eligible,
+      clarification: null,
+      clarificationCount: 0,
+      normalizedPlan,
+      intentShortfall: 0,
+      rationale: groupKeyUnsatisfiedRationale(selectedGateShortfall),
+    });
+  }
+
   const { bindings, unmet } = bindGroupsToPlanIntents(selected, normalizedPlan);
   const selectedGroups = selected.map((g) => ({
     groupId: g.questionId,
@@ -424,6 +539,26 @@ function resolveClarification({ eligible, normalizedPlan, planIdentity, poolPlan
     forced.push(g);
   }
   forced.sort((a, b) => (b.score !== a.score ? b.score - a.score : compareQuestionId(a.questionId, b.questionId)));
+
+  // Reform F1 groupKey hard gate on the forced set: the user-selected set must
+  // exactly cover every required (non-empty groupKey) intent with distinct
+  // bindings — a forced resolution that leaves a required key unsatisfied
+  // fails closed (count-only rationale; no groupKey values echoed).
+  const forcedGateShortfall = countUnsatisfiedRequiredGroupKeys(normalizedPlan, forced.map((g) => g.questionId));
+  if (forcedGateShortfall > 0) {
+    return finalize({
+      verdict: SELECT_VERDICT_NONE,
+      reason: SELECTION_FAILURE_PLAN_GROUP_KEY_UNSATISFIED,
+      planIdentity, poolPlanHash, planHashMatch,
+      selectedGroups: [],
+      eligible,
+      clarification: null,
+      clarificationCount: 0,
+      normalizedPlan,
+      intentShortfall: 0,
+      rationale: groupKeyUnsatisfiedRationale(forcedGateShortfall),
+    });
+  }
 
   const { bindings, unmet } = bindGroupsToPlanIntents(forced, normalizedPlan);
   const selectedGroups = forced.map((g) => ({
@@ -543,9 +678,13 @@ export function loadSelectionDecision(workDir) {
 
 /**
  * Stale-propagation seam (Spec §4.3): a prior selection decision is reusable
- * ONLY when its planHash matches the CURRENT valid plan's planHash AND its
- * poolPlanHash matches the current pool's planHash. Any mismatch → stale
- * (fail-closed reuse). Returns { reusable, stale, reason }.
+ * ONLY when its planHash matches the CURRENT valid plan's planHash AND both
+ * pool identities (decision.poolPlanHash and currentPoolPlanHash) are
+ * syntactically valid planHashes that match each other. Reform F2: the pool
+ * planHash is a HARD dependency identity — a missing identity is
+ * `selection_dependency_missing`, a malformed one is
+ * `selection_dependency_invalid`; an invalid identity NEVER implies reuse,
+ * even when identical. Returns { reusable, stale, reason }.
  */
 export function selectionDecisionStatus({ decision, currentPlanHash, currentPoolPlanHash }) {
   if (!isPlainObject(decision) || !isValidPlanHashFormat(decision.planHash)) {
@@ -557,10 +696,20 @@ export function selectionDecisionStatus({ decision, currentPlanHash, currentPool
   if (decision.planHash !== currentPlanHash) {
     return { reusable: false, stale: true, reason: 'selection_plan_hash_mismatch' };
   }
-  if (isValidPlanHashFormat(currentPoolPlanHash)) {
-    if (decision.poolPlanHash !== currentPoolPlanHash) {
-      return { reusable: false, stale: true, reason: 'selection_pool_hash_mismatch' };
-    }
+  // Pool identity is a hard dependency: both sides must be format-valid
+  // planHashes before any comparison (fail-closed reuse contract).
+  const decisionPoolOk = isValidPlanHashFormat(decision.poolPlanHash);
+  const currentPoolOk = isValidPlanHashFormat(currentPoolPlanHash);
+  if (!decisionPoolOk || !currentPoolOk) {
+    const isMissing = (h) => !(typeof h === 'string' && h.length > 0);
+    const reason =
+      isMissing(decision.poolPlanHash) || isMissing(currentPoolPlanHash)
+        ? 'selection_dependency_missing'
+        : 'selection_dependency_invalid';
+    return { reusable: false, stale: true, reason };
+  }
+  if (decision.poolPlanHash !== currentPoolPlanHash) {
+    return { reusable: false, stale: true, reason: 'selection_pool_hash_mismatch' };
   }
   return { reusable: true, stale: false, reason: null };
 }
