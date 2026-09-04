@@ -267,6 +267,23 @@ function projectCanonicalRankRecord(item) {
  * enter the T08 decision.
  */
 export function buildCandidateGroups(pool) {
+  // R3 reviewer repair (F1, round B): the pool-level discriminator reads are
+  // EXCEPTION-SAFE too — a hostile getter on pool.type / pool.schemaVersion /
+  // pool.candidates fails closed into the stable invalid-pool verdict instead
+  // of escaping as a raw throw (same T06 exception-safety doctrine as the
+  // per-candidate reads below).
+  try {
+    return buildCandidateGroupsInner(pool);
+  } catch {
+    return {
+      ok: false,
+      reason: SELECTION_FAILURE_INVALID_POOL,
+      rationale: 'retrieval pool could not be safely consumed (fail-closed)',
+    };
+  }
+}
+
+function buildCandidateGroupsInner(pool) {
   if (!isPlainObject(pool)) {
     return { ok: false, reason: SELECTION_FAILURE_INVALID_POOL };
   }
@@ -555,7 +572,20 @@ export function selectSourceGroups(pool, plan, opts = {}) {
   // Reform F2: the pool planHash is a HARD dependency identity. A missing or
   // malformed identity fails closed; untrusted raw values are never persisted
   // into the decision (a malformed identity is recorded as null).
-  const poolPlanHash = pool?.planHash ?? null;
+  // R3 reviewer repair (F1, round B): the pool.planHash read is EXCEPTION-SAFE
+  // — a hostile getter fails closed into the stable malformed-identity verdict
+  // (raw value never read twice, never recorded) instead of escaping as a raw
+  // throw.
+  let poolPlanHash;
+  try {
+    poolPlanHash = pool?.planHash ?? null;
+  } catch {
+    return failureVerdict(SELECTION_FAILURE_POOL_PLANHASH_MALFORMED, {
+      planHash: planIdentity,
+      poolPlanHash: null,
+      rationale: 'retrieval-pool planHash dependency identity could not be safely read (fail-closed); raw value not recorded',
+    });
+  }
   if (!isNonEmptyString(poolPlanHash)) {
     return failureVerdict(SELECTION_FAILURE_POOL_PLANHASH_MISSING, {
       planHash: planIdentity,

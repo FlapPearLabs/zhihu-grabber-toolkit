@@ -1279,6 +1279,40 @@ describe('external repair R3: canonical pool-consumption boundary (P1-A) + clari
       assert.ok(!serializedCred.includes('abc'));
     });
 
+    test('A10: hostile getter on pool top-level fields (type/schemaVersion/candidates) → FAIL CLOSED verdict (never a raw throw)', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      for (const field of ['type', 'schemaVersion', 'candidates']) {
+        const hostile = makePool([cand('100', 0.100)], ph);
+        Object.defineProperty(hostile, field, { get() { throw new Error(`hostile ${field}`); } });
+        let d;
+        try {
+          d = selectSourceGroups(hostile, plan);
+        } catch (err) {
+          assert.fail(`pool.${field} hostile getter escaped as a raw throw: ${err.message}`);
+        }
+        assert.equal(d.verdict, SELECT_VERDICT_NONE, `pool.${field}`);
+        assert.equal(d.reason, SELECTION_FAILURE_INVALID_POOL, `pool.${field}`);
+        assert.equal(d.selectedGroups.length, 0);
+      }
+    });
+
+    test('A11: hostile getter on pool.planHash → FAIL CLOSED malformed-identity verdict (never a raw throw; no echo)', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const hostile = makePool([cand('100', 0.100)], ph);
+      Object.defineProperty(hostile, 'planHash', { get() { throw new Error('hostile planHash'); } });
+      let d;
+      try {
+        d = selectSourceGroups(hostile, plan);
+      } catch (err) {
+        assert.fail(`pool.planHash hostile getter escaped as a raw throw: ${err.message}`);
+      }
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, 'selection_pool_planhash_malformed');
+      assert.equal(d.poolPlanHash, null);
+    });
+
     test('A7-guard: a clean T08 decision still persists (artifact-safety gate has no false positives on canonical output)', () => {
       const plan = makePlan();
       const ph = validPlanHash(plan);
