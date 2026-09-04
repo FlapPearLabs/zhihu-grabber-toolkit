@@ -227,4 +227,81 @@ CE-18 HOOK_ACCOUNTING_MECHANICAL   derived update always satisfies updateSourceC
                                    validator; inconsistent manual payload throws (hook alive)
 CE-19 CAPTURE_ADAPTER_CONTRACT     invalid provider result shape → group failed with
                                    PROVIDER_RESULT_CONTRACT_INVALID (validateProviderResult gate)
+CE-20 PLAN_IDENTITY_BINDING        decision.planHash/poolPlanHash missing, malformed, or
+                                   != executing planHash → MULTI_GROUP_PLAN_IDENTITY_MISMATCH
+                                   at create (and every resume fresh path); stale
+                                   (plan, decision) pair never composes — re-selection required
+CE-21 STATE_SHAPE_GROUPS           parseable state, valid type/schemaVersion, groups
+                                   missing/array/empty → corrupt → load null → resume fresh
+                                   (no raw throw, no silent empty-groups 'resume')
+CE-22 STATE_SHAPE_GROUP_ENTRY      tampered group entries (nulled; groupId != key; boolean
+                                   coercion; unknown artifact-hash keys; failure w/ raw detail
+                                   keys) → corrupt → load null → resume fresh
+```
+
+---
+
+## RETROACTIVE ROUND — PRE-FRESH-REVIEW CONTRACT REPAIR (CE-20/21/22)
+
+```text
+TRIGGER = product-owner instruction before FRESH REVIEW: probe CE-20/21/22; repair any
+          contract defect via RED → append-only repair → GREEN; complete retroactive
+          CodeGraph grounding on the candidate. Independence semantics clarified:
+          independent graph QUERY / relationship reasoning — NOT independent graph
+          database construction; no full reindex merely for a fresh reviewer.
+
+RED_EVIDENCE = /tmp/t09_red_ce2022.log — node --test at exact candidate c6dc4c3
+          (pre-repair lib): 36 tests, 33 pass, 3 fail:
+            CE-20 'Missing expected exception' (no fail-closed identity binding)
+            CE-21 TypeError 'Cannot convert undefined or null to object' (raw throw)
+            CE-22 TypeError "Cannot read properties of null (reading 'captured')" (raw throw)
+
+CE-20 PLAN_IDENTITY_BINDING   createMultiGroupExecutionState now hard-binds BOTH T08
+          decision identity fields (decision.planHash AND decision.poolPlanHash) to the
+          executing planHash (format-valid + equality; mirrors the T08
+          selectionDecisionStatus fail-closed reuse contract). A (planHash, decision)
+          pair that is internally inconsistent fails closed
+          MULTI_GROUP_PLAN_IDENTITY_MISMATCH on every path (create + all resume fresh
+          boundaries). Plan drift therefore requires a RE-SELECTION under the new plan,
+          never composition of a stale decision. CE-04 test updated to this stronger
+          semantics (stale pair throws; legal plan drift uses a fresh decision).
+CE-21 STATE_SHAPE_GROUPS      loadMultiGroupState deep-validates persisted shape: a
+          parseable file with valid type/schemaVersion but missing/array/empty groups
+          map is CORRUPT → null → resume fresh (no_state). Closes the raw-throw at
+          resume's groups iteration and the silent empty-groups 'resume' state.
+CE-22 STATE_SHAPE_GROUP_ENTRY entry-level validation: strict key whitelists (15-entry
+          production shape; 9-key top-level shape), entry.groupId === key, strict
+          booleans (no truthiness coercion), enum-bounded stage/paginationStatus,
+          artifact-hash whitelist {answersJson, handoffJson}, failure object exactly
+          {code, class} (raw detail keys rejected). Invalid → null → fresh. Path
+          containment of evidenceRef/handoffRef stays with the T06 authority
+          (validateArtifactCheckpoint → assertWorkRelative), revalidated on every reuse.
+
+REPAIR = append-only commit on work/p1-t09-multi-group-execution (c6dc4c3 untouched;
+         repair SHA recorded in the lane packet / final report).
+```
+
+---
+
+## GROUNDING RECORD (honest labels per product-owner-required format)
+
+```text
+PRE_CODE_CODEGRAPH_GROUNDING = INCOMPLETE
+  (implementation began before the rebuilt graph was ready; no PASS is claimed)
+DIRECT_REPOSITORY_GROUNDING  = PASS
+  (every manifest surface read verbatim at exact SHAs during AUTHORITY / MANIFEST phases)
+
+RETROACTIVE_CODEGRAPH_GROUNDING = PASS (reused healthy exact-base index + incremental candidate delta)
+  BASE_GRAPH       = wt-p1-t08-reform/research-orchestration CodeGraph index
+                     (32 files / 653 nodes / 3459 edges, 'Index is up to date');
+                     worktree HEAD verified = 0287ba3ef33c29357c7f8306f9e51dcca2b41da0
+                     (exact base/master). REUSED — not rebuilt.
+  CANDIDATE_DELTA  = index copied to wt-p1-t09/research-orchestration + `codegraph sync`:
+                     'Synced 4 changed files — Added: 2, Modified: 2 — 154 nodes in 2.3s'
+                     → 34 files / 738 nodes / 3971 edges, including the T09 module + tests.
+  FULL_REBUILD     = a background full-repo init (wt-p1-t09 root) started earlier in this
+                     session is NOT waited on and NOT required (healthy exact-base graph +
+                     candidate delta satisfies grounding; product-owner instruction #10).
+  REVIEWER_USAGE   = fresh reviewer must ground via graph QUERY against this index plus
+                     direct reads at the exact candidate SHA; no reviewer-owned reindex.
 ```

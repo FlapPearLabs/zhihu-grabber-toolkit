@@ -672,7 +672,16 @@ test('CE-04 PLAN_IDENTITY_DRIFT: changed planHash → fresh state; old refs neve
   runGroupFlow(state, '200', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
   persistMultiGroupState(workDir, state);
 
-  const resume = resumeMultiGroupExecution({ workDir, planHash: sha('plan-b'), selectionDecision: decision });
+  // CE-20 binding: the stale (plan-b, decision-from-plan-a) pair can never compose —
+  // plan drift requires a RE-SELECTION under the new plan, never reuse of the old decision.
+  assert.throws(
+    () => resumeMultiGroupExecution({ workDir, planHash: sha('plan-b'), selectionDecision: decision }),
+    (err) => err instanceof MultiGroupError && err.code === 'MULTI_GROUP_PLAN_IDENTITY_MISMATCH',
+  );
+
+  // legal plan drift: fresh re-selection under the NEW plan → fresh state at the plan boundary
+  const newPlanDecision = makeSelectionDecision(['100', '200'], { planHashValue: sha('plan-b') });
+  const resume = resumeMultiGroupExecution({ workDir, planHash: sha('plan-b'), selectionDecision: newPlanDecision });
   assert.equal(resume.fresh, true);
   assert.equal(resume.boundary, 'plan');
   assert.deepEqual(resume.invalidatedGroupIds, []);
@@ -876,4 +885,128 @@ test('I4+I8 guard: ref hashes bind to exact artifact bytes at composition time',
   assert.equal(refs[0].handoffHash, crypto.createHash('sha256').update(fs.readFileSync(path.join(workDir, 'zhihu', '100', 'handoff.json'))).digest('hex'));
   assert.equal(refs[0].answersRel, 'zhihu/100/answers.json');
   assert.equal(refs[0].handoffRel, 'zhihu/100/handoff.json');
+});
+
+// ---------------------------------------------------------------------------
+// CE-20/21/22 — identity binding + persisted-state shape validation
+// (retroactive grounding round: contract defects identified before fresh review;
+//  each maps to docs/planning/P1_T09_MULTI_GROUP_EXECUTION_CONTRACT.md register)
+// ---------------------------------------------------------------------------
+
+test('CE-20 PLAN_IDENTITY_BINDING: decision composed under another plan/pool identity is rejected at the T09 boundary', () => {
+  // decision.planHash != planHash argument → fail closed (no cross-plan composition)
+  const d1 = makeSelectionDecision(['100'], { planHashValue: sha('plan-a') });
+  assert.throws(
+    () => createMultiGroupExecutionState({ planHash: sha('plan-b'), selectionDecision: d1 }),
+    (err) => err instanceof MultiGroupError && err.code === 'MULTI_GROUP_PLAN_IDENTITY_MISMATCH',
+  );
+
+  // decision.poolPlanHash != planHash argument (pool built under a different plan) → fail closed
+  const d2 = makeSelectionDecision(['100'], { planHashValue: sha('plan-a') });
+  d2.poolPlanHash = sha('plan-c');
+  assert.throws(
+    () => createMultiGroupExecutionState({ planHash: sha('plan-a'), selectionDecision: d2 }),
+    (err) => err.code === 'MULTI_GROUP_PLAN_IDENTITY_MISMATCH',
+  );
+
+  // missing decision plan identity → fail closed
+  const d3 = makeSelectionDecision(['100']);
+  delete d3.planHash;
+  assert.throws(
+    () => createMultiGroupExecutionState({ planHash: sha('plan-a'), selectionDecision: d3 }),
+    (err) => err.code === 'MULTI_GROUP_PLAN_IDENTITY_MISMATCH',
+  );
+
+  // resume-level: a (planHash, decision) pair that is internally inconsistent fails
+  // closed instead of silently composing fresh state from a decision that was never
+  // made under that plan (the plan boundary requires a RE-SELECTION, not reuse).
+  const workDir = tmpDir('ce20-resume');
+  const oldDecision = makeSelectionDecision(['100'], { planHashValue: sha('plan-a') });
+  const state = makeState(workDir, ['100'], { decision: oldDecision });
+  runGroupFlow(state, '100', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  persistMultiGroupState(workDir, state);
+  assert.throws(
+    () => resumeMultiGroupExecution({ workDir, planHash: sha('plan-b'), selectionDecision: oldDecision }),
+    (err) => err instanceof MultiGroupError && err.code === 'MULTI_GROUP_PLAN_IDENTITY_MISMATCH',
+  );
+});
+
+test('CE-21 STATE_SHAPE_GROUPS: parseable state with missing/malformed groups never raw-throws resume — corrupt → fresh', () => {
+  const workDir = tmpDir('ce21');
+  const decision = makeSelectionDecision(['100']);
+  const state = makeState(workDir, ['100'], { decision });
+  runGroupFlow(state, '100', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  persistMultiGroupState(workDir, state);
+
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+
+  const expectFresh = () => {
+    const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+    assert.equal(resume.fresh, true);
+    assert.equal(resume.boundary, 'no_state');
+    assert.equal(resume.state.groups['100'].stage, GROUP_STAGE_PENDING);
+    assert.deepEqual(resume.state.verifiedGroupRefs, []);
+  };
+
+  // variant A: groups key missing entirely (type/schemaVersion still valid)
+  const noGroups = { ...parsed };
+  delete noGroups.groups;
+  fs.writeFileSync(stateFile, JSON.stringify(noGroups, null, 2));
+  expectFresh();
+
+  // variant B: groups replaced by a non-object (array) — must not silently resume
+  fs.writeFileSync(stateFile, JSON.stringify({ ...parsed, groups: [] }, null, 2));
+  expectFresh();
+
+  // variant C: groups emptied (selection was non-empty; empty groups can never be valid)
+  fs.writeFileSync(stateFile, JSON.stringify({ ...parsed, groups: {} }, null, 2));
+  expectFresh();
+});
+
+test('CE-22 STATE_SHAPE_GROUP_ENTRY: semantically malformed group entries are never reused — corrupt → fresh', () => {
+  const workDir = tmpDir('ce22');
+  const decision = makeSelectionDecision(['100']);
+  const state = makeState(workDir, ['100'], { decision });
+  runGroupFlow(state, '100', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  persistMultiGroupState(workDir, state);
+
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+
+  const expectFresh = () => {
+    const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+    assert.equal(resume.fresh, true);
+    assert.equal(resume.boundary, 'no_state');
+    assert.equal(resume.state.groups['100'].stage, GROUP_STAGE_PENDING);
+    assert.deepEqual(resume.state.verifiedGroupRefs, []);
+  };
+
+  // A: entry nulled out
+  fs.writeFileSync(stateFile, JSON.stringify({ ...parsed, groups: { '100': null } }, null, 2));
+  expectFresh();
+
+  // B: entry identity tampered (entry.groupId no longer equals its key) — never silently accepted
+  const b = JSON.parse(JSON.stringify(parsed));
+  b.groups['100'].groupId = '999';
+  fs.writeFileSync(stateFile, JSON.stringify(b, null, 2));
+  expectFresh();
+
+  // C: boolean flags coerced to strings (captured: 'true') — no truthiness reuse
+  const c = JSON.parse(JSON.stringify(parsed));
+  c.groups['100'].captured = 'true';
+  fs.writeFileSync(stateFile, JSON.stringify(c, null, 2));
+  expectFresh();
+
+  // D: unknown artifact hash key injected (hash domain tampered)
+  const d = JSON.parse(JSON.stringify(parsed));
+  d.groups['100'].artifactHashes.evildoer = 'cafebabe';
+  fs.writeFileSync(stateFile, JSON.stringify(d, null, 2));
+  expectFresh();
+
+  // E: failure object carrying raw detail keys (value-free contract violated)
+  const e = JSON.parse(JSON.stringify(parsed));
+  e.groups['100'].failure = { code: 'X', class: 'provider', detail: 'raw provider stack' };
+  fs.writeFileSync(stateFile, JSON.stringify(e, null, 2));
+  expectFresh();
 });

@@ -81,6 +81,21 @@ const PAGINATION_COMPLETE = 'complete';
 const PAGINATION_PARTIAL = 'partial';
 const PAGINATION_UNKNOWN = 'unknown';
 
+// strict persisted-shape domains (CE-21/CE-22: a parseable file with wrong shapes
+// is CORRUPT — loads as null, never partially reused, never raw-throws)
+const GROUP_STAGE_VALUES = [GROUP_STAGE_PENDING, GROUP_STAGE_CAPTURED, GROUP_STAGE_VERIFIED, GROUP_STAGE_HANDED_OFF, GROUP_STAGE_FAILED];
+const PAGINATION_STATUS_VALUES = [PAGINATION_COMPLETE, PAGINATION_PARTIAL, PAGINATION_UNKNOWN];
+const GROUP_ARTIFACT_HASH_KEYS = ['answersJson', 'handoffJson'];
+const GROUP_ENTRY_KEYS = [
+  'groupId', 'questionId', 'stage', 'captured', 'verified', 'handoffValid', 'failed', 'partial',
+  'paginationStatus', 'evidenceRef', 'handoffRef', 'artifactHashes', 'capturedAnswerCount',
+  'verification', 'failure',
+];
+const MULTI_GROUP_STATE_KEYS = [
+  'schemaVersion', 'type', 'planHash', 'selectionIdentity', 'selectionDecisionHash',
+  'groups', 'verifiedGroupRefs', 'manifest', 'researchComplete',
+];
+
 // ---------------------------------------------------------------------------
 // error type
 // ---------------------------------------------------------------------------
@@ -160,7 +175,8 @@ function freshGroup({ groupId, questionId }) {
 
 /**
  * Create the multi-group execution state from the T08 selection decision.
- * Fail closed on: invalid planHash, non-auto verdict, empty/invalid/duplicate groups.
+ * Fail closed on: invalid planHash, non-auto verdict, decision plan/pool identity
+ * mismatch (CE-20), empty/invalid/duplicate groups.
  */
 export function createMultiGroupExecutionState({ planHash, selectionDecision }) {
   if (!isValidPlanHashFormat(planHash)) {
@@ -168,6 +184,17 @@ export function createMultiGroupExecutionState({ planHash, selectionDecision }) 
   }
   if (!selectionDecision || typeof selectionDecision !== 'object' || selectionDecision.verdict !== 'auto') {
     throw new MultiGroupError('MULTI_GROUP_SELECTION_INVALID', 'selection decision must be a T08 auto verdict (fail closed)');
+  }
+  // CE-20: the decision is only composable under the plan it was actually made for.
+  // BOTH identity fields T08 embeds in every decision (decision.planHash and
+  // decision.poolPlanHash) must be format-valid and equal the executing planHash —
+  // a decision made under another plan/pool can never silently seed this state.
+  // (Mirrors the T08 selectionDecisionStatus hard fail-closed reuse contract.)
+  if (!isValidPlanHashFormat(selectionDecision.planHash) || selectionDecision.planHash !== planHash) {
+    throw new MultiGroupError('MULTI_GROUP_PLAN_IDENTITY_MISMATCH', 'selection decision plan identity missing, malformed, or not the executing plan (fail closed)');
+  }
+  if (!isValidPlanHashFormat(selectionDecision.poolPlanHash) || selectionDecision.poolPlanHash !== planHash) {
+    throw new MultiGroupError('MULTI_GROUP_PLAN_IDENTITY_MISMATCH', 'selection decision pool identity missing, malformed, or built under a different plan (fail closed)');
   }
   const selected = Array.isArray(selectionDecision.selectedGroups) ? selectionDecision.selectedGroups : [];
   if (selected.length === 0) {
@@ -618,8 +645,10 @@ export function persistMultiGroupState(workDir, state) {
 }
 
 /**
- * Load + type-check the persisted state. Absent / corrupt / incompatible-typed
- * files all load as null (treated as absent by resume — FILE EXISTS != VALID).
+ * Load + validate the persisted state. Absent / corrupt (unparseable OR
+ * shape-invalid — CE-21/CE-22) / incompatible-typed files all load as null
+ * (treated as absent by resume — FILE EXISTS != VALID; never raw-throws,
+ * never partially reused).
  */
 export function loadMultiGroupState(workDir) {
   const file = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
@@ -630,11 +659,89 @@ export function loadMultiGroupState(workDir) {
   } catch {
     return null;
   }
-  if (!parsed || typeof parsed !== 'object') return null;
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
   if (parsed.type !== MULTI_GROUP_STATE_TYPE || parsed.schemaVersion !== MULTI_GROUP_STATE_SCHEMA_VERSION) {
     return null;
   }
+  if (!isValidPersistedMultiGroupShape(parsed)) return null;
   return parsed;
+}
+
+// ---------------------------------------------------------------------------
+// persisted-state shape validation (CE-21 / CE-22)
+// ---------------------------------------------------------------------------
+
+function isStrictBoolean(v) {
+  return v === true || v === false;
+}
+
+function isPlainObjectValue(v) {
+  return v !== null && typeof v === 'object' && !Array.isArray(v);
+}
+
+/**
+ * A persisted group entry is reusable only in its EXACT production shape:
+ * identity-coherent with its key, strict booleans (no truthiness coercion),
+ * enum-bounded stage/pagination, whitelist-bounded artifact hash keys, and a
+ * value-free failure object ({code, class} only — never raw detail keys).
+ */
+function isValidGroupEntry(key, g) {
+  if (!isPlainObjectValue(g)) return false;
+  for (const k of Object.keys(g)) {
+    if (!GROUP_ENTRY_KEYS.includes(k)) return false;
+  }
+  if (g.groupId !== key) return false;
+  if (typeof g.questionId !== 'string' || g.questionId.length === 0) return false;
+  if (!GROUP_STAGE_VALUES.includes(g.stage)) return false;
+  for (const flag of ['captured', 'verified', 'handoffValid', 'failed', 'partial']) {
+    if (!isStrictBoolean(g[flag])) return false;
+  }
+  if (!PAGINATION_STATUS_VALUES.includes(g.paginationStatus)) return false;
+  if (g.evidenceRef !== null && typeof g.evidenceRef !== 'string') return false;
+  if (g.handoffRef !== null && typeof g.handoffRef !== 'string') return false;
+  if (!isPlainObjectValue(g.artifactHashes)) return false;
+  for (const k of Object.keys(g.artifactHashes)) {
+    if (!GROUP_ARTIFACT_HASH_KEYS.includes(k)) return false;
+    if (typeof g.artifactHashes[k] !== 'string' || g.artifactHashes[k].length === 0) return false;
+  }
+  if (g.capturedAnswerCount !== null && !(Number.isInteger(g.capturedAnswerCount) && g.capturedAnswerCount >= 0)) return false;
+  if (g.verification !== null && !isPlainObjectValue(g.verification)) return false;
+  if (g.failure !== null) {
+    if (!isPlainObjectValue(g.failure)) return false;
+    if (Object.keys(g.failure).length !== 2) return false;
+    if (typeof g.failure.code !== 'string' || g.failure.code.length === 0) return false;
+    if (typeof g.failure.class !== 'string' || g.failure.class.length === 0) return false;
+  }
+  return true;
+}
+
+/**
+ * Deep structural validation for a parsed persisted state (CE-21/CE-22). A
+ * parseable file with a valid type/schemaVersion but a missing/malformed groups
+ * map, tampered group entries, or tampered identity fields is CORRUPT — it must
+ * never be partially reused and never raw-throw the resume path. Invalid shape
+ * loads as null (treated as absent by resume → fresh execution, fail closed).
+ */
+function isValidPersistedMultiGroupShape(parsed) {
+  for (const k of Object.keys(parsed)) {
+    if (!MULTI_GROUP_STATE_KEYS.includes(k)) return false;
+  }
+  if (typeof parsed.planHash !== 'string' || !isValidPlanHashFormat(parsed.planHash)) return false;
+  if (typeof parsed.selectionIdentity !== 'string' || parsed.selectionIdentity.length === 0) return false;
+  if (typeof parsed.selectionDecisionHash !== 'string' || parsed.selectionDecisionHash.length === 0) return false;
+  if (!isPlainObjectValue(parsed.groups)) return false;
+  const groupIds = Object.keys(parsed.groups);
+  if (groupIds.length === 0) return false;
+  for (const id of groupIds) {
+    if (!isValidGroupEntry(id, parsed.groups[id])) return false;
+  }
+  if (!Array.isArray(parsed.verifiedGroupRefs)) return false;
+  for (const ref of parsed.verifiedGroupRefs) {
+    if (!isPlainObjectValue(ref) || typeof ref.groupId !== 'string' || ref.groupId.length === 0) return false;
+  }
+  if (parsed.manifest !== null && !isPlainObjectValue(parsed.manifest)) return false;
+  if (!isStrictBoolean(parsed.researchComplete)) return false;
+  return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -659,8 +766,11 @@ function resetGroupToPending(g) {
 
 /**
  * Resume the multi-group execution from persisted state (Spec §6.2):
- *  - no/corrupt/incompatible state          → fresh create (no silent partial reuse)
- *  - planHash drift                          → fresh create from the PLAN boundary
+ *  - no/corrupt/shape-invalid (CE-21/CE-22)/incompatible state → fresh create
+ *    (no silent partial reuse; shape-invalid loads as null, never raw-throws)
+ *  - planHash drift                           → fresh create from the PLAN boundary
+ *    (the (planHash, decision) pair must itself be consistent — a stale decision
+ *     fails closed per CE-20; plan drift requires a re-selection, not reuse)
  *  - selectionIdentity drift                 → fresh create from the SELECTION boundary
  *  - selectionDecisionHash drift             → fresh create from the DECISION boundary
  *  - otherwise revalidate each group's recorded artifact hashes (I4) and invalidate:
