@@ -669,3 +669,60 @@ empirically); probe A 7-check over-rejection sweep = ALL ACCEPTED (defense held 
 no producible tuple rejected); probe C mirror extra key = lazy (=F2); probe D
 E1-roundtrip independent re-drive = CAUGHT (reuse, sibling preserved); probe E
 E2/E3 direct re-probes = CAUGHT at load.
+```
+
+## FRESH REVIEW ROUND G — FINAL CONVERGENCE: PASS_WITH_NONBLOCKING_FINDINGS
+
+Fresh review @ exact 4789382 (post-R7 repair SHA). VERDICT: **PASS** — blocking
+findings: none. All 23 registered findings (F1..F8, FB1..FB3, RC1..RC3, D1..D4,
+E1..E3, Round-F F1..F2) independently re-verified CLOSED_VERIFIED with line-level
+citations. Reviewer's own probes:
+
+- G1 over-rejection sweep (3 producible sub-probes: partial-capture→crash→
+  supersede→persist→resume with sibling; recapture-after-crash; handoff-stale
+  recorded hash on handoffValid:false): ALL ACCEPTED, composed work preserved.
+- G2 wedge-family exhaustive sweep (15 forged variants through
+  load→resume→applySourceCompletenessToCoverageState): ALL rejected at load
+  (corrupt→fresh, no_state); the T07 hook never throws mid-controller — CE-18
+  holds end-to-end; the RC2/E2/F1 clause family exactly covers the T07 forbidden
+  set as emitted by buildSourceCompletenessUpdate.
+- G3 two non-blocking P3 observations (EXTERNAL_REVIEW_POOL — see OVERRIDE
+  classification below): (a) forged researchComplete=true over all-pending groups
+  loads but is never read and is recomputed to false at resume (healed, inert);
+  (b) forged failure identity on a handoffValid group loads but failure is read
+  by no derivation/coverage path (inert bookkeeping). Both are not-producible-
+  but-inert handcrafted states that fail safely at the repo boundary; coherence
+  gates for them are DEFERRED unless external consumers of the raw loaded object
+  appear.
+
+## CONVERGENCE OVERRIDE (PRODUCT-OWNER, 2026-09-04) — APPLIED TO THIS REGISTER
+
+The product owner issued a convergence override governing the remainder of the
+T09 lane. Its rules, as applied to this register and the third-party review:
+
+1. P0/P1 remain mandatory blockers.
+2. P2 blocks ONLY if P2_CORE: reachable through the ticket's OWNED
+   runtime/persistence boundary AND violates an explicit T09 hard invariant AND
+   materially affects correctness/identity/resume/security/validity.
+   P2_ADJACENT / defensive-hardening findings are NON-BLOCKING and are recorded
+   in an external-review pool.
+3. P3 is non-blocking by default; no further repair round is opened for P3-only
+   findings.
+4. The reviewer may return PASS_WITH_NONBLOCKING_FINDINGS.
+5. State-validation scope: distinguish REACHABLE_PRODUCTION_STATE from
+   ARBITRARY_HOSTILE_HANDCRAFTED_STATE. The module is NOT authorized to become a
+   general formal state-schema engine; the requirement is that hostile input
+   FAILS SAFELY at the repo boundary (no refs/manifest/coverage/accounting
+   effect), not that every theoretically malformed tuple is rejected.
+6. No new invariant is introduced merely for internal consistency.
+7. Any proposed repair must pass the regression-risk test: does it reject a
+   currently legal runtime state? (This test is retrospective — Round E's E1
+   over-rejection is the standing example of why it exists.)
+8. Classification outcome for Round G: P0=0, P1=0, P2_CORE=0 → Fresh Review
+   final status = PASS_WITH_NONBLOCKING_FINDINGS; the fresh-repair loop is
+   STOPPED (no R8); the candidate code SHA is preserved at 4789382 (this
+   registration commit is docs-only and does not touch lib/ or test/).
+9. THIRD-PARTY ADVERSARIAL REVIEW proceeds on the same blocking classification
+   (P0/P1/P2_CORE block; P2_ADJACENT + P3 → external-review pool; verdicts may
+   be PASS | PASS_WITH_NONBLOCKING_FINDINGS | CHANGES_REQUESTED) and is bounded
+   to a single review round — it is not another unlimited hardening round.
