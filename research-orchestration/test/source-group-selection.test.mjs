@@ -53,6 +53,7 @@ import {
   scoreCandidateGroup,
   intendedGroupCount,
   bindGroupsToPlanIntents,
+  isCanonicalQuestionId,
   persistSelectionDecision,
   loadSelectionDecision,
   selectionDecisionStatus,
@@ -930,5 +931,37 @@ describe('repair round 2: constraint-first group-set construction + clarificatio
       assert.equal(d.reason, SELECTION_FAILURE_INVALID_CLARIFICATION);
       assert.equal(d.rationale, FIXED_RATIONALE);
     });
+  });
+});
+
+describe('canonical questionId gate consistency with T06', () => {
+  // T06 source of truth: rrf.mjs CANONICAL_QUESTION_ID = /^[1-9]\d*$/
+  // (unlimited length). The T08 selection boundary must accept exactly the
+  // same set of ids — same canonical identity at both boundaries (CE-08).
+  test("accepts '123'", () => {
+    assert.equal(isCanonicalQuestionId('123'), true);
+  });
+  test("rejects '0'", () => {
+    assert.equal(isCanonicalQuestionId('0'), false);
+  });
+  test("rejects '0123' (leading zero)", () => {
+    assert.equal(isCanonicalQuestionId('0123'), false);
+  });
+  test("rejects 'abc'", () => {
+    assert.equal(isCanonicalQuestionId('abc'), false);
+  });
+  test("rejects ''", () => {
+    assert.equal(isCanonicalQuestionId(''), false);
+  });
+  test("accepts 20-digit id '9'.repeat(20) (T06 drift case)", () => {
+    assert.equal(isCanonicalQuestionId('9'.repeat(20)), true);
+  });
+  test("accepts 30-digit id '9'.repeat(30)", () => {
+    assert.equal(isCanonicalQuestionId('9'.repeat(30)), true);
+  });
+  test('rejects non-string values', () => {
+    assert.equal(isCanonicalQuestionId(123), false);
+    assert.equal(isCanonicalQuestionId(null), false);
+    assert.equal(isCanonicalQuestionId(undefined), false);
   });
 });

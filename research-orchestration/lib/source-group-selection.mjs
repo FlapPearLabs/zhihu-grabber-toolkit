@@ -201,11 +201,14 @@ export function buildCandidateGroups(pool) {
   return { ok: true, groups };
 }
 
-/** Reuse T06's canonical questionId gate so a malformed id fails closed. */
-function isCanonicalQuestionId(value) {
-  if (typeof value !== 'string' || value.length === 0) return false;
-  // Canonical Zhihu decimal question id: 1..19 digits, no leading zeros, non-empty.
-  return /^(?!0)\d{1,19}$/.test(value);
+/**
+ * Canonical Zhihu questionId gate — EXACTLY matches T06 rrf.mjs
+ * CANONICAL_QUESTION_ID (/^[1-9]\d*$/): canonical decimal integer,
+ * no leading zeros, no length cap. One canonical definition across the
+ * T06 pool boundary and the T08 selection boundary (V2 grounding CE-08).
+ */
+export function isCanonicalQuestionId(value) {
+  return typeof value === 'string' && /^[1-9]\d*$/.test(value);
 }
 
 /**
