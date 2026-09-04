@@ -185,35 +185,55 @@ export function scoreCandidateGroup(candidate) {
 }
 
 /**
- * R3 P1-A: canonical T06 rank-provenance record gate (the EXACT fused-rank
- * shape rrf.mjs emits): exactly `{ channel, rank, rankOrigin, route }`;
- * `rank` is a 1-based safe integer; `rankOrigin` / `route` cross the T06
- * route-string boundary (null stays null, never invented); `channel` is the
- * exact §5.4 triple `{ query, providerId, capability }` with the retrieval-
- * ranked search capability, the plan-owned query re-validated at the T04 plan
- * boundary (isPlanBoundarySafeString) and the providerId at the provider-
- * content boundary (isBoundarySafeString) — the SAME owning authorities T06
- * applies, never a second weaker policy.
+ * R3 P1-A: canonical T06 rank-provenance record gate + projection (the EXACT
+ * fused-rank shape rrf.mjs emits): exactly `{ channel, rank, rankOrigin,
+ * route }`; `rank` is a 1-based safe integer; `rankOrigin` / `route` cross the
+ * T06 route-string boundary (null stays null, never invented); `channel` is
+ * the exact §5.4 triple `{ query, providerId, capability }` with the
+ * retrieval-ranked search capability, the plan-owned query re-validated at the
+ * T04 plan boundary (isPlanBoundarySafeString) and the providerId at the
+ * provider-content boundary (isBoundarySafeString) — the SAME owning
+ * authorities T06 applies, never a second weaker policy.
+ *
+ * Validate-and-PROJECT in one pass (T06 projection doctrine): every field is
+ * read EXACTLY ONCE into a local, so a hostile or stateful getter cannot
+ * escape as a raw throw (the caller's try/catch turns any throw into a
+ * fail-closed verdict) nor return different values across reads, and the
+ * returned value is a pinned plain-data copy — no exotic object behavior can
+ * ride into the consumed/persisted provenance.
  */
-function isCanonicalRankRecord(item) {
-  if (!isPlainObject(item)) return false;
-  const keys = Object.keys(item);
-  if (keys.length !== 4 || !keys.every((k) => k === 'channel' || k === 'rank' || k === 'rankOrigin' || k === 'route')) {
-    return false;
+function projectCanonicalRankRecord(item) {
+  if (!isPlainObject(item)) return { ok: false };
+  try {
+    const channel = item.channel ?? null;
+    const rank = item.rank;
+    const rankOrigin = item.rankOrigin;
+    const route = item.route;
+    const keys = Object.keys(item);
+    if (keys.length !== 4 || !keys.every((k) => k === 'channel' || k === 'rank' || k === 'rankOrigin' || k === 'route')) {
+      return { ok: false };
+    }
+    if (!isPlainObject(channel)) return { ok: false };
+    const query = channel.query;
+    const providerId = channel.providerId;
+    const capability = channel.capability;
+    const channelKeys = Object.keys(channel);
+    if (channelKeys.length !== 3 || !channelKeys.every((k) => k === 'query' || k === 'providerId' || k === 'capability')) {
+      return { ok: false };
+    }
+    if (capability !== CAPABILITY_SEARCH) return { ok: false };
+    if (!isPlanBoundarySafeString(query)) return { ok: false };
+    if (!isBoundarySafeString(providerId)) return { ok: false };
+    if (!Number.isSafeInteger(rank) || rank < 1) return { ok: false };
+    if (!projectRouteString(rankOrigin).ok) return { ok: false };
+    if (!projectRouteString(route).ok) return { ok: false };
+    return {
+      ok: true,
+      value: { channel: { query, providerId, capability }, rank, rankOrigin, route },
+    };
+  } catch {
+    return { ok: false }; // hostile getter / exotic object — fail closed
   }
-  if (!Number.isSafeInteger(item.rank) || item.rank < 1) return false;
-  if (!projectRouteString(item.rankOrigin).ok) return false;
-  if (!projectRouteString(item.route).ok) return false;
-  const channel = item.channel;
-  if (!isPlainObject(channel)) return false;
-  const channelKeys = Object.keys(channel);
-  if (channelKeys.length !== 3 || !channelKeys.every((k) => k === 'query' || k === 'providerId' || k === 'capability')) {
-    return false;
-  }
-  if (channel.capability !== CAPABILITY_SEARCH) return false;
-  if (!isPlanBoundarySafeString(channel.query)) return false;
-  if (!isBoundarySafeString(channel.providerId)) return false;
-  return true;
 }
 
 /**
@@ -237,7 +257,12 @@ function isCanonicalRankRecord(item) {
  *   - `ranks`: non-empty array of canonical rank records (isCanonicalRankRecord).
  * Any violation fails closed with the stable value-free
  * `selection_invalid_pool` identity and a FIXED rationale — raw offending
- * values are never echoed. Fields T08 does not consume (facts, rejected,
+ * values are never echoed. Pool consumption is EXCEPTION-SAFE (T06 doctrine):
+ * caller-controlled fields are read once into locals inside a try-block, so
+ * hostile getters fail closed instead of escaping as raw throws, and every
+ * consumed/persisted value (sourceUrl, provenance) is the PINNED canonical
+ * PROJECTION, never the caller's raw object.
+ * Fields T08 does not consume (facts, rejected,
  * channels) stay T06's own persisted-boundary responsibility; they never
  * enter the T08 decision.
  */
@@ -268,67 +293,107 @@ export function buildCandidateGroups(pool) {
   const groups = [];
   const seenQuestionIds = new Set();
   for (const c of pool.candidates) {
-    if (!isPlainObject(c) || !isPlainObject(c.identity) || !isCanonicalQuestionId(c.identity.questionId)) {
-      return { ok: false, reason: SELECTION_FAILURE_INVALID_POOL };
-    }
-    // R3 P1-A (A4): the canonical T06 candidate identity kind is exactly
-    // 'candidate' (fusion normalizes every fused identity to it). Any other
-    // kind is not a canonical pool candidate — fail closed.
-    if (c.identity.kind !== 'candidate') {
+    // R3 reviewer repair (F1): pool consumption is EXCEPTION-SAFE. Every
+    // caller-controlled field is read EXACTLY ONCE into a local inside this
+    // try-block — a hostile getter (or any exotic object behavior) can never
+    // escape as a raw throw; it fails closed into the stable invalid-pool
+    // verdict with a FIXED value-free rationale (T06 exception-safety
+    // doctrine applied at the T08 consumption boundary).
+    try {
+      if (!isPlainObject(c)) {
+        return { ok: false, reason: SELECTION_FAILURE_INVALID_POOL };
+      }
+      const identity = c.identity ?? null;
+      const kind = identity?.kind;
+      const questionId = identity?.questionId;
+      const rrfScore = c.rrfScore;
+      const sourceUrlRaw = c.source_url;
+      const ranksRaw = c.ranks;
+      if (!isPlainObject(identity) || !isCanonicalQuestionId(questionId)) {
+        return { ok: false, reason: SELECTION_FAILURE_INVALID_POOL };
+      }
+      // R3 P1-A (A4): the canonical T06 candidate identity kind is exactly
+      // 'candidate' (fusion normalizes every fused identity to it). Any other
+      // kind is not a canonical pool candidate — fail closed.
+      if (kind !== 'candidate') {
+        return {
+          ok: false,
+          reason: SELECTION_FAILURE_INVALID_POOL,
+          rationale: 'candidate identity kind violates the canonical T06 candidate contract (fail-closed)',
+        };
+      }
+      // Third-party review F-B: a candidate group's canonical identity is its
+      // questionId — two candidates sharing one identity is a malformed pool
+      // (a duplicate would produce a duplicate-group AUTO artifact). Fail
+      // closed with the existing stable reason code and a FIXED value-free
+      // rationale; the duplicate id is never echoed.
+      if (seenQuestionIds.has(questionId)) {
+        return {
+          ok: false,
+          reason: SELECTION_FAILURE_INVALID_POOL,
+          rationale: 'duplicate candidate group identity in retrieval pool (fail-closed)',
+        };
+      }
+      seenQuestionIds.add(questionId);
+      // R3 P1-A (A1/A3 + reviewer repair F2): source_url crosses the ONE
+      // canonical T06 source-identity authority and the CONSUMED/PERSISTED
+      // value is the PROJECTION ({url, securityClass} only) — non-contract
+      // metadata keys or credential-shaped keys on the caller's record can
+      // never ride into the decision (in memory or on disk).
+      const projectedSourceUrl = projectSourceUrlRecord(sourceUrlRaw);
+      if (!projectedSourceUrl.ok) {
+        return {
+          ok: false,
+          reason: SELECTION_FAILURE_INVALID_POOL,
+          rationale: 'candidate source_url violates the canonical T06 source-identity contract (fail-closed)',
+        };
+      }
+      // R3 P1-A (A2): ranks are the persisted provenance — each record must be
+      // the canonical T06 rank-provenance shape, and the consumed/persisted
+      // value is the PINNED PROJECTION (exact records, plain data). Any extra
+      // caller-controlled field (e.g. a credential-shaped `diagnostic`
+      // payload) violates the contract and fails closed.
+      if (!Array.isArray(ranksRaw) || ranksRaw.length === 0) {
+        return {
+          ok: false,
+          reason: SELECTION_FAILURE_INVALID_POOL,
+          rationale: 'candidate rank provenance violates the canonical T06 rank-provenance contract (fail-closed)',
+        };
+      }
+      const projectedRanks = [];
+      for (const item of ranksRaw) {
+        const projectedRank = projectCanonicalRankRecord(item);
+        if (!projectedRank.ok) {
+          return {
+            ok: false,
+            reason: SELECTION_FAILURE_INVALID_POOL,
+            rationale: 'candidate rank provenance violates the canonical T06 rank-provenance contract (fail-closed)',
+          };
+        }
+        projectedRanks.push(projectedRank.value);
+      }
+      // An invalid (missing/non-finite) rrfScore makes the group INELIGIBLE:
+      // it must never be selectable. Eligible groups are gated in
+      // selectSourceGroups; an all-invalid pool naturally lands in the
+      // no-valid-set fail-closed branch.
+      const rrfValid = typeof rrfScore === 'number' && Number.isFinite(rrfScore);
+      groups.push({
+        questionId,
+        rrfScore: rrfValid ? rrfScore : null,
+        score: rrfValid ? rrfScore : 0,
+        eligible: rrfValid,
+        sourceUrl: projectedSourceUrl.value,
+        provenance: projectedRanks,
+      });
+    } catch {
+      // Hostile pool content (throwing getter, exotic object) → fail closed,
+      // never a raw throw out of the selector.
       return {
         ok: false,
         reason: SELECTION_FAILURE_INVALID_POOL,
-        rationale: 'candidate identity kind violates the canonical T06 candidate contract (fail-closed)',
+        rationale: 'retrieval pool could not be safely consumed (fail-closed)',
       };
     }
-    // Third-party review F-B: a candidate group's canonical identity is its
-    // questionId — two candidates sharing one identity is a malformed pool
-    // (a duplicate would produce a duplicate-group AUTO artifact). Fail
-    // closed with the existing stable reason code and a FIXED value-free
-    // rationale; the duplicate id is never echoed.
-    if (seenQuestionIds.has(c.identity.questionId)) {
-      return {
-        ok: false,
-        reason: SELECTION_FAILURE_INVALID_POOL,
-        rationale: 'duplicate candidate group identity in retrieval pool (fail-closed)',
-      };
-    }
-    seenQuestionIds.add(c.identity.questionId);
-    // R3 P1-A (A1/A3): source_url crosses the ONE canonical T06 source-identity
-    // authority (projectSourceUrlRecord: null | {url, securityClass} bound to
-    // the shared classifyUrl verdict + credential/path hygiene). A raw string,
-    // a credential-bearing value, or any noncanonical shape fails closed.
-    if (!projectSourceUrlRecord(c.source_url).ok) {
-      return {
-        ok: false,
-        reason: SELECTION_FAILURE_INVALID_POOL,
-        rationale: 'candidate source_url violates the canonical T06 source-identity contract (fail-closed)',
-      };
-    }
-    // R3 P1-A (A2): ranks are the persisted provenance — they must be the
-    // canonical T06 rank-provenance shape (non-empty, exact records). Any
-    // extra caller-controlled field (e.g. a credential-shaped `diagnostic`
-    // payload) violates the contract and fails closed.
-    if (!Array.isArray(c.ranks) || c.ranks.length === 0 || !c.ranks.every(isCanonicalRankRecord)) {
-      return {
-        ok: false,
-        reason: SELECTION_FAILURE_INVALID_POOL,
-        rationale: 'candidate rank provenance violates the canonical T06 rank-provenance contract (fail-closed)',
-      };
-    }
-    const score = scoreCandidateGroup(c);
-    // An invalid (missing/non-finite) rrfScore makes the group INELIGIBLE:
-    // it must never be selectable. Eligible groups are gated in selectSourceGroups;
-    // an all-invalid pool naturally lands in the no-valid-set fail-closed branch.
-    const rrfValid = typeof c.rrfScore === 'number' && Number.isFinite(c.rrfScore);
-    groups.push({
-      questionId: String(c.identity.questionId),
-      rrfScore: rrfValid ? c.rrfScore : null,
-      score,
-      eligible: rrfValid,
-      sourceUrl: c.source_url,
-      provenance: c.ranks,
-    });
   }
   groups.sort((a, b) => (b.score !== a.score ? b.score - a.score : compareQuestionId(a.questionId, b.questionId)));
   return { ok: true, groups };

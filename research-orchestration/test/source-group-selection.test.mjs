@@ -1228,6 +1228,57 @@ describe('external repair R3: canonical pool-consumption boundary (P1-A) + clari
       }
     });
 
+    test('A8: hostile getter on a consumed pool field → FAIL CLOSED verdict (never a raw throw)', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const hostile = { ...cand('100', 0.100) };
+      Object.defineProperty(hostile.identity, 'questionId', { get() { throw new Error('hostile getter'); } });
+      const pool = makePool([hostile, cand('200', 0.030)], ph);
+      let d;
+      try {
+        d = selectSourceGroups(pool, plan);
+      } catch (err) {
+        assert.fail(`selector threw on hostile pool content instead of failing closed: ${err.message}`);
+      }
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_POOL);
+      assert.equal(d.selectedGroups.length, 0);
+    });
+
+    test('A9: source_url record with extra caller-controlled keys → ONLY the canonical {url, securityClass} projection is consumed/persisted', () => {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      // (i) benign-looking extra metadata keys — the canonical T06 projection
+      // drops non-contract fields; they must never ride into the decision.
+      const pool = makePool([cand('100', 0.100)], ph);
+      pool.candidates[0].source_url = {
+        url: 'https://www.zhihu.com/question/100',
+        securityClass: 'external_unverified',
+        note: 'attacker controlled note',
+        status: 'ok',
+      };
+      const d = selectSourceGroups(pool, plan);
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+      assert.deepEqual(d.selectedGroups[0].sourceUrl, { url: 'https://www.zhihu.com/question/100', securityClass: 'external_unverified' });
+      const serialized = JSON.stringify(d);
+      assert.ok(!serialized.includes('attacker controlled note'));
+
+      // (ii) credential-shaped extra KEY — must not be carried into the
+      // in-memory decision either (persist-time walker is defense in depth,
+      // not the primary boundary).
+      const poolCred = makePool([cand('100', 0.100)], ph);
+      poolCred.candidates[0].source_url = {
+        url: 'https://www.zhihu.com/question/100',
+        securityClass: 'external_unverified',
+        token: 'abc',
+      };
+      const dCred = selectSourceGroups(poolCred, plan);
+      assert.equal(dCred.verdict, SELECT_VERDICT_AUTO);
+      const serializedCred = JSON.stringify(dCred);
+      assert.ok(!serializedCred.includes('"token"'));
+      assert.ok(!serializedCred.includes('abc'));
+    });
+
     test('A7-guard: a clean T08 decision still persists (artifact-safety gate has no false positives on canonical output)', () => {
       const plan = makePlan();
       const ph = validPlanHash(plan);
