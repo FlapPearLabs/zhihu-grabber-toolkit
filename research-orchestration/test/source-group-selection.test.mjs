@@ -548,20 +548,28 @@ describe('reform F1/F2: fail-closed plan-intent gates + pool planHash identity',
       assert.equal(d.clarificationCount, 0);
     });
 
-    test('F1-T3: best group differs from required groupKey → NOT positionally rebound; FAIL CLOSED', () => {
+    test('F1-T3: best group differs from required groupKey → the REQUIRED group is selected (never positionally rebound)', () => {
       const plan = makePlan({
         sourceGroupIntents: [{ intent: '关注反方观点', constraints: [], groupKey: '555' }],
       });
       const ph = validPlanHash(plan);
-      // '100' is the high-RRF best; the required '555' is not dominant. The old
-      // contract positionally rebound '100' to intent 0 and reported AUTO.
+      // '100' is the high-RRF best; the required '555' is not dominant. The
+      // pre-reform contract positionally rebound '100' to intent 0; the first
+      // reform rejected the whole selection post-hoc. Repair round 2 (P1-1)
+      // constructs the set constraint-first: the required '555' is a MANDATORY
+      // member and '100' can never displace or be rebound onto intent 0.
       const pool = makePool([cand('100', 0.100), cand('555', 0.030), cand('300', 0.020)], ph);
       const d = selectSourceGroups(pool, plan);
 
-      assert.equal(d.verdict, SELECT_VERDICT_NONE);
-      assert.equal(d.reason, 'selection_plan_group_key_unsatisfied');
-      // No success-shaped selectedGroups: the mismatch must not surface as AUTO.
-      assert.equal(d.selectedGroups.length, 0);
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+      assert.equal(d.reason, 'clear_best');
+      // The selected group is the required groupKey itself — NOT a positional
+      // substitute — and the binding is exact.
+      assert.deepEqual(d.selectedGroups.map((g) => g.questionId), ['555']);
+      assert.ok(d.selectedGroups[0].rationaleRef);
+      assert.equal(d.selectedGroups[0].rationaleRef.intentIndex, 0);
+      assert.equal(d.selectedGroups[0].rationaleRef.groupKey, '555');
+      assert.ok(!d.selectedGroups.some((g) => g.questionId === '100'));
     });
 
     test('F1-T4: two required groupKeys, only one satisfiable → FAIL CLOSED (no AUTO with shortfall)', () => {
@@ -675,6 +683,252 @@ describe('reform F1/F2: fail-closed plan-intent gates + pool planHash identity',
       assert.equal(st.reusable, true);
       assert.equal(st.stale, false);
       assert.equal(st.reason, null);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// External repair round 2 (review findings P1-1 / P1-2 on candidate 1eeeaa6).
+//
+// P1-1 — CONSTRAINED GROUP-SET CONSTRUCTION: the selected set must be
+//        CONSTRUCTED around the plan's required (non-empty groupKey) intents
+//        (constraint-first), not an unconstrained RRF top-k followed by a
+//        post-hoc required-key check. An eligible required group ranked below
+//        the top-k boundary is a MANDATORY member of the set; remaining slots
+//        are filled from eligible NON-required groups in deterministic RRF
+//        order; the ambiguity boundary is evaluated ONLY on the optional pool
+//        (required membership never distorts it).
+// P1-2 — CLARIFICATION IDENTITY BOUNDARY: forceGroupIds is mechanically
+//        validated BEFORE any lookup (array / non-empty / string / canonical
+//        questionId / unique / eligible), with NO String() coercion anywhere
+//        and ONE fixed value-free rationale — no caller-controlled value is
+//        ever echoed into the persisted decision artifact.
+// ---------------------------------------------------------------------------
+describe('repair round 2: constraint-first group-set construction + clarification identity boundary', () => {
+  describe('P1-1: constraint-first construction', () => {
+    test('P1-1 A: eligible required group ranked below top-k is INCLUDED (auto through construction)', () => {
+      const plan = makePlan({
+        sourceGroupIntents: [{ intent: '关注反方观点', constraints: [], groupKey: '555' }],
+      });
+      const ph = validPlanHash(plan);
+      // k defaults to intents.length = 1. The old implementation took the
+      // unconstrained top-1 ([100]) and failed closed post-hoc even though a
+      // valid plan-satisfying set ([555]) exists.
+      const pool = makePool([cand('100', 0.100), cand('555', 0.030)], ph);
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+      assert.equal(d.reason, 'clear_best');
+      assert.deepEqual(d.selectedGroups.map((g) => g.questionId), ['555']);
+      assert.equal(d.selectedGroups[0].rationaleRef.intentIndex, 0);
+      assert.equal(d.selectedGroups[0].rationaleRef.groupKey, '555');
+      assert.equal(d.intentCoverage.unmet, 0);
+      assert.equal(d.intentCoverage.shortfall, 0);
+    });
+
+    test('P1-1 B: required group is a mandatory member; optional fill from RRF order', () => {
+      const plan = makePlan({
+        sourceGroupIntents: [
+          { intent: '关注反方观点', constraints: [], groupKey: '555' },
+          { intent: '看主流讨论', constraints: [], groupKey: null },
+        ],
+      });
+      const ph = validPlanHash(plan);
+      // k = 2 (intents.length); required 555 (.030) + one optional slot filled
+      // by the best optional group 100 (.100). The higher-RRF optional group
+      // must NOT displace the required groupKey.
+      const pool = makePool([cand('100', 0.100), cand('200', 0.090), cand('555', 0.030)], ph);
+      const d = selectSourceGroups(pool, plan, { ambiguityMargin: 0.01 });
+
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+      assert.equal(d.selectedGroups.length, 2);
+      const ids = d.selectedGroups.map((g) => g.questionId).sort();
+      assert.deepEqual(ids, ['100', '555']);
+      // 555 is bound to the required intent via exact groupKey (intentIndex 0).
+      const bound = d.selectedGroups.find((g) => g.questionId === '555');
+      assert.ok(bound.rationaleRef);
+      assert.equal(bound.rationaleRef.intentIndex, 0);
+      assert.equal(bound.rationaleRef.groupKey, '555');
+      // Deterministic artifact ordering: score DESC then questionId ASC.
+      assert.deepEqual(d.selectedGroups.map((g) => g.questionId), ['100', '555']);
+      assert.equal(d.intentCoverage.unmet, 0);
+      assert.equal(d.intentCoverage.shortfall, 0);
+    });
+
+    test('P1-1 C: required groupKey absent from eligible pool → FAIL CLOSED (regression guard)', () => {
+      const plan = makePlan({
+        sourceGroupIntents: [{ intent: '关注反方观点', constraints: [], groupKey: '777' }],
+      });
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100), cand('200', 0.030)], ph);
+      const d = selectSourceGroups(pool, plan);
+
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, 'selection_plan_group_key_unsatisfied');
+      assert.equal(d.selectedGroups.length, 0);
+    });
+
+    test('P1-1 D: required group present but below minimum validity → FAIL CLOSED (regression guard)', () => {
+      // (i) required group has an invalid (non-finite) rrfScore → ineligible.
+      const plan = makePlan({
+        sourceGroupIntents: [{ intent: 'a', constraints: [], groupKey: '555' }],
+      });
+      const ph = validPlanHash(plan);
+      const poolInvalid = makePool([
+        cand('100', 0.100),
+        { identity: { kind: 'candidate', questionId: '555' }, rrfScore: NaN, ranks: [], source_url: 'x', facts: {} },
+      ], ph);
+      const dInvalid = selectSourceGroups(poolInvalid, plan);
+      assert.equal(dInvalid.verdict, SELECT_VERDICT_NONE);
+      assert.equal(dInvalid.reason, 'selection_plan_group_key_unsatisfied');
+
+      // (ii) required group is eligible by rrfScore but below minScore.
+      const poolBelow = makePool([cand('100', 0.100), cand('555', 0.030)], ph);
+      const dBelow = selectSourceGroups(poolBelow, plan, { minScore: 0.5 });
+      assert.equal(dBelow.verdict, SELECT_VERDICT_NONE);
+      assert.equal(dBelow.reason, 'selection_plan_group_key_unsatisfied');
+    });
+
+    test('P1-1 E: ambiguity is driven by the OPTIONAL free-slot boundary only (required membership never distorts it)', () => {
+      const plan = makePlan({
+        sourceGroupIntents: [
+          { intent: '关注反方观点', constraints: [], groupKey: '555' },
+          { intent: '看主流讨论', constraints: [], groupKey: null },
+        ],
+      });
+      const ph = validPlanHash(plan);
+      // required 555 (.030); optional pool 100 (.100), 200 (.099), 300 (.020).
+      // remainingSlots = 1 → free boundary = 100 vs 200 (gap .001 < margin).
+      const pool = makePool([cand('555', 0.030), cand('100', 0.100), cand('200', 0.099), cand('300', 0.020)], ph);
+      const d = selectSourceGroups(pool, plan, { ambiguityMargin: 0.01 });
+
+      assert.equal(d.verdict, SELECT_VERDICT_AMBIGUOUS);
+      assert.equal(d.reason, 'material_ambiguity');
+      assert.equal(d.selectedGroups.length, 0);
+      // Options express a COMPLETE legal resolution: the required group plus
+      // the free-boundary optional candidates.
+      const optionIds = d.clarification.options.map((o) => o.groupId);
+      assert.ok(optionIds.includes('555'), 'required group must appear in clarification options');
+      assert.ok(optionIds.includes('100') && optionIds.includes('200'), 'free-boundary options must appear');
+    });
+
+    test('P1-1 E control: fuzzy gap BELOW the optional boundary does NOT trigger ambiguity', () => {
+      const plan = makePlan({
+        sourceGroupIntents: [
+          { intent: '关注反方观点', constraints: [], groupKey: '555' },
+          { intent: '看主流讨论', constraints: [], groupKey: null },
+        ],
+      });
+      const ph = validPlanHash(plan);
+      // optional pool 100 (.100), 200 (.090), 300 (.089): the top boundary gap
+      // (100 vs 200) is wide, but a fuzzy gap exists BELOW the boundary
+      // (200 vs 300). The old implementation evaluated the boundary over the
+      // merged eligible list including the required group and reported
+      // AMBIGUOUS — required membership must not distort the boundary logic.
+      const pool = makePool([cand('555', 0.030), cand('100', 0.100), cand('200', 0.090), cand('300', 0.089)], ph);
+      const d = selectSourceGroups(pool, plan, { ambiguityMargin: 0.01 });
+
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+      assert.equal(d.reason, 'clear_best');
+      const ids = d.selectedGroups.map((g) => g.questionId).sort();
+      assert.deepEqual(ids, ['100', '555']);
+    });
+  });
+
+  describe('P1-2: clarification identity boundary', () => {
+    /** Ambiguity fixture (plan/pool reach AMBIGUOUS → nearest clarification path). */
+    function ambiguousContext() {
+      const plan = makePlan();
+      const ph = validPlanHash(plan);
+      const pool = makePool([cand('100', 0.100), cand('200', 0.099), cand('300', 0.020)], ph);
+      return { plan, pool };
+    }
+
+    const FIXED_RATIONALE = 'clarification contains an invalid or unavailable source-group identity';
+
+    test('P1-2: non-string entry [{}] → fail closed, no throw, no object coercion, no echo', () => {
+      const { plan, pool } = ambiguousContext();
+      const d = selectSourceGroups(pool, plan, {
+        ambiguityMargin: 0.01,
+        clarification: { forceGroupIds: [{}] },
+      });
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_CLARIFICATION);
+      assert.equal(d.clarificationCount, 0);
+      assert.equal(d.rationale, FIXED_RATIONALE);
+      assert.ok(!JSON.stringify(d).includes('[object Object]'));
+    });
+
+    test('P1-2: non-canonical id ["abc"] → fail closed, no echo', () => {
+      const { plan, pool } = ambiguousContext();
+      const d = selectSourceGroups(pool, plan, {
+        ambiguityMargin: 0.01,
+        clarification: { forceGroupIds: ['abc'] },
+      });
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_CLARIFICATION);
+      assert.equal(d.rationale, FIXED_RATIONALE);
+      assert.ok(!JSON.stringify(d).includes('abc'));
+    });
+
+    test('P1-2: duplicate ids ["123","123"] → fail closed, no echo', () => {
+      const { plan, pool } = ambiguousContext();
+      const d = selectSourceGroups(pool, plan, {
+        ambiguityMargin: 0.01,
+        clarification: { forceGroupIds: ['123', '123'] },
+      });
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_CLARIFICATION);
+      assert.equal(d.rationale, FIXED_RATIONALE);
+      assert.ok(!JSON.stringify(d).includes('123'));
+    });
+
+    test('P1-2: credential-shaped value ["token=SECRET_VALUE"] → fail closed; value never persists', () => {
+      const { plan, pool } = ambiguousContext();
+      const d = selectSourceGroups(pool, plan, {
+        ambiguityMargin: 0.01,
+        clarification: { forceGroupIds: ['token=SECRET_VALUE'] },
+      });
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_CLARIFICATION);
+      assert.equal(d.rationale, FIXED_RATIONALE);
+      assert.ok(!JSON.stringify(d).includes('SECRET_VALUE'));
+      assert.ok(!JSON.stringify(d).includes('token='));
+    });
+
+    test('P1-2: unknown canonical id ["999999999999"] → fail closed; raw id never persists', () => {
+      const { plan, pool } = ambiguousContext();
+      const d = selectSourceGroups(pool, plan, {
+        ambiguityMargin: 0.01,
+        clarification: { forceGroupIds: ['999999999999'] },
+      });
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_CLARIFICATION);
+      assert.equal(d.rationale, FIXED_RATIONALE);
+      assert.ok(!JSON.stringify(d).includes('999999999999'));
+    });
+
+    test('P1-2: valid unique eligible ids → forced resolution still works (AUTO with forced set)', () => {
+      const { plan, pool } = ambiguousContext();
+      const d = selectSourceGroups(pool, plan, {
+        ambiguityMargin: 0.01,
+        clarification: { forceGroupIds: ['200'] },
+      });
+      assert.equal(d.verdict, SELECT_VERDICT_AUTO);
+      assert.equal(d.clarificationCount, 1);
+      assert.deepEqual(d.selectedGroups.map((g) => g.questionId), ['200']);
+      assert.equal(d.selectedGroups[0].selectionReason, SELECT_REASON_CLARIFICATION_FORCED);
+    });
+
+    test('P1-2: missing forceGroupIds under a provided clarification object → fail closed (value-free rationale)', () => {
+      const { plan, pool } = ambiguousContext();
+      const d = selectSourceGroups(pool, plan, {
+        ambiguityMargin: 0.01,
+        clarification: { note: 'no selection' },
+      });
+      assert.equal(d.verdict, SELECT_VERDICT_NONE);
+      assert.equal(d.reason, SELECTION_FAILURE_INVALID_CLARIFICATION);
+      assert.equal(d.rationale, FIXED_RATIONALE);
     });
   });
 });

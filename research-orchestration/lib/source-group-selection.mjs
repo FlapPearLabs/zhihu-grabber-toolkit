@@ -40,6 +40,38 @@
  *   updateSourceGroupFusion, OWNER_T08_FUSION): T08 owns the source-group
  *   fusion accounting and records fusedCandidateCount / fusedGroupCount.
  *
+ * Reform round 2 (external review P1-1) — CONSTRAINT-FIRST GROUP-SET
+ * CONSTRUCTION: the selected set is CONSTRUCTED around the plan's required
+ * (non-empty groupKey) intents instead of taking an unconstrained RRF top-k
+ * and checking required keys post-hoc:
+ *   1. every required groupKey must resolve to a DISTINCT ELIGIBLE group
+ *      (absent / invalid / below minimum validity → fail closed);
+ *   2. required groups are MANDATORY members of the selected set — a higher-
+ *      RRF optional group can never displace them;
+ *   3. remainingSlots = k - |requiredGroups| (floored at 0; takeAll → all
+ *      eligible optional groups) are filled from eligible NON-required groups
+ *      in the deterministic RRF order (score DESC, questionId ASC);
+ *   4. the material-ambiguity boundary is evaluated ONLY where an actual free-
+ *      selection boundary exists: optionalPool[remainingSlots-1] vs
+ *      optionalPool[remainingSlots] over the eligible NON-required pool.
+ *      remainingSlots === 0 or takeAll → no free boundary → no ambiguity.
+ *   PRECEDENCE: |requiredGroups| > k (including an explicit groupCount=0 with
+ *   required keys) — required keys are MANDATORY and OUTRANK k: the selected
+ *   set is exactly the required groups, remainingSlots = 0, and the optional
+ *   intent shortfall is 0. k only bounds the OPTIONAL fills.
+ *   intentShortfall is OPTIONAL shortfall only (remainingSlots -
+ *   optionalPool.length when positive); a required shortfall can never reach
+ *   an AUTO verdict because the eligibility gate fails closed first. The
+ *   post-construction required-coverage check is kept purely as a DEFENSIVE
+ *   fail-closed invariant — the primary path is construction.
+ *
+ * Reform round 2 (external review P1-2) — CLARIFICATION IDENTITY BOUNDARY:
+ * clarification forceGroupIds is mechanically validated BEFORE any lookup
+ * (array / non-empty / string / canonical questionId / unique / eligible) with
+ * NO String() coercion anywhere; every invalid clarification fails closed
+ * with ONE fixed value-free rationale, so no caller-controlled value is ever
+ * echoed into the decision artifact.
+ *
  * Numeric boundaries (minScore / ambiguityMargin / default k) are D-5
  * implementation-validation bounds, not product thresholds; they are explicit,
  * deterministic, and overridable per call so tests are stable.
@@ -387,15 +419,41 @@ export function selectSourceGroups(pool, plan, opts = {}) {
     });
   }
 
-  // 7. Determine the intended group count k and the set boundary.
+  // 7. Determine the intended group count k and CONSTRUCT the set
+  // constraint-first (reform round 2 P1-1): required (groupKey) intents are
+  // MANDATORY members resolved FIRST; the remaining free slots are filled
+  // from eligible NON-required groups in the deterministic RRF order.
   const k = intendedGroupCount(normalizedPlan, opts);
   const takeAll = !Number.isFinite(k);
-  const takeCount = takeAll ? eligible.length : Math.min(k, eligible.length);
-  const selected = eligible.slice(0, takeCount);
-  const intentShortfall = takeAll || k <= eligible.length ? 0 : k - eligible.length;
 
-  // Explicit zero-count (e.g. groupCount=0) with available candidates → no set
-  // satisfies the requested scope → fail closed rather than a misleading empty "clear best".
+  // Step 4b already proved every distinct required groupKey binds to a
+  // DISTINCT eligible group, so this filter yields exactly the mandatory set.
+  const requiredKeySet = new Set(
+    normalizedPlan.sourceGroupIntents
+      .filter((it) => isNonEmptyString(it.groupKey))
+      .map((it) => it.groupKey),
+  );
+  const requiredGroups = eligible.filter((g) => requiredKeySet.has(g.questionId));
+  const optionalPool = eligible.filter((g) => !requiredKeySet.has(g.questionId));
+
+  // PRECEDENCE: |requiredGroups| > k (including explicit groupCount=0 with
+  // required keys) — required keys are MANDATORY and OUTRANK k: remainingSlots
+  // floors at 0 and the selected set is exactly the required groups. k only
+  // bounds the OPTIONAL fills.
+  const remainingSlots = takeAll ? optionalPool.length : Math.max(0, k - requiredGroups.length);
+  const optionalFills = optionalPool.slice(0, remainingSlots);
+  const selected = [...requiredGroups, ...optionalFills].sort(
+    (a, b) => (b.score !== a.score ? b.score - a.score : compareQuestionId(a.questionId, b.questionId)),
+  );
+  // intentShortfall is OPTIONAL shortfall only (required shortfall can never
+  // reach here: the step 4b gate fails closed first). takeAll → 0.
+  const intentShortfall = takeAll ? 0 : Math.max(0, remainingSlots - optionalPool.length);
+
+  // Explicit zero-count (e.g. groupCount=0) with available candidates and NO
+  // required keys → no set satisfies the requested scope → fail closed rather
+  // than a misleading empty "clear best". With required keys the mandatory
+  // members outrank k, so this branch is only reachable when the constraint-
+  // first construction above produced an empty set.
   if (selected.length === 0) {
     return finalize({
       verdict: SELECT_VERDICT_NONE,
@@ -411,29 +469,41 @@ export function selectSourceGroups(pool, plan, opts = {}) {
     });
   }
 
-  // 8. Material ambiguity: fuzzy set boundary at k (only when a boundary exists).
+  // 8. Material ambiguity: fuzzy boundary evaluated ONLY where an actual free-
+  // selection boundary exists — optionalPool[remainingSlots-1] vs
+  // optionalPool[remainingSlots] (eligible NON-required groups in RRF order).
+  // remainingSlots === 0 (fully constrained set) or takeAll → no free boundary
+  // → no ambiguity. A fuzzy gap BELOW the boundary among optional groups does
+  // not trigger it: required membership never distorts the boundary logic.
   let ambiguous = false;
   let ambiguityMessage = null;
-  if (!takeAll && eligible.length > k && k > 0) {
-    const lastIncluded = eligible[k - 1];
-    const firstExcluded = eligible[k];
+  if (!takeAll && remainingSlots > 0 && optionalPool.length > remainingSlots) {
+    const lastIncluded = optionalPool[remainingSlots - 1];
+    const firstExcluded = optionalPool[remainingSlots];
     if (lastIncluded.score - firstExcluded.score < ambiguityMargin) {
       ambiguous = true;
       ambiguityMessage =
-        `material ambiguity: the selected group set boundary is fuzzy `
-        + `(included group ${lastIncluded.questionId} score ${lastIncluded.score} vs `
-        + `excluded group ${firstExcluded.questionId} score ${firstExcluded.score}; `
+        `material ambiguity: the free-selection boundary of the source-group set is fuzzy `
+        + `(optional group ${lastIncluded.questionId} score ${lastIncluded.score} vs `
+        + `excluded optional group ${firstExcluded.questionId} score ${firstExcluded.score}; `
         + `gap < ambiguity margin ${ambiguityMargin}) — auto-selecting would change the normalized research intent`;
     }
   }
 
   if (ambiguous) {
-    const options = eligible.slice(0, Math.max(k + 1, 1)).map((g) => ({
-      groupId: g.questionId,
-      questionId: g.questionId,
-      score: g.score,
-      sourceUrl: g.sourceUrl,
-    }));
+    // The clarification options must express a COMPLETE legal resolution: the
+    // mandatory required groups plus the free-boundary optional candidates
+    // (every optional group up to and including the first excluded one), in
+    // the deterministic comparator order.
+    const boundaryOptional = optionalPool.slice(0, remainingSlots + 1);
+    const options = [...requiredGroups, ...boundaryOptional]
+      .sort((a, b) => (b.score !== a.score ? b.score - a.score : compareQuestionId(a.questionId, b.questionId)))
+      .map((g) => ({
+        groupId: g.questionId,
+        questionId: g.questionId,
+        score: g.score,
+        sourceUrl: g.sourceUrl,
+      }));
     return finalize({
       verdict: SELECT_VERDICT_AMBIGUOUS,
       reason: 'material_ambiguity',
@@ -454,11 +524,13 @@ export function selectSourceGroups(pool, plan, opts = {}) {
   }
 
   // 9. Clear best group set → deterministic auto-selection.
-  // Reform F1 gate (selected-set coverage): the AUTO set itself must exactly
-  // cover every required (non-empty groupKey) intent with distinct bindings —
-  // a required group that is eligible but not selected (e.g. outranked at k)
-  // must NEVER be positionally rebound or reported satisfied. Required-intent
-  // shortfall therefore can never reach an AUTO verdict.
+  // DEFENSIVE fail-closed invariant ONLY (reform round 2 P1-1): the primary
+  // path is the constraint-first construction at step 7, which already
+  // includes every required group as a mandatory member. This post-
+  // construction coverage check is retained as a last-resort invariant guard;
+  // valid AUTO outcomes reach here THROUGH CONSTRUCTION, never via this
+  // branch. A required group that is eligible but not selected (e.g. outranked
+  // at k) must NEVER be positionally rebound or reported satisfied.
   const selectedGateShortfall = countUnsatisfiedRequiredGroupKeys(normalizedPlan, selected.map((g) => g.questionId));
   if (selectedGateShortfall > 0) {
     return finalize({
@@ -507,34 +579,65 @@ export function selectSourceGroups(pool, plan, opts = {}) {
 }
 
 /**
+ * Fixed value-free rationale for EVERY invalid clarification input (reform
+ * round 2 P1-2): no raw forceGroupId, no attacker/user-controlled string, and
+ * no credential-shaped data is ever echoed into the decision artifact.
+ */
+const CLARIFICATION_INVALID_RATIONALE =
+  'clarification contains an invalid or unavailable source-group identity';
+
+function invalidClarificationVerdict(planIdentity, poolPlanHash) {
+  return failureVerdict(SELECTION_FAILURE_INVALID_CLARIFICATION, {
+    planHash: planIdentity,
+    poolPlanHash,
+    rationale: CLARIFICATION_INVALID_RATIONALE,
+  });
+}
+
+/**
  * Resolve a clarification answer (forceGroupIds). Honors the user's explicit
- * choice, never re-asks (clarificationCount becomes 1), and fails closed on an
- * invalid/unknown forced id. This guarantees clarification_count <= 1.
+ * choice, never re-asks (clarificationCount becomes 1), and fails closed on
+ * any invalid clarification input. This guarantees clarification_count <= 1.
+ *
+ * Reform round 2 (external review P1-2) — CLARIFICATION IDENTITY BOUNDARY:
+ * forceGroupIds is mechanically validated BEFORE any lookup, in this order:
+ *   1. is an Array (missing/non-array under a provided clarification object
+ *      fails closed);
+ *   2. non-empty;
+ *   3. every item is a string (typeof — NO String() coercion anywhere);
+ *   4. every item passes isCanonicalQuestionId (the canonical Zhihu
+ *      questionId gate reused from T06);
+ *   5. unique (no duplicates);
+ *   6. every item references an ELIGIBLE group.
+ * Every violation — malformed, duplicate, unknown, or ineligible — returns
+ * SELECT_VERDICT_NONE / selection_invalid_clarification with the SAME fixed
+ * value-free rationale (CLARIFICATION_INVALID_RATIONALE), so the persisted
+ * decision can never carry a caller-controlled value.
  */
 function resolveClarification({ eligible, normalizedPlan, planIdentity, poolPlanHash, planHashMatch, opts }) {
   const force = opts.clarification;
-  const forceIds = Array.isArray(force?.forceGroupIds) ? force.forceGroupIds.map(String) : null;
-  if (forceIds === null) {
-    return failureVerdict(SELECTION_FAILURE_INVALID_CLARIFICATION, {
-      planHash: planIdentity, poolPlanHash, rationale: 'clarification provided without a valid forceGroupIds array',
-    });
+  const forceIds = Array.isArray(force?.forceGroupIds) ? force.forceGroupIds : null;
+  if (forceIds === null || forceIds.length === 0) {
+    // Missing/non-array, or empty (user selected nothing) — an empty success
+    // verdict is never produced; fail closed with the fixed rationale.
+    return invalidClarificationVerdict(planIdentity, poolPlanHash);
   }
-  // An empty forceGroupIds means the user selected nothing — that must NOT
-  // produce an empty SUCCESS verdict. Fail closed (same code as unknown/ineligible ids).
-  if (forceIds.length === 0) {
-    return failureVerdict(SELECTION_FAILURE_INVALID_CLARIFICATION, {
-      planHash: planIdentity, poolPlanHash,
-      rationale: 'clarification forceGroupIds is empty — user selected no group (fail-closed)',
-    });
+  if (!forceIds.every((id) => typeof id === 'string')) {
+    return invalidClarificationVerdict(planIdentity, poolPlanHash);
+  }
+  if (!forceIds.every((id) => isCanonicalQuestionId(id))) {
+    return invalidClarificationVerdict(planIdentity, poolPlanHash);
+  }
+  if (new Set(forceIds).size !== forceIds.length) {
+    return invalidClarificationVerdict(planIdentity, poolPlanHash);
   }
   const forced = [];
   for (const id of forceIds) {
     const g = eligible.find((e) => e.questionId === id);
     if (!g) {
-      return failureVerdict(SELECTION_FAILURE_INVALID_CLARIFICATION, {
-        planHash: planIdentity, poolPlanHash,
-        rationale: `clarification forceGroupIds contains an unknown group id: ${id}`,
-      });
+      // Unknown or ineligible identity — validated above, so no echo needed:
+      // the fixed rationale carries zero caller-controlled content.
+      return invalidClarificationVerdict(planIdentity, poolPlanHash);
     }
     forced.push(g);
   }
