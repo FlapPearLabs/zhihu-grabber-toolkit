@@ -1322,3 +1322,87 @@ test('R4-RC3 verification-mirror count fields: non-scalar garbage in the persist
   const g100 = manifest.groups.find((x) => x.groupId === '100');
   assert.ok(!g100 || (g100.reportedAnswerCount === null || Number.isInteger(g100.reportedAnswerCount)));
 });
+
+test('R5-D1 negative mirror counts: intOrNull cannot produce negatives — persisted negative mirror count is corrupt → fresh', () => {
+  const workDir = tmpDir('r5d1');
+  const decision = makeSelectionDecision(['100']);
+  const state = makeState(workDir, ['100'], { decision });
+  runGroupFlow(state, '100', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  persistMultiGroupState(workDir, state);
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  parsed.groups['100'].verification.capturedAnswerCount = -3;
+  parsed.groups['100'].verification.reportedAnswerCount = -3;
+  fs.writeFileSync(stateFile, JSON.stringify(parsed, null, 2));
+
+  const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+  assert.equal(resume.fresh, true);
+  assert.equal(resume.boundary, 'no_state');
+  assert.deepEqual(deriveVerifiedGroupRefs(resume.state), []);
+});
+
+test('R5-D2 mirror/state count divergence: a verified group whose entry count contradicts its mirror is corrupt → fresh (adoption invariant)', () => {
+  const workDir = tmpDir('r5d2');
+  const decision = makeSelectionDecision(['100']);
+  const state = makeState(workDir, ['100'], { decision });
+  runGroupFlow(state, '100', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  persistMultiGroupState(workDir, state);
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  // verify success ADOPTS a non-null mirror count into the entry (live-flow
+  // invariant); a persisted divergence (entry=99, mirror=3) is not producible and
+  // would inflate T07 Source Completeness accounting.
+  parsed.groups['100'].capturedAnswerCount = 99;
+  fs.writeFileSync(stateFile, JSON.stringify(parsed, null, 2));
+
+  const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+  assert.equal(resume.fresh, true);
+  assert.equal(resume.boundary, 'no_state');
+  assert.deepEqual(deriveVerifiedGroupRefs(resume.state), []);
+});
+
+test('R5-D3 stage↔flags production mapping: a stage contradicting its validity flags is corrupt → fresh', () => {
+  const workDir = tmpDir('r5d3');
+  const decision = makeSelectionDecision(['100']);
+  const state = makeState(workDir, ['100'], { decision });
+  runGroupFlow(state, '100', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  persistMultiGroupState(workDir, state);
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  // fully-composed group (captured+verified+handoffValid) rewound to stage='pending'
+  // with all flags left true — no live flow produces this combination.
+  parsed.groups['100'].stage = GROUP_STAGE_PENDING;
+  fs.writeFileSync(stateFile, JSON.stringify(parsed, null, 2));
+
+  const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+  assert.equal(resume.fresh, true);
+  assert.equal(resume.boundary, 'no_state');
+  assert.deepEqual(deriveVerifiedGroupRefs(resume.state), []);
+});
+
+test('R5-D4 unreadable capture artifact (directory at answers path): value-free group failure, never a raw filesystem exception', () => {
+  const workDir = tmpDir('r5d4');
+  const decision = makeSelectionDecision(['100']);
+  const state = makeState(workDir, ['100'], { decision });
+
+  const dirRunner = function runPrimitive(name, args) {
+    if (name !== 'zhihu-grab') throw new Error(`unexpected primitive: ${name}`);
+    const qid = args[0];
+    const outDir = args[2];
+    // plant a DIRECTORY at the answers.json path: existsSync passes, hashing EISDIRs
+    fs.mkdirSync(path.join(outDir, qid, 'answers.json'), { recursive: true });
+    return {
+      status: 0,
+      stdout: JSON.stringify({ ok: true, stage: 'captured', verified: false, questionId: qid, questionTitle: `问题 ${qid}`, capturedAnswerCount: 3 }),
+      stderr: '',
+    };
+  };
+  const captureAdapter = createSessionCaptureAdapter({ runner: dirRunner });
+
+  executeGroupCapture({ state, groupId: '100', workDir, captureAdapter });
+  const g = state.groups['100'];
+  assert.equal(g.captured, false);
+  assert.equal(g.failed, true);
+  assert.equal(g.stage, GROUP_STAGE_FAILED);
+  assert.deepEqual(g.failure, { code: 'CAPTURE_ARTIFACT_MISSING', class: 'contract' });
+});

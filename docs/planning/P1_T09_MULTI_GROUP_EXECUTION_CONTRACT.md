@@ -475,3 +475,75 @@ run against exact 05f0133): C1 dup-questionId = NOT CAUGHT (=RC1), C2 mirror-gar
 = NOT CAUGHT (=RC3), C3 partial+complete = NOT CAUGHT (=RC2), C4 key-order drift =
 defense held (clean reuse, order-independent comparisons), C5 garbage recorded hash
 = defense held (stale reset, over-invalidation only, fail-closed).
+```
+
+## FRESH REVIEW ROUND D — CONVERGENCE FINDINGS + REPAIR (R5-D1..D4)
+
+Fresh review @ exact a5863a7 (post-R4 repair SHA). VERDICT: CHANGES_REQUESTED —
+convergence nearly complete: NO P1/P2 remain; 4×P3 residual bookkeeping/robustness
+gaps. All 14 prior findings (F1..F8, FB1..FB3, RC1..RC3) verified CLOSED_VERIFIED.
+Reviewer over-rejection evidence (O1–O6): six module-produced states (legal
+verify-false+partial, handoff gate failure, capture failure, verify crash,
+asymmetric progress, unknown pagination) persist→load→resume ALL ACCEPTED — the
+R4 gates reject nothing the module itself can write.
+
+ID  PRI  FINDING + REPAIR
+--  ---  --------------------------------------------------------------------------------
+D1  P3   RC3 gate required integer-or-null mirror counts but not NON-NEGATIVE:
+         persisted verification.reportedAnswerCount=-3 (intOrNull can never produce
+         a negative — it is null-or-(int>=0)) loaded → reused → flowed into
+         manifest.groups[].reportedAnswerCount. Violates the module's own
+         "not-producible persisted combination = corruption → fresh" standard.
+         REPAIR: both mirror count gates tightened to integer && >= 0 (exact
+         intOrNull domain).
+D2  P3   Mirror-count ADOPTION invariant not re-checked at load: verify success
+         copies a non-null mirror capturedAnswerCount into the entry; a persisted
+         divergence (entry=99, mirror=3) is not producible, loaded → reused →
+         inflated T07 Source Completeness accounting (selectedCount=99 /
+         verifiedCount=99; validator internally self-consistent, no wedge —
+         accounting lie only).
+         REPAIR: FB2 verified block requires verification.capturedAnswerCount
+         !== null ⇒ entry capturedAnswerCount === mirror value.
+D3  P3   stage had enum validation only — no stage↔flags production mapping. Not-
+         producible combinations (stage='pending' ∧ captured/verified/handoffValid
+         all true; stage='handed_off' ∧ handoffValid=false) loaded → reused. No
+         validity lie (derivation reads flags, refs correctly excluded — reviewer
+         probe D3a), but bookkeeping distortion for stage-driven external consumers.
+         REPAIR: isValidGroupEntry enforces the exact production mapping —
+         pending ⇒ all flags false; captured ⇒ captured ∧ ¬verified ∧
+         ¬handoffValid ∧ ¬failed; verified ⇒ captured ∧ verified ∧ ¬handoffValid ∧
+         ¬failed; handed_off ⇒ all three true ∧ ¬failed; failed ⇒ failed ∧
+         ¬verified ∧ ¬handoffValid (captured free: pre-capture and post-capture
+         failures are both live outcomes).
+D4  P3   executeGroupCapture: existsSync → sha256File with no try/catch — a
+         directory (or permission loss / TOCTOU swap) at the answers.json path made
+         EISDIR escape the controller as a raw filesystem exception, violating the
+         module's own "controller failure → value-free {code,class} group failure"
+         pattern (adapter throw and runner throws are both caught; only the hash
+         step was bare). Same shape at executeGroupHandoff for handoff.json.
+         REPAIR: hash BEFORE any state mutation, wrapped in try/catch → capture:
+         markGroupFailed(CAPTURE_ARTIFACT_MISSING, 'contract'); handoff:
+         g.failure = {HANDOFF_ARTIFACT_MISSING, 'contract'} (failed NOT set —
+         coverage forbids failed && verified), matching each function's existing
+         missing-artifact failure pattern. Resume path already immune
+         (validateArtifactCheckpoint catches internally → stale).
+
+R5 TDD = RED at exact a5863a7 (54 tests / 50 pass / 4 fail — /tmp/t09_red_r5.log;
+         the 4 failures are exactly D1/D2/D3/D4; the 50 pre-existing tests show zero
+         perturbation)
+         → append-only repair (this round) → GREEN 54/54
+         → full regression 474/474 (420 pre-existing + 54 focused; /tmp/t09_regression_r5.log)
+
+Repair edits (append-only, single repair commit):
+  1. isValidGroupEntry: mirror count gates → non-negative integer-or-null (D1).
+  2. isValidGroupEntry verified block: mirror/entry count adoption invariant (D2).
+  3. isValidGroupEntry: stage↔flags production-mapping gate (D3).
+  4. executeGroupCapture: pre-mutation hash try/catch → value-free failure (D4).
+  5. executeGroupHandoff: pre-mutation hash try/catch → value-free failure (D4).
+
+Round D reviewer probes (evidence /tmp/t09_round_d_probes.mjs +
+/tmp/t09_round_d_overreach.mjs, run against exact a5863a7): D1-probe negative
+mirror = NOT CAUGHT (=D1); D2-probe count divergence = NOT CAUGHT (=D2); D3-probe
+stage/flags = NOT CAUGHT (=D3); forged verifiedGroupRefs + garbage manifest +
+researchComplete=true = CAUGHT (whole file rejected by the FB2 gate — fabricated
+refs never consumed); directory-at-answers-path = NOT CAUGHT (=D4, EISDIR escape).

@@ -340,6 +340,19 @@ export function executeGroupCapture({ state, groupId, workDir, captureAdapter })
     return state;
   }
 
+  // R5-D4: existsSync passed but the artifact can still be unreadable (a directory
+  // at the path, permission loss, TOCTOU swap). Hash BEFORE any state mutation and
+  // record the same value-free failure identity as missing — never a raw
+  // filesystem exception escaping the controller (every other failure path in
+  // this module records {code, class}; the hash step must not be the exception).
+  let answersHash = null;
+  try {
+    answersHash = sha256File(answersAbs);
+  } catch {
+    markGroupFailed(g, GROUP_FAILURE_CAPTURE_ARTIFACT_MISSING, 'contract');
+    return state;
+  }
+
   g.captured = true;
   g.failed = false;
   g.failure = null;
@@ -349,7 +362,7 @@ export function executeGroupCapture({ state, groupId, workDir, captureAdapter })
     : result.completeness.status === PAGINATION_PARTIAL ? PAGINATION_PARTIAL : PAGINATION_UNKNOWN;
   g.partial = g.paginationStatus === PAGINATION_PARTIAL;
   g.evidenceRef = toWorkRelative(workDir, answersAbs);
-  g.artifactHashes.answersJson = sha256File(answersAbs);
+  g.artifactHashes.answersJson = answersHash;
   g.capturedAnswerCount = intOrNull(item.facts?.capturedAnswerCount);
   return state;
 }
@@ -483,11 +496,24 @@ export function executeGroupHandoff({ state, groupId, workDir, runner }) {
     return state;
   }
 
+  // R5-D4 (handoff twin): the gate passed but handoff.json can still be unreadable
+  // at hash time (directory/permission/TOCTOU). Hash BEFORE any state mutation and
+  // record the same value-free failure identity as the missing-artifact branch —
+  // failed is NOT set here (coverage forbids failed && verified), mirroring the
+  // contract-failure pattern used throughout this function.
+  let handoffHash = null;
+  try {
+    handoffHash = sha256File(handoffAbs);
+  } catch {
+    g.failure = { code: GROUP_FAILURE_HANDOFF_ARTIFACT_MISSING, class: 'contract' };
+    return state;
+  }
+
   g.handoffValid = true;
   g.failure = null;
   g.stage = GROUP_STAGE_HANDED_OFF;
   g.handoffRef = toWorkRelative(workDir, handoffAbs);
-  g.artifactHashes.handoffJson = sha256File(handoffAbs);
+  g.artifactHashes.handoffJson = handoffHash;
   return state;
 }
 
@@ -770,12 +796,13 @@ function isValidGroupEntry(key, g) {
   if (g.capturedAnswerCount !== null && !(Number.isInteger(g.capturedAnswerCount) && g.capturedAnswerCount >= 0)) return false;
   if (g.verification !== null) {
     if (!isPlainObjectValue(g.verification)) return false;
-    // R4-RC3: mirror count fields are built via intOrNull in every live flow and
-    // consumed by manifest accounting (reportedAnswerCount) and capturedAnswerCount
-    // adoption — non-scalar garbage in the persisted mirror is corruption, never an
-    // accounting input (I7 hygiene; keys absent or non-integer → corrupt).
-    if (g.verification.capturedAnswerCount !== null && !Number.isInteger(g.verification.capturedAnswerCount)) return false;
-    if (g.verification.reportedAnswerCount !== null && !Number.isInteger(g.verification.reportedAnswerCount)) return false;
+    // R4-RC3 + R5-D1: mirror count fields are built via intOrNull in every live
+    // flow (integer AND non-negative, else null) and consumed by manifest
+    // accounting (reportedAnswerCount) and capturedAnswerCount adoption — non-
+    // scalar OR negative garbage in the persisted mirror is corruption, never an
+    // accounting input (I7 hygiene; keys absent/non-integer/negative → corrupt).
+    if (g.verification.capturedAnswerCount !== null && !(Number.isInteger(g.verification.capturedAnswerCount) && g.verification.capturedAnswerCount >= 0)) return false;
+    if (g.verification.reportedAnswerCount !== null && !(Number.isInteger(g.verification.reportedAnswerCount) && g.verification.reportedAnswerCount >= 0)) return false;
   }
   if (g.failure !== null) {
     if (!isPlainObjectValue(g.failure)) return false;
@@ -804,6 +831,10 @@ function isValidGroupEntry(key, g) {
     if (!isPlainObjectValue(g.verification)) return false;
     if (g.verification.valid !== true) return false;
     if (g.verification.questionId !== g.questionId) return false;
+    // R5-D2: adoption invariant — verify success copies a non-null mirror count
+    // into the entry (live flow); a persisted divergence between the two would
+    // inflate T07 Source Completeness accounting and is not producible.
+    if (g.verification.capturedAnswerCount !== null && g.capturedAnswerCount !== g.verification.capturedAnswerCount) return false;
   }
   if (g.handoffValid && !g.verified) return false;
   if (g.failed && g.verified) return false;
@@ -814,6 +845,17 @@ function isValidGroupEntry(key, g) {
   // resume cleanly and then wedge the coverage hook (coverage_invalid_state)
   // instead of failing closed here (CE-18: derived updates must always apply).
   if (g.partial !== (g.paginationStatus === PAGINATION_PARTIAL)) return false;
+  // R5-D3: stage ↔ flag production mapping — every live flow keeps stage and the
+  // validity flags in exactly one of these relationships (capture/verify/handoff
+  // advance the stage; every failure path marks stage='failed' and voids
+  // verify/handoff validity; stale reset returns to the neutral pending tuple).
+  // A persisted stage contradicting its flags is not producible — corruption,
+  // never a bookkeeping input for external stage-driven consumers.
+  if (g.stage === GROUP_STAGE_PENDING && (g.captured || g.verified || g.handoffValid || g.failed)) return false;
+  if (g.stage === GROUP_STAGE_CAPTURED && (!g.captured || g.verified || g.handoffValid || g.failed)) return false;
+  if (g.stage === GROUP_STAGE_VERIFIED && (!g.captured || !g.verified || g.handoffValid || g.failed)) return false;
+  if (g.stage === GROUP_STAGE_HANDED_OFF && (!g.captured || !g.verified || !g.handoffValid || g.failed)) return false;
+  if (g.stage === GROUP_STAGE_FAILED && (g.verified || g.handoffValid || !g.failed)) return false;
   return true;
 }
 
