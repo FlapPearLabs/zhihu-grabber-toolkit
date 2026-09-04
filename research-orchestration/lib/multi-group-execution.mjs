@@ -230,6 +230,7 @@ export function createMultiGroupExecutionState({ planHash, selectionDecision }) 
     throw new MultiGroupError('MULTI_GROUP_SELECTION_INVALID', 'selected source group set is empty (fail closed)');
   }
   const seen = new Set();
+  const seenQuestionIds = new Set();
   for (const sg of selected) {
     const groupId = sg && typeof sg === 'object' ? sg.groupId : null;
     const questionId = sg && typeof sg === 'object' ? sg.questionId : null;
@@ -249,7 +250,16 @@ export function createMultiGroupExecutionState({ planHash, selectionDecision }) 
     if (seen.has(groupId)) {
       throw new MultiGroupError('MULTI_GROUP_DUPLICATE_GROUP_ID', 'duplicate groupId in SelectedSourceGroups (fail closed)');
     }
+    // R4-RC1: two distinct groupIds composing the SAME question would double-count
+    // one source in manifest accounting and T07 Source Completeness aggregation
+    // (plus a shared evidence directory under I3). T08 structurally prevents this;
+    // the contract PRECONDITIONS forbid duplicate questionIds and T09 re-enforces
+    // them at its own boundary against forged decisions.
+    if (seenQuestionIds.has(questionId)) {
+      throw new MultiGroupError('MULTI_GROUP_DUPLICATE_QUESTION_ID', 'duplicate questionId across selected source groups (fail closed)');
+    }
     seen.add(groupId);
+    seenQuestionIds.add(questionId);
   }
 
   const groups = {};
@@ -758,7 +768,15 @@ function isValidGroupEntry(key, g) {
     if (typeof g.artifactHashes[k] !== 'string' || g.artifactHashes[k].length === 0) return false;
   }
   if (g.capturedAnswerCount !== null && !(Number.isInteger(g.capturedAnswerCount) && g.capturedAnswerCount >= 0)) return false;
-  if (g.verification !== null && !isPlainObjectValue(g.verification)) return false;
+  if (g.verification !== null) {
+    if (!isPlainObjectValue(g.verification)) return false;
+    // R4-RC3: mirror count fields are built via intOrNull in every live flow and
+    // consumed by manifest accounting (reportedAnswerCount) and capturedAnswerCount
+    // adoption — non-scalar garbage in the persisted mirror is corruption, never an
+    // accounting input (I7 hygiene; keys absent or non-integer → corrupt).
+    if (g.verification.capturedAnswerCount !== null && !Number.isInteger(g.verification.capturedAnswerCount)) return false;
+    if (g.verification.reportedAnswerCount !== null && !Number.isInteger(g.verification.reportedAnswerCount)) return false;
+  }
   if (g.failure !== null) {
     if (!isPlainObjectValue(g.failure)) return false;
     if (Object.keys(g.failure).length !== 2) return false;
@@ -789,6 +807,13 @@ function isValidGroupEntry(key, g) {
   }
   if (g.handoffValid && !g.verified) return false;
   if (g.failed && g.verified) return false;
+  // R4-RC2: partial is DERIVED from paginationStatus in every live flow (capture
+  // sets partial = (status === 'partial'); failure downgrade and stale reset set
+  // BOTH to the neutral pair). A persisted contradictory pair (partial=true +
+  // paginationStatus='complete') is T07-forbidden corruption that would otherwise
+  // resume cleanly and then wedge the coverage hook (coverage_invalid_state)
+  // instead of failing closed here (CE-18: derived updates must always apply).
+  if (g.partial !== (g.paginationStatus === PAGINATION_PARTIAL)) return false;
   return true;
 }
 

@@ -1260,3 +1260,65 @@ test('R3-FB3 non-canonical questionId + shallow path alias in persisted group is
   assert.equal(resume.boundary, 'no_state');
   assert.deepEqual(deriveVerifiedGroupRefs(resume.state), []);
 });
+
+test('R4-RC1 create precondition: duplicate questionId across distinct groupIds is rejected (fail closed)', () => {
+  const workDir = tmpDir('r4rc1');
+  const base = makeSelectionDecision(['100']);
+  // forged decision: distinct groupIds composing the SAME question — T08 structures
+  // this away (groupId === questionId), but T09 re-validates decision preconditions
+  // at its own boundary and the contract PRECONDITIONS forbid duplicate questionIds.
+  const forged = { ...base, selectedGroups: [
+    { groupId: 'g1', questionId: '100', rrfScore: 0.2, score: 9 },
+    { groupId: 'g2', questionId: '100', rrfScore: 0.1, score: 8 },
+  ] };
+  const planHash = base.planHash;
+  assert.throws(
+    () => createMultiGroupExecutionState({ planHash, selectionDecision: forged }),
+    (err) => err instanceof MultiGroupError && err.code === 'MULTI_GROUP_DUPLICATE_QUESTION_ID',
+  );
+});
+
+test('R4-RC2 partial↔paginationStatus coherence: T07-forbidden pair in persisted state is corrupt → fresh, never resumed into a coverage wedge', () => {
+  const workDir = tmpDir('r4rc2');
+  const decision = makeSelectionDecision(['100']);
+  const state = makeState(workDir, ['100'], { decision });
+  runGroupFlow(state, '100', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  persistMultiGroupState(workDir, state);
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  // partial=true alongside paginationStatus='complete': the T07-forbidden pair.
+  // Live flows derive partial FROM paginationStatus, so this combo is unwritable
+  // by the module itself; if it loads, resume reuses it and the coverage hook
+  // throws coverage_invalid_state mid-controller (CE-18 broken) instead of
+  // corrupt → fresh.
+  parsed.groups['100'].partial = true;
+  fs.writeFileSync(stateFile, JSON.stringify(parsed, null, 2));
+
+  const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+  assert.equal(resume.fresh, true);
+  assert.equal(resume.boundary, 'no_state');
+  assert.deepEqual(deriveVerifiedGroupRefs(resume.state), []);
+});
+
+test('R4-RC3 verification-mirror count fields: non-scalar garbage in the persisted mirror is corrupt → fresh (manifest accounting hygiene)', () => {
+  const workDir = tmpDir('r4rc3');
+  const decision = makeSelectionDecision(['100']);
+  const state = makeState(workDir, ['100'], { decision });
+  runGroupFlow(state, '100', workDir, { captureAdapter: makeCaptureAdapter(), runner: makeGroupRunner() });
+  persistMultiGroupState(workDir, state);
+  const stateFile = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  // mirror flags stay coherent (valid mirror of a verified group) but the count
+  // fields — always intOrNull in live flows, consumed by manifest accounting —
+  // carry non-scalar garbage.
+  parsed.groups['100'].verification.capturedAnswerCount = { injected: 'object' };
+  parsed.groups['100'].verification.reportedAnswerCount = 'not-a-number-at-all';
+  fs.writeFileSync(stateFile, JSON.stringify(parsed, null, 2));
+
+  const resume = resumeMultiGroupExecution({ workDir, planHash: state.planHash, selectionDecision: decision });
+  assert.equal(resume.fresh, true);
+  assert.equal(resume.boundary, 'no_state');
+  const manifest = deriveResearchCorpusManifest({ state: resume.state, selectionDecision: decision });
+  const g100 = manifest.groups.find((x) => x.groupId === '100');
+  assert.ok(!g100 || (g100.reportedAnswerCount === null || Number.isInteger(g100.reportedAnswerCount)));
+});

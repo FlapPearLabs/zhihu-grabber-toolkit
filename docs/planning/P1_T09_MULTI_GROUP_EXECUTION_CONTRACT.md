@@ -419,3 +419,59 @@ Note (R2-F5 superset + FB1 interplay): the load-layer selection-set equality che
 equal-size-swap variant that kept the set identical but rewrote per-group
 questionIds. Together: persisted groups map must equal the recorded selection set
 AND every per-group questionId must equal the decision's recorded questionId.
+```
+
+## FRESH REVIEW ROUND C — FINDINGS + REPAIR (R4-RC1..RC3)
+
+Fresh review @ exact 05f0133 (post-R3 repair SHA). VERDICT: CHANGES_REQUESTED
+(2×P2 + 1×P3). All 11 prior closures (F1..F8, FB1..FB3) verified CLOSED_VERIFIED;
+reviewer's own probes C4 (key-order drift → clean reuse) and C5 (garbage recorded
+hash → stale reset, never reuse) confirmed the defense HOLDS in those directions.
+
+ID  PRI  FINDING + REPAIR
+--  ---  --------------------------------------------------------------------------------
+RC1 P2   create accepted two DISTINCT groupIds composing the SAME questionId (checked
+         duplicate groupIds, canonicality, plan binding — but not questionId
+         uniqueness). A forged decision (T08 structures groupId===questionId away;
+         T09 re-validates decision preconditions at its own boundary) yields two
+         groups sharing one evidence directory, double-counts one source in manifest
+         accounting and T07 Source Completeness aggregation, and doubles the I3
+         sibling-interference surface. Violates contract PRECONDITIONS
+         ("no duplicate groupId/questionId").
+         REPAIR: create loop rejects duplicate questionId across selectedGroups
+         (MULTI_GROUP_DUPLICATE_QUESTION_ID, fail closed).
+RC2 P2   Load gate had no partial ↔ paginationStatus coherence: a persisted
+         shape-valid partial=true + paginationStatus='complete' (T07-forbidden pair)
+         loaded cleanly, RESUMED (hashes valid → reuse), and then
+         applySourceCompletenessToCoverageState threw coverage_invalid_state
+         mid-controller — wedging instead of corrupt→fresh. Breaks CE-18 ("derived
+         updates always apply") with the same structure as the R2-F5 wedge family;
+         the R3-FB2 flag-coherence gate did not cover partial.
+         REPAIR: isValidGroupEntry enforces partial === (paginationStatus ===
+         'partial') — the exact invariant every live flow maintains (capture derives
+         partial from status; failure downgrade and stale reset set the neutral pair).
+RC3 P3   isValidGroupEntry type-validated mirror valid/questionId but NOT the mirror
+         count fields: persisted garbage (capturedAnswerCount:{injected:'object'},
+         reportedAnswerCount:'not-a-number') loaded → resumed → flowed into
+         VerifiedGroupRefs and manifest.groups[].reportedAnswerCount (T12 accounting
+         surface, I7 hygiene). Not a reuse-lie (refs still bound to real artifact
+         hashes), hence P3.
+         REPAIR: load gate requires both mirror count fields to be integer-or-null
+         (live flows build them via intOrNull; absent/non-integer → corrupt).
+
+R4 TDD = RED at exact 05f0133 (50 tests / 47 pass / 3 fail — /tmp/t09_red_r4.log;
+         the 3 failures are exactly RC1/RC2/RC3; the 47 pre-existing tests show zero
+         perturbation)
+         → append-only repair (this round) → GREEN 50/50
+         → full regression 470/470 (420 pre-existing + 50 focused; /tmp/t09_regression_r4.log)
+
+Repair edits (append-only, single repair commit):
+  1. createMultiGroupExecutionState: seenQuestionIds set + MULTI_GROUP_DUPLICATE_QUESTION_ID.
+  2. isValidGroupEntry: partial ↔ paginationStatus bidirectional coherence gate.
+  3. isValidGroupEntry: mirror count-field integer-or-null type gate.
+
+Round C reviewer probes (evidence /tmp/t09_round_c_probes.mjs — reviewer-authored,
+run against exact 05f0133): C1 dup-questionId = NOT CAUGHT (=RC1), C2 mirror-garbage
+= NOT CAUGHT (=RC3), C3 partial+complete = NOT CAUGHT (=RC2), C4 key-order drift =
+defense held (clean reuse, order-independent comparisons), C5 garbage recorded hash
+= defense held (stale reset, over-invalidation only, fail-closed).
