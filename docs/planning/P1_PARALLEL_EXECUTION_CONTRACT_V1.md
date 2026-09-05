@@ -131,7 +131,7 @@ DAG 新角色 = INTEGRATION_DEPENDENCY_DAG（真实集成的唯一顺序权威�
 | T12 → T13 | INTEGRATION_BLOCKED_BY | SEAM B（T12_TO_T13_V1） |
 | T13 → T14 | INTEGRATION_BLOCKED_BY | SEAM C（T13_TO_T14_V1） |
 | T14 → T15 | INTEGRATION_BLOCKED_BY | SEAM D（T14_TO_T15_V1） |
-| T09 → T12（T11 dense 输入） | INTEGRATION_BLOCKED_BY | T11 产物经 T12 输入面；dense 输入形状未单独建模（T11↔T12 为同仓模块间内部输入，未冻结 seam → 不授权 T12 在无 T11 时宣称可集成） |
+| T09 → T12（T11 dense 输入） | INTEGRATION_BLOCKED_BY | T11 产物经 T12 输入面；dense 输入形状未单独建模（T11↔T12 为同仓模块间内部输入，未冻结 seam）。事实状态：T11 已 DONE / MERGED / REMOTE_VERIFIED（PR #66，mergeCommit 8e9b83c）——该边对 T12 已满足，T11 不是未解决的集成阻塞 |
 
 无任何一条 T12–T15 入边是 CONTRACT_DEFINITION_DEPENDENCY（seam 冻结后）；
 若 audit 推翻某个 seam 的冻结性，该边自动降级为 IMPLEMENTATION_BLOCKED_BY。
@@ -189,12 +189,12 @@ CONTRACT_READY        = YES   （SEAM A 已 producer-grounded：TYPE_B conforman
                                不 gate T13 消费的产物形状）
 ELIGIBLE_FOR_PARALLEL_START_GATE = YES   （authority 冻结 + 输入 seam CONTRACT_READY + fixture 可测）
 IMPLEMENTATION_READY  = NO    （START_GATE 未授予：#44 PLANNED_NOT_AUTHORIZED）
-INTEGRATION_READY     = NO    （T09 未 merge；T11 dense 输入未集成）
+INTEGRATION_READY     = NO    （仅 T09 未 merge/未集成；T11 已 DONE/MERGED/REMOTE_VERIFIED，不再是阻塞）
 UNRESOLVED_CONTRACT_BLOCKERS = [无 BLOCKING_DECISION_REQUIRED；canonicalSourceId 具体编码
                                由 producer 权威决定（delegated），T11 dense 输入面未单独建模
                                → 见 UNSAFE_TO_PARALLELIZE_YET 的集成侧约束]
 CAN_IMPLEMENT_IN_PARALLEL_WITH = [T13, T14]（若各自 START_GATE 获授）
-MUST_WAIT_FOR_REAL_UPSTREAM_BEFORE = [真实集成（T09+T11 产物过 SEAM A / dense 输入面）]
+MUST_WAIT_FOR_REAL_UPSTREAM_BEFORE = [真实集成（T09 产物过 SEAM A；T11 已集成（PR #66 merged），dense 输入面已在真实基线中）]
 
 TICKET = P1-T13（#45）
 CONTRACT_READY        = YES   （SEAM B/C 冻结为 candidate；claims 绑定 T12 fixture 已机械演示）
@@ -282,8 +282,9 @@ PARALLEL_WAVE_CANDIDATE = [T12, T13, T14]
 T12（#44）:
   UPSTREAM_SEAM            = T09_TO_T12_V1
   CONTRACT_FIXTURE         = research-orchestration/test/fixtures/p1-seams/seam-a/
-  REAL_UPSTREAM_REQUIRED_FOR_INTEGRATION = T09 真实产物（PR #68 exact-SHA merge 后）过
-                             SEAM A（TYPE_B 已就绪）+ T11 dense 输入面
+  REAL_UPSTREAM_REQUIRED_FOR_INTEGRATION = T09 真实产物（exact-SHA integration 后）过
+                             SEAM A（TYPE_B 已就绪）；T11 已 DONE/MERGED/REMOTE_VERIFIED
+                             （PR #66，mergeCommit 8e9b83c），dense 输入面已就位
   MODEL_RECOMMENDATION     = GLM_5_3_FLASH_EXTREME（Issue #44 IMPLEMENTATION_MODEL_CLASS）
   RISK_CLASS               = HIGH（Issue #44；Lane V2 HIGH-RISK 流程全程适用）
 
