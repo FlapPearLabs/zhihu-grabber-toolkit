@@ -326,6 +326,10 @@ export async function runPerGroupAnalysis({
   coverageState = null,
   maxStatementChars = DEFAULT_MAX_STATEMENT_CHARS,
 }) {
+  // Validate the corpus artifact BEFORE any dereference (reviewer round 1):
+  // malformed input (e.g. corpus=null) must raise the module's coded
+  // SEAM_C_REPRESENTATION_CONFLICT, never a bare TypeError.
+  validateSeamBCorpusArtifact(corpus);
   const groupResults = [];
   for (const group of corpus.corpus.groups) {
     groupResults.push(await extractPerGroupClaims({

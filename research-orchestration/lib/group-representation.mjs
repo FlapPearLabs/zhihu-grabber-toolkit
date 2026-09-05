@@ -29,6 +29,9 @@
  *   SEAM_C_IDENTITY_ARTIFACT_INCOMPLETE missing aggregate identity artifact
  *   Module-level (implementation detail, NOT part of the frozen seam table):
  *   SEAM_C_RUNTIME_UNAVAILABLE         semantic runtime unavailable (NO_SILENT_RUNTIME_FALLBACK)
+ *   SEAM_C_ANALYZED_SET_FOREIGN_MEMBER analyzed set contains an id outside the group's
+ *                                      controller-owned selectedSourceRefs (P1-T13 reviewer
+ *                                      round 1; already listed under DECISION_REQUIRED D1)
  *
  * Identity family rule: every emitted "sha256:<64hex>" value is the SAME
  * identity encoding family as SEAM B selectedCorpusIdentity — Issue #46's
@@ -48,6 +51,8 @@ export const SEAM_C_MODEL_OWNED_IDENTITY = 'SEAM_C_MODEL_OWNED_IDENTITY';
 export const SEAM_C_IDENTITY_ARTIFACT_INCOMPLETE = 'SEAM_C_IDENTITY_ARTIFACT_INCOMPLETE';
 /** Module-level fail-closed code (runtime unavailability; NO_SILENT_RUNTIME_FALLBACK, Spec §5.2/§10.2). */
 export const SEAM_C_RUNTIME_UNAVAILABLE = 'SEAM_C_RUNTIME_UNAVAILABLE';
+/** Module-level fail-closed code (analyzed set membership; listed under DECISION_REQUIRED D1). */
+export const SEAM_C_ANALYZED_SET_FOREIGN_MEMBER = 'SEAM_C_ANALYZED_SET_FOREIGN_MEMBER';
 
 /** §9.2 frozen completeness vocabulary (Spec §9.2; validator COMPLETENESS_STATUSES). */
 export const COMPLETENESS_STATUSES = Object.freeze(['captured', 'verified', 'partial', 'failed']);
@@ -92,7 +97,24 @@ function sha256Hex(text) {
   return crypto.createHash('sha256').update(text, 'utf8').digest('hex');
 }
 
+/**
+ * Deterministic sort + dedupe of canonical id arrays. Fail closed (P1-T13
+ * reviewer round 1): an array containing a non-string / empty-string entry is
+ * a malformed input domain, never silently filtered. Non-array input still
+ * canonicalizes to [] (legitimate "no value" paths, e.g. partial-coverage
+ * `perGroupAnalyzed[gid] ?? []`), only ARRAY MEMBERSHIP is strictly validated.
+ */
 function sortedUniqueIds(ids) {
+  if (Array.isArray(ids)) {
+    for (const id of ids) {
+      if (!isNonEmptyString(id)) {
+        throw new SeamCError(
+          SEAM_C_REPRESENTATION_CONFLICT,
+          `sortedUniqueIds: id arrays must contain only non-empty strings, got ${String(id)}`,
+        );
+      }
+    }
+  }
   return [...new Set((Array.isArray(ids) ? ids : []).filter(isNonEmptyString))].sort();
 }
 
@@ -277,6 +299,18 @@ export function buildGroupRepresentation({
     );
   }
   const canonicalIds = new Set(selected);
+  // Analyzed-set membership (reviewer round 1): the analyzed set must be a
+  // SUBSET of the group's controller-owned selectedSourceRefs. Count checks
+  // alone would admit a count-compliant representation containing foreign ids.
+  for (const id of sortedUniqueIds(analyzedSourceIds)) {
+    if (!canonicalIds.has(id)) {
+      throw new SeamCError(
+        SEAM_C_ANALYZED_SET_FOREIGN_MEMBER,
+        `group ${corpusGroup.groupId}: analyzed source ${id} is not a controller-owned canonicalSourceId of this group`,
+        { details: { groupId: corpusGroup.groupId, foreignId: id } },
+      );
+    }
+  }
   for (const ref of expertEvidenceRichRefs ?? []) {
     if (!canonicalIds.has(ref)) {
       throw new SeamCError(SEAM_C_REPRESENTATION_CONFLICT, `group ${corpusGroup.groupId}: expertEvidenceRichRef ${ref} is not a controller-owned canonicalSourceId`);

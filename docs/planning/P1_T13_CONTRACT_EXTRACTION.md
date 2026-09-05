@@ -75,7 +75,10 @@ level (`updatePerGroupAnalysis` rejects non-T13 callers).
    `seam-c/invalid.guard-mismatch.json` semantics (structurally valid + guard-failing).
 5. **Module-level fail-closed codes** beyond the frozen §SEAM C table:
    `SEAM_C_RUNTIME_UNAVAILABLE`, `SEAM_C_SOURCE_FAILURE`, `SEAM_C_MODEL_OUTPUT_INVALID`,
-   `SEAM_C_PROJECTION_ISOLATION_VIOLATION` (per-group-claim-extraction.mjs). The frozen four
+   `SEAM_C_PROJECTION_ISOLATION_VIOLATION` (per-group-claim-extraction.mjs), plus
+   `SEAM_C_ANALYZED_SET_FOREIGN_MEMBER` (group-representation.mjs; reviewer round 1 —
+   `buildGroupRepresentation` additionally validates the analyzed set as a SUBSET of the
+   group's `selectedSourceRefs` canonicalSourceIds, not counts alone). The frozen four
    (`SEAM_C_GUARD_MISMATCH`, `SEAM_C_REPRESENTATION_CONFLICT`, `SEAM_C_MODEL_OWNED_IDENTITY`,
    `SEAM_C_IDENTITY_ARTIFACT_INCOMPLETE`) are emitted exactly per §SEAM C.
 
@@ -85,6 +88,9 @@ level (`updatePerGroupAnalysis` rejects non-T13 callers).
   "single source failure", "model output shape violation", and "projection isolation
   violation" — the frozen §SEAM C table covers only the four guard semantics; T13 must
   fail closed for the first two per Issue #45 AC but has no frozen code to emit.
+  Reviewer round 1 additionally adds module-level `SEAM_C_ANALYZED_SET_FOREIGN_MEMBER`
+  (analyzed id outside the group's selected set in `buildGroupRepresentation`) to this
+  same pending-assignment list.
 - **D2 (upstream gap)**: SEAM B carries no per-group provider provenance and no answer
   count; §8.1 requires both (`canonicalGroupIdentity`, `discussionVolume`). Proposal:
   T12 extends SEAM B (V1-compatible additive fields) or T13 keeps the injected

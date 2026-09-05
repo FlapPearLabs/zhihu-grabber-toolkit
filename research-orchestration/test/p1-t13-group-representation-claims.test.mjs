@@ -36,6 +36,7 @@ import {
   SEAM_C_MODEL_OWNED_IDENTITY,
   SEAM_C_IDENTITY_ARTIFACT_INCOMPLETE,
   SEAM_C_RUNTIME_UNAVAILABLE,
+  SEAM_C_ANALYZED_SET_FOREIGN_MEMBER,
   validateSeamBCorpusArtifact,
   derivePerGroupAnalyzedIdentity,
   deriveAggregateAnalyzedIdentity,
@@ -742,6 +743,117 @@ describe('P1-T13 accounting updates: per-group mapped/analyzed via frozen T07 ho
       groupResults: [{ groupId: corpus.corpus.groups[0].groupId, mappedSourceIds: ids, analyzedSourceIds: ids }],
     });
     assert.equal(next.analysisCoverage.is100PercentAnalysis, false);
+  });
+});
+
+/* ==================== 10. reviewer round 1 repairs ==================== */
+
+describe('P1-T13 reviewer round 1: analyzed set membership + coded input errors + partial coverage', () => {
+  test('F1: foreign id in the analyzed set fails closed with SEAM_C_ANALYZED_SET_FOREIGN_MEMBER (not counts alone)', () => {
+    const corpus = CORPUS_MINIMAL();
+    const group = corpus.corpus.groups[0];
+    const selected = group.selectedSourceRefs.map((r) => r.canonicalSourceId);
+    // Count-compliant (5 = verified) but contains one id outside the group's selected set.
+    const foreignSet = [...selected.slice(0, selected.length - 1), 'zzz-foreign-not-in-group'];
+    assert.throws(() => buildGroupRepresentation({
+      corpusGroup: group,
+      canonicalGroupIdentity: identityResolver(group.groupId),
+      mappedSourceIds: selected,
+      analyzedSourceIds: foreignSet,
+      claims: { main: [], minority: [], contradictory: [] },
+      expertEvidenceRichRefs: [],
+      completenessStatus: 'verified',
+      discussionVolume: { answerCount: selected.length },
+    }), (e) => assertHasErrorCode(e, SEAM_C_ANALYZED_SET_FOREIGN_MEMBER));
+    // Control: a proper subset (no foreign id) still passes membership.
+    assert.doesNotThrow(() => buildGroupRepresentation({
+      corpusGroup: group,
+      canonicalGroupIdentity: identityResolver(group.groupId),
+      mappedSourceIds: selected,
+      analyzedSourceIds: selected.slice(0, selected.length - 1),
+      claims: { main: [], minority: [], contradictory: [] },
+      expertEvidenceRichRefs: [],
+      completenessStatus: 'partial',
+      discussionVolume: { answerCount: selected.length },
+    }));
+  });
+
+  test('F2: runPerGroupAnalysis with corpus=null raises a coded SeamCError, never a bare TypeError', async () => {
+    await assert.rejects(() => runPerGroupAnalysis({
+      corpus: null,
+      planHash: PLAN_HASH,
+      runtime: mockRuntime(),
+      sourceContentLoader: contentLoader(),
+      canonicalGroupIdentityResolver: identityResolver,
+    }), (e) => assertHasErrorCode(e, SEAM_C_REPRESENTATION_CONFLICT));
+  });
+
+  test('F3: id arrays containing non-string entries fail closed (no silent filtering)', () => {
+    const corpus = CORPUS_MINIMAL();
+    const group = corpus.corpus.groups[0];
+    const selected = group.selectedSourceRefs.map((r) => r.canonicalSourceId);
+    assert.throws(
+      () => derivePerGroupAnalyzedIdentity(group.groupId, ['ok-id', 42, null]),
+      (e) => assertHasErrorCode(e, SEAM_C_REPRESENTATION_CONFLICT),
+    );
+    assert.throws(() => buildGroupRepresentation({
+      corpusGroup: group,
+      canonicalGroupIdentity: identityResolver(group.groupId),
+      mappedSourceIds: ['ok-id', { evil: true }],
+      analyzedSourceIds: selected,
+      claims: { main: [], minority: [], contradictory: [] },
+      expertEvidenceRichRefs: [],
+      completenessStatus: 'verified',
+      discussionVolume: { answerCount: selected.length },
+    }), (e) => assertHasErrorCode(e, SEAM_C_REPRESENTATION_CONFLICT));
+  });
+
+  test('F4: partial analyzed set → completenessStatus=partial identity semantics flow through the aggregate derivation', () => {
+    const corpus = CORPUS_MULTI();
+    const group = corpus.corpus.groups[0];
+    const selected = group.selectedSourceRefs.map((r) => r.canonicalSourceId);
+    const analyzed = selected.slice(0, selected.length - 1); // partial coverage
+    const rep = buildGroupRepresentation({
+      corpusGroup: group,
+      canonicalGroupIdentity: identityResolver(group.groupId),
+      mappedSourceIds: selected,
+      analyzedSourceIds: analyzed,
+      claims: { main: [], minority: [], contradictory: [] },
+      expertEvidenceRichRefs: [],
+      completenessStatus: 'partial',
+      discussionVolume: { answerCount: selected.length },
+    });
+    assert.equal(rep.completenessStatus, 'partial');
+    assert.equal(rep.accounting.analyzed, analyzed.length);
+    assert.ok(rep.accounting.analyzed < rep.accounting.selected);
+    // §9.2 partial identity semantics: distinct deterministic partial aggregate
+    // identity, never equal to the selected corpus identity, guard fails closed.
+    const perGroupAnalyzed = {
+      ...Object.fromEntries(
+        corpus.corpus.groups
+          .filter((g) => g.groupId !== group.groupId)
+          .map((g) => [g.groupId, g.selectedSourceRefs.map((r) => r.canonicalSourceId)]),
+      ),
+      [group.groupId]: analyzed,
+    };
+    const perGroupSelected = Object.fromEntries(
+      corpus.corpus.groups.map((g) => [g.groupId, g.selectedSourceRefs.map((r) => r.canonicalSourceId)]),
+    );
+    const aggregate = deriveAggregateAnalyzedIdentity({
+      selectedCorpusIdentity: corpus.selectedCorpusIdentity,
+      perGroupAnalyzed,
+      perGroupSelected,
+    });
+    assert.notEqual(aggregate, corpus.selectedCorpusIdentity);
+    // The partial per-group identity is deterministic and derives from the analyzed set alone.
+    assert.equal(
+      derivePerGroupAnalyzedIdentity(group.groupId, [...analyzed].reverse()),
+      derivePerGroupAnalyzedIdentity(group.groupId, analyzed),
+      'per-group partial identity is order-independent (mechanical derivation)',
+    );
+    const guard = evaluateSeamCGuard(corpus.selectedCorpusIdentity, aggregate);
+    assert.equal(guard.ok, false);
+    assert.ok(guard.errors.some((e) => e.code === SEAM_C_GUARD_MISMATCH));
   });
 });
 
