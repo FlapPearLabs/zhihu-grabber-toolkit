@@ -154,5 +154,18 @@ Produced（本票所有权内）：
    层的归属票（T12 集成 follow-up vs T15 wiring）。
 4. **canonicalSourceId 编码**：合同 delegated（seam doc :253-255）。测试 fixture
    惯例 `<questionId>-a-<n>`；selector 不校验内部编码，只要求 stable identity +
-   sha256 contentHash 配对（合同原样）。
+   sha256 contentHash 配对（合同原样）。**全局唯一性（reviewer round 1, F1）**：
+   canonicalSourceId 必须全局唯一 —— denseSignals 按 canonicalSourceId 全局键控，
+   跨组重复会静默共享同一 dense signal；selector 现已机械强制（跨组重复 →
+   `RCE_DUPLICATE_CANONICAL_SOURCE_ID` fail closed）。
 5. 未新增 npm 依赖、未改 package.json、无 playwright/browser 代码、无网络调用。
+6. **verified accounting 语义（reviewer round 1, F2）— DECISION_REQUIRED
+   （product owner）**：§SEAM B 允许 selected ≤ verified ≤ eligible，存在两种
+   同样合法的读法：(a) **verified := selected**（verified-only：仅被选中的
+   source 计入 verified —— 当前实现的 pinned reading，赋值处已注释说明，并有
+   pinning 测试锁定 `accounting.verified === accounting.selected`）；(b)
+   **verified := eligible**（每个 eligible candidate 都从 verified group
+   artifact 分解而来，故全部计入 verified）。该措辞直接决定 T07/T15 的
+   reconciliation 语义，需 product-owner 明确后冻结；在决定前保持读法 (a)，
+   任何静默切换都会被 pinning 测试拦截（见测试
+   "accounting.verified is PINNED to accounting.selected"）。

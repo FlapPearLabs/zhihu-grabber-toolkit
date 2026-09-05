@@ -43,6 +43,10 @@
  *     legal peer option).
  *   - MMR optional (§3.2): default OFF. When enabled it REQUIRES pairwise
  *     similarity geometry (no silent degraded mode) and stays deterministic.
+ *   - canonicalSourceId global uniqueness: the same canonicalSourceId under two
+ *     different manifest groups fails closed (RCE_DUPLICATE_CANONICAL_SOURCE_ID)
+ *     — denseSignals are keyed globally by canonicalSourceId, so a cross-group
+ *     duplicate would silently share one dense signal.
  *   - verified-only (§SEAM B invariant 5): a source under a groupId outside the
  *     manifest, or with malformed identity fields, fails closed
  *     (SEAM_B_UNVERIFIED_SOURCE_REF).
@@ -390,6 +394,10 @@ export function selectResearchCorpus({
   }
 
   const groups = [];
+  // canonicalSourceId is required GLOBALLY unique across groups: denseSignals
+  // are keyed by canonicalSourceId alone, so the same id under two groups would
+  // silently share one dense signal (fail closed, reviewer round 1 F1).
+  const seenSourceOwner = new Map(); // canonicalSourceId -> groupId
   for (const mGroup of manifest.groups) {
     const groupId = mGroup.groupId;
     const rawSources = sourcesByGroup[groupId];
@@ -407,6 +415,13 @@ export function selectResearchCorpus({
       if (byId.has(s.canonicalSourceId)) {
         failClosed('RCE_INPUT_INVALID', `duplicate canonicalSourceId ${s.canonicalSourceId} in group ${groupId}`);
       }
+      const priorGroup = seenSourceOwner.get(s.canonicalSourceId);
+      if (priorGroup !== undefined) {
+        failClosed('RCE_DUPLICATE_CANONICAL_SOURCE_ID',
+          `canonicalSourceId ${s.canonicalSourceId} appears under multiple groups (${priorGroup}, ${groupId}); denseSignals are keyed globally, so a cross-group duplicate would silently share one dense signal`,
+          { canonicalSourceId: s.canonicalSourceId, groups: [priorGroup, groupId] });
+      }
+      seenSourceOwner.set(s.canonicalSourceId, groupId);
       const sig = denseSignals[s.canonicalSourceId];
       validateDenseSignal(sig, s.canonicalSourceId);
       byId.set(s.canonicalSourceId, { ...s, signal: sig });
@@ -451,6 +466,13 @@ export function selectResearchCorpus({
       accounting: {
         eligible: eligibleCount,
         selected: selectedRefs.length,
+        // PINNED READING (§SEAM B accounting): verified := selected.
+        // §SEAM B permits selected <= verified <= eligible; the alternative
+        // reading (verified := eligible, since every eligible candidate
+        // decomposes from verified group artifacts) is equally valid. Which
+        // reading governs T07/T15 reconciliation is a PRODUCT-OWNER decision,
+        // not an implementation choice — a silent change here must fail the
+        // pinning test loudly (reviewer round 1 F2).
         verified: selectedRefs.length, // verified-only: every selected source is verified
         exclusionReasonCategories: exclusions,
       },

@@ -271,8 +271,39 @@ describe('P1-T12 selection accounting completeness', () => {
     }
   });
 
-  test('default relevance floor is the natural non-negative boundary (no invented threshold)', () => {
-    assert.equal(DEFAULT_RELEVANCE_FLOOR, 0);
+  test('accounting.verified is PINNED to accounting.selected (verified := selected reading)', () => {
+    // Reviewer round 1 (F2): §SEAM B permits selected <= verified <= eligible;
+    // the alternative reading (verified := eligible) is a product-owner
+    // decision. This test pins the current reading so a silent semantic change
+    // fails loudly (see P1_T12_CONTRACT_EXTRACTION.md §5 DECISION_REQUIRED).
+    for (const g of artifact.corpus.groups) {
+      assert.equal(g.accounting.verified, g.accounting.selected, `${g.groupId}: verified must equal selected under the pinned reading`);
+    }
+    assert.equal(artifact.corpus.totals.verified, artifact.corpus.totals.selected);
+  });
+
+  test('default relevance floor is 0, pinned through observable behavior (not asserted against itself)', () => {
+    // DEFAULT_RELEVANCE_FLOOR = 0 means: relevance exactly 0 is KEPT, a small
+    // negative is floor-excluded, and an explicit lower floor admits it back.
+    // (A floor > 0 would drop the relevance-0 source; a floor < 0 would keep
+    // the negative one — this run shape is only produced by floor == 0.)
+    const m = buildManifest([manifestGroup('930001', { captured: 3 })]);
+    const prepared = prepare({
+      930001: sourcesWith('930001', [[1, 0.9, 0.5], [2, 0, 0.5], [3, -0.1, 0.5]]),
+    });
+    const run = (opts) => selectResearchCorpus({ manifest: m, ...prepared, options: opts });
+    const artifact = run({});
+    const g = group(artifact, '930001');
+    assert.deepEqual(
+      g.selectedSourceRefs.map((r) => r.canonicalSourceId),
+      ['930001-a-1', '930001-a-2'],
+      'relevance exactly 0 is kept under the default floor',
+    );
+    assert.equal(g.accounting.exclusionReasonCategories[EXCLUSION_BELOW_RELEVANCE_FLOOR], 1);
+    const lower = run({ relevanceFloor: -1 });
+    assert.equal(group(lower, '930001').selectedSourceRefs.length, 3, 'an explicit lower floor is a real tunable, not a hard rule');
+    // tie the constant to the behavior: explicit DEFAULT == implicit default
+    assert.equal(JSON.stringify(run({})), JSON.stringify(run({ relevanceFloor: DEFAULT_RELEVANCE_FLOOR })));
   });
 });
 
@@ -409,12 +440,21 @@ describe('P1-T12 MMR-optional semantics', () => {
     );
   });
 
-  test('novelty weight is an explicit provisional D-4 tunable, not a magic inline number', () => {
-    assert.equal(typeof DEFAULT_NOVELTY_WEIGHT, 'number');
-    assert.ok(DEFAULT_NOVELTY_WEIGHT > 0 && DEFAULT_NOVELTY_WEIGHT < 1);
-    assert.equal(typeof DEFAULT_MMR_LAMBDA, 'number');
-    assert.ok(DEFAULT_MMR_LAMBDA > 0 && DEFAULT_MMR_LAMBDA < 1);
-    assert.ok(DEFAULT_NEAR_DUPLICATE_SIMILARITY > 0 && DEFAULT_NEAR_DUPLICATE_SIMILARITY <= 1);
+  test('DEFAULT_NOVELTY_WEIGHT is pinned through ranking behavior (MMR lambda / nearDuplicate defaults already pinned by the explicit-defaults identity test above)', () => {
+    // Both sources sit below the relevance floor, so anti-starvation preserves
+    // rank-1 — and rank-1 depends on the novelty weight. With w = 0.25:
+    // a-1 scores -0.3 + 0.25*0.9 = -0.075 > a-2 (-0.25) → a-1 preserved.
+    // With w = 0 the ordering flips and a-2 is preserved instead.
+    const m = buildManifest([manifestGroup('930002', { captured: 2 })]);
+    const prepared = prepare({
+      930002: sourcesWith('930002', [[1, -0.3, 0.9], [2, -0.25, 0]]),
+    });
+    const run = (opts) => selectResearchCorpus({ manifest: m, ...prepared, options: opts });
+    // explicit DEFAULT_NOVELTY_WEIGHT is indistinguishable from the default
+    assert.equal(JSON.stringify(run({})), JSON.stringify(run({ noveltyWeight: DEFAULT_NOVELTY_WEIGHT })));
+    const preserved = (opts) => group(run(opts), '930002').selectedSourceRefs[0].canonicalSourceId;
+    assert.equal(preserved({}), '930002-a-1', 'default weight ranks the novelty-rich source first');
+    assert.equal(preserved({ noveltyWeight: 0 }), '930002-a-2', 'weight 0 flips the preservation ranking — the default is a real, load-bearing tunable');
   });
 });
 
@@ -466,10 +506,19 @@ describe('P1-T12 mode identity', () => {
   const { manifest, sourcesByGroup, denseSignals } = baseScenario();
   const artifact = selectResearchCorpus({ manifest, sourcesByGroup, denseSignals });
 
-  test('selector declares its own distinct mode identity', () => {
-    assert.equal(RCE_SELECTOR_MODE, 'rce-corpus-selection');
-    assert.notEqual(RCE_SELECTOR_MODE, 'top-percent-analysis');
-    assert.notEqual(RCE_SELECTOR_MODE, 'sampled');
+  test('selector accepts its own mode identity literal and rejects a near-miss foreign mode (mode identity pinned through behavior)', () => {
+    // The exact exported literal is accepted and a one-character near-miss is
+    // rejected — this pins RCE_SELECTOR_MODE's VALUE through observable
+    // behavior instead of asserting the constant against itself.
+    assert.doesNotThrow(() => selectResearchCorpus({
+      manifest, sourcesByGroup, denseSignals, options: { mode: 'rce-corpus-selection' },
+    }));
+    assertHasErrorCode(
+      () => selectResearchCorpus({
+        manifest, sourcesByGroup, denseSignals, options: { mode: 'rce-corpus-selector' },
+      }),
+      'SEAM_B_MODE_IDENTITY_CONFLICT',
+    );
   });
 
   test('output contains NO analyzed field anywhere (single writer = P1-T13)', () => {
@@ -619,6 +668,24 @@ describe('P1-T12 fail-closed semantics', () => {
     assertHasErrorCode(
       () => selectResearchCorpus({ manifest, sourcesByGroup: dup, denseSignals }),
       'RCE_INPUT_INVALID',
+    );
+  });
+
+  test('RCE_DUPLICATE_CANONICAL_SOURCE_ID: the same canonicalSourceId under two different groups fails closed', () => {
+    // denseSignals are keyed GLOBALLY by canonicalSourceId — a cross-group
+    // duplicate would silently share one dense signal (reviewer round 1 F1).
+    const shared = '900001-a-1';
+    const crossGroup = {
+      sourcesByGroup: {
+        900001: [{ canonicalSourceId: shared, contentHash: `sha256:${hex64('c1')}` }],
+        900002: [{ canonicalSourceId: shared, contentHash: `sha256:${hex64('c2')}` }],
+        900003: sourcesWith('900003', [[1, 0.6, 0.5]]),
+      },
+      denseSignals: { ...denseSignals, [shared]: signal(0.9, 0.5) },
+    };
+    assertHasErrorCode(
+      () => selectResearchCorpus({ manifest, ...crossGroup }),
+      'RCE_DUPLICATE_CANONICAL_SOURCE_ID',
     );
   });
 });
