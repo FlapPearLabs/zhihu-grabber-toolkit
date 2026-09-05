@@ -1,0 +1,25 @@
+{
+  "seam": "T09_TO_T12",
+  "seamVersion": 1,
+  "planHash": "5f1a2b3c4d5e6f708192a3b4c5d6e7f80112233445566778899aabbccddeeff0",
+  "verifiedGroupRefs": [
+    {
+      "groupId": "q-56789123",
+      "questionId": "56789123",
+      "verifiedArtifactRef": "runs/run-demo-001/groups/q-56789123/answers.json",
+      "contentHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "verifyAuthority": "verify-output",
+      "selectedSourceCount": 4,
+      "verifiedAt": "2026-09-01T08:00:00Z"
+    }
+  ],
+  "manifest": {
+    "manifestHash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "derivedFrom": ["verifiedGroupRefs", "selectorOutputRef"],
+    "selectorOutputRef": "runs/run-demo-001/selection/selection-decision.json",
+    "selectedGroupCount": 1,
+    "groupProvenance": [
+      { "groupId": "q-56789123", "providerId": "official-search", "capability": "searchQuestions" }
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "seam": "T12_TO_T13",
+  "seamVersion": 1,
+  "planHash": "5f1a2b3c4d5e6f708192a3b4c5d6e7f80112233445566778899aabbccddeeff0",
+  "selectedCorpusIdentity": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+  "corpus": {
+    "groups": [
+      {
+        "groupId": "q-23456789",
+        "selectedSourceRefs": [
+          { "canonicalSourceId": "q-23456789-a-101", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/q-23456789/answers.json" }
+        ],
+        "accounting": {
+          "eligible": 4,
+          "selected": 1,
+          "verified": 1,
+          "exclusionReasonCategories": {}
+        }
+      }
+    ],
+    "totals": {
+      "eligible": 4,
+      "selected": 1,
+      "verified": 1,
+      "exclusionReasonCategories": {}
+    }
+  }
+}

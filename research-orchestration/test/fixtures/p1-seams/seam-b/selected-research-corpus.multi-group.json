@@ -1,0 +1,57 @@
+{
+  "seam": "T12_TO_T13",
+  "seamVersion": 1,
+  "planHash": "5f1a2b3c4d5e6f708192a3b4c5d6e7f80112233445566778899aabbccddeeff0",
+  "selectedCorpusIdentity": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+  "corpus": {
+    "groups": [
+      {
+        "groupId": "q-23456789",
+        "selectedSourceRefs": [
+          { "canonicalSourceId": "q-23456789-a-101", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/q-23456789/answers.json" },
+          { "canonicalSourceId": "q-23456789-a-102", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/q-23456789/answers.json" },
+          { "canonicalSourceId": "q-23456789-a-103", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/q-23456789/answers.json" },
+          { "canonicalSourceId": "q-23456789-a-104", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/q-23456789/answers.json" },
+          { "canonicalSourceId": "q-23456789-a-105", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/q-23456789/answers.json" }
+        ],
+        "accounting": {
+          "eligible": 8,
+          "selected": 5,
+          "verified": 5,
+          "exclusionReasonCategories": { "belowRelevanceFloor": 2, "nearDuplicate": 1 }
+        }
+      },
+      {
+        "groupId": "q-34561234",
+        "selectedSourceRefs": [
+          { "canonicalSourceId": "q-34561234-a-201", "contentHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "verifiedArtifactRef": "runs/run-demo-001/groups/q-34561234/answers.json" },
+          { "canonicalSourceId": "q-34561234-a-202", "contentHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "verifiedArtifactRef": "runs/run-demo-001/groups/q-34561234/answers.json" }
+        ],
+        "accounting": {
+          "eligible": 2,
+          "selected": 2,
+          "verified": 2,
+          "exclusionReasonCategories": {}
+        }
+      },
+      {
+        "groupId": "q-45678123",
+        "selectedSourceRefs": [
+          { "canonicalSourceId": "q-45678123-a-301", "contentHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "verifiedArtifactRef": "runs/run-demo-001/groups/q-45678123/answers.json" }
+        ],
+        "accounting": {
+          "eligible": 3,
+          "selected": 1,
+          "verified": 1,
+          "exclusionReasonCategories": { "belowRelevanceFloor": 2 }
+        }
+      }
+    ],
+    "totals": {
+      "eligible": 13,
+      "selected": 8,
+      "verified": 8,
+      "exclusionReasonCategories": { "belowRelevanceFloor": 4, "nearDuplicate": 1 }
+    }
+  }
+}

@@ -289,6 +289,111 @@ Agent 与 LLM 系统非常容易为了未来扩展提前引入复杂 abstraction
 
 ---
 
+## D09 — ResearchCorpusManifest 是派生组合产物，不是第二 canonical store
+
+### 问题
+
+Multi-group composition 天然诱人"顺手"把各组回答内容复制进一份研究级 manifest：下游分析、
+渲染、resume 都会变得"方便"。但一旦 manifest 持有内容，它就会与各组 `answers.json` 漂移，
+"哪个才是事实"变成不可审计的问题。
+
+### 决策
+
+`ResearchCorpusManifest` 只从 valid `VerifiedGroupRefs[]` + selector output **确定性派生**，
+记录 selected source composition / group provenance / dependent hashes；canonical content
+永远留在各组 `answers.json`，verified 状态永远归 verifier / handoff authority。
+
+```text
+manifest = derived composition artifact
+canonical content = per-group answers.json
+verified status   = verify-output authority
+```
+
+### 为什么
+
+这是 D03（canonical 与 derived view 分离）在跨问题研究层的直接延伸：组合层一旦变成第二
+事实源，stale 传播、coverage 对账和 evidence lineage 全部失效。
+
+### 代价
+
+- manifest 必须可确定性重建并携带 dependent hashes；
+- 任何下游都不能从 manifest"抄近路"拿内容；
+- stale 组必须连带失效所有依赖它的 corpus/analysis artifact。
+
+### 演进
+
+来源：P1 Spec §6.1 / §11（no second canonical content store）；T09 Issue #41 验收项
+（manifest 非第二 canonical store）。
+
+---
+
+## D10 — Analyzed source-set identity 唯一写入者 = P1-T13
+
+### 问题
+
+Coverage 数字在多个 stage "顺手重算"是渐进腐蚀的开端：T14 聚合时算一遍、T15 集成时再算
+一遍，两套数字一旦不同，"100% Analysis Coverage"就失去可审计性。
+
+### 决策
+
+per-group mapped/analyzed source-set identity 与 controller-derived aggregate identity
+由 **P1-T13 唯一写入**（经 T07 hooks 进入 CoverageState）；T14 只消费 aggregate identity
+并在 synthesis 前执行机械 guard
+（`selected_verified_source_set_identity == mapped_analyzed_source_set_identity`，
+不等 → FAIL_CLOSED 且无 synthesis artifact）；T15 只做最终对账 / 比较 / 断言 / 披露，
+不重算、不第二写入。
+
+### 为什么
+
+"100% analysis assertion" 是产品合同（两集合机械相等才可断言）。多个写入者会让相等性
+变成口号；单一写入者 + 机械比较才让它成为可测试事实。
+
+### 代价
+
+- T13 必须让 aggregate identity 可机械导出；
+- T14/T15 的实现里禁止任何"看起来等价"的重算路径（有负向测试看守）；
+- 聚合前多了 guard 分支（不等即 fail closed，无部分产出）。
+
+### 演进
+
+来源：Ticket Graph V1 §B 所有权规则（R2 F-4 + R3 P2）；Issues #45/#46/#47 单一 owner、
+PRE-SYNTHESIS GUARD 与双保险条款。
+
+---
+
+## D11 — P1 跨模块数据流经 versioned observable seam contracts 沟通
+
+### 问题
+
+P1 管线 T09→T12→T13→T14→T15 的依赖边如果只表达"上游已 merge 才能开工"，下游实现就永远
+串行；而如果没有任何冻结的接口，"并行开工"又会退化成各写各的、集成时爆炸。
+
+### 决策
+
+下游模块对上游的依赖表达为 **versioned observable seam contract**（`P1_SEAM_CONTRACTS_V1`）
++ golden contract fixtures + contract tests：冻结的是模块间可观察产物（identity fields、
+invariants、fail-closed、ownership），不是私有函数名或内部实现。下游 ticket 在上游实现
+merge 之前，可以对着冻结 seam 的 fixtures 做 isolated implementation；真实集成仍按 DAG
+顺序串行执行并跑 producer-consumer contract tests。
+
+### 为什么
+
+单一 READY 语义把"合同已冻结"与"上游已集成"混为一谈，是 P1 并行度被阻塞的根因。seam
+contract 把两者拆开后，AGENTS.md §8 本就允许的跨分支并行施工才有安全落点。
+
+### 代价
+
+- 需要维护 seam 版本与 fixtures（上游产物演进必须走 seam amendment，不能静默改）；
+- 契约测试是一等公民，不是装饰；
+- 存在"fixture 与真实上游产物漂移"的风险，由集成期 producer-consumer gate 兜底。
+
+### 演进
+
+来源：P1 Workflow Reform（planning/p1-contract-driven-parallel-workflow）；与 D08 的
+"frozen decision 机械消费"一脉相承——seam contract 是它的跨模块形态。
+
+---
+
 ## 决策之间的关系
 
 这些决策并不是孤立规则：
@@ -309,6 +414,9 @@ thin orchestrator coordinates existing authorities
 runtime can stay replaceable
         ↓
 cross-question research can scale without losing truth boundaries
+        ↓
+manifest stays derived; analyzed identity has one writer;
+cross-module data flows through versioned seam contracts
 ```
 
 这也是 Zhihu Grabber Toolkit 从抓取脚本逐步演化为完整工具链的主线。
