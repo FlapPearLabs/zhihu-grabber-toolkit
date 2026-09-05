@@ -106,20 +106,21 @@ function contentLoader() {
 }
 
 /** Deterministic MOCK semantic runtime — parses the projection and emits
- *  token-referenced claims. Never touches network. Configurable to simulate
+ *  token-referenced claims referencing ONLY controller-issued tokens visible
+ *  in the projection. Never touches network. Configurable to simulate
  *  misbehaving models. */
 function mockRuntime(overrides = {}) {
   return {
     runtimeId: 'mock-deepseek-api-tool-less',
     analyze: async ({ projection }) => {
-      // The mock emits claims referencing ONLY controller-issued tokens that
-      // appear in the projection.
       assert.ok(typeof projection === 'string' && projection.length > 0);
+      const tokens = [...projection.matchAll(/\[BEGIN UNTRUSTED_DATA token=([A-Za-z0-9]+)/g)].map((m) => m[1]);
+      assert.ok(tokens.length > 0, 'mock runtime saw no issued tokens');
       const base = {
-        main: [{ tokenRef: '1', statement: '主流观点：该做法在多数场景下有效' }],
-        minority: [{ tokenRef: '3', statement: '少数派观点：特定条件下结论相反' }],
+        main: [{ tokenRef: tokens[0], statement: '主流观点：该做法在多数场景下有效' }],
+        minority: [{ tokenRef: tokens[tokens.length - 1], statement: '少数派观点：特定条件下结论相反' }],
         contradictory: [],
-        expertEvidenceRichTokens: ['2'],
+        expertEvidenceRichTokens: tokens.length > 1 ? [tokens[1]] : [tokens[0]],
       };
       return typeof overrides.apply === 'function' ? overrides.apply(base, { projection }) : base;
     },
@@ -129,6 +130,7 @@ function mockRuntime(overrides = {}) {
 function assertHasErrorCode(error, code) {
   assert.ok(error instanceof SeamCError, `expected SeamCError, got ${error?.constructor?.name}`);
   assert.equal(error.code, code, `expected code ${code}, got ${error.code}: ${error.message}`);
+  return true;
 }
 
 /* ======================= 1. SEAM B input validation ======================= */
@@ -188,7 +190,7 @@ describe('P1-T13 representation completeness (Spec §8.1, mechanically checkable
       assert.ok(['captured', 'verified', 'partial', 'failed'].includes(group.completenessStatus));
       assert.equal(typeof group.discussionVolume.answerCount, 'number');
     }
-    assert.ok(Array.isArray(artifact.aggregateAnalyzedIdentity.perGroup));
+    assert.ok(artifact.aggregateAnalyzedIdentity && typeof artifact.aggregateAnalyzedIdentity.perGroup === 'object');
     assert.ok('mappedAnalyzedSourceSetIdentity' in artifact.aggregateAnalyzedIdentity);
   });
 
