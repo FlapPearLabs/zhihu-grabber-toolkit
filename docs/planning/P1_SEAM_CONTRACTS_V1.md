@@ -339,7 +339,7 @@ OUTPUT = per-group research representations + claims
       "canonicalGroupIdentity": { "questionId": "<id>", "providerId": "<id>", "capability": "<id>" },
       "accounting": { "selected": <n>, "verified": <n>, "mapped": <n>, "analyzed": <n> },
       "claims": {
-        "main":         [ { "claimId": "<id>", "statement": "<text>", "sourceRefs": ["<canonicalSourceId>"] } ],
+        "main":         [ { "claimId": "<id>", "statement": "<text>", "sourceRefs": ["<canonicalSourceId>"], "authorRef": null | "author-<16hex>" } ],
         "minority":     [ /* 同上 */ ],
         "contradictory":[ /* 同上 */ ]
       },
@@ -393,6 +393,19 @@ representation 与 canonical 不冲突、claims lineage 可回溯。
 | representation 与 canonical 冲突 | `SEAM_C_REPRESENTATION_CONFLICT` |
 | claims 携带非 controller-owned identity | `SEAM_C_MODEL_OWNED_IDENTITY` |
 | 缺 aggregate identity / owner 标注 | `SEAM_C_IDENTITY_ARTIFACT_INCOMPLETE` |
+| semantic runtime 不可用（NO_SILENT_RUNTIME_FALLBACK） | `SEAM_C_RUNTIME_UNAVAILABLE` |
+| 单一来源读取失败（该组 fail closed） | `SEAM_C_SOURCE_FAILURE` |
+| runtime 输出违反 short-token 数据契约 | `SEAM_C_MODEL_OUTPUT_INVALID` |
+| canonical identity 泄漏进模型可见投影 | `SEAM_C_PROJECTION_ISOLATION_VIOLATION` |
+| analyzed 集合含组外 canonicalSourceId | `SEAM_C_ANALYZED_SET_FOREIGN_MEMBER` |
+| mapped 集合含组外 canonicalSourceId | `SEAM_C_MAPPED_SET_FOREIGN_MEMBER` |
+
+> **V1 修订（错误分类学加法扩展；ratified by product owner via P1 WAVE 01
+> integration gate, 2026-09-05）**：上表后六行为 T13 模块级 fail-closed 代码
+> （已实现并测试覆盖，`lib/per-group-claim-extraction.mjs` /
+> `lib/group-representation.mjs`），经 P1 WAVE 01 集成门批准升格为 V1 错误契约
+> 的一部分（T13-I2 / DECISION_REQUIRED D1 关闭）。本修订仅补记权威，不改变任何
+> identity / output 语义。
 
 ### OWNERSHIP
 

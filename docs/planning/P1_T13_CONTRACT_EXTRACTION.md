@@ -98,22 +98,32 @@ level (`updatePerGroupAnalysis` rejects non-T13 callers).
 
 ## 4. DECISION_REQUIRED (surfaced, not improvised)
 
-- **D1 (seam amendment)**: assign frozen seam codes for "runtime unavailable",
-  "single source failure", "model output shape violation", and "projection isolation
-  violation" — the frozen §SEAM C table covers only the four guard semantics; T13 must
-  fail closed for the first two per Issue #45 AC but has no frozen code to emit.
-  Reviewer round 1 additionally adds module-level `SEAM_C_ANALYZED_SET_FOREIGN_MEMBER`
-  (analyzed id outside the group's selected set in `buildGroupRepresentation`) to this
-  same pending-assignment list; reviewer round 2 adds `SEAM_C_MAPPED_SET_FOREIGN_MEMBER`
-  (mapped id outside the group's selected set in `buildGroupRepresentation` and in the
-  `applyAnalysisToCoverageState` hook write-through) to the same list.
-- **D2 (upstream gap)**: SEAM B carries no per-group provider provenance and no answer
-  count; §8.1 requires both (`canonicalGroupIdentity`, `discussionVolume`). Proposal:
-  T12 extends SEAM B (V1-compatible additive fields) or T13 keeps the injected
-  resolver + mechanical answerCount derivation (current implementation).
-- **D3 (T12/T13 integration)**: verify T12's real `canonicalSourceId` encoding remains
-  boundary-safe (CoverageState hook validation) and stable; the frozen fixture encoding
-  (`<questionId>-a-<n>`) is assumed representative until real artifacts exist.
+- **D1 (seam amendment) — RESOLVED (ratified by product owner via P1 WAVE 01
+  integration gate, 2026-09-05; T13-I2)**: the six module-level fail-closed codes
+  (`SEAM_C_RUNTIME_UNAVAILABLE`, `SEAM_C_SOURCE_FAILURE`, `SEAM_C_MODEL_OUTPUT_INVALID`,
+  `SEAM_C_PROJECTION_ISOLATION_VIOLATION`, `SEAM_C_ANALYZED_SET_FOREIGN_MEMBER`,
+  `SEAM_C_MAPPED_SET_FOREIGN_MEMBER`) are ratified into the frozen §SEAM C
+  FAIL_CLOSED table as an ADDITIVE V1 error-taxonomy amendment
+  (docs/planning/P1_SEAM_CONTRACTS_V1.md §SEAM C, dated note). Identity/output
+  semantics unchanged — documentation-of-authority only (codes were already
+  implemented + tested at reviewed T13).
+- **D2 (upstream gap) — RESOLVED (ratified by product owner via P1 WAVE 01
+  integration gate, 2026-09-05; T13-I1)**: SEAM B stays UNEXPANDED (no additive
+  provenance fields). The injectable `canonicalGroupIdentityResolver` mechanism
+  is retained and WIRED to the real controller-owned provenance authority via
+  `buildRealProvenanceResolver({ manifest, artifactsRoot })`
+  (lib/rce-provenance-adapter.mjs): questionId = manifest group questionId;
+  providerId = capture namespace from the answersRel prefix; capability =
+  handoff.json sourceType (task 'digest') read via group.handoffRel. Any
+  unresolvable component → fail closed (SEAM_C_REPRESENTATION_CONFLICT at the
+  resolver boundary); values are never invented.
+- **D3 (T12/T13 integration) — RESOLVED (verified via the real gate, 2026-09-05;
+  T13-I4)**: T12's real `canonicalSourceId` encoding (`asrc-<24hex>` scheme via
+  `deriveCanonicalSourceId`) is recomputed by the SEAM C real conformance gate
+  from the real capture: stable (deterministic recomputation), globally unique
+  across the real corpus, boundary-safe (repo boundary-safety helpers), and
+  contentHash-bound (recomputed per-entry hash equals the SEAM B artifact's
+  value). The frozen fixture encoding assumption is superseded by real evidence.
 
 ## 5. Test / evidence map (REQUIRED_TESTS → file)
 
