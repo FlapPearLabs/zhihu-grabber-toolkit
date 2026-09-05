@@ -117,8 +117,9 @@ function expectedCoverageState() {
 
 describe('P1-T14 aggregation semantics (Spec §8.2)', () => {
   test('cross-group aggregation keeps supporting/opposing sources with source/group/author dimensions (no support_count)', () => {
+    const artifact = seamCMultiGroup();
     const result = produceCrossSourceSynthesis({
-      seamCArtifact: seamCMultiGroup(),
+      seamCArtifact: artifact,
       runtime: defaultRuntime(),
     });
     assert.equal(result.ok, true, JSON.stringify(result));
@@ -126,12 +127,62 @@ describe('P1-T14 aggregation semantics (Spec §8.2)', () => {
     assert.ok(merged, 'merged aspect cluster must exist');
     const groupIds = new Set(merged.support.map((s) => s.groupId));
     assert.ok(groupIds.size >= 2, `support must span groups, got ${JSON.stringify(merged.support)}`);
+    // author dimension = the SEAM C claim's controller-owned authorRef carrier
+    // (ratified 2026-09-05), consumed VERBATIM — nullable (author-unknown),
+    // never a derived source-token.
+    const fixtureAuthorRefs = new Set(
+      artifact.groupRepresentations.flatMap((g) => ['main', 'minority', 'contradictory'].flatMap((k) => g.claims[k].map((c) => c.authorRef))),
+    );
     for (const side of [...merged.support, ...merged.oppose]) {
       assert.equal(typeof side.sourceRef, 'string');
       assert.equal(typeof side.groupId, 'string');
-      assert.equal(typeof side.authorRef, 'string');
+      assert.ok(side.authorRef === null || typeof side.authorRef === 'string', `authorRef must be null or the consumed carrier, got ${JSON.stringify(side.authorRef)}`);
+      if (side.authorRef !== null) {
+        assert.ok(fixtureAuthorRefs.has(side.authorRef), `authorRef ${side.authorRef} must be a SEAM C claim carrier value (verbatim consumption)`);
+      }
     }
     assert.ok(!Object.prototype.hasOwnProperty.call(merged, 'support_count'), 'support_count-only aggregation forbidden');
+  });
+
+  test('authorRef is consumed verbatim per sourceRef; a null SEAM C carrier stays null (author-unknown disclosed, never fabricated)', () => {
+    const artifact = seamCMultiGroup();
+    // per-group sourceRef → authorRef authority exactly as the SEAM C carrier states it
+    const authorRefBySourceRef = new Map();
+    for (const group of artifact.groupRepresentations) {
+      for (const kind of ['main', 'minority', 'contradictory']) {
+        for (const claim of group.claims[kind]) {
+          for (const ref of claim.sourceRefs) authorRefBySourceRef.set(ref, claim.authorRef ?? null);
+        }
+      }
+    }
+    const ok = produceCrossSourceSynthesis({ seamCArtifact: artifact, runtime: defaultRuntime() });
+    assert.equal(ok.ok, true);
+    for (const synthClaim of ok.artifact.synthesis.claims) {
+      for (const side of [...synthClaim.support, ...synthClaim.oppose]) {
+        assert.equal(side.authorRef, authorRefBySourceRef.get(side.sourceRef),
+          `${side.sourceRef}: entry authorRef must equal the SEAM C claim carrier value verbatim`);
+      }
+    }
+
+    // null carrier → null entry, no derivation: the old source-token scheme
+    // (`author-` + sha256(sourceRef)[:12]) must NOT reappear for unresolvable
+    // authors — the aggregation output discloses author-unknown as null.
+    const broken = seamCMultiGroup();
+    broken.groupRepresentations[0].claims.main[0].authorRef = null;
+    const r = produceCrossSourceSynthesis({ seamCArtifact: broken, runtime: defaultRuntime() });
+    assert.equal(r.ok, true);
+    const deAuthoredRef = broken.groupRepresentations[0].claims.main[0].sourceRefs[0];
+    const nullEntries = r.artifact.synthesis.claims
+      .flatMap((c) => [...c.support, ...c.oppose])
+      .filter((s) => s.sourceRef === deAuthoredRef);
+    assert.ok(nullEntries.length > 0, 'the de-authored sourceRef must appear in some entry');
+    for (const side of nullEntries) {
+      assert.equal(side.authorRef, null, 'null carrier → null authorRef (disclosed author-unknown)');
+    }
+    for (const side of r.artifact.synthesis.claims.flatMap((c) => [...c.support, ...c.oppose])) {
+      assert.ok(side.authorRef === null || /^author-[0-9a-f]{16}$/.test(side.authorRef),
+        `no fabricated token scheme allowed, got ${side.authorRef}`);
+    }
   });
 
   test('expert/evidence-rich support flag is derived from SEAM C expertEvidenceRichRefs', () => {

@@ -48,25 +48,17 @@ function canonicalJson(value) {
 }
 
 /**
- * Deterministic author dimension (§8.2 keeps authors).
+ * One structured reference entry (§8.2 dimension triple).
  *
- * DECISION_REQUIRED: SEAM C V1 does not carry author identity (the §8.1 shape
- * has no author field), so T14 derives a stable, non-reversible pseudo author
- * token from the controller-owned canonicalSourceId. When upstream authority
- * adds author identity to SEAM C (additive = V1-compatible), this derivation is
- * replaced by the consumed field — never by a model-owned value.
+ * Author dimension (ratified P1 WAVE 01 integration gate, 2026-09-05):
+ * the authorRef is the claim's CONTROLLER-OWNED carrier value consumed
+ * VERBATIM from the SEAM C input (single writer = P1-T13; the model never
+ * creates it). null = author identity unresolvable upstream → the entry
+ * discloses author-unknown as null. No derivation, no fabrication: a
+ * source-token pseudo author is never minted here.
  */
-export function deriveAuthorRef(sourceRef) {
-  // CONSUMER WARNING (DECISION_REQUIRED #1): this is a derived source-token,
-  // NOT a real author identity — SEAM D consumers must not read it as an
-  // author signal until the SEAM C author carrier is adjudicated.
-  const digest = crypto.createHash('sha256').update(canonicalJson(sourceRef), 'utf8').digest('hex');
-  return `author-${digest.slice(0, 12)}`;
-}
-
-/** One structured reference entry (§8.2 dimension triple). */
-function toSideEntry(sourceRef, groupId) {
-  return { sourceRef, groupId, authorRef: deriveAuthorRef(sourceRef) };
+function toSideEntry(sourceRef, groupId, authorRef) {
+  return { sourceRef, groupId, authorRef: authorRef ?? null };
 }
 
 /**
@@ -81,21 +73,33 @@ export function aggregateCrossGroupClaims(seamCArtifact) {
     const expertRefs = new Set(group.expertEvidenceRichRefs);
     const mainSources = new Set(group.claims.main.flatMap((c) => c.sourceRefs));
 
+    // Author carrier map (controller-owned): every sourceRef cited in this
+    // group resolves to the SEAM C claim's authorRef, consumed verbatim.
+    const authorRefBySourceRef = new Map();
     for (const kind of ['main', 'minority', 'contradictory']) {
       for (const claim of group.claims[kind]) {
-        const support = claim.sourceRefs.map((ref) => toSideEntry(ref, group.groupId));
+        for (const ref of claim.sourceRefs) {
+          if (!authorRefBySourceRef.has(ref)) authorRefBySourceRef.set(ref, claim.authorRef ?? null);
+        }
+      }
+    }
+    const authorRefOf = (ref) => authorRefBySourceRef.get(ref) ?? null;
+
+    for (const kind of ['main', 'minority', 'contradictory']) {
+      for (const claim of group.claims[kind]) {
+        const support = claim.sourceRefs.map((ref) => toSideEntry(ref, group.groupId, claim.authorRef));
         const oppose = [];
         if (kind === 'main') {
           // in-group contradictory claims oppose this group's main claims
           for (const contra of group.claims.contradictory) {
             for (const ref of contra.sourceRefs) {
-              if (!mainSources.has(ref)) oppose.push(toSideEntry(ref, group.groupId));
+              if (!mainSources.has(ref)) oppose.push(toSideEntry(ref, group.groupId, contra.authorRef));
             }
           }
         } else if (kind === 'contradictory') {
           // this group's main claims oppose the contradictory claim
           for (const ref of mainSources) {
-            oppose.push(toSideEntry(ref, group.groupId));
+            oppose.push(toSideEntry(ref, group.groupId, authorRefOf(ref)));
           }
         }
         records.push({
