@@ -281,18 +281,38 @@ describe('P1-T12 selection accounting completeness', () => {
 // ---------------------------------------------------------------------------
 
 describe('P1-T12 popularity anchor is non-authoritative', () => {
-  test('a high-answerCount low-relevance source never outranks a low-answerCount high-relevance source', () => {
+  test('a high-answerCount low-relevance source never gains selection advantage from popularity', () => {
+    // both sources stay selected (no cap), so popularity must have ZERO effect:
+    // placing the huge answer count on either source yields identical output.
     const m = buildManifest([manifestGroup('910001', { captured: 2 })]);
+    const mk = (popOnFirst) => {
+      const prepared = prepare({
+        910001: [
+          { ...source('910001', 1, { relevance: 0.2, answerCount: popOnFirst ? 100000 : 1 }), __signal: signal(0.2, 0.5) },
+          { ...source('910001', 2, { relevance: 0.9, answerCount: popOnFirst ? 1 : 100000 }), __signal: signal(0.9, 0.5) },
+        ],
+      });
+      return selectResearchCorpus({ manifest: m, ...prepared });
+    };
+    const a = mk(true);
+    const b = mk(false);
+    assert.equal(JSON.stringify(a), JSON.stringify(b), 'answer count placement must not change the artifact');
+    assert.equal(group(a, '910001').selectedSourceRefs.length, 2);
+  });
+
+  test('popularity never rescues a source from relevance-based preservation ranking', () => {
+    // all sources below the floor: preservation keeps the highest-RELEVANCE
+    // source, even if another source carries an enormous answer count.
+    const m = buildManifest([manifestGroup('910002', { captured: 2 })]);
     const prepared = prepare({
-      910001: [
-        { ...source('910001', 1, { relevance: 0.2, answerCount: 100000 }), __signal: signal(0.2, 0.5) },
-        { ...source('910001', 2, { relevance: 0.9, answerCount: 1 }), __signal: signal(0.9, 0.5) },
+      910002: [
+        { ...source('910002', 1, { relevance: -0.1, answerCount: 1000000 }), __signal: signal(-0.1, 0.5) },
+        { ...source('910002', 2, { relevance: -0.05, answerCount: 1 }), __signal: signal(-0.05, 0.5) },
       ],
     });
     const artifact = selectResearchCorpus({ manifest: m, ...prepared });
-    const refs = group(artifact, '910001').selectedSourceRefs.map((r) => r.canonicalSourceId);
-    assert.equal(refs[0], '910001-a-2', 'relevance leads; popularity is only a soft anchor');
-    assert.deepEqual(refs, ['910001-a-2', '910001-a-1']);
+    const kept = group(artifact, '910002').selectedSourceRefs.map((r) => r.canonicalSourceId);
+    assert.deepEqual(kept, ['910002-a-2'], 'relevance ranks the preserved source; answer count is not a truth weight');
   });
 
   test('mutating answerCount metadata never changes the selection or the corpus identity', () => {
@@ -617,7 +637,7 @@ describe('P1-T12 SEAM B output shape', () => {
     assert.equal(artifact.planHash, manifest.planHash);
     assert.match(artifact.selectedCorpusIdentity, /^sha256:[0-9a-f]{64}$/);
     assert.deepEqual(Object.keys(artifact).sort(), [
-      'corpus', 'planHash', 'selectedCorpusIdentity', 'seam', 'seamVersion',
+      'corpus', 'planHash', 'seam', 'seamVersion', 'selectedCorpusIdentity',
     ]);
   });
 
