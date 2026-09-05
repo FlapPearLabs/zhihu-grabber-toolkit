@@ -12,14 +12,13 @@ UPSTREAM_SEAM       = T13_TO_T14_V1
 CONTRACT_FIXTURE    = research-orchestration/test/fixtures/p1-seams/seam-c/
                       (group-representations.multi-group.json — golden input;
                        invalid.guard-mismatch.json — guard-negative input state)
-INTEGRATION_STATUS  = NOT_YET_REAL_UPSTREAM
-                      (upstream T13 implements in parallel; this ticket was
-                      developed against the FROZEN SEAM C fixtures only, never
-                      against T13 code. Per §G binding, the max reachable state
-                      is IMPLEMENTATION_REVIEWED; INTEGRATION_ACCEPTED requires
-                      the real T13 producer to pass the frozen SEAM C validator
-                      (TYPE_B, DEFERRED_UNTIL_T13_EXISTS) plus guard truth on
-                      both branches.)
+INTEGRATION_STATUS  = REAL_UPSTREAM_INTEGRATED (P1 WAVE 01 integration train,
+                      2026-09-05): reviewed T13 is the real upstream; the real
+                      SEAM C artifact (work/p1-wave-01-integration/seam-c-real.json,
+                      from the real T09 dogfood capture) passes the frozen
+                      amended validator and the TYPE_B SEAM D real conformance
+                      gate. DECISION_REQUIRED items below resolved per the PO
+                      verdict of the same train.
 OUTPUT_SEAM         = T14_TO_T15_V1 (SEAM D)
 FROZEN_VALIDATOR    = research-orchestration/test/helpers/p1-seam-contracts.mjs
                       (READ-ONLY; module output is re-validated against
@@ -91,7 +90,7 @@ Runtime injection / safety precedents (read, not modified):
 4. Aspect labels come from the INJECTED runtime (Spec §5.2 semantic duty); the runtime returns ONLY a validated partition over controller-owned claimIds — unknown claimIds / duplicates / incomplete coverage / unsafe aspect strings → `T14_RUNTIME_OUTPUT_INVALID` fail-closed. The runtime never owns identity (key-decisions D02).
 5. Runtime pin: exact-match `deepseek-api-tool-less` + `deepseek-v4-flash` + callable (planner.mjs:128 discipline); anything else → `T14_RUNTIME_UNAVAILABLE`, no fallback.
 6. Degradation gate: any SEAM C group with completenessStatus ∈ {captured, partial, failed} → `T14_DEGRADED_REPRESENTATION` fail-closed (§10.2 NO_SEMANTIC_DOWNGRADE; §8.1 vocabulary).
-7. authorRef derivation: SEAM C V1 carries NO author identity while §8.2 requires the authors dimension → deterministic controller-derived token `author-<sha256(sourceRef)[:12]>` (never model-owned). Additive upstream fix tracked below as DECISION_REQUIRED.
+7. authorRef consumption (RATIFIED, P1 WAVE 01 integration gate 2026-09-05): every SEAM C claim carries the controller-owned `authorRef` carrier (single writer = P1-T13; nullable = unresolvable author, disclosed). T14 consumes the carrier VERBATIM into the §8.2 author dimension — support/oppose entries take the claim's authorRef (or null, disclosing author-unknown). The former derived source-token fallback `author-<sha256(sourceRef)[:12]>` was REMOVED from the integrated path entirely; no derivation, no fabrication.
 8. Diagnostics definitions (Spec §9.4 freezes the KEYS, not the formulas; formulas are explicit here, not silently invented): new_aspect_rate/new_claim_rate vs optional priorSynthesis baseline (absent prior → all new); new_expert_rate = expert-backed claims share; new_contradiction_rate = `conflicting` share; claim_source_diversity = distinct sourceRefs / total reference slots.
 9. Claim lineage: synthesis claims carry additive `sourceClaimIds` (V1-compatible extra field) + deterministic controller-derived `claimId` = `syn-<sha256(sorted claimIds)[:12]>`; every support/oppose entry is group-scoped to its SEAM C group's canonicalSourceIds.
 10. categoryEnum is NOT embedded in the artifact (R1-F5): the frozen §8.3 vocabulary lives in the validator (static authority); the module's local CLAIM_CATEGORIES mirror is for assignment only.
@@ -104,9 +103,29 @@ Runtime injection / safety precedents (read, not modified):
 
 ## DECISION_REQUIRED (surfaced, not silently resolved)
 
-1. AUTHOR_IDENTITY_CARRIER_MISSING — §8.2 requires the authors dimension but SEAM C V1 has no author field. Current handling: deterministic pseudo authorRef (see decision 7). Needs upstream authority (T13 SEAM C additive field, or T12 canonicalSourceId encoding) to carry real author identity. CONSUMER WARNING: until this is adjudicated, SEAM D consumers (T15/disclosure) must treat `authorRef` as a derived source-token (`sha256(sourceRef)[:12]`), NOT an author signal.
-2. CATEGORY_ASSIGNMENT_AUTHORITY — Spec §8.3 freezes the category vocabulary, not the assignment algorithm; the mechanical precedence in decision 3 is an implementation validation bound needing reviewer/spec-owner confirmation (no thresholds were invented).
-3. PRIOR_SYNTHESIS_BASELINE_UNMODELED — new_aspect_rate/new_claim_rate need a "previous synthesis" baseline; no frozen upstream carrier for that baseline exists in P1. Absent prior ⇒ everything counts as new (honest, disclosed). If a durable baseline is required, it is a new seam/field decision above T14's authority.
+ALL ITEMS RESOLVED by the P1 WAVE 01 integration-train PO verdict (2026-09-05):
+
+1. AUTHOR_IDENTITY_CARRIER_MISSING — RESOLVED: the real authorRef carrier is
+   integrated from T13 (additive SEAM C V1 amendment, REQUIRED-but-NULLABLE on
+   every claim); the source-token fallback derivation was removed from the
+   integrated aggregation path (T14-I1). The former CONSUMER WARNING is void:
+   `authorRef` on SEAM D entries IS the real author signal (or null =
+   author-unknown, disclosed).
+2. CATEGORY_ASSIGNMENT_AUTHORITY — RESOLVED (ratified, no tuning): the V1
+   deterministic structural precedence `conflicting > minority >
+   widely-shared > group-specific` is confirmed as-is; no numerical truth
+   weights, no answer-count weighting (pinned end-to-end in the T14 suite).
+3. PRIOR_SYNTHESIS_BASELINE_UNMODELED — RESOLVED (first-run baseline
+   ratified): no prior synthesis ⇒ first run — everything observed counts as
+   new, so the prior-baseline novelty rates (new_aspect_rate / new_claim_rate)
+   are 1; no prior is invented and no second diagnostics store exists (the
+   frozen T07 hook updateSynthesisDiagnostics remains the single write path).
+   new_expert_rate / new_contradiction_rate remain the structural shares
+   documented in decision 8 (they are not prior-relative).
+4. EMPTY_VERIFIED_INPUT — RESOLVED (ratified, round 1): a structurally-valid
+   SEAM C input with ZERO verified claims fails closed
+   `T14_EMPTY_VERIFIED_INPUT` (decision 12); ratified unchanged by the same
+   PO verdict — empty saturation never masquerades as a conclusion.
 
 ## STOP conditions encountered
 

@@ -185,6 +185,37 @@ describe('P1-T14 aggregation semantics (Spec §8.2)', () => {
     }
   });
 
+  test('category precedence ratified end-to-end: conflicting > minority > widely-shared (deterministic structure, no weights)', () => {
+    // PO ratification (P1 WAVE 01 integration train, 2026-09-05): the V1
+    // mechanical precedence is frozen as-is. This test pins the two contested
+    // precedence edges that the per-branch tests above do not.
+    const artifact = seamCMultiGroup();
+    // a second-group minority claim so an all-minority cluster can span 2 groups
+    artifact.groupRepresentations[1].claims.minority.push({
+      claimId: 'c-34561234-002',
+      statement: '第二组的少数派观点',
+      sourceRefs: ['34561234-a-101'],
+      authorRef: 'author-8f116bfe5d0e9a4a',
+    });
+    const runtime = createMockRuntime({
+      aspectByClaimId: {
+        'c-23456789-003': '冲突优先簇', // contradictory
+        'c-34561234-002': '冲突优先簇', // minority  → conflicting must WIN over minority
+        'c-23456789-002': '少数派跨组簇', // minority
+        'c-34561234-002': '少数派跨组簇', // minority → all-minority cluster spanning 2 groups:
+                                          //   minority must WIN over widely-shared
+        'c-34561234-001': '跨组主流簇', // main
+        'c-23456789-001': '跨组主流簇', // main × 2 groups → widely-shared
+      },
+    });
+    const result = produceCrossSourceSynthesis({ seamCArtifact: artifact, runtime });
+    assert.equal(result.ok, true, JSON.stringify(result));
+    const byAspect = new Map(result.artifact.synthesis.claims.map((c) => [c.aspect, c]));
+    assert.equal(byAspect.get('冲突优先簇').category, 'conflicting', 'conflicting > minority');
+    assert.equal(byAspect.get('少数派跨组簇').category, 'minority', 'minority > widely-shared (support spans 2 groups yet stays minority)');
+    assert.equal(byAspect.get('跨组主流簇').category, 'widely-shared');
+  });
+
   test('expert/evidence-rich support flag is derived from SEAM C expertEvidenceRichRefs', () => {
     const result = produceCrossSourceSynthesis({
       seamCArtifact: seamCMultiGroup(),
@@ -565,6 +596,39 @@ describe('P1-T14 diagnostics — written ONLY through the frozen T07 hook (exact
       Object.keys(result.artifact.diagnostics).sort(),
       ['claim_source_diversity', 'new_aspect_rate', 'new_claim_rate', 'new_contradiction_rate', 'new_expert_rate'],
     );
+  });
+
+  test('first-run diagnostics: no prior synthesis → prior-baseline novelty rates are 1 (fresh coverage state via the frozen hook)', () => {
+    // I3 ratification (P1 WAVE 01 integration train, 2026-09-05): the first
+    // run has NO prior synthesis — no prior is ever invented, no second
+    // diagnostics store exists; the baseline is disclosed by the rates
+    // themselves. Prior-baseline novelty rates are therefore 1. The
+    // expert/contradiction keys are structural shares per the documented
+    // formulas (P1_T14_CONTRACT_EXTRACTION.md decision 8), not prior-relative.
+    const state = expectedCoverageState(); // fresh state, no prior synthesis diagnostics
+    const result = produceCrossSourceSynthesis({
+      seamCArtifact: seamCMultiGroup(),
+      runtime: defaultRuntime(),
+      coverageState: state,
+      // priorSynthesis deliberately omitted → everything counts as new
+    });
+    assert.equal(result.ok, true, JSON.stringify(result));
+    // exactly the real five-key contract
+    assert.deepEqual(
+      Object.keys(result.artifact.diagnostics).sort(),
+      ['claim_source_diversity', 'new_aspect_rate', 'new_claim_rate', 'new_contradiction_rate', 'new_expert_rate'],
+    );
+    assert.equal(result.artifact.diagnostics.new_aspect_rate, 1, 'first run: every aspect is new');
+    assert.equal(result.artifact.diagnostics.new_claim_rate, 1, 'first run: every claim is new');
+    // written through the FROZEN T07 hook into the coverage state (no second store)
+    assert.equal(result.coverageState.diagnostics.new_aspect_rate, 1);
+    assert.equal(result.coverageState.diagnostics.new_claim_rate, 1);
+    // structural shares, honest recomputation (documented formulas, not prior-relative)
+    const claims = result.artifact.synthesis.claims;
+    assert.equal(result.artifact.diagnostics.new_expert_rate,
+      claims.filter((c) => c.expertEvidenceRichSupport).length / claims.length);
+    assert.equal(result.artifact.diagnostics.new_contradiction_rate,
+      claims.filter((c) => c.category === 'conflicting').length / claims.length);
   });
 
   test('diagnostics values are honest recomputations from the synthesis (expert/contradiction rates)', () => {
