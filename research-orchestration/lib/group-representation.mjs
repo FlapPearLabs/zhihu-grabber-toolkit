@@ -32,6 +32,16 @@
  *   SEAM_C_ANALYZED_SET_FOREIGN_MEMBER analyzed set contains an id outside the group's
  *                                      controller-owned selectedSourceRefs (P1-T13 reviewer
  *                                      round 1; already listed under DECISION_REQUIRED D1)
+ *   SEAM_C_MAPPED_SET_FOREIGN_MEMBER   mapped set contains an id outside the group's
+ *                                      controller-owned selectedSourceRefs (P1-T13 reviewer
+ *                                      round 2; already listed under DECISION_REQUIRED D1)
+ *
+ * Identity-safety boundary (reviewer round 2): groupIds that collide with
+ * Object.prototype plumbing ("__proto__", "constructor", "hasOwnProperty") are
+ * REJECTED at SEAM B validation (fail closed, coded) — never silently dropped
+ * by plain-object map assignment (which would enable guard-echo forgery via a
+ * group missing from the per-group maps). Internal groupId-keyed identity maps
+ * additionally use null-prototype objects as defense in depth.
  *
  * Identity family rule: every emitted "sha256:<64hex>" value is the SAME
  * identity encoding family as SEAM B selectedCorpusIdentity — Issue #46's
@@ -53,6 +63,18 @@ export const SEAM_C_IDENTITY_ARTIFACT_INCOMPLETE = 'SEAM_C_IDENTITY_ARTIFACT_INC
 export const SEAM_C_RUNTIME_UNAVAILABLE = 'SEAM_C_RUNTIME_UNAVAILABLE';
 /** Module-level fail-closed code (analyzed set membership; listed under DECISION_REQUIRED D1). */
 export const SEAM_C_ANALYZED_SET_FOREIGN_MEMBER = 'SEAM_C_ANALYZED_SET_FOREIGN_MEMBER';
+/** Module-level fail-closed code (mapped set membership; listed under DECISION_REQUIRED D1). */
+export const SEAM_C_MAPPED_SET_FOREIGN_MEMBER = 'SEAM_C_MAPPED_SET_FOREIGN_MEMBER';
+
+/**
+ * Reserved dangerous groupIds (reviewer round 2 identity-safety boundary).
+ * These keys collide with Object.prototype plumbing: assigning them into a
+ * plain-object map either silently drops the entry ("__proto__") or reaches
+ * inherited machinery ("constructor"/"hasOwnProperty"), enabling a group to
+ * vanish from per-group identity maps while the aggregate echo branch still
+ * fires (guard-echo forgery). Rejected fail closed at SEAM B validation.
+ */
+export const RESERVED_GROUP_IDS = Object.freeze(['__proto__', 'constructor', 'hasOwnProperty']);
 
 /** §9.2 frozen completeness vocabulary (Spec §9.2; validator COMPLETENESS_STATUSES). */
 export const COMPLETENESS_STATUSES = Object.freeze(['captured', 'verified', 'partial', 'failed']);
@@ -152,6 +174,9 @@ export function validateSeamBCorpusArtifact(artifact) {
   for (const group of corpus.groups) {
     const p = `groups[${group?.groupId ?? '?'}]`;
     if (!isNonEmptyString(group.groupId)) conflict(`${p}: groupId required`);
+    if (RESERVED_GROUP_IDS.includes(group.groupId)) {
+      conflict(`${p}: groupId '${group.groupId}' is a reserved dangerous key (prototype-pollution identity-safety boundary) — fail closed, never silently dropped`);
+    }
     if (!isPlainObject(group.accounting)) conflict(`${p}: accounting required`);
     if ('analyzed' in group.accounting) {
       conflict(`${p}: analyzed accounting is owned by P1-T13 (single writer) — SEAM B input must not carry it`);
@@ -223,7 +248,11 @@ export function deriveAggregateAnalyzedIdentity({ selectedCorpusIdentity, perGro
   if (fullCoverage) {
     return selectedCorpusIdentity;
   }
-  const partial = {};
+  // Null-prototype map (identity-safety, reviewer round 2): a caller-supplied
+  // map may carry an own "__proto__" key (e.g. via JSON.parse); assigning that
+  // key into a plain object would silently drop the group from the partial
+  // encoding. Defense in depth on top of the SEAM B validator rejection.
+  const partial = Object.create(null);
   for (const gid of groupIds) {
     partial[gid] = sortedUniqueIds(perGroupAnalyzed[gid] ?? []);
   }
@@ -289,8 +318,10 @@ export function buildGroupRepresentation({
   }
   const selected = corpusGroup.selectedSourceRefs.map((r) => r.canonicalSourceId);
   const verified = corpusGroup.accounting.verified;
-  const mappedCount = sortedUniqueIds(mappedSourceIds).length;
-  const analyzedCount = sortedUniqueIds(analyzedSourceIds).length;
+  const mappedSorted = sortedUniqueIds(mappedSourceIds);
+  const analyzedSorted = sortedUniqueIds(analyzedSourceIds);
+  const mappedCount = mappedSorted.length;
+  const analyzedCount = analyzedSorted.length;
   if (analyzedCount > verified || verified > selected.length) {
     throw new SeamCError(
       SEAM_C_REPRESENTATION_CONFLICT,
@@ -299,10 +330,22 @@ export function buildGroupRepresentation({
     );
   }
   const canonicalIds = new Set(selected);
+  // Mapped-set membership (reviewer round 2): mirror of the analyzed check —
+  // the mapped set must be a SUBSET of the group's controller-owned
+  // selectedSourceRefs; count checks alone would admit all-foreign mapped sets.
+  for (const id of mappedSorted) {
+    if (!canonicalIds.has(id)) {
+      throw new SeamCError(
+        SEAM_C_MAPPED_SET_FOREIGN_MEMBER,
+        `group ${corpusGroup.groupId}: mapped source ${id} is not a controller-owned canonicalSourceId of this group`,
+        { details: { groupId: corpusGroup.groupId, foreignId: id } },
+      );
+    }
+  }
   // Analyzed-set membership (reviewer round 1): the analyzed set must be a
   // SUBSET of the group's controller-owned selectedSourceRefs. Count checks
   // alone would admit a count-compliant representation containing foreign ids.
-  for (const id of sortedUniqueIds(analyzedSourceIds)) {
+  for (const id of analyzedSorted) {
     if (!canonicalIds.has(id)) {
       throw new SeamCError(
         SEAM_C_ANALYZED_SET_FOREIGN_MEMBER,
@@ -368,7 +411,13 @@ export function assembleSeamCArtifact({
     throw new SeamCError(SEAM_C_IDENTITY_ARTIFACT_INCOMPLETE, 'assembleSeamCArtifact: perGroupAnalyzedSourceIds map required (identity artifact incomplete)');
   }
 
-  const perGroupSelected = {};
+  // Null-prototype map (identity-safety, reviewer round 2): a groupId of
+  // "__proto__" must NEVER be silently dropped by plain-object assignment —
+  // that omission is what enabled the guard-echo forgery (a group vanishing
+  // from the per-group maps while the echo branch still fired). The SEAM B
+  // validator above already rejects reserved groupIds; this is defense in
+  // depth for direct callers of the derivation internals.
+  const perGroupSelected = Object.create(null);
   for (const group of corpus.corpus.groups) {
     perGroupSelected[group.groupId] = group.selectedSourceRefs.map((r) => r.canonicalSourceId);
   }
@@ -435,13 +484,29 @@ export function assembleSeamCArtifact({
     }
   }
 
+  // Artifact seal (reviewer round 2): the assembled artifact is a DEEP COPY of
+  // the caller's representations. The former shallow spread shared the `claims`
+  // arrays with the caller's objects, so post-assembly mutation could inject or
+  // remove claims inside the "sealed" artifact. Non-plain-data representations
+  // fail closed with a coded error (never an uncoded DataCloneError).
+  let sealedRepresentations;
+  try {
+    sealedRepresentations = structuredClone(groupRepresentations);
+  } catch (error) {
+    throw new SeamCError(
+      SEAM_C_REPRESENTATION_CONFLICT,
+      'assembleSeamCArtifact: group representations must be plain cloneable data (artifact seal requires a deep copy)',
+      { details: { cause: String(error && error.message ? error.message : error) } },
+    );
+  }
+
   // READ-ONLY echo: the input identity value is copied verbatim, never recomputed.
   return {
     seam: SEAM_C_SEAM,
     seamVersion: SEAM_C_SEAM_VERSION,
     planHash,
     selectedCorpusIdentityRef: corpus.selectedCorpusIdentity,
-    groupRepresentations: groupRepresentations.map((rep) => ({ ...rep })),
+    groupRepresentations: sealedRepresentations,
     aggregateAnalyzedIdentity: { mappedAnalyzedSourceSetIdentity, perGroup },
   };
 }

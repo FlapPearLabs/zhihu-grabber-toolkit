@@ -39,6 +39,8 @@ import {
   SEAM_C_REPRESENTATION_CONFLICT,
   SEAM_C_MODEL_OWNED_IDENTITY,
   SEAM_C_RUNTIME_UNAVAILABLE,
+  SEAM_C_ANALYZED_SET_FOREIGN_MEMBER,
+  SEAM_C_MAPPED_SET_FOREIGN_MEMBER,
   validateSeamBCorpusArtifact,
   buildGroupRepresentation,
   assembleSeamCArtifact,
@@ -358,10 +360,47 @@ export async function runPerGroupAnalysis({
  * hook updatePerGroupAnalysis with caller OWNER_T13_ANALYSIS. This function
  * never touches other hooks and never asserts is100PercentAnalysis (T15 owns
  * that assertion per §9.3).
+ *
+ * Membership cross-check (reviewer round 2): every id written through the hook
+ * is verified ⊆ the canonical corpus's selected set for that group BEFORE the
+ * hook is invoked — foreign ids fail closed with a coded error and the hook is
+ * never called (T15 would refuse the resulting 100% claim; the guard belongs
+ * at the source).
  */
 export function applyAnalysisToCoverageState(coverageState, { corpus, groupResults }) {
   if (!Array.isArray(groupResults) || groupResults.length === 0) {
     throw new SeamCError(SEAM_C_REPRESENTATION_CONFLICT, 'applyAnalysisToCoverageState: non-empty groupResults required');
+  }
+  validateSeamBCorpusArtifact(corpus);
+  const selectedByGroup = new Map(
+    corpus.corpus.groups.map((group) => [group.groupId, new Set(group.selectedSourceRefs.map((r) => r.canonicalSourceId))]),
+  );
+  for (const result of groupResults) {
+    const selected = selectedByGroup.get(result.groupId);
+    if (!selected) {
+      throw new SeamCError(
+        SEAM_C_REPRESENTATION_CONFLICT,
+        `applyAnalysisToCoverageState: group ${String(result.groupId)} does not exist in the canonical corpus (no silent group invention)`,
+      );
+    }
+    for (const id of result.mappedSourceIds ?? []) {
+      if (!selected.has(id)) {
+        throw new SeamCError(
+          SEAM_C_MAPPED_SET_FOREIGN_MEMBER,
+          `group ${result.groupId}: mapped source ${String(id)} is not a controller-owned canonicalSourceId — write-through to CoverageState refused (fail closed, hook not invoked)`,
+          { details: { groupId: result.groupId, foreignId: id } },
+        );
+      }
+    }
+    for (const id of result.analyzedSourceIds ?? []) {
+      if (!selected.has(id)) {
+        throw new SeamCError(
+          SEAM_C_ANALYZED_SET_FOREIGN_MEMBER,
+          `group ${result.groupId}: analyzed source ${String(id)} is not a controller-owned canonicalSourceId — write-through to CoverageState refused (fail closed, hook not invoked)`,
+          { details: { groupId: result.groupId, foreignId: id } },
+        );
+      }
+    }
   }
   const perGroupMappedSourceSet = {};
   const perGroupAnalyzedSourceSet = {};

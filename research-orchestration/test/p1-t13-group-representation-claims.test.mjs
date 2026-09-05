@@ -37,6 +37,7 @@ import {
   SEAM_C_IDENTITY_ARTIFACT_INCOMPLETE,
   SEAM_C_RUNTIME_UNAVAILABLE,
   SEAM_C_ANALYZED_SET_FOREIGN_MEMBER,
+  SEAM_C_MAPPED_SET_FOREIGN_MEMBER,
   validateSeamBCorpusArtifact,
   derivePerGroupAnalyzedIdentity,
   deriveAggregateAnalyzedIdentity,
@@ -854,6 +855,189 @@ describe('P1-T13 reviewer round 1: analyzed set membership + coded input errors 
     const guard = evaluateSeamCGuard(corpus.selectedCorpusIdentity, aggregate);
     assert.equal(guard.ok, false);
     assert.ok(guard.errors.some((e) => e.code === SEAM_C_GUARD_MISMATCH));
+  });
+});
+
+/* ==================== 11. reviewer round 2 repairs (adversarial probes) ==================== */
+
+describe('P1-T13 reviewer round 2: prototype-key identity safety, artifact seal, mapped set membership', () => {
+  /** Adversarial corpus mirroring the reviewer's F1 probe: one real full-coverage
+   *  group + a `__proto__` groupId group. */
+  function hostileProtoCorpus() {
+    const base = CORPUS_MINIMAL();
+    return {
+      seam: base.seam,
+      seamVersion: base.seamVersion,
+      planHash: base.planHash,
+      selectedCorpusIdentity: base.selectedCorpusIdentity,
+      corpus: {
+        groups: [
+          base.corpus.groups[0],
+          {
+            groupId: '__proto__',
+            accounting: { eligible: 1, selected: 1, verified: 1 },
+            selectedSourceRefs: [{ canonicalSourceId: 'zz-proto-1', contentHash: `sha256:${'c'.repeat(64)}`, verifiedArtifactRef: 'art://zz-proto-1' }],
+          },
+        ],
+      },
+    };
+  }
+
+  test('A1: reserved dangerous groupIds are rejected by the SEAM B validator (fail closed, coded)', () => {
+    for (const gid of ['__proto__', 'constructor', 'hasOwnProperty']) {
+      const corpus = hostileProtoCorpus();
+      corpus.corpus.groups[1].groupId = gid;
+      assert.throws(() => validateSeamBCorpusArtifact(corpus), (e) => assertHasErrorCode(e, SEAM_C_REPRESENTATION_CONFLICT));
+    }
+  });
+
+  test('A1 (F1 echo forgery): __proto__ group with hostile analyzed set fails closed at assembly — never echo, never silent drop', () => {
+    const corpus = hostileProtoCorpus();
+    // The crafted perGroupAnalyzed map leaves the __proto__ group empty/foreign
+    // (the reviewer's exploit precondition). Assembly must reject the whole
+    // corpus BEFORE any identity derivation can be forged.
+    const reps = corpus.corpus.groups.map((g) => buildGroupRepresentation({
+      corpusGroup: g,
+      canonicalGroupIdentity: identityResolver(g.groupId),
+      mappedSourceIds: g.selectedSourceRefs.map((r) => r.canonicalSourceId),
+      analyzedSourceIds: g.selectedSourceRefs.map((r) => r.canonicalSourceId),
+      claims: { main: [], minority: [], contradictory: [] },
+      expertEvidenceRichRefs: [],
+      completenessStatus: 'verified',
+      discussionVolume: { answerCount: g.selectedSourceRefs.length },
+    }));
+    const hostile = JSON.parse('{"__proto__": []}');
+    assert.throws(
+      () => assembleSeamCArtifact({ corpus, groupRepresentations: reps, perGroupAnalyzedSourceIds: hostile, planHash: PLAN_HASH }),
+      (e) => assertHasErrorCode(e, SEAM_C_REPRESENTATION_CONFLICT),
+    );
+    // F1b variant: hostile FOREIGN analyzed id for the __proto__ group — same fail-closed outcome.
+    const hostileForeign = JSON.parse('{"__proto__": ["FOREIGN-X"]}');
+    assert.throws(
+      () => assembleSeamCArtifact({ corpus, groupRepresentations: reps, perGroupAnalyzedSourceIds: hostileForeign, planHash: PLAN_HASH }),
+      (e) => assertHasErrorCode(e, SEAM_C_REPRESENTATION_CONFLICT),
+    );
+    // Control: the same groupIds are fine when not reserved (normal two-group assembly still works).
+    const benignCorpus = hostileProtoCorpus();
+    benignCorpus.corpus.groups[1].groupId = 'zz-normal-group';
+    const benignReps = benignCorpus.corpus.groups.map((g) => buildGroupRepresentation({
+      corpusGroup: g,
+      canonicalGroupIdentity: identityResolver(g.groupId),
+      mappedSourceIds: g.selectedSourceRefs.map((r) => r.canonicalSourceId),
+      analyzedSourceIds: g.selectedSourceRefs.map((r) => r.canonicalSourceId),
+      claims: { main: [], minority: [], contradictory: [] },
+      expertEvidenceRichRefs: [],
+      completenessStatus: 'verified',
+      discussionVolume: { answerCount: g.selectedSourceRefs.length },
+    }));
+    const art = assembleSeamCArtifact({
+      corpus: benignCorpus,
+      groupRepresentations: benignReps,
+      perGroupAnalyzedSourceIds: Object.fromEntries(benignCorpus.corpus.groups.map((g) => [g.groupId, g.selectedSourceRefs.map((r) => r.canonicalSourceId)])),
+      planHash: PLAN_HASH,
+    });
+    assert.equal(Object.prototype.hasOwnProperty.call(art.aggregateAnalyzedIdentity.perGroup, 'zz-normal-group'), true);
+  });
+
+  test('A2 (artifact seal): post-assembly mutation of the caller representation cannot touch the artifact', () => {
+    const corpus = CORPUS_MINIMAL();
+    const group = corpus.corpus.groups[0];
+    const selected = group.selectedSourceRefs.map((r) => r.canonicalSourceId);
+    const rep = buildGroupRepresentation({
+      corpusGroup: group,
+      canonicalGroupIdentity: identityResolver(group.groupId),
+      mappedSourceIds: selected,
+      analyzedSourceIds: selected,
+      claims: { main: [{ claimId: 'c-001', statement: 'legit', sourceRefs: [selected[0]] }], minority: [], contradictory: [] },
+      expertEvidenceRichRefs: [],
+      completenessStatus: 'verified',
+      discussionVolume: { answerCount: selected.length },
+    });
+    const art = assembleSeamCArtifact({
+      corpus,
+      groupRepresentations: [rep],
+      perGroupAnalyzedSourceIds: { [group.groupId]: selected },
+      planHash: PLAN_HASH,
+    });
+    // No shared references anywhere in the claims structure.
+    assert.notEqual(art.groupRepresentations[0].claims, rep.claims);
+    assert.notEqual(art.groupRepresentations[0].claims.main, rep.claims.main);
+    assert.notEqual(art.groupRepresentations[0].claims.main[0], rep.claims.main[0]);
+    // 0→1 injection and 1→2 growth via the caller's retained object must not leak in.
+    assert.equal(art.groupRepresentations[0].claims.main.length, 1);
+    rep.claims.main.push({ claimId: 'EVIL-2', statement: 'injected', sourceRefs: [selected[0]] });
+    rep.claims.main[0].statement = 'TAMPERED';
+    rep.claims.minority.push({ claimId: 'EVIL-1', statement: 'injected', sourceRefs: [selected[0]] });
+    assert.equal(art.groupRepresentations[0].claims.main.length, 1);
+    assert.equal(art.groupRepresentations[0].claims.main[0].statement, 'legit');
+    assert.equal(art.groupRepresentations[0].claims.minority.length, 0);
+    // Non-cloneable representation payloads fail closed with a coded error (never uncoded DataCloneError).
+    const hostileRep = { ...rep, claims: { main: [{ claimId: 'c', statement: 's', sourceRefs: [selected[0]], fn: () => 1 }] } };
+    assert.throws(
+      () => assembleSeamCArtifact({ corpus, groupRepresentations: [hostileRep], perGroupAnalyzedSourceIds: { [group.groupId]: selected }, planHash: PLAN_HASH }),
+      (e) => assertHasErrorCode(e, SEAM_C_REPRESENTATION_CONFLICT),
+    );
+  });
+
+  test('A3a: all-foreign mappedSourceIds fail closed with SEAM_C_MAPPED_SET_FOREIGN_MEMBER (membership, not counts)', () => {
+    const corpus = CORPUS_MINIMAL();
+    const group = corpus.corpus.groups[0];
+    const selected = group.selectedSourceRefs.map((r) => r.canonicalSourceId);
+    assert.throws(() => buildGroupRepresentation({
+      corpusGroup: group,
+      canonicalGroupIdentity: identityResolver(group.groupId),
+      mappedSourceIds: ['foreign-1', 'foreign-2'],
+      analyzedSourceIds: [],
+      claims: { main: [], minority: [], contradictory: [] },
+      expertEvidenceRichRefs: [],
+      completenessStatus: 'verified',
+      discussionVolume: { answerCount: selected.length },
+    }), (e) => assertHasErrorCode(e, SEAM_C_MAPPED_SET_FOREIGN_MEMBER));
+    // Mixed set with one foreign id is rejected too; proper subsets still pass.
+    assert.throws(() => buildGroupRepresentation({
+      corpusGroup: group,
+      canonicalGroupIdentity: identityResolver(group.groupId),
+      mappedSourceIds: [selected[0], 'foreign-9'],
+      analyzedSourceIds: [selected[0]],
+      claims: { main: [], minority: [], contradictory: [] },
+      expertEvidenceRichRefs: [],
+      completenessStatus: 'partial',
+      discussionVolume: { answerCount: selected.length },
+    }), (e) => assertHasErrorCode(e, SEAM_C_MAPPED_SET_FOREIGN_MEMBER));
+    assert.doesNotThrow(() => buildGroupRepresentation({
+      corpusGroup: group,
+      canonicalGroupIdentity: identityResolver(group.groupId),
+      mappedSourceIds: selected.slice(0, 2),
+      analyzedSourceIds: selected.slice(0, 1),
+      claims: { main: [], minority: [], contradictory: [] },
+      expertEvidenceRichRefs: [],
+      completenessStatus: 'partial',
+      discussionVolume: { answerCount: selected.length },
+    }));
+  });
+
+  test('A3b: foreign ids in groupResults are refused at the T13 hook path — coded error, hook never invoked', () => {
+    const corpus = CORPUS_MINIMAL();
+    const ids = corpus.corpus.groups[0].selectedSourceRefs.map((r) => r.canonicalSourceId);
+    const state = createInitialCoverageState({ planHash: PLAN_HASH });
+    const seeded = updateSelectionAccounting(state, { selectedCorpusSourceSet: ids }, { caller: OWNER_T12_SELECTION });
+    // Foreign mapped id: refused before updatePerGroupAnalysis is called.
+    assert.throws(() => applyAnalysisToCoverageState(seeded, {
+      corpus,
+      groupResults: [{ groupId: corpus.corpus.groups[0].groupId, mappedSourceIds: ['foreign-9'], analyzedSourceIds: ['foreign-9'] }],
+    }), (e) => assertHasErrorCode(e, SEAM_C_MAPPED_SET_FOREIGN_MEMBER));
+    // Foreign analyzed id (valid mapped set): refused with the analyzed code.
+    assert.throws(() => applyAnalysisToCoverageState(seeded, {
+      corpus,
+      groupResults: [{ groupId: corpus.corpus.groups[0].groupId, mappedSourceIds: ids, analyzedSourceIds: ['foreign-9'] }],
+    }), (e) => assertHasErrorCode(e, SEAM_C_ANALYZED_SET_FOREIGN_MEMBER));
+    // Invented groupId: refused (no silent group invention through the hook path).
+    assert.throws(() => applyAnalysisToCoverageState(seeded, {
+      corpus,
+      groupResults: [{ groupId: 'ghost-group', mappedSourceIds: ['x'], analyzedSourceIds: ['x'] }],
+    }), (e) => assertHasErrorCode(e, SEAM_C_REPRESENTATION_CONFLICT));
+    // The coverage state was never mutated by the refused writes.
+    assert.deepEqual(seeded.analysisCoverage.analyzedSourceSet, []);
   });
 });
 

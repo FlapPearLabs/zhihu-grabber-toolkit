@@ -76,11 +76,25 @@ level (`updatePerGroupAnalysis` rejects non-T13 callers).
 5. **Module-level fail-closed codes** beyond the frozen §SEAM C table:
    `SEAM_C_RUNTIME_UNAVAILABLE`, `SEAM_C_SOURCE_FAILURE`, `SEAM_C_MODEL_OUTPUT_INVALID`,
    `SEAM_C_PROJECTION_ISOLATION_VIOLATION` (per-group-claim-extraction.mjs), plus
-   `SEAM_C_ANALYZED_SET_FOREIGN_MEMBER` (group-representation.mjs; reviewer round 1 —
-   `buildGroupRepresentation` additionally validates the analyzed set as a SUBSET of the
-   group's `selectedSourceRefs` canonicalSourceIds, not counts alone). The frozen four
-   (`SEAM_C_GUARD_MISMATCH`, `SEAM_C_REPRESENTATION_CONFLICT`, `SEAM_C_MODEL_OWNED_IDENTITY`,
-   `SEAM_C_IDENTITY_ARTIFACT_INCOMPLETE`) are emitted exactly per §SEAM C.
+   `SEAM_C_ANALYZED_SET_FOREIGN_MEMBER` and `SEAM_C_MAPPED_SET_FOREIGN_MEMBER`
+   (group-representation.mjs; reviewer rounds 1/2 — `buildGroupRepresentation` validates
+   the analyzed AND mapped sets as SUBSETS of the group's `selectedSourceRefs`
+   canonicalSourceIds, not counts alone, and `applyAnalysisToCoverageState` cross-checks
+   every id written through the T07 hook against the corpus selected set before the hook
+   is invoked). The frozen four (`SEAM_C_GUARD_MISMATCH`, `SEAM_C_REPRESENTATION_CONFLICT`,
+   `SEAM_C_MODEL_OWNED_IDENTITY`, `SEAM_C_IDENTITY_ARTIFACT_INCOMPLETE`) are emitted
+   exactly per §SEAM C.
+6. **Identity-safety boundary (reviewer round 2)**: reserved dangerous groupIds
+   (`__proto__`, `constructor`, `hasOwnProperty`) are rejected fail closed at SEAM B
+   validation (`RESERVED_GROUP_IDS`) — a plain-object map silently drops a `__proto__`
+   key, which let a group vanish from the per-group identity maps while the aggregate
+   echo branch still fired (guard-echo forgery). Internal groupId-keyed identity maps
+   (`assembleSeamCArtifact` per-group selected map, `deriveAggregateAnalyzedIdentity`
+   partial encoding) additionally use null-prototype objects as defense in depth.
+7. **Artifact seal (reviewer round 2)**: `assembleSeamCArtifact` deep-copies the caller's
+   group representations (`structuredClone`) so post-assembly mutation of caller-retained
+   objects cannot inject/remove claims inside the sealed SEAM C artifact; non-plain-data
+   representations fail closed with `SEAM_C_REPRESENTATION_CONFLICT`.
 
 ## 4. DECISION_REQUIRED (surfaced, not improvised)
 
@@ -90,7 +104,9 @@ level (`updatePerGroupAnalysis` rejects non-T13 callers).
   fail closed for the first two per Issue #45 AC but has no frozen code to emit.
   Reviewer round 1 additionally adds module-level `SEAM_C_ANALYZED_SET_FOREIGN_MEMBER`
   (analyzed id outside the group's selected set in `buildGroupRepresentation`) to this
-  same pending-assignment list.
+  same pending-assignment list; reviewer round 2 adds `SEAM_C_MAPPED_SET_FOREIGN_MEMBER`
+  (mapped id outside the group's selected set in `buildGroupRepresentation` and in the
+  `applyAnalysisToCoverageState` hook write-through) to the same list.
 - **D2 (upstream gap)**: SEAM B carries no per-group provider provenance and no answer
   count; §8.1 requires both (`canonicalGroupIdentity`, `discussionVolume`). Proposal:
   T12 extends SEAM B (V1-compatible additive fields) or T13 keeps the injected
