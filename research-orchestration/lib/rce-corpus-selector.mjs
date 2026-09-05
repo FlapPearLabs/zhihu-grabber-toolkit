@@ -466,14 +466,17 @@ export function selectResearchCorpus({
       accounting: {
         eligible: eligibleCount,
         selected: selectedRefs.length,
-        // PINNED READING (§SEAM B accounting): verified := selected.
-        // §SEAM B permits selected <= verified <= eligible; the alternative
-        // reading (verified := eligible, since every eligible candidate
-        // decomposes from verified group artifacts) is equally valid. Which
-        // reading governs T07/T15 reconciliation is a PRODUCT-OWNER decision,
-        // not an implementation choice — a silent change here must fail the
-        // pinning test loudly (reviewer round 1 F2).
-        verified: selectedRefs.length, // verified-only: every selected source is verified
+        // PINNED READING (§SEAM B accounting, PO decision 2026-09-05, P1 WAVE 01
+        // integration gate): verified := eligible. VERIFICATION != SELECTION —
+        // every eligible candidate decomposes from valid-only SEAM A verified
+        // group artifacts, so the number of eligible sources whose upstream
+        // verification is already valid is exactly the eligible count.
+        // Selected-by-RCE must NOT be conflated with verified; the invariant
+        // selected <= verified <= eligible holds by construction. The former
+        // reading (verified := selected) is superseded by this PO decision; a
+        // silent semantic change must fail the pinning test loudly (reviewer
+        // round 1 F2; test "accounting.verified is PINNED to accounting.eligible").
+        verified: eligibleCount,
         exclusionReasonCategories: exclusions,
       },
     });

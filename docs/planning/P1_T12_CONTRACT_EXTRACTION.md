@@ -169,3 +169,12 @@ Produced（本票所有权内）：
    reconciliation 语义，需 product-owner 明确后冻结；在决定前保持读法 (a)，
    任何静默切换都会被 pinning 测试拦截（见测试
    "accounting.verified is PINNED to accounting.selected"）。
+   **RESOLVED（product owner，2026-09-05，P1 WAVE 01 集成 gate）**：采用读法
+   (b) **verified := eligible**——VERIFICATION != SELECTION：每个 eligible
+   candidate 都从 valid-only 的 SEAM A verified group artifact 分解而来，故
+   "上游验证已合法的 eligible source 数" 恰等于 eligible 数；selected-by-RCE
+   不与 verified 混同，不变式 selected ≤ verified ≤ eligible 保持。赋值处
+   PINNED READING 注释与 pinning 测试已切换为新读法（测试
+   "accounting.verified is PINNED to accounting.eligible"），并新增概念测试
+   "selection vs verification accounting stay distinct: eligible 100 /
+   selected 30 → verified 100"。

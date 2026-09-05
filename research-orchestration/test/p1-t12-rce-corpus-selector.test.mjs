@@ -238,11 +238,11 @@ describe('P1-T12 selection accounting completeness', () => {
     assert.equal(result.ok, true, JSON.stringify(result.errors));
   });
 
-  test('selected <= verified <= eligible per group; verified == selected (verified-only)', () => {
+  test('selected <= verified <= eligible per group; verified == eligible (verification != selection)', () => {
     for (const g of artifact.corpus.groups) {
       const { eligible, selected, verified } = g.accounting;
       assert.ok(selected <= verified && verified <= eligible, `${g.groupId}: ${selected}/${verified}/${eligible}`);
-      assert.equal(verified, selected, 'every selected source is verified-only');
+      assert.equal(verified, eligible, 'every eligible source inherits valid upstream verification (PO 2026-09-05)');
       assert.equal(g.selectedSourceRefs.length, selected);
     }
   });
@@ -271,15 +271,37 @@ describe('P1-T12 selection accounting completeness', () => {
     }
   });
 
-  test('accounting.verified is PINNED to accounting.selected (verified := selected reading)', () => {
-    // Reviewer round 1 (F2): §SEAM B permits selected <= verified <= eligible;
-    // the alternative reading (verified := eligible) is a product-owner
-    // decision. This test pins the current reading so a silent semantic change
-    // fails loudly (see P1_T12_CONTRACT_EXTRACTION.md §5 DECISION_REQUIRED).
+  test('accounting.verified is PINNED to accounting.eligible (verified := eligible reading, PO 2026-09-05)', () => {
+    // Product-owner decision (P1 WAVE 01 integration gate, 2026-09-05):
+    // VERIFICATION != SELECTION. Every eligible candidate derives from
+    // valid-only SEAM A sources, so verified := eligible; selected-by-RCE
+    // must not be conflated with verified. This test pins the NEW reading so
+    // a silent semantic change fails loudly (see
+    // P1_T12_CONTRACT_EXTRACTION.md §5 DECISION_REQUIRED #6 — RESOLVED).
     for (const g of artifact.corpus.groups) {
-      assert.equal(g.accounting.verified, g.accounting.selected, `${g.groupId}: verified must equal selected under the pinned reading`);
+      assert.equal(g.accounting.verified, g.accounting.eligible, `${g.groupId}: verified must equal eligible under the pinned reading`);
     }
-    assert.equal(artifact.corpus.totals.verified, artifact.corpus.totals.selected);
+    assert.equal(artifact.corpus.totals.verified, artifact.corpus.totals.eligible);
+  });
+
+  test('selection vs verification accounting stay distinct: eligible 100 / selected 30 → verified 100', () => {
+    // Conceptual pin of the PO semantics: 70 of 100 sources sit below the
+    // relevance floor (excluded by RCE selection), yet ALL 100 remain
+    // verified — upstream verification is a property of the SEAM A
+    // provenance, not of the selection outcome.
+    const m = buildManifest([manifestGroup('940001', { captured: 100 })]);
+    const specs = [
+      ...Array.from({ length: 30 }, (_, i) => [i + 1, 0.5, 0.5]),
+      ...Array.from({ length: 70 }, (_, i) => [i + 31, -0.5, 0.5]),
+    ];
+    const prepared = prepare({ 940001: sourcesWith('940001', specs) });
+    const artifact = selectResearchCorpus({ manifest: m, ...prepared });
+    const g = group(artifact, '940001');
+    assert.equal(g.accounting.eligible, 100);
+    assert.equal(g.accounting.selected, 30);
+    assert.equal(g.accounting.verified, 100, 'verified counts the SEAM A verified provenance, not the selection');
+    assert.ok(g.accounting.selected <= g.accounting.verified && g.accounting.verified <= g.accounting.eligible);
+    assert.equal(artifact.corpus.totals.verified, 100);
   });
 
   test('default relevance floor is 0, pinned through observable behavior (not asserted against itself)', () => {
