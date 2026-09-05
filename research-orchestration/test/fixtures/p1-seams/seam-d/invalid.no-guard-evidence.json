@@ -10,7 +10,7 @@
         "aspect": "总体有效性",
         "category": "widely-shared",
         "support": [
-          { "sourceRef": "q-23456789-a-101", "groupId": "q-23456789", "authorRef": "author-1001" }
+          { "sourceRef": "23456789-a-101", "groupId": "23456789", "authorRef": "author-1001" }
         ],
         "oppose": [],
         "expertEvidenceRichSupport": false
@@ -25,6 +25,6 @@
     "new_claim_rate": 0.2,
     "new_expert_rate": 0.0,
     "new_contradiction_rate": 0.05,
-    "novelty_gain": 0.3
+    "claim_source_diversity": 0.6
   }
 }

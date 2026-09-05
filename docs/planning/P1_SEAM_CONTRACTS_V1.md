@@ -7,10 +7,16 @@ AUTHORITY_CLASS = PLANNING / GOVERNANCE CANDIDATE（待 ChatGPT external audit P
                   integration 后生效；生效前不授权任何实现消费其字段为 product authority）
 BASE_SHA = 0287ba3ef33c29357c7f8306f9e51dcca2b41da0
 BRANCH = planning/p1-contract-driven-parallel-workflow
-COMPANION = docs/planning/P1_PARALLEL_EXECUTION_CONTRACT_V1.md（READY 三 gate + 执行模型）
+REVISION = R1（2026-09-05，PREVIOUS_SHA = 9cbe5121d1c13b2d1cb70690f9df8d7494483f7c）
+           F1  SEAM A 重建为 producer-grounded 最小可观察合同（真实 reviewed T09 @ 4789382）
+           F3  SEAM D diagnostics 重接地 T14/T07 所有权（novelty_gain 移除、claim_source_diversity 补回）
+           F5  SEAM B/C/D 最小合同审计（移除 owner 标注 / derivedFrom / 嵌入 categoryEnum）
+           F4  新增 TYPE_B 真实 producer conformance test（REAL_T09_TO_SEAM_A_CONFORMANCE = PASS）
+COMPANION = docs/planning/P1_PARALLEL_EXECUTION_CONTRACT_V1.md（READY gate + 执行模型 + 测试 taxonomy）
 FIXTURES = research-orchestration/test/fixtures/p1-seams/
 VALIDATOR = research-orchestration/test/helpers/p1-seam-contracts.mjs
-CONTRACT_TESTS = research-orchestration/test/p1-seam-contracts.test.mjs
+CONTRACT_TESTS = research-orchestration/test/p1-seam-contracts.test.mjs（TYPE_A）
+                 research-orchestration/test/p1-seam-a-producer-conformance.test.mjs（TYPE_B，SEAM A）
 SPEC_AUTHORITY = docs/specs/p1-cross-question-deep-research.md（语义唯一权威）
 Date: 2026-09-05
 ```
@@ -58,89 +64,111 @@ BLOCKING_DECISION_REQUIRED = <exact missing decision + authority pointer>
 
 ---
 
-## SEAM A — T09 → T12
+## SEAM A — T09 → T12（R1：producer-grounded 最小可观察合同）
+
+> **R1 REPAIR（F1/F4）**：本 seam 由理想化接口重建为**真实 reviewed T09 producer** 实际暴露的
+> 输出形状（REVIEWED_CODE_SHA = `4789382f36d179dc13957f2c23748f169875d7a2`，PR #68，未 merge）。
+> seam 适配真实 producer，不要求 producer 适配 seam；identity 投影（无字段改写）。被移除的
+> 发明字段见本节末尾「F1 审计」表。
 
 ```text
 SEAM_ID = T09_TO_T12
 VERSION = 1
-PRODUCER = P1-T09 Multi-group Execution State + Per-group Capture/Verify/Handoff（Issue #41）
+PRODUCER = P1-T09 Multi-group Execution（Issue #41；reviewed @ 4789382，PR #68）
 CONSUMER = P1-T12 RCE Corpus Selector（Issue #44）
-INPUT  = SelectedSourceGroups[]（T08 selection artifact）+ per-group capture/verify 产物
-OUTPUT = ResearchCorpusManifest（derived composition artifact）
-         + VerifiedGroupRefs[]（仅 valid）
+INPUT  = T08 selection decision + per-group capture/verify/handoff 产物
+OUTPUT = ResearchCorpusManifest（producer 真实派生产物）
+PROJECTION = IDENTITY——真实输出即 canonical view，无字段改写；producer 内部可持久化
+             richer state，manifest 本身就是其确定性派生面（I7）
 ```
 
-### OUTPUT_OBSERVABLE_SHAPE（canonical fixture encoding）
+### OUTPUT_OBSERVABLE_SHAPE（= 真实 deriveResearchCorpusManifest 输出，逐字段）
 
 ```jsonc
 {
-  "seam": "T09_TO_T12",
-  "seamVersion": 1,
-  "planHash": "<64hex>",                              // Spec §4.3
-  "verifiedGroupRefs": [                              // Spec §6.1：仅 valid 组
+  "schemaVersion": 1,                                   // producer manifest schema（非 seam 信封）
+  "type": "research-corpus-manifest",                   // seam binding = producer 真实 type
+  "planHash": "<64hex>",                                // Spec §4.3
+  "selectionIdentity": "<64hex>",                       // selected groupIds 集合身份（I10）
+  "selectionDecisionHash": "<64hex>",                   // selection 决策内容身份（I10）
+  "groups": [                                           // == VerifiedGroupRefs（valid-only，I1/I2）
     {
-      "groupId": "q-<questionId>",
-      "questionId": "<questionId>",
-      "verifiedArtifactRef": "<path>",                // 引用，不含内容
-      "contentHash": "sha256:<64hex>",                // dependent hash（§6.1）
-      "verifyResultRef": "<path>",                    // verify authority 证据引用（§2.2）
-      "verifyAuthority": "verify-output",
-      "selectedSourceCount": <n>,                     // §9.2 per-group 计数
-      "verifiedAt": "<ISO8601>"
+      "groupId": "<T08 权威格式>",                       // 当前 T08 实现 = questionId；合同不冻结前缀
+      "questionId": "<canonical questionId>",
+      "answersRel": "<work-relative 引用>",              // 不含内容；exact 文件布局属 PRIVATE（§0）
+      "handoffRel": "<work-relative 引用>",
+      "answersHash": "<64hex>",                         // dependent artifact hash（§6.1；裸 hex）
+      "handoffHash": "<64hex>",
+      "capturedAnswerCount": <n|null>,
+      "reportedAnswerCount": <n|null>,
+      "paginationStatus": "complete|partial|unknown"
     }
   ],
-  "manifest": {
-    "manifestHash": "sha256:<64hex>",
-    "derivedFrom": ["verifiedGroupRefs", "selectorOutputRef"],
-    "selectorOutputRef": "<path>",                    // T08 selection artifact 引用
+  "accounting": {                                       // §9.2 组级计量（captured != verified 可见）
     "selectedGroupCount": <n>,
-    "groupProvenance": [                              // §5.1 provider/capability provenance
-      { "groupId": "q-<id>", "providerId": "<id>", "capability": "<id>" }
-    ]
-  }
+    "verifiedGroupCount": <n>,
+    "capturedNotVerifiedGroupCount": <n>,
+    "failedGroupCount": <n>
+  },
+  "manifestHash": "<64hex>"                             // sha256(canonicalJson(manifest))，自校验
 }
 ```
 
 ### IDENTITY_FIELDS
 
-`planHash`、`manifestHash`、每 ref 的 `contentHash` + `verifyResultRef`、
-`selectedGroupCount`。manifest 相同输入必须确定性重建（§6.1）。
+`planHash`、`selectionIdentity`、`selectionDecisionHash`（selection 决策身份，漂移按 I10 从
+相应边界失效）；每 group 的 `answersHash` + `handoffHash`（dependent artifact hashes，I4/I5）；
+`manifestHash` = 对除自身外全部字段的 canonical JSON 取 sha256——**自校验字段**：validator
+按同一算法重算比对，任何被 hash 覆盖字段的篡改/漂移/混入都机械可检
+（`SEAM_A_MANIFEST_HASH_MISMATCH`）。真实 producer 的 hash 域为裸 64 位 hex（无 `sha256:` 前缀）。
 
 ### REQUIRED_INVARIANTS
 
-1. 只有 verify authority 判 valid 的组可进入 `verifiedGroupRefs`；captured 不得进入（§6.1、§6.2）。
-2. manifest 只从 valid refs + selector output 确定性派生（§6.1）。
+1. 只有 captured && verified && handoffValid 且带完整 artifact 身份的组可进入 `groups[]`
+   （I1/I2、§6.1）；captured-not-verified / failed 组只出现在 `accounting`，永不进入 `groups[]`。
+2. manifest 只从 valid refs + selection 确定性派生，可字节级复现（§6.1）。
 3. manifest 不是第二 canonical store（§6.1、key-decisions D09）。
-4. planHash / group identity 变更 → 该组及依赖 artifact 失效（§6.2）。
+4. planHash / selectionIdentity / selectionDecisionHash 变更 → 从匹配边界失效（I10、§6.2）。
 5. credentials / secret-bearing 内容永不进入 manifest（§6.2）。
 6. partial 不得渲染为 complete（§6.2）。
 
 ### VALID_SUCCESS
 
-全部 ref 的 `contentHash` 与 per-group artifact 现值一致、`verifyResultRef` 存在且 authority =
-verify-output、planHash 与当前 plan 一致、派生可复现。
+`manifestHash` 重算一致；accounting 与 `groups[]` 机械自洽（`verifiedGroupCount == groups.length`
+且 ≤ `selectedGroupCount`）；全部 ref 为 work-relative、内容无关引用；无 canonical 内容体。
 
 ### FAIL_CLOSED
 
 | 条件 | 错误码 |
 |---|---|
-| ref 缺 verify 证据引用 / authority 不是 verify-output | `SEAM_A_MISSING_VERIFY_EVIDENCE` |
-| manifest 内出现 canonical 内容体（回答正文/markdown/渲染文本） | `SEAM_A_CANONICAL_CONTENT_FORBIDDEN` |
-| hash 不匹配 / identity stale | `SEAM_A_STALE_DEPENDENCY` |
-| planHash 不一致 | `SEAM_A_PLAN_HASH_MISMATCH` |
-| manifest 结构性不一致（计数/派生声明/provenance 缺失） | `SEAM_A_MANIFEST_INCONSISTENT` |
+| type / schemaVersion 不符 | `SEAM_A_TYPE` / `SEAM_A_SCHEMA_VERSION` |
+| planHash 缺失或格式错 | `SEAM_A_PLAN_HASH` |
+| selection 身份字段缺失或格式错 | `SEAM_A_SELECTION_IDENTITY` |
+| group 条目 identity 缺失 | `SEAM_A_GROUP_IDENTITY` |
+| ref 非 work-relative / 含路径逃逸 | `SEAM_A_ARTIFACT_REF` |
+| artifact hash 非 64hex | `SEAM_A_CONTENT_HASH` |
+| 计数非 null 且非非负整数 | `SEAM_A_COUNT_INVALID` |
+| paginationStatus 越界 | `SEAM_A_PAGINATION_STATUS` |
+| accounting 缺失 / 字段不齐 | `SEAM_A_ACCOUNTING_INVALID` |
+| accounting 与 groups[] 不自洽 | `SEAM_A_ACCOUNTING_INCONSISTENT` |
+| manifestHash 缺失 / 重算不一致（篡改、stale、captured 组混入） | `SEAM_A_MANIFEST_HASH` / `SEAM_A_MANIFEST_HASH_MISMATCH` |
+| groups 为空（零 verified 组不可作为可消费 artifact） | `SEAM_A_REFS_REQUIRED` |
+| manifest 内出现 canonical 内容体 | `SEAM_A_CANONICAL_CONTENT_FORBIDDEN` |
 
 ### OWNERSHIP
 
-producer = T09；verified 状态权威 = verify-output authority（不变，§2.2）；T12 只消费。
+producer = T09；verified 状态权威 = verify-output / handoff authority（不变，§2.2）；
+T12 只消费。
 
 ### CANONICAL_CONTENT_LOCATION
 
-各组 `answers.json`（§6.1）。manifest 只持 refs + hashes。
+各组 `answers.json`（+ per-group `handoff.json` 作为 handoff 权威产物）。manifest 只持
+refs + hashes + accounting。
 
 ### FORBIDDEN_DUPLICATION
 
-回答正文、渲染 markdown、projection 文本、credential 内容。
+回答正文、渲染 markdown、projection 文本、credential 内容；verify 判定镜像 / 验证证据指针 /
+派生元数据也不得复制进 manifest（valid-only 语义由 I1/I2 与 producer 保证）。
 
 ### SECURITY_BOUNDARY
 
@@ -149,8 +177,37 @@ semantic worker 时仍受 §10.1 投影隔离约束；无 machine-private path�
 
 ### BACKWARD_COMPATIBILITY / VERSIONING_RULE
 
-只增可选字段 = V1 兼容；删除/改名/语义变化 = major bump + fixture/validator 同步 +
-下游 re-review。禁止 post-review 静默改 fixture 语义。
+producer manifest schemaVersion 1 ↔ SEAM A V1。真实输出**新增字段**（其 manifestHash 天然
+覆盖新字段）→ validator 重算规则天然兼容 = V1 兼容；删字段 / 改名 / 语义变化 / canonical 化
+算法变化 → seam major bump + fixture/validator 同步 + 下游消费面 re-review。禁止 post-review
+静默改 fixture 语义。
+
+### F1 审计：移除的发明字段（相对 R0 seam）
+
+| R0 字段 | 处置 | 理由（authority / 消费需求核查） |
+|---|---|---|
+| `verifiedArtifactRef` / `contentHash` | 更名为真实字段 `answersRel`+`handoffRel` / `answersHash`+`handoffHash` | 对齐真实 producer 字段名 |
+| `verifyResultRef` | 移除 | 真实 VerifiedGroupRefs 不暴露；valid-only 由 I1/I2 保证；运行时产物无需复制验证证据指针 |
+| `verifyAuthority` | 移除 | 静态权威（verify-output）复制进运行时产物（F5 模式）；由本合同 OWNERSHIP 记录 |
+| `verifiedAt` | 移除 | producer 不暴露；Issue #44 无消费需求 |
+| `selectedSourceCount` | 移除 | 无 authority 依据；T12 依据 Issue #44 自行从 verified corpus 计算 eligible/selected |
+| `manifest.derivedFrom` | 移除 | derivedFrom 解释数组（F5 模式）；派生语义由 I7 与本合同记录 |
+| `manifest.selectorOutputRef` | 移除 | producer 不暴露；selection 身份由 selectionIdentity/selectionDecisionHash 承载（更强） |
+| `manifest.selectedGroupCount`（顶层） | 移入 `accounting` | 对齐真实 producer 结构 |
+| `manifest.groupProvenance` | 移除 | producer manifest 不含；§5.1 provenance 属 T08 selection 决策面，非本 seam |
+| groupId `"q-<id>"` 前缀 | 移除 | 真实 T08 输出 groupId == questionId；格式由 T08 权威决定，合同不冻结前缀 |
+
+### CONTRACT TESTS（taxonomy 见 companion doc §E2）
+
+```text
+TYPE_A = REQUIRED（3 fixtures，见 §附）
+TYPE_B = REQUIRED（producer 已存在）：
+         research-orchestration/test/p1-seam-a-producer-conformance.test.mjs
+         pin REVIEWED_T09_SHA = 4789382f36d179dc13957f2c23748f169875d7a2，git archive 只读物化
+         真实 producer，公共 API 构造确定性状态 → deriveResearchCorpusManifest → SEAM A validator
+         → PASS；负例：captured-but-not-verified 组不进入 groups[]（I1）+ 混入被自校验 hash 拒绝。
+REAL_T09_TO_SEAM_A_CONFORMANCE = PASS（2026-09-05，本分支验证记录）
+```
 
 ---
 
@@ -176,7 +233,7 @@ OUTPUT = Selected Verified Research Corpus（含 corpus identity + selection acc
   "corpus": {
     "groups": [
       {
-        "groupId": "q-<id>",
+        "groupId": "<T08 权威格式，与 SEAM A 同一 identity>",   // R1：不再示例化 "q-" 前缀
         "selectedSourceRefs": [                       // 引用，不含内容
           { "canonicalSourceId": "<stable-id>", "contentHash": "sha256:<64hex>",
             "verifiedArtifactRef": "<path>" }
@@ -196,6 +253,13 @@ OUTPUT = Selected Verified Research Corpus（含 corpus identity + selection acc
 注意：canonicalSourceId 的具体编码由 producer 权威决定（delegated）；合同只要求
 stable identity + contentHash 配对。**T12 产物中不得出现任何 `analyzed` 计数字段**
 （analyzed 归 T13 唯一写入，Issue #44 OUT_OF_SCOPE）。
+
+> **R1-F5 审计结论（SEAM B）**：逐 REQUIRED 字段核查后**零移除**——`planHash`（Spec §4.3
+> 绑定）、`selectedCorpusIdentity`（Issue #46 guard 比较基准）、per-source refs（T13 claims
+> 绑定）、`accounting`（Issue #44 IN_SCOPE：eligible/selected/verified + exclusion reasons
+> 完整可测）、`totals`（Issue #44「selection accounting 完整且可测」的 corpus 级机械一致性
+> 面，validator 交叉核对）。无 timestamps / owner 标注 / derivedFrom / 嵌入枚举可疑项。
+> groupId 示例格式与 SEAM A 对齐（T08 权威，不冻结前缀）。
 
 ### IDENTITY_FIELDS
 
@@ -271,7 +335,7 @@ OUTPUT = per-group research representations + claims
   "selectedCorpusIdentityRef": "sha256:<64hex>",      // SEAM B identity 的只读回显
   "groupRepresentations": [                           // §8.1 全字段
     {
-      "groupId": "q-<id>",
+      "groupId": "<T08 权威格式，与 SEAM A/B 同一 identity>",
       "canonicalGroupIdentity": { "questionId": "<id>", "providerId": "<id>", "capability": "<id>" },
       "accounting": { "selected": <n>, "verified": <n>, "mapped": <n>, "analyzed": <n> },
       "claims": {
@@ -286,12 +350,18 @@ OUTPUT = per-group research representations + claims
   ],
   "aggregateAnalyzedIdentity": {                      // T14 PRE-SYNTHESIS guard 消费 artifact
     "mappedAnalyzedSourceSetIdentity": "sha256:<64hex>",
-    "perGroup": { "q-<id>": "sha256:<64hex>" },
-    "owner": "P1-T13",
-    "derivedFrom": ["perGroupAnalyzedIdentities"]
+    "perGroup": { "<groupId>": "sha256:<64hex>" }
   }
 }
 ```
+
+> **R1-F5 审计结论（SEAM C）**：从 REQUIRED 形状移除 `aggregateAnalyzedIdentity.owner`
+> 与 `aggregateAnalyzedIdentity.derivedFrom`——两者分别是「静态权威重复的 owner 标注」与
+> 「derivedFrom 解释数组」（F5 明确可疑类别）：所有权由静态权威承载（Issue #45
+> single-owner 条款 `ANALYZED_SOURCE_SET_IDENTITY_OWNER = P1-T13`、Ticket Graph §B、
+> key-decisions D10），SEAM C 产物只能由 T13 产出这一点由 seam 本身保证；伪造 owner 标注
+> 不提供任何安全价值。其余字段（§8.1 representation 全字段、claims lineage、guard 消费的
+> aggregate identity）均有直接 authority 与消费需求，保留。
 
 ### IDENTITY_FIELDS
 
@@ -378,21 +448,37 @@ OUTPUT = cross-group synthesis artifact（含 PRE-SYNTHESIS guard 证据）
     "synthesisIdentity": "sha256:<64hex>",
     "claims": [
       { "claimId": "<id>", "aspect": "<text>", "category": "widely-shared",
-        "support": [ { "sourceRef": "<canonicalSourceId>", "groupId": "q-<id>", "authorRef": "<id>" } ],
+        "support": [ { "sourceRef": "<canonicalSourceId>", "groupId": "<T08 groupId>", "authorRef": "<id>" } ],
         "oppose":   [ /* 同构 */ ],
         "expertEvidenceRichSupport": <bool> }
     ],
-    "categoryEnum": ["widely-shared", "group-specific", "minority", "conflicting"],  // §8.3
+    // R1-F5：§8.3 category 冻结词表是静态权威，不再嵌入运行时产物的 categoryEnum 字段
     "groupDifferences": [ /* source-group differences */ ],
     "evidenceStrength": [ /* §8.3 */ ],
     "discussionVolumeDifferences": { /* §8.3 */ }
   },
-  "diagnostics": {                                    // §9.4 冻结键集（synthesis 级，T14 写）
+  "diagnostics": {                                    // 仅 T14 可写键集（见下方所有权映射）
     "new_aspect_rate": <f>, "new_claim_rate": <f>, "new_expert_rate": <f>,
-    "new_contradiction_rate": <f>, "novelty_gain": <f>
+    "new_contradiction_rate": <f>, "claim_source_diversity": <f>
   }
 }
 ```
+
+### diagnostics 所有权映射（R1-F3：FIELD → OWNER → AUTHORITY）
+
+`diagnostics` 的 REQUIRED 键集 = **T14 经冻结 T07 hook `updateSynthesisDiagnostics` 实际可写
+的键集**（coverage-state.mjs @ master；Spec §9.4）。不按命名相似度推断，逐键给出权威：
+
+| field | OWNER | AUTHORITY |
+|---|---|---|
+| `new_aspect_rate` | T14 | Hook 5 `updateSynthesisDiagnostics` → `applyNewRateDiagnostics`；Spec §9.4 |
+| `new_claim_rate` | T14 | 同上 |
+| `new_expert_rate` | T14 | 同上 |
+| `new_contradiction_rate` | T14 | 同上 |
+| `claim_source_diversity` | T14 | Hook 5 显式 T14-only 写入路径；Spec §9.4（R1-F3 补回：R0 缺失） |
+| `novelty_gain` | **T06 / Retrieval Controller** | Hook 1 `updateRetrievalCoverage` —— 非 T14 可写，**已从 SEAM D 移除**（R0 漂移项） |
+| `selected_source_group_count` 等 selection 类 | T12 | Hook 3 `updateSelectionAccounting` —— 不经 SEAM D |
+| `capturedNotVerifiedCount` 等 completeness 类 | T09 | Hook 2 `updateSourceCompleteness` —— 不经 SEAM D |
 
 ### IDENTITY_FIELDS
 
@@ -447,19 +533,23 @@ synthesis 面向最终 render/披露：无 machine-private path；UNTRUSTED 投�
 
 ### BACKWARD_COMPATIBILITY / VERSIONING_RULE
 
-同 SEAM A。`categoryEnum` 按 §8.3 冻结词表；diagnostics 键集按 §9.4 冻结——两者扩展均需
-Spec 级 authority，不得由 seam amendment 私自扩张。
+同 SEAM A。claim category 词表按 §8.3 冻结（静态权威，validator 内置）；diagnostics 键集 =
+T14 hook 可写集——两者扩展均需 Spec 级 authority，不得由 seam amendment 私自扩张。
 
 ---
 
 ## 附：Seam → fixture / validator / test 对照
 
-| Seam | valid minimal | valid multi-group | fail-closed |
-|---|---|---|---|
-| A | `seam-a/research-corpus-manifest.minimal.json` | `seam-a/research-corpus-manifest.multi-group.json` | `seam-a/invalid.captured-only-ref.json` |
-| B | `seam-b/selected-research-corpus.minimal.json` | `seam-b/selected-research-corpus.multi-group.json` | `seam-b/invalid.missing-exclusion-reason.json` |
-| C | `seam-c/group-representations.multi-group.json` | （同左，多组即 realistic case） | `seam-c/invalid.guard-mismatch.json` |
-| D | `seam-d/synthesis-output.minimal.json` | （由 chain test 以 B+C 真实链验证） | `seam-d/invalid.no-guard-evidence.json` |
+| Seam | valid minimal | valid multi-group | fail-closed | TYPE_B |
+|---|---|---|---|---|
+| A | `seam-a/research-corpus-manifest.minimal.json` | `seam-a/research-corpus-manifest.multi-group.json` | `seam-a/invalid.stale-manifest-hash.json` | **REQUIRED**（T09 已存在 @ 4789382）→ `test/p1-seam-a-producer-conformance.test.mjs` |
+| B | `seam-b/selected-research-corpus.minimal.json` | `seam-b/selected-research-corpus.multi-group.json` | `seam-b/invalid.missing-exclusion-reason.json` | DEFERRED_UNTIL_T12 |
+| C | `seam-c/group-representations.multi-group.json` | （同左，多组即 realistic case） | `seam-c/invalid.guard-mismatch.json` | DEFERRED_UNTIL_T13 |
+| D | `seam-d/synthesis-output.minimal.json` | （由 chain test 以 B+C 真实链验证） | `seam-d/invalid.no-guard-evidence.json` | DEFERRED_UNTIL_T14 |
 
 canonical-content 重复检测：contract test 在内存中向 valid A fixture 植入内容体字段并断言
 `SEAM_A_CANONICAL_CONTENT_FORBIDDEN`（无需独立文件）。
+
+**R1 新增机械保障（SEAM A）**：manifestHash 自校验——validator 重算真实 producer 的 hash 域
+（canonicalJson 逐键排序 + sha256），fixtures 的 manifestHash 为真实计算值；任何被 hash 覆盖
+字段的篡改 / captured 组混入 / stale 漂移都触发 `SEAM_A_MANIFEST_HASH_MISMATCH`。

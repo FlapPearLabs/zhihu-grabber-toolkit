@@ -15,12 +15,23 @@
       "capturedAnswerCount": 3,
       "reportedAnswerCount": 3,
       "paginationStatus": "complete"
+    },
+    {
+      "groupId": "56789123",
+      "questionId": "56789123",
+      "answersRel": "zhihu/56789123/answers.json",
+      "handoffRel": "zhihu/56789123/handoff.json",
+      "answersHash": "b9f0627502acf9ea2cb861e3662f91f465ed7bf01231f1bed7eaabb4d5e07b58",
+      "handoffHash": "8a3df94a58af594f9162f46fb75a19292e14554f6ca7f3dbc2297a06b3fa67a6",
+      "capturedAnswerCount": 4,
+      "reportedAnswerCount": null,
+      "paginationStatus": "complete"
     }
   ],
   "accounting": {
-    "selectedGroupCount": 1,
+    "selectedGroupCount": 2,
     "verifiedGroupCount": 1,
-    "capturedNotVerifiedGroupCount": 0,
+    "capturedNotVerifiedGroupCount": 1,
     "failedGroupCount": 0
   },
   "manifestHash": "d4850c93a226981dc6ce8c70047cbd638185281651c1c49118b6d8c8762f3541"

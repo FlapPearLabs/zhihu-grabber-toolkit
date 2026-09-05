@@ -9,20 +9,34 @@
  *
  * Pure, offline, deterministic. No product-module imports, no network, no
  * credentials. These validators verify STRUCTURE + frozen invariants of the
- * canonical fixture encoding; they do not recompute product hashes.
+ * canonical encoding; for SEAM A they additionally RECOMPUTE the producer's
+ * manifestHash (R1: self-verifying identity — tamper/stale detection).
  */
+
+import crypto from 'node:crypto';
+import path from 'node:path';
 
 const SHA256_REF = /^sha256:[0-9a-f]{64}$/;
 const PLAN_HASH = /^[0-9a-f]{64}$/;
+// Real producer hash domain (state.mjs @ 4789382): plain 64-char lowercase hex,
+// NO "sha256:" prefix — answersHash / handoffHash / selectionIdentity /
+// selectionDecisionHash / manifestHash all use this encoding.
+const HEX64 = /^[0-9a-f]{64}$/;
 
 const COMPLETENESS_STATUSES = ['captured', 'verified', 'partial', 'failed'];
 const SYNTHESIS_CLAIM_CATEGORIES = ['widely-shared', 'group-specific', 'minority', 'conflicting'];
-const FROZEN_DIAGNOSTIC_KEYS = [
+// SEAM D diagnostics = EXACTLY the keys T14 can write through the frozen T07 hook
+// updateSynthesisDiagnostics (coverage-state.mjs @ master):
+//   claim_source_diversity (explicit T14-only write) + applyNewRateDiagnostics (4 rates).
+// novelty_gain is owned by T06 / Retrieval Controller (updateRetrievalCoverage) and is
+// NOT T14-writable — removed from SEAM D (R1-F3). Selection diagnostics (T12, Hook 3)
+// and Source Completeness diagnostics (T09, Hook 2) never travel through SEAM D.
+const T14_WRITABLE_DIAGNOSTIC_KEYS = [
   'new_aspect_rate',
   'new_claim_rate',
   'new_expert_rate',
   'new_contradiction_rate',
-  'novelty_gain',
+  'claim_source_diversity',
 ];
 const FORBIDDEN_CONTENT_KEYS = [
   'content',
@@ -88,62 +102,120 @@ export function walkForForbiddenKeys(value, forbiddenKeys, prefix = '') {
   return found;
 }
 
+/**
+ * Deterministic canonical JSON — byte-identical algorithm to the real T09
+ * producer's private canonicalJson (multi-group-execution.mjs @ 4789382):
+ * recursively key-sorted, JSON.stringify leaf semantics. Used ONLY to recompute
+ * manifestHash so tampering of any hashed field is mechanically detectable.
+ */
+function canonicalJsonForHash(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJsonForHash).join(',')}]`;
+  if (value !== null && typeof value === 'object') {
+    const keys = Object.keys(value).sort();
+    return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalJsonForHash(value[k])}`).join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+/**
+ * Recompute manifestHash exactly as the real producer does: sha256 over the
+ * canonical JSON of every present field EXCEPT manifestHash itself (the producer
+ * hashes the manifest before attaching the hash). Adding new fields later keeps
+ * working (they enter the hash on the producer side); any post-hoc mutation of a
+ * hashed field breaks the recomputation — the fail-closed tamper/stale signal.
+ */
+function recomputeManifestHash(artifact) {
+  const { manifestHash: _omitted, ...hashedFields } = artifact;
+  return crypto.createHash('sha256').update(canonicalJsonForHash(hashedFields)).digest('hex');
+}
+
+/**
+ * Work-relative artifact reference: non-empty string, never absolute, never
+ * escaping the work dir. Exact file layout stays PRIVATE (seam doc §0) — the
+ * real producer currently uses `zhihu/<questionId>/{answers,handoff}.json`.
+ */
+function isWorkRelativeRef(value) {
+  if (!isNonEmptyString(value)) return false;
+  if (value.startsWith('/') || path.isAbsolute(value)) return false;
+  return !value.split('/').includes('..');
+}
+
 /* ---------------------------------- SEAM A --------------------------------- */
 
+/**
+ * SEAM A — T09_TO_T12: MINIMUM OBSERVABLE CONTRACT (R1 producer-grounded).
+ * The observable artifact IS the real ResearchCorpusManifest emitted by
+ * deriveResearchCorpusManifest (reviewed T09 @ 4789382): identity projection,
+ * no renamed/invented fields. Invented mandatory fields of the pre-R1 seam
+ * (verifyResultRef / verifyAuthority / verifiedAt / selectedSourceCount /
+ * derivedFrom / selectorOutputRef / groupProvenance) were REMOVED — see
+ * P1_SEAM_CONTRACTS_V1.md SEAM A "F1 审计" table.
+ */
 export function validateResearchCorpusManifest(artifact) {
   const errors = [];
   if (!isPlainObject(artifact)) return fail([err('SEAM_A_SHAPE', '$', 'not an object')]);
-  if (artifact.seam !== 'T09_TO_T12') errors.push(err('SEAM_A_ID', '$.seam', 'expected T09_TO_T12'));
-  if (artifact.seamVersion !== 1) errors.push(err('SEAM_A_VERSION', '$.seamVersion', 'expected 1'));
+  if (artifact.type !== 'research-corpus-manifest') errors.push(err('SEAM_A_TYPE', '$.type', 'expected research-corpus-manifest (real producer binding)'));
+  if (artifact.schemaVersion !== 1) errors.push(err('SEAM_A_SCHEMA_VERSION', '$.schemaVersion', 'expected 1'));
   if (!PLAN_HASH.test(artifact.planHash || '')) errors.push(err('SEAM_A_PLAN_HASH', '$.planHash', '64hex required'));
+  if (!HEX64.test(artifact.selectionIdentity || '')) errors.push(err('SEAM_A_SELECTION_IDENTITY', '$.selectionIdentity', '64hex required'));
+  if (!HEX64.test(artifact.selectionDecisionHash || '')) errors.push(err('SEAM_A_SELECTION_IDENTITY', '$.selectionDecisionHash', '64hex required'));
 
-  const refs = artifact.verifiedGroupRefs;
-  if (!Array.isArray(refs) || refs.length === 0) {
-    errors.push(err('SEAM_A_REFS_REQUIRED', '$.verifiedGroupRefs', 'non-empty array required'));
+  const groups = artifact.groups;
+  if (!Array.isArray(groups) || groups.length === 0) {
+    // A manifest with zero verified groups cannot seed selection (Spec §7.2 no
+    // valid candidate → fail closed); it is a legal producer STATE but never a
+    // consumable SEAM A artifact.
+    errors.push(err('SEAM_A_REFS_REQUIRED', '$.groups', 'non-empty array required (empty manifest is a terminal producer state, not a consumable artifact)'));
   } else {
-    refs.forEach((ref, i) => {
-      const p = `$.verifiedGroupRefs[${i}]`;
+    groups.forEach((ref, i) => {
+      const p = `$.groups[${i}]`;
       if (!isNonEmptyString(ref.groupId) || !isNonEmptyString(ref.questionId)) {
         errors.push(err('SEAM_A_GROUP_IDENTITY', `${p}`, 'groupId/questionId required'));
       }
-      if (!isNonEmptyString(ref.verifiedArtifactRef)) {
-        errors.push(err('SEAM_A_ARTIFACT_REF', `${p}.verifiedArtifactRef`, 'required'));
+      if (!isWorkRelativeRef(ref.answersRel) || !isWorkRelativeRef(ref.handoffRel)) {
+        errors.push(err('SEAM_A_ARTIFACT_REF', `${p}.answersRel/handoffRel`, 'work-relative refs required (content-free)'));
       }
-      if (!SHA256_REF.test(ref.contentHash || '')) {
-        errors.push(err('SEAM_A_CONTENT_HASH', `${p}.contentHash`, 'sha256:64hex required'));
+      if (!HEX64.test(ref.answersHash || '') || !HEX64.test(ref.handoffHash || '')) {
+        errors.push(err('SEAM_A_CONTENT_HASH', `${p}.answersHash/handoffHash`, '64hex required (real producer encoding, no prefix)'));
       }
-      // valid-only invariant (Spec §6.1): verification evidence must be referenced
-      if (!isNonEmptyString(ref.verifyResultRef) || ref.verifyAuthority !== 'verify-output') {
-        errors.push(err('SEAM_A_MISSING_VERIFY_EVIDENCE', `${p}`, 'verifyResultRef + verify-output authority required (captured != verified)'));
+      for (const countKey of ['capturedAnswerCount', 'reportedAnswerCount']) {
+        const v = ref[countKey];
+        if (v !== null && !isNonNegativeInt(v)) {
+          errors.push(err('SEAM_A_COUNT_INVALID', `${p}.${countKey}`, 'non-negative int or null required'));
+        }
       }
-      if (!isPositiveInt(ref.selectedSourceCount)) {
-        errors.push(err('SEAM_A_SOURCE_COUNT', `${p}.selectedSourceCount`, 'positive int required'));
+      if (!['complete', 'partial', 'unknown'].includes(ref.paginationStatus)) {
+        errors.push(err('SEAM_A_PAGINATION_STATUS', `${p}.paginationStatus`, 'complete/partial/unknown required'));
       }
     });
   }
 
-  const manifest = artifact.manifest;
-  if (!isPlainObject(manifest)) {
-    errors.push(err('SEAM_A_MANIFEST_REQUIRED', '$.manifest', 'object required'));
+  const accounting = artifact.accounting;
+  if (!isPlainObject(accounting)) {
+    errors.push(err('SEAM_A_ACCOUNTING_INVALID', '$.accounting', 'object required'));
   } else {
-    if (!SHA256_REF.test(manifest.manifestHash || '')) {
-      errors.push(err('SEAM_A_MANIFEST_HASH', '$.manifest.manifestHash', 'sha256:64hex required'));
-    }
-    if (!Array.isArray(manifest.derivedFrom) || !manifest.derivedFrom.includes('verifiedGroupRefs') || !manifest.derivedFrom.includes('selectorOutputRef')) {
-      errors.push(err('SEAM_A_DERIVATION', '$.manifest.derivedFrom', 'must declare verifiedGroupRefs + selectorOutputRef'));
-    }
-    if (!isNonEmptyString(manifest.selectorOutputRef)) {
-      errors.push(err('SEAM_A_SELECTOR_REF', '$.manifest.selectorOutputRef', 'required'));
-    }
-    if (Array.isArray(refs) && manifest.selectedGroupCount !== refs.length) {
-      errors.push(err('SEAM_A_MANIFEST_INCONSISTENT', '$.manifest.selectedGroupCount', `expected ${refs ? refs.length : 'n/a'}`));
-    }
-    const refIds = Array.isArray(refs) ? refs.map((r) => r.groupId) : [];
-    const provIds = Array.isArray(manifest.groupProvenance) ? manifest.groupProvenance.map((g) => g.groupId) : [];
-    for (const id of refIds) {
-      if (!provIds.includes(id)) {
-        errors.push(err('SEAM_A_PROVENANCE_MISSING', '$.manifest.groupProvenance', `missing provenance for ${id}`));
+    const keys = ['selectedGroupCount', 'verifiedGroupCount', 'capturedNotVerifiedGroupCount', 'failedGroupCount'];
+    if (!keys.every((k) => isNonNegativeInt(accounting[k]))) {
+      errors.push(err('SEAM_A_ACCOUNTING_INVALID', '$.accounting', `${keys.join('/')} non-negative ints required`));
+    } else {
+      if (Array.isArray(groups) && accounting.verifiedGroupCount !== groups.length) {
+        errors.push(err('SEAM_A_ACCOUNTING_INCONSISTENT', '$.accounting.verifiedGroupCount', `expected ${groups.length} (groups[] is valid-only)`));
       }
+      if (accounting.verifiedGroupCount > accounting.selectedGroupCount) {
+        errors.push(err('SEAM_A_ACCOUNTING_INCONSISTENT', '$.accounting', 'verifiedGroupCount cannot exceed selectedGroupCount'));
+      }
+    }
+  }
+
+  if (!HEX64.test(artifact.manifestHash || '')) {
+    errors.push(err('SEAM_A_MANIFEST_HASH', '$.manifestHash', '64hex required'));
+  } else {
+    // Self-verifying identity: recompute over every present field except the
+    // hash itself (exact producer derivation). Detects tampered group entries,
+    // smuggled captured-not-verified groups, and any stale content drift.
+    const recomputed = recomputeManifestHash(artifact);
+    if (recomputed !== artifact.manifestHash) {
+      errors.push(err('SEAM_A_MANIFEST_HASH_MISMATCH', '$.manifestHash', 'recomputed manifestHash differs — manifest is stale or tampered (e.g. a captured-not-verified group smuggled into groups[])'));
     }
   }
 
@@ -297,8 +369,13 @@ export function validateGroupRepresentations(artifact) {
   }
 
   const agg = artifact.aggregateAnalyzedIdentity;
-  if (!isPlainObject(agg) || !SHA256_REF.test(agg.mappedAnalyzedSourceSetIdentity || '') || !isPlainObject(agg.perGroup) || agg.owner !== 'P1-T13' || !Array.isArray(agg.derivedFrom) || agg.derivedFrom.length === 0) {
-    errors.push(err('SEAM_C_IDENTITY_ARTIFACT_INCOMPLETE', '$.aggregateAnalyzedIdentity', 'identity + perGroup + owner=P1-T13 + derivedFrom required'));
+  // R1-F5: ownership is static authority (Issue #45 single-owner clause; Ticket
+  // Graph §B; key-decisions D10) — NOT a runtime field. owner labels and
+  // derivedFrom explanation arrays were removed from the REQUIRED shape.
+  // SEAM C producer identity is guaranteed by the seam itself (only T13 can
+  // produce this artifact); a forged owner label would provide zero security.
+  if (!isPlainObject(agg) || !SHA256_REF.test(agg.mappedAnalyzedSourceSetIdentity || '') || !isPlainObject(agg.perGroup)) {
+    errors.push(err('SEAM_C_IDENTITY_ARTIFACT_INCOMPLETE', '$.aggregateAnalyzedIdentity', 'mappedAnalyzedSourceSetIdentity + perGroup map required (single writer = P1-T13 by static authority)'));
   }
   return errors.length === 0 ? ok() : fail(errors);
 }
@@ -357,12 +434,15 @@ export function validateSynthesisOutput(artifact) {
   if (!isPlainObject(diagnostics)) {
     errors.push(err('SEAM_D_DIAGNOSTICS_REQUIRED', '$.diagnostics', 'object required'));
   } else {
+    // R1-F3: the SEAM D diagnostics key set is EXACTLY what T14 can write via the
+    // frozen T07 hook updateSynthesisDiagnostics. novelty_gain (T06-owned) and all
+    // selection/completeness diagnostics do NOT travel through SEAM D.
     for (const key of Object.keys(diagnostics)) {
-      if (!FROZEN_DIAGNOSTIC_KEYS.includes(key)) {
-        errors.push(err('SEAM_D_UNKNOWN_DIAGNOSTIC_KEY', `$.diagnostics.${key}`, 'not in Spec §9.4 frozen key set'));
+      if (!T14_WRITABLE_DIAGNOSTIC_KEYS.includes(key)) {
+        errors.push(err('SEAM_D_UNKNOWN_DIAGNOSTIC_KEY', `$.diagnostics.${key}`, 'not in the T14-writable set (updateSynthesisDiagnostics / Spec §9.4)'));
       }
     }
-    for (const key of FROZEN_DIAGNOSTIC_KEYS) {
+    for (const key of T14_WRITABLE_DIAGNOSTIC_KEYS) {
       if (typeof diagnostics[key] !== 'number') {
         errors.push(err('SEAM_D_DIAGNOSTICS_INCOMPLETE', `$.diagnostics.${key}`, 'numeric value required'));
       }

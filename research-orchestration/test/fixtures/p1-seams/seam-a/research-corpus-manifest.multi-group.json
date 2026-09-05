@@ -1,48 +1,49 @@
 {
-  "seam": "T09_TO_T12",
-  "seamVersion": 1,
+  "schemaVersion": 1,
+  "type": "research-corpus-manifest",
   "planHash": "5f1a2b3c4d5e6f708192a3b4c5d6e7f80112233445566778899aabbccddeeff0",
-  "verifiedGroupRefs": [
+  "selectionIdentity": "63c5586d7dc07aa47edf01e90906983eca11a9bb317354b78c0a2fac9730ea04",
+  "selectionDecisionHash": "0d3af3bcb09d97acd94f854b451ab4e8d734de4ccc91d71c31d3d8cb2bd9e543",
+  "groups": [
     {
-      "groupId": "q-23456789",
+      "groupId": "23456789",
       "questionId": "23456789",
-      "verifiedArtifactRef": "runs/run-demo-001/groups/q-23456789/answers.json",
-      "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-      "verifyResultRef": "runs/run-demo-001/groups/q-23456789/verify-result.json",
-      "verifyAuthority": "verify-output",
-      "selectedSourceCount": 5,
-      "verifiedAt": "2026-09-01T08:00:00Z"
+      "answersRel": "zhihu/23456789/answers.json",
+      "handoffRel": "zhihu/23456789/handoff.json",
+      "answersHash": "735793db1163a1d45769b9b46edc978b6968321ca2929a93c34118c9931b30b6",
+      "handoffHash": "564f79fbf3db7a0ba66d762ec740774daec7031130693887acf85dd2b5387e75",
+      "capturedAnswerCount": 5,
+      "reportedAnswerCount": 5,
+      "paginationStatus": "complete"
     },
     {
-      "groupId": "q-34561234",
+      "groupId": "34561234",
       "questionId": "34561234",
-      "verifiedArtifactRef": "runs/run-demo-001/groups/q-34561234/answers.json",
-      "contentHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
-      "verifyResultRef": "runs/run-demo-001/groups/q-34561234/verify-result.json",
-      "verifyAuthority": "verify-output",
-      "selectedSourceCount": 2,
-      "verifiedAt": "2026-09-01T08:05:00Z"
+      "answersRel": "zhihu/34561234/answers.json",
+      "handoffRel": "zhihu/34561234/handoff.json",
+      "answersHash": "8a5415fd8d255421def8116c317cea0c06d1796d90eb16db8bd6e728b2e5759d",
+      "handoffHash": "f710678bb0c82a47137151b95494c58ed9d876df320ef9bd82435f164316fce0",
+      "capturedAnswerCount": 2,
+      "reportedAnswerCount": 2,
+      "paginationStatus": "complete"
     },
     {
-      "groupId": "q-45678123",
+      "groupId": "45678123",
       "questionId": "45678123",
-      "verifiedArtifactRef": "runs/run-demo-001/groups/q-45678123/answers.json",
-      "contentHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
-      "verifyResultRef": "runs/run-demo-001/groups/q-45678123/verify-result.json",
-      "verifyAuthority": "verify-output",
-      "selectedSourceCount": 1,
-      "verifiedAt": "2026-09-01T08:10:00Z"
+      "answersRel": "zhihu/45678123/answers.json",
+      "handoffRel": "zhihu/45678123/handoff.json",
+      "answersHash": "b54fa94d3554b6cd91db900fb4402cd0900f12f6fe2da23428db1f542221ecbb",
+      "handoffHash": "4de09f21d7b1fd2831c4cf98607d889eb559e7ed375730ea7d03b9e4aafc9fae",
+      "capturedAnswerCount": 1,
+      "reportedAnswerCount": 1,
+      "paginationStatus": "partial"
     }
   ],
-  "manifest": {
-    "manifestHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-    "derivedFrom": ["verifiedGroupRefs", "selectorOutputRef"],
-    "selectorOutputRef": "runs/run-demo-001/selection/selection-decision.json",
-    "selectedGroupCount": 3,
-    "groupProvenance": [
-      { "groupId": "q-23456789", "providerId": "official-search", "capability": "searchQuestions" },
-      { "groupId": "q-34561234", "providerId": "official-search", "capability": "searchQuestions" },
-      { "groupId": "q-45678123", "providerId": "official-search", "capability": "searchQuestions" }
-    ]
-  }
+  "accounting": {
+    "selectedGroupCount": 4,
+    "verifiedGroupCount": 3,
+    "capturedNotVerifiedGroupCount": 1,
+    "failedGroupCount": 0
+  },
+  "manifestHash": "ca51021c4bad2ff9720ec9667b295132e934b1da2378f314626ab9ab51429ffc"
 }

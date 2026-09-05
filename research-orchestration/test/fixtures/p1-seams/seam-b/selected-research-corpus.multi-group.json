@@ -6,13 +6,13 @@
   "corpus": {
     "groups": [
       {
-        "groupId": "q-23456789",
+        "groupId": "23456789",
         "selectedSourceRefs": [
-          { "canonicalSourceId": "q-23456789-a-101", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/q-23456789/answers.json" },
-          { "canonicalSourceId": "q-23456789-a-102", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/q-23456789/answers.json" },
-          { "canonicalSourceId": "q-23456789-a-103", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/q-23456789/answers.json" },
-          { "canonicalSourceId": "q-23456789-a-104", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/q-23456789/answers.json" },
-          { "canonicalSourceId": "q-23456789-a-105", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/q-23456789/answers.json" }
+          { "canonicalSourceId": "23456789-a-101", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/23456789/answers.json" },
+          { "canonicalSourceId": "23456789-a-102", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/23456789/answers.json" },
+          { "canonicalSourceId": "23456789-a-103", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/23456789/answers.json" },
+          { "canonicalSourceId": "23456789-a-104", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/23456789/answers.json" },
+          { "canonicalSourceId": "23456789-a-105", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/23456789/answers.json" }
         ],
         "accounting": {
           "eligible": 8,
@@ -22,10 +22,10 @@
         }
       },
       {
-        "groupId": "q-34561234",
+        "groupId": "34561234",
         "selectedSourceRefs": [
-          { "canonicalSourceId": "q-34561234-a-201", "contentHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "verifiedArtifactRef": "runs/run-demo-001/groups/q-34561234/answers.json" },
-          { "canonicalSourceId": "q-34561234-a-202", "contentHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "verifiedArtifactRef": "runs/run-demo-001/groups/q-34561234/answers.json" }
+          { "canonicalSourceId": "34561234-a-201", "contentHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "verifiedArtifactRef": "runs/run-demo-001/groups/34561234/answers.json" },
+          { "canonicalSourceId": "34561234-a-202", "contentHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "verifiedArtifactRef": "runs/run-demo-001/groups/34561234/answers.json" }
         ],
         "accounting": {
           "eligible": 2,
@@ -35,9 +35,9 @@
         }
       },
       {
-        "groupId": "q-45678123",
+        "groupId": "45678123",
         "selectedSourceRefs": [
-          { "canonicalSourceId": "q-45678123-a-301", "contentHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "verifiedArtifactRef": "runs/run-demo-001/groups/q-45678123/answers.json" }
+          { "canonicalSourceId": "45678123-a-301", "contentHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "verifiedArtifactRef": "runs/run-demo-001/groups/45678123/answers.json" }
         ],
         "accounting": {
           "eligible": 3,

@@ -6,11 +6,11 @@
   "corpus": {
     "groups": [
       {
-        "groupId": "q-23456789",
+        "groupId": "23456789",
         "selectedSourceRefs": [
-          { "canonicalSourceId": "q-23456789-a-101", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/q-23456789/answers.json" },
-          { "canonicalSourceId": "q-23456789-a-102", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/q-23456789/answers.json" },
-          { "canonicalSourceId": "q-23456789-a-103", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/q-23456789/answers.json" }
+          { "canonicalSourceId": "23456789-a-101", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/23456789/answers.json" },
+          { "canonicalSourceId": "23456789-a-102", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/23456789/answers.json" },
+          { "canonicalSourceId": "23456789-a-103", "contentHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "verifiedArtifactRef": "runs/run-demo-001/groups/23456789/answers.json" }
         ],
         "accounting": {
           "eligible": 5,

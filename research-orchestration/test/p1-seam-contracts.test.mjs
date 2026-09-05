@@ -48,7 +48,7 @@ function assertHasError(result, code) {
 
 /* ================================== SEAM A ================================== */
 
-describe('SEAM A T09_TO_T12 — ResearchCorpusManifest', () => {
+describe('SEAM A T09_TO_T12 — ResearchCorpusManifest (producer-grounded R1)', () => {
   const minimal = () => load('seam-a', 'research-corpus-manifest.minimal.json');
   const multiGroup = () => load('seam-a', 'research-corpus-manifest.multi-group.json');
 
@@ -58,17 +58,29 @@ describe('SEAM A T09_TO_T12 — ResearchCorpusManifest', () => {
     assert.equal(result.ok, true);
   });
 
-  test('valid realistic multi-group case (incl. small group) satisfies the seam', () => {
+  test('valid realistic multi-group case (4 selected / 3 verified / 1 captured-not-verified) satisfies the seam', () => {
     const artifact = multiGroup();
-    assert.equal(artifact.verifiedGroupRefs.length, 3);
+    assert.equal(artifact.groups.length, 3);
+    assert.equal(artifact.accounting.capturedNotVerifiedGroupCount, 1);
+    assert.equal(artifact.accounting.selectedGroupCount, 4);
     const result = validateResearchCorpusManifest(artifact);
     assert.equal(result.ok, true, JSON.stringify(result.errors));
   });
 
-  test('captured-only ref (no verify evidence) fails closed — captured != verified', () => {
-    const result = validateResearchCorpusManifest(load('seam-a', 'invalid.captured-only-ref.json'));
+  test('self-verifying manifestHash: stale/tampered manifest fails closed', () => {
+    // invalid fixture = captured-not-verified group smuggled into groups[] without
+    // recomputing manifestHash — exactly what the real producer hash domain detects.
+    const result = validateResearchCorpusManifest(load('seam-a', 'invalid.stale-manifest-hash.json'));
     assert.equal(result.ok, false);
-    assertHasError(result, 'SEAM_A_MISSING_VERIFY_EVIDENCE');
+    assertHasError(result, 'SEAM_A_MANIFEST_HASH_MISMATCH');
+  });
+
+  test('any post-hoc group mutation breaks the recomputed manifestHash (fail closed)', () => {
+    const mutated = minimal();
+    mutated.groups[0].capturedAnswerCount = 99;
+    const result = validateResearchCorpusManifest(mutated);
+    assert.equal(result.ok, false);
+    assertHasError(result, 'SEAM_A_MANIFEST_HASH_MISMATCH');
   });
 
   test('canonical-content duplication is mechanically detectable (D09)', () => {
@@ -79,12 +91,20 @@ describe('SEAM A T09_TO_T12 — ResearchCorpusManifest', () => {
     assertHasError(result, 'SEAM_A_CANONICAL_CONTENT_FORBIDDEN');
   });
 
-  test('manifest group-count inconsistency is detected', () => {
+  test('accounting inconsistency (verifiedGroupCount drift from groups[]) is detected', () => {
     const mutated = minimal();
-    mutated.manifest.selectedGroupCount = 5;
+    mutated.accounting.verifiedGroupCount = 5;
     const result = validateResearchCorpusManifest(mutated);
     assert.equal(result.ok, false);
-    assertHasError(result, 'SEAM_A_MANIFEST_INCONSISTENT');
+    assertHasError(result, 'SEAM_A_ACCOUNTING_INCONSISTENT');
+  });
+
+  test('empty manifest (zero verified groups) is not a consumable artifact (Spec §7.2)', () => {
+    const mutated = minimal();
+    mutated.groups = [];
+    const result = validateResearchCorpusManifest(mutated);
+    assert.equal(result.ok, false);
+    assertHasError(result, 'SEAM_A_REFS_REQUIRED');
   });
 });
 
@@ -101,7 +121,7 @@ describe('SEAM B T12_TO_T13 — Selected Verified Research Corpus', () => {
 
   test('valid realistic multi-group case with full exclusion accounting satisfies the seam', () => {
     const artifact = multiGroup();
-    const small = artifact.corpus.groups.find((g) => g.groupId === 'q-45678123');
+    const small = artifact.corpus.groups.find((g) => g.groupId === '45678123');
     assert.ok(small && small.selectedSourceRefs.length === 1, 'small/minority group must keep representation');
     const result = validateSelectedResearchCorpus(artifact);
     assert.equal(result.ok, true, JSON.stringify(result.errors));
@@ -167,9 +187,11 @@ describe('SEAM C T13_TO_T14 — representations + aggregate analyzed identity', 
     }
   });
 
-  test('aggregate identity owner is enforced as P1-T13', () => {
+  test('missing aggregate analyzed identity fails closed (single writer = P1-T13, static authority)', () => {
+    // R1-F5: ownership is enforced by static authority (Issue #45 / Ticket Graph §B /
+    // D10), not by a runtime owner label — the label was removed from the contract.
     const mutated = multiGroup();
-    mutated.aggregateAnalyzedIdentity.owner = 'P1-T14';
+    delete mutated.aggregateAnalyzedIdentity;
     const result = validateGroupRepresentations(mutated);
     assert.equal(result.ok, false);
     assertHasError(result, 'SEAM_C_IDENTITY_ARTIFACT_INCOMPLETE');
