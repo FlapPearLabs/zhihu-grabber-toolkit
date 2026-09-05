@@ -40,6 +40,16 @@ export const GUARD_ERROR_IDENTITY_FORMAT = 'T14_GUARD_IDENTITY_FORMAT';
 const SHA256_REF = /^sha256:[0-9a-f]{64}$/;
 const PLAN_HASH = /^[0-9a-f]{64}$/;
 
+/**
+ * Reserved dangerous keys (adversarial round 2, P1probe): a groupId with one
+ * of these names would be silently DROPPED by plain-object groupId-keyed maps
+ * (`byGroup['__proto__'] = v` dispatches through the prototype setter, never
+ * creating an own property — a group vanishes without error). Rejected here
+ * so such a group either fails closed with a coded error; it is never
+ * silently omitted from any disclosure map.
+ */
+const RESERVED_GROUP_IDS = new Set(['__proto__', 'constructor', 'prototype']);
+
 /** Frozen §9.2 completeness vocabulary; synthesis requires verified representations. */
 const COMPLETENESS_STATUSES = ['captured', 'verified', 'partial', 'failed'];
 
@@ -142,6 +152,8 @@ export function readSeamCInput(artifact) {
       const p = `$.groupRepresentations[${i}]`;
       if (!isNonEmptyString(group.groupId)) {
         errors.push({ code: 'SEAM_C_GROUP_ID', path: `${p}.groupId`, detail: 'required' });
+      } else if (RESERVED_GROUP_IDS.has(group.groupId)) {
+        errors.push({ code: 'SEAM_C_GROUP_ID_RESERVED', path: `${p}.groupId`, detail: `groupId "${group.groupId}" is reserved (prototype-key safety); refusing to silently drop the group from groupId-keyed maps` });
       }
       if (!COMPLETENESS_STATUSES.includes(group.completenessStatus)) {
         errors.push({ code: 'SEAM_C_COMPLETENESS_STATUS', path: `${p}.completenessStatus`, detail: `one of ${COMPLETENESS_STATUSES.join('/')}` });

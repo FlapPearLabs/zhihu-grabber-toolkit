@@ -604,3 +604,95 @@ describe('P1-T14 lineage — controller-owned (every synthesis claim traceable t
     }
   });
 });
+
+/* ==================== adversarial round 2 (reviewer probes) ================== */
+
+describe('P1-T14 adversarial round 2 — single-read snapshot, coded getter failures, total-order sort, prototype-key safety', () => {
+  test('H2 TOCTOU: hostile counting-getter input cannot decouple the guard from the synthesis (single-read snapshot)', () => {
+    const honest = seamCMultiGroup();
+    const forgedGroups = JSON.parse(JSON.stringify(honest.groupRepresentations));
+    forgedGroups[0].claims.main[0] = { claimId: 'SMUGGLED', statement: 'injected after PASS', sourceRefs: ['forged-src'] };
+
+    let reads = 0;
+    const hostile = seamCMultiGroup();
+    Object.defineProperty(hostile, 'groupRepresentations', {
+      enumerable: true,
+      get() {
+        reads += 1;
+        return reads === 1 ? honest.groupRepresentations : forgedGroups;
+      },
+    });
+
+    const runtime = defaultRuntime();
+    const result = produceCrossSourceSynthesis({ seamCArtifact: hostile, runtime });
+    assert.equal(result.ok, true, JSON.stringify(result));
+    assert.equal(reads, 1, 'the untrusted input must be read exactly once — guard and synthesis see the same snapshot bytes');
+    assert.equal(runtime.__calls.length, 1);
+    assert.ok(!JSON.stringify(runtime.__calls[0]).includes('SMUGGLED'), 'the runtime must see only the honest snapshot claims');
+    // guard evidence and synthesis content come from ONE consistent snapshot
+    assert.equal(result.artifact.preSynthesisGuard.guardResult, GUARD_PASS);
+    assert.equal(
+      result.artifact.preSynthesisGuard.selectedVerifiedSourceSetIdentity,
+      honest.selectedCorpusIdentityRef,
+    );
+    // identical logical input → byte-identical artifact (no smuggled claim anywhere)
+    const plain = produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: defaultRuntime() });
+    assert.deepEqual(result.artifact, plain.artifact);
+  });
+
+  test('H1: hostile throwing getters escape as coded T14_INPUT_INVALID, never a bare throw from the exported entry', () => {
+    // enumerable accessor on the input
+    const a = {};
+    Object.defineProperty(a, 'seam', { enumerable: true, get() { throw new TypeError('hostile getter'); } });
+    const r1 = produceCrossSourceSynthesis({ seamCArtifact: a, runtime: defaultRuntime() });
+    assert.equal(r1.ok, false);
+    assert.equal(r1.code, 'T14_INPUT_INVALID');
+    assert.ok(r1.errors.some((e) => e.code === 'SEAM_C_INPUT_SNAPSHOT_FAILED'), JSON.stringify(r1.errors));
+
+    // NON-enumerable accessor on an otherwise-valid artifact (still read exactly once)
+    const b = seamCMultiGroup();
+    Object.defineProperty(b, 'groupRepresentations', { get() { throw new RangeError('hostile hidden getter'); } });
+    const r2 = produceCrossSourceSynthesis({ seamCArtifact: b, runtime: defaultRuntime() });
+    assert.equal(r2.ok, false);
+    assert.equal(r2.code, 'T14_INPUT_INVALID');
+    assert.equal(r2.artifact, undefined);
+  });
+
+  test('C5 determinism: equal-aspect clusters — synthesisIdentity is invariant under runtime emission order permutation', () => {
+    const clusterA = { aspect: '同一面向', claimIds: ['c-23456789-001', 'c-23456789-002'] };
+    const clusterB = { aspect: '同一面向', claimIds: ['c-34561234-001', 'c-23456789-003'] };
+    const mkRuntime = (swap) => ({
+      runtimeId: T14_SYNTHESIS_RUNTIME_ID,
+      model: 'deepseek-v4-flash',
+      synthesize: () => ({ aspects: swap ? [clusterB, clusterA] : [clusterA, clusterB] }),
+    });
+    const r1 = produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: mkRuntime(false) });
+    const r2 = produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: mkRuntime(true) });
+    assert.equal(r1.ok, true);
+    assert.equal(r2.ok, true);
+    assert.equal(r1.artifact.synthesis.synthesisIdentity, r2.artifact.synthesis.synthesisIdentity);
+    assert.deepEqual(
+      r2.artifact.synthesis.claims.map((c) => c.claimId),
+      r1.artifact.synthesis.claims.map((c) => c.claimId),
+      'claim order must be a total order, not runtime insertion order',
+    );
+    assert.deepEqual(r1.artifact, r2.artifact);
+  });
+
+  test('P1probe prototype-key safety: reserved groupId fails closed with a coded error — never silently dropped from groupId-keyed maps', () => {
+    const runtime = defaultRuntime();
+    for (const groupId of ['__proto__', 'constructor', 'prototype']) {
+      const artifact = seamCMultiGroup();
+      artifact.groupRepresentations[0].groupId = groupId;
+      const result = produceCrossSourceSynthesis({ seamCArtifact: artifact, runtime });
+      assert.equal(result.ok, false, `groupId=${groupId}`);
+      assert.equal(result.code, 'T14_INPUT_INVALID', `groupId=${groupId}`);
+      assert.equal(result.artifact, undefined, `groupId=${groupId}`);
+      assert.ok(
+        result.errors.some((e) => e.code === 'SEAM_C_GROUP_ID_RESERVED' && e.path.endsWith('.groupId')),
+        JSON.stringify(result.errors),
+      );
+    }
+    assert.equal(runtime.__calls.length, 0, 'reserved groupId must be rejected before any runtime invocation');
+  });
+});

@@ -19,7 +19,21 @@
  *     ONLY through the frozen T07 hook updateSynthesisDiagnostics.
  *
  * Pipeline (all deterministic given deterministic inputs + runtime):
- *   1. readSeamCInput            — structural gate on the SEAM C artifact;
+ *   0. input snapshot            — the untrusted seamCArtifact is deep-copied
+ *                                  ONCE, at the very first read (every own
+ *                                  property — including hostile accessors —
+ *                                  is read exactly once into a plain-data
+ *                                  snapshot); validation, guard, aggregation
+ *                                  and synthesis then ALL operate on that one
+ *                                  snapshot. This is the single-read property
+ *                                  that seals the PRE-SYNTHESIS guard against
+ *                                  TOCTOU decoupling (a hostile getter cannot
+ *                                  serve honest bytes to the guard and forged
+ *                                  bytes to the aggregation — there is only
+ *                                  one read and one set of bytes). Getter
+ *                                  throws / non-JSON values / cycles → coded
+ *                                  T14_INPUT_INVALID, never a bare throw;
+ *   1. readSeamCInput            — structural gate on the snapshot;
  *   2. degradation gate          — any non-verified representation → fail
  *                                  closed (synthesizing over non-verified
  *                                  representations is a semantic downgrade);
@@ -99,6 +113,49 @@ function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+/**
+ * Deep structural snapshot of the untrusted SEAM C input.
+ *
+ * Properties (adversarial round 2, H2/H1):
+ *   - SINGLE READ: every own property of the input is read EXACTLY once
+ *     (Reflect.ownKeys — hostile accessors are invoked once, whether or not
+ *     they are enumerable); the returned graph is plain data with own data
+ *     properties only. Any read after the snapshot is getter-free, so the
+ *     guard, the aggregation and the synthesis physically cannot observe
+ *     divergent bytes of the same input.
+ *   - FULL DETACHMENT: values are copied by value (deep); the output shares
+ *     no object identity with the input, so later mutation of the input (or
+ *     of objects reachable from it) cannot change what the pipeline sees.
+ *   - FAIL CLOSED on non-JSON values (function/symbol/bigint) and cyclic
+ *     graphs (SEAM C is a frozen JSON contract; the caller maps the throw to
+ *     coded T14_INPUT_INVALID — never a bare throw from the exported entry).
+ *   - defineProperty is used so a literal `__proto__` own key is copied as an
+ *     own data property instead of dispatching through the prototype setter.
+ */
+function deepSnapshot(value, seen = new Set()) {
+  const t = typeof value;
+  if (value === undefined || value === null || t === 'string' || t === 'number' || t === 'boolean') {
+    return value;
+  }
+  if (t !== 'object' || seen.has(value)) {
+    throw new TypeError('SEAM C input is not a JSON-safe acyclic value');
+  }
+  seen.add(value);
+  if (Array.isArray(value)) {
+    return value.map((entry) => deepSnapshot(entry, seen));
+  }
+  const out = {};
+  for (const key of Reflect.ownKeys(value)) {
+    Object.defineProperty(out, key, {
+      value: deepSnapshot(value[key], seen),
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
+  }
+  return out;
+}
+
 function sha256HexOf(value) {
   return crypto.createHash('sha256').update(canonicalJson(value), 'utf8').digest('hex');
 }
@@ -164,15 +221,33 @@ export function produceCrossSourceSynthesis({
   priorSynthesis = null,
   workDir = null, // eslint-disable-line no-unused-vars — reserved, no IO by design
 } = {}) {
-  // 1. Structural gate on the input seam artifact.
-  const input = readSeamCInput(seamCArtifact);
+  // 0. SINGLE-READ input snapshot (H2/H1, adversarial round 2): the ONLY read
+  //    of the untrusted artifact happens here; validation (step 1), the guard
+  //    (step 4), aggregation (step 5) and assembly (step 7) all run on the
+  //    snapshot, so guard PASS and synthesis content are computed from one
+  //    consistent set of bytes. Hostile getters that throw, or the input
+  //    being non-JSON/cyclic, are coded failures — never a bare throw.
+  let seamC;
+  try {
+    seamC = deepSnapshot(seamCArtifact);
+  } catch {
+    return {
+      ok: false,
+      code: ERROR_INPUT_INVALID,
+      errors: [{ code: 'SEAM_C_INPUT_SNAPSHOT_FAILED', path: '$', detail: 'input must be a JSON-safe acyclic value; hostile accessors are not readable consistently' }],
+    };
+  }
+
+  // 1. Structural gate on the snapshot (not the raw input — same bytes as
+  //    every later stage).
+  const input = readSeamCInput(seamC);
   if (!input.ok) {
     return { ok: false, code: ERROR_INPUT_INVALID, errors: input.errors };
   }
 
   // 2. Degradation gate: synthesis requires verified representations (§10.2
   //    NO_SEMANTIC_DOWNGRADE — a degraded base is never silently synthesized over).
-  const degraded = seamCArtifact.groupRepresentations.filter((g) => g.completenessStatus !== 'verified');
+  const degraded = seamC.groupRepresentations.filter((g) => g.completenessStatus !== 'verified');
   if (degraded.length > 0) {
     return {
       ok: false,
@@ -186,7 +261,7 @@ export function produceCrossSourceSynthesis({
   //     masquerade as a real conclusion downstream. Spec/issue never authorized
   //     synthesis over an empty verified corpus; repo convention is
   //     fail-closed on unauthorized states → T14_EMPTY_VERIFIED_INPUT.
-  const totalVerifiedClaims = seamCArtifact.groupRepresentations.reduce(
+  const totalVerifiedClaims = seamC.groupRepresentations.reduce(
     (n, g) => n + g.claims.main.length + g.claims.minority.length + g.claims.contradictory.length,
     0,
   );
@@ -223,8 +298,9 @@ export function produceCrossSourceSynthesis({
     return { ok: false, code: guard.code ?? ERROR_INPUT_INVALID };
   }
 
-  // 5. Stage-1 mechanical aggregation (§8.2 structure-preserving records).
-  const stage1 = aggregateCrossGroupClaims(seamCArtifact);
+  // 5. Stage-1 mechanical aggregation (§8.2 structure-preserving records) —
+  //    on the snapshot, the same bytes the guard above saw.
+  const stage1 = aggregateCrossGroupClaims(seamC);
   const records = stage1.records;
   const recordsByClaimId = new Map(records.map((r) => [r.claimId, r]));
 
@@ -270,10 +346,18 @@ export function produceCrossSourceSynthesis({
       sourceClaimIds,
     });
   }
-  claims.sort((a, b) => (a.aspect < b.aspect ? -1 : a.aspect > b.aspect ? 1 : 0));
+  // Total order (adversarial round 2, C5): aspect, then claimId (unique per
+  // cluster — the runtime output is a partition), then canonical JSON of the
+  // claim record as a content-level backstop. synthesisIdentity is therefore
+  // invariant under the runtime's emission order.
+  claims.sort(
+    (a, b) => (a.aspect < b.aspect ? -1 : a.aspect > b.aspect ? 1 : 0)
+      || (a.claimId < b.claimId ? -1 : a.claimId > b.claimId ? 1 : 0)
+      || (canonicalJson(a) < canonicalJson(b) ? -1 : canonicalJson(a) > canonicalJson(b) ? 1 : 0),
+  );
 
   const allAspects = claims.map((c) => c.aspect);
-  const groupDifferences = seamCArtifact.groupRepresentations
+  const groupDifferences = seamC.groupRepresentations
     .map((g) => g.groupId)
     .sort()
     .map((groupId) => {
@@ -301,7 +385,7 @@ export function produceCrossSourceSynthesis({
   // (before any runtime invocation); here it is disclosed as a separate signal,
   // never an epistemic weight.
   const byGroup = {};
-  for (const g of seamCArtifact.groupRepresentations) {
+  for (const g of seamC.groupRepresentations) {
     byGroup[g.groupId] = g.discussionVolume.answerCount;
   }
   const discussionVolumeDifferences = { byGroup };
@@ -319,7 +403,7 @@ export function produceCrossSourceSynthesis({
   const diagnostics = computeDiagnostics(claims, priorSynthesis);
   let nextCoverageState;
   try {
-    const baseState = coverageState ?? createInitialCoverageState({ planHash: seamCArtifact.planHash });
+    const baseState = coverageState ?? createInitialCoverageState({ planHash: seamC.planHash });
     nextCoverageState = updateSynthesisDiagnostics(baseState, diagnostics, { caller: OWNER_T14_SYNTHESIS });
   } catch {
     return { ok: false, code: ERROR_DIAGNOSTICS_HOOK_REJECTED };
@@ -328,7 +412,7 @@ export function produceCrossSourceSynthesis({
   const artifact = {
     seam: 'T14_TO_T15',
     seamVersion: 1,
-    planHash: seamCArtifact.planHash,
+    planHash: seamC.planHash,
     preSynthesisGuard: {
       guardResult: GUARD_PASS,
       selectedVerifiedSourceSetIdentity: guard.selectedVerifiedSourceSetIdentity,
