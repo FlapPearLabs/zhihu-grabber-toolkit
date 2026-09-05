@@ -1,0 +1,31 @@
+{
+  "seam": "T13_TO_T14",
+  "seamVersion": 1,
+  "planHash": "5f1a2b3c4d5e6f708192a3b4c5d6e7f80112233445566778899aabbccddeeff0",
+  "selectedCorpusIdentityRef": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+  "groupRepresentations": [
+    {
+      "groupId": "q-23456789",
+      "canonicalGroupIdentity": { "questionId": "23456789", "providerId": "official-search", "capability": "searchQuestions" },
+      "accounting": { "selected": 3, "verified": 3, "mapped": 2, "analyzed": 2 },
+      "claims": {
+        "main": [
+          { "claimId": "c-23456789-001", "statement": "主流观点：该做法在多数场景下有效", "sourceRefs": ["q-23456789-a-101"] }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": { "answerCount": 5 }
+    }
+  ],
+  "aggregateAnalyzedIdentity": {
+    "mappedAnalyzedSourceSetIdentity": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "perGroup": {
+      "q-23456789": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+    },
+    "owner": "P1-T13",
+    "derivedFrom": ["perGroupAnalyzedIdentities"]
+  }
+}

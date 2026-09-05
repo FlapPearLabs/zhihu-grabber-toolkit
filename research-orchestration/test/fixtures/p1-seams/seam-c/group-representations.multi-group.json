@@ -1,0 +1,51 @@
+{
+  "seam": "T13_TO_T14",
+  "seamVersion": 1,
+  "planHash": "5f1a2b3c4d5e6f708192a3b4c5d6e7f80112233445566778899aabbccddeeff0",
+  "selectedCorpusIdentityRef": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+  "groupRepresentations": [
+    {
+      "groupId": "q-23456789",
+      "canonicalGroupIdentity": { "questionId": "23456789", "providerId": "official-search", "capability": "searchQuestions" },
+      "accounting": { "selected": 3, "verified": 3, "mapped": 3, "analyzed": 3 },
+      "claims": {
+        "main": [
+          { "claimId": "c-23456789-001", "statement": "主流观点：该做法在多数场景下有效", "sourceRefs": ["q-23456789-a-101", "q-23456789-a-102"] }
+        ],
+        "minority": [
+          { "claimId": "c-23456789-002", "statement": "少数派观点：特定条件下结论相反", "sourceRefs": ["q-23456789-a-103"] }
+        ],
+        "contradictory": [
+          { "claimId": "c-23456789-003", "statement": "与主流观点直接冲突的表述", "sourceRefs": ["q-23456789-a-103"] }
+        ]
+      },
+      "expertEvidenceRichRefs": ["q-23456789-a-102"],
+      "completenessStatus": "verified",
+      "discussionVolume": { "answerCount": 5 }
+    },
+    {
+      "groupId": "q-34561234",
+      "canonicalGroupIdentity": { "questionId": "34561234", "providerId": "official-search", "capability": "searchQuestions" },
+      "accounting": { "selected": 2, "verified": 2, "mapped": 2, "analyzed": 2 },
+      "claims": {
+        "main": [
+          { "claimId": "c-34561234-001", "statement": "另一 Question 下的代表性观点", "sourceRefs": ["q-34561234-a-201"] }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": { "answerCount": 2 }
+    }
+  ],
+  "aggregateAnalyzedIdentity": {
+    "mappedAnalyzedSourceSetIdentity": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "perGroup": {
+      "q-23456789": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "q-34561234": "sha256:8888888888888888888888888888888888888888888888888888888888888888"
+    },
+    "owner": "P1-T13",
+    "derivedFrom": ["perGroupAnalyzedIdentities"]
+  }
+}
