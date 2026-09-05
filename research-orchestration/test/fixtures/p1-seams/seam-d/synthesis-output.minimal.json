@@ -15,11 +15,11 @@
         "aspect": "总体有效性",
         "category": "widely-shared",
         "support": [
-          { "sourceRef": "q-23456789-a-101", "groupId": "q-23456789", "authorRef": "author-1001" },
-          { "sourceRef": "q-34561234-a-201", "groupId": "q-34561234", "authorRef": "author-2001" }
+          { "sourceRef": "23456789-a-101", "groupId": "23456789", "authorRef": "author-1001" },
+          { "sourceRef": "34561234-a-201", "groupId": "34561234", "authorRef": "author-2001" }
         ],
         "oppose": [
-          { "sourceRef": "q-23456789-a-103", "groupId": "q-23456789", "authorRef": "author-1002" }
+          { "sourceRef": "23456789-a-103", "groupId": "23456789", "authorRef": "author-1002" }
         ],
         "expertEvidenceRichSupport": true
       },
@@ -28,10 +28,10 @@
         "aspect": "特定条件下的反例",
         "category": "conflicting",
         "support": [
-          { "sourceRef": "q-23456789-a-103", "groupId": "q-23456789", "authorRef": "author-1002" }
+          { "sourceRef": "23456789-a-103", "groupId": "23456789", "authorRef": "author-1002" }
         ],
         "oppose": [
-          { "sourceRef": "q-23456789-a-101", "groupId": "q-23456789", "authorRef": "author-1001" }
+          { "sourceRef": "23456789-a-101", "groupId": "23456789", "authorRef": "author-1001" }
         ],
         "expertEvidenceRichSupport": false
       },
@@ -40,20 +40,20 @@
         "aspect": "仅在小 Question 出现的观点",
         "category": "group-specific",
         "support": [
-          { "sourceRef": "q-34561234-a-202", "groupId": "q-34561234", "authorRef": "author-2002" }
+          { "sourceRef": "34561234-a-202", "groupId": "34561234", "authorRef": "author-2002" }
         ],
         "oppose": [],
         "expertEvidenceRichSupport": false
       }
     ],
     "groupDifferences": [
-      { "groupId": "q-34561234", "difference": "该 Question 内未见少数派表述" }
+      { "groupId": "34561234", "difference": "该 Question 内未见少数派表述" }
     ],
     "evidenceStrength": [
       { "claimId": "x-001", "note": "含 expert/evidence-rich 支持来源" }
     ],
     "discussionVolumeDifferences": {
-      "byGroup": { "q-23456789": 5, "q-34561234": 2 }
+      "byGroup": { "23456789": 5, "34561234": 2 }
     }
   },
   "diagnostics": {
@@ -61,6 +61,6 @@
     "new_claim_rate": 0.2,
     "new_expert_rate": 0.0,
     "new_contradiction_rate": 0.05,
-    "novelty_gain": 0.3
+    "claim_source_diversity": 0.75
   }
 }
