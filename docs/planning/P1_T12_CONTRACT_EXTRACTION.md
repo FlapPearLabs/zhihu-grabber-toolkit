@@ -152,6 +152,10 @@ Produced（本票所有权内）：
    边界；未写 hook 调用路径，避免在无真实 upstream 的分支上发明第二 runner。
    **DECISION_REQUIRED（集成阶段）**：确认 buildSelectionAccountingUpdate 薄适配
    层的归属票（T12 集成 follow-up vs T15 wiring）。
+   **RESOLVED（product owner，2026-09-05，P1 WAVE 01 集成 gate）**：归属 P1-T12
+   ——集成任务 T12-I3 已落地 `applySelectionAccountingToCoverageState`
+   （lib/rce-input-adapter.mjs，caller=OWNER_T12_SELECTION，写面=冻结 Hook 3
+   updateSelectionAccounting 接受键集）；T15 仅保留 reconcile/audit/render 职责。
 4. **canonicalSourceId 编码**：合同 delegated（seam doc :253-255）。测试 fixture
    惯例 `<questionId>-a-<n>`；selector 不校验内部编码，只要求 stable identity +
    sha256 contentHash 配对（合同原样）。**全局唯一性（reviewer round 1, F1）**：
