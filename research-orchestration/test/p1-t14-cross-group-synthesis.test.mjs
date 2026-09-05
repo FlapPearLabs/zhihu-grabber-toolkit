@@ -168,7 +168,7 @@ describe('P1-T14 aggregation semantics (Spec §8.2)', () => {
     const result = produceCrossSourceSynthesis({
       seamCArtifact: artifact,
       runtime: createMockRuntime({
-        aspectByClaimId: { ...MERGED_ASPECTS, 'c-23456789-002': '少数派声音', 'c-23456789-003': '少数派声音' },
+        aspectByClaimId: { ...MERGED_ASPECTS, 'c-23456789-002': '少数派声音' },
       }),
     });
     assert.equal(result.ok, true);
@@ -529,20 +529,30 @@ describe('P1-T14 lineage — controller-owned (every synthesis claim traceable t
     assert.equal(result.ok, true);
 
     const knownClaimIds = new Set();
-    const refsByClaim = new Map();
+    const knownGroups = new Set();
+    const refsByGroup = new Map();
     for (const group of artifact.groupRepresentations) {
+      knownGroups.add(group.groupId);
+      const groupRefs = new Set();
       for (const kind of ['main', 'minority', 'contradictory']) {
         for (const claim of group.claims[kind]) {
           knownClaimIds.add(claim.claimId);
-          refsByClaim.set(claim.claimId, new Set(claim.sourceRefs));
+          for (const ref of claim.sourceRefs) groupRefs.add(ref);
         }
       }
+      refsByGroup.set(group.groupId, groupRefs);
     }
     for (const synthClaim of result.artifact.synthesis.claims) {
       assert.ok(synthClaim.sourceClaimIds.every((id) => knownClaimIds.has(id)), 'claimIds must trace to SEAM C');
-      const refUnion = new Set(synthClaim.sourceClaimIds.flatMap((id) => [...refsByClaim.get(id)]));
       for (const side of [...synthClaim.support, ...synthClaim.oppose]) {
-        assert.ok(refUnion.has(side.sourceRef), `sourceRef ${side.sourceRef} must trace to its SEAM C claim`);
+        assert.ok(knownGroups.has(side.groupId), `groupId ${side.groupId} must trace to SEAM C`);
+        // every reference entry is group-scoped: the ref must exist among that
+        // group's SEAM C claims (in-group opposition traces to the group's
+        // contradictory claims — controller-owned lineage, never model-minted)
+        assert.ok(
+          refsByGroup.get(side.groupId).has(side.sourceRef),
+          `sourceRef ${side.sourceRef} must trace to SEAM C group ${side.groupId}`,
+        );
       }
     }
   });
