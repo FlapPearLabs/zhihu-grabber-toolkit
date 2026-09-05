@@ -788,3 +788,60 @@ PASS_WITH_NONBLOCKING_FINDINGS with zero blocking findings on the same code SHA
 4789382. Lane proceeds to Task #12 (PR + real CI + post-CI fresh contract
 review). External-review pool (G3 x2, N1–N4) is carried into the PR description
 for merge-gate visibility.
+```
+
+## POST-CI FRESH CONTRACT REVIEW — TASK #12 CLOSE-OUT
+
+Mechanical gate executed with first-hand commands in-session (the spawned
+post-CI reviewer returned empty on a transient infrastructure error; per the
+product-owner CONVERGENCE OVERRIDE's anti-over-convergence direction, no
+additional reviewer rounds were spawned — every check below was re-verified
+directly, not taken from any reviewer's claims).
+
+PR STATE — VERIFIED:
+- PR #68 OPEN, base master 0287ba3, head work/p1-t09-multi-group-execution, MERGEABLE.
+- Branch tip 03ad81d; `git diff --stat 4789382..HEAD` = 1 file, +119 lines,
+  docs/planning/P1_T09_MULTI_GROUP_EXECUTION_CONTRACT.md ONLY (c49530a + 03ad81d
+  registration commits). REVIEWED_CODE_SHA 4789382 integrity intact.
+- Remote tip verified via `git ls-remote --refs origin` at every push this lane.
+
+REAL PR CI — RUN 33900382200 (node 22 matrix: ubuntu/macos/windows):
+- CI_TERMINAL = COMPLETED_WITH_KNOWN_BASELINE_FAILURE (never claimed as PASS).
+- Workflow (.github/workflows/ci.yml): step 1 zhihu-answer-grabber `node --test`,
+  step 2 corpus-anthology tests, step 3 repository integration tests. Steps after
+  a failing step do NOT execute → steps 2/3 SKIPPED on all three PR jobs (and
+  identically on the baseline run).
+- Failure signature (full expansion, PR run): ONLY `ERR_MODULE_NOT_FOUND: Cannot
+  find package 'parse5' imported from zhihu-answer-grabber/src/asset-extractor.js`
+  — the CI environment installs no dependencies (workflow comment: modules
+  declare no deps; parse5 import is baseline reality). Per-OS: 272 tests,
+  ubuntu 222 pass / macos 222 pass / windows 219 pass, 49–50 fail, 4 skipped.
+  Every failing test name is the parse5 import cascade; zero failures in any
+  T09-touched area.
+- Baseline comparison: master 0287ba3's own run 33871502421 concluded failure
+  with the IDENTICAL signature and magnitudes (219/222 pass, 49/50 fail across
+  the same three jobs). Same workflow, same skip behavior.
+- T09 scope check: the candidate adds files ONLY under research-orchestration/
+  and docs/planning/. zhihu-answer-grabber is untouched by the entire diff
+  (c6dc4c3..HEAD). No CI evidence indicates a T09-caused regression.
+- CI COVERAGE GAP (durable note): research-orchestration is not part of the CI
+  workflow at all — the T09 domain's 59/59 + 479/479 figures are evidenced by
+  local runs AND independent re-runs by the third-party reviewer at exact HEAD;
+  wiring research-orchestration into CI is deferred to a separate lane decision
+  (out of T09 scope).
+
+LOCAL RE-CONFIRMATION AT HEAD (post-registration): focused 59/59, full
+regression 479/479 (run after 03ad81d).
+
+POST-CI VERDICT: **PASS_WITH_NONBLOCKING_FINDINGS** — all mechanical checks
+clean; CI classification honest (KNOWN_BASELINE_FAILURE, never PASS); register
+consistent; no blocking findings.
+
+LANE TERMINAL STATE (Task #12 complete):
+- REVIEWED_CODE_SHA 4789382 — cleared Round G fresh review AND third-party
+  adversarial review (both PASS_WITH_NONBLOCKING_FINDINGS, zero blocking
+  findings) on the SAME code SHA.
+- PR #68 open with real CI terminal state classified above.
+- NEXT LEGAL ACTION: product-owner merge-gate decision (requires real Chrome
+  dogfood acceptance per governance; merge is exact-SHA fast-forward only).
+  This lane STOPS here — no merge executed, T12/T13/T14/T15 not started.
