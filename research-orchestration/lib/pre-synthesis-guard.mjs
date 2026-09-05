@@ -170,6 +170,8 @@ export function readSeamCInput(artifact) {
       }
       if (!isPlainObject(group.discussionVolume)) {
         errors.push({ code: 'SEAM_C_DISCUSSION_VOLUME', path: `${p}.discussionVolume`, detail: 'separate signal object required' });
+      } else if (!Number.isInteger(group.discussionVolume.answerCount) || group.discussionVolume.answerCount < 0) {
+        errors.push({ code: 'SEAM_C_DISCUSSION_VOLUME', path: `${p}.discussionVolume.answerCount`, detail: 'non-negative int required (separate signal, never an epistemic weight)' });
       }
     });
   }

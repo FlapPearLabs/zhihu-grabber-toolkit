@@ -49,8 +49,10 @@ lib/cross-source-synthesis.mjs   — orchestration: input gate → degradation g
                                     aspect clustering (sanitized projection) →
                                     §8.3 artifact assembly → diagnostics via
                                     the T07 hook.
-test/p1-t14-cross-group-synthesis.test.mjs — 31 tests (counterexample-first:
-                                    committed red in 4b6d182 before modules).
+test/p1-t14-cross-group-synthesis.test.mjs — 33 tests (counterexample-first:
+                                    committed red in 4b6d182 before modules;
+                                    +2 reviewer round 1: empty-corpus
+                                    fail-closed, answerCount gate-before-runtime).
 No new fixtures under seam-d/ were needed (the frozen
 synthesis-output.minimal.json / invalid.no-guard-evidence.json were NOT
 touched; module output is validated against the frozen validator in-memory).
@@ -94,10 +96,11 @@ Runtime injection / safety precedents (read, not modified):
 9. Claim lineage: synthesis claims carry additive `sourceClaimIds` (V1-compatible extra field) + deterministic controller-derived `claimId` = `syn-<sha256(sorted claimIds)[:12]>`; every support/oppose entry is group-scoped to its SEAM C group's canonicalSourceIds.
 10. categoryEnum is NOT embedded in the artifact (R1-F5): the frozen §8.3 vocabulary lives in the validator (static authority); the module's local CLAIM_CATEGORIES mirror is for assignment only.
 11. The module performs NO filesystem IO (workDir accepted and ignored by design); persistence is a controller/T15 concern — the "nothing written on FAIL_CLOSED" property is structural, and is additionally asserted against a temp dir in tests.
+12. Empty verified corpus fails closed (reviewer round 1): a structurally-valid SEAM C input whose groups carry ZERO claims → `T14_EMPTY_VERIFIED_INPUT`, NO synthesis artifact — spec/issue never authorized synthesis over an empty verified corpus, and spec authorization is assumed from the repo's fail-closed convention (§10.2); PO may grant an explicit empty-corpus allowance as a spec change if desired.
 
 ## DECISION_REQUIRED (surfaced, not silently resolved)
 
-1. AUTHOR_IDENTITY_CARRIER_MISSING — §8.2 requires the authors dimension but SEAM C V1 has no author field. Current handling: deterministic pseudo authorRef (see decision 7). Needs upstream authority (T13 SEAM C additive field, or T12 canonicalSourceId encoding) to carry real author identity.
+1. AUTHOR_IDENTITY_CARRIER_MISSING — §8.2 requires the authors dimension but SEAM C V1 has no author field. Current handling: deterministic pseudo authorRef (see decision 7). Needs upstream authority (T13 SEAM C additive field, or T12 canonicalSourceId encoding) to carry real author identity. CONSUMER WARNING: until this is adjudicated, SEAM D consumers (T15/disclosure) must treat `authorRef` as a derived source-token (`sha256(sourceRef)[:12]`), NOT an author signal.
 2. CATEGORY_ASSIGNMENT_AUTHORITY — Spec §8.3 freezes the category vocabulary, not the assignment algorithm; the mechanical precedence in decision 3 is an implementation validation bound needing reviewer/spec-owner confirmation (no thresholds were invented).
 3. PRIOR_SYNTHESIS_BASELINE_UNMODELED — new_aspect_rate/new_claim_rate need a "previous synthesis" baseline; no frozen upstream carrier for that baseline exists in P1. Absent prior ⇒ everything counts as new (honest, disclosed). If a durable baseline is required, it is a new seam/field decision above T14's authority.
 

@@ -423,6 +423,44 @@ describe('P1-T14 failure semantics (fail-closed, no silent fallback / degradatio
     assert.ok(result.errors.length > 0);
   });
 
+  test('structurally-valid SEAM C with ZERO claims → fail closed T14_EMPTY_VERIFIED_INPUT, NO artifact written', () => {
+    const artifact = seamCMultiGroup();
+    for (const group of artifact.groupRepresentations) {
+      group.claims = { main: [], minority: [], contradictory: [] };
+    }
+    const runtime = defaultRuntime();
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'p1-t14-empty-corpus-'));
+    try {
+      const before = fs.readdirSync(tmp);
+      const result = produceCrossSourceSynthesis({
+        seamCArtifact: artifact,
+        runtime,
+        workDir: tmp,
+      });
+      assert.equal(result.ok, false);
+      assert.equal(result.code, 'T14_EMPTY_VERIFIED_INPUT');
+      assert.equal(result.artifact, undefined, 'empty verified corpus must not produce a synthesis artifact');
+      assert.equal(runtime.__calls.length, 0, 'no runtime invocation on empty verified corpus');
+      assert.deepEqual(fs.readdirSync(tmp), before, 'fail-closed branch must not write any artifact file');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  test('input-integrity validation precedes any runtime call: malformed answerCount → coded error, zero runtime invocations', () => {
+    const artifact = seamCMultiGroup();
+    artifact.groupRepresentations[0].discussionVolume = { answerCount: -1 };
+    const runtime = defaultRuntime();
+    const result = produceCrossSourceSynthesis({ seamCArtifact: artifact, runtime });
+    assert.equal(result.ok, false);
+    assert.equal(result.artifact, undefined);
+    assert.ok(
+      result.errors.some((e) => e.code === 'SEAM_C_DISCUSSION_VOLUME' && e.path.endsWith('discussionVolume.answerCount')),
+      JSON.stringify(result.errors),
+    );
+    assert.equal(runtime.__calls.length, 0, 'structural gate must reject BEFORE the runtime is ever invoked');
+  });
+
   test('runtime output is untrusted: unknown claimId / incomplete partition / unsafe aspect → fail closed', () => {
     const unknown = createMockRuntime({ aspectByClaimId: {}, defaultAspect: 'x' });
     unknown.synthesize = () => ({ aspects: [{ aspect: 'a', claimIds: ['c-23456789-001', 'FORGED-CLAIM-ID'] }] });

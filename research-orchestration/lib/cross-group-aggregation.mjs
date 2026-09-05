@@ -57,6 +57,9 @@ function canonicalJson(value) {
  * replaced by the consumed field — never by a model-owned value.
  */
 export function deriveAuthorRef(sourceRef) {
+  // CONSUMER WARNING (DECISION_REQUIRED #1): this is a derived source-token,
+  // NOT a real author identity — SEAM D consumers must not read it as an
+  // author signal until the SEAM C author carrier is adjudicated.
   const digest = crypto.createHash('sha256').update(canonicalJson(sourceRef), 'utf8').digest('hex');
   return `author-${digest.slice(0, 12)}`;
 }

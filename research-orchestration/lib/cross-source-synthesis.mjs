@@ -23,6 +23,11 @@
  *   2. degradation gate          — any non-verified representation → fail
  *                                  closed (synthesizing over non-verified
  *                                  representations is a semantic downgrade);
+ *                                  a structurally-valid input with ZERO verified
+ *                                  claims also fails closed
+ *                                  (T14_EMPTY_VERIFIED_INPUT — "empty
+ *                                  saturation" must never masquerade as a
+ *                                  conclusion);
  *   3. runtime pin               — injected runtime must exactly match the
  *                                  approved deepseek-api-tool-less identity
  *                                  (same discipline as planner.mjs); anything
@@ -86,6 +91,7 @@ const T14_DIAGNOSTIC_KEYS = [
 const ERROR_RUNTIME_UNAVAILABLE = 'T14_RUNTIME_UNAVAILABLE';
 const ERROR_RUNTIME_OUTPUT_INVALID = 'T14_RUNTIME_OUTPUT_INVALID';
 const ERROR_DEGRADED_REPRESENTATION = 'T14_DEGRADED_REPRESENTATION';
+const ERROR_EMPTY_VERIFIED_INPUT = 'T14_EMPTY_VERIFIED_INPUT';
 const ERROR_INPUT_INVALID = 'T14_INPUT_INVALID';
 const ERROR_DIAGNOSTICS_HOOK_REJECTED = 'T14_DIAGNOSTICS_HOOK_REJECTED';
 
@@ -175,9 +181,22 @@ export function produceCrossSourceSynthesis({
     };
   }
 
-  // 3. Runtime pin — BEFORE the guard? No: the guard is cheaper and authoritative;
-  //    but the pin does not invoke the runtime, so running it first keeps the
-  //    "runtime never invoked on guard failure" property intact either way.
+  // 2b. Empty-corpus gate: a structurally-valid SEAM C input whose groups carry
+  //     ZERO claims must NOT produce an "empty saturation" artifact that could
+  //     masquerade as a real conclusion downstream. Spec/issue never authorized
+  //     synthesis over an empty verified corpus; repo convention is
+  //     fail-closed on unauthorized states → T14_EMPTY_VERIFIED_INPUT.
+  const totalVerifiedClaims = seamCArtifact.groupRepresentations.reduce(
+    (n, g) => n + g.claims.main.length + g.claims.minority.length + g.claims.contradictory.length,
+    0,
+  );
+  if (totalVerifiedClaims === 0) {
+    return { ok: false, code: ERROR_EMPTY_VERIFIED_INPUT };
+  }
+
+  // 3. Runtime pin — the pin happens before the guard but performs no runtime
+  //    invocation; the guard strictly precedes any runtime call and any
+  //    synthesis write.
   if (!assertSynthesisRuntime(runtime)) {
     return { ok: false, code: ERROR_RUNTIME_UNAVAILABLE };
   }
@@ -278,17 +297,12 @@ export function produceCrossSourceSynthesis({
     }))
     .sort((a, b) => (a.claimId < b.claimId ? -1 : 1));
 
+  // discussionVolume is input-integrity validated in the readSeamCInput gate
+  // (before any runtime invocation); here it is disclosed as a separate signal,
+  // never an epistemic weight.
   const byGroup = {};
   for (const g of seamCArtifact.groupRepresentations) {
-    const n = g.discussionVolume.answerCount;
-    if (!Number.isInteger(n) || n < 0) {
-      return {
-        ok: false,
-        code: ERROR_INPUT_INVALID,
-        errors: [{ code: 'SEAM_C_DISCUSSION_VOLUME', path: `$.groupRepresentations[groupId=${g.groupId}].discussionVolume.answerCount`, detail: 'non-negative int required (separate signal, never an epistemic weight)' }],
-      };
-    }
-    byGroup[g.groupId] = n;
+    byGroup[g.groupId] = g.discussionVolume.answerCount;
   }
   const discussionVolumeDifferences = { byGroup };
 
