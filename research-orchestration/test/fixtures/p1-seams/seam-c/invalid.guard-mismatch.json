@@ -10,7 +10,7 @@
       "accounting": { "selected": 3, "verified": 3, "mapped": 2, "analyzed": 2 },
       "claims": {
         "main": [
-          { "claimId": "c-23456789-001", "statement": "主流观点：该做法在多数场景下有效", "sourceRefs": ["23456789-a-101"] }
+          { "claimId": "c-23456789-001", "statement": "主流观点：该做法在多数场景下有效", "sourceRefs": ["23456789-a-101"], "authorRef": "author-8f116bfe5d0e9a4a" }
         ],
         "minority": [],
         "contradictory": []

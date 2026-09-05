@@ -31,7 +31,10 @@
  *   SEAM_C_SOURCE_FAILURE        a single source read failed (group fails closed)
  *   SEAM_C_MODEL_OUTPUT_INVALID  runtime output violated the short-token data contract
  *   SEAM_C_PROJECTION_ISOLATION_VIOLATION  canonical identity leaked into a projection
- * DECISION_REQUIRED: assign these states frozen seam codes at SEAM C amendment time.
+ * Ratified (SEAM C V1 error taxonomy amendment, product owner via P1 WAVE 01
+ * integration gate, 2026-09-05): these module-level codes — together with
+ * SEAM_C_ANALYZED_SET_FOREIGN_MEMBER / SEAM_C_MAPPED_SET_FOREIGN_MEMBER — are
+ * now part of the V1 error contract (docs/planning/P1_SEAM_CONTRACTS_V1.md §SEAM C).
  */
 
 import {
@@ -62,11 +65,41 @@ export const SEAM_C_MODEL_OUTPUT_INVALID = 'SEAM_C_MODEL_OUTPUT_INVALID';
 export const SEAM_C_PROJECTION_ISOLATION_VIOLATION = 'SEAM_C_PROJECTION_ISOLATION_VIOLATION';
 
 const DEFAULT_MAX_STATEMENT_CHARS = 500;
-/** Identity is controller-owned: these keys must NEVER appear in runtime output. */
+/** Identity is controller-owned: these keys must NEVER appear in runtime output.
+ *  'authorRef' (T13-I3 ratified amendment, 2026-09-05) is controller-attached in
+ *  the claim assembly path AFTER validation — the model never creates it. */
 const MODEL_FORBIDDEN_IDENTITY_KEYS = Object.freeze([
   'claimId', 'sourceId', 'sourceIds', 'sourceRefs', 'canonicalSourceId',
-  'groupId', 'questionId', 'providerId', 'capability',
+  'groupId', 'questionId', 'providerId', 'capability', 'authorRef',
 ]);
+
+/**
+ * Ratified SEAM C V1 authorRef shape (2026-09-05): REQUIRED but NULLABLE on
+ * every claim entry — null = author identity unresolvable from canonical
+ * metadata (disclosed), never fabricated. Non-null must match the frozen
+ * 'author-<16 lowercase hex>' scheme produced by the controller-owned
+ * deriveAuthorRef helper (lib/rce-provenance-adapter.mjs).
+ */
+const AUTHOR_REF_PATTERN = /^author-[0-9a-f]{16}$/;
+
+/**
+ * Controller-attached author identity for one claim: resolve the authorRef of
+ * a backing canonical source. No resolver injected (e.g. legacy mock-runtime
+ * paths) → null (disclosed unresolvable). A resolver returning a malformed
+ * value is a CONTROLLER bug, not model behavior → fail closed, coded.
+ */
+function resolveAuthorRef(authorRefResolver, canonicalSourceId) {
+  if (typeof authorRefResolver !== 'function') return null;
+  const authorRef = authorRefResolver(canonicalSourceId);
+  if (authorRef === null) return null;
+  if (typeof authorRef !== 'string' || !AUTHOR_REF_PATTERN.test(authorRef)) {
+    throw new SeamCError(
+      SEAM_C_REPRESENTATION_CONFLICT,
+      `authorRefResolver returned a malformed authorRef for ${canonicalSourceId} — controller-owned derivation violated, fail closed`,
+    );
+  }
+  return authorRef;
+}
 
 function isPlainObject(v) {
   return v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -198,6 +231,7 @@ export async function extractPerGroupClaims({
   runtime,
   sourceContentLoader,
   canonicalGroupIdentityResolver,
+  authorRefResolver = null,
   maxStatementChars = DEFAULT_MAX_STATEMENT_CHARS,
 }) {
   validateSeamBCorpusArtifact(corpus);
@@ -263,6 +297,9 @@ export async function extractPerGroupClaims({
         claimId: `c-${groupId}-${String(claimSeq).padStart(3, '0')}`,
         statement,
         sourceRefs: [canonicalSourceId],
+        // T13-I3 (ratified 2026-09-05): controller-attached author identity —
+        // attached HERE, after model-output validation, never model-owned.
+        authorRef: resolveAuthorRef(authorRefResolver, canonicalSourceId),
       };
     });
   }
@@ -325,6 +362,7 @@ export async function runPerGroupAnalysis({
   runtime,
   sourceContentLoader,
   canonicalGroupIdentityResolver,
+  authorRefResolver = null,
   coverageState = null,
   maxStatementChars = DEFAULT_MAX_STATEMENT_CHARS,
 }) {
@@ -340,6 +378,7 @@ export async function runPerGroupAnalysis({
       runtime,
       sourceContentLoader,
       canonicalGroupIdentityResolver,
+      authorRefResolver,
       maxStatementChars,
     }));
   }

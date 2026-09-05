@@ -1066,3 +1066,126 @@ describe('P1-T13 determinism & fixture hygiene', () => {
     assert.deepEqual(a, b);
   });
 });
+
+/* ============ 10. authorRef identity carrier (T13-I3 ratified amendment) ============ */
+
+describe('P1-T13 authorRef identity carrier (SEAM C V1 amendment, ratified 2026-09-05)', () => {
+  /** Controller-injected authorRefResolver over the mock corpus metadata. */
+  const authorRefResolverFor = (map) => (canonicalSourceId) => {
+    if (!(canonicalSourceId in map)) {
+      throw new Error(`no author metadata for ${canonicalSourceId}`);
+    }
+    return map[canonicalSourceId];
+  };
+  const REF_A = 'author-8f116bfe5d0e9a4a'; // deriveAuthorRef('回答者甲')
+  const REF_C = 'author-b718d5a1ba1f6dde'; // deriveAuthorRef('回答者丙')
+  const AUTHOR_MAP = {
+    '23456789-a-101': REF_A,
+    '23456789-a-102': REF_A,
+    '23456789-a-103': null, // author-less captured metadata → null (disclosed)
+    '23456789-a-104': REF_C,
+    '23456789-a-105': REF_A,
+    '34561234-a-201': REF_A, // same captured author value across groups → same ref
+    '34561234-a-202': REF_C,
+    '45678123-a-301': REF_A,
+  };
+
+  test('A10-1: default composition (no resolver injected) → authorRef null on every claim (disclosed, never fabricated)', async () => {
+    const { artifact } = await runPerGroupAnalysis({
+      corpus: CORPUS_MULTI(),
+      planHash: PLAN_HASH,
+      runtime: mockRuntime(),
+      sourceContentLoader: contentLoader(),
+      canonicalGroupIdentityResolver: identityResolver,
+    });
+    let count = 0;
+    for (const rep of artifact.groupRepresentations) {
+      for (const kind of ['main', 'minority', 'contradictory']) {
+        for (const claim of rep.claims[kind]) {
+          count += 1;
+          assert.ok(Object.prototype.hasOwnProperty.call(claim, 'authorRef'), `${claim.claimId} must carry the authorRef field`);
+          assert.equal(claim.authorRef, null);
+        }
+      }
+    }
+    assert.ok(count > 0);
+  });
+
+  test('A10-2: controller resolver → authorRef attached per claim from the backing source; same author → same ref everywhere', async () => {
+    const run = () => runPerGroupAnalysis({
+      corpus: CORPUS_MULTI(),
+      planHash: PLAN_HASH,
+      runtime: mockRuntime(),
+      sourceContentLoader: contentLoader(),
+      canonicalGroupIdentityResolver: identityResolver,
+      authorRefResolver: authorRefResolverFor(AUTHOR_MAP),
+    });
+    const { artifact } = await run();
+    for (const rep of artifact.groupRepresentations) {
+      for (const kind of ['main', 'minority', 'contradictory']) {
+        for (const claim of rep.claims[kind]) {
+          assert.ok(/^author-[0-9a-f]{16}$/.test(claim.authorRef), `${claim.claimId}: resolved authorRef shape`);
+          for (const ref of claim.sourceRefs) {
+            assert.equal(claim.authorRef, AUTHOR_MAP[ref], `${claim.claimId}: authorRef lineage binds to the backing source`);
+          }
+        }
+      }
+    }
+    // Cross-group same-author determinism: group1's main claim is backed by
+    // '23456789-a-101' (回答者甲) and group2's main claim by '34561234-a-201'
+    // (same captured author value) → identical authorRef across groups.
+    const g1Main = artifact.groupRepresentations[0].claims.main[0].authorRef;
+    const g2Main = artifact.groupRepresentations[1].claims.main[0].authorRef;
+    assert.equal(g1Main, REF_A);
+    assert.equal(g2Main, REF_A);
+    assert.equal(g1Main, g2Main);
+    // Determinism: identical runs → identical authorRef lineage.
+    const b = (await run()).artifact;
+    assert.deepEqual(artifact, b);
+  });
+
+  test('A10-3: author-less source → authorRef null (disclosed) while other claims keep resolved refs', async () => {
+    const { artifact } = await runPerGroupAnalysis({
+      corpus: CORPUS_MULTI(),
+      planHash: PLAN_HASH,
+      runtime: mockRuntime({ apply: (base, { projection }) => (projection.includes('token=3]')
+        ? { ...base, main: [{ tokenRef: '2', statement: 's2' }, { tokenRef: '3', statement: 's3' }] }
+        : base) }),
+      sourceContentLoader: contentLoader(),
+      canonicalGroupIdentityResolver: identityResolver,
+      authorRefResolver: authorRefResolverFor(AUTHOR_MAP),
+    });
+    const g1 = artifact.groupRepresentations[0];
+    const mainById = new Map(g1.claims.main.map((c) => [c.sourceRefs[0], c.authorRef]));
+    assert.equal(mainById.get('23456789-a-102'), REF_A);
+    assert.equal(mainById.get('23456789-a-103'), null, 'author-less source → null disclosed');
+  });
+
+  test('A10-4: authorRef in MODEL output is rejected (model-owned identity machinery) — controller attaches it afterwards', async () => {
+    await assert.rejects(
+      () => extractPerGroupClaims({
+        corpus: CORPUS_MINIMAL(),
+        groupId: CORPUS_MINIMAL().corpus.groups[0].groupId,
+        runtime: mockRuntime({ apply: (base) => ({ ...base, main: [{ tokenRef: '1', statement: 'x', authorRef: 'author-8f116bfe5d0e9a4a' }] }) }),
+        sourceContentLoader: contentLoader(),
+        canonicalGroupIdentityResolver: identityResolver,
+        authorRefResolver: authorRefResolverFor(AUTHOR_MAP),
+      }),
+      (e) => assertHasErrorCode(e, SEAM_C_MODEL_OWNED_IDENTITY),
+    );
+  });
+
+  test('A10-5: garbage authorRef from the CONTROLLER resolver fails closed (coded, never reaches SEAM C)', async () => {
+    await assert.rejects(
+      () => extractPerGroupClaims({
+        corpus: CORPUS_MINIMAL(),
+        groupId: CORPUS_MINIMAL().corpus.groups[0].groupId,
+        runtime: mockRuntime(),
+        sourceContentLoader: contentLoader(),
+        canonicalGroupIdentityResolver: identityResolver,
+        authorRefResolver: () => '张三', // fabricated display value — controller bug
+      }),
+      (e) => assertHasErrorCode(e, SEAM_C_REPRESENTATION_CONFLICT),
+    );
+  });
+});

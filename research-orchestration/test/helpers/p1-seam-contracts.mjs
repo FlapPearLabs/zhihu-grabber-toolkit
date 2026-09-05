@@ -18,6 +18,12 @@ import path from 'node:path';
 
 const SHA256_REF = /^sha256:[0-9a-f]{64}$/;
 const PLAN_HASH = /^[0-9a-f]{64}$/;
+// T13-I3 ratified SEAM C V1 amendment (product owner via P1 WAVE 01
+// integration gate, 2026-09-05): every claim entry carries a REQUIRED but
+// NULLABLE authorRef. Non-null must match the frozen controller-derived
+// scheme 'author-' + 16 lowercase hex chars; null = author identity
+// unresolvable from canonical metadata (disclosed, never fabricated).
+const AUTHOR_REF = /^author-[0-9a-f]{16}$/;
 // Real producer hash domain (state.mjs @ 4789382): plain 64-char lowercase hex,
 // NO "sha256:" prefix — answersHash / handoffHash / selectionIdentity /
 // selectionDecisionHash / manifestHash all use this encoding.
@@ -352,6 +358,15 @@ export function validateGroupRepresentations(artifact) {
           claims[kind].forEach((claim, j) => {
             if (!isNonEmptyString(claim.claimId) || !isNonEmptyString(claim.statement) || !Array.isArray(claim.sourceRefs) || claim.sourceRefs.length === 0 || !claim.sourceRefs.every(isNonEmptyString)) {
               errors.push(err('SEAM_C_CLAIM_LINEAGE_REQUIRED', `${p}.claims.${kind}[${j}]`, 'claimId + statement + controller-owned sourceRefs required'));
+            }
+            // T13-I3 ratified amendment (2026-09-05): authorRef REQUIRED but
+            // NULLABLE — presence is mandatory; null discloses an unresolvable
+            // author; non-null must be the frozen controller-derived scheme.
+            // The model never creates authorRef (controller-attached).
+            if (!Object.prototype.hasOwnProperty.call(claim, 'authorRef')) {
+              errors.push(err('SEAM_C_AUTHOR_REF_REQUIRED', `${p}.claims.${kind}[${j}].authorRef`, 'authorRef field required (nullable; ratified P1 WAVE 01 integration gate 2026-09-05)'));
+            } else if (claim.authorRef !== null && !(typeof claim.authorRef === 'string' && AUTHOR_REF.test(claim.authorRef))) {
+              errors.push(err('SEAM_C_AUTHOR_REF_INVALID', `${p}.claims.${kind}[${j}].authorRef`, 'null or author-<16 lowercase hex> required (controller-attached; never model-owned, never fabricated)'));
             }
           });
         }

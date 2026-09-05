@@ -217,6 +217,53 @@ describe('SEAM C T13_TO_T14 — representations + aggregate analyzed identity', 
     );
     assert.equal(guard.ok, true);
   });
+
+  // ---- T13-I3 ratified SEAM C V1 amendment (2026-09-05): authorRef carrier ----
+
+  test('authorRef amendment: every fixture claim entry carries a REQUIRED but NULLABLE authorRef', () => {
+    const artifact = multiGroup();
+    let count = 0;
+    for (const group of artifact.groupRepresentations) {
+      for (const kind of ['main', 'minority', 'contradictory']) {
+        for (const claim of group.claims[kind]) {
+          count += 1;
+          assert.ok(Object.prototype.hasOwnProperty.call(claim, 'authorRef'), `${claim.claimId} must carry authorRef`);
+          assert.ok(
+            claim.authorRef === null || /^author-[0-9a-f]{16}$/.test(claim.authorRef),
+            `${claim.claimId}.authorRef must be null or author-<16hex>`,
+          );
+        }
+      }
+    }
+    assert.ok(count > 0);
+  });
+
+  test('authorRef amendment: same captured author → same authorRef everywhere (deterministic lineage)', () => {
+    const artifact = multiGroup();
+    // Both c-23456789-002 (minority) and c-23456789-003 (contradictory) are
+    // backed by the same source/author in the fixture → identical authorRef.
+    const minority = artifact.groupRepresentations[0].claims.minority[0].authorRef;
+    const contradictory = artifact.groupRepresentations[0].claims.contradictory[0].authorRef;
+    assert.equal(minority, contradictory);
+  });
+
+  test('authorRef amendment: missing authorRef field fails closed (SEAM_C_AUTHOR_REF_REQUIRED)', () => {
+    const mutated = multiGroup();
+    delete mutated.groupRepresentations[0].claims.main[0].authorRef;
+    const result = validateGroupRepresentations(mutated);
+    assert.equal(result.ok, false);
+    assertHasError(result, 'SEAM_C_AUTHOR_REF_REQUIRED');
+  });
+
+  test('authorRef amendment: model-owned / garbage authorRef fails closed (SEAM_C_AUTHOR_REF_INVALID)', () => {
+    for (const garbage of ['author-XYZ123', '张三', 'author-8f116bfe5d0e9a4', 42]) {
+      const mutated = multiGroup();
+      mutated.groupRepresentations[0].claims.main[0].authorRef = garbage;
+      const result = validateGroupRepresentations(mutated);
+      assert.equal(result.ok, false, `garbage ${JSON.stringify(garbage)} must be rejected`);
+      assertHasError(result, 'SEAM_C_AUTHOR_REF_INVALID');
+    }
+  });
 });
 
 /* ================================== SEAM D ================================== */

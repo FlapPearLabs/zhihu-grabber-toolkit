@@ -10,13 +10,13 @@
       "accounting": { "selected": 3, "verified": 3, "mapped": 3, "analyzed": 3 },
       "claims": {
         "main": [
-          { "claimId": "c-23456789-001", "statement": "主流观点：该做法在多数场景下有效", "sourceRefs": ["23456789-a-101", "23456789-a-102"] }
+          { "claimId": "c-23456789-001", "statement": "主流观点：该做法在多数场景下有效", "sourceRefs": ["23456789-a-101", "23456789-a-102"], "authorRef": "author-8f116bfe5d0e9a4a" }
         ],
         "minority": [
-          { "claimId": "c-23456789-002", "statement": "少数派观点：特定条件下结论相反", "sourceRefs": ["23456789-a-103"] }
+          { "claimId": "c-23456789-002", "statement": "少数派观点：特定条件下结论相反", "sourceRefs": ["23456789-a-103"], "authorRef": "author-b718d5a1ba1f6dde" }
         ],
         "contradictory": [
-          { "claimId": "c-23456789-003", "statement": "与主流观点直接冲突的表述", "sourceRefs": ["23456789-a-103"] }
+          { "claimId": "c-23456789-003", "statement": "与主流观点直接冲突的表述", "sourceRefs": ["23456789-a-103"], "authorRef": "author-b718d5a1ba1f6dde" }
         ]
       },
       "expertEvidenceRichRefs": ["23456789-a-102"],
@@ -29,7 +29,7 @@
       "accounting": { "selected": 2, "verified": 2, "mapped": 2, "analyzed": 2 },
       "claims": {
         "main": [
-          { "claimId": "c-34561234-001", "statement": "另一 Question 下的代表性观点", "sourceRefs": ["34561234-a-201"] }
+          { "claimId": "c-34561234-001", "statement": "另一 Question 下的代表性观点", "sourceRefs": ["34561234-a-201"], "authorRef": "author-5b598323be3d9feb" }
         ],
         "minority": [],
         "contradictory": []
