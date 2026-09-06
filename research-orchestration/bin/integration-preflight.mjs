@@ -2,28 +2,31 @@
 /**
  * research-orchestration/bin/integration-preflight.mjs
  *
- * P1 execution-workflow repair (workflow efficiency audit, 2026-09-06):
- * runtime/environment preflight that must PASS before any live integration
- * test runs. Purpose: classify environment problems BEFORE expensive product
- * suites (forensic root cause RC2 — the 8192-context LM Studio incident was
- * discovered via a failed product gate instead of a preflight check).
+ * P1 execution-workflow repair (workflow efficiency audit 2026-09-06;
+ * round 1 per PR #72 review — F4 mode-aware preflight):
  *
- * Pure/offline by default: with --checks-json it classifies supplied check
- * results (used by tests); without it, it probes the real environment.
- * No product semantics; fails closed on unverifiable capacity.
+ *   --mode offline (default): an explicitly OFFLINE dry-run must NOT demand
+ *     a runtime. Checks: local real artifacts (final stage) only. The
+ *     @xenova/transformers dependency is deliberately NOT checked here
+ *     because the offline suite is proven to run without node_modules
+ *     (657/657 on a bare worktree); requiring it offline would be a false gate.
  *
- * Usage:
- *   node bin/integration-preflight.mjs                          # live probe, JSON to stdout
- *   node bin/integration-preflight.mjs --checks-json '<json>'    # classify supplied results
- *   node bin/integration-preflight.mjs --stage final             # also require local real artifacts
+ *   --mode live: required before LIVE acceptance. Checks: endpoint health,
+ *     exact model served, context capacity sufficient, @xenova/transformers
+ *     resolvable (missing = FAIL — the live embedding gate needs it), local
+ *     real artifacts (final stage), env variables.
  *
- * Exit code: 0 = PREFLIGHT_PASS, 1 = PREFLIGHT_FAIL.
+ * Pure/offline: with --checks-json it classifies supplied check results
+ * (used by tests). Exit code: 0 = PREFLIGHT_PASS, 1 = PREFLIGHT_FAIL.
  */
 
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { resolve as pathResolve } from 'node:path';
+import { existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
 
 const REPO_ROOT = pathResolve(fileURLToPath(import.meta.url), '..', '..', '..'); // bin -> research-orchestration -> repo
+const RO_DIR = pathResolve(REPO_ROOT, 'research-orchestration');
 
 const DEFAULT_BASE_URL = process.env.P1_LMSTUDIO_BASE_URL ?? 'http://127.0.0.1:1234/v1';
 const DEFAULT_MODEL = process.env.P1_LMSTUDIO_MODEL ?? 'qwen/qwen3-1.7b';
@@ -31,10 +34,7 @@ const DEFAULT_MIN_CONTEXT = Number(process.env.P1_MIN_CONTEXT ?? 32768);
 const DEFAULT_DOGFOOD_ROOT = process.env.P1_REAL_DOGFOOD_ROOT ?? null;
 const SEAM_ARTIFACTS_DIR = process.env.P1_SEAM_ARTIFACTS_DIR ?? pathResolve(REPO_ROOT, 'work', 'p1-wave-01-integration');
 
-/**
- * Pure classification: map a list of check results to a verdict.
- * @param {{check:string, status:'PASS'|'FAIL'|'WARN', code?:string, detail?:string}[]} checks
- */
+/** Pure classification: map a list of check results to a verdict. */
 export function classifyPreflight(checks) {
   const failures = checks.filter((c) => c.status === 'FAIL');
   const warnings = checks.filter((c) => c.status === 'WARN');
@@ -42,7 +42,6 @@ export function classifyPreflight(checks) {
     verdict: failures.length === 0 ? 'PREFLIGHT_PASS' : 'PREFLIGHT_FAIL',
     failures,
     warnings,
-    // Machine-readable summary for the execution ledger.
     failedCodes: failures.map((f) => f.code ?? f.check),
   };
 }
@@ -58,13 +57,20 @@ export function checkContextCapacity(model, servedContext, requiredMin) {
   return { check: 'runtime.context', status: 'PASS', detail: `${model} serves ${servedContext} >= ${requiredMin}` };
 }
 
-/** Dependency rule: live embedding path needs node_modules with @xenova/transformers. */
-export function checkDependencies(hasNodeModules, hasTransformers) {
+/**
+ * F4: dependency rule is MODE-AWARE.
+ * live: node_modules and @xenova/transformers are REQUIRED (missing = FAIL —
+ *       the live embedding gate imports them).
+ * offline: not checked (returns null) — the offline suite provably runs
+ *       without node_modules; a missing dep is not a false gate there.
+ */
+export function checkDependencies(mode, hasNodeModules, hasTransformers) {
+  if (mode !== 'live') return null;
   if (!hasNodeModules) {
-    return { check: 'deps', status: 'FAIL', code: 'DEPS_NODE_MODULES_MISSING', detail: 'research-orchestration/node_modules absent (offline suites fine; live embedding path not qualified)' };
+    return { check: 'deps', status: 'FAIL', code: 'DEPS_NODE_MODULES_MISSING', detail: 'research-orchestration/node_modules absent — live embedding path unqualified; run npm ci (unsandboxed) first' };
   }
   if (!hasTransformers) {
-    return { check: 'deps', status: 'WARN', code: 'DEPS_TRANSFORMERS_MISSING', detail: '@xenova/transformers not resolvable — embedding provider live path unqualified' };
+    return { check: 'deps', status: 'FAIL', code: 'DEPS_TRANSFORMERS_MISSING', detail: '@xenova/transformers not resolvable — live embedding gate would fail' };
   }
   return { check: 'deps', status: 'PASS', detail: 'node_modules + @xenova/transformers present' };
 }
@@ -84,9 +90,27 @@ async function jsonFetch(url, timeoutMs) {
   return res.json();
 }
 
-async function probeLive({ baseUrl, model, minContext, stage }) {
+function artifactsCheck(stage) {
+  if (stage !== 'final') return null;
+  const wanted = [];
+  if (DEFAULT_DOGFOOD_ROOT) wanted.push(pathResolve(DEFAULT_DOGFOOD_ROOT, 'multi-group-state.json'));
+  for (const rel of ['seam-b-real.json', 'seam-c-real.json', 'seam-d-real.json']) {
+    wanted.push(pathResolve(SEAM_ARTIFACTS_DIR, rel));
+  }
+  return checkLocalArtifacts(wanted.map((path) => ({ path, exists: existsSync(path) })));
+}
+
+async function probeLive({ mode, baseUrl, model, minContext, stage }) {
   const checks = [];
-  // 1. endpoint health + model presence
+  const finalArtifacts = artifactsCheck(stage);
+  if (finalArtifacts) checks.push(finalArtifacts);
+  if (mode === 'offline') {
+    // F4: an explicitly offline dry-run must not demand a runtime.
+    // Documented non-check: @xenova/transformers (offline suite runs without node_modules).
+    checks.push({ check: 'mode', status: 'PASS', detail: 'offline mode — runtime endpoint/dependencies intentionally not required (see docs §C)' });
+    return checks;
+  }
+  // mode === 'live'
   let models = null;
   try {
     const body = await jsonFetch(`${baseUrl}/models`, 5000);
@@ -98,7 +122,6 @@ async function probeLive({ baseUrl, model, minContext, stage }) {
   } catch (e) {
     checks.push({ check: 'runtime.endpoint', status: 'FAIL', code: 'RUNTIME_ENDPOINT_UNREACHABLE', detail: `${baseUrl}: ${e.message}` });
   }
-  // 2. context capacity via LM Studio /api/v0/models (REST) when reachable
   if (models) {
     let servedCtx = Number.NaN;
     try {
@@ -109,25 +132,19 @@ async function probeLive({ baseUrl, model, minContext, stage }) {
     } catch { /* capacity API unavailable — handled by the rule below */ }
     checks.push(checkContextCapacity(model, servedCtx, minContext));
   }
-  // 3. embedding runtime qualification
+  let hasNodeModules = false;
+  let hasTransformers = false;
   try {
-    const { createRequire } = await import('node:module');
-    const req = createRequire(import.meta.url);
-    req.resolve('@xenova/transformers');
-    checks.push({ check: 'deps', status: 'PASS', detail: '@xenova/transformers resolvable' });
+    const roRequire = createRequire(pathResolve(RO_DIR, 'package.json'));
+    roRequire.resolve('@xenova/transformers');
+    hasTransformers = true;
+    hasNodeModules = existsSync(pathResolve(RO_DIR, 'node_modules'));
   } catch {
-    checks.push({ check: 'deps', status: 'WARN', code: 'DEPS_TRANSFORMERS_MISSING', detail: '@xenova/transformers not resolvable — live embedding gate would fail; run npm ci (unsandboxed) first' });
+    hasNodeModules = existsSync(pathResolve(RO_DIR, 'node_modules'));
+    hasTransformers = false;
   }
-  // 4. local real artifacts (final stage)
-  if (stage === 'final') {
-    const { existsSync } = await import('node:fs');
-    const wanted = [];
-    if (DEFAULT_DOGFOOD_ROOT) wanted.push(pathResolve(DEFAULT_DOGFOOD_ROOT, 'multi-group-state.json'));
-    for (const rel of ['seam-b-real.json', 'seam-c-real.json', 'seam-d-real.json']) {
-      wanted.push(pathResolve(SEAM_ARTIFACTS_DIR, rel));
-    }
-    checks.push(checkLocalArtifacts(wanted.map((path) => ({ path, exists: existsSync(path) }))));
-  }
+  const deps = checkDependencies('live', hasNodeModules, hasTransformers);
+  if (deps) checks.push(deps);
   return checks;
 }
 
@@ -137,6 +154,7 @@ function isMainModule() {
 if (isMainModule()) {
   const args = process.argv.slice(2);
   const stage = args.includes('--stage') ? args[args.indexOf('--stage') + 1] : 'intermediate';
+  const mode = args.includes('--mode') ? args[args.indexOf('--mode') + 1] : 'offline';
   const jsonIdx = args.indexOf('--checks-json');
   if (jsonIdx !== -1) {
     const supplied = JSON.parse(args[jsonIdx + 1]);
@@ -144,9 +162,9 @@ if (isMainModule()) {
     console.log(JSON.stringify(verdict, null, 2));
     process.exit(verdict.verdict === 'PREFLIGHT_PASS' ? 0 : 1);
   } else {
-    const checks = await probeLive({ baseUrl: DEFAULT_BASE_URL, model: DEFAULT_MODEL, minContext: DEFAULT_MIN_CONTEXT, stage });
+    const checks = await probeLive({ mode, baseUrl: DEFAULT_BASE_URL, model: DEFAULT_MODEL, minContext: DEFAULT_MIN_CONTEXT, stage });
     const verdict = classifyPreflight(checks);
-    console.log(JSON.stringify({ baseUrl: DEFAULT_BASE_URL, model: DEFAULT_MODEL, minContext: DEFAULT_MIN_CONTEXT, stage, ...verdict }, null, 2));
+    console.log(JSON.stringify({ baseUrl: DEFAULT_BASE_URL, model: DEFAULT_MODEL, minContext: DEFAULT_MIN_CONTEXT, stage, mode, ...verdict }, null, 2));
     process.exit(verdict.verdict === 'PREFLIGHT_PASS' ? 0 : 1);
   }
 }
