@@ -11,10 +11,13 @@
  *   smoke    — LOCAL_NONCANONICAL_SMOKE. May use the project-declared local
  *              runtime; explicitly NONCANONICAL; never acceptance-eligible
  *              (even when every step passes).
- *   canonical— CANONICAL_ACCEPTANCE. Uses the project-declared canonical
- *              runtime only; missing credential/runtime fails closed;
- *              absolutely no fallback to the local smoke runtime; only a
- *              canonical whole-wave PASS sets finalAcceptanceEligible=true.
+ *   canonical— CANONICAL_ACCEPTANCE. Invokes the project-declared canonical
+ *              runner (a mechanically verifiable adapter declared in the
+ *              project authority file); only machine-readable runner PASS
+ *              evidence bound to the declared runtimeId/model + actual
+ *              execution sets finalAcceptanceEligible=true. No env boolean
+ *              can authorize canonical acceptance; missing runner fails
+ *              closed; absolutely no fallback to the local smoke runtime.
  *
  * EXTRACTION BOUNDARY: this file and integration-preflight.mjs contain no
  * runtime/model/credential/project names — every such binding lives in the
@@ -26,7 +29,7 @@
  */
 
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { resolve as pathResolve, isAbsolute } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { loadRuntimeAuthority, REPO_ROOT, RO_DIR } from './runtime-authority.mjs';
@@ -156,15 +159,17 @@ export async function negativeGuardProbe({ artifact }) {
 }
 
 /**
- * F8: acceptance verdict is a pure function of the execution mode and the
- * canonical step outcome. smoke is NEVER acceptance-eligible (even on PASS);
- * only canonical ACCEPTANCE_PASS qualifies.
+ * F8/F8b: acceptance verdict is a pure function of the execution mode and,
+ * for canonical mode, the validated runner evidence. smoke is NEVER
+ * acceptance-eligible (even on PASS); only canonical mode with ok:true
+ * runner evidence (PASS bound to declared runtimeId/model + actual
+ * execution) qualifies.
  */
-export function acceptanceVerdictFor({ mode, canonicalStepOutcome = 'NOT_RUN' }) {
+export function acceptanceVerdictFor({ mode, canonicalEvidence = null }) {
   if (mode === 'offline') return { finalAcceptanceEligible: false, acceptanceVerdict: 'OFFLINE_DRY_RUN_NOT_ACCEPTANCE' };
   if (mode === 'smoke') return { finalAcceptanceEligible: false, acceptanceVerdict: 'LOCAL_NONCANONICAL_SMOKE_NOT_ACCEPTANCE' };
   if (mode === 'canonical') {
-    return canonicalStepOutcome === 'PASS'
+    return canonicalEvidence && canonicalEvidence.ok === true
       ? { finalAcceptanceEligible: true, acceptanceVerdict: 'CANONICAL_ACCEPTANCE_PASS' }
       : { finalAcceptanceEligible: false, acceptanceVerdict: 'CANONICAL_ACCEPTANCE_NOT_PASSED' };
   }
@@ -192,25 +197,80 @@ export function wholeWaveEnvFor({ mode, authority, env = process.env }) {
 }
 
 /**
- * F8: canonical readiness — fail closed WITHOUT using the credential.
- * 1. canonical credential present: declared env var non-empty OR declared
- *    0600 file exists at the repo root (the value is never read by the harness).
- * 2. canonical suite wiring switch: the whole-wave gates must consume the
- *    canonical runtime declaration (env switch) — otherwise canonical mode
- *    aborts rather than silently exercising the local smoke runtime under a
- *    canonical label (that would be a forbidden fallback).
+ * F8b: canonical suite authority is DECLARATION-DRIVEN, never env-driven.
+ * The project authority file must declare a canonical runner (a project-owned
+ * gate command / adapter); an environment boolean is mechanically worthless.
+ *
+ * Responsibilities (generic, vendor-free):
+ *   1. load the project declaration            (loadRuntimeAuthority)
+ *   2. resolve the declared canonical runner   (resolveCanonicalRunner)
+ *   3. fail closed if absent                   -> CANONICAL_SUITE_NOT_WIRED
+ *   4. execute that runner                     (runCanonicalRunner)
+ *   5. require machine-readable PASS evidence bound to the declared
+ *      runtimeId + model + actual canonical execution (validateCanonicalEvidence)
+ *   6. only then is canonical acceptance eligible (acceptanceVerdictFor)
  */
-export function canonicalReadiness({ authority, env = process.env, repoRoot = REPO_ROOT }) {
-  const failures = [];
-  const envPresent = typeof env[authority.canonical.credentialEnv] === 'string' && env[authority.canonical.credentialEnv].trim() !== '';
-  const filePresent = authority.canonical.credentialFile ? existsSync(pathResolve(repoRoot, authority.canonical.credentialFile)) : false;
-  if (!envPresent && !filePresent) {
-    failures.push({ code: 'CANONICAL_CREDENTIAL_MISSING', detail: `${authority.canonical.credentialEnv} not set and ${authority.canonical.credentialFile} not present — canonical acceptance fails closed (no fallback)` });
+
+/** F8b step 2+3: resolve the declared canonical runner; fail closed if the declaration carries none. */
+export function resolveCanonicalRunner({ authority, repoRoot = REPO_ROOT }) {
+  const runner = authority.canonical?.runner;
+  if (!runner || typeof runner !== 'object' || typeof runner.file !== 'string' || runner.file.trim() === '') {
+    return {
+      ok: false,
+      code: 'CANONICAL_SUITE_NOT_WIRED',
+      detail: 'project declaration carries no canonical runner — canonical acceptance fails closed (environment flags cannot authorize it; wiring is a declaration change)',
+    };
   }
-  if (env[authority.env.suiteReady] !== '1') {
-    failures.push({ code: 'CANONICAL_SUITE_NOT_WIRED', detail: 'whole-wave gates do not yet consume the canonical runtime declaration; refusing to run a canonical-labelled wave that would exercise a noncanonical runtime' });
+  const file = pathResolve(repoRoot, runner.file);
+  if (!existsSync(file) || !statSync(file).isFile()) {
+    return { ok: false, code: 'CANONICAL_SUITE_NOT_WIRED', detail: `declared canonical runner not found at ${runner.file}` };
   }
-  return { ok: failures.length === 0, failures };
+  return { ok: true, code: 'CANONICAL_RUNNER_RESOLVED', file, args: Array.isArray(runner.args) ? runner.args : [] };
+}
+
+/** F8b step 5: machine-readable PASS evidence contract. Evidence from smoke/offline execution can never satisfy it (executionClass binding). */
+export function validateCanonicalEvidence(raw, authority) {
+  const invalid = (detail) => ({ ok: false, code: 'CANONICAL_RUNNER_EVIDENCE_INVALID', detail });
+  let ev;
+  try {
+    ev = JSON.parse(raw);
+  } catch {
+    return invalid('runner stdout is not valid JSON (machine-readable evidence required)');
+  }
+  if (!ev || typeof ev !== 'object' || Array.isArray(ev)) return invalid('evidence is not a JSON object');
+  if (ev.schema !== 'canonical-runner-evidence/1') return invalid(`unexpected evidence schema ${JSON.stringify(ev.schema ?? null)}`);
+  if (ev.verdict !== 'PASS') return invalid(`runner verdict ${JSON.stringify(ev.verdict ?? null)} != PASS`);
+  if (ev.executionClass !== 'CANONICAL') {
+    return invalid(`executionClass ${JSON.stringify(ev.executionClass ?? null)} != CANONICAL — smoke/offline execution evidence can never satisfy canonical acceptance`);
+  }
+  if (ev.runtimeId !== authority.canonical.runtimeId) {
+    return invalid(`runtimeId mismatch: runner reported ${JSON.stringify(ev.runtimeId ?? null)}, declaration declares ${authority.canonical.runtimeId}`);
+  }
+  if (ev.model !== authority.canonical.model) {
+    return invalid(`model mismatch: runner reported ${JSON.stringify(ev.model ?? null)}, declaration declares ${authority.canonical.model}`);
+  }
+  if (!ev.evidence || typeof ev.evidence !== 'object' || Array.isArray(ev.evidence) || Object.keys(ev.evidence).length === 0) {
+    return invalid('evidence block missing or empty — actual canonical execution must be disclosed');
+  }
+  return { ok: true, evidence: ev };
+}
+
+/** F8b step 4+5: execute the declared canonical runner and validate its evidence. Never consults env booleans. */
+export function runCanonicalRunner({ authority, repoRoot = REPO_ROOT, env = process.env, spawnImpl } = {}) {
+  const resolved = resolveCanonicalRunner({ authority, repoRoot });
+  if (!resolved.ok) return resolved;
+  const spawn = spawnImpl ?? ((file, args, opts) => spawnSync(file, args, opts));
+  const nodeBin = env[authority.env.nodeBin] || process.execPath || 'node';
+  const r = spawn(nodeBin, [resolved.file, ...resolved.args], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: { ...env, [authority.env.runtimeMode]: 'canonical' },
+  });
+  if (r.error) return { ok: false, code: 'CANONICAL_RUNNER_FAILED', detail: `declared runner could not be executed: ${r.error.message}` };
+  if (r.status !== 0) return { ok: false, code: 'CANONICAL_RUNNER_FAILED', detail: `declared runner exited ${r.status} (canonical execution did not pass)` };
+  const v = validateCanonicalEvidence(r.stdout ?? '', authority);
+  if (!v.ok) return v;
+  return { ok: true, code: 'CANONICAL_RUNNER_EVIDENCE_PASS', evidence: v.evidence };
 }
 
 /** F5: repository-root-relative default ledger path (from the declaration) — cwd-independent. */
@@ -330,7 +390,6 @@ async function cliStageFinal(args) {
     await recordAsync('tests.full-offline', async () => {
       execFileSync(NODE_BIN(), ['--test', 'test/*.test.mjs'], { cwd: RO_DIR, stdio: 'inherit' });
     });
-    let canonicalStepOutcome = 'NOT_RUN';
     if (mode === 'smoke') {
       await recordAsync('tests.smoke-whole-wave', async () => {
         execFileSync(NODE_BIN(), ['--test', '--test-concurrency=1', 'test/*.test.mjs'], {
@@ -339,18 +398,12 @@ async function cliStageFinal(args) {
         return 'PASS';
       });
     }
+    let canonicalEvidence = null;
     if (mode === 'canonical') {
-      await recordAsync('canonical.readiness (F8)', async () => {
-        const r = canonicalReadiness({ authority });
-        if (!r.ok) throw new Error(r.failures.map((f) => `${f.code}: ${f.detail}`).join('; '));
-        return 'PASS';
-      });
-      await recordAsync('tests.canonical-whole-wave', async () => {
-        execFileSync(NODE_BIN(), ['--test', '--test-concurrency=1', 'test/*.test.mjs'], {
-          cwd: RO_DIR, stdio: 'inherit', env: { ...process.env, ...wholeWaveEnvFor({ mode, authority }) },
-        });
-        canonicalStepOutcome = 'PASS';
-        return 'PASS';
+      canonicalEvidence = await recordAsync('canonical.runner (F8b)', async () => {
+        const r = await runCanonicalRunner({ authority, repoRoot: REPO_ROOT });
+        if (!r.ok) throw new Error(`${r.code}${r.detail ? `: ${r.detail}` : ''}`);
+        return r;
       });
     }
     const work = pathResolve(process.env[authority.env.seamArtifactsDir] ?? pathResolve(REPO_ROOT, authority.artifacts.dir));
@@ -362,20 +415,20 @@ async function cliStageFinal(args) {
     if (!chain.pass) throw new Error(`identity chain failures: ${chain.failures.join('; ')}`);
     const negative = await recordAsync('guard.negative (F6)', async () => negativeGuardProbe({ artifact: JSON.parse(readFileSync(pathResolve(work, authority.artifacts.files[1]), 'utf8')) }));
     if (!negative.pass) throw new Error(`negative guard probe failed: ${negative.detail}`);
-    const acc = acceptanceVerdictFor({ mode, canonicalStepOutcome });
+    const acc = acceptanceVerdictFor({ mode, canonicalEvidence });
     const ledger = buildLedger({
       stage: 'FINAL', runtimeClass: RUNTIME_CLASS[mode],
       mergeCommit: git('rev-parse', 'HEAD'), steps,
       finalAcceptanceEligible: acc.finalAcceptanceEligible, acceptanceVerdict: acc.acceptanceVerdict,
-      extra: { mode, identityChain: chain, guardNegative: negative },
+      extra: { mode, canonicalRunner: canonicalEvidence ? { ok: canonicalEvidence.ok, code: canonicalEvidence.code ?? 'CANONICAL_RUNNER_EVIDENCE_PASS', evidence: canonicalEvidence.evidence ?? null } : null, identityChain: chain, guardNegative: negative },
     });
     writeLedger(ledger, out, REPO_ROOT, authority);
     console.log(JSON.stringify(ledger, null, 2));
     if (!acc.finalAcceptanceEligible) {
-      console.error(`NOT ACCEPTANCE-ELIGIBLE: ${acc.acceptanceVerdict}. Canonical acceptance requires the canonical whole-wave = PASS.`);
+      console.error(`NOT ACCEPTANCE-ELIGIBLE: ${acc.acceptanceVerdict}. Canonical acceptance requires the declared project runner's machine-readable PASS evidence bound to the declared canonical runtime.`);
     }
   } catch (e) {
-    const acc = acceptanceVerdictFor({ mode, canonicalStepOutcome: 'FAIL' });
+    const acc = acceptanceVerdictFor({ mode, canonicalEvidence: null });
     const ledger = buildLedger({
       stage: 'FINAL', runtimeClass: RUNTIME_CLASS[mode],
       mergeCommit: (() => { try { return git('rev-parse', 'HEAD'); } catch { return null; } })(),

@@ -23,7 +23,6 @@
     "seamArtifactsDir": "P1_SEAM_ARTIFACTS_DIR",
     "minContext": "P1_MIN_CONTEXT",
     "runtimeMode": "P1_RUNTIME_MODE",
-    "suiteReady": "P1_CANONICAL_SUITE_READY",
     "nodeBin": "WFH_NODE_BIN"
   },
   "ledger": {

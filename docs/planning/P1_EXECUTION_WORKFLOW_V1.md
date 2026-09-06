@@ -54,12 +54,17 @@ smoke    = LOCAL_NONCANONICAL_SMOKE：preflight(smoke：本地 runtime 健康/�
            一次全量离线回归 → 本地 runtime whole-wave（--test-concurrency=1）→ 探针；
            **显式 NONCANONICAL —— 无论步骤是否全过，finalAcceptanceEligible 恒为 false**
            （acceptanceVerdict=LOCAL_NONCANONICAL_SMOKE_NOT_ACCEPTANCE）。
-canonical= CANONICAL_ACCEPTANCE：preflight(canonical：声明有效性 + canonical 凭据存在性
-           [只查存在、不读取/不传输] + 依赖 + 产物) → canonical.readiness（套件接线开关，
-           未接线即拒）→ canonical whole-wave（runtimeId/model 来自项目声明）→ 探针；
-           **仅 canonical whole-wave = PASS 可置 finalAcceptanceEligible=true**
+canonical= CANONICAL_ACCEPTANCE（F8b：声明驱动，非 env 驱动）：preflight(canonical：
+           声明有效性 + canonical 凭据存在性 [只查存在、不读取/不传输] + 依赖 + 产物)
+           → canonical.runner：解析项目声明中的 canonical runner（项目所有的 gate 命令/
+           适配器）；**声明无 runner 或文件缺失 → CANONICAL_SUITE_NOT_WIRED，fail closed**；
+           执行该 runner，要求其机器可读 PASS 证据绑定 ①声明的 canonical runtimeId
+           ②声明的 canonical model ③实际 canonical 执行（executionClass=CANONICAL +
+           非空 evidence 块）；**仅该验证通过可置 finalAcceptanceEligible=true**
            （CANONICAL_ACCEPTANCE_PASS）；任何失败 fail closed（CANONICAL_ACCEPTANCE_NOT_PASSED），
-           **绝不回退到本地 smoke runtime**。
+           **绝不回退到本地 smoke runtime**。**环境 boolean（如旧的 suite-ready 开关）
+           对 canonical 验收机械无效**——接线 = 修改项目声明（声明 runner），不是设置 env。
+           smoke/offline 的执行证据永远无法满足 canonical 证据契约（executionClass 绑定）。
 
 env-failure saturation（§C）适用于所有模式。canonical 模式在 env 层即不携带任何
 smoke runtime 键（wholeWaveEnvFor 机械保证）——回退禁令不是 prose，是可测试的机制。
@@ -83,7 +88,7 @@ smoke runtime 键（wholeWaveEnvFor 机械保证）——回退禁令不是 pros
 ## D. GOVERNANCE_WRITE_POLICY（批量对账）
 
 执行期间的状态记录进**本地 execution ledger**（harness 自动产出
-`work/p1-wave-latest/execution-ledger.json`，schema `p1-execution-ledger/1`）。
+`work/p1-wave-latest/execution-ledger.json`，schema `wf-execution-ledger/1`）。
 durable 写册（issue 登记、handoff packet、memory）合并为**一次对账 pass**，
 在 wave 的 terminal state（push 完成或 STOP 点）执行。**例外**（必须即时持久化）：
 状态变更操作本身（activation/ff push、branch push）与其 freshness 核验；USER_DECISION_REQUIRED
@@ -142,5 +147,17 @@ PR #72 是 proving ground；generic harness 概念必须可抽取进开发模板
   模式分类学（offline/smoke/canonical）、验收判定、ledger schema、exact-SHA 合并语义、
   tier plan、identity/negative 探针框架。
 - **project-owned（留在本仓库）**：`bin/runtime-authority.json`（canonical runtimeId/model/
-  凭据绑定、local smoke 绑定、env/ledger/产物路径）、真实产物、gate 测试、全部产品语义。
-- 抽取动作 = 复制三个 generic 文件 + 为目标项目写一份新的 runtime-authority 声明。
+  凭据绑定、local smoke 绑定、env/ledger/产物路径、**canonical runner 声明**）、项目所有的
+  canonical runner 脚本、真实产物、gate 测试、全部产品语义。
+- 抽取动作 = 复制三个 generic 文件 + 为目标项目写一份新的 runtime-authority 声明
+  （含该项目的 canonical runner）。
+
+## I. FINAL_REPORT_SHA_POLICY（报告 SHA 来源纪律，2026-09-06 事故修复）
+
+任何最终报告中引用的 full SHA 必须**逐字符复制自同一 turn 内 fresh 执行的
+`git ls-remote --refs origin` 输出**（远端真值行），禁止来自本地 rev-parse 回显、
+终端 scrollback、历史消息或记忆复述。事故案例：round-2 报告引用的 NEW_SHA 尾段
+与远端真值不符（`64261ebdec…` vs 远端 `64261eb9bb…`）——短 SHA 相同掩盖了 full SHA
+错误。执行规则：push 后立即 `git ls-remote --refs origin <ref>`，报告中的
+NEW_SHA 字段直接粘贴该命令输出中的对应行值；若报告与 push 不在同一 turn，
+重新执行 ls-remote 再引用。

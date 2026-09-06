@@ -2,11 +2,16 @@
  * research-orchestration/test/p1-integration-harness.test.mjs
  *
  * Offline-deterministic tests for the P1 execution-workflow harness,
- * round 1 (PR #72 review repairs F1–F6, 2026-09-06):
+ * round 1 (PR #72 review repairs F1–F6) + round 2 (F8 canonical runtime
+ * authority) + round 3 (F8b declaration-driven canonical suite authority —
+ * env booleans are mechanically worthless; canonical acceptance requires the
+ * project-declared runner's machine-readable PASS evidence):
  *   F1 exact-SHA freezing; F2 parallel-worker input model with a REAL
  *   temporary git repo (B -> worker-A / worker-B, sequential merges, drift
  *   refusals); F3 offline final != acceptance; F4 mode-aware dependency
- *   rules; F5 cwd-independent ledger path; F6 named negative-guard probe.
+ *   rules; F5 cwd-independent ledger path; F6 named negative-guard probe;
+ *   F8 mode taxonomy + no-fallback env + extraction boundary; F8b runner
+ *   resolution/execution/evidence contract.
  *
  * Pure logic + real temp git repos only — no network, no product semantics
  * changed, no live model.
@@ -30,7 +35,9 @@ import {
   writeLedger,
   acceptanceVerdictFor,
   wholeWaveEnvFor,
-  canonicalReadiness,
+  resolveCanonicalRunner,
+  validateCanonicalEvidence,
+  runCanonicalRunner,
   defaultLedgerPath,
   negativeGuardProbe,
 } from '../bin/integration-harness.mjs';
@@ -159,20 +166,22 @@ describe('F3/F8 — acceptance verdict taxonomy (mechanical, in-ledger)', () => 
     assert.equal(l.acceptanceVerdict, 'OFFLINE_DRY_RUN_NOT_ACCEPTANCE');
     assert.equal(l.runtimeClass, 'OFFLINE_DRY_RUN');
   });
-  test('smoke is NEVER acceptance-eligible — even when every step passes', () => {
-    const acc = acceptanceVerdictFor({ mode: 'smoke', canonicalStepOutcome: 'PASS' });
+  test('smoke is NEVER acceptance-eligible — even when every step passes (evidence cannot help it)', () => {
+    const acc = acceptanceVerdictFor({ mode: 'smoke', canonicalEvidence: { ok: true, evidence: { schema: 'canonical-runner-evidence/1' } } });
     assert.equal(acc.finalAcceptanceEligible, false);
     assert.equal(acc.acceptanceVerdict, 'LOCAL_NONCANONICAL_SMOKE_NOT_ACCEPTANCE');
+    const noEv = acceptanceVerdictFor({ mode: 'smoke' });
+    assert.equal(noEv.finalAcceptanceEligible, false);
   });
-  test('canonical PASS is the only acceptance-eligible path; canonical FAIL fails closed', () => {
-    const ok = acceptanceVerdictFor({ mode: 'canonical', canonicalStepOutcome: 'PASS' });
+  test('canonical eligibility requires VALIDATED runner evidence; anything else fails closed', () => {
+    const ok = acceptanceVerdictFor({ mode: 'canonical', canonicalEvidence: { ok: true, code: 'CANONICAL_RUNNER_EVIDENCE_PASS', evidence: { schema: 'canonical-runner-evidence/1' } } });
     assert.equal(ok.finalAcceptanceEligible, true);
     assert.equal(ok.acceptanceVerdict, 'CANONICAL_ACCEPTANCE_PASS');
-    const bad = acceptanceVerdictFor({ mode: 'canonical', canonicalStepOutcome: 'FAIL' });
-    assert.equal(bad.finalAcceptanceEligible, false);
-    assert.equal(bad.acceptanceVerdict, 'CANONICAL_ACCEPTANCE_NOT_PASSED');
-    const nr = acceptanceVerdictFor({ mode: 'canonical', canonicalStepOutcome: 'NOT_RUN' });
-    assert.equal(nr.finalAcceptanceEligible, false);
+    for (const ev of [null, undefined, {}, { ok: false, code: 'CANONICAL_RUNNER_FAILED' }, { ok: false, code: 'CANONICAL_RUNNER_EVIDENCE_INVALID' }]) {
+      const r = acceptanceVerdictFor({ mode: 'canonical', canonicalEvidence: ev });
+      assert.equal(r.finalAcceptanceEligible, false);
+      assert.equal(r.acceptanceVerdict, 'CANONICAL_ACCEPTANCE_NOT_PASSED');
+    }
   });
   test('unknown mode throws', () => {
     assert.throws(() => acceptanceVerdictFor({ mode: 'yolo' }), /unknown execution mode/);
@@ -211,21 +220,6 @@ describe('F8 — canonical runtime authority (no fallback, extraction boundary)'
     for (const k of Object.keys(smoke)) assert.ok(!(k in canonical));
     assert.equal(wholeWaveEnvFor({ mode: 'offline', authority }), null);
   });
-  test('canonicalReadiness: missing credential AND file -> CANONICAL_CREDENTIAL_MISSING (fail closed)', () => {
-    const authority = loadRuntimeAuthority();
-    const emptyEnv = { [authority.canonical.credentialEnv]: '' };
-    const r = canonicalReadiness({ authority, env: emptyEnv, repoRoot: '/definitely/not/a/repo' });
-    assert.equal(r.ok, false);
-    assert.ok(r.failures.some((f) => f.code === 'CANONICAL_CREDENTIAL_MISSING'));
-  });
-  test('canonicalReadiness: credential present but suite not wired -> CANONICAL_SUITE_NOT_WIRED (no silent fallback)', () => {
-    const authority = loadRuntimeAuthority();
-    const envWithCred = { [authority.canonical.credentialEnv]: 'x'.repeat(8) };
-    const r = canonicalReadiness({ authority, env: envWithCred, repoRoot: '/definitely/not/a/repo' });
-    assert.equal(r.ok, false);
-    assert.ok(r.failures.some((f) => f.code === 'CANONICAL_SUITE_NOT_WIRED'));
-    assert.ok(!r.failures.some((f) => f.code === 'CANONICAL_CREDENTIAL_MISSING'));
-  });
   test('loadRuntimeAuthority validates the declaration', () => {
     const a = loadRuntimeAuthority();
     assert.equal(a.canonical.runtimeId, 'deepseek-api-tool-less');
@@ -241,6 +235,118 @@ describe('F8 — canonical runtime authority (no fallback, extraction boundary)'
       const src = readFileSync(join(process.cwd(), f), 'utf8');
       assert.equal(scan.test(src), false, `extraction boundary violated in ${f}`);
     }
+  });
+});
+
+/* ---------------------------------- F8b declaration-driven canonical suite authority ---------------------------------- */
+
+describe('F8b — canonical suite authority is declaration-driven (env booleans are mechanically worthless)', () => {
+  // Synthetic project-owned runner fixture (in real wiring this script is the
+  // declared project gate that executes the canonical whole-wave and prints
+  // machine-readable evidence; here it is parametrized through env keys).
+  const RUNNER_OK = [
+    "const ev = {",
+    "  schema: 'canonical-runner-evidence/1',",
+    "  verdict: process.env.EV_VERDICT ?? 'PASS',",
+    "  runtimeId: process.env.EV_RUNTIME_ID,",
+    "  model: process.env.EV_MODEL,",
+    "  executionClass: process.env.EV_EXEC_CLASS ?? 'CANONICAL',",
+    "  evidence: JSON.parse(process.env.EV_BLOCK ?? '{\"suite\":\"synthetic\",\"testsTotal\":3,\"testsFailed\":0}'),",
+    "};",
+    "console.log(JSON.stringify(ev));",
+  ].join('\n');
+
+  function mkRunner(dir, src = RUNNER_OK, file = 'runner.mjs', declare = true) {
+    if (src !== null) writeFileSync(join(dir, file), src);
+    const base = loadRuntimeAuthority();
+    return { ...base, canonical: { ...base.canonical, runner: declare ? { file } : null } };
+  }
+
+  test('NO env boolean can authorize canonical acceptance (P1_CANONICAL_SUITE_READY=1 is mechanically worthless)', () => {
+    const authority = loadRuntimeAuthority(); // real declaration: runner not wired
+    const hostileEnv = {
+      P1_CANONICAL_SUITE_READY: '1',
+      [authority.env.runtimeMode]: 'canonical',
+      [authority.canonical.credentialEnv]: 'x'.repeat(8),
+    };
+    const resolved = resolveCanonicalRunner({ authority, repoRoot: '/definitely/not/a/repo', env: hostileEnv });
+    assert.equal(resolved.ok, false);
+    assert.equal(resolved.code, 'CANONICAL_SUITE_NOT_WIRED');
+    const run = runCanonicalRunner({ authority, repoRoot: '/definitely/not/a/repo', env: hostileEnv });
+    assert.equal(run.ok, false);
+    assert.equal(run.code, 'CANONICAL_SUITE_NOT_WIRED');
+    const acc = acceptanceVerdictFor({ mode: 'canonical', canonicalEvidence: run });
+    assert.equal(acc.finalAcceptanceEligible, false);
+    assert.equal(acc.acceptanceVerdict, 'CANONICAL_ACCEPTANCE_NOT_PASSED');
+  });
+
+  test('missing canonical runner file -> CANONICAL_SUITE_NOT_WIRED (fail closed)', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'p1-f8b-'));
+    const authority = mkRunner(dir, RUNNER_OK, 'absent-runner.mjs');
+    rmSync(join(dir, 'absent-runner.mjs'), { force: true });
+    const r = resolveCanonicalRunner({ authority, repoRoot: dir });
+    assert.equal(r.ok, false);
+    assert.equal(r.code, 'CANONICAL_SUITE_NOT_WIRED');
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test('canonical PASS requires machine-readable evidence from the declared project-owned runner (happy path)', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'p1-f8b-'));
+    const authority = mkRunner(dir);
+    const r = runCanonicalRunner({ authority, repoRoot: dir, env: { EV_RUNTIME_ID: authority.canonical.runtimeId, EV_MODEL: authority.canonical.model } });
+    assert.equal(r.ok, true);
+    assert.equal(r.evidence.schema, 'canonical-runner-evidence/1');
+    assert.equal(r.evidence.runtimeId, authority.canonical.runtimeId);
+    assert.equal(r.evidence.model, authority.canonical.model);
+    assert.equal(r.evidence.executionClass, 'CANONICAL');
+    const acc = acceptanceVerdictFor({ mode: 'canonical', canonicalEvidence: r });
+    assert.equal(acc.finalAcceptanceEligible, true);
+    assert.equal(acc.acceptanceVerdict, 'CANONICAL_ACCEPTANCE_PASS');
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test('runner failure / non-JSON stdout fail closed', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'p1-f8b-'));
+    let authority = mkRunner(dir, 'process.exit(3);', 'failing.mjs');
+    let r = runCanonicalRunner({ authority, repoRoot: dir, env: {} });
+    assert.equal(r.ok, false);
+    assert.equal(r.code, 'CANONICAL_RUNNER_FAILED');
+    authority = mkRunner(dir, 'console.log("not json at all");', 'garbage.mjs');
+    r = runCanonicalRunner({ authority, repoRoot: dir, env: {} });
+    assert.equal(r.ok, false);
+    assert.equal(r.code, 'CANONICAL_RUNNER_EVIDENCE_INVALID');
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test('smoke/offline execution evidence can NEVER satisfy canonical acceptance; identity mismatch rejected', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'p1-f8b-'));
+    const authority = mkRunner(dir);
+    const base = { EV_RUNTIME_ID: authority.canonical.runtimeId, EV_MODEL: authority.canonical.model };
+    for (const cls of ['SMOKE', 'OFFLINE_DRY_RUN', 'LOCAL_NONCANONICAL_SMOKE']) {
+      const r = runCanonicalRunner({ authority, repoRoot: dir, env: { ...base, EV_EXEC_CLASS: cls } });
+      assert.equal(r.ok, false);
+      assert.equal(r.code, 'CANONICAL_RUNNER_EVIDENCE_INVALID');
+      assert.match(r.detail, /smoke\/offline/);
+    }
+    let r = runCanonicalRunner({ authority, repoRoot: dir, env: { ...base, EV_RUNTIME_ID: 'some-smoke-runtime' } });
+    assert.equal(r.code, 'CANONICAL_RUNNER_EVIDENCE_INVALID');
+    assert.match(r.detail, /runtimeId mismatch/);
+    r = runCanonicalRunner({ authority, repoRoot: dir, env: { ...base, EV_MODEL: 'some-smoke-model' } });
+    assert.equal(r.code, 'CANONICAL_RUNNER_EVIDENCE_INVALID');
+    assert.match(r.detail, /model mismatch/);
+    // empty evidence block = no disclosure of actual execution -> rejected
+    r = runCanonicalRunner({ authority, repoRoot: dir, env: { ...base, EV_BLOCK: '{}' } });
+    assert.equal(r.code, 'CANONICAL_RUNNER_EVIDENCE_INVALID');
+    assert.match(r.detail, /evidence block missing or empty/);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test('proving-ground state: declaration carries no runner yet -> mechanically NOT_WIRED (no bypass)', () => {
+    const authority = loadRuntimeAuthority();
+    assert.equal(authority.canonical.runner ?? null, null);
+    const r = resolveCanonicalRunner({ authority, repoRoot: process.cwd() });
+    assert.equal(r.ok, false);
+    assert.equal(r.code, 'CANONICAL_SUITE_NOT_WIRED');
   });
 });
 
