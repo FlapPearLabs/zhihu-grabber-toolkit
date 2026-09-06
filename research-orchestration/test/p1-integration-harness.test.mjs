@@ -27,10 +27,14 @@ import {
   buildTierPlan,
   verifyIdentityChain,
   buildLedger,
+  writeLedger,
   acceptanceVerdictFor,
+  wholeWaveEnvFor,
+  canonicalReadiness,
   defaultLedgerPath,
   negativeGuardProbe,
-} from '../bin/p1-integration-harness.mjs';
+} from '../bin/integration-harness.mjs';
+import { loadRuntimeAuthority } from '../bin/runtime-authority.mjs';
 import {
   classifyPreflight,
   checkContextCapacity,
@@ -145,24 +149,35 @@ describe('F2 — parallel-worker integration (REAL temp git: B -> worker-A / wor
 
 /* ---------------------------------- F3 offline final != acceptance ---------------------------------- */
 
-describe('F3 — FINAL_DRY_RUN != FINAL_ACCEPTANCE (mechanical, in-ledger)', () => {
+describe('F3/F8 — acceptance verdict taxonomy (mechanical, in-ledger)', () => {
   test('offline final run is NOT acceptance-eligible', () => {
-    const acc = acceptanceVerdictFor({ liveRequested: false, liveStepOutcome: 'NOT_RUN' });
+    const acc = acceptanceVerdictFor({ mode: 'offline' });
     assert.equal(acc.finalAcceptanceEligible, false);
     assert.equal(acc.acceptanceVerdict, 'OFFLINE_DRY_RUN_NOT_ACCEPTANCE');
-    const l = buildLedger({ stage: 'FINAL', steps: [], ...acc });
+    const l = buildLedger({ stage: 'FINAL', runtimeClass: 'OFFLINE_DRY_RUN', steps: [], ...acc });
     assert.equal(l.finalAcceptanceEligible, false);
     assert.equal(l.acceptanceVerdict, 'OFFLINE_DRY_RUN_NOT_ACCEPTANCE');
+    assert.equal(l.runtimeClass, 'OFFLINE_DRY_RUN');
   });
-  test('live whole-wave PASS is the only acceptance-eligible path', () => {
-    const ok = acceptanceVerdictFor({ liveRequested: true, liveStepOutcome: 'PASS' });
+  test('smoke is NEVER acceptance-eligible — even when every step passes', () => {
+    const acc = acceptanceVerdictFor({ mode: 'smoke', canonicalStepOutcome: 'PASS' });
+    assert.equal(acc.finalAcceptanceEligible, false);
+    assert.equal(acc.acceptanceVerdict, 'LOCAL_NONCANONICAL_SMOKE_NOT_ACCEPTANCE');
+  });
+  test('canonical PASS is the only acceptance-eligible path; canonical FAIL fails closed', () => {
+    const ok = acceptanceVerdictFor({ mode: 'canonical', canonicalStepOutcome: 'PASS' });
     assert.equal(ok.finalAcceptanceEligible, true);
-    assert.equal(ok.acceptanceVerdict, 'ELIGIBLE_LIVE_WAVE_PASS');
-    const bad = acceptanceVerdictFor({ liveRequested: true, liveStepOutcome: 'FAIL: x' });
+    assert.equal(ok.acceptanceVerdict, 'CANONICAL_ACCEPTANCE_PASS');
+    const bad = acceptanceVerdictFor({ mode: 'canonical', canonicalStepOutcome: 'FAIL' });
     assert.equal(bad.finalAcceptanceEligible, false);
-    assert.equal(bad.acceptanceVerdict, 'LIVE_REQUESTED_BUT_NOT_PASSED');
+    assert.equal(bad.acceptanceVerdict, 'CANONICAL_ACCEPTANCE_NOT_PASSED');
+    const nr = acceptanceVerdictFor({ mode: 'canonical', canonicalStepOutcome: 'NOT_RUN' });
+    assert.equal(nr.finalAcceptanceEligible, false);
   });
-  test('ledger carries the frozen reviewed sha fields', () => {
+  test('unknown mode throws', () => {
+    assert.throws(() => acceptanceVerdictFor({ mode: 'yolo' }), /unknown execution mode/);
+  });
+  test('ledger carries the frozen reviewed sha fields + refusal policy', () => {
     const l = buildLedger({
       stage: 'INTERMEDIATE',
       expectedIntegrationHead: 'h'.repeat(40),
@@ -174,19 +189,72 @@ describe('F3 — FINAL_DRY_RUN != FINAL_ACCEPTANCE (mechanical, in-ledger)', () 
     assert.equal(l.workerReviewedSha, 'w'.repeat(40));
     assert.equal(l.expectedIntegrationHead, 'h'.repeat(40));
     assert.equal(l.workerReviewBase, 'b'.repeat(40));
+    assert.equal(l.schema, 'wf-execution-ledger/1');
     assert.match(l.masterUpdate, /REFUSED_BY_HARNESS/);
+  });
+});
+
+/* ---------------------------------- F8 canonical runtime authority ---------------------------------- */
+
+describe('F8 — canonical runtime authority (no fallback, extraction boundary)', () => {
+  test('wholeWaveEnvFor(smoke) uses declared local env names; canonical carries ONLY the mode key', () => {
+    const authority = loadRuntimeAuthority();
+    const smoke = wholeWaveEnvFor({ mode: 'smoke', authority, env: {} });
+    assert.equal(smoke[authority.env.realRuntime], '1');
+    assert.equal(smoke[authority.localSmoke.baseUrlEnv], authority.localSmoke.baseUrlDefault);
+    assert.equal(smoke[authority.localSmoke.modelEnv], authority.localSmoke.modelDefault);
+    assert.ok(!(authority.env.runtimeMode in smoke));
+    const canonical = wholeWaveEnvFor({ mode: 'canonical', authority, env: {} });
+    assert.deepEqual(Object.keys(canonical), [authority.env.runtimeMode]);
+    assert.equal(canonical[authority.env.runtimeMode], 'canonical');
+    // no-fallback at env level: canonical overlay must not carry any local-smoke key
+    for (const k of Object.keys(smoke)) assert.ok(!(k in canonical));
+    assert.equal(wholeWaveEnvFor({ mode: 'offline', authority }), null);
+  });
+  test('canonicalReadiness: missing credential AND file -> CANONICAL_CREDENTIAL_MISSING (fail closed)', () => {
+    const authority = loadRuntimeAuthority();
+    const emptyEnv = { [authority.canonical.credentialEnv]: '' };
+    const r = canonicalReadiness({ authority, env: emptyEnv, repoRoot: '/definitely/not/a/repo' });
+    assert.equal(r.ok, false);
+    assert.ok(r.failures.some((f) => f.code === 'CANONICAL_CREDENTIAL_MISSING'));
+  });
+  test('canonicalReadiness: credential present but suite not wired -> CANONICAL_SUITE_NOT_WIRED (no silent fallback)', () => {
+    const authority = loadRuntimeAuthority();
+    const envWithCred = { [authority.canonical.credentialEnv]: 'x'.repeat(8) };
+    const r = canonicalReadiness({ authority, env: envWithCred, repoRoot: '/definitely/not/a/repo' });
+    assert.equal(r.ok, false);
+    assert.ok(r.failures.some((f) => f.code === 'CANONICAL_SUITE_NOT_WIRED'));
+    assert.ok(!r.failures.some((f) => f.code === 'CANONICAL_CREDENTIAL_MISSING'));
+  });
+  test('loadRuntimeAuthority validates the declaration', () => {
+    const a = loadRuntimeAuthority();
+    assert.equal(a.canonical.runtimeId, 'deepseek-api-tool-less');
+    assert.equal(a.canonical.model, 'deepseek-v4-flash');
+    const bad = mkdtempSync(join(tmpdir(), 'p1-auth-'));
+    writeFileSync(join(bad, 'runtime-authority.json'), JSON.stringify({ schema: 'runtime-authority/1', localSmoke: {} }));
+    assert.throws(() => loadRuntimeAuthority(join(bad, 'runtime-authority.json')), /missing canonical/);
+    rmSync(bad, { recursive: true, force: true });
+  });
+  test('EXTRACTION BOUNDARY: generic harness/preflight sources contain no vendor/project/ticket names', () => {
+    const scan = /deepseek|lmstudio|qwen|zhihu|p1|t1[2-7]/i;
+    for (const f of ['bin/integration-harness.mjs', 'bin/integration-preflight.mjs', 'bin/runtime-authority.mjs']) {
+      const src = readFileSync(join(process.cwd(), f), 'utf8');
+      assert.equal(scan.test(src), false, `extraction boundary violated in ${f}`);
+    }
   });
 });
 
 /* ---------------------------------- F4 mode-aware dependency rules ---------------------------------- */
 
 describe('F4 — preflight matches the execution mode', () => {
-  test('live: missing node_modules / transformers = FAIL (not WARN)', () => {
-    assert.equal(checkDependencies('live', false, false).code, 'DEPS_NODE_MODULES_MISSING');
-    assert.equal(checkDependencies('live', false, false).status, 'FAIL');
-    assert.equal(checkDependencies('live', true, false).code, 'DEPS_TRANSFORMERS_MISSING');
-    assert.equal(checkDependencies('live', true, false).status, 'FAIL');
-    assert.equal(checkDependencies('live', true, true).status, 'PASS');
+  test('smoke/canonical: missing node_modules / embedding dep = FAIL (not WARN)', () => {
+    for (const mode of ['smoke', 'canonical']) {
+      assert.equal(checkDependencies(mode, false, false).code, 'DEPS_NODE_MODULES_MISSING');
+      assert.equal(checkDependencies(mode, false, false).status, 'FAIL');
+      assert.equal(checkDependencies(mode, true, false).code, 'DEPS_EMBEDDING_MISSING');
+      assert.equal(checkDependencies(mode, true, false).status, 'FAIL');
+      assert.equal(checkDependencies(mode, true, true).status, 'PASS');
+    }
   });
   test('offline: dependency check intentionally not applied (returns null — documented non-check)', () => {
     assert.equal(checkDependencies('offline', false, false), null);
@@ -234,17 +302,11 @@ describe('F5 — ledger default path is repository-root-relative (cwd must not m
   test('explicit absolute path wins over default', () => {
     const p = '/tmp/whatever/ledger.json';
     const dir = mkdtempSync(join(tmpdir(), 'p1-f5-'));
-    const written = require_writeLedger(p, dir);
+    const written = writeLedger(buildLedger({ stage: 'FINAL', steps: [] }), p, dir);
     assert.equal(written, p);
     rmSync(dir, { recursive: true, force: true });
   });
 });
-
-/** helper: call the (non-exported-in-ESM-friendly) writeLedger via import — wrapper for hermetic test */
-import { writeLedger } from '../bin/p1-integration-harness.mjs';
-function require_writeLedger(p, repoRoot) {
-  return writeLedger(buildLedger({ stage: 'FINAL', steps: [] }), p, repoRoot);
-}
 
 /* ---------------------------------- F6 executable evidence matches the docs ---------------------------------- */
 

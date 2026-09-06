@@ -2,37 +2,34 @@
 /**
  * research-orchestration/bin/integration-preflight.mjs
  *
- * P1 execution-workflow repair (workflow efficiency audit 2026-09-06;
- * round 1 per PR #72 review — F4 mode-aware preflight):
+ * Generic execution-workflow preflight (round 2, F8 mode-aware). All
+ * runtime/model/credential/env names come from the project declaration
+ * (bin/runtime-authority.json) — no vendor or project names here (statically
+ * enforced).
  *
- *   --mode offline (default): an explicitly OFFLINE dry-run must NOT demand
- *     a runtime. Checks: local real artifacts (final stage) only. The
- *     @xenova/transformers dependency is deliberately NOT checked here
- *     because the offline suite is proven to run without node_modules
- *     (657/657 on a bare worktree); requiring it offline would be a false gate.
+ *   --mode offline (default): explicitly OFFLINE dry-run. Checks: local real
+ *     artifacts (final stage) only. Runtime and dependencies intentionally
+ *     NOT checked (documented non-check: the offline suite provably runs on a
+ *     bare worktree).
  *
- *   --mode live: required before LIVE acceptance. Checks: endpoint health,
- *     exact model served, context capacity sufficient, @xenova/transformers
- *     resolvable (missing = FAIL — the live embedding gate needs it), local
- *     real artifacts (final stage), env variables.
+ *   --mode smoke: LOCAL_NONCANONICAL_SMOKE preflight. Checks: local runtime
+ *     endpoint health, model served, context capacity, dependencies
+ *     (missing = FAIL — the whole-wave gates need them), artifacts (final).
  *
- * Pure/offline: with --checks-json it classifies supplied check results
- * (used by tests). Exit code: 0 = PREFLIGHT_PASS, 1 = PREFLIGHT_FAIL.
+ *   --mode canonical: CANONICAL_ACCEPTANCE preflight. Checks: runtime
+ *     authority declaration valid, canonical credential PRESENT (env or
+ *     declared 0600 file — presence only; the credential value is never read,
+ *     printed or transmitted by preflight), dependencies, artifacts (final).
+ *     NO endpoint probe and NO local-runtime probe happen here — canonical
+ *     mode must not touch the noncanonical smoke runtime at all.
+ *
+ * Exit code: 0 = PREFLIGHT_PASS, 1 = PREFLIGHT_FAIL.
  */
 
-import { pathToFileURL, fileURLToPath } from 'node:url';
-import { resolve as pathResolve } from 'node:path';
 import { existsSync } from 'node:fs';
+import { resolve as pathResolve } from 'node:path';
 import { createRequire } from 'node:module';
-
-const REPO_ROOT = pathResolve(fileURLToPath(import.meta.url), '..', '..', '..'); // bin -> research-orchestration -> repo
-const RO_DIR = pathResolve(REPO_ROOT, 'research-orchestration');
-
-const DEFAULT_BASE_URL = process.env.P1_LMSTUDIO_BASE_URL ?? 'http://127.0.0.1:1234/v1';
-const DEFAULT_MODEL = process.env.P1_LMSTUDIO_MODEL ?? 'qwen/qwen3-1.7b';
-const DEFAULT_MIN_CONTEXT = Number(process.env.P1_MIN_CONTEXT ?? 32768);
-const DEFAULT_DOGFOOD_ROOT = process.env.P1_REAL_DOGFOOD_ROOT ?? null;
-const SEAM_ARTIFACTS_DIR = process.env.P1_SEAM_ARTIFACTS_DIR ?? pathResolve(REPO_ROOT, 'work', 'p1-wave-01-integration');
+import { loadRuntimeAuthority, REPO_ROOT, RO_DIR } from './runtime-authority.mjs';
 
 /** Pure classification: map a list of check results to a verdict. */
 export function classifyPreflight(checks) {
@@ -46,7 +43,7 @@ export function classifyPreflight(checks) {
   };
 }
 
-/** Context-capacity rule (encodes the 2026-09-05 8192-ctx incident). */
+/** Context-capacity rule (encodes the undersized-context incident of 2026-09-05). */
 export function checkContextCapacity(model, servedContext, requiredMin) {
   if (!Number.isFinite(servedContext)) {
     return { check: 'runtime.context', status: 'FAIL', code: 'RUNTIME_CAPACITY_UNVERIFIABLE', detail: `served context unknown for ${model}` };
@@ -58,21 +55,21 @@ export function checkContextCapacity(model, servedContext, requiredMin) {
 }
 
 /**
- * F4: dependency rule is MODE-AWARE.
- * live: node_modules and @xenova/transformers are REQUIRED (missing = FAIL —
- *       the live embedding gate imports them).
+ * Dependency rule, mode-aware.
+ * smoke + canonical: node_modules and the declared embedding dependency are
+ *   REQUIRED (missing = FAIL — the whole-wave gates import them).
  * offline: not checked (returns null) — the offline suite provably runs
- *       without node_modules; a missing dep is not a false gate there.
+ *   without node_modules; a missing dep is not a false gate there.
  */
-export function checkDependencies(mode, hasNodeModules, hasTransformers) {
-  if (mode !== 'live') return null;
+export function checkDependencies(mode, hasNodeModules, hasEmbeddingDep) {
+  if (mode === 'offline') return null;
   if (!hasNodeModules) {
-    return { check: 'deps', status: 'FAIL', code: 'DEPS_NODE_MODULES_MISSING', detail: 'research-orchestration/node_modules absent — live embedding path unqualified; run npm ci (unsandboxed) first' };
+    return { check: 'deps', status: 'FAIL', code: 'DEPS_NODE_MODULES_MISSING', detail: 'research-orchestration/node_modules absent — whole-wave gates unqualified; install dependencies first' };
   }
-  if (!hasTransformers) {
-    return { check: 'deps', status: 'FAIL', code: 'DEPS_TRANSFORMERS_MISSING', detail: '@xenova/transformers not resolvable — live embedding gate would fail' };
+  if (!hasEmbeddingDep) {
+    return { check: 'deps', status: 'FAIL', code: 'DEPS_EMBEDDING_MISSING', detail: 'declared embedding dependency not resolvable — whole-wave embedding gate would fail' };
   }
-  return { check: 'deps', status: 'PASS', detail: 'node_modules + @xenova/transformers present' };
+  return { check: 'deps', status: 'PASS', detail: 'node_modules + embedding dependency present' };
 }
 
 /** Local real-artifact rule for the final wave. */
@@ -90,27 +87,64 @@ async function jsonFetch(url, timeoutMs) {
   return res.json();
 }
 
-function artifactsCheck(stage) {
+function artifactsCheck(stage, authority) {
   if (stage !== 'final') return null;
-  const wanted = [];
-  if (DEFAULT_DOGFOOD_ROOT) wanted.push(pathResolve(DEFAULT_DOGFOOD_ROOT, 'multi-group-state.json'));
-  for (const rel of ['seam-b-real.json', 'seam-c-real.json', 'seam-d-real.json']) {
-    wanted.push(pathResolve(SEAM_ARTIFACTS_DIR, rel));
-  }
+  const base = pathResolve(process.env[authority.env.seamArtifactsDir] ?? pathResolve(REPO_ROOT, authority.artifacts.dir));
+  const wanted = authority.artifacts.files.map((rel) => pathResolve(base, rel));
   return checkLocalArtifacts(wanted.map((path) => ({ path, exists: existsSync(path) })));
 }
 
-async function probeLive({ mode, baseUrl, model, minContext, stage }) {
+function depsCheck(mode, authority) {
+  let hasNodeModules = false;
+  let hasEmbeddingDep = false;
+  try {
+    const roRequire = createRequire(pathResolve(RO_DIR, 'package.json'));
+    roRequire.resolve(authority.deps.embedding);
+    hasEmbeddingDep = true;
+    hasNodeModules = existsSync(pathResolve(RO_DIR, 'node_modules'));
+  } catch {
+    hasNodeModules = existsSync(pathResolve(RO_DIR, 'node_modules'));
+    hasEmbeddingDep = false;
+  }
+  return checkDependencies(mode, hasNodeModules, hasEmbeddingDep);
+}
+
+/**
+ * F8 canonical credential presence — fail closed WITHOUT using the
+ * credential: declared env var non-empty OR declared 0600 file exists at the
+ * repo root. The credential value is never read into memory by preflight.
+ */
+export function checkCanonicalCredential(authority, env = process.env, repoRoot = REPO_ROOT) {
+  const envName = authority.canonical.credentialEnv;
+  const fileRel = authority.canonical.credentialFile;
+  const envPresent = typeof env[envName] === 'string' && env[envName].trim() !== '';
+  const filePresent = fileRel ? existsSync(pathResolve(repoRoot, fileRel)) : false;
+  if (!envPresent && !filePresent) {
+    return { check: 'canonical.credential', status: 'FAIL', code: 'CANONICAL_CREDENTIAL_MISSING', detail: `${envName} not set and ${fileRel} not present — canonical acceptance fails closed (no fallback)` };
+  }
+  return { check: 'canonical.credential', status: 'PASS', detail: `canonical credential present (${envPresent ? 'env' : 'file'})` };
+}
+
+async function probeLive({ mode, authority, stage }) {
   const checks = [];
-  const finalArtifacts = artifactsCheck(stage);
+  const finalArtifacts = artifactsCheck(stage, authority);
   if (finalArtifacts) checks.push(finalArtifacts);
   if (mode === 'offline') {
-    // F4: an explicitly offline dry-run must not demand a runtime.
-    // Documented non-check: @xenova/transformers (offline suite runs without node_modules).
-    checks.push({ check: 'mode', status: 'PASS', detail: 'offline mode — runtime endpoint/dependencies intentionally not required (see docs §C)' });
+    checks.push({ check: 'mode', status: 'PASS', detail: 'offline mode — runtime/dependencies intentionally not required (docs §C)' });
     return checks;
   }
-  // mode === 'live'
+  const deps = depsCheck(mode, authority);
+  if (deps) checks.push(deps);
+  if (mode === 'canonical') {
+    // F8: presence-only credential check; NO endpoint probe, NO local-runtime probe.
+    checks.push(checkCanonicalCredential(authority));
+    checks.push({ check: 'canonical.mode', status: 'PASS', detail: `canonical runtime ${authority.canonical.runtimeId}/${authority.canonical.model} declared (reachability verified at run time by the runtime authority module, not by preflight)` });
+    return checks;
+  }
+  // mode === 'smoke' — local noncanonical runtime, values from the declaration
+  const baseUrl = process.env[authority.localSmoke.baseUrlEnv] ?? authority.localSmoke.baseUrlDefault;
+  const model = process.env[authority.localSmoke.modelEnv] ?? authority.localSmoke.modelDefault;
+  const minContext = Number(process.env[authority.env.minContext] ?? 32768);
   let models = null;
   try {
     const body = await jsonFetch(`${baseUrl}/models`, 5000);
@@ -132,19 +166,6 @@ async function probeLive({ mode, baseUrl, model, minContext, stage }) {
     } catch { /* capacity API unavailable — handled by the rule below */ }
     checks.push(checkContextCapacity(model, servedCtx, minContext));
   }
-  let hasNodeModules = false;
-  let hasTransformers = false;
-  try {
-    const roRequire = createRequire(pathResolve(RO_DIR, 'package.json'));
-    roRequire.resolve('@xenova/transformers');
-    hasTransformers = true;
-    hasNodeModules = existsSync(pathResolve(RO_DIR, 'node_modules'));
-  } catch {
-    hasNodeModules = existsSync(pathResolve(RO_DIR, 'node_modules'));
-    hasTransformers = false;
-  }
-  const deps = checkDependencies('live', hasNodeModules, hasTransformers);
-  if (deps) checks.push(deps);
   return checks;
 }
 
@@ -162,9 +183,10 @@ if (isMainModule()) {
     console.log(JSON.stringify(verdict, null, 2));
     process.exit(verdict.verdict === 'PREFLIGHT_PASS' ? 0 : 1);
   } else {
-    const checks = await probeLive({ mode, baseUrl: DEFAULT_BASE_URL, model: DEFAULT_MODEL, minContext: DEFAULT_MIN_CONTEXT, stage });
+    const authority = loadRuntimeAuthority();
+    const checks = await probeLive({ mode, authority, stage });
     const verdict = classifyPreflight(checks);
-    console.log(JSON.stringify({ baseUrl: DEFAULT_BASE_URL, model: DEFAULT_MODEL, minContext: DEFAULT_MIN_CONTEXT, stage, mode, ...verdict }, null, 2));
+    console.log(JSON.stringify({ mode, stage, ...verdict }, null, 2));
     process.exit(verdict.verdict === 'PREFLIGHT_PASS' ? 0 : 1);
   }
 }

@@ -1,0 +1,43 @@
+{
+  "schema": "runtime-authority/1",
+  "projectNote": "Zhihu P1 proving-ground declaration. The generic harness/preflight authority reads THIS file; vendor, runtime, model, credential and ticket names live here only (enforced by a static extraction-boundary test).",
+  "canonical": {
+    "runtimeId": "deepseek-api-tool-less",
+    "model": "deepseek-v4-flash",
+    "authorityModule": "corpus-anthology/lib/deepseek-tool-less.mjs",
+    "credentialEnv": "DEEPSEEK_API_KEY",
+    "credentialFile": ".deepseek_api_key",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "note": "authoritative declaration = frozen DEEPSEEK_RUNTIME in the authority module; credential resolution via resolveDeepSeekCredential() (env first, then 0600 file); missing credential fails closed; absolutely no fallback to the localSmoke runtime"
+  },
+  "localSmoke": {
+    "class": "LOCAL_NONCANONICAL_SMOKE",
+    "baseUrlEnv": "P1_LMSTUDIO_BASE_URL",
+    "baseUrlDefault": "http://127.0.0.1:1234/v1",
+    "modelEnv": "P1_LMSTUDIO_MODEL",
+    "modelDefault": "qwen/qwen3-1.7b:2",
+    "note": "explicitly NONCANONICAL; may use the local LM Studio stack; never acceptance-eligible; never used by canonical mode"
+  },
+  "env": {
+    "realRuntime": "P1_REAL_RUNTIME",
+    "seamArtifactsDir": "P1_SEAM_ARTIFACTS_DIR",
+    "minContext": "P1_MIN_CONTEXT",
+    "runtimeMode": "P1_RUNTIME_MODE",
+    "suiteReady": "P1_CANONICAL_SUITE_READY",
+    "nodeBin": "WFH_NODE_BIN"
+  },
+  "ledger": {
+    "dir": "work/p1-wave-latest"
+  },
+  "artifacts": {
+    "dir": "work/p1-wave-01-integration",
+    "files": [
+      "seam-b-real.json",
+      "seam-c-real.json",
+      "seam-d-real.json"
+    ]
+  },
+  "deps": {
+    "embedding": "@xenova/transformers"
+  }
+}

@@ -42,45 +42,43 @@ merge --no-ff reviewed SHA（harness 校验 base/worker/merge-base 精确性）
 （≈0——三票文件零交集 + 冻结 validator 不受未触碰文件影响）不抵 agent-turn 成本；
 `node --test test/*.test.mjs` 的最终一次全量足够兜底。
 
-## B. FINAL_TEST_POLICY（stage-final，每个 integration wave 恰好一次）
+## B. FINAL_TEST_POLICY（stage-final；F8 三模式验收机制）
 
 ```text
-runtime preflight（§C）
-→ 一次 full research-orchestration regression（offline）
-→ 一次 live whole-wave run（--test-concurrency=1，真实 runtime）
-→ identity-chain 正向 + guard 负向探针（真实产物）
-→ final exact-SHA review
-→ governance reconciliation（§D）
-```
+MODE = offline | smoke | canonical   （stage-final --mode；默认 offline）
 
-**默认恰一次 live**；live 失败若为环境类签名（§C 分类）→ 修复环境后重跑 preflight +
-live，禁止进入产品修复/评审循环（§C 饱和规则）。
-**FINAL_DRY_RUN ≠ FINAL_ACCEPTANCE（机械可查，非 prose）**：不带 `--live` 的 stage-final
-是 dry-run，其 ledger 记录 `finalAcceptanceEligible=false` /
-`acceptanceVerdict=OFFLINE_DRY_RUN_NOT_ACCEPTANCE`；canonical P1 集成验收的唯一合格路径 =
-`finalAcceptanceEligible=true`（live whole-wave=PASS）。
+offline  = FINAL_DRY_RUN：preflight(offline) → 一次全量离线回归 → identity-chain +
+           negative-guard 探针；ledger 机械记录 runtimeClass=OFFLINE_DRY_RUN、
+           finalAcceptanceEligible=false、acceptanceVerdict=OFFLINE_DRY_RUN_NOT_ACCEPTANCE。
+smoke    = LOCAL_NONCANONICAL_SMOKE：preflight(smoke：本地 runtime 健康/容量/依赖) →
+           一次全量离线回归 → 本地 runtime whole-wave（--test-concurrency=1）→ 探针；
+           **显式 NONCANONICAL —— 无论步骤是否全过，finalAcceptanceEligible 恒为 false**
+           （acceptanceVerdict=LOCAL_NONCANONICAL_SMOKE_NOT_ACCEPTANCE）。
+canonical= CANONICAL_ACCEPTANCE：preflight(canonical：声明有效性 + canonical 凭据存在性
+           [只查存在、不读取/不传输] + 依赖 + 产物) → canonical.readiness（套件接线开关，
+           未接线即拒）→ canonical whole-wave（runtimeId/model 来自项目声明）→ 探针；
+           **仅 canonical whole-wave = PASS 可置 finalAcceptanceEligible=true**
+           （CANONICAL_ACCEPTANCE_PASS）；任何失败 fail closed（CANONICAL_ACCEPTANCE_NOT_PASSED），
+           **绝不回退到本地 smoke runtime**。
 
-## C. RUNTIME_PREFLIGHT（mode-aware，强制前置）
+env-failure saturation（§C）适用于所有模式。canonical 模式在 env 层即不携带任何
+smoke runtime 键（wholeWaveEnvFor 机械保证）——回退禁令不是 prose，是可测试的机制。
 
-任何 live 测试之前必须跑 `bin/integration-preflight.mjs --mode live`，检查：
+## C. RUNTIME_PREFLIGHT（mode-aware，强制前置；模式必须显式传入）
 
-1. runtime endpoint 健康（/v1/models，5s 超时）；
-2. 所需 model id 在 served 列表（默认 `qwen/qwen3-1.7b`，env `P1_LMSTUDIO_MODEL`）；
-3. **上下文容量**：经 `/api/v0/models` 的 `max_context_length` 对照 `P1_MIN_CONTEXT`
-   （默认 32768）。不可验证 → `RUNTIME_CAPACITY_UNVERIFIABLE`（fail closed，不静默放行）；
-   不足 → `RUNTIME_CONTEXT_INSUFFICIENT`（8192 事件已固化为测试 fixture）；
-4. **依赖资格（live=FAIL 非 WARN）**：node_modules 缺失 → `DEPS_NODE_MODULES_MISSING`；
-   `@xenova/transformers` 不可解析 → `DEPS_TRANSFORMERS_MISSING`（live embedding 门需要）；
-5. 本地真实产物（final stage）：dogfood root + seam-{b,c,d}-real.json 可解析；
-6. 所需 env 变量（P1_REAL_RUNTIME / P1_LMSTUDIO_BASE_URL / P1_LMSTUDIO_MODEL）。
+`bin/integration-preflight.mjs --mode <offline|smoke|canonical> [--stage final]`
 
-**`--mode offline`（默认）**：显式离线 dry-run **不要求 runtime/依赖**——只检查本地产物
-（final stage）。不检查 `@xenova/transformers` 的理由：离线套件已被证明在无 node_modules
-的干净 worktree 上 657/657 通过（2026-09-05/06 实测）；离线要求它属于假门。执行模式必须
-显式传入（或由 `stage-final --live` 推导），不得对离线执行静默套用 live 要求。
+1. offline：仅本地产物（final stage）。**runtime 与依赖刻意不检查**（离线套件已在裸
+   worktree 上 657/657 实测通过；对离线要求依赖属于假门——文档化 non-check）。
+2. smoke：本地 runtime endpoint 健康、model served、上下文容量
+   （RUNTIME_CONTEXT_INSUFFICIENT / _UNVERIFIABLE fail-closed）、依赖（缺失=FAIL）、产物。
+3. canonical：声明有效性、**canonical 凭据存在性**（declared env 非空或 0600 文件存在；
+   只查存在——preflight 不读取/不打印/不传输凭据值）、依赖（缺失=FAIL）、产物（final）。
+   **无 endpoint 探测、无本地 runtime 探测**——canonical 模式完全不接触 smoke runtime。
+   运行时可达性由 runtime authority 模块在真实 canonical 运行时验证。
 
 **ENV FAILURE SATURATION**：环境故障签名一旦被 preflight 分类并复现，禁止反复进入
-产品修复/评审循环；修复动作仅限环境面（换实例/env/装依赖），随后重跑 preflight。
+产品修复/评审循环；修复动作仅限环境面，随后重跑 preflight。
 
 ## D. GOVERNANCE_WRITE_POLICY（批量对账）
 
@@ -101,38 +99,48 @@ git 查询一律 `--no-pager`）。长输出命令禁止假设完整回显，关
 ## F. 工具
 
 ```bash
-# 中间 stage（例：T13；F2 并行 worker 输入模型——注意 base 是 worker 的评审基点，
-# 不是当前 integration HEAD）
-node research-orchestration/bin/p1-integration-harness.mjs stage-intermediate \
-  --expected-head   <EXPECTED_INTEGRATION_HEAD（调用时 integration 分支 tip，必须精确相等）> \
-  --worker-review-base <WORKER_REVIEW_BASE（worker 评审时的共同 base，如 d1b4585）> \
-  --worker          <WORKER_REVIEWED_SHA（40-hex；其他 ref 会被立即冻结为 full SHA）> \
-  --ticket p1-t13 \
-  --focus 'test/p1-t13-group-representation-claims.test.mjs' \
-  --gate  'test/p1-seam-c-real-conformance.test.mjs'
-# 校验语义：HEAD===expected-head；review-base 是 reviewed sha 的祖先；
-# merge-base(HEAD, reviewed)===review-base → merge --no-ff → reviewed sha 仍为精确祖先。
+# 中间 stage（并行 worker 输入模型：expected-head 是调用时的 integration tip，
+# worker-review-base 是该 worker 评审时的共同 base——两者通常不同）
+node research-orchestration/bin/integration-harness.mjs stage-intermediate \
+  --expected-head     <EXPECTED_INTEGRATION_HEAD（必须与当前 HEAD 精确相等）> \
+  --worker-review-base <WORKER_REVIEW_BASE（reviewed sha 的祖先）> \
+  --worker            <WORKER_REVIEWED_SHA（40-hex；其他 ref 立即冻结为 full SHA）> \
+  --ticket <id> --focus 'test/<focused>.test.mjs' --gate 'test/<seam-gate>.test.mjs'
 
-# final wave（offline dry-run；ledger 记录 FINAL_ACCEPTANCE_ELIGIBLE=NO——不构成验收）
-node research-orchestration/bin/p1-integration-harness.mjs stage-final
-# final wave（live，恰一次；唯一 acceptance-eligible 路径）
-P1_REAL_RUNTIME=1 node research-orchestration/bin/p1-integration-harness.mjs stage-final --live
+# final wave 三模式
+node research-orchestration/bin/integration-harness.mjs stage-final --mode offline
+node research-orchestration/bin/integration-harness.mjs stage-final --mode smoke
+P1_RUNTIME_MODE 相关凭据就绪后：
+node research-orchestration/bin/integration-harness.mjs stage-final --mode canonical
 
 # 单独 preflight（mode-aware）
-node research-orchestration/bin/integration-preflight.mjs --mode offline --stage final
-node research-orchestration/bin/integration-preflight.mjs --mode live   --stage final
+node research-orchestration/bin/integration-preflight.mjs --mode <mode> [--stage final]
 ```
 
-harness 特性：expected-head/merge-base 精确校验（不匹配即拒绝合并——MASTER_DRIFT 语义）、
-reviewed ref 调用起点**一次性冻结**为 40-hex full SHA（F1）、幂等合并、分步计时、
-机器可读 ledger（`p1-execution-ledger/1`，默认 `<repo>/work/p1-wave-latest/execution-ledger.json`，
-cwd 无关——F5）、identity-chain 正向 + **named negative-guard probe**（真实 guard 模块 + 篡改
-真实产物，F6）、FINAL_DRY_RUN≠FINAL_ACCEPTANCE（F3：ledger 机械记录
-`finalAcceptanceEligible`，canonical 验收必须 live whole-wave=PASS）、
-**永远拒绝更新 master**（master 更新 = 单独的、显式授权的 exact-SHA ff push）。
+harness 特性：expected-head/merge-base 精确校验（不匹配即拒绝合并）、reviewed ref 一次性
+冻结为 40-hex（F1）、幂等合并、分步计时、机器可读 ledger（`wf-execution-ledger/1`，默认
+`<repo>/<declaration.ledger.dir>/execution-ledger.json`，cwd 无关——F5）、identity-chain +
+named negative-guard probe（F6）、F8 三模式验收机制（见 §B）、**永远拒绝更新 master**。
+
+**运行时权威声明**：所有 runtime/model/凭据/env/ledger 路径绑定位于
+`research-orchestration/bin/runtime-authority.json`（项目所有）；generic harness 与
+preflight 不含任何 vendor/项目/ticket 名称——由静态抽取边界测试机械强制（见 §H）。
 
 ## G. 边界（本文件不改变）
 
 TICKET_LANE_V2 全部门、exact-SHA 评审语义、Repair Saturation、TYPE_B 真实 producer
 conformance、fail-closed 语义、final live dogfood、KNOWN_BASELINE_FAILURE ≠ PASS——
 全部保持。本文件删除的只是**重复执行**与**环境盲目性**，不是任何质量门。
+
+## H. 抽取边界（EXTRACTION BOUNDARY，F8）
+
+PR #72 是 proving ground；generic harness 概念必须可抽取进开发模板仓库：
+
+- **generic（可抽取）**：`bin/integration-harness.mjs`、`bin/integration-preflight.mjs`、
+  `bin/runtime-authority.mjs`（loader）——三文件内容零 vendor/项目/ticket 名称
+  （静态测试机械强制：scan `/deepseek|lmstudio|qwen|zhihu|p1|t1[2-7]/i` 必须零命中）；
+  模式分类学（offline/smoke/canonical）、验收判定、ledger schema、exact-SHA 合并语义、
+  tier plan、identity/negative 探针框架。
+- **project-owned（留在本仓库）**：`bin/runtime-authority.json`（canonical runtimeId/model/
+  凭据绑定、local smoke 绑定、env/ledger/产物路径）、真实产物、gate 测试、全部产品语义。
+- 抽取动作 = 复制三个 generic 文件 + 为目标项目写一份新的 runtime-authority 声明。
