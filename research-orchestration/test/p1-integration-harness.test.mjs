@@ -21,7 +21,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, readFileSync, rmSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve as pathResolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import {
   makeGit,
@@ -41,7 +41,7 @@ import {
   defaultLedgerPath,
   negativeGuardProbe,
 } from '../bin/integration-harness.mjs';
-import { loadRuntimeAuthority } from '../bin/runtime-authority.mjs';
+import { loadRuntimeAuthority, REPO_ROOT } from '../bin/runtime-authority.mjs';
 import {
   classifyPreflight,
   checkContextCapacity,
@@ -263,7 +263,11 @@ describe('F8b — canonical suite authority is declaration-driven (env booleans 
   }
 
   test('NO env boolean can authorize canonical acceptance (P1_CANONICAL_SUITE_READY=1 is mechanically worthless)', () => {
-    const authority = loadRuntimeAuthority(); // real declaration: runner not wired
+    // synthetic runner-less declaration: this contract must hold regardless of
+    // the real declaration's wiring state (the real runner is wired by the P1
+    // canonical-runner lane; a runner-less declaration still fails closed)
+    const base = loadRuntimeAuthority();
+    const authority = { ...base, canonical: { ...base.canonical, runner: null } };
     const hostileEnv = {
       P1_CANONICAL_SUITE_READY: '1',
       [authority.env.runtimeMode]: 'canonical',
@@ -341,12 +345,14 @@ describe('F8b — canonical suite authority is declaration-driven (env booleans 
     rmSync(dir, { recursive: true, force: true });
   });
 
-  test('proving-ground state: declaration carries no runner yet -> mechanically NOT_WIRED (no bypass)', () => {
+  test('P1 canonical runner wiring: declaration resolves the declared project runner (deliberate flip of the proving-ground NOT_WIRED pin)', () => {
     const authority = loadRuntimeAuthority();
-    assert.equal(authority.canonical.runner ?? null, null);
-    const r = resolveCanonicalRunner({ authority, repoRoot: process.cwd() });
-    assert.equal(r.ok, false);
-    assert.equal(r.code, 'CANONICAL_SUITE_NOT_WIRED');
+    assert.equal(typeof authority.canonical.runner?.file, 'string');
+    const r = resolveCanonicalRunner({ authority, repoRoot: REPO_ROOT });
+    assert.equal(r.ok, true);
+    assert.equal(r.code, 'CANONICAL_RUNNER_RESOLVED');
+    assert.equal(r.file, pathResolve(REPO_ROOT, authority.canonical.runner.file));
+    assert.ok(Array.isArray(r.args));
   });
 });
 
