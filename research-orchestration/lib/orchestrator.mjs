@@ -34,6 +34,7 @@ import {
 } from './state.mjs';
 import { selectCandidate, SELECT_VERDICT_AUTO, SELECT_VERDICT_AMBIGUOUS, SELECT_VERDICT_NONE } from './selection.mjs';
 import { MODE_DIGEST, MODE_TOP_PERCENT } from './intent.mjs';
+import { FINAL_COVERAGE_FILENAME, FINAL_COVERAGE_TYPE } from './coverage-final-integration.mjs';
 
 /** Approved qualified semantic runtimes for public Zhihu research (R5). */
 export const RUNTIME_DEEPSEEK = 'deepseek-api-tool-less';
@@ -76,6 +77,36 @@ function jsonDetail(stdout) {
     /* fall through to first line */
   }
   return firstLine(stdout);
+}
+
+/**
+ * P1 final coverage integration consumption (Issue #47 render/disclosure seam).
+ * Absent artifact → null (pure v0.3 runs keep byte-identical behavior).
+ * Present artifact → validated minimal view; malformed → coverage_failed
+ * OrchestrationError (fail closed: a present-but-unreadable coverage record
+ * must never be silently ignored by a completeness claim).
+ */
+export function loadP1FinalCoverage(workDir) {
+  const file = path.join(workDir, FINAL_COVERAGE_FILENAME);
+  if (!fs.existsSync(file)) return null;
+  let parsed = null;
+  try {
+    parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    parsed = null;
+  }
+  if (!parsed || parsed.type !== FINAL_COVERAGE_TYPE || !parsed.assertion
+    || typeof parsed.assertion.is100PercentAnalysis !== 'boolean') {
+    throw new OrchestrationError('coverage_failed', 'P1 final coverage artifact present but invalid（fail closed；未验证的覆盖记录不得被渲染为完成）', { stage: STAGE_RENDER });
+  }
+  return {
+    coverageFinal: {
+      planHash: typeof parsed.planHash === 'string' ? parsed.planHash : null,
+      stage: typeof parsed.stage === 'string' ? parsed.stage : null,
+      pipeline: typeof parsed.pipeline === 'string' ? parsed.pipeline : null,
+      is100PercentAnalysis: parsed.assertion.is100PercentAnalysis,
+    },
+  };
 }
 
 export function createOrchestrator({
@@ -446,6 +477,21 @@ export function createOrchestrator({
       : '';
     const coverage = state.coverage ?? readCoverage();
 
+    // P1 final coverage integration (Issue #47): when a P1 research run has
+    // reconciled its coverage in this work dir, the render consumes the
+    // reconciled assertion — the 100% claim comes ONLY from it, never from
+    // mode naming. Partial P1 states never render as complete. A malformed
+    // artifact fails closed through the stage failure path.
+    let p1Final = null;
+    try {
+      p1Final = loadP1FinalCoverage(workDir);
+    } catch (err) {
+      fail(err instanceof OrchestrationError ? err : new OrchestrationError('coverage_failed', String(err?.message ?? err), { stage: STAGE_RENDER }));
+    }
+    const isFullCoverage = p1Final
+      ? p1Final.coverageFinal.is100PercentAnalysis
+      : (mode === MODE_DIGEST && (coverage ? coverage.valid !== false : true));
+
     // reduce.mjs spreads the top-percent disclosure block at final.json top level
     // (mode / totalAnswers / selectedAnswers / requestedPercent / actualCoveragePercent /
     //  selectionRule / selectedSourceIds / isFullCoverage) rather than a nested `disclosure`.
@@ -461,7 +507,6 @@ export function createOrchestrator({
           isFullCoverage: finalJson.isFullCoverage ?? null,
         }
       : null;
-    const isFullCoverage = mode === MODE_DIGEST;
     const result = {
       schemaVersion: 1,
       topic,
@@ -473,6 +518,7 @@ export function createOrchestrator({
         disclosure,
         requestedPercent: mode === MODE_TOP_PERCENT ? percent : null,
         useHierarchy: state.analysisResult?.useHierarchy ?? false,
+        ...(p1Final ? { coverageFinal: p1Final.coverageFinal } : {}),
       },
       runtime,
       verification: state.verification ?? null,
@@ -515,7 +561,11 @@ export function createOrchestrator({
       `- 研究主题：${topic}`,
       `- 选中问题：${state.selectedQuestion?.title ?? '(无)'}（${state.selectedQuestion?.url ?? ''}）`,
       `- 分析模式：${mode === MODE_DIGEST ? '全量研究（FULL-COVERAGE DIGEST）' : `采样分析（top ${percent}%）`}`,
-      mode === MODE_DIGEST ? '- 覆盖：100% 全量（isFullCoverage=true）' : `- 覆盖：采样（requested ${percent}%；非全量）`,
+      p1Final
+        ? (p1Final.coverageFinal.is100PercentAnalysis
+          ? '- 覆盖：100% 分析覆盖（P1 最终对账 PASS）'
+          : '- 覆盖：部分分析覆盖（P1 最终对账未通过；不得宣称全量）')
+        : (mode === MODE_DIGEST ? '- 覆盖：100% 全量（isFullCoverage=true）' : `- 覆盖：采样（requested ${percent}%；非全量）`),
       `- 运行时：${runtime}`,
       `- 验证：${state.verification?.valid === true ? 'verified（verify-output PASS）' : 'unverified'}`,
       `- 捕获回答数：${state.verification?.capturedAnswerCount ?? '(n/a)'}`,
