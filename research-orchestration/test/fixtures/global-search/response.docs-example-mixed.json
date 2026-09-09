@@ -1,0 +1,27 @@
+{
+  "_provenance": "P1-T17 repair-round F1 fixture — replicates the SHAPE of the first-party global_search docs response example recorded in discovery/p1-t03-retrieval-provider-qualification/evidence/official-docs-snapshot-2026-08-31.json: bare-answer items (ContentType 'Answer', ContentID numeric string, Url https://www.zhihu.com/answer/<id>?utm_...), Article items (zhuanlan-style), and a question-bearing item. All IDs / utm values are SYNTHESIZED comparable values (no real personal data, no live payload).",
+  "Code": 0,
+  "Data": {
+    "HasMore": false,
+    "Items": [
+      {
+        "Title": "合成答案条目（docs 示例形状）",
+        "ContentType": "Answer",
+        "ContentID": "1903044959663284999",
+        "Url": "https://www.zhihu.com/answer/1903044959663284999?utm_medium=openapi_platform&utm_source=synthetic"
+      },
+      {
+        "Title": "合成文章条目（docs 示例形状）",
+        "ContentType": "Article",
+        "ContentID": "710000000",
+        "Url": "https://zhuanlan.zhihu.com/p/710000000"
+      },
+      {
+        "Title": "合成问题条目（docs 示例形状）",
+        "ContentType": "Question",
+        "ContentID": "q-700",
+        "Url": "https://www.zhihu.com/question/700"
+      }
+    ]
+  }
+}

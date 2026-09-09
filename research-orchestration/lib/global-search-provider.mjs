@@ -52,8 +52,12 @@
  *     sibling `zhihu_search` families (10001/20001/30001/90001) are NEVER
  *     ported across documents. A non-zero envelope `Code` maps to the neutral
  *     PROVIDER_REPORTED_FAILURE with the OBSERVED code preserved verbatim as
- *     `provider_error_type` — no cause inference. Envelope- and transport-level
- *     violations carry their own machine-readable codes (below).
+ *     `provider_error_type` — no cause inference. The provider-controlled
+ *     `Message` is UNTRUSTED provider content and is NEVER returned (T10
+ *     default-deny posture, docs/project-memory.md): the failure detail is a
+ *     fixed neutral withholding notice. Envelope- and transport-level
+ *     violations carry their own machine-readable codes (below); NO failure
+ *     path echoes a provider-controlled response body or diagnostic string.
  *   - RANKING SCORE SURFACE ASYMMETRY (recorded, not papered over): the HTTP
  *     API doc does NOT expose a documented numeric `RankingScore` (the MCP doc
  *     shows `ranking_score`; semantics UNKNOWN). Ranking ORDER of `Items` is
@@ -64,7 +68,29 @@
  *     `Message` + `Data.HasMore` (必返) + `Data.Items[]` with documented fields
  *     (Title / ContentType / ContentID / ContentText / Url / CommentCount /
  *     VoteUpCount / AuthorName / AuthorAvatar / AuthorBadge / AuthorBadgeText /
- *     EditTime / AuthorityLevel).
+ *     EditTime / AuthorityLevel). The first-party docs example shows
+ *     bare-answer items (Url `https://www.zhihu.com/answer/<id>?utm_…`,
+ *     ContentType `Answer`) and Article items (zhuanlan-style) — both
+ *     well-formed documented shapes (PR #73 review F1).
+ *
+ * Per-item identity resolution (identity FIRST, PR #73 review F1):
+ *   - plain-object item with a zhihu-hosted URL carrying a `/question/<qid>`
+ *     segment (shared extractQuestionId) → fusible question candidate;
+ *   - zhihu-hosted URL WITHOUT a `/question/<qid>` segment (bare `/answer/<id>`,
+ *     zhuanlan article, …) → CANDIDATE_QUESTION_IDENTITY_UNRESOLVED
+ *     (class 'provider'): the item is well-formed, but its question identity is
+ *     NOT derivable from any documented Item field and answer→question
+ *     resolution is UNKNOWN/undocumented — per §18.3 no resolution semantics
+ *     are invented (no redirect probing, no network resolution, no
+ *     ContentID→question guessing). Machine-readable detail carries the
+ *     documented `{ contentType, contentId }` fields verbatim when present
+ *     (T06 projects per-item failures to `{ code, class }` in the pool).
+ *   - non-zhihu hosts / unusable shapes (non-object item, missing/garbage URL)
+ *     → CANDIDATE_IDENTITY_INVALID (class 'contract') — strictly genuinely
+ *     unusable items;
+ *   - actual candidates then cross the duplicate gate
+ *     (CANDIDATE_IDENTITY_DUPLICATE) and the shared URL classifier
+ *     (SOURCE_URL_BOUNDARY_REJECTED).
  *
  * Candidate identity (T06 §5.4 fusion contract): only CANONICAL zhihu question
  * candidates fuse. Item URLs are resolved with the existing shared extractor
@@ -100,11 +126,15 @@
  *   PROVIDER_OUTPUT_UNPARSEABLE         contract   — non-JSON body (no echo)
  *   PROVIDER_REPORTED_FAILURE           provider   — envelope Code !== 0
  *                                                    (observed code verbatim in
- *                                                    provider_error_type)
+ *                                                    provider_error_type;
+ *                                                    provider Message is never
+ *                                                    echoed — default-deny)
  *   PROVIDER_RESULT_CONTRACT_INVALID    contract   — envelope/Data/HasMore/Items
  *                                                    violates the documented
  *                                                    response contract
- * Per-item: CANDIDATE_IDENTITY_INVALID (contract) /
+ * Per-item: CANDIDATE_QUESTION_IDENTITY_UNRESOLVED (provider — well-formed
+ *           zhihu item without a derivable question identity) /
+ *           CANDIDATE_IDENTITY_INVALID (contract — genuinely unusable item) /
  *           CANDIDATE_IDENTITY_DUPLICATE (contract) /
  *           SOURCE_URL_BOUNDARY_REJECTED (boundary).
  *
@@ -200,6 +230,40 @@ function completenessFromHasMore(hasMore) {
 }
 
 /**
+ * Per-item identity resolution (PR #73 review F1) — IDENTITY FIRST:
+ *   1. unusable shape (non-object item, or no parseable URL) → INVALID;
+ *   2. zhihu-hosted URL with a /question/<qid> segment (shared extractor)
+ *      → fusible question candidate;
+ *   3. zhihu-hosted URL WITHOUT a /question/<qid> segment (bare /answer/<id>,
+ *      zhuanlan article — documented shapes, PR #73 F1 evidence) → UNRESOLVED:
+ *      well-formed, but the question identity is NOT derivable from any
+ *      documented Item field and answer→question resolution is UNKNOWN —
+ *      per §18.3 no resolution semantics are invented (no redirect probing,
+ *      no network resolution, no ContentID→question guessing);
+ *   4. non-zhihu host → INVALID (as before).
+ * Deterministic w.r.t. the URL boundary: the shared classifier is consulted
+ * only for actual candidates (verified: it marks both bare-answer and
+ * zhuanlan URLs clickable — the classifier is not what separates them).
+ */
+function isZhihuHosted(rawUrl) {
+  try {
+    const host = new URL(rawUrl).hostname.toLowerCase();
+    return host === 'zhihu.com' || host.endsWith('.zhihu.com');
+  } catch {
+    return false;
+  }
+}
+
+function unresolvedIdentityFailure(rawItem) {
+  const detail = {};
+  if (Object.hasOwn(rawItem, 'ContentType')) detail.contentType = rawItem.ContentType;
+  if (Object.hasOwn(rawItem, 'ContentID')) detail.contentId = rawItem.ContentID;
+  const failure = { code: 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED', class: 'provider' };
+  if (Object.keys(detail).length > 0) failure.detail = detail;
+  return failure;
+}
+
+/**
  * Map one documented `Data.Items[]` entry to a §5.1 contract item.
  * Only canonical zhihu question candidates are fusible; everything else is an
  * explicit per-item failure identity (never silently dropped, never fused).
@@ -216,14 +280,28 @@ function toItem(rawItem, rank, contributedQuestionIds) {
     facts: {},
   };
 
-  const questionId = extractQuestionId(rawItem);
-  item.identity.questionId = questionId ?? '';
-  if (!questionId) {
-    // External 全网信源 items / non-zhihu hosts / malformed URLs cannot become
-    // canonical question candidates (T06 fusion contract) — explicit rejection.
+  if (!isPlainObject(rawItem)) {
+    // Genuinely unusable shape (non-object) — explicit rejection.
     item.failure = { code: 'CANDIDATE_IDENTITY_INVALID', class: 'contract' };
     return item;
   }
+
+  const questionId = extractQuestionId(rawItem);
+  if (!questionId) {
+    if (isZhihuHosted(rawItem.Url)) {
+      // Well-formed zhihu-hosted item whose URL carries no /question/<qid>
+      // segment (bare /answer/<id>, zhuanlan article, …): question identity
+      // UNKNOWN from documented fields — never invented (§18.3), explicit
+      // machine-readable non-candidate identity with the documented
+      // { contentType, contentId } detail when present.
+      item.failure = unresolvedIdentityFailure(rawItem);
+      return item;
+    }
+    // Non-zhihu host / missing-garbage URL: cannot become a question candidate.
+    item.failure = { code: 'CANDIDATE_IDENTITY_INVALID', class: 'contract' };
+    return item;
+  }
+  item.identity.questionId = questionId;
 
   if (contributedQuestionIds.has(questionId)) {
     // Same-question duplicate within ONE response: the highest-ranked
@@ -235,8 +313,7 @@ function toItem(rawItem, rank, contributedQuestionIds) {
   }
 
   // §5.1: source_url must be boundary-validated — reuse the shared classifier.
-  const rawUrl = isPlainObject(rawItem) ? rawItem.Url : undefined;
-  const classification = classifyUrl(rawUrl);
+  const classification = classifyUrl(rawItem.Url);
   if (!classification || classification.clickable !== true) {
     item.failure = { code: 'SOURCE_URL_BOUNDARY_REJECTED', class: 'boundary' };
     return item;
@@ -251,7 +328,7 @@ function toItem(rawItem, rank, contributedQuestionIds) {
   // ContentText / author fields / any undocumented score field are deliberately
   // NOT propagated (untrusted corpus + UNKNOWN score semantics).
   for (const [sourceKey, factKey] of FACT_FIELDS) {
-    if (isPlainObject(rawItem) && Object.hasOwn(rawItem, sourceKey)) item.facts[factKey] = rawItem[sourceKey];
+    if (Object.hasOwn(rawItem, sourceKey)) item.facts[factKey] = rawItem[sourceKey];
   }
 
   contributedQuestionIds.add(questionId);
@@ -357,11 +434,15 @@ export function createGlobalSearchAdapter({ transport, now = defaultNow } = {}) 
         });
       }
       if (payload.Code !== 0) {
+        // F2 (PR #73 review, T10 default-deny): the provider-controlled
+        // `Message` is untrusted provider content and is NEVER returned. The
+        // observed Code stays machine-readable in `provider_error_type`; the
+        // detail is a fixed neutral withholding notice.
         return failureResult({
           retrievedAt,
           code: 'PROVIDER_REPORTED_FAILURE',
           failureClass: 'provider',
-          detail: typeof payload.Message === 'string' ? payload.Message : null,
+          detail: 'provider-reported failure; message withheld (default-deny)',
           providerErrorType: payload.Code,
         });
       }

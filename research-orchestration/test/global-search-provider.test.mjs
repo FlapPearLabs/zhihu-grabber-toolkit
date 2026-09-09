@@ -309,11 +309,13 @@ test('B4: non-JSON body → PROVIDER_OUTPUT_UNPARSEABLE, no untrusted body echo'
   assert.ok(!JSON.stringify(result).includes('TOPSECRETVALUE'));
 });
 
-test('B5: undocumented upstream error Code → neutral PROVIDER_REPORTED_FAILURE + observed code; NO ported zhihu_search error families', () => {
+test('B5: undocumented upstream error Code → neutral PROVIDER_REPORTED_FAILURE + observed code; NO ported zhihu_search error families; Message default-deny (F2)', () => {
   // global_search has NO own error-code table (T03 durable limitation): an
   // unknown non-zero Code must keep its OBSERVED identity, never be classified
-  // into the sibling zhihu_search families 10001/20001/30001/90001.
-  const transport = makeGlobalTransport({ q: { response: { Code: 99999, Message: '未知错误' } } });
+  // into the sibling zhihu_search families 10001/20001/30001/90001. The
+  // provider-controlled Message is UNTRUSTED provider content — T10 default-deny:
+  // it is never returned; only a fixed neutral withholding notice is.
+  const transport = makeGlobalTransport({ q: { response: { Code: 99999, Message: 'quota exhausted TOPSECRETVALUE' } } });
   const adapter = createGlobalSearchAdapter({ transport, now: FIXED_NOW });
   const result = adapter.retrieve({ query: 'q' });
   assertSeamValid(result);
@@ -324,7 +326,28 @@ test('B5: undocumented upstream error Code → neutral PROVIDER_REPORTED_FAILURE
   for (const ported of ['10001', '20001', '30001', '90001']) {
     assert.notEqual(result.failure.provider_error_type, ported, 'no cross-document error-family porting');
   }
+  assert.equal(result.failure.detail, 'provider-reported failure; message withheld (default-deny)', 'fixed neutral notice, no provider Message echo');
   assert.equal(result.completeness.status, 'unknown');
+  assert.ok(!JSON.stringify(result).includes('TOPSECRETVALUE'), 'provider Message never reaches any serialized surface');
+});
+
+test('B10: sentinel umbrella — NO failure path echoes provider-controlled diagnostics into any serialized surface', () => {
+  const SENTINEL = 'TOPSECRETVALUE';
+  const scenarios = [
+    ['transport throw', () => { throw new Error(`fetch failed ${SENTINEL}`); }],
+    ['transport malformed', () => 'not-an-object'],
+    ['http 403 body', () => ({ status: 403, body: `{"Message":"${SENTINEL}"}` })],
+    ['non-JSON body', () => ({ status: 200, body: `<html>${SENTINEL}</html>` })],
+    ['envelope error message', () => ({ status: 200, body: JSON.stringify({ Code: 42, Message: `${SENTINEL} in message` }) })],
+    ['contract violation body', () => ({ status: 200, body: JSON.stringify({ Code: 0, Message: SENTINEL, Data: { HasMore: 'nope', Items: `${SENTINEL}` } }) })],
+  ];
+  for (const [name, transport] of scenarios) {
+    const adapter = createGlobalSearchAdapter({ transport, now: FIXED_NOW });
+    const result = adapter.retrieve({ query: 'q' });
+    assertSeamValid(result);
+    assert.equal(result.ok, false, name);
+    assert.ok(!JSON.stringify(result).includes(SENTINEL), `sentinel leaked on path: ${name}`);
+  }
 });
 
 test('B6: JSON body without an envelope Code → PROVIDER_RESULT_CONTRACT_INVALID (envelope contract violation)', () => {
@@ -439,6 +462,109 @@ test('C3: ContentText (untrusted corpus) never enters the candidate result surfa
   assert.ok(!dumped.includes('不可信外部语料正文'));
   const withBody = result.items[4];
   assert.deepEqual(withBody.facts, { title: '带正文的知乎问题', contentType: 'question', contentId: 'q-500', authorityLevel: 2 });
+});
+
+// --- F1 repair (PR #73 review): documented Answer/Article item identity ------
+//
+// The first-party docs example (T03 evidence snapshot) shows bare-answer items
+// (Url https://www.zhihu.com/answer/<id>?utm_..., ContentType 'Answer') and
+// Article items (zhuanlan-style). These are WELL-FORMED documented shapes whose
+// question identity is simply NOT derivable from any documented Item field:
+// answer→question resolution is UNKNOWN/undocumented (§18.3 — no invented
+// resolution semantics). They must carry CANDIDATE_QUESTION_IDENTITY_UNRESOLVED
+// (class 'provider'), NOT CANDIDATE_IDENTITY_INVALID.
+//
+// Deterministic code path (verified): classifyUrl('https://zhuanlan.zhihu.com/p/…')
+// and classifyUrl('https://www.zhihu.com/answer/…') are BOTH clickable=true
+// (securityClass 'external_unverified') — the boundary classifier is not what
+// distinguishes them; identity resolution runs FIRST, so a zhihu-hosted URL
+// without a /question/<qid> segment is UNRESOLVED regardless of the classifier
+// verdict, and the classifier is only consulted for actual candidates.
+
+test('C4: documented bare-answer item (docs example shape) → CANDIDATE_QUESTION_IDENTITY_UNRESOLVED, not INVALID', () => {
+  const transport = makeGlobalTransport({ q: { response: readFixture('response.docs-example-mixed.json') } });
+  const adapter = createGlobalSearchAdapter({ transport, now: FIXED_NOW });
+  const result = adapter.retrieve({ query: 'q' });
+  assertSeamValid(result);
+  assert.equal(result.ok, true);
+
+  const [answer, article, question] = result.items;
+  assert.equal(answer.identity.questionId, '', 'no derivable question identity (never invented)');
+  assert.deepEqual(answer.failure, {
+    code: 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED',
+    class: 'provider',
+    detail: { contentType: 'Answer', contentId: '1903044959663284999' },
+  }, 'well-formed zhihu item whose URL carries no /question/<qid>: question identity UNKNOWN, not malformed');
+  assert.equal(answer.source_url, null);
+  assert.equal(answer.provenance.rank, 1);
+  assert.equal(answer.provenance.route, GLOBAL_SEARCH_ROUTE);
+
+  assert.deepEqual(article.failure, {
+    code: 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED',
+    class: 'provider',
+    detail: { contentType: 'Article', contentId: '710000000' },
+  }, 'zhuanlan-style Article is zhihu-hosted without a question segment → UNRESOLVED');
+  assert.equal(article.provenance.rank, 2);
+
+  assert.equal(question.failure, undefined, 'question-bearing item remains a fusible candidate');
+  assert.equal(question.identity.questionId, '700');
+  assert.equal(question.provenance.rank, 3);
+  assert.deepEqual(question.facts, { title: '合成问题条目（docs 示例形状）', contentType: 'Question', contentId: 'q-700' });
+});
+
+test('C5: CANDIDATE_IDENTITY_INVALID stays strictly for genuinely malformed items', () => {
+  const items = ['garbage-string', 42, null, { ContentType: 'Answer', ContentID: 'x' }, { Url: 'not a url at all' }];
+  const result = createGlobalSearchAdapter({
+    transport: () => ({ status: 200, body: JSON.stringify({ Code: 0, Data: { HasMore: false, Items: items } }) }),
+    now: FIXED_NOW,
+  }).retrieve({ query: 'q' });
+  assertSeamValid(result);
+  assert.equal(result.ok, true);
+  for (const item of result.items) {
+    assert.deepEqual(item.failure, { code: 'CANDIDATE_IDENTITY_INVALID', class: 'contract' }, 'unusable shape (non-object / no usable URL)');
+    assert.equal(item.source_url, null);
+  }
+});
+
+test('C6: page of ONLY documented Answers+Articles → §5.1-valid ok=true result, zero candidates, all identities explicit (no whole-run failure, no silent drop)', () => {
+  const page = {
+    Code: 0,
+    Data: {
+      HasMore: true,
+      Items: [
+        { ContentType: 'Answer', ContentID: '1903044959663284999', Url: 'https://www.zhihu.com/answer/1903044959663284999' },
+        { ContentType: 'Article', ContentID: '710000000', Url: 'https://zhuanlan.zhihu.com/p/710000000' },
+      ],
+    },
+  };
+  const globalTransport = makeGlobalTransport({ [Q1]: { response: page } });
+  const adapter = createGlobalSearchAdapter({ transport: globalTransport, now: FIXED_NOW });
+  const result = adapter.retrieve({ query: Q1 });
+  assertSeamValid(result);
+  assert.equal(result.ok, true, 'a page whose items are all non-candidates is a valid provider result, never a run failure');
+  assert.equal(result.items.length, 2);
+  for (const item of result.items) {
+    assert.equal(item.failure.code, 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED');
+    assert.equal(item.failure.class, 'provider');
+  }
+
+  // Through the REAL T06 pipeline: the channel stays valid, nothing fused,
+  // every observation explicit — never a whole-run failure, never a silent drop.
+  const seam = createProviderSeam({ adapters: [adapter] });
+  const run = runMultiQueryRetrieval({
+    plan: { schemaVersion: 1, queryVariants: [Q1], aspects: ['技术成熟度'], entities: [], opposingFramings: [], terminologyVariants: [], sourceGroupIntents: [] },
+    planHash: planHash({ schemaVersion: 1, queryVariants: [Q1], aspects: ['技术成熟度'], entities: [], opposingFramings: [], terminologyVariants: [], sourceGroupIntents: [] }),
+    seam,
+    channels: [{ providerId: PROVIDER_ZHIHU_OPEN_PLATFORM }],
+    workDir: tmpWorkDir(),
+  });
+  assert.equal(run.ok, true);
+  assert.deepEqual(run.pool.candidates, [], 'no derivable question identity → nothing fused');
+  assert.equal(run.pool.rejected.length, 2);
+  for (const rejected of run.pool.rejected) {
+    assert.deepEqual(rejected.failure, { code: 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED', class: 'provider' });
+    assert.equal(rejected.channel.providerId, PROVIDER_ZHIHU_OPEN_PLATFORM);
+  }
 });
 
 // ---------------------------------------------------------------------------
