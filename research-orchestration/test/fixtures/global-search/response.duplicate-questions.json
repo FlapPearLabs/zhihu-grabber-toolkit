@@ -9,14 +9,14 @@
         "ContentType": "answer",
         "ContentID": "ans-9001",
         "Url": "https://www.zhihu.com/question/300/answer/9001",
-        "AuthorityLevel": 3
+        "AuthorityLevel": "3"
       },
       {
         "Title": "问题三百的回答二",
         "ContentType": "answer",
         "ContentID": "ans-9002",
         "Url": "https://www.zhihu.com/question/300/answer/9002",
-        "AuthorityLevel": 1
+        "AuthorityLevel": "1"
       }
     ]
   }

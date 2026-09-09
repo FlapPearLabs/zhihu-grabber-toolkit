@@ -181,7 +181,7 @@ test('A1: success mapping — T03-documented response shape becomes §5.1 contra
   assert.equal(first.provenance.route, GLOBAL_SEARCH_ROUTE);
   assert.equal(first.source_url.url, 'https://www.zhihu.com/question/123/answer/456');
   assert.equal(first.source_url.securityClass, 'external_unverified', 'source_url classified by the SHARED repository classifier');
-  assert.deepEqual(first.facts, { title: '大模型落地的真实成本', contentType: 'answer', contentId: 'ans-456', authorityLevel: 3 });
+  assert.deepEqual(first.facts, { title: '大模型落地的真实成本', contentType: 'answer', contentId: 'ans-456', authorityLevel: '3' });
 
   assert.equal(second.identity.questionId, '200');
   assert.equal(second.provenance.rank, 2);
@@ -193,7 +193,7 @@ test('A1: success mapping — T03-documented response shape becomes §5.1 contra
 
 test('A2: HasMore=true → completeness `partial` with the provider-reported evidence (never complete)', () => {
   const transport = makeGlobalTransport({
-    q: { response: { Code: 0, Data: { HasMore: true, Items: [{ Title: 't', ContentType: 'question', ContentID: 'c1', Url: 'https://www.zhihu.com/question/700', AuthorityLevel: 1 }] } } },
+    q: { response: { Code: 0, Data: { HasMore: true, Items: [{ Title: 't', ContentType: 'question', ContentID: 'c1', AuthorityLevel: '1', Url: 'https://www.zhihu.com/question/700' }] } } },
   });
   const adapter = createGlobalSearchAdapter({ transport, now: FIXED_NOW });
   const result = adapter.retrieve({ query: 'q' });
@@ -265,7 +265,8 @@ test('B1: transport throws (network/auth-layer error) → PROVIDER_TRANSPORT_FAI
   assert.equal(result.ok, false);
   assert.equal(result.failure.code, 'PROVIDER_TRANSPORT_FAILURE');
   assert.equal(result.failure.class, 'transport');
-  assert.equal(result.failure.provider_error_type, 'Error', 'stable error class identity only');
+  assert.ok(!('provider_error_type' in result.failure), 'D2: transport failure carries NO caller-controlled identity (error names are not guaranteed built-ins)');
+  assert.equal(result.failure.detail, 'transport error (diagnostics default-deny)', 'fixed neutral detail only');
   assert.equal(result.completeness.status, 'unknown');
   const dumped = JSON.stringify(result);
   assert.ok(!dumped.includes('TOPSECRETVALUE'), 'raw error message is never echoed (T10 default-deny posture)');
@@ -338,8 +339,11 @@ test('B5: undocumented upstream error Code → neutral PROVIDER_REPORTED_FAILURE
 
 test('B10: sentinel umbrella — NO failure path echoes provider-controlled diagnostics into any serialized surface', () => {
   const SENTINEL = 'TOPSECRETVALUE';
+  const hostileNameError = new Error('message irrelevant');
+  hostileNameError.name = `Bearer ${SENTINEL}`;
   const scenarios = [
     ['transport throw', () => { throw new Error(`fetch failed ${SENTINEL}`); }],
+    ['transport hostile name', () => { throw hostileNameError; }],
     ['transport malformed', () => 'not-an-object'],
     ['http 403 body', () => ({ status: 403, body: `{"Message":"${SENTINEL}"}` })],
     ['non-JSON body', () => ({ status: 200, body: `<html>${SENTINEL}</html>` })],
@@ -468,7 +472,7 @@ test('C3: ContentText (untrusted corpus) never enters the candidate result surfa
   assert.ok(!dumped.includes('ContentText'));
   assert.ok(!dumped.includes('不可信外部语料正文'));
   const withBody = result.items[4];
-  assert.deepEqual(withBody.facts, { title: '带正文的知乎问题', contentType: 'question', contentId: 'q-500', authorityLevel: 2 });
+  assert.deepEqual(withBody.facts, { title: '带正文的知乎问题', contentType: 'question', contentId: 'q-500', authorityLevel: '2' });
 });
 
 // --- F1 repair (PR #73 review): documented Answer/Article item identity ------
@@ -516,7 +520,7 @@ test('C4: documented bare-answer item (docs example shape) → CANDIDATE_QUESTIO
   assert.equal(question.failure, undefined, 'question-bearing item remains a fusible candidate');
   assert.equal(question.identity.questionId, '700');
   assert.equal(question.provenance.rank, 3);
-  assert.deepEqual(question.facts, { title: '合成问题条目（docs 示例形状）', contentType: 'Question', contentId: 'q-700' });
+  assert.deepEqual(question.facts, { title: '合成问题条目（docs 示例形状）', contentType: 'Question', contentId: 'q-700', authorityLevel: '2' });
 });
 
 test('C5: CANDIDATE_IDENTITY_INVALID stays strictly for genuinely malformed items', () => {
@@ -582,7 +586,7 @@ test('C7: parseable non-zhihu URL → UNRESOLVED, never INVALID (full-web capabi
       Items: [
         { ContentType: 'article', ContentID: 'ext-1', Url: 'https://www.example.com/article' },
         { ContentType: 'doc', ContentID: 'ext-2', Url: 'https://docs.example.org/guide?page=1' },
-        { ContentType: 'question', ContentID: 'q-700', Url: 'https://www.zhihu.com/question/700' },
+        { Title: '合成问题条目', ContentType: 'question', ContentID: 'q-700', AuthorityLevel: '2', Url: 'https://www.zhihu.com/question/700' },
       ],
     },
   };
@@ -693,6 +697,117 @@ test('C9: UNRESOLVED detail is default-deny — provider ContentType/ContentID s
   assert.equal(run.pool.rejected.length, 1);
   assert.deepEqual(run.pool.rejected[0].failure, { code: 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED', class: 'provider' });
   assert.ok(!JSON.stringify(run).includes('TOPSECRET'));
+});
+
+// --- D3 repair (PR #73 review round 3): documented required item fields ------
+//
+// The first-party docs Item table marks Title / ContentType / ContentID /
+// AuthorityLevel as 必返 String; the adapter's FACT_FIELDS consume exactly
+// these four. For CANDIDATES (items that passed identity classification) the
+// documented required-field contract is enforced: any missing/mistyped
+// required field → explicit CANDIDATE_FACT_CONTRACT_INVALID (class 'contract')
+// — never silent omission, never a fusible candidate with missing required
+// facts. Order: identity classification first, THEN required-facts gate, THEN
+// classifyUrl boundary, THEN fact copy. Non-required / deliberately-unconsumed
+// fields (ContentText, CommentCount, VoteUpCount, Author*, EditTime, …) are
+// NOT enforced — absence stays tolerated (documented schema variance beyond
+// the consumed surface; no over-strict).
+
+test('C10: candidate required-field contract — missing/mistyped 必返 fields → CANDIDATE_FACT_CONTRACT_INVALID, others unaffected (D3)', () => {
+  const good = { Title: '合规条目', ContentType: 'question', ContentID: 'q-800', AuthorityLevel: '2', Url: 'https://www.zhihu.com/question/800' };
+  const badVariants = [
+    ['missing Title', { ContentType: 'question', ContentID: 'c', AuthorityLevel: '1', Url: 'https://www.zhihu.com/question/810' }],
+    ['missing ContentType', { Title: 't', ContentID: 'c', AuthorityLevel: '1', Url: 'https://www.zhihu.com/question/811' }],
+    ['missing ContentID', { Title: 't', ContentType: 'question', AuthorityLevel: '1', Url: 'https://www.zhihu.com/question/812' }],
+    ['missing AuthorityLevel', { Title: 't', ContentType: 'question', ContentID: 'c', Url: 'https://www.zhihu.com/question/813' }],
+    ['number ContentType', { Title: 't', ContentType: 7, ContentID: 'c', AuthorityLevel: '1', Url: 'https://www.zhihu.com/question/814' }],
+    ['object ContentID', { Title: 't', ContentType: 'question', ContentID: { nested: true }, AuthorityLevel: '1', Url: 'https://www.zhihu.com/question/815' }],
+    ['null AuthorityLevel', { Title: 't', ContentType: 'question', ContentID: 'c', AuthorityLevel: null, Url: 'https://www.zhihu.com/question/816' }],
+    // Determinism pin: the facts gate fires BEFORE the boundary gate.
+    ['facts gate before boundary gate', { Title: 't', ContentType: 'question', ContentID: 'c', Url: 'http://www.zhihu.com/question/817' }],
+  ];
+  const items = [good, ...badVariants.map(([, item]) => item)];
+  const adapter = createGlobalSearchAdapter({
+    transport: () => ({ status: 200, body: JSON.stringify({ Code: 0, Data: { HasMore: false, Items: items } }) }),
+    now: FIXED_NOW,
+  });
+  const result = adapter.retrieve({ query: 'q' });
+  assertSeamValid(result);
+  assert.equal(result.ok, true);
+  assert.equal(result.items.length, items.length);
+
+  assert.equal(result.items[0].identity.questionId, '800', 'the compliant item stays a fusible candidate, unaffected');
+  assert.equal(result.items[0].failure, undefined);
+
+  for (const [index, [label]] of badVariants.entries()) {
+    const item = result.items[index + 1];
+    assert.deepEqual(item.failure, { code: 'CANDIDATE_FACT_CONTRACT_INVALID', class: 'contract' }, label);
+    assert.equal(item.source_url, null);
+    assert.deepEqual(item.facts, {});
+    assert.ok(item.identity.questionId.length > 0, `identity classification ran first (${label})`);
+  }
+
+  // Through the REAL T06 pipeline: zero fusible contribution from the invalid
+  // items; the compliant item unaffected; every rejection machine-readable.
+  const seam = createProviderSeam({ adapters: [adapter] });
+  const plan = { schemaVersion: 1, queryVariants: [Q1], aspects: ['技术成熟度'], entities: [], opposingFramings: [], terminologyVariants: [], sourceGroupIntents: [] };
+  const run = runMultiQueryRetrieval({ plan, planHash: planHash(plan), seam, channels: [{ providerId: PROVIDER_ZHIHU_OPEN_PLATFORM }], workDir: tmpWorkDir() });
+  assert.equal(run.ok, true);
+  assert.deepEqual(run.pool.candidates.map((c) => c.identity.questionId), ['800']);
+  assert.equal(run.pool.rejected.length, badVariants.length);
+  for (const rejected of run.pool.rejected) {
+    assert.deepEqual(rejected.failure, { code: 'CANDIDATE_FACT_CONTRACT_INVALID', class: 'contract' });
+  }
+});
+
+test('C11: exact-URL-only item → CANDIDATE_FACT_CONTRACT_INVALID, never a fusible candidate with empty facts (Codex counterexample, D3)', () => {
+  const page = { Code: 0, Data: { HasMore: false, Items: [{ Url: 'https://www.zhihu.com/question/123' }] } };
+  const adapter = createGlobalSearchAdapter({ transport: () => ({ status: 200, body: JSON.stringify(page) }), now: FIXED_NOW });
+  const result = adapter.retrieve({ query: 'q' });
+  assertSeamValid(result);
+  assert.equal(result.ok, true);
+  const item = result.items[0];
+  assert.equal(item.identity.questionId, '123');
+  assert.deepEqual(item.failure, { code: 'CANDIDATE_FACT_CONTRACT_INVALID', class: 'contract' });
+  assert.deepEqual(item.facts, {});
+  assert.equal(item.source_url, null);
+});
+
+test('C12: non-required / unconsumed fields stay tolerated — no over-strict (D3)', () => {
+  const page = {
+    Code: 0,
+    Data: {
+      HasMore: false,
+      Items: [
+        { Title: '仅必返字段', ContentType: 'question', ContentID: 'c1', AuthorityLevel: '2', Url: 'https://www.zhihu.com/question/900' },
+        {
+          Title: '带可选字段',
+          ContentType: 'question',
+          ContentID: 'c2',
+          AuthorityLevel: '3',
+          Url: 'https://www.zhihu.com/question/901',
+          CommentCount: 5,
+          VoteUpCount: 9,
+          AuthorName: '匿名用户',
+          EditTime: '2026-01-01',
+          ContentText: '不可信正文——仅容忍存在，不消费',
+          CommentInfoList: [{ x: 1 }],
+        },
+      ],
+    },
+  };
+  const adapter = createGlobalSearchAdapter({ transport: () => ({ status: 200, body: JSON.stringify(page) }), now: FIXED_NOW });
+  const result = adapter.retrieve({ query: 'q' });
+  assertSeamValid(result);
+  assert.equal(result.ok, true);
+  assert.equal(result.items[0].failure, undefined, 'an item with exactly the required fields stays a candidate');
+  assert.equal(result.items[1].failure, undefined, 'extra documented-optional fields are not enforced');
+  for (const item of result.items) {
+    assert.equal(Object.keys(item.facts).length, 4, 'only the consumed surface is copied');
+  }
+  const dumped = JSON.stringify(result);
+  assert.ok(!dumped.includes('CommentInfoList'));
+  assert.ok(!dumped.includes('不可信正文'));
 });
 
 // ---------------------------------------------------------------------------
@@ -806,7 +921,7 @@ test('E1: dual-channel RRF fusion — exact math, per-channel provenance, machin
   // source_url: canonical-first NON-NULL validated record; facts from canonical-first channel.
   const candidate300 = pool.candidates.find((c) => c.identity.questionId === '300');
   assert.deepEqual(candidate300.source_url, { url: 'https://www.zhihu.com/question/300/answer/9001', securityClass: 'external_unverified' });
-  assert.deepEqual(candidate300.facts, { title: '智能体记忆机制综述', contentType: 'answer', contentId: 'ans-9001', authorityLevel: 3 });
+  assert.deepEqual(candidate300.facts, { title: '智能体记忆机制综述', contentType: 'answer', contentId: 'ans-9001', authorityLevel: '3' });
 
   // Rejections: machine-readable identity + contributing channel, nothing silent.
   // C2: the well-formed external item is UNRESOLVED (provider class), not INVALID.

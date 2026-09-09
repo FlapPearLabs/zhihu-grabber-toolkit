@@ -10,7 +10,7 @@
         "ContentType": "answer",
         "ContentID": "ans-456",
         "Url": "https://www.zhihu.com/question/123/answer/456",
-        "AuthorityLevel": 3,
+        "AuthorityLevel": "3",
         "VoteUpCount": 42,
         "CommentCount": 7
       },
@@ -19,7 +19,7 @@
         "ContentType": "question",
         "ContentID": "q-200",
         "Url": "https://www.zhihu.com/question/200",
-        "AuthorityLevel": 2,
+        "AuthorityLevel": "2",
         "VoteUpCount": 10,
         "CommentCount": 1
       }

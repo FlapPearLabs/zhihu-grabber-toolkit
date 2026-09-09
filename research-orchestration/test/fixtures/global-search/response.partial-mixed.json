@@ -9,7 +9,7 @@
         "ContentType": "answer",
         "ContentID": "ans-9001",
         "Url": "https://www.zhihu.com/question/300/answer/9001",
-        "AuthorityLevel": 3,
+        "AuthorityLevel": "3",
         "RankingScore": 0.98
       },
       {
@@ -17,28 +17,28 @@
         "ContentType": "article",
         "ContentID": "ext-1",
         "Url": "https://www.example.com/article",
-        "AuthorityLevel": 4
+        "AuthorityLevel": "4"
       },
       {
         "Title": "另一条回答条目",
         "ContentType": "answer",
         "ContentID": "ans-9002",
         "Url": "https://www.zhihu.com/question/600/answer/9002",
-        "AuthorityLevel": 1
+        "AuthorityLevel": "1"
       },
       {
         "Title": "非 https 的知乎链接",
         "ContentType": "question",
         "ContentID": "q-400",
         "Url": "http://www.zhihu.com/question/400",
-        "AuthorityLevel": 2
+        "AuthorityLevel": "2"
       },
       {
         "Title": "带正文的知乎问题",
         "ContentType": "question",
         "ContentID": "q-500",
         "Url": "https://www.zhihu.com/question/500",
-        "AuthorityLevel": 2,
+        "AuthorityLevel": "2",
         "ContentText": "不可信外部语料正文 —— 不得进入候选池"
       }
     ]

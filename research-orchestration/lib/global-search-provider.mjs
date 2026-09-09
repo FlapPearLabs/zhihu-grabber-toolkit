@@ -36,7 +36,10 @@
  * SEAM SYNCHRONY: T05 seam adapters are synchronous (`seam.retrieve` validates
  * the result inline). `transport` is therefore a SYNC IO boundary; async HTTP
  * bridging (real fetch wiring) is the composition layer's concern (T16), never
- * this adapter's.
+ * this adapter's. An adapter-level live capability smoke on a credentialed
+ * environment is a DEFERRED OBLIGATION for that composition window (T16
+ * acceptance; PR #73 round-3 D1 disposition): this adapter contains NO network
+ * code, and an absent credential must never be worked around (UNKNOWN != PASS).
  *
  * T03 durable limitations honored (UNKNOWN != PASS — nothing is guessed):
  *   - PAGINATION / COMPLETENESS: the API documents ONLY the 必返 `HasMore`
@@ -143,11 +146,16 @@
  * Per-item: CANDIDATE_QUESTION_IDENTITY_UNRESOLVED (provider — well-formed
  *           parseable item whose URL yields no derivable question identity:
  *           zhihu-hosted no-question-segment AND external alike) /
+ *           CANDIDATE_FACT_CONTRACT_INVALID (contract — a CANDIDATE whose
+ *           documented 必返 String fields Title/ContentType/ContentID/
+ *           AuthorityLevel are missing or mistyped; enforced AFTER identity
+ *           classification, BEFORE the boundary gate) /
  *           CANDIDATE_IDENTITY_INVALID (contract — genuinely unusable item:
  *           non-object / missing Url / unparseable URL string) /
  *           SOURCE_URL_BOUNDARY_REJECTED (boundary). Duplicate questions are
  *           NOT a per-item identity: they pass through to the frozen T06
- *           FUSION_DUPLICATE_IN_CHANNEL gate (PR #73 round-2 C3).
+ *           FUSION_DUPLICATE_IN_CHANNEL gate (PR #73 round-2 C3). Non-required
+ *           / unconsumed fields are tolerated, never enforced (round-3 D3).
  *
  * Security / privacy: no credentials, no machine-private paths, no untrusted
  * corpus text enters any emitted field; failure details are bounded (500 chars)
@@ -208,23 +216,18 @@ function failureResult({ retrievedAt, code, failureClass, detail = null, provide
 }
 
 /**
- * T10 default-deny posture: transport/network error messages are an open-ended
- * untrusted surface (they can embed URLs, paths, header or credential shapes).
- * Only the stable error class name is surfaced; the message is never echoed.
+ * T10 default-deny posture (PR #73 review round-3 D2): transport/network error
+ * objects are CALLER-CONTROLLED open surfaces — even `error.name` is not a
+ * guaranteed built-in class name (it can carry arbitrary strings). A transport
+ * failure therefore carries NO caller-controlled identity at all: fixed code +
+ * class + fixed neutral detail, nothing else. The thrown value is dropped.
  */
-function transportFailure(retrievedAt, thrown) {
-  let errorType = null;
-  try {
-    errorType = thrown?.name ?? null;
-  } catch {
-    errorType = null;
-  }
+function transportFailure(retrievedAt) {
   return failureResult({
     retrievedAt,
     code: 'PROVIDER_TRANSPORT_FAILURE',
     failureClass: 'transport',
     detail: 'transport error (diagnostics default-deny)',
-    providerErrorType: errorType,
   });
 }
 
@@ -241,28 +244,18 @@ function completenessFromHasMore(hasMore) {
 }
 
 /**
- * Per-item identity resolution (PR #73 review F1 + round-2 C2/C3/C4) —
- * IDENTITY FIRST, NO adapter-level duplicate policy:
- *   1. unusable shape (non-object item, missing/non-string Url, or a URL string
- *      that cannot be parsed AT ALL) → INVALID;
- *   2. parseable URL with a /question/<qid> segment (shared extractor)
- *      → fusible question candidate;
- *   3. parseable URL that is NOT a zhihu question-bearing URL — zhihu-hosted
- *      without a question segment AND well-formed external URLs alike →
- *      UNRESOLVED (global_search is a full-web capability: an external result
- *      is well-formed, its zhihu question identity is unresolved). The failure
- *      detail is a FIXED NEUTRAL STRING — provider-controlled values are never
- *      echoed (T10 default-deny, round-2 C4).
- *   4. NO adapter-level duplicate policy (round-2 C3): every question-bearing
- *      item is emitted as a candidate; same-question duplicates within one
- *      response reach the frozen T06 FUSION_DUPLICATE_IN_CHANNEL gate and fail
- *      the channel closed there — the adapter never makes item-order-dependent
- *      contribution decisions.
- * Deterministic w.r.t. the URL boundary: the shared classifier is consulted
- * only for actual candidates (verified: it marks bare-answer, zhuanlan and
- * external https URLs clickable — the classifier is not what separates
- * candidates from non-candidates; identity resolution is).
+ * D3 (PR #73 review round 3): the first-party docs Item table marks Title /
+ * ContentType / ContentID / AuthorityLevel as 必返 String — exactly the fields
+ * FACT_FIELDS consumes. For CANDIDATES (items that passed identity
+ * classification) this documented required-field contract is enforced: any
+ * missing/mistyped required field → explicit CANDIDATE_FACT_CONTRACT_INVALID —
+ * never silent omission, never a fusible candidate with missing required
+ * facts. Non-required / deliberately-unconsumed fields are NOT enforced.
  */
+function isStringFieldPresent(rawItem, key) {
+  return Object.hasOwn(rawItem, key) && typeof rawItem[key] === 'string';
+}
+
 function isParseableUrl(rawUrl) {
   if (typeof rawUrl !== 'string') return false;
   try {
@@ -284,6 +277,10 @@ const UNRESOLVED_IDENTITY_DETAIL = 'provider item carries no derivable zhihu que
  * Map one documented `Data.Items[]` entry to a §5.1 contract item.
  * Only canonical zhihu question candidates are fusible; everything else is an
  * explicit per-item failure identity (never silently dropped, never fused).
+ * Order (PR #73 round-3 D3): identity classification first
+ * (unusable → INVALID / no question segment → UNRESOLVED / question segment →
+ * candidate), THEN the required-facts gate for candidates, THEN the
+ * classifyUrl boundary gate, THEN the fact copy.
  */
 function toItem(rawItem, rank) {
   const item = {
@@ -320,6 +317,13 @@ function toItem(rawItem, rank) {
   }
   item.identity.questionId = questionId;
 
+  if (!FACT_FIELDS.every(([sourceKey]) => isStringFieldPresent(rawItem, sourceKey))) {
+    // D3: a documented 必返 String field is missing or mistyped — the item
+    // cannot become a fusible candidate with silently-absent required facts.
+    item.failure = { code: 'CANDIDATE_FACT_CONTRACT_INVALID', class: 'contract' };
+    return item;
+  }
+
   // §5.1: source_url must be boundary-validated — reuse the shared classifier.
   const classification = classifyUrl(rawItem.Url);
   if (!classification || classification.clickable !== true) {
@@ -332,11 +336,12 @@ function toItem(rawItem, rank) {
     displayHost: classification.displayHost,
   };
 
-  // Documented fields only, each only when present (missing stays absent).
-  // ContentText / author fields / any undocumented score field are deliberately
-  // NOT propagated (untrusted corpus + UNKNOWN score semantics).
+  // Documented consumed fields (guaranteed present strings by the D3 gate),
+  // copied verbatim. ContentText / author fields / any undocumented score
+  // field are deliberately NOT consumed (untrusted corpus + UNKNOWN score
+  // semantics); their absence stays tolerated.
   for (const [sourceKey, factKey] of FACT_FIELDS) {
-    if (Object.hasOwn(rawItem, sourceKey)) item.facts[factKey] = rawItem[sourceKey];
+    item.facts[factKey] = rawItem[sourceKey];
   }
   return item;
 }
@@ -385,8 +390,10 @@ export function createGlobalSearchAdapter({ transport, now = defaultNow } = {}) 
       let response;
       try {
         response = transport({ query, count: effectiveCount });
-      } catch (err) {
-        return transportFailure(retrievedAt, err);
+      } catch {
+        // D2: the thrown value is entirely untrusted (message AND name) — it
+        // never reaches the result in any form.
+        return transportFailure(retrievedAt);
       }
       if (!isPlainObject(response) || !Number.isFinite(response.status) || typeof response.body !== 'string') {
         return failureResult({
