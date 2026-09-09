@@ -214,25 +214,26 @@ test('A3: empty Items + HasMore=false → ok=true with zero items; completeness 
   assert.equal(result.completeness.evidence.hasMore, false);
 });
 
-test('A4: count contract — documented default 10; explicit 1..20 forwarded; out-of-range/invalid fails closed before IO', () => {
+test('A4: count contract — ONLY omission (undefined) defaults to 10; explicit 1..20 forwarded; every other value fails closed before IO (E2, round 4)', () => {
   const transport = makeGlobalTransport({
     q: { response: { Code: 0, Data: { HasMore: false, Items: [] } } },
   });
   const adapter = createGlobalSearchAdapter({ transport, now: FIXED_NOW });
 
   adapter.retrieve({ query: 'q' });
+  adapter.retrieve({ query: 'q', count: undefined });
   adapter.retrieve({ query: 'q', count: 1 });
   adapter.retrieve({ query: 'q', count: 20 });
-  assert.deepEqual(transport.calls.map((c) => c.count), [10, 1, 20], 'Count max 20 per T03 request contract');
+  assert.deepEqual(transport.calls.map((c) => c.count), [10, 10, 1, 20], 'only undefined omission defaults; Count max 20 per T03 request contract');
 
-  for (const bad of [0, 21, -1, 2.5, '5', NaN]) {
+  for (const bad of [null, 0, 21, -1, 2.5, '5', NaN, true, Infinity, 1e21]) {
     const result = adapter.retrieve({ query: 'q', count: bad });
-    assert.equal(result.ok, false);
+    assert.equal(result.ok, false, `count value must fail closed: ${String(bad)}`);
     assert.equal(result.failure.code, 'SEARCH_INPUT_INVALID');
     assert.equal(result.failure.class, 'input');
     assertSeamValid(result);
   }
-  assert.equal(transport.calls.length, 3, 'no transport IO for statically invalid input');
+  assert.equal(transport.calls.length, 4, 'no transport IO for statically invalid input — explicit null is NOT a default');
 });
 
 test('A5: invalid query → SEARCH_INPUT_INVALID without transport IO', () => {

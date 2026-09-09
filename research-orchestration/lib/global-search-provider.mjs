@@ -123,6 +123,18 @@
  * deliberately NOT propagated: content authority stays with capture/verify,
  * the candidate pool carries identity + provenance only.
  *
+ * Required-field enforcement is deliberately scoped to the CONSUMPTION surface
+ * (Title / ContentType / ContentID / AuthorityLevel — the four documented
+ * 必返 String fields FACT_FIELDS consumes; round-3 D3). Enforcing the FULL
+ * 13-field docs table (ContentText / CommentCount / VoteUpCount / Author* /
+ * EditTime / …) was reviewed and NOT adopted (PR #73 round-4 E3): it would
+ * reject valid fusible candidates over fields the pipeline never consumes —
+ * information-destroying over-strictness with no downstream consumer
+ * (projectFailure projects {code, class}; nothing branches on unconsumed
+ * fields). A full-schema conformance mode would need a separate product
+ * decision backed by live response evidence (candidate obligation at the T16
+ * composition window). C10/C11/C12 pin this scope decision.
+ *
  * Failure taxonomy (machine-readable, fail closed; every failure result still
  * passes the §5.1 validator so the controller can judge it):
  *   SEARCH_INPUT_INVALID                input      — bad query/count (no IO)
@@ -179,7 +191,7 @@ export const GLOBAL_SEARCH_ROUTE = 'zhihu-open-platform:global_search';
 /** Exact GATE-3-qualified platform capability identity (T03 CAPABILITY). */
 export const GLOBAL_SEARCH_CAPABILITY_ID = 'global_search';
 
-/** Documented request contract (T03): Count default 10, max 20. */
+/** Documented request contract (T03): Count default 10, max 20; ONLY field omission (undefined) defaults. */
 const DEFAULT_COUNT = 10;
 const MAX_COUNT = 20;
 
@@ -377,13 +389,17 @@ export function createGlobalSearchAdapter({ transport, now = defaultNow } = {}) 
           detail: 'query must be a non-empty string',
         });
       }
-      const effectiveCount = count === undefined || count === null ? DEFAULT_COUNT : count;
+      // E2 (PR #73 review round 4): ONLY the documented optional-field OMISSION
+      // (undefined) may default to the documented Count default (10). An
+      // explicit `null` — or any other non-safe-integer value — is invalid
+      // input and fails closed with ZERO provider IO.
+      const effectiveCount = count === undefined ? DEFAULT_COUNT : count;
       if (!Number.isSafeInteger(effectiveCount) || effectiveCount < 1 || effectiveCount > MAX_COUNT) {
         return failureResult({
           retrievedAt,
           code: 'SEARCH_INPUT_INVALID',
           failureClass: 'input',
-          detail: `count must be an integer within [1, ${MAX_COUNT}] (documented T03 request contract)`,
+          detail: `count must be an integer within [1, ${MAX_COUNT}] (documented T03 request contract; only omission defaults)`,
         });
       }
 
