@@ -31,7 +31,14 @@
  *     `captured != verified` and name verify-output as the validity authority.
  */
 
-/** Capability identities. `search` is the only known retrieval-ranked channel (§5.4). */
+/**
+ * Capability identities. `search` is the retrieval-ranked capability family (§5.4);
+ * P1-T17 (GATE-3, Issue #49) adds a SECOND retrieval-ranked channel under the same
+ * family: Official Search (`zhihu_search` → PROVIDER_ZHIHU_OFFICIAL_SEARCH) and the
+ * zhihu-open-platform `global_search` HTTP API (→ PROVIDER_ZHIHU_OPEN_PLATFORM).
+ * The channel triple (query + providerId + capability) stays the §5.4 identity;
+ * the concrete platform capability name is carried by each adapter's provenance.
+ */
 export const CAPABILITY_SEARCH = 'search';
 export const CAPABILITY_CAPTURE = 'capture';
 export const CAPABILITIES = Object.freeze([CAPABILITY_SEARCH, CAPABILITY_CAPTURE]);
@@ -59,6 +66,9 @@ export const COMPLETENESS_STATES = Object.freeze([
 /** Registered provider identities shipped with this seam. */
 export const PROVIDER_ZHIHU_OFFICIAL_SEARCH = 'zhihu-official-search';
 export const PROVIDER_ZHIHU_SESSION_CAPTURE = 'zhihu-session-capture';
+/** P1-T17 (GATE-3): second retrieval-ranked channel — zhihu-open-platform `global_search`.
+ *  Provider identity is the T03-qualified PROVIDER_ID, verbatim. */
+export const PROVIDER_ZHIHU_OPEN_PLATFORM = 'zhihu-open-platform';
 
 /** Fail-closed error codes surfaced by the seam. */
 export const SEAM_ERROR_UNSUPPORTED_CAPABILITY = 'UNSUPPORTED_CAPABILITY';

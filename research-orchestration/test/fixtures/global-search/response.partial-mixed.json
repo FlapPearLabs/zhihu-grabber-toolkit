@@ -1,0 +1,46 @@
+{
+  "_provenance": "P1-T17 fixture grounded in discovery/p1-t03-retrieval-provider-qualification (GATE-3, Issue #35): HasMore=true partial page with a MIXED item population — question items, a non-zhihu external item, a same-question duplicate, and a non-https URL — plus an undocumented upstream 'RankingScore' field (the T03-recorded HTTP-API/MCP surface asymmetry; the HTTP API doc does NOT document a numeric RankingScore). Values are synthetic; no live payload, no credentials.",
+  "Code": 0,
+  "Data": {
+    "HasMore": true,
+    "Items": [
+      {
+        "Title": "智能体记忆机制综述",
+        "ContentType": "answer",
+        "ContentID": "ans-9001",
+        "Url": "https://www.zhihu.com/question/300/answer/9001",
+        "AuthorityLevel": 3,
+        "RankingScore": 0.98
+      },
+      {
+        "Title": "外站权威信源文章",
+        "ContentType": "article",
+        "ContentID": "ext-1",
+        "Url": "https://www.example.com/article",
+        "AuthorityLevel": 4
+      },
+      {
+        "Title": "同一问题的另一条回答",
+        "ContentType": "answer",
+        "ContentID": "ans-9002",
+        "Url": "https://www.zhihu.com/question/300/answer/9002",
+        "AuthorityLevel": 1
+      },
+      {
+        "Title": "非 https 的知乎链接",
+        "ContentType": "question",
+        "ContentID": "q-400",
+        "Url": "http://www.zhihu.com/question/400",
+        "AuthorityLevel": 2
+      },
+      {
+        "Title": "带正文的知乎问题",
+        "ContentType": "question",
+        "ContentID": "q-500",
+        "Url": "https://www.zhihu.com/question/500",
+        "AuthorityLevel": 2,
+        "ContentText": "不可信外部语料正文 —— 不得进入候选池"
+      }
+    ]
+  }
+}
