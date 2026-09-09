@@ -241,6 +241,14 @@
 - **Durable limitation — 不推断未文档化内容**：不得推断未文档化的 pagination / completeness 语义（API 文档仅定义 `HasMore` 布尔字段，无 offset / page / cursor 请求参数）、全局错误码分类（`global_search` 文档无自身错误码段落，不得从 `zhihu_search` 的 10001/20001/30001/90001 跨文档移植）、或数值 ranking-score 含义（排名顺序有据，数值语义未文档化）。
 - **Surface asymmetry（值得保留）**：当前 `global_search` HTTP API 文档**未暴露**文档化的 `RankingScore` 数值字段（`zhihu_search` 有），而官方 MCP 文档暴露 `ranking_score` 属性。该不对称是已记录的发现事实，不得忽视或掩盖。
 - **T17 / adapter implementation 是独立事项**：GATE-3 qualification 本身**不隐含** T17（Additional retrieval provider adapter）的激活或实现授权；任何 T17 实现仍需独立的 legal conditional activation + START_GATE。
+- **T17 adapter durable facts（T17 实现合并后沉淀；reviewer 裁定 POST_GATE_MEMORY_UPDATE_REQUIRED = YES）**：
+  - **身份不可推导限制**：`global_search` 的 documented Answer（bare `/answer/<id>` URL）/ Article（zhuanlan）/ 外站 Item 均不含可推导的 question identity；answer→question resolution 为 UNKNOWN。adapter 不得发明解析语义（无 redirect 探测 / 网络解析 / ContentID→question 猜测）；well-formed 但无 question 段的项以显式机器可读 `CANDIDATE_QUESTION_IDENTITY_UNRESOLVED`（class 'provider'）拒绝，**不是** `INVALID`（外部 well-formed 结果是合法 provider 形状——全网能力）。产品级后果：第二通道对 Answer/Article-only 响应可能产出零候选——该能力价值问题归 product owner，需独立 evidence 授权票才能改变。
+  - **重复裁决权归融合层**：per-response 同题重复项必须原样透传，由冻结的 T06 `FUSION_DUPLICATE_IN_CHANNEL` 门整通道 fail-closed；adapter 不得自行 per-response 去重（那会绕过冻结门并引入 item-order-dependent 贡献）。
+  - **INVALID 是封闭集**：仅限非对象 / 缺失或非字符串 Url / URL 完全不可解析。
+  - **default-deny 全覆盖（T10 posture 扩展到 retrieval adapter）**：provider 受控内容（envelope `Message`、transport 异常 `name`、Item 的 ContentType/ContentID 等）一律不进任何 result failure detail；detail 只能是固定中性串；`provider_error_type` 仅承载 provider 侧结构化事实（如观察到的 Code 逐字）。
+  - **必返字段门限于消费面**：候选仅强制 adapter 实际消费的 documented required String 字段（Title / ContentType / ContentID / AuthorityLevel）→ 缺失/误型 = `CANDIDATE_FACT_CONTRACT_INVALID`；全部 13 字段强制 = 未采纳的 product decision（会以管线从不消费的字段拒绝合法候选；需独立产品决策 + T16 窗口 live 证据）。
+  - **count 输入合同**：仅字段省略（`undefined`）取文档化默认 10；显式 `null` 或任何非安全整数值 → `SEARCH_INPUT_INVALID`，零 provider I/O。
+  - **live smoke 递延义务**：adapter 级真实 capability smoke 是 T16 composition window 的 deferred obligation（凭据缺席时 UNKNOWN != PASS 禁止伪造；T03 端点级 SMOKE_PASS_SAMPLED 仍是端点证据；transport 注入是 adapter 唯一网络边界）。
 
 ## P1-T10 EmbeddingProvider — native diagnostic default-deny（durable security invariant）
 
