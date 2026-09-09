@@ -81,14 +81,28 @@ function jsonDetail(stdout) {
 
 /**
  * P1 final coverage integration consumption (Issue #47 render/disclosure seam).
- * Absent artifact → null (pure v0.3 runs keep byte-identical behavior).
- * Present artifact → validated minimal view; malformed → coverage_failed
- * OrchestrationError (fail closed: a present-but-unreadable coverage record
- * must never be silently ignored by a completeness claim).
+ *
+ * RUN BINDING (Spec §1.1 — mode identity is pipeline identity): an orchestration
+ * run consumes a P1 final coverage artifact ONLY when the run itself declares
+ * the binding (state.p1FinalCoveragePlanHash set by the P1-integrated composer).
+ * A bare coverage-final.json in the work dir is NEVER sufficient — a stale or
+ * foreign artifact must not flip a v0.3 digest/sampled run's disclosure.
+ *
+ *   unbound run        → null, always (v0.3 behavior byte-identical; even a
+ *                        malformed foreign file is ignored, it is not this run's
+ *                        coverage record)
+ *   bound + no file    → coverage_failed (promised artifact missing; inconsistent)
+ *   bound + malformed  → coverage_failed (fail closed)
+ *   bound + planHash mismatch → coverage_failed (stale/foreign under an explicit binding)
+ *   bound + match      → validated minimal view
  */
-export function loadP1FinalCoverage(workDir) {
+export function loadP1FinalCoverage(workDir, expectedPlanHash = null) {
   const file = path.join(workDir, FINAL_COVERAGE_FILENAME);
-  if (!fs.existsSync(file)) return null;
+  if (!fs.existsSync(file)) {
+    if (expectedPlanHash == null) return null;
+    throw new OrchestrationError('coverage_failed', 'run declares a P1 final coverage binding but the artifact is missing（fail closed）', { stage: STAGE_RENDER });
+  }
+  if (expectedPlanHash == null) return null; // unbound run: never consume a bare artifact
   let parsed = null;
   try {
     parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -98,6 +112,9 @@ export function loadP1FinalCoverage(workDir) {
   if (!parsed || parsed.type !== FINAL_COVERAGE_TYPE || !parsed.assertion
     || typeof parsed.assertion.is100PercentAnalysis !== 'boolean') {
     throw new OrchestrationError('coverage_failed', 'P1 final coverage artifact present but invalid（fail closed；未验证的覆盖记录不得被渲染为完成）', { stage: STAGE_RENDER });
+  }
+  if (parsed.planHash !== expectedPlanHash) {
+    throw new OrchestrationError('coverage_failed', 'P1 final coverage artifact belongs to a different run（planHash binding mismatch；fail closed）', { stage: STAGE_RENDER });
   }
   return {
     coverageFinal: {
@@ -477,14 +494,16 @@ export function createOrchestrator({
       : '';
     const coverage = state.coverage ?? readCoverage();
 
-    // P1 final coverage integration (Issue #47): when a P1 research run has
-    // reconciled its coverage in this work dir, the render consumes the
-    // reconciled assertion — the 100% claim comes ONLY from it, never from
-    // mode naming. Partial P1 states never render as complete. A malformed
-    // artifact fails closed through the stage failure path.
+    // P1 final coverage integration (Issue #47): consumption is RUN-BOUND. Only
+    // a run whose state declares p1FinalCoveragePlanHash (set by the P1-integrated
+    // composer) may consume the reconciled artifact; the 100% claim then comes
+    // ONLY from the reconciled assertion, never from mode naming. Unbound runs
+    // (all pure v0.3 runs) keep byte-identical behavior regardless of what
+    // coverage-final.json files exist in the work dir. Malformed/mismatched
+    // artifacts under an explicit binding fail closed through the stage path.
     let p1Final = null;
     try {
-      p1Final = loadP1FinalCoverage(workDir);
+      p1Final = loadP1FinalCoverage(workDir, typeof state.p1FinalCoveragePlanHash === 'string' ? state.p1FinalCoveragePlanHash : null);
     } catch (err) {
       fail(err instanceof OrchestrationError ? err : new OrchestrationError('coverage_failed', String(err?.message ?? err), { stage: STAGE_RENDER }));
     }
@@ -632,6 +651,7 @@ export function createOrchestrator({
         analysisResult: existing.analysisResult ?? null,
         searchCandidates: existing.searchCandidates ?? null,
         result: existing.result ?? null,
+        p1FinalCoveragePlanHash: existing.p1FinalCoveragePlanHash ?? null,
       });
     }
 

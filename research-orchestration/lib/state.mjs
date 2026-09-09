@@ -75,6 +75,10 @@ export function makeState({ workDir, topic, mode, percent, runtime, forceQuestio
     hashes: {}, // artifact identity for checkpoint validation
     verification: null,
     coverage: null,
+    // P1 final coverage integration binding (Issue #47 render seam): set ONLY by
+    // a P1-integrated composer; pure v0.3 runs stay null and never consume a
+    // bare coverage-final.json (run binding is the anti-cross-run contract).
+    p1FinalCoveragePlanHash: null,
     updatedAt: new Date().toISOString(),
   };
 }

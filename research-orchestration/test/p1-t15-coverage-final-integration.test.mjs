@@ -574,6 +574,82 @@ describe('T15 source-group selection + fused-count ownership (CE6)', () => {
     assert.equal(selection.code, 'selection_no_valid_group');
   });
 
+  test('C5 (review CE1 pinned): stale multi-group state under a grown selection is NEVER reused — frozen T09 resume authority decides', async () => {
+    const work = tmpWork('t15-c5-');
+    const journal = beginConvergenceJournal();
+    const identity = planHash(PLAN);
+    const started = beginResearchCoverageLedger({ plan: PLAN, planHash: identity, workDir: work });
+    const loop = runRetrievalFeedbackLoop({
+      coverageState: started.coverageState, plan: PLAN, planHash: identity, workDir: work,
+      seam: rankingSeam(['100', '200']), channels: [{ providerId: 'fixture-a' }, { providerId: 'fixture-b' }], journal,
+      config: { maxRetrievalRounds: 1 },
+    });
+    // compose #1: selection of ONE group ({100} only)
+    const decision1 = {
+      ...loop.pool && {},
+      verdict: 'auto', reason: 'clear_best', planHash: identity, poolPlanHash: identity,
+      schemaVersion: 1, type: 'source-group-selection-decision',
+      selectedGroups: [{ groupId: '100', questionId: '100', rrfScore: 1, score: 1, sourceUrl: null, provenance: null, rationaleRef: null, selectionReason: 'clear_best' }],
+      selectedGroupCount: 1,
+      candidates: [{ questionId: '100', score: 1, rrfScore: 1, eligible: true, selected: true }],
+      clarification: null, clarificationCount: 0,
+      intentCoverage: { total: 0, bound: 0, unmet: 0, shortfall: 0 },
+      rationale: 'fixture',
+    };
+    const journal1 = beginConvergenceJournal();
+    recordStage(journal1, STAGE_RETRIEVAL_ROUNDS);
+    recordStage(journal1, STAGE_SOURCE_GROUP_SELECTION);
+    const groups1 = executeSelectedGroups({
+      coverageState: loop.coverageState, decision: decision1, planHash: identity, workDir: work,
+      captureAdapter: captureAdapterFor({ 100: answersJsonFor('100', GROUP_100_TEXTS), 200: answersJsonFor('200', GROUP_200_TEXTS) }),
+      runner: groupRunnerFor(),
+      journal: journal1,
+    });
+    assert.equal(groups1.multiGroupState.selectionIdentity !== null, true);
+    // Reproduce the POSIX-persisted stale state (the reviewer's counterexample is
+    // POSIX-shaped; on Windows the platform separator makes T09's own load gate
+    // reject the file and degrade to fail-closed fresh-create). Normalize the
+    // persisted refs to POSIX so the stale-reuse path is exercised everywhere.
+    const stateFile = path.join(work, 'multi-group-state.json');
+    const staleState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+    for (const g of Object.values(staleState.groups)) {
+      for (const key of ['evidenceRef', 'handoffRef']) {
+        if (typeof g[key] === 'string') g[key] = g[key].split(path.sep).join('/');
+      }
+    }
+    fs.writeFileSync(stateFile, JSON.stringify(staleState, null, 2));
+    // compose #2: SAME workDir, SAME planHash, GROWN selection ({100,200}).
+    // The stale state (only group 100) must be rejected by the frozen T09 resume
+    // authority (selection identity drift → fresh); group 200 must be composed.
+    const decision2 = {
+      ...decision1,
+      selectedGroups: [
+        { groupId: '100', questionId: '100', rrfScore: 1, score: 1, sourceUrl: null, provenance: null, rationaleRef: null, selectionReason: 'clear_best' },
+        { groupId: '200', questionId: '200', rrfScore: 0.9, score: 0.9, sourceUrl: null, provenance: null, rationaleRef: null, selectionReason: 'clear_best' },
+      ],
+      selectedGroupCount: 2,
+    };
+    const journal2 = beginConvergenceJournal();
+    recordStage(journal2, STAGE_RETRIEVAL_ROUNDS);
+    recordStage(journal2, STAGE_SOURCE_GROUP_SELECTION);
+    const groups2 = executeSelectedGroups({
+      coverageState: groups1.coverageState, decision: decision2, planHash: identity, workDir: work,
+      captureAdapter: captureAdapterFor({ 100: answersJsonFor('100', GROUP_100_TEXTS), 200: answersJsonFor('200', GROUP_200_TEXTS) }),
+      runner: groupRunnerFor(),
+      journal: journal2,
+    });
+    // fresh state: BOTH groups composed (no silent under-execution)
+    assert.equal(Object.keys(groups2.multiGroupState.groups).length, 2);
+    assert.equal(groups2.multiGroupState.groups['100'].verified, true);
+    assert.equal(groups2.multiGroupState.groups['200'].verified, true);
+    assert.equal(groups2.multiGroupState.groups['200'].handoffValid, true);
+    assert.equal(groups2.manifest.accounting.selectedGroupCount, 2);
+    assert.equal(groups2.manifest.groups.length, 2);
+    // the composed state's selection identity binds the GROWN decision
+    const { computeSelectionIdentity } = await import('../lib/multi-group-execution.mjs');
+    assert.equal(groups2.multiGroupState.selectionIdentity, computeSelectionIdentity(decision2.selectedGroups));
+  });
+
   test('C4: selection stage recorded exactly once; counts coherent after auto-selection', () => {
     const work = tmpWork('t15-c4-');
     const journal = beginConvergenceJournal();
@@ -778,6 +854,31 @@ describe('T15 full chain convergence → final reconciliation', () => {
     assert.deepEqual(d2.gap.missingMapped, ['s4']);
   });
 
+  test('H9 (review CE3 pinned): a synthesis artifact from a FOREIGN run is refused — planHash binding required', () => {
+    const work = tmpWork('t15-h9-');
+    let coverageState = createInitialCoverageState({ planHash: PLAN_HASH, plannedQueryVariants: PLAN.queryVariants });
+    const selected = ['asrc-1111111111111111111111111', 'asrc-2222222222222222222222222'];
+    coverageState = updateSelectionAccounting(coverageState, { selectedCorpusSourceSet: selected }, { caller: 'T12' });
+    coverageState = updatePerGroupAnalysis(
+      coverageState,
+      {
+        mappedSourceSet: selected,
+        analyzedSourceSet: selected,
+        perGroupMappedSourceSet: { g1: selected },
+        perGroupAnalyzedSourceSet: { g1: selected },
+      },
+      { caller: 'T13' },
+    );
+    // foreign-run synthesis artifact: well-formed guard, but planHash belongs to another run
+    const foreignPlanHash = 'f'.repeat(64);
+    const foreignArtifact = guardPassSynthesisArtifact(foreignPlanHash, 'a'.repeat(64));
+    assert.notEqual(foreignArtifact.planHash, PLAN_HASH);
+    assert.throws(() => finalizeResearchCoverage({
+      coverageState, synthesisArtifact: foreignArtifact, workDir: work,
+      journal: fullJournal(), requireFullCoverage: true,
+    }), (e) => e.code !== undefined);
+  });
+
   test('H8 (CE4): no second analyzed-set writer — hook layer rejects non-T13 callers; driver never writes analyzed sets', async () => {
     const coverageState = createInitialCoverageState({ planHash: PLAN_HASH });
     assert.throws(() => updatePerGroupAnalysis(coverageState, { analyzedSourceSet: ['x'] }, { caller: 'T15' }), (e) => e.code === COVERAGE_ERROR_UNAUTHORIZED_OWNER);
@@ -802,23 +903,54 @@ describe('T15 full chain convergence → final reconciliation', () => {
 // ---------------------------------------------------------------------------
 
 describe('T15 v0.3 render/disclosure integration', () => {
-  test('I1: absent P1 artifact → null (v0.3 path untouched)', async () => {
+  test('I1: absent P1 artifact + unbound run → null (v0.3 path untouched)', async () => {
     const { loadP1FinalCoverage } = await import('../lib/orchestrator.mjs');
     const work = tmpWork('t15-i1-');
-    assert.equal(loadP1FinalCoverage(work), null);
+    assert.equal(loadP1FinalCoverage(work, null), null);
   });
 
-  test('I2: malformed P1 artifact → coded coverage_failed (fail closed)', async () => {
+  test('I2 (review CE2 pinned): unbound run ignores a foreign coverage-final.json — a sampled/digest run can NEVER be flipped by a bare artifact', async () => {
     const { loadP1FinalCoverage } = await import('../lib/orchestrator.mjs');
     const work = tmpWork('t15-i2-');
+    fs.writeFileSync(path.join(work, FINAL_COVERAGE_FILENAME), JSON.stringify({
+      type: 'p1-final-coverage-integration', planHash: PLAN_HASH, stage: 'FINAL_COVERAGE_RECONCILIATION',
+      pipeline: 'p1-cross-question-deep-research',
+      assertion: { is100PercentAnalysis: true, basis: 'MECHANICAL_SET_EQUALITY' },
+      coverage: { retrieval: { retrievalRounds: 2, stopReason: 'zero_new_candidates' } },
+    }));
+    // no run binding → the artifact does not belong to this run; bare presence is
+    // never sufficient (SAMPLED_ANALYSIS != FULL_COVERAGE_DIGEST; Spec §1.1)
+    assert.equal(loadP1FinalCoverage(work, null), null);
+    // even a malformed foreign file must not fail an unbound v0.3 run
     fs.writeFileSync(path.join(work, FINAL_COVERAGE_FILENAME), '{ not json');
-    assert.throws(() => loadP1FinalCoverage(work), (e) => e instanceof OrchestrationError && e.code === 'coverage_failed');
-    fs.writeFileSync(path.join(work, FINAL_COVERAGE_FILENAME), JSON.stringify({ type: 'something-else', assertion: {} }));
-    assert.throws(() => loadP1FinalCoverage(work), (e) => e instanceof OrchestrationError && e.code === 'coverage_failed');
+    assert.equal(loadP1FinalCoverage(work, null), null);
   });
 
-  /** Seed a minimal valid digest-run work dir whose checkpoint resumes at RENDER. */
-  function seedDigestRun(prefix, p1Assertion) {
+  test('I3: bound run — missing / malformed / foreign-planHash artifact all fail closed', async () => {
+    const { loadP1FinalCoverage } = await import('../lib/orchestrator.mjs');
+    const work = tmpWork('t15-i3-');
+    // bound but artifact missing → inconsistent state → fail closed
+    assert.throws(() => loadP1FinalCoverage(work, PLAN_HASH), (e) => e instanceof OrchestrationError && e.code === 'coverage_failed');
+    // bound + malformed → fail closed
+    fs.writeFileSync(path.join(work, FINAL_COVERAGE_FILENAME), '{ not json');
+    assert.throws(() => loadP1FinalCoverage(work, PLAN_HASH), (e) => e instanceof OrchestrationError && e.code === 'coverage_failed');
+    // bound + wrong type → fail closed
+    fs.writeFileSync(path.join(work, FINAL_COVERAGE_FILENAME), JSON.stringify({ type: 'something-else', planHash: PLAN_HASH, assertion: { is100PercentAnalysis: true } }));
+    assert.throws(() => loadP1FinalCoverage(work, PLAN_HASH), (e) => e instanceof OrchestrationError && e.code === 'coverage_failed');
+    // bound + foreign planHash (stale artifact from another run) → fail closed
+    fs.writeFileSync(path.join(work, FINAL_COVERAGE_FILENAME), JSON.stringify({
+      type: 'p1-final-coverage-integration', planHash: 'f'.repeat(64), stage: 'FINAL_COVERAGE_RECONCILIATION',
+      assertion: { is100PercentAnalysis: true, basis: 'MECHANICAL_SET_EQUALITY' },
+    }));
+    assert.throws(() => loadP1FinalCoverage(work, PLAN_HASH), (e) => e instanceof OrchestrationError && e.code === 'coverage_failed');
+  });
+
+  /**
+   * Seed a minimal valid digest-run work dir whose checkpoint resumes at RENDER.
+   * p1Binding = the run's declared P1 final-coverage binding (state field), or
+   * null for an unbound pure-v0.3 run.
+   */
+  function seedDigestRun(prefix, p1Assertion, { p1Binding = null } = {}) {
     const work = tmpWork(prefix);
     const cw = path.join(work, 'corpus');
     fs.mkdirSync(path.join(cw, 'final'), { recursive: true });
@@ -849,7 +981,9 @@ describe('T15 v0.3 render/disclosure integration', () => {
       hashes: Object.fromEntries(Object.entries(artifacts).map(([k, rel]) => [k, h(fs.readFileSync(path.join(work, rel), 'utf8'))])),
       verification: { valid: true, questionId: '100', capturedAnswerCount: 1, reportedAnswerCount: 1 },
       coverage: null, analysisResult: { mode: 'digest', percent: null, useHierarchy: false, totalChars: 1, finalJson },
-      searchCandidates: [], result: null, updatedAt: new Date().toISOString(),
+      searchCandidates: [], result: null,
+      p1FinalCoveragePlanHash: p1Binding,
+      updatedAt: new Date().toISOString(),
     };
     fs.writeFileSync(path.join(work, 'orchestration-state.json'), JSON.stringify(state, null, 2));
     fs.writeFileSync(path.join(work, FINAL_COVERAGE_FILENAME), JSON.stringify({
@@ -861,9 +995,23 @@ describe('T15 v0.3 render/disclosure integration', () => {
     return work;
   }
 
-  test('I3: stageRender derives the 100% claim ONLY from the reconciled P1 assertion', async () => {
-    // Reconciled FALSE → render must NOT claim complete, even in a digest run.
-    const work = seedDigestRun('t15-i3-false-', false);
+  test('I4 (review CE2 pinned): unbound digest run ignores a foreign artifact — v0.3 behavior byte-identical', async () => {
+    const work = seedDigestRun('t15-i4-unbound-', true, { p1Binding: null });
+    const orch = createOrchestrator({
+      workDir: work, topic: 't', mode: 'digest', percent: null, runtime: 'deepseek-api-tool-less',
+      runner: () => ({ status: 0, stdout: '', stderr: '' }),
+    });
+    const result = await orch.runOrchestration();
+    // no binding → the foreign artifact is NOT consumed; v0.3 mode-derived disclosure stands
+    assert.equal(result.analysis.coverageFinal, undefined);
+    assert.equal(result.analysis.isFullCoverage, true); // v0.3 digest with valid coverage gate
+    const md = fs.readFileSync(path.join(work, 'research-result.md'), 'utf8');
+    assert.ok(md.includes('100% 全量'), 'unbound runs keep the v0.3 header line');
+  });
+
+  test('I5: bound run derives the 100% claim ONLY from the reconciled P1 assertion', async () => {
+    // Reconciled FALSE → render must NOT claim complete, even in a digest-named run.
+    const work = seedDigestRun('t15-i5-false-', false, { p1Binding: PLAN_HASH });
     const orch = createOrchestrator({
       workDir: work, topic: 't', mode: 'digest', percent: null, runtime: 'deepseek-api-tool-less',
       runner: () => ({ status: 0, stdout: '', stderr: '' }),
@@ -876,7 +1024,7 @@ describe('T15 v0.3 render/disclosure integration', () => {
     assert.ok(!md.includes('100% 全量'), 'must not render the v0.3 100% line over a partial P1 reconciliation');
 
     // Reconciled TRUE → 100% claim allowed, derived from the artifact (independent dir).
-    const work2 = seedDigestRun('t15-i3-true-', true);
+    const work2 = seedDigestRun('t15-i5-true-', true, { p1Binding: PLAN_HASH });
     const orch2 = createOrchestrator({
       workDir: work2, topic: 't', mode: 'digest', percent: null, runtime: 'deepseek-api-tool-less',
       runner: () => ({ status: 0, stdout: '', stderr: '' }),

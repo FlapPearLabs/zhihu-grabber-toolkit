@@ -85,7 +85,6 @@ import {
   SELECTION_DECISION_FILENAME,
 } from './source-group-selection.mjs';
 import {
-  createMultiGroupExecutionState,
   executeGroupCapture,
   executeGroupVerify,
   executeGroupHandoff,
@@ -93,8 +92,7 @@ import {
   deriveResearchCorpusManifest,
   applySourceCompletenessToCoverageState,
   persistMultiGroupState,
-  loadMultiGroupState,
-  MULTI_GROUP_STATE_FILENAME,
+  resumeMultiGroupExecution,
 } from './multi-group-execution.mjs';
 import {
   buildSelectorInput,
@@ -568,11 +566,21 @@ export function executeSelectedGroups({
 } = {}) {
   requireJournalAtStage(journal, STAGE_GROUP_EXECUTION);
 
-  const existing = loadMultiGroupState(workDir);
-  const multiGroupState = (existing && existing.planHash === expectedPlanHash)
-    ? existing
-    : createMultiGroupExecutionState({ planHash: expectedPlanHash, selectionDecision: decision });
+  // Reuse is decided EXCLUSIVELY by the frozen T09 resume authority: it binds
+  // planHash + selectionIdentity + selectionDecisionHash and revalidates every
+  // recorded artifact (FILE EXISTS != VALID CACHE). A stale state from a
+  // different selection under the same plan is NEVER silently reused — a
+  // hand-written planHash-only check would silently under-execute grown
+  // selections and assert 100% over an unverified corpus.
+  const resumed = resumeMultiGroupExecution({ workDir, planHash: expectedPlanHash, selectionDecision: decision });
+  const multiGroupState = resumed.state;
   persistMultiGroupState(workDir, multiGroupState);
+  appendEvent(workDir, {
+    event: 'multi_group_resume',
+    boundary: resumed.boundary,
+    fresh: resumed.fresh === true,
+    invalidatedGroups: resumed.invalidatedGroupIds.length,
+  });
 
   for (const groupId of Object.keys(multiGroupState.groups).sort()) {
     const g = multiGroupState.groups[groupId];
@@ -805,6 +813,20 @@ export function finalizeResearchCoverage({
     failClosed(CFI_ERROR_INVALID_INPUT, 'finalizeResearchCoverage requires coverageState, synthesisArtifact, workDir');
   }
   requireJournalAtStage(journal, STAGE_FINAL_RECONCILIATION);
+
+  // Run binding (review round 1 P2): the synthesis artifact must belong to THIS
+  // run. A well-formed foreign-run guard must never be recorded as this run's
+  // double-defense provenance.
+  const ledgerCheck = validateCoverageState(coverageState);
+  if (!ledgerCheck.ok) {
+    failClosed(CFI_ERROR_INVALID_INPUT, `coverage state invalid before final reconciliation: ${ledgerCheck.reason}`);
+  }
+  if (String(ledgerCheck.validated.planHash ?? '') !== String(synthesisArtifact.planHash ?? '')) {
+    failClosed(CFI_ERROR_INVALID_INPUT, 'synthesis artifact does not bind to the ledger planHash (foreign-run synthesis refused)', {
+      ledgerPlanHash: ledgerCheck.validated.planHash,
+      artifactPlanHashPresent: typeof synthesisArtifact.planHash === 'string' && synthesisArtifact.planHash.length > 0,
+    });
+  }
 
   // (2) consume the T14 guard evidence — frozen SEAM D: only PASS may travel
   // with a synthesis artifact; identity refs must be well-formed.
