@@ -21,7 +21,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          # 项目无 package-lock.json 且两个模块均无 dependencies，按 setup-node 文档要求关闭 npm cache
+          # 未启用 npm cache（setup-node 默认不缓存；lockfile 位于 zhihu-answer-grabber/ 子目录）
+
+      # parse5 是 zhihu-answer-grabber 的运行时依赖（src/asset-extractor.js）：缺失时测试套件
+      # 在 import 阶段即 ERR_MODULE_NOT_FOUND；根级集成测试 spawn 的同一 CLI 也需要它。
+      # corpus-anthology 无任何依赖（亦无 lockfile），无需安装步骤。
+      - name: Install zhihu-answer-grabber dependencies
+        working-directory: zhihu-answer-grabber
+        run: npm ci --registry=https://registry.npmjs.org
 
       - name: zhihu-answer-grabber tests
         working-directory: zhihu-answer-grabber
