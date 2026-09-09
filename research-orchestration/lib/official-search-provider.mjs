@@ -20,7 +20,15 @@
  *     passed through unvalidated;
  *   - completeness: the search machine output carries NO pagination/completeness
  *     signal, so status stays `unknown` with explicit evidence. It is never guessed
- *     as `complete` (Spec §5.1: completeness 不得猜测).
+ *     as `complete` (Spec §5.1: completeness 不得猜测);
+ *   - diagnostics (T10 default-deny, P1 final cheap cleanup; durable invariant in
+ *     docs/project-memory.md, same posture as the T17 global_search adapter):
+ *     the subprocess boundary is untrusted — CLI/provider error messages and any
+ *     raw stdout/stderr content NEVER enter any serialized failure field. Details
+ *     are fixed neutral withholding notices (or bounded mechanical facts);
+ *     `provider_error_type` carries only a structured, identifier-shaped
+ *     `error.type` (the CLI's stable classifyError enumeration), everything else
+ *     is omitted.
  */
 
 import { classifyUrl } from '../../zhihu-answer-grabber/src/markdown-security.js';
@@ -53,8 +61,43 @@ function failureResult({ providerId, capability, authClass, retrievedAt, code, f
   };
 }
 
-function firstLine(text) {
-  return String(text ?? '').trim().split('\n')[0] ?? '';
+// ---------------------------------------------------------------------------
+// T10 default-deny posture (docs/project-memory.md; P1 final cheap cleanup,
+// same-class repair following the T17 global_search adapter precedent):
+// the subprocess boundary is UNTRUSTED. CLI/provider error messages and any
+// raw stdout/stderr content are an open-ended leak surface (server response
+// fragments, machine paths, credential-shaped text, multi-line injection) —
+// they are NEVER echoed into any serialized failure field. Every failure
+// detail below is a fixed neutral adapter-controlled string (or a bounded
+// mechanical fact, e.g. the exit status number); only a stable failure
+// identity (code + class) plus a STRUCTURED provider_error_type survive.
+// ---------------------------------------------------------------------------
+
+/** Fixed neutral withholding notices (T17 precedent wording). */
+const REPORTED_FAILURE_DETAIL = 'provider-reported failure; message withheld (default-deny)';
+const NONZERO_EXIT_DETAIL = 'provider process exited with non-zero status; output withheld (default-deny)';
+const UNPARSEABLE_OUTPUT_DETAIL = 'provider output was not parseable JSON; output withheld (default-deny)';
+
+/**
+ * provider_error_type carries ONLY a structured, enumerated identity — the CLI
+ * machine contract's stable error classification strings (`classifyError`:
+ * configuration_error / question_metadata_identity_conflict / http_error /
+ * invalid_input / network_error / unknown_error). The subprocess output is
+ * untrusted, so admission is mechanical: a bounded identifier-shaped string
+ * only (no whitespace/control characters, no path / credential-assignment
+ * shapes, ≤ 100 chars). Any other observed value — free text, numbers,
+ * objects, multi-line injections — is OMITTED, never echoed (fail closed on
+ * the optional diagnostic field; the machine-readable code + class identity
+ * is unaffected).
+ */
+const PROVIDER_ERROR_TYPE_MAX_LENGTH = 100;
+const PROVIDER_ERROR_TYPE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
+
+function structuredProviderErrorType(value) {
+  if (typeof value !== 'string') return null;
+  if (value.length === 0 || value.length > PROVIDER_ERROR_TYPE_MAX_LENGTH) return null;
+  if (!PROVIDER_ERROR_TYPE_PATTERN.test(value)) return null;
+  return value;
 }
 
 /**
@@ -64,6 +107,11 @@ function firstLine(text) {
  * `ok:false` error report on stdout is preserved as the provider failure identity
  * (PROVIDER_REPORTED_FAILURE + provider_error_type); anything else — including a stdout
  * claiming ok=true — fails closed as PROVIDER_PROCESS_NONZERO_EXIT.
+ *
+ * T10 default-deny (P1 final cheap cleanup): the provider-controlled
+ * `error.message` and any raw stderr/stdout content are NEVER echoed into
+ * `detail` — fixed neutral withholding notices only. `error.type` survives
+ * only when it crosses the structuredProviderErrorType identity gate.
  */
 function processExitFailure({ providerId, capability, authClass, retrievedAt, res }) {
   let structuredError = null;
@@ -72,7 +120,7 @@ function processExitFailure({ providerId, capability, authClass, retrievedAt, re
     const parsed = JSON.parse(res.stdout);
     if (parsed && parsed.ok === false && parsed.error) structuredError = parsed.error;
     if (parsed && parsed.ok === true) claimedOk = true;
-  } catch { /* stdout not JSON — raw output stays the evidence */ }
+  } catch { /* stdout not JSON — the failure identity below stays default-deny */ }
   if (structuredError) {
     return failureResult({
       providerId,
@@ -81,8 +129,8 @@ function processExitFailure({ providerId, capability, authClass, retrievedAt, re
       retrievedAt,
       code: 'PROVIDER_REPORTED_FAILURE',
       failureClass: 'provider',
-      detail: structuredError.message ?? (firstLine(res.stderr) || firstLine(res.stdout)),
-      providerErrorType: structuredError.type ?? null,
+      detail: REPORTED_FAILURE_DETAIL,
+      providerErrorType: structuredProviderErrorType(structuredError.type),
     });
   }
   return failureResult({
@@ -92,9 +140,12 @@ function processExitFailure({ providerId, capability, authClass, retrievedAt, re
     retrievedAt,
     code: 'PROVIDER_PROCESS_NONZERO_EXIT',
     failureClass: 'process',
-    detail: claimedOk
+    // The exit status number is a bounded mechanical fact (T17 `HTTP <status>`
+    // precedent); a non-numeric runner contract violation falls back to the
+    // neutral notice instead of echoing an uncontrolled value.
+    detail: claimedOk && Number.isSafeInteger(res.status)
       ? `primitive exited with status ${res.status} but stdout claimed ok=true`
-      : (firstLine(res.stderr) || firstLine(res.stdout)),
+      : NONZERO_EXIT_DETAIL,
   });
 }
 
@@ -156,11 +207,15 @@ export function createOfficialSearchAdapter({ runner, now = defaultNow } = {}) {
           retrievedAt,
           code: 'PROVIDER_OUTPUT_UNPARSEABLE',
           failureClass: 'contract',
-          detail: firstLine(res.stdout) || firstLine(res.stderr),
+          detail: UNPARSEABLE_OUTPUT_DETAIL,
         });
       }
 
       if (!payload || payload.ok !== true || payload.error) {
+        // T10 default-deny: the provider-controlled `error.message` is untrusted
+        // subprocess content and is NEVER returned; only the fixed neutral
+        // withholding notice is. The observed `error.type` stays machine-readable
+        // ONLY when it crosses the structured identity gate (see above).
         return failureResult({
           providerId: PROVIDER_ZHIHU_OFFICIAL_SEARCH,
           capability: CAPABILITY_SEARCH,
@@ -168,8 +223,8 @@ export function createOfficialSearchAdapter({ runner, now = defaultNow } = {}) {
           retrievedAt,
           code: 'PROVIDER_REPORTED_FAILURE',
           failureClass: 'provider',
-          detail: payload?.error?.message ?? null,
-          providerErrorType: payload?.error?.type ?? null,
+          detail: REPORTED_FAILURE_DETAIL,
+          providerErrorType: structuredProviderErrorType(payload?.error?.type),
         });
       }
 

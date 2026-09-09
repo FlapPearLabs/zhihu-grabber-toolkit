@@ -600,7 +600,7 @@ test('F6: P1-2 — session capture: non-zero exit with stdout claiming ok=true f
   assert.equal(validateProviderResult(result).valid, true, 'failure stays machine-readable');
 });
 
-test('F7: P1-2 — non-zero exit still preserves a structured ok:false provider error detail', () => {
+test('F7: P1-2 — non-zero exit still preserves a structured ok:false provider failure identity (detail default-deny)', () => {
   const runner = makeRecordingRunner({
     'zhihu-search': okHandler(JSON.stringify({
       schemaVersion: 1, ok: false, command: 'search', error: { type: 'http_403', message: 'denied' },
@@ -612,7 +612,12 @@ test('F7: P1-2 — non-zero exit still preserves a structured ok:false provider 
   assert.equal(result.failure.code, 'PROVIDER_REPORTED_FAILURE');
   assert.equal(result.failure.class, 'provider');
   assert.equal(result.failure.provider_error_type, 'http_403', 'machine-readable provider error detail preserved');
-  assert.equal(result.failure.detail, 'denied');
+  // Contract update (P1 final cheap cleanup, T10 default-deny): the raw provider
+  // message ('denied') is no longer echoed — the detail is the fixed neutral
+  // withholding notice; the machine-readable identity (code + class +
+  // provider_error_type) is unchanged.
+  assert.equal(result.failure.detail, 'provider-reported failure; message withheld (default-deny)');
+  assert.ok(!JSON.stringify(result).includes('denied'), 'provider message never reaches any serialized surface');
 });
 
 test('F8: P1-3 — stage=captured + verified=true → PROVIDER_RESULT_CONTRACT_INVALID (fail closed, never propagated)', () => {
@@ -665,6 +670,205 @@ test('F11: P2-1 — validator accepts failed items lacking questionId; still rej
   assert.equal(validateProviderResult(validSearchResult({
     items: [{ identity: { kind: 'candidate', questionId: '' }, provenance: { route: 'r' }, source_url: null }],
   })).valid, false, 'success items still require a non-empty questionId');
+});
+
+// ---------------------------------------------------------------------------
+// G. T10 default-deny — official-search diagnostic normalization (P1 final
+//    cheap cleanup; same durable security invariant as T10 / T17):
+//    provider / CLI / process-controlled free text (error.message, stderr,
+//    stdout, any open-ended subprocess output) must NEVER enter any serialized
+//    failure surface — detail is a fixed neutral string; provider_error_type
+//    carries only a bounded identifier-shaped structured identity (the CLI
+//    machine contract's stable classifyError enumeration), everything else is
+//    omitted. Mirrors the T17 global_search sentinel pattern
+//    (global-search-provider.test.mjs B-series).
+// ---------------------------------------------------------------------------
+
+const REPORTED_FAILURE_NEUTRAL_DETAIL = 'provider-reported failure; message withheld (default-deny)';
+const NONZERO_EXIT_NEUTRAL_DETAIL = 'provider process exited with non-zero status; output withheld (default-deny)';
+const UNPARSEABLE_NEUTRAL_DETAIL = 'provider output was not parseable JSON; output withheld (default-deny)';
+
+test('G1: provider-reported failure via non-zero exit — neutral detail, message sentinel never surfaces', () => {
+  const runner = makeRecordingRunner({
+    'zhihu-search': okHandler(JSON.stringify({
+      schemaVersion: 1, ok: false, command: 'search', error: { type: 'http_error', message: 'denied TOPSECRETVALUE' },
+    }), 1),
+  });
+  const adapter = createOfficialSearchAdapter({ runner, now: FIXED_NOW });
+  const result = adapter.retrieve({ query: 'q' });
+  assert.equal(validateProviderResult(result).valid, true, 'failure stays machine-readable');
+  assert.equal(result.ok, false);
+  assert.equal(result.failure.code, 'PROVIDER_REPORTED_FAILURE');
+  assert.equal(result.failure.class, 'provider');
+  assert.equal(result.failure.provider_error_type, 'http_error', 'enumerated structured identity preserved');
+  assert.equal(result.failure.detail, REPORTED_FAILURE_NEUTRAL_DETAIL);
+  assert.ok(!JSON.stringify(result).includes('TOPSECRETVALUE'), 'provider message never reaches any serialized surface');
+});
+
+test('G2: structured ok:false without a message no longer falls back to stderr/stdout echo (default-deny)', () => {
+  const runner = makeRecordingRunner({
+    'zhihu-search': () => ({
+      status: 1,
+      stdout: JSON.stringify({ schemaVersion: 1, ok: false, command: 'search', error: { type: 'http_error' } }),
+      stderr: 'Authorization failed TOPSECRETVALUE',
+    }),
+  });
+  const adapter = createOfficialSearchAdapter({ runner, now: FIXED_NOW });
+  const result = adapter.retrieve({ query: 'q' });
+  assert.equal(validateProviderResult(result).valid, true);
+  assert.equal(result.failure.code, 'PROVIDER_REPORTED_FAILURE');
+  assert.equal(result.failure.detail, REPORTED_FAILURE_NEUTRAL_DETAIL);
+  assert.ok(!JSON.stringify(result).includes('TOPSECRETVALUE'), 'stderr echo must never surface');
+});
+
+test('G3: non-zero exit without a structured report — neutral detail; stderr/stdout sentinels never surface', () => {
+  const runner = makeRecordingRunner({
+    'zhihu-search': () => ({ status: 1, stdout: `panic: TOPSECRETVALUE`, stderr: `FATAL: TOPSECRETVALUE` }),
+  });
+  const adapter = createOfficialSearchAdapter({ runner, now: FIXED_NOW });
+  const result = adapter.retrieve({ query: 'q' });
+  assert.equal(validateProviderResult(result).valid, true);
+  assert.equal(result.failure.code, 'PROVIDER_PROCESS_NONZERO_EXIT');
+  assert.equal(result.failure.class, 'process');
+  assert.equal(result.failure.detail, NONZERO_EXIT_NEUTRAL_DETAIL);
+  assert.ok(!JSON.stringify(result).includes('TOPSECRETVALUE'), 'process output must never surface');
+});
+
+test('G4: unparseable output — neutral detail; stdout/stderr sentinels never surface', () => {
+  const runner = makeRecordingRunner({
+    'zhihu-search': () => ({ status: 0, stdout: `<html>TOPSECRETVALUE</html>`, stderr: `warn: TOPSECRETVALUE` }),
+  });
+  const adapter = createOfficialSearchAdapter({ runner, now: FIXED_NOW });
+  const result = adapter.retrieve({ query: 'q' });
+  assert.equal(validateProviderResult(result).valid, true);
+  assert.equal(result.failure.code, 'PROVIDER_OUTPUT_UNPARSEABLE');
+  assert.equal(result.failure.class, 'contract');
+  assert.equal(result.failure.detail, UNPARSEABLE_NEUTRAL_DETAIL);
+  assert.ok(!JSON.stringify(result).includes('TOPSECRETVALUE'), 'raw output echo must never surface');
+});
+
+test('G5: provider_error_type carries only a bounded identifier-shaped structured identity; hostile values are omitted on every path', () => {
+  const HOSTILE_TYPES = [
+    'http_error\nTOPSECRETVALUE', // multi-line injection
+    'token=TOPSECRETVALUE', // credential-assignment shape
+    '/home/user/TOPSECRETVALUE', // machine-private path shape
+    `Bearer ${'x'.repeat(120)} TOPSECRETVALUE`, // over-length free text
+    123, // non-string
+    { nested: 'TOPSECRETVALUE' }, // structured non-identity
+    '',
+    '   ',
+  ];
+  for (const hostileType of HOSTILE_TYPES) {
+    for (const [label, handler] of [
+      ['exit 0', okHandler(JSON.stringify({
+        schemaVersion: 1, ok: false, command: 'search', error: { type: hostileType, message: 'm' },
+      }))],
+      ['non-zero exit', okHandler(JSON.stringify({
+        schemaVersion: 1, ok: false, command: 'search', error: { type: hostileType, message: 'm' },
+      }), 1)],
+    ]) {
+      const runner = makeRecordingRunner({ 'zhihu-search': handler });
+      const adapter = createOfficialSearchAdapter({ runner, now: FIXED_NOW });
+      const result = adapter.retrieve({ query: 'q' });
+      assert.equal(validateProviderResult(result).valid, true, `${label}: failure stays machine-readable`);
+      assert.equal(result.failure.code, 'PROVIDER_REPORTED_FAILURE', label);
+      assert.equal(result.failure.detail, REPORTED_FAILURE_NEUTRAL_DETAIL, label);
+      assert.ok(!('provider_error_type' in result.failure), `${label}: non-identity error.type (${typeof hostileType}) is omitted, never echoed`);
+      assert.ok(!JSON.stringify(result).includes('TOPSECRETVALUE'), `${label}: hostile error.type must never surface`);
+    }
+  }
+});
+
+test('G6: positive control — the documented CLI classifyError enumeration crosses the structural gate verbatim', () => {
+  for (const type of [
+    'configuration_error',
+    'question_metadata_identity_conflict',
+    'http_error',
+    'invalid_input',
+    'network_error',
+    'unknown_error',
+  ]) {
+    const runner = makeRecordingRunner({
+      'zhihu-search': okHandler(JSON.stringify({
+        schemaVersion: 1, ok: false, command: 'search', error: { type, message: 'm' },
+      })),
+    });
+    const adapter = createOfficialSearchAdapter({ runner, now: FIXED_NOW });
+    const result = adapter.retrieve({ query: 'q' });
+    assert.equal(result.ok, false);
+    assert.equal(result.failure.code, 'PROVIDER_REPORTED_FAILURE');
+    assert.equal(result.failure.provider_error_type, type, `enumerated identity preserved verbatim: ${type}`);
+  }
+});
+
+test('G7: claimed-ok non-zero exit keeps the bounded mechanical status detail; stdout sentinels never surface', () => {
+  const runner = makeRecordingRunner({
+    'zhihu-search': okHandler(searchPayload([
+      { questionId: '123', title: 'TOPSECRETVALUE', url: 'https://www.zhihu.com/question/123' },
+    ]), 1),
+  });
+  const adapter = createOfficialSearchAdapter({ runner, now: FIXED_NOW });
+  const result = adapter.retrieve({ query: 'q' });
+  assert.equal(validateProviderResult(result).valid, true);
+  assert.equal(result.failure.code, 'PROVIDER_PROCESS_NONZERO_EXIT');
+  assert.equal(result.failure.detail, 'primitive exited with status 1 but stdout claimed ok=true',
+    'adapter-constructed mechanical fact (exit status number only) is the one allowed non-neutral detail');
+  assert.ok(!JSON.stringify(result).includes('TOPSECRETVALUE'), 'claimed-ok stdout content must never surface');
+});
+
+test('G8: sentinel umbrella — NO official-search failure path echoes provider/CLI/process-controlled text into any serialized surface', () => {
+  const SENTINEL = 'TOPSECRETVALUE';
+  const structuredStdout = JSON.stringify({
+    schemaVersion: 1, ok: false, command: 'search', error: { type: 'http_error', message: `denied: ${SENTINEL}` },
+  });
+  const scenarios = [
+    ['non-zero exit + structured provider message', () => ({ status: 1, stdout: structuredStdout, stderr: '' })],
+    ['non-zero exit + structured error without message (stderr fallback)', () => ({
+      status: 1,
+      stdout: JSON.stringify({ schemaVersion: 1, ok: false, command: 'search', error: { type: 'http_error' } }),
+      stderr: `Authorization failed ${SENTINEL}`,
+    })],
+    ['non-zero exit + non-JSON stdout', () => ({ status: 1, stdout: `panic: ${SENTINEL}`, stderr: `FATAL: ${SENTINEL}` })],
+    ['non-zero exit + stdout claiming ok=true', () => ({
+      status: 1,
+      stdout: searchPayload([{ questionId: '123', title: SENTINEL, url: 'https://www.zhihu.com/question/123' }]),
+      stderr: '',
+    })],
+    ['exit 0 + non-JSON stdout', () => ({ status: 0, stdout: `<html>${SENTINEL}</html>`, stderr: `warn: ${SENTINEL}` })],
+    ['exit 0 + ok:false provider message', () => ({
+      status: 0,
+      stdout: JSON.stringify({ schemaVersion: 1, ok: false, command: 'search', error: { type: 'network_error', message: `server said ${SENTINEL}` } }),
+      stderr: '',
+    })],
+    ['exit 0 + ok:false hostile error.type', () => ({
+      status: 0,
+      stdout: JSON.stringify({ schemaVersion: 1, ok: false, command: 'search', error: { type: `http_error ${SENTINEL}`, message: 'm' } }),
+      stderr: '',
+    })],
+    ['exit 0 + candidates shape broken (sentinel stdout)', () => ({
+      status: 0,
+      stdout: JSON.stringify({ schemaVersion: 1, ok: true, command: 'search', note: SENTINEL }),
+      stderr: '',
+    })],
+  ];
+  for (const [name, handler] of scenarios) {
+    const runner = makeRecordingRunner({ 'zhihu-search': handler });
+    const adapter = createOfficialSearchAdapter({ runner, now: FIXED_NOW });
+    const result = adapter.retrieve({ query: 'q' });
+    assert.equal(validateProviderResult(result).valid, true, `${name}: failure stays machine-readable`);
+    assert.equal(result.ok, false, name);
+    assert.ok(!JSON.stringify(result).includes(SENTINEL), `sentinel leaked on path: ${name}`);
+  }
+  // input boundary: the caller-supplied query itself is never echoed into any
+  // failure result (sentinel travels AS the query; the failure carries no echo)
+  const runner = makeRecordingRunner({
+    'zhihu-search': () => ({ status: 1, stdout: structuredStdout, stderr: '' }),
+  });
+  const adapter = createOfficialSearchAdapter({ runner, now: FIXED_NOW });
+  const result = adapter.retrieve({ query: SENTINEL });
+  assert.equal(result.ok, false);
+  assert.equal(result.failure.code, 'PROVIDER_REPORTED_FAILURE');
+  assert.ok(!JSON.stringify(result).includes(SENTINEL), 'the query value must never be echoed into a failure result');
 });
 
 // helper kept at bottom to avoid hoisting confusion
