@@ -63,7 +63,12 @@ import {
   GLOBAL_SEARCH_ROUTE,
   GLOBAL_SEARCH_CAPABILITY_ID,
 } from '../lib/global-search-provider.mjs';
-import { RETRIEVAL_FAILURE_NO_VALID_CHANNEL, runMultiQueryRetrieval } from '../lib/retrieval.mjs';
+import {
+  RETRIEVAL_POOL_FILENAME,
+  RETRIEVAL_FAILURE_NO_VALID_CHANNEL,
+  RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID,
+  runMultiQueryRetrieval,
+} from '../lib/retrieval.mjs';
 import { RRF_K } from '../lib/rrf.mjs';
 import { planHash } from '../lib/plan-contract.mjs';
 
@@ -414,21 +419,23 @@ test('C1: mixed page — fusible question candidates + explicit per-item failure
   assert.equal(result.completeness.status, COMPLETENESS_PARTIAL);
   assert.equal(result.completeness.evidence.hasMore, true);
 
-  const [fusible, external, duplicate, boundary, withBody] = result.items;
+  const [fusible, external, secondQuestion, boundary, withBody] = result.items;
 
   assert.equal(fusible.identity.questionId, '300', 'answer item canonicalizes to its question candidate');
   assert.equal(fusible.provenance.rank, 1);
   assert.equal(fusible.failure, undefined);
 
-  assert.equal(external.failure.code, 'CANDIDATE_IDENTITY_INVALID', 'non-zhihu items cannot be question candidates');
-  assert.equal(external.failure.class, 'contract');
+  // C2 (PR #73 round 2): global_search is a full-web capability — a well-formed
+  // parseable external URL is NOT a malformed contract item; its zhihu question
+  // identity is unresolved.
+  assert.equal(external.failure.code, 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED', 'external items are unresolved, not malformed');
+  assert.equal(external.failure.class, 'provider');
   assert.equal(external.source_url, null, 'a per-item failure never rides beside a source_url');
   assert.equal(external.provenance.rank, 2);
 
-  assert.equal(duplicate.failure.code, 'CANDIDATE_IDENTITY_DUPLICATE', 'same-question duplicate is an explicit rejection, not a silent drop');
-  assert.equal(duplicate.failure.class, 'contract');
-  assert.equal(duplicate.identity.questionId, '300', 'rejected duplicate stays judgeable (which candidate duplicated)');
-  assert.equal(duplicate.provenance.rank, 3);
+  assert.equal(secondQuestion.identity.questionId, '600', 'a second distinct question item stays a fusible candidate');
+  assert.equal(secondQuestion.failure, undefined);
+  assert.equal(secondQuestion.provenance.rank, 3);
 
   assert.equal(boundary.identity.questionId, '400');
   assert.equal(boundary.failure.code, 'SOURCE_URL_BOUNDARY_REJECTED', 'shared classifyUrl verdict, never a weaker parallel policy');
@@ -481,7 +488,7 @@ test('C3: ContentText (untrusted corpus) never enters the candidate result surfa
 // without a /question/<qid> segment is UNRESOLVED regardless of the classifier
 // verdict, and the classifier is only consulted for actual candidates.
 
-test('C4: documented bare-answer item (docs example shape) → CANDIDATE_QUESTION_IDENTITY_UNRESOLVED, not INVALID', () => {
+test('C4: documented bare-answer item (docs example shape) → CANDIDATE_QUESTION_IDENTITY_UNRESOLVED, not INVALID; detail default-deny (C4 round 2)', () => {
   const transport = makeGlobalTransport({ q: { response: readFixture('response.docs-example-mixed.json') } });
   const adapter = createGlobalSearchAdapter({ transport, now: FIXED_NOW });
   const result = adapter.retrieve({ query: 'q' });
@@ -493,8 +500,8 @@ test('C4: documented bare-answer item (docs example shape) → CANDIDATE_QUESTIO
   assert.deepEqual(answer.failure, {
     code: 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED',
     class: 'provider',
-    detail: { contentType: 'Answer', contentId: '1903044959663284999' },
-  }, 'well-formed zhihu item whose URL carries no /question/<qid>: question identity UNKNOWN, not malformed');
+    detail: 'provider item carries no derivable zhihu question identity (documented shape; default-deny detail)',
+  }, 'well-formed zhihu item whose URL carries no /question/<qid>: question identity UNKNOWN, not malformed; NO provider-controlled detail values (T10 default-deny)');
   assert.equal(answer.source_url, null);
   assert.equal(answer.provenance.rank, 1);
   assert.equal(answer.provenance.route, GLOBAL_SEARCH_ROUTE);
@@ -502,8 +509,8 @@ test('C4: documented bare-answer item (docs example shape) → CANDIDATE_QUESTIO
   assert.deepEqual(article.failure, {
     code: 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED',
     class: 'provider',
-    detail: { contentType: 'Article', contentId: '710000000' },
-  }, 'zhuanlan-style Article is zhihu-hosted without a question segment → UNRESOLVED');
+    detail: 'provider item carries no derivable zhihu question identity (documented shape; default-deny detail)',
+  }, 'zhuanlan-style Article is a parseable URL without a question segment → UNRESOLVED');
   assert.equal(article.provenance.rank, 2);
 
   assert.equal(question.failure, undefined, 'question-bearing item remains a fusible candidate');
@@ -565,6 +572,127 @@ test('C6: page of ONLY documented Answers+Articles → §5.1-valid ok=true resul
     assert.deepEqual(rejected.failure, { code: 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED', class: 'provider' });
     assert.equal(rejected.channel.providerId, PROVIDER_ZHIHU_OPEN_PLATFORM);
   }
+});
+
+test('C7: parseable non-zhihu URL → UNRESOLVED, never INVALID (full-web capability; C2 round 2)', () => {
+  const page = {
+    Code: 0,
+    Data: {
+      HasMore: false,
+      Items: [
+        { ContentType: 'article', ContentID: 'ext-1', Url: 'https://www.example.com/article' },
+        { ContentType: 'doc', ContentID: 'ext-2', Url: 'https://docs.example.org/guide?page=1' },
+        { ContentType: 'question', ContentID: 'q-700', Url: 'https://www.zhihu.com/question/700' },
+      ],
+    },
+  };
+  const adapter = createGlobalSearchAdapter({ transport: () => ({ status: 200, body: JSON.stringify(page) }), now: FIXED_NOW });
+  const result = adapter.retrieve({ query: 'q' });
+  assertSeamValid(result);
+  assert.equal(result.ok, true);
+  const [first, second, candidate] = result.items;
+  assert.deepEqual(first.failure, {
+    code: 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED',
+    class: 'provider',
+    detail: 'provider item carries no derivable zhihu question identity (documented shape; default-deny detail)',
+  });
+  assert.deepEqual(second.failure, {
+    code: 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED',
+    class: 'provider',
+    detail: 'provider item carries no derivable zhihu question identity (documented shape; default-deny detail)',
+  });
+  assert.equal(candidate.failure, undefined);
+  assert.equal(candidate.identity.questionId, '700');
+});
+
+test('C8: duplicate question in ONE response passes through the adapter; the frozen T06 FUSION_DUPLICATE_IN_CHANNEL gate owns the failure (C3 round 2)', () => {
+  const dupPage = () => readFixture('response.duplicate-questions.json');
+
+  // Adapter level: BOTH same-question items are emitted as candidates — the
+  // adapter does NOT run a per-response duplicate policy of its own.
+  const adapter = createGlobalSearchAdapter({ transport: makeGlobalTransport({ [Q1]: { response: dupPage() } }), now: FIXED_NOW });
+  const result = adapter.retrieve({ query: Q1 });
+  assertSeamValid(result);
+  assert.equal(result.ok, true);
+  assert.equal(result.items.length, 2);
+  assert.equal(result.items[0].identity.questionId, '300');
+  assert.equal(result.items[1].identity.questionId, '300', 'duplicates pass through — no adapter-level dedup, no item-order-dependent contributions');
+  for (const item of result.items) assert.equal(item.failure, undefined);
+
+  // Through the REAL T06 pipeline, single global channel: the frozen gate fires
+  // (whole-channel fail-closed, machine-readable), and NO pool artifact exists.
+  const singleSeam = createProviderSeam({ adapters: [adapter] });
+  const workDir = tmpWorkDir();
+  const run = runMultiQueryRetrieval({
+    plan: { schemaVersion: 1, queryVariants: [Q1], aspects: ['技术成熟度'], entities: [], opposingFramings: [], terminologyVariants: [], sourceGroupIntents: [] },
+    planHash: planHash({ schemaVersion: 1, queryVariants: [Q1], aspects: ['技术成熟度'], entities: [], opposingFramings: [], terminologyVariants: [], sourceGroupIntents: [] }),
+    seam: singleSeam,
+    channels: [{ providerId: PROVIDER_ZHIHU_OPEN_PLATFORM }],
+    workDir,
+  });
+  assert.equal(run.ok, false);
+  assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
+  assert.equal(run.details.code, 'FUSION_DUPLICATE_IN_CHANNEL', 'duplicate policy belongs to the frozen T06/rrf gate');
+  assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no pool artifact on the fail-closed path');
+
+  // Dual-channel: a healthy sibling channel does NOT mask or substitute the
+  // duplicate-bearing channel — the gate fires regardless of sibling health.
+  const officialRunner = makeOfficialRunner({ [Q1]: { candidates: [officialCandidate('100', '问题一百', 5)] } });
+  const globalTransport = makeGlobalTransport({ [Q1]: { response: dupPage() } });
+  const dualSeam = createProviderSeam({
+    adapters: [
+      createOfficialSearchAdapter({ runner: officialRunner, now: FIXED_NOW }),
+      createGlobalSearchAdapter({ transport: globalTransport, now: FIXED_NOW }),
+    ],
+  });
+  const dualRun = runMultiQueryRetrieval({
+    plan: { schemaVersion: 1, queryVariants: [Q1], aspects: ['技术成熟度'], entities: [], opposingFramings: [], terminologyVariants: [], sourceGroupIntents: [] },
+    planHash: planHash({ schemaVersion: 1, queryVariants: [Q1], aspects: ['技术成熟度'], entities: [], opposingFramings: [], terminologyVariants: [], sourceGroupIntents: [] }),
+    seam: dualSeam,
+    channels: [{ providerId: PROVIDER_ZHIHU_OFFICIAL_SEARCH }, { providerId: PROVIDER_ZHIHU_OPEN_PLATFORM }],
+    workDir: tmpWorkDir(),
+  });
+  assert.equal(dualRun.ok, false, 'no silent substitution of the duplicate-bearing channel');
+  assert.equal(dualRun.details.code, 'FUSION_DUPLICATE_IN_CHANNEL');
+  assert.equal(officialRunner.calls.length, 1, 'the sibling channel executed exactly once (failure is not a routing event)');
+});
+
+test('C9: UNRESOLVED detail is default-deny — provider ContentType/ContentID sentinels never surface (C4 round 2)', () => {
+  const page = {
+    Code: 0,
+    Data: {
+      HasMore: false,
+      Items: [
+        {
+          ContentType: 'TOPSECRET_A',
+          ContentID: 'TOPSECRET_B',
+          Url: 'https://www.zhihu.com/answer/1903044959663284999?utm_source=TOPSECRET_C',
+        },
+      ],
+    },
+  };
+  const adapter = createGlobalSearchAdapter({ transport: () => ({ status: 200, body: JSON.stringify(page) }), now: FIXED_NOW });
+  const result = adapter.retrieve({ query: 'q' });
+  assertSeamValid(result);
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.items[0].failure, {
+    code: 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED',
+    class: 'provider',
+    detail: 'provider item carries no derivable zhihu question identity (documented shape; default-deny detail)',
+  });
+  const dumped = JSON.stringify(result);
+  for (const sentinel of ['TOPSECRET_A', 'TOPSECRET_B', 'TOPSECRET_C']) {
+    assert.ok(!dumped.includes(sentinel), `provider-controlled value must never surface: ${sentinel}`);
+  }
+
+  // Through the REAL T06 pipeline: rejected entries carry { code, class } only.
+  const seam = createProviderSeam({ adapters: [adapter] });
+  const plan = { schemaVersion: 1, queryVariants: [Q1], aspects: ['技术成熟度'], entities: [], opposingFramings: [], terminologyVariants: [], sourceGroupIntents: [] };
+  const run = runMultiQueryRetrieval({ plan, planHash: planHash(plan), seam, channels: [{ providerId: PROVIDER_ZHIHU_OPEN_PLATFORM }], workDir: tmpWorkDir() });
+  assert.equal(run.ok, true);
+  assert.equal(run.pool.rejected.length, 1);
+  assert.deepEqual(run.pool.rejected[0].failure, { code: 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED', class: 'provider' });
+  assert.ok(!JSON.stringify(run).includes('TOPSECRET'));
 });
 
 // ---------------------------------------------------------------------------
@@ -656,12 +784,13 @@ test('E1: dual-channel RRF fusion — exact math, per-channel provenance, machin
   assert.equal(byChannel.get(`${Q2}::${PROVIDER_ZHIHU_OPEN_PLATFORM}`).completeness.evidence.hasMore, false);
 
   // Exact RRF math (canonical accumulation order), candidate order score desc.
-  assert.deepEqual(pool.candidates.map((c) => c.identity.questionId), ['100', '300', '200', '123', '500']);
+  assert.deepEqual(pool.candidates.map((c) => c.identity.questionId), ['100', '300', '200', '123', '600', '500']);
   const score = (questionId) => pool.candidates.find((c) => c.identity.questionId === questionId).rrfScore;
   assert.equal(score('100'), 1 / (RRF_K + 1) + 1 / (RRF_K + 1), '100: official q1 r1 + official q2 r1');
   assert.equal(score('300'), 1 / (RRF_K + 1) + 1 / (RRF_K + 2), '300: global q1 r1 + official q2 r2');
   assert.equal(score('200'), 1 / (RRF_K + 2) + 1 / (RRF_K + 2), '200: official q1 r2 + global q2 r2');
   assert.equal(score('123'), 1 / (RRF_K + 1), '123: global q2 r1 only');
+  assert.equal(score('600'), 1 / (RRF_K + 3), '600: global q1 r3 only (distinct second question item)');
   assert.equal(score('500'), 1 / (RRF_K + 5), '500: global q1 r5 only');
 
   // Fused ranks preserve the §5.4 channel triple + retrieval route/rank origin.
@@ -680,20 +809,17 @@ test('E1: dual-channel RRF fusion — exact math, per-channel provenance, machin
   assert.deepEqual(candidate300.facts, { title: '智能体记忆机制综述', contentType: 'answer', contentId: 'ans-9001', authorityLevel: 3 });
 
   // Rejections: machine-readable identity + contributing channel, nothing silent.
-  assert.equal(pool.rejected.length, 3);
+  // C2: the well-formed external item is UNRESOLVED (provider class), not INVALID.
+  assert.equal(pool.rejected.length, 2);
   const rejectedByCode = new Map(pool.rejected.map((r) => [r.failure.code, r]));
-  const invalid = rejectedByCode.get('CANDIDATE_IDENTITY_INVALID');
-  assert.deepEqual(invalid, {
+  const unresolved = rejectedByCode.get('CANDIDATE_QUESTION_IDENTITY_UNRESOLVED');
+  assert.deepEqual(unresolved, {
     channel: { query: Q1, providerId: PROVIDER_ZHIHU_OPEN_PLATFORM, capability: CAPABILITY_SEARCH },
     identity: { kind: 'candidate', questionId: '' },
     rank: 2,
     route: GLOBAL_SEARCH_ROUTE,
-    failure: { code: 'CANDIDATE_IDENTITY_INVALID', class: 'contract' },
+    failure: { code: 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED', class: 'provider' },
   });
-  const duplicate = rejectedByCode.get('CANDIDATE_IDENTITY_DUPLICATE');
-  assert.equal(duplicate.identity.questionId, '300');
-  assert.equal(duplicate.rank, 3);
-  assert.deepEqual(duplicate.failure, { code: 'CANDIDATE_IDENTITY_DUPLICATE', class: 'contract' });
   const boundary = rejectedByCode.get('SOURCE_URL_BOUNDARY_REJECTED');
   assert.equal(boundary.identity.questionId, '400');
   assert.deepEqual(boundary.failure, { code: 'SOURCE_URL_BOUNDARY_REJECTED', class: 'boundary' });
@@ -770,7 +896,7 @@ test('E5: a failed channel is recorded with its machine-readable identity and NE
   }
   // The surviving channel actually produced candidates (this assertion keeps the
   // no-substitution check from passing vacuously on an empty result).
-  assert.equal(run.pool.candidates.length, 4, 'global_search q1 {300,500} + q2 {123,200}');
+  assert.equal(run.pool.candidates.length, 5, 'global q1 {300,600,500} + q2 {123,200}');
   // Every fused rank comes from the global channel only — no attribution drift.
   for (const candidate of run.pool.candidates) {
     for (const rank of candidate.ranks) {

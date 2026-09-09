@@ -73,38 +73,46 @@
  *     ContentType `Answer`) and Article items (zhuanlan-style) — both
  *     well-formed documented shapes (PR #73 review F1).
  *
- * Per-item identity resolution (identity FIRST, PR #73 review F1):
- *   - plain-object item with a zhihu-hosted URL carrying a `/question/<qid>`
- *     segment (shared extractQuestionId) → fusible question candidate;
- *   - zhihu-hosted URL WITHOUT a `/question/<qid>` segment (bare `/answer/<id>`,
- *     zhuanlan article, …) → CANDIDATE_QUESTION_IDENTITY_UNRESOLVED
- *     (class 'provider'): the item is well-formed, but its question identity is
- *     NOT derivable from any documented Item field and answer→question
- *     resolution is UNKNOWN/undocumented — per §18.3 no resolution semantics
- *     are invented (no redirect probing, no network resolution, no
- *     ContentID→question guessing). Machine-readable detail carries the
- *     documented `{ contentType, contentId }` fields verbatim when present
- *     (T06 projects per-item failures to `{ code, class }` in the pool).
- *   - non-zhihu hosts / unusable shapes (non-object item, missing/garbage URL)
- *     → CANDIDATE_IDENTITY_INVALID (class 'contract') — strictly genuinely
- *     unusable items;
- *   - actual candidates then cross the duplicate gate
- *     (CANDIDATE_IDENTITY_DUPLICATE) and the shared URL classifier
- *     (SOURCE_URL_BOUNDARY_REJECTED).
+ * Per-item identity resolution (identity FIRST; PR #73 review F1 + round-2 C2):
+ *   - non-object item, missing/non-string Url, or a URL string that cannot be
+ *     parsed AT ALL → CANDIDATE_IDENTITY_INVALID (class 'contract') — strictly
+ *     genuinely unusable items;
+ *   - parseable URL whose path carries a `/question/<qid>` segment (shared
+ *     extractQuestionId) → fusible question candidate;
+ *   - parseable URL that is NOT a zhihu question-bearing URL — zhihu-hosted
+ *     without a question segment (bare `/answer/<id>`, zhuanlan article) AND
+ *     well-formed external URLs alike → CANDIDATE_QUESTION_IDENTITY_UNRESOLVED
+ *     (class 'provider'): global_search is a FULL-WEB capability (the
+ *     first-party Filter docs use host=="example.com" examples), so a valid
+ *     external result is not a malformed contract item — its question identity
+ *     is simply unresolved. Answer→question resolution is UNKNOWN/undocumented;
+ *     per §18.3 no resolution semantics are invented (no redirect probing, no
+ *     network resolution, no ContentID→question guessing). The failure detail
+ *     is a fixed neutral string — provider-controlled ContentType/ContentID
+ *     values are NEVER echoed (T10 default-deny, PR #73 round-2 C4).
+ *   - actual candidates then cross the shared URL classifier
+ *     (SOURCE_URL_BOUNDARY_REJECTED). There is NO adapter-level per-response
+ *     duplicate policy (PR #73 round-2 C3): every well-formed question-bearing
+ *     item is emitted as a candidate; if one response contains the same
+ *     question more than once, the duplicates reach rrfFusion() and the frozen
+ *     T06 FUSION_DUPLICATE_IN_CHANNEL gate fails the channel closed — the
+ *     adapter never decides duplicate policy that belongs to the fusion layer
+ *     and never creates item-order-dependent RRF contributions.
  *
  * Candidate identity (T06 §5.4 fusion contract): only CANONICAL zhihu question
  * candidates fuse. Item URLs are resolved with the existing shared extractor
  * (`zhihu-answer-grabber` extractQuestionId — an answer item
- * /question/<qid>/answer/... canonicalizes to question <qid>); anything that
- * cannot yield a canonical question id (external 全网信源 items, non-zhihu
- * hosts, malformed URLs) becomes an EXPLICIT per-item failure identity
- * (CANDIDATE_IDENTITY_INVALID) — never fused, never silently dropped. A
- * same-question duplicate within ONE provider response is also an explicit
- * per-item failure (CANDIDATE_IDENTITY_DUPLICATE, first/highest-rank occurrence
- * contributes) — emitting it as a fusible item would fail the whole T06 run
- * (FUSION_DUPLICATE_IN_CHANNEL) for a provider response shape that is legal
- * upstream. source_url reuses the repository's shared `classifyUrl` security
- * classifier; a rejected URL becomes SOURCE_URL_BOUNDARY_REJECTED.
+ * /question/<qid>/answer/... canonicalizes to question <qid>). An item that is
+ * well-formed but yields no derivable question id (bare /answer/<id>,
+ * zhuanlan article, external full-web result) carries the explicit
+ * CANDIDATE_QUESTION_IDENTITY_UNRESOLVED identity; a genuinely unusable item
+ * (non-object / missing Url / unparseable URL string) carries
+ * CANDIDATE_IDENTITY_INVALID — never fused, never silently dropped. There is
+ * NO adapter-level per-response duplicate policy (round-2 C3): same-question
+ * duplicates pass through as candidates and the frozen T06
+ * FUSION_DUPLICATE_IN_CHANNEL gate owns the failure. source_url reuses the
+ * repository's shared `classifyUrl` security classifier; a rejected URL
+ * becomes SOURCE_URL_BOUNDARY_REJECTED.
  *
  * Facts surface: only DOCUMENTED fields pass through
  * (title/contentType/contentId/authorityLevel), each only when present —
@@ -133,10 +141,13 @@
  *                                                    violates the documented
  *                                                    response contract
  * Per-item: CANDIDATE_QUESTION_IDENTITY_UNRESOLVED (provider — well-formed
- *           zhihu item without a derivable question identity) /
- *           CANDIDATE_IDENTITY_INVALID (contract — genuinely unusable item) /
- *           CANDIDATE_IDENTITY_DUPLICATE (contract) /
- *           SOURCE_URL_BOUNDARY_REJECTED (boundary).
+ *           parseable item whose URL yields no derivable question identity:
+ *           zhihu-hosted no-question-segment AND external alike) /
+ *           CANDIDATE_IDENTITY_INVALID (contract — genuinely unusable item:
+ *           non-object / missing Url / unparseable URL string) /
+ *           SOURCE_URL_BOUNDARY_REJECTED (boundary). Duplicate questions are
+ *           NOT a per-item identity: they pass through to the frozen T06
+ *           FUSION_DUPLICATE_IN_CHANNEL gate (PR #73 round-2 C3).
  *
  * Security / privacy: no credentials, no machine-private paths, no untrusted
  * corpus text enters any emitted field; failure details are bounded (500 chars)
@@ -230,45 +241,51 @@ function completenessFromHasMore(hasMore) {
 }
 
 /**
- * Per-item identity resolution (PR #73 review F1) — IDENTITY FIRST:
- *   1. unusable shape (non-object item, or no parseable URL) → INVALID;
- *   2. zhihu-hosted URL with a /question/<qid> segment (shared extractor)
+ * Per-item identity resolution (PR #73 review F1 + round-2 C2/C3/C4) —
+ * IDENTITY FIRST, NO adapter-level duplicate policy:
+ *   1. unusable shape (non-object item, missing/non-string Url, or a URL string
+ *      that cannot be parsed AT ALL) → INVALID;
+ *   2. parseable URL with a /question/<qid> segment (shared extractor)
  *      → fusible question candidate;
- *   3. zhihu-hosted URL WITHOUT a /question/<qid> segment (bare /answer/<id>,
- *      zhuanlan article — documented shapes, PR #73 F1 evidence) → UNRESOLVED:
- *      well-formed, but the question identity is NOT derivable from any
- *      documented Item field and answer→question resolution is UNKNOWN —
- *      per §18.3 no resolution semantics are invented (no redirect probing,
- *      no network resolution, no ContentID→question guessing);
- *   4. non-zhihu host → INVALID (as before).
+ *   3. parseable URL that is NOT a zhihu question-bearing URL — zhihu-hosted
+ *      without a question segment AND well-formed external URLs alike →
+ *      UNRESOLVED (global_search is a full-web capability: an external result
+ *      is well-formed, its zhihu question identity is unresolved). The failure
+ *      detail is a FIXED NEUTRAL STRING — provider-controlled values are never
+ *      echoed (T10 default-deny, round-2 C4).
+ *   4. NO adapter-level duplicate policy (round-2 C3): every question-bearing
+ *      item is emitted as a candidate; same-question duplicates within one
+ *      response reach the frozen T06 FUSION_DUPLICATE_IN_CHANNEL gate and fail
+ *      the channel closed there — the adapter never makes item-order-dependent
+ *      contribution decisions.
  * Deterministic w.r.t. the URL boundary: the shared classifier is consulted
- * only for actual candidates (verified: it marks both bare-answer and
- * zhuanlan URLs clickable — the classifier is not what separates them).
+ * only for actual candidates (verified: it marks bare-answer, zhuanlan and
+ * external https URLs clickable — the classifier is not what separates
+ * candidates from non-candidates; identity resolution is).
  */
-function isZhihuHosted(rawUrl) {
+function isParseableUrl(rawUrl) {
+  if (typeof rawUrl !== 'string') return false;
   try {
-    const host = new URL(rawUrl).hostname.toLowerCase();
-    return host === 'zhihu.com' || host.endsWith('.zhihu.com');
+    new URL(rawUrl);
+    return true;
   } catch {
     return false;
   }
 }
 
-function unresolvedIdentityFailure(rawItem) {
-  const detail = {};
-  if (Object.hasOwn(rawItem, 'ContentType')) detail.contentType = rawItem.ContentType;
-  if (Object.hasOwn(rawItem, 'ContentID')) detail.contentId = rawItem.ContentID;
-  const failure = { code: 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED', class: 'provider' };
-  if (Object.keys(detail).length > 0) failure.detail = detail;
-  return failure;
-}
+/**
+ * T10 default-deny (round-2 C4): the UNRESOLVED identity's detail is a fixed
+ * neutral string; provider-controlled ContentType/ContentID (or anything else
+ * from the item) is never echoed into any serialized surface.
+ */
+const UNRESOLVED_IDENTITY_DETAIL = 'provider item carries no derivable zhihu question identity (documented shape; default-deny detail)';
 
 /**
  * Map one documented `Data.Items[]` entry to a §5.1 contract item.
  * Only canonical zhihu question candidates are fusible; everything else is an
  * explicit per-item failure identity (never silently dropped, never fused).
  */
-function toItem(rawItem, rank, contributedQuestionIds) {
+function toItem(rawItem, rank) {
   const item = {
     identity: { kind: 'candidate', questionId: '' },
     provenance: {
@@ -280,37 +297,28 @@ function toItem(rawItem, rank, contributedQuestionIds) {
     facts: {},
   };
 
-  if (!isPlainObject(rawItem)) {
-    // Genuinely unusable shape (non-object) — explicit rejection.
+  if (!isPlainObject(rawItem) || !isParseableUrl(rawItem.Url)) {
+    // Genuinely unusable shape (non-object, missing/non-string Url, unparseable
+    // URL string) — explicit rejection.
     item.failure = { code: 'CANDIDATE_IDENTITY_INVALID', class: 'contract' };
     return item;
   }
 
   const questionId = extractQuestionId(rawItem);
   if (!questionId) {
-    if (isZhihuHosted(rawItem.Url)) {
-      // Well-formed zhihu-hosted item whose URL carries no /question/<qid>
-      // segment (bare /answer/<id>, zhuanlan article, …): question identity
-      // UNKNOWN from documented fields — never invented (§18.3), explicit
-      // machine-readable non-candidate identity with the documented
-      // { contentType, contentId } detail when present.
-      item.failure = unresolvedIdentityFailure(rawItem);
-      return item;
-    }
-    // Non-zhihu host / missing-garbage URL: cannot become a question candidate.
-    item.failure = { code: 'CANDIDATE_IDENTITY_INVALID', class: 'contract' };
+    // Well-formed parseable item whose URL yields no derivable question
+    // identity (bare /answer/<id>, zhuanlan article, external full-web
+    // result): question identity UNKNOWN from documented fields — never
+    // invented (§18.3); explicit machine-readable non-candidate identity with
+    // a fixed neutral detail (no provider-controlled echo).
+    item.failure = {
+      code: 'CANDIDATE_QUESTION_IDENTITY_UNRESOLVED',
+      class: 'provider',
+      detail: UNRESOLVED_IDENTITY_DETAIL,
+    };
     return item;
   }
   item.identity.questionId = questionId;
-
-  if (contributedQuestionIds.has(questionId)) {
-    // Same-question duplicate within ONE response: the highest-ranked
-    // occurrence already contributes; a later one must NOT be emitted as a
-    // fusible item (that would fail the whole T06 run with
-    // FUSION_DUPLICATE_IN_CHANNEL). Explicit, machine-readable rejection.
-    item.failure = { code: 'CANDIDATE_IDENTITY_DUPLICATE', class: 'contract' };
-    return item;
-  }
 
   // §5.1: source_url must be boundary-validated — reuse the shared classifier.
   const classification = classifyUrl(rawItem.Url);
@@ -330,8 +338,6 @@ function toItem(rawItem, rank, contributedQuestionIds) {
   for (const [sourceKey, factKey] of FACT_FIELDS) {
     if (Object.hasOwn(rawItem, sourceKey)) item.facts[factKey] = rawItem[sourceKey];
   }
-
-  contributedQuestionIds.add(questionId);
   return item;
 }
 
@@ -476,8 +482,7 @@ export function createGlobalSearchAdapter({ transport, now = defaultNow } = {}) 
         });
       }
 
-      const contributedQuestionIds = new Set();
-      const items = data.Items.map((rawItem, index) => toItem(rawItem, index + 1, contributedQuestionIds));
+      const items = data.Items.map((rawItem, index) => toItem(rawItem, index + 1));
 
       return {
         ok: true,

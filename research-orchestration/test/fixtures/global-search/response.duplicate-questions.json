@@ -1,0 +1,23 @@
+{
+  "_provenance": "P1-T17 fixture (PR #73 round-2 C3): a legal-upstream page containing the SAME question twice (two different answers under /question/300). The adapter passes both through as candidates; the frozen T06/rrf FUSION_DUPLICATE_IN_CHANNEL gate owns duplicate policy and fails the channel closed. Values are synthetic; no live payload, no credentials.",
+  "Code": 0,
+  "Data": {
+    "HasMore": false,
+    "Items": [
+      {
+        "Title": "问题三百的回答一",
+        "ContentType": "answer",
+        "ContentID": "ans-9001",
+        "Url": "https://www.zhihu.com/question/300/answer/9001",
+        "AuthorityLevel": 3
+      },
+      {
+        "Title": "问题三百的回答二",
+        "ContentType": "answer",
+        "ContentID": "ans-9002",
+        "Url": "https://www.zhihu.com/question/300/answer/9002",
+        "AuthorityLevel": 1
+      }
+    ]
+  }
+}

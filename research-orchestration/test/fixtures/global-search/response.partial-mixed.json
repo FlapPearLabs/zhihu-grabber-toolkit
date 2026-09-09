@@ -1,5 +1,5 @@
 {
-  "_provenance": "P1-T17 fixture grounded in discovery/p1-t03-retrieval-provider-qualification (GATE-3, Issue #35): HasMore=true partial page with a MIXED item population — question items, a non-zhihu external item, a same-question duplicate, and a non-https URL — plus an undocumented upstream 'RankingScore' field (the T03-recorded HTTP-API/MCP surface asymmetry; the HTTP API doc does NOT document a numeric RankingScore). Values are synthetic; no live payload, no credentials.",
+  "_provenance": "P1-T17 fixture grounded in discovery/p1-t03-retrieval-provider-qualification (GATE-3, Issue #35): HasMore=true partial page with a MIXED item population — question items, a non-zhihu external item (full-web capability; well-formed parseable external URL → CANDIDATE_QUESTION_IDENTITY_UNRESOLVED, PR #73 round-2 C2), a non-https URL — plus an undocumented upstream 'RankingScore' field (the T03-recorded HTTP-API/MCP surface asymmetry; the HTTP API doc does NOT document a numeric RankingScore). Per-response duplicate policy is NOT the adapter's (PR #73 round-2 C3): a duplicate-bearing page is covered by response.duplicate-questions.json and must fail closed at the frozen T06 FUSION_DUPLICATE_IN_CHANNEL gate. Values are synthetic; no live payload, no credentials.",
   "Code": 0,
   "Data": {
     "HasMore": true,
@@ -20,10 +20,10 @@
         "AuthorityLevel": 4
       },
       {
-        "Title": "同一问题的另一条回答",
+        "Title": "另一条回答条目",
         "ContentType": "answer",
         "ContentID": "ans-9002",
-        "Url": "https://www.zhihu.com/question/300/answer/9002",
+        "Url": "https://www.zhihu.com/question/600/answer/9002",
         "AuthorityLevel": 1
       },
       {
