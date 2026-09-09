@@ -267,6 +267,15 @@
 - **CODE gate（Phase 4 — Comments Enrichment）**：PASS（2026-08-11），已纳入 accepted project baseline。
 - 建议：停止无限制地静态加 gate，进入真实使用验证与按 Phase 推进。
 
+## P1 Final Integration Runtime Path（P1-T15 实现沉淀；随本票 branch 进入 review）
+
+- **P1 运行时组合唯一 owner**：`research-orchestration/lib/coverage-final-integration.mjs` —— T06-T14 组件此前仅有库/测试面、无运行时组合；T15 起完整 P1 运行时路径 = persisted plan → 检索轮（round → CoverageState → saturation/budget/provider-failure 决策）→ T08 selection（ambiguity → 至多一次 clarification）→ T09 multi-group → T11/T12 RCE → T13 analysis → T14 synthesis → T15 最终对账 → 披露。严格单遍无环收敛序（convergence journal 逐段校验；重复/跳段/乱序 fail closed）；检索轮的合同内语义 = 重执行同一 planned retrieval（targeted re-query 属 #53，不在基线内）。
+- **100% Analysis Coverage 双保险合同（durable）**：断言只来自 frozen `reconcileFinalCoverage` 的机械集合相等（selected == mapped == analyzed 且 evidence refs 干净）；T14 pre-synthesis guard PASS 不替代、不消除 T15 最终对账；partial 一律以缺口证据披露（missingAnalyzed / missingMapped），绝不渲染为 complete；最终产物 `coverage-final.json` 的 100% 声明只来自该对账 flag（与 mode 命名无关）。
+- **所有权 pin（durable）**：`fusedCandidateCount` = 检索/融合候选数（controller 为确定性 last-writer，selection 后 re-pin，与执行顺序无关）；`fusedGroupCount` = T08 专属选中组数；五个 `new_*_rate` 诊断 = T14 最后写（journal 强制 T13-before-T14 次序）；`novelty_gain` = T06/controller 专属。
+- **analyzed set 单写者不变**：T13 hook（经 `runPerGroupAnalysis` 内部路径）是 analyzed source-set identity 唯一写入者；integration owner 不 import T13 hook、不持 T13 owner token（机械测试 pin）。
+- **v0.3 render 消费缝**：`orchestrator.mjs loadP1FinalCoverage(workDir)` —— 工作目录存在 P1 最终覆盖产物时，render 的 100% 声明只来自其对账断言（partial 不渲染为 complete）；产物缺失时 v0.3 行为不变；产物畸形 fail closed（`coverage_failed`）。
+- **Windows 分隔符可移植事实**：T09 capture 的 work-relative refs 在 Windows 为反斜杠；T12 适配器可消费，但 T13 provenance authority 的 namespace 前缀检查要求 POSIX 分隔符。integration owner 在组合缝对 manifest refs 做分隔符归一（语义恒等：selection identity / 产物 hash 不变），POSIX 上为恒等变换，Windows 上按 producer 同一 canonical-JSON 域重算自校验 manifestHash；T09/T12/T13 模块本身未被修改。
+
 ## Maintenance Contract
 
 - 本文件是 **Git tracked durable project memory**；GitHub master 是最终权威版本。
