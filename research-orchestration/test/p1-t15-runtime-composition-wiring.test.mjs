@@ -41,10 +41,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import http from 'node:http';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { planHash } from '../lib/plan-contract.mjs';
 import { createProviderSeam, CAPABILITY_SEARCH, AUTH_CLASS_OFFICIAL_SECRET } from '../lib/provider-seam.mjs';
@@ -475,4 +476,248 @@ test('CE7: the production research runtime adapter sends the OWNER-authorized re
     fetchImpl: async () => ({ ok: true, json: async () => ({ object: 'chat.completion', model: 'deepseek-flash', choices: [{ message: { role: 'assistant', content: '{"main":[]}' }, finish_reason: 'length' }] }) }),
   });
   await assert.rejects(() => truncated.analyze({ projection: 'x' }), (e) => String(e?.message ?? '').length > 0);
+});
+
+// ---------------------------------------------------------------------------
+// D3 repair (Issue #47): global_search sync-bridge child LIFECYCLE
+// ---------------------------------------------------------------------------
+
+/**
+ * OWNER RULING (2026-09-10/11, mechanically proven by the P1-T16 canonical
+ * dogfood): the pre-repair -e bridge script wrote the COMPLETE provider
+ * response to stdout and then called process.exit() from inside the async
+ * stdin 'end' continuation. On Windows that races libuv's async stdin
+ * teardown ("Assertion failed: !(handle->flags & UV_HANDLE_CLOSING),
+ * src\win\async.c", exit 0xC0000409), so the parent's (correct) nonzero-exit
+ * validation classified a COMPLETED provider response as a transport
+ * failure. The repair owns the child LIFECYCLE only:
+ *
+ *   - the child core is an exported, injectable module
+ *     (lib/global-search-bridge-child.mjs → runGlobalSearchBridgeChild) that
+ *     RESOLVES the secret itself (ZHIHU_SECRET env → zhihu_secret.txt in the
+ *     stdin-passed secretDirs; the key never crosses to stdout/artifacts),
+ *     performs the fetch, writes only { status, body } to an injected
+ *     writer, and RETURNS the exit-code intent (0 success / nonzero
+ *     failure) — it never calls process.exit() mid-async;
+ *   - the composer's -e script becomes a THIN wrapper: parse stdin, import
+ *     the child module (URL passed via stdin), set process.exitCode from the
+ *     returned intent, and let the process drain naturally;
+ *   - the parent's exit/status validation in createSyncGlobalSearchTransport
+ *     stays UNCHANGED: nonzero child exit (+ any stdout) is STILL a
+ *     transport failure — never a "pretend success";
+ *   - HTTP-level provider responses (including non-2xx) remain COMPLETED
+ *     exchanges (exit intent 0) whose {status, body} pass through verbatim.
+ *
+ * The OLD crash was timing-dependent (Windows scheduler timing between the
+ * completed response write and libuv teardown): D3-CE4b's real child spawns
+ * are the closest honest offline reproducer of that racing lifecycle, not a
+ * deterministic proof the old binary crashed.
+ */
+
+const D3_BRIDGE_CHILD_URL = pathToFileURL(path.join(RO_ROOT, 'lib', 'global-search-bridge-child.mjs')).href;
+const D3_ENDPOINT = 'https://developer.zhihu.com/api/v1/content/global_search';
+
+/** Collecting writer with the same write(s: string) shape as process.stdout. */
+function d3CollectingWriter() {
+  return { writes: [], write(s) { this.writes.push(String(s)); } };
+}
+
+test('D3-CE1: bridge child success writes the COMPLETE {status, body} payload and returns exit intent 0 (natural drain)', async () => {
+  const { runGlobalSearchBridgeChild } = await import('../lib/global-search-bridge-child.mjs');
+  const body = JSON.stringify({ Code: 0, Data: { HasMore: false, Items: [{ Id: 1, Title: 'ok', ContentText: 'x', Url: 'https://www.zhihu.com/question/1' }] } });
+  let seenUrl = null;
+  let seenOpts = null;
+  const writer = d3CollectingWriter();
+  const code = await runGlobalSearchBridgeChild({
+    request: { url: D3_ENDPOINT, query: 'AI 编程', count: 3, secretDirs: [] },
+    fetchImpl: async (url, opts) => {
+      seenUrl = url;
+      seenOpts = opts;
+      return { status: 200, text: async () => body };
+    },
+    env: { ZHIHU_SECRET: 'd3-ce1-secret' },
+    writer,
+  });
+  assert.equal(code, 0, 'success = exit intent 0 (the parent accepts only exit 0)');
+  assert.equal(writer.writes.length, 1, 'exactly one uninterrupted payload write');
+  assert.deepEqual(JSON.parse(writer.writes[0]), { status: 200, body }, 'the COMPLETE response must reach the wire');
+  assert.match(seenUrl, /^https:\/\/developer\.zhihu\.com\/[^?]+\?[^]*Query=AI\+%E7%BC%96%E7%A8%8B&Count=3$/,
+    'the child assembles the endpoint URL with the Query/Count request contract');
+  assert.equal(seenOpts.method, 'GET');
+  assert.equal(seenOpts.headers.Authorization, 'Bearer d3-ce1-secret', 'the secret resolves inside the child and goes only into the request header');
+});
+
+test('D3-CE2: bridge child fetch rejection = NONZERO exit intent, mapped via the unchanged parent validation to PROVIDER_TRANSPORT_FAILURE semantics', async () => {
+  const { runGlobalSearchBridgeChild } = await import('../lib/global-search-bridge-child.mjs');
+  const { createGlobalSearchAdapter } = await import('../lib/global-search-provider.mjs');
+  const writer = d3CollectingWriter();
+  const code = await runGlobalSearchBridgeChild({
+    request: { url: D3_ENDPOINT, query: 'q', count: 3, secretDirs: [] },
+    fetchImpl: async () => { throw new Error('connect ECONNREFUSED (offline fixture)'); },
+    env: { ZHIHU_SECRET: 'd3-ce2-secret' },
+    writer,
+  });
+  assert.notEqual(code, 0, 'transport failure must be a NONZERO exit intent (never a forged success)');
+  assert.deepEqual(JSON.parse(writer.writes[0]), { status: 0, body: '' });
+
+  // Parent side of the chain (validation unchanged): a nonzero child exit
+  // makes the real transport throw; the adapter maps that throw to the
+  // neutral transport-class failure identity. (D3-CE3 pins the throw itself
+  // end-to-end through the real spawnSync transport.)
+  const adapter = createGlobalSearchAdapter({
+    transport: () => { throw new Error('global_search transport failed (exit 1)'); },
+    now: FIXED_NOW,
+  });
+  const result = adapter.retrieve({ query: 'q', count: 3 });
+  assert.equal(result.ok, false);
+  assert.equal(result.failure.code, 'PROVIDER_TRANSPORT_FAILURE');
+  assert.equal(result.failure.class, 'transport');
+});
+
+test('D3-CE3: parent validation unchanged — a nonzero child exit is a transport failure EVEN when complete stdout is present', async () => {
+  const composer = await import('../lib/p1-runtime-composer.mjs');
+  const { createSyncGlobalSearchTransport, GLOBAL_SEARCH_BRIDGE_SCRIPT } = composer;
+  // static lifecycle guard: the repaired wrapper must never force-terminate
+  assert.doesNotMatch(GLOBAL_SEARCH_BRIDGE_SCRIPT, /process\.exit\s*\(/,
+    'the bridge wrapper must never call process.exit() mid-async (D3 lifecycle ruling)');
+
+  // stub child module: writes a COMPLETE valid payload to stdout, then
+  // reports an abnormal exit intent — the exact "stdout present + abnormal
+  // exit" wire facts the unchanged parent validation must reject.
+  const stubPath = path.join(tmpWork('d3-ce3-'), 'stub-child.mjs');
+  fs.writeFileSync(stubPath, [
+    'export async function runGlobalSearchBridgeChild() {',
+    '  process.stdout.write(JSON.stringify({ status: 200, body: JSON.stringify({ Code: 0, Items: [] }) }));',
+    '  return 1; // abnormal exit intent while COMPLETE stdout is present',
+    '}',
+    '',
+  ].join('\n'));
+
+  // (a) the real wrapper + stub child: complete stdout reaches the wire AND
+  // the abnormal exit intent propagates as a nonzero process status.
+  const wrapperRes = spawnSync(process.execPath, ['--input-type=module', '-e', GLOBAL_SEARCH_BRIDGE_SCRIPT], {
+    encoding: 'utf8',
+    input: JSON.stringify({ url: D3_ENDPOINT, query: 'q', count: 1, secretDirs: [], childModuleUrl: pathToFileURL(stubPath).href }),
+    timeout: 30_000,
+  });
+  assert.equal(wrapperRes.status, 1, `stub child abnormal exit must propagate, got ${wrapperRes.status}; stderr=${wrapperRes.stderr}`);
+  assert.deepEqual(JSON.parse(wrapperRes.stdout), { status: 200, body: JSON.stringify({ Code: 0, Items: [] }) });
+
+  // (b) the REAL transport (spawnSync + UNCHANGED validation) sees the same
+  // wire facts and MUST throw — stdout presence can never buy a success.
+  const seam = 'ZHIHU_GLOBAL_SEARCH_BRIDGE_CHILD_URL';
+  const prev = process.env[seam];
+  process.env[seam] = pathToFileURL(stubPath).href;
+  try {
+    const transport = createSyncGlobalSearchTransport();
+    assert.throws(() => transport({ query: 'q', count: 1 }), /global_search transport failed \(exit 1\)/,
+      'nonzero child exit with stdout present must STILL be a transport failure (never pretend success)');
+  } finally {
+    if (prev === undefined) delete process.env[seam];
+    else process.env[seam] = prev;
+  }
+});
+
+test('D3-CE4a: 50 rapid invocations of the exported child core complete without unhandled rejection or teardown race', async () => {
+  const { runGlobalSearchBridgeChild } = await import('../lib/global-search-bridge-child.mjs');
+  const body = JSON.stringify({ Code: 0, Items: [] });
+  const fetchImpl = async () => ({ status: 200, text: async () => body });
+  for (let i = 0; i < 50; i++) {
+    const writer = d3CollectingWriter();
+    const code = await runGlobalSearchBridgeChild({
+      request: { url: D3_ENDPOINT, query: `q${i}`, count: 1, secretDirs: [] },
+      fetchImpl,
+      env: { ZHIHU_SECRET: `d3-ce4-${i}` },
+      writer,
+    });
+    assert.equal(code, 0, `invocation ${i} must complete with exit intent 0`);
+    assert.deepEqual(JSON.parse(writer.writes[0]), { status: 200, body }, `invocation ${i} must deliver the complete payload`);
+  }
+});
+
+test('D3-CE4b: real bridge child process (node -e wrapper) against a local server — 3 consecutive spawns, each exit 0 with COMPLETE stdout', async () => {
+  // Closest honest offline reproducer of the OLD racing lifecycle (async
+  // fetch completion followed by process teardown). The old crash was
+  // timing-dependent on Windows; these spawns exercise the repaired natural
+  // drain deterministically.
+  const { GLOBAL_SEARCH_BRIDGE_SCRIPT } = await import('../lib/p1-runtime-composer.mjs');
+  const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ Code: 0, Data: { HasMore: false, Items: [{ Id: 9, Title: 't', ContentText: 'c', Url: 'https://www.zhihu.com/question/9' }] } }));
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+  try {
+    const { spawn } = await import('node:child_process');
+    for (let i = 0; i < 3; i++) {
+      const res = await new Promise((resolve) => {
+        const c = spawn(process.execPath, ['--input-type=module', '-e', GLOBAL_SEARCH_BRIDGE_SCRIPT], {
+          env: { ...process.env, ZHIHU_SECRET: 'd3-ce4b-secret' },
+        });
+        let stdout = '';
+        let stderr = '';
+        c.stdout.on('data', d => stdout += d.toString('utf8'));
+        c.stderr.on('data', d => stderr += d.toString('utf8'));
+        c.on('error', err => resolve({ status: 999, stdout, stderr: err.message }));
+        c.on('close', code => resolve({ status: code, stdout, stderr }));
+        
+        c.stdin.write(JSON.stringify({
+          url: `http://127.0.0.1:${port}/api/v1/content/global_search`,
+          query: 'AI',
+          count: 2,
+          secretDirs: [],
+          childModuleUrl: D3_BRIDGE_CHILD_URL,
+        }));
+        c.stdin.end();
+      });
+      assert.equal(res.status, 0, `spawn ${i} must drain to a natural exit 0, got ${res.status}; stderr=${res.stderr}`);
+      const out = JSON.parse(res.stdout);
+      assert.equal(out.status, 200, `spawn ${i} must deliver the COMPLETE provider payload`);
+      const payload = JSON.parse(out.body);
+      assert.equal(payload.Code, 0);
+      assert.ok(Array.isArray(payload.Data?.Items) && payload.Data.Items.length === 1, `spawn ${i} body must be the complete envelope`);
+      assert.ok(!res.stdout.includes('d3-ce4b-secret') && !(res.stderr ?? '').includes('d3-ce4b-secret'),
+        'the access secret must never reach the bridge stdout/stderr');
+    }
+  } finally {
+    server.close();
+    server.closeAllConnections?.();
+  }
+});
+
+test('D3-CE5: the bridge never emits the access secret — writes are {status, body} only and secret resolution stays inside', async () => {
+  const { runGlobalSearchBridgeChild } = await import('../lib/global-search-bridge-child.mjs');
+  const secret = 'd3-ce5-secret-DO-NOT-EMIT';
+  const secretDir = tmpWork('d3-ce5-');
+  fs.writeFileSync(path.join(secretDir, 'zhihu_secret.txt'), `${secret}\n`, 'utf8');
+  const emptyDir = tmpWork('d3-ce5-empty-');
+  const body = JSON.stringify({ Code: 0, Items: [] });
+  const scenarios = [
+    { name: 'file-resolved secret', env: {}, secretDirs: [secretDir], expectCode: 0 },
+    { name: 'env-resolved secret', env: { ZHIHU_SECRET: secret }, secretDirs: [], expectCode: 0 },
+    { name: 'no secret resolves', env: {}, secretDirs: [emptyDir], expectCode: 1 },
+  ];
+  for (const s of scenarios) {
+    const writer = d3CollectingWriter();
+    const code = await runGlobalSearchBridgeChild({
+      request: { url: D3_ENDPOINT, query: 'q', count: 1, secretDirs: s.secretDirs },
+      fetchImpl: async () => ({ status: 200, text: async () => body }),
+      env: s.env,
+      writer,
+    });
+    assert.equal(code, s.expectCode, `exit intent (${s.name})`);
+    assert.ok(writer.writes.length >= 1, `at least one write (${s.name})`);
+    for (const w of writer.writes) {
+      const parsed = JSON.parse(w);
+      assert.deepEqual(Object.keys(parsed).sort(), ['body', 'status'], `writes must be {status, body} ONLY (${s.name})`);
+      assert.equal(typeof parsed.status, 'number');
+      assert.equal(typeof parsed.body, 'string');
+      assert.ok(!w.includes(secret), `the secret must never appear in a bridge write (${s.name})`);
+    }
+    if (s.expectCode !== 0) {
+      assert.deepEqual(JSON.parse(writer.writes[0]), { status: 0, body: '' }, `fail-closed payload shape (${s.name})`);
+    } else {
+      assert.equal(JSON.parse(writer.writes[0]).status, 200, `completed exchange passes the provider status through (${s.name})`);
+    }
+  }
 });

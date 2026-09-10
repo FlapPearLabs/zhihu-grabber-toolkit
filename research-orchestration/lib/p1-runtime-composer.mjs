@@ -139,47 +139,41 @@ const CFC_CLARIFICATION_REQUIRED = 'clarification_required';
 /**
  * The bridge child resolves the access secret ITSELF (ZHIHU_SECRET env, then
  * the git-ignored zhihu_secret.txt at cwd/repo root — the same resolution the
- * grabber preflight exposes) and never prints it. Only { url, query, count }
- * cross the stdin boundary; the parent receives only { status, body }.
+ * grabber preflight exposes) and never prints it. Only { url, query, count,
+ * childModuleUrl } cross the stdin boundary; the parent receives only
+ * { status, body }.
+ *
+ * D3 LIFECYCLE REPAIR (Issue #47, owner ruling 2026-09-10/11): the child
+ * core (secret resolution + fetch + { status, body } write + exit intent)
+ * lives in lib/global-search-bridge-child.mjs as an exported, injectable
+ * function; this -e script is a THIN WRAPPER that sets process.exitCode from
+ * the returned intent and lets the process drain naturally. It must NEVER
+ * call process.exit() mid-async: on Windows that explicit exit races libuv's
+ * async stdin teardown ("Assertion failed: !(handle->flags &
+ * UV_HANDLE_CLOSING), src\win\async.c", exit 0xC0000409), so a fully-written
+ * success response was misclassified as a transport failure by the parent's
+ * (correct) nonzero-exit validation.
  */
-const GLOBAL_SEARCH_BRIDGE_SCRIPT = `
+export const GLOBAL_SEARCH_BRIDGE_SCRIPT = `
 const chunks = [];
 process.stdin.on('data', (c) => chunks.push(c));
 process.stdin.on('end', async () => {
-  const finish = (payload, code = 0) => { process.stdout.write(JSON.stringify(payload)); process.exit(code); };
-  let req = null;
-  try { req = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { finish({ status: 0, body: '' }, 1); }
-  const fs = await import('node:fs');
-  const pathMod = await import('node:path');
-  let key = (process.env.ZHIHU_SECRET ?? '').trim();
-  if (!key) {
-    for (const dir of Array.isArray(req.secretDirs) ? req.secretDirs : []) {
-      try {
-        const raw = fs.readFileSync(pathMod.join(String(dir), 'zhihu_secret.txt'), 'utf8').trim();
-        if (raw) { key = raw; break; }
-      } catch { /* try next location */ }
-    }
-  }
-  if (!key) finish({ status: 0, body: '' }, 1);
   try {
-    const url = new URL(String(req.url));
-    url.searchParams.set('Query', String(req.query));
-    url.searchParams.set('Count', String(req.count));
-    const res = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        Authorization: 'Bearer ' + key,
-        'X-Request-Timestamp': String(Math.floor(Date.now() / 1000)),
-        'Content-Type': 'application/json',
-      },
-      redirect: 'error',
-      signal: AbortSignal.timeout(25_000),
-    });
-    const body = await res.text();
-    finish({ status: res.status, body });
-  } catch { finish({ status: 0, body: '' }, 0); }
+    const req = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    if (typeof req.childModuleUrl !== 'string' || req.childModuleUrl.length === 0) {
+      throw new Error('bridge child module url missing');
+    }
+    const child = await import(req.childModuleUrl);
+    const code = await child.runGlobalSearchBridgeChild({ request: req, writer: process.stdout });
+    process.exitCode = code === 0 ? 0 : 1;
+  } catch {
+    process.exitCode = 1;
+  }
 });
 `;
+
+/** The composition-layer bridge child lifecycle module (D3 repair, Issue #47). */
+const GLOBAL_SEARCH_BRIDGE_CHILD_URL = new URL('./global-search-bridge-child.mjs', import.meta.url).href;
 
 /**
  * Build the production global_search transport: a SYNC IO boundary that runs
@@ -192,7 +186,16 @@ export function createSyncGlobalSearchTransport({ timeoutMs = 30_000 } = {}) {
     const res = spawnSync(process.execPath, ['--input-type=module', '-e', GLOBAL_SEARCH_BRIDGE_SCRIPT], {
       encoding: 'utf8',
       cwd: REPO_ROOT,
-      input: JSON.stringify({ url: GLOBAL_SEARCH_ENDPOINT, query, count, secretDirs: [process.cwd(), REPO_ROOT] }),
+      input: JSON.stringify({
+        url: GLOBAL_SEARCH_ENDPOINT,
+        query,
+        count,
+        secretDirs: [process.cwd(), REPO_ROOT],
+        // Test/ops seam ONLY (never credential material): lets an offline
+        // test point the wrapper at a stub child module. Defaults to the
+        // composition-layer lifecycle module shipped beside this composer.
+        childModuleUrl: process.env.ZHIHU_GLOBAL_SEARCH_BRIDGE_CHILD_URL || GLOBAL_SEARCH_BRIDGE_CHILD_URL,
+      }),
       timeout: timeoutMs,
       maxBuffer: 16 * 1024 * 1024,
     });
