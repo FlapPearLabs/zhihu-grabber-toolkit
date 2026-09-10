@@ -38,7 +38,12 @@
  *                             (incl. isolation violations like model-visible tools)
  *     planner_invalid       — runtime answered but the proposal is not a valid
  *                             plan per the existing T04 contract (unparseable or
- *                             schema-invalid output; model-quality failure)
+ *                             schema-invalid output) or violates the
+ *                             planner-specific post-model groupKey contract
+ *                             (model-generated pre-retrieval plans must have
+ *                             groupKey null — no source-identity authority;
+ *                             owner ruling 2026-09-10/11, Issue #48 D1 repair);
+ *                             model-quality failure
  *
  * 既有隔离实现 reuse (ticket IN_SCOPE "经既有 tool-less runtime 通道 / 沿用既有
  * 隔离实现"): this module follows the exact channel discipline of the reviewed
@@ -190,7 +195,8 @@ export function buildPlannerSystemPrompt() {
     'Requirements:',
     '- "schemaVersion" must be exactly 1.',
     '- "queryVariants" and "aspects" must each contain at least 1 entry; every list has at most 32 entries; every string is non-empty and at most 300 characters.',
-    '- "terminologyVariants" entries use exactly {"term", "variants"}; "sourceGroupIntents" entries use exactly {"intent", "constraints", "groupKey"}; "groupKey" may be null.',
+    '- "terminologyVariants" entries use exactly {"term", "variants"}; "sourceGroupIntents" entries use exactly {"intent", "constraints", "groupKey"}; every "groupKey" value MUST be null.',
+    '- "groupKey" MUST be null: a model-generated, pre-retrieval plan has no source-identity authority and cannot know Zhihu question IDs. Never guess, invent, or label a groupKey (no semantic labels, no numeric IDs); express grouping semantics only through "intent" and "constraints".',
     '- Semantics only: propose diverse query variants, research aspects, key entities, opposing framings, terminology variants, and source-group intent/constraints for retrieving public Zhihu discussions about the user request. Do not decide which sources are valid, do not select sources, do not verify anything.',
     'Never call tools, never access the network or filesystem, never execute code.',
     'Never include any other field, never include credentials or machine-private paths, never include reasoning outside the JSON object.',
@@ -377,6 +383,31 @@ export async function proposeResearchPlan({
   const v = validatePlanJson(content);
   if (!v.ok) {
     return { ok: false, reason: PLANNER_FAILURE_PLANNER_INVALID, issues: v.issues, runtime: identity };
+  }
+
+  // 6b. Planner-side post-model groupKey contract gate (owner ruling
+  // 2026-09-10/11, Issue #48 D1 repair): a model-generated, PRE-RETRIEVAL plan
+  // has NO source-identity authority — it cannot know Zhihu question IDs — so
+  // the planner model-output contract requires every groupKey to be null. A
+  // non-null groupKey (semantic label or numeric-looking string) would be
+  // treated by the frozen T08 selector as a HARD canonical questionId
+  // exact-match gate and fail a real run closed
+  // (selection_constraint_unevaluable). FAIL CLOSED here, BEFORE persistence:
+  // planner_invalid with a structured issue path; NO silent coercion, no
+  // rewriting to null, nothing persisted. The GENERIC T04 plan contract
+  // (plan-contract.mjs) is deliberately UNCHANGED — callers that legitimately
+  // possess canonical identities keep non-null groupKey.
+  const groupKeyIssues = [];
+  for (let i = 0; i < v.plan.sourceGroupIntents.length; i += 1) {
+    if (v.plan.sourceGroupIntents[i].groupKey != null) {
+      groupKeyIssues.push({
+        path: `sourceGroupIntents[${i}].groupKey`,
+        message: 'model-generated pre-retrieval plans must have a null groupKey (the planner has no source-identity authority and cannot know Zhihu question IDs); a non-null groupKey is fail-closed, never coerced',
+      });
+    }
+  }
+  if (groupKeyIssues.length > 0) {
+    return { ok: false, reason: PLANNER_FAILURE_PLANNER_INVALID, issues: groupKeyIssues, runtime: identity };
   }
 
   // 7. Persist via the existing T04 validate-then-write contract.

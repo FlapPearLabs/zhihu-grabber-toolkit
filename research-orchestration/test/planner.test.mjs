@@ -18,6 +18,8 @@
  *   5. runtime identity recorded faithfully
  *   6. credentials never enter prompt / output / state
  *   7. USER_REQUEST input validation (Spec §10.1 class; not UNTRUSTED_CORPUS)
+ *   8. OWNER RULING 2026-09-10/11 (Issue #48 D1 repair): model-generated
+ *      pre-retrieval plans must have groupKey === null (D1-CE1..CE5)
  */
 
 import { test } from 'node:test';
@@ -31,6 +33,7 @@ import {
   PLANNER_FAILURE_USER_REQUEST_INVALID,
   PLANNER_FAILURE_RUNTIME_UNAVAILABLE,
   PLANNER_FAILURE_PLANNER_INVALID,
+  buildPlannerSystemPrompt,
   proposeResearchPlan,
 } from '../lib/planner.mjs';
 import {
@@ -38,6 +41,7 @@ import {
   PLAN_FAILURE_PLANNER_INVALID,
   loadPlan,
   planHash,
+  validatePlanInput,
 } from '../lib/plan-contract.mjs';
 
 // ---------------------------------------------------------------------------
@@ -64,7 +68,11 @@ const VALID_PLAN_TEXT = JSON.stringify({
   opposingFramings: ['Agent 已可大规模落地', 'Agent 仍不成熟'],
   terminologyVariants: [{ term: 'Agent', variants: ['智能体', '代理'] }],
   sourceGroupIntents: [
-    { intent: '关注反方观点', constraints: ['至少包含一个高赞反对回答'], groupKey: 'controversy' },
+    // groupKey MUST be null in planner MODEL output (owner ruling 2026-09-10/11,
+    // Issue #48 D1 repair): a pre-retrieval model-generated plan has no
+    // source-identity authority. The generic T04 contract still accepts a
+    // non-null groupKey for callers with canonical identities (D1-CE4).
+    { intent: '关注反方观点', constraints: ['至少包含一个高赞反对回答'], groupKey: null },
   ],
 });
 
@@ -487,4 +495,87 @@ test('P1-T18 repair P1-1: legitimate USER_REQUEST with tilde / drive-colon text 
   });
   assert.equal(res.ok, true, 'legitimate tilde/drive-like request must be accepted');
   assert.equal(capture.length, 1, 'valid request proceeds to egress');
+});
+
+// ---------------------------------------------------------------------------
+// 8. OWNER RULING 2026-09-10/11 (Issue #48 D1 repair): planner model-output
+//    contract — sourceGroupIntents[*].groupKey MUST be null. A pre-retrieval,
+//    model-generated plan has NO source-identity authority (it cannot know
+//    Zhihu question IDs), and a non-null groupKey (semantic label or
+//    numeric-looking string) would poison the frozen T08 exact-match groupKey
+//    gate (selection_constraint_unevaluable). The planner applies a
+//    deterministic post-model contract gate BEFORE persistence: non-null
+//    groupKey in model output → planner_invalid FAIL CLOSED (no silent
+//    coercion, no rewriting to null, nothing persisted). The GENERIC T04
+//    plan contract (plan-contract.mjs) is UNCHANGED — callers that
+//    legitimately possess canonical identities keep non-null groupKey.
+// ---------------------------------------------------------------------------
+
+/** Plan text identical to a valid proposal except sourceGroupIntents[*].groupKey. */
+function planTextWithGroupKey(groupKey) {
+  return JSON.stringify({
+    ...JSON.parse(VALID_PLAN_TEXT),
+    sourceGroupIntents: [{ intent: '关注反方观点', constraints: ['至少包含一个高赞反对回答'], groupKey }],
+  });
+}
+
+test('OWNER RULING D1-CE1: model-emitted semantic groupKey ("pro-replacement") → planner_invalid FAIL_CLOSED, nothing persisted', async () => {
+  const workDir = tmpWorkDir();
+  const res = await proposeResearchPlan({
+    userRequest: '研究知乎上对量化交易的讨论', workDir,
+    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithGroupKey('pro-replacement'))), credential: CREDENTIAL,
+  });
+  assert.equal(res.ok, false);
+  assert.equal(res.reason, PLANNER_FAILURE_PLANNER_INVALID);
+  assert.equal(res.reason, 'planner_invalid');
+  assert.ok(Array.isArray(res.issues) && res.issues.length > 0, 'structured issues must be present');
+  assert.ok(
+    res.issues.some((i) => /sourceGroupIntents\[0\]\.groupKey/.test(i.path)),
+    'issue path must name the offending groupKey',
+  );
+  assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false, 'invalid plan must NOT be persisted');
+  assert.equal(loadPlan(workDir).ok, false);
+});
+
+test('OWNER RULING D1-CE2: numeric-looking groupKey ("123456789") is still planner_invalid — the planner acquires no source identity from model output', async () => {
+  const workDir = tmpWorkDir();
+  const res = await proposeResearchPlan({
+    userRequest: '研究知乎上对量化交易的讨论', workDir,
+    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithGroupKey('123456789'))), credential: CREDENTIAL,
+  });
+  assert.equal(res.ok, false);
+  assert.equal(res.reason, PLANNER_FAILURE_PLANNER_INVALID);
+  assert.ok(Array.isArray(res.issues) && res.issues.length > 0);
+  assert.ok(
+    res.issues.some((i) => /sourceGroupIntents\[0\]\.groupKey/.test(i.path)),
+    'issue path must name the offending groupKey',
+  );
+  assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false);
+  assert.equal(loadPlan(workDir).ok, false);
+});
+
+test('OWNER RULING D1-CE3: groupKey null remains a valid planner proposal — persisted as today', async () => {
+  const workDir = tmpWorkDir();
+  const res = await proposeResearchPlan({
+    userRequest: '研究知乎上对量化交易的讨论', workDir,
+    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithGroupKey(null))), credential: CREDENTIAL,
+  });
+  assert.equal(res.ok, true, JSON.stringify({ ok: res.ok, reason: res.reason, issues: res.issues }));
+  const loaded = loadPlan(workDir);
+  assert.equal(loaded.ok, true);
+  assert.equal(loaded.plan.sourceGroupIntents[0].groupKey, null);
+  assert.equal(res.planHash, planHash(loaded.plan));
+});
+
+test('OWNER RULING D1-CE4: generic T04 validatePlanInput KEEPS accepting a legitimate non-null groupKey (planner gate is planner-specific; no schema regression)', () => {
+  const v = validatePlanInput(JSON.parse(planTextWithGroupKey('canonical-question-1')));
+  assert.equal(v.ok, true, 'generic T04 contract must still accept a non-null groupKey');
+  assert.equal(v.plan.sourceGroupIntents[0].groupKey, 'canonical-question-1');
+});
+
+test('OWNER RULING D1-CE5: planner system prompt explicitly requires groupKey MUST be null (no source-identity authority) for model-generated pre-retrieval plans', () => {
+  const prompt = buildPlannerSystemPrompt();
+  assert.match(prompt, /"groupKey"[^.\n]*MUST be null/i, 'prompt must state groupKey MUST be null');
+  assert.match(prompt, /no source-identity authority/i, 'prompt must explain why (no source-identity authority)');
+  assert.match(prompt, /cannot know Zhihu question IDs/i, 'prompt must explain the pre-retrieval identity gap');
 });
