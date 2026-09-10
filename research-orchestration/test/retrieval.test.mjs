@@ -106,6 +106,10 @@ import {
 import { planHash, validatePlanInput } from '../lib/plan-contract.mjs';
 import {
   FUSION_ERROR_DUPLICATE_IN_CHANNEL,
+  // Deliberate contract flip (owner ruling 2026-09-10/11): the stable
+  // machine-readable identity for equal-best-rank within-channel duplicates
+  // whose projected fusible payload conflicts.
+  FUSION_ERROR_DUPLICATE_CONFLICT,
   FUSION_ERROR_DUPLICATE_CHANNEL,
   FUSION_CONTRACT_ERROR_CODES,
 } from '../lib/rrf.mjs';
@@ -700,16 +704,29 @@ test('D12: contradictory ok:true + top-level failure → FAIL CLOSED (retrieval_
   }
 });
 
-test('D13: within-channel duplicate questionId → FAIL CLOSED (retrieval_provider_contract_invalid); independent of item array order (P1-4)', () => {
+test('D13: within-channel duplicate questionId → deterministic per-channel canonicalization in the REAL pipeline (DELIBERATE CONTRACT FLIP — owner ruling 2026-09-10/11): the lowest valid rank owns the single contribution, item array order never changes the pool, and the run SUCCEEDS', () => {
   const dupFirst = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1], ['100', 5]], { query: input.query }));
   const dupSecond = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 5], ['100', 1]], { query: input.query }));
+  const runs = [];
   for (const adapter of [dupFirst, dupSecond]) {
     const seam = createProviderSeam({ adapters: [adapter] });
     const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam, workDir: tmpWorkDir() });
-    assert.equal(run.ok, false);
-    assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
-    assert.equal(run.details.reason, 'rrf_fusion_contract_violation', 'rrf hard FUSION_DUPLICATE_IN_CHANNEL surfaced as a fail-closed contract failure');
+    runs.push(run);
+    assert.equal(run.ok, true, 'within-channel duplicates canonicalize — the run is no longer a contract failure');
+    assert.equal(run.pool.candidates.length, 1, 'the duplicate questionId fuses to exactly ONE candidate');
+    assert.equal(run.pool.candidates[0].ranks.length, 1, 'exactly ONE contribution from the duplicated channel (AT MOST ONCE)');
+    assert.equal(run.pool.candidates[0].ranks[0].rank, 1, 'the LOWEST valid provider rank owns the contribution');
+    assert.ok(Math.abs(run.pool.candidates[0].rrfScore - 1 / (60 + 1)) < 1e-15, 'single rank-1 score semantics — contributions are never summed within a channel');
+    assert.equal(run.pool.rejected.length, 0, 'canonicalization synthesizes no rejection');
   }
+  // Item array order does not own the decision: both orders produce a
+  // byte-identical persisted pool artifact.
+  assert.equal(
+    JSON.stringify(runs[0].pool),
+    JSON.stringify(runs[1].pool),
+    'the canonicalized pool is byte-identical under item order reversal',
+  );
+  assert.ok(runs[0].file, 'a pool artifact exists on the canonicalized success path');
 });
 
 test('D14: pool.rejected is canonical — permuted channel descriptors + permuted item order produce an identical rejected list (P1-5)', () => {
@@ -1821,15 +1838,32 @@ test('R12-B3 (retrieval boundary): BLOCK3 duplicate channel identity is structur
 });
 
 test('R12-B4 (retrieval boundary): BLOCK4 allowlist — a fusion contract failure surfaces its machine-readable allowlisted code; an arbitrary path/credential-shaped adapter code is nulled, never proxied (3905300529)', () => {
-  // (a) positive surface: within-channel duplicate → the allowlisted
-  // FUSION_DUPLICATE_IN_CHANNEL code surfaces machine-readably.
-  const dupAdapter = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1], ['100', 5]], { query: input.query }));
-  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam: createProviderSeam({ adapters: [dupAdapter] }), workDir: tmpWorkDir('retrieval-r12') });
+  // (a) positive surface: within-channel duplicates with an EQUAL best rank
+  // and CONFLICTING projected payload fail closed, and the allowlisted
+  // FUSION_DUPLICATE_CONFLICT code surfaces machine-readably (deliberate
+  // contract flip, owner ruling 2026-09-10/11 — plain within-channel
+  // duplicates now canonicalize and no longer throw).
+  assert.ok(
+    typeof FUSION_ERROR_DUPLICATE_CONFLICT === 'string' && FUSION_ERROR_DUPLICATE_CONFLICT.length > 0,
+    'FUSION_ERROR_DUPLICATE_CONFLICT must be an exported stable non-empty string',
+  );
+  const conflictAdapter = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [
+    ['100', 1, { facts: { title: '事实A' } }],
+    ['100', 1, { facts: { title: '事实B' } }],
+  ], { query: input.query }));
+  const run = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam: createProviderSeam({ adapters: [conflictAdapter] }), workDir: tmpWorkDir('retrieval-r12') });
   assert.equal(run.ok, false);
   assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
   assert.equal(run.details.reason, 'rrf_fusion_contract_violation');
-  assert.equal(run.details.code, FUSION_ERROR_DUPLICATE_IN_CHANNEL, 'allowlisted fusion code surfaces machine-readably');
+  assert.equal(run.details.code, FUSION_ERROR_DUPLICATE_CONFLICT, 'allowlisted fusion code surfaces machine-readably');
   assert.ok(FUSION_CONTRACT_ERROR_CODES.includes(run.details.code), 'the surfaced code is a member of the allowlist');
+  // (a2) plain within-channel duplicates (different ranks, equivalent payload)
+  // canonicalize — the run SUCCEEDS with exactly one contribution (D13).
+  const dupAdapter = fixtureSearchAdapter('fixture-a', (input) => searchResult('fixture-a', [['100', 1], ['100', 5]], { query: input.query }));
+  const canonicalRun = runMultiQueryRetrieval({ plan: PLAN_SINGLE, seam: createProviderSeam({ adapters: [dupAdapter] }), workDir: tmpWorkDir('retrieval-r12') });
+  assert.equal(canonicalRun.ok, true, 'plain within-channel duplicates canonicalize (no contract failure)');
+  assert.equal(canonicalRun.pool.candidates[0].ranks.length, 1);
+  assert.equal(canonicalRun.pool.candidates[0].ranks[0].rank, 1);
   // (b) negative: a path/credential-shaped code thrown by an adapter is nulled
   // at the boundary — never proxied, never surfaced.
   for (const [label, code] of [['credential-shaped', 'token=sekrit'], ['path-shaped', '/home/private-user/x']]) {
@@ -1847,7 +1881,7 @@ test('R12-B4 (retrieval boundary): BLOCK4 allowlist — a fusion contract failur
   }
   // (c) allowlist integrity at the retrieval boundary: complete + frozen + no
   // path/credential-shaped member can ever be admitted.
-  assert.equal(FUSION_CONTRACT_ERROR_CODES.length, 7, 'the allowlist is complete');
+  assert.equal(FUSION_CONTRACT_ERROR_CODES.length, 8, 'the allowlist is complete');
   assert.ok(Object.isFrozen(FUSION_CONTRACT_ERROR_CODES), 'the allowlist is frozen — no runtime mutation');
   assert.equal(FUSION_CONTRACT_ERROR_CODES.includes('/home/private-user/x'), false, 'path-shaped code can never be a member');
   assert.equal(FUSION_CONTRACT_ERROR_CODES.includes('token=sekrit'), false, 'credential-shaped code can never be a member');

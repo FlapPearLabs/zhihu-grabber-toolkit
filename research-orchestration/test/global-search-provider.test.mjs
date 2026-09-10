@@ -610,7 +610,7 @@ test('C7: parseable non-zhihu URL → UNRESOLVED, never INVALID (full-web capabi
   assert.equal(candidate.identity.questionId, '700');
 });
 
-test('C8: duplicate question in ONE response passes through the adapter; the frozen T06 FUSION_DUPLICATE_IN_CHANNEL gate owns the failure (C3 round 2)', () => {
+test('C8: duplicate question in ONE response passes through the adapter; the frozen T06 fusion gate OWNS duplicate policy — deterministic per-channel canonicalization (DELIBERATE CONTRACT FLIP, owner ruling 2026-09-10/11: the old FUSION_DUPLICATE_IN_CHANNEL fatality was mechanically disproved by the REAL provider surface, P1-T16 dogfood)', () => {
   const dupPage = () => readFixture('response.duplicate-questions.json');
 
   // Adapter level: BOTH same-question items are emitted as candidates — the
@@ -624,8 +624,10 @@ test('C8: duplicate question in ONE response passes through the adapter; the fro
   assert.equal(result.items[1].identity.questionId, '300', 'duplicates pass through — no adapter-level dedup, no item-order-dependent contributions');
   for (const item of result.items) assert.equal(item.failure, undefined);
 
-  // Through the REAL T06 pipeline, single global channel: the frozen gate fires
-  // (whole-channel fail-closed, machine-readable), and NO pool artifact exists.
+  // Through the REAL T06 pipeline, single global channel: duplicate policy
+  // still belongs to the fusion layer, which now CANONICALIZES deterministically
+  // (lowest valid provider rank contributes exactly once) instead of failing
+  // the whole run closed.
   const singleSeam = createProviderSeam({ adapters: [adapter] });
   const workDir = tmpWorkDir();
   const run = runMultiQueryRetrieval({
@@ -635,14 +637,18 @@ test('C8: duplicate question in ONE response passes through the adapter; the fro
     channels: [{ providerId: PROVIDER_ZHIHU_OPEN_PLATFORM }],
     workDir,
   });
-  assert.equal(run.ok, false);
-  assert.equal(run.reason, RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID);
-  assert.equal(run.details.code, 'FUSION_DUPLICATE_IN_CHANNEL', 'duplicate policy belongs to the frozen T06/rrf gate');
-  assert.ok(!fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'no pool artifact on the fail-closed path');
+  assert.equal(run.ok, true, 'within-channel duplicates canonicalize — no whole-run contract failure');
+  assert.equal(run.pool.candidates.length, 1, 'the duplicated question fuses to exactly ONE candidate');
+  assert.equal(run.pool.candidates[0].identity.questionId, '300');
+  assert.equal(run.pool.candidates[0].ranks.length, 1, 'AT MOST ONE contribution per (channel, questionId)');
+  assert.equal(run.pool.candidates[0].ranks[0].rank, 1, 'the LOWEST provider rank (1) owns the contribution — never array position, never a sum');
+  assert.equal(run.pool.candidates[0].facts.title, '问题三百的回答一', 'the lowest-rank occurrence supplies the projected facts');
+  assert.equal(run.pool.rejected.length, 0, 'canonicalization synthesizes no rejection');
+  assert.ok(fs.existsSync(path.join(workDir, RETRIEVAL_POOL_FILENAME)), 'a pool artifact exists on the canonicalized success path');
 
-  // Dual-channel: a healthy sibling channel does NOT mask or substitute the
-  // duplicate-bearing channel — the gate fires regardless of sibling health.
-  const officialRunner = makeOfficialRunner({ [Q1]: { candidates: [officialCandidate('100', '问题一百', 5)] } });
+  // Dual-channel: the canonicalized global channel fuses alongside the healthy
+  // sibling — two independent RRF contributions for two distinct questions.
+  const officialRunner = makeOfficialRunner({ [Q1]: { candidates: [officialCandidate('800', '问题一百', 5)] } });
   const globalTransport = makeGlobalTransport({ [Q1]: { response: dupPage() } });
   const dualSeam = createProviderSeam({
     adapters: [
@@ -657,9 +663,12 @@ test('C8: duplicate question in ONE response passes through the adapter; the fro
     channels: [{ providerId: PROVIDER_ZHIHU_OFFICIAL_SEARCH }, { providerId: PROVIDER_ZHIHU_OPEN_PLATFORM }],
     workDir: tmpWorkDir(),
   });
-  assert.equal(dualRun.ok, false, 'no silent substitution of the duplicate-bearing channel');
-  assert.equal(dualRun.details.code, 'FUSION_DUPLICATE_IN_CHANNEL');
-  assert.equal(officialRunner.calls.length, 1, 'the sibling channel executed exactly once (failure is not a routing event)');
+  assert.equal(dualRun.ok, true, 'the canonicalized duplicate-bearing channel fuses with its sibling');
+  assert.equal(dualRun.pool.candidates.length, 2);
+  assert.equal(dualRun.pool.candidates[0].identity.questionId, '300', 'rank-1 global contribution outranks the sibling rank-5 contribution');
+  assert.equal(dualRun.pool.candidates[1].identity.questionId, '800');
+  assert.equal(dualRun.pool.candidates.find((c) => c.identity.questionId === '300').ranks.length, 1, 'the global channel still contributes exactly once for the duplicated question');
+  assert.equal(officialRunner.calls.length, 1, 'the sibling channel executed exactly once');
 });
 
 test('C9: UNRESOLVED detail is default-deny — provider ContentType/ContentID sentinels never surface (C4 round 2)', () => {

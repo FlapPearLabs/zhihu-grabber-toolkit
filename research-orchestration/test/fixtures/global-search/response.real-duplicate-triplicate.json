@@ -1,0 +1,79 @@
+{
+  "_provenance": "P1-T16 canonical-dogfood repair fixture (sanitized REAL global_search response, Issue #38 within-channel duplicate canonicalization): envelope + 10-item identity/rank structure preserved verbatim incl. the REAL within-channel triplicate questionId 1943057024997913208 (provider ranks 6/8/10). Untrusted corpus fields (Title → neutral placeholder 标题-<n>; ContentText / CommentCount / VoteUpCount / Author* / EditTime / CommentInfoList / RankingScore) and URL query/tracking parameters are dropped or neutralized. No live payload, no credentials, no personal data.",
+  "Code": 0,
+  "Data": {
+    "HasMore": false,
+    "Items": [
+      {
+        "Title": "标题-1",
+        "ContentType": "Answer",
+        "ContentID": "-1121673822574433548",
+        "Url": "https://www.zhihu.com/question/1929917688894955824/answer/2055042357486155274",
+        "AuthorityLevel": "4"
+      },
+      {
+        "Title": "标题-2",
+        "ContentType": "Answer",
+        "ContentID": "-8393684584489265199",
+        "Url": "https://www.zhihu.com/question/2038411932424725710/answer/2074611461687619824",
+        "AuthorityLevel": "4"
+      },
+      {
+        "Title": "标题-3",
+        "ContentType": "Answer",
+        "ContentID": "-3596866254648524842",
+        "Url": "https://www.zhihu.com/question/2077824745589028563/answer/2078577672926634612",
+        "AuthorityLevel": "4"
+      },
+      {
+        "Title": "标题-4",
+        "ContentType": "Answer",
+        "ContentID": "4963254742312971931",
+        "Url": "https://www.zhihu.com/question/9674070301/answer/2071986655142196536",
+        "AuthorityLevel": "4"
+      },
+      {
+        "Title": "标题-5",
+        "ContentType": "Answer",
+        "ContentID": "-6736149563655953666",
+        "Url": "https://www.zhihu.com/question/1913266434462717594/answer/2066276631988135182",
+        "AuthorityLevel": "4"
+      },
+      {
+        "Title": "标题-6",
+        "ContentType": "Answer",
+        "ContentID": "9104139134115793692",
+        "Url": "https://www.zhihu.com/question/1943057024997913208/answer/2025960244967142399",
+        "AuthorityLevel": "4"
+      },
+      {
+        "Title": "标题-7",
+        "ContentType": "Answer",
+        "ContentID": "5887195202431428022",
+        "Url": "https://www.zhihu.com/question/1972252087044796716/answer/2079213215842563423",
+        "AuthorityLevel": "4"
+      },
+      {
+        "Title": "标题-8",
+        "ContentType": "Answer",
+        "ContentID": "5994858464598351019",
+        "Url": "https://www.zhihu.com/question/1943057024997913208/answer/2070576732353172617",
+        "AuthorityLevel": "4"
+      },
+      {
+        "Title": "标题-9",
+        "ContentType": "Answer",
+        "ContentID": "3084010944743463394",
+        "Url": "https://www.zhihu.com/question/1960623371101398549/answer/2012324191995703722",
+        "AuthorityLevel": "4"
+      },
+      {
+        "Title": "标题-10",
+        "ContentType": "Answer",
+        "ContentID": "3334099302263157308",
+        "Url": "https://www.zhihu.com/question/1943057024997913208/answer/2009947460483711539",
+        "AuthorityLevel": "4"
+      }
+    ]
+  }
+}
