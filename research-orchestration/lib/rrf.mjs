@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
  * research-orchestration/lib/rrf.mjs
@@ -114,6 +115,16 @@ export const FUSION_ERROR_FAILURE_IDENTITY_INVALID = 'FUSION_FAILURE_IDENTITY_IN
 /** Hard fail-closed error code: within-channel duplicate candidate (P1-4). */
 export const FUSION_ERROR_DUPLICATE_IN_CHANNEL = 'FUSION_DUPLICATE_IN_CHANNEL';
 /**
+ * Hard fail-closed error code: within-channel duplicate candidates sharing the
+ * SAME best (lowest) rank whose projected fusible payloads CONFLICT (deliberate
+ * contract flip, owner ruling 2026-09-10/11 — see the canonicalization note at
+ * the top of this file). Mechanically-equivalent equal-best-rank duplicates
+ * collapse deterministically; only a conflicting material projected payload
+ * (canonical-JSON inequality of the projected rankOrigin/route/source_url/facts
+ * payload) fails closed with this stable machine-readable identity.
+ */
+export const FUSION_ERROR_DUPLICATE_CONFLICT = 'FUSION_DUPLICATE_CONFLICT';
+/**
  * Hard fail-closed error code: the SAME channel identity (query + providerId +
  * capability) appears on more than one ranking — duplicate channels make RRF
  * accumulation ambiguous (Round-6 BLOCK3, review 3905300520). Detected BEFORE
@@ -140,6 +151,7 @@ export const FUSION_CONTRACT_ERROR_CODES = Object.freeze([
   FUSION_ERROR_ITEM_IDENTITY_INVALID,
   FUSION_ERROR_FAILURE_IDENTITY_INVALID,
   FUSION_ERROR_DUPLICATE_IN_CHANNEL,
+  FUSION_ERROR_DUPLICATE_CONFLICT,
   FUSION_ERROR_DUPLICATE_CHANNEL,
   FUSION_ERROR_UNSAFE_PROVIDER_DATA,
 ]);
@@ -883,6 +895,7 @@ export function rrfFusion(rankings) {
     }
     seenChannels.add(key);
 
+    const channelItems = new Map();
     for (const item of ranking.items) {
       // Distinguish failure ABSENT vs PRESENT-BUT-MALFORMED (P1-3): an explicit
       // `failure` key must carry a machine-readable { code, class } identity.
@@ -955,33 +968,7 @@ export function rrfFusion(rankings) {
       }
 
       const questionId = identity.questionId;
-      let record = byCandidate.get(questionId);
-      if (!record) {
-        record = {
-          questionId,
-          // Canonical T06 candidate identity (P1-3): fusion keys by questionId;
-          // kind is normalized to the candidate contract so the fused identity is
-          // order-independent — an upstream kind variant is never "first wins".
-          identity: { kind: 'candidate', questionId },
-          contributions: [],
-        };
-        byCandidate.set(questionId, record);
-      }
 
-      // Duplicate within the same channel (P1-4): "keep the first / reject the
-      // second" would make scores depend on item array order (rank 1 vs rank 5),
-      // which violates the item-order-independence contract. FAIL CLOSED instead —
-      // the detection is order-independent (a duplicate anywhere throws).
-      if (record.contributions.some((c) => c.key === key)) {
-        const err = new Error('duplicate questionId within the same channel; within-channel duplicates fail closed (item-order-independence, P1-4)');
-        err.code = FUSION_ERROR_DUPLICATE_IN_CHANNEL;
-        throw err;
-      }
-
-      // P1-1 (review 5077286260): provider-controlled contribution fields
-      // (rankOrigin / route / source_url / facts) cross the persisted-artifact
-      // boundary here — projected into safe canonical shapes or fail closed.
-      // `rank` already passed the integer gate and is therefore JSON-safe.
       const projectedRankOrigin = projectRouteString(item.provenance?.rankOrigin);
       if (!projectedRankOrigin.ok) throwUnsafeProviderData('rankOrigin');
       const projectedRoute = projectRouteString(item.provenance?.route);
@@ -991,7 +978,12 @@ export function rrfFusion(rankings) {
       const projectedFacts = projectSafeJson(item.facts ?? {});
       if (!projectedFacts.ok) throwUnsafeProviderData('facts');
 
-      record.contributions.push({
+      let bucket = channelItems.get(questionId);
+      if (!bucket) {
+        bucket = [];
+        channelItems.set(questionId, bucket);
+      }
+      bucket.push({
         key,
         channel,
         rank,
@@ -1000,6 +992,43 @@ export function rrfFusion(rankings) {
         source_url: projectedSourceUrl.value,
         facts: projectedFacts.value,
       });
+    }
+
+    // Resolve within-channel duplicates according to D2 rules
+    for (const [questionId, bucket] of channelItems.entries()) {
+      let bestRank = Infinity;
+      for (const c of bucket) {
+        if (c.rank < bestRank) bestRank = c.rank;
+      }
+
+      const bestItems = bucket.filter(c => c.rank === bestRank);
+      if (bestItems.length > 1) {
+        const first = bestItems[0];
+        for (let j = 1; j < bestItems.length; j++) {
+          const other = bestItems[j];
+          if (!isDeepStrictEqual(first.rankOrigin, other.rankOrigin) ||
+              !isDeepStrictEqual(first.route, other.route) ||
+              !isDeepStrictEqual(first.source_url, other.source_url) ||
+              !isDeepStrictEqual(first.facts, other.facts)) {
+            const err = new Error('STRICT CONFLICT');
+            err.code = FUSION_ERROR_DUPLICATE_CONFLICT;
+            throw err;
+          }
+        }
+      }
+
+      const winner = bestItems[0];
+
+      let record = byCandidate.get(questionId);
+      if (!record) {
+        record = {
+          questionId,
+          identity: { kind: 'candidate', questionId },
+          contributions: []
+        };
+        byCandidate.set(questionId, record);
+      }
+      record.contributions.push(winner);
     }
   }
 

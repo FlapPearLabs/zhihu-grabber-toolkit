@@ -16,9 +16,17 @@
  *     order within a ranking produce identical fusion output;
  *   - a ranking item without a valid 1-based provenance.rank is rejected with a
  *     hard fail-closed error (malformed input, nothing half-fused);
- *   - within-channel duplicate candidate → FAIL CLOSED with a hard
- *     machine-readable error (FUSION_DUPLICATE_IN_CHANNEL), order-independent
- *     (item-order-independence contract, P1-4);
+ *   - within-channel duplicate candidate → DETERMINISTIC PER-CHANNEL
+ *     CANONICALIZATION (DELIBERATE CONTRACT FLIP, owner ruling 2026-09-10/11
+ *     after the P1-T16 canonical dogfood mechanically proved the REAL
+ *     global_search surface returns the same questionId multiple times within
+ *     ONE retrieval-ranked channel): per (channel, canonical questionId) the
+ *     occurrence with the LOWEST valid explicit provenance.rank contributes to
+ *     RRF AT MOST ONCE — never summed, never array-position-owned; equal
+ *     best-rank duplicates collapse only when the projected fusible payload is
+ *     canonically equivalent, and conflicting projected payload FAILS CLOSED
+ *     with FUSION_DUPLICATE_CONFLICT; result is independent of item array
+ *     order (D2-CE1..CE8);
  *   - items carrying a per-item provider failure are rejected (not fused) with
  *     their failure identity preserved and channel provenance recorded;
  *   - per-item failure identity is projected through the SAME canonical
@@ -40,6 +48,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   RRF_K,
@@ -50,6 +61,10 @@ import {
   FUSION_ERROR_RANK_INVALID,
   FUSION_ERROR_FAILURE_IDENTITY_INVALID,
   FUSION_ERROR_DUPLICATE_IN_CHANNEL,
+  // Deliberate contract flip (owner ruling 2026-09-10/11): the stable
+  // machine-readable identity for equal-best-rank within-channel duplicates
+  // whose projected fusible payload CONFLICTS.
+  FUSION_ERROR_DUPLICATE_CONFLICT,
   FUSION_ERROR_UNSAFE_PROVIDER_DATA,
   // Round-6 final convergence repair (BLOCK3 / BLOCK4): duplicate-channel
   // identity error code + the FUSION_* allowlist the retrieval layer proxies.
@@ -71,6 +86,11 @@ import {
   projectFailure,
   projectAllowedErrorCode,
 } from '../lib/rrf.mjs';
+// D2-CE8 exercises the REAL provider surface: the same adapter that projects a
+// live global_search response (identity/rank/facts/source_url) feeds rrfFusion
+// with a sanitized captured response fixture. The adapter itself is untouched —
+// duplicate policy stays owned by the FUSION layer.
+import { createGlobalSearchAdapter } from '../lib/global-search-provider.mjs';
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -389,20 +409,27 @@ test('E2: malformed channel identity (missing query/providerId/capability) is re
   }
 });
 
-test('E3: within-channel duplicate candidate → FAIL CLOSED with FUSION_DUPLICATE_IN_CHANNEL regardless of item array order (P1-4)', () => {
-  // "keep the first / reject the second" would make scores depend on array order
-  // (rank 1 vs rank 5) — a within-channel duplicate is a malformed ranking.
+test('E3: within-channel duplicate candidate → deterministic per-channel canonicalization (DELIBERATE CONTRACT FLIP — owner ruling 2026-09-10/11; the old unconditional FUSION_DUPLICATE_IN_CHANNEL fatality was mechanically disproved by the REAL provider surface, P1-T16 dogfood): the LOWEST valid provenance.rank owns the single contribution, never array position', () => {
+  // The duplicate policy still belongs to the FUSION layer, but a within-channel
+  // duplicate now canonicalizes deterministically: per (channel, questionId) the
+  // occurrence with the LOWEST valid explicit rank contributes exactly once.
+  // Item array order must never own the decision (the old "keep first" is still
+  // forbidden — the explicit validated provider rank owns it).
   const permutations = [
     [['10', 1], ['10', 5]],
     [['10', 5], ['10', 1]],
-    [['10', 1], ['10', 1]],
+    [['10', 1], ['10', 1]], // equal best rank + equivalent payload → deterministic collapse
   ];
   for (const entries of permutations) {
-    assert.throws(
-      () => rrfFusion([ranking('q1', 'fixture-a', entries)]),
-      (err) => err.code === FUSION_ERROR_DUPLICATE_IN_CHANNEL,
-      `duplicate entries ${JSON.stringify(entries)} must throw FUSION_DUPLICATE_IN_CHANNEL, never silently re-rank`,
+    const fused = rrfFusion([ranking('q1', 'fixture-a', entries)]);
+    assert.deepEqual(candidateIds(fused), ['10'], `duplicate entries ${JSON.stringify(entries)} must canonicalize to ONE contribution, never silently re-rank`);
+    assert.equal(fused.candidates[0].ranks.length, 1, 'exactly ONE contribution from the duplicated channel (AT MOST ONCE)');
+    assert.equal(fused.candidates[0].ranks[0].rank, 1, 'the LOWEST valid provider rank owns the contribution');
+    assert.ok(
+      Math.abs(fused.candidates[0].rrfScore - 1 / (RRF_K + 1)) < 1e-15,
+      'single rank-1 score semantics — contributions from the same channel are NEVER summed',
     );
+    assert.deepEqual(fused.rejected, [], 'canonicalization is not rejection — no rejected observation is synthesized');
   }
   // control: the same questionId in DIFFERENT channels is NOT a duplicate.
   const fused = rrfFusion([
@@ -1130,13 +1157,21 @@ test('R12-C2: every FUSION_* error MESSAGE is STATIC — raw provider/caller-con
   err = capture(() => rrfFusion([{ channel: { query: 'q1', providerId: 'fixture-a', capability: 'search' }, items: [{ identity: { questionId: '10' }, provenance: { route: 'r', rank: 0 }, source_url: null, facts: {} }] }]));
   assert.equal(err.code, FUSION_ERROR_RANK_INVALID);
   assert.equal(err.message, 'fusible item carries no valid 1-based provenance.rank');
-  // Within-channel duplicate: the questionId is never embedded.
+  // Within-channel duplicate with EQUAL best rank + CONFLICTING projected
+  // payload (deliberate contract flip, owner ruling 2026-09-10/11): the stable
+  // FUSION_DUPLICATE_CONFLICT identity fires, and the questionId is never
+  // embedded. (Plain within-channel duplicates no longer throw — they
+  // canonicalize per E3 / D2-CE1..CE8.)
+  assert.ok(
+    typeof FUSION_ERROR_DUPLICATE_CONFLICT === 'string' && FUSION_ERROR_DUPLICATE_CONFLICT.length > 0,
+    'the duplicate-conflict identity must be an exported stable non-empty string',
+  );
   err = capture(() => rrfFusion([{ channel: { query: 'q1', providerId: 'fixture-a', capability: 'search' }, items: [
-    { identity: { questionId: '42' }, provenance: { route: 'r', rank: 1 }, source_url: null, facts: {} },
-    { identity: { questionId: '42' }, provenance: { route: 'r', rank: 5 }, source_url: null, facts: {} },
+    { identity: { questionId: '42' }, provenance: { route: 'r', rank: 1 }, source_url: null, facts: { title: 'a' } },
+    { identity: { questionId: '42' }, provenance: { route: 'r', rank: 1 }, source_url: null, facts: { title: 'b' } },
   ] }]));
-  assert.equal(err.code, FUSION_ERROR_DUPLICATE_IN_CHANNEL);
-  assert.ok(!err.message.includes('42'), 'questionId never embedded in the duplicate-in-channel message');
+  assert.equal(err.code, FUSION_ERROR_DUPLICATE_CONFLICT);
+  assert.ok(!err.message.includes('42') && !err.message.includes('a') && !err.message.includes('b'), 'questionId / payload values never embedded in the duplicate-conflict message');
   // Duplicate channel: neither the query nor the candidate ids are embedded.
   err = capture(() => rrfFusion([ranking('q1', 'fixture-a', [['10', 1]]), ranking('q1', 'fixture-a', [['20', 1]])]));
   assert.equal(err.code, FUSION_ERROR_DUPLICATE_CHANNEL);
@@ -1157,10 +1192,14 @@ test('R12-B4: FUSION_CONTRACT_ERROR_CODES allowlists EVERY FUSION_* contract err
     FUSION_ERROR_DUPLICATE_IN_CHANNEL,
     FUSION_ERROR_DUPLICATE_CHANNEL,
     FUSION_ERROR_UNSAFE_PROVIDER_DATA,
+    // Deliberate contract flip (owner ruling 2026-09-10/11): the
+    // equal-best-rank conflicting-payload duplicate identity must be able to
+    // surface machine-readably through the retrieval allowlist proxy.
+    FUSION_ERROR_DUPLICATE_CONFLICT,
   ]) {
     assert.ok(FUSION_CONTRACT_ERROR_CODES.includes(code), `${code} must be allowlisted`);
   }
-  assert.equal(FUSION_CONTRACT_ERROR_CODES.length, 7, 'the allowlist is complete and frozen');
+  assert.equal(FUSION_CONTRACT_ERROR_CODES.length, 8, 'the allowlist is complete and frozen');
   // Counterexamples: a path/credential-shaped code thrown by a buggy future
   // path is NULLED by the retrieval catch — it can never be a member here.
   assert.equal(FUSION_CONTRACT_ERROR_CODES.includes('/home/private-user/x'), false, 'path-shaped code can never be a member');
@@ -1233,4 +1272,210 @@ test('R13-F2: projectFailure rejects whitespace-only code/class — machine-read
   assert.equal(projectFailure(null).ok, true, 'null -> no failure');
   assert.equal(projectFailure({ code: 'X' }).ok, false, 'missing class -> rejected');
   assert.equal(projectFailure({ code: 'token=sekrit', class: 'provider' }).ok, false, 'credential-shaped code -> rejected');
+});
+
+// ---------------------------------------------------------------------------
+// D2 — within-channel duplicate canonicalization (DELIBERATE CONTRACT FLIP).
+//
+// Owner ruling (binding, 2026-09-10/11), mechanically motivated by the P1-T16
+// canonical dogfood: the REAL global_search provider surface returns the same
+// canonical questionId multiple times within ONE retrieval-ranked channel, so
+// the old unconditional FUSION_DUPLICATE_IN_CHANNEL fatality is too strict for
+// the real provider. The frozen behavior is replaced by deterministic
+// per-channel canonicalization:
+//   - duplicate-policy ownership stays in the FUSION layer (rrf.mjs);
+//   - per (channel, canonical questionId): contribute to RRF AT MOST ONCE,
+//     using the occurrence with the LOWEST valid explicit provenance.rank;
+//   - contributions from the same channel are NEVER summed;
+//   - the result is independent of the input array order — array position does
+//     NOT own the decision; the explicit validated provider rank does;
+//   - equal best-rank duplicates collapse only when the projected fusible
+//     payload is canonically equivalent; conflicting projected payload FAILS
+//     CLOSED with the stable machine-readable FUSION_DUPLICATE_CONFLICT;
+//   - invalid/missing rank remains a contract failure — duplicate handling
+//     never sanitizes malformed ranking evidence;
+//   - no popularity weighting, no new ranking score, no cross-channel dedupe
+//     change, no final-selection change.
+// ---------------------------------------------------------------------------
+
+test('D2-CE1: same channel, qid at rank 2 and rank 7 → exactly ONE contribution using rank-2 score semantics (lowest explicit rank owns it; never summed; order-independent)', () => {
+  const forward = rrfFusion([ranking('q1', 'fixture-a', [['10', 2], ['10', 7]])]);
+  const reversed = rrfFusion([ranking('q1', 'fixture-a', [['10', 7], ['10', 2]])]);
+  for (const fused of [forward, reversed]) {
+    assert.deepEqual(candidateIds(fused), ['10']);
+    assert.equal(fused.candidates[0].ranks.length, 1, 'AT MOST ONE contribution per (channel, questionId)');
+    assert.equal(fused.candidates[0].ranks[0].rank, 2, 'the LOWEST valid provider rank (2), never the array-position side');
+    assert.ok(
+      Math.abs(scoreFor(fused, '10') - 1 / (RRF_K + 2)) < 1e-15,
+      'rank-2 score semantics — never rank-7, never a two-contribution sum',
+    );
+    assert.deepEqual(fused.rejected, []);
+  }
+  assert.equal(JSON.stringify(forward), JSON.stringify(reversed), 'byte-equivalent under item order reversal');
+});
+
+test('D2-CE2: same input arrays in reversed order → byte-equivalent fused result (JSON.stringify equality; canonicalization is array-position-free)', () => {
+  const forward = [
+    ranking('q1', 'fixture-a', [['10', 2], ['20', 1], ['10', 7], ['30', 3]]),
+    ranking('q2', 'fixture-b', [['10', 1], ['30', 2]]),
+  ];
+  const reversed = [
+    ranking('q2', 'fixture-b', [['30', 2], ['10', 1]]),
+    ranking('q1', 'fixture-a', [['30', 3], ['10', 7], ['20', 1], ['10', 2]]),
+  ];
+  const a = rrfFusion(forward);
+  const b = rrfFusion(reversed);
+  assert.equal(
+    JSON.stringify(a),
+    JSON.stringify(b),
+    'fused pool must be byte-identical under full channel+item order reversal (the rank, not array position, owns the canonicalization decision)',
+  );
+  const dup = a.candidates.find((c) => c.identity.questionId === '10');
+  assert.equal(dup.ranks.length, 2, 'the within-channel duplicate still contributes exactly once per channel');
+  assert.equal(dup.ranks[0].rank, 2);
+  assert.equal(dup.ranks[1].rank, 1);
+});
+
+test('D2-CE3: same qid at ranks 1/4/9 → exactly one contribution (rank 1)', () => {
+  const fused = rrfFusion([ranking('q1', 'fixture-a', [['10', 1], ['10', 4], ['10', 9]])]);
+  assert.equal(fused.candidates.length, 1);
+  assert.equal(fused.candidates[0].ranks.length, 1, 'exactly ONE contribution across the triplicate');
+  assert.equal(fused.candidates[0].ranks[0].rank, 1, 'lowest provider rank wins');
+  assert.ok(Math.abs(fused.candidates[0].rrfScore - 1 / (RRF_K + 1)) < 1e-15, 'single rank-1 score semantics');
+  assert.deepEqual(fused.rejected, []);
+});
+
+test('D2-CE4: same qid in TWO DIFFERENT channels → TWO RRF contributions remain (RRF sums across channels as today; no cross-channel dedupe change)', () => {
+  const fused = rrfFusion([
+    ranking('q1', 'fixture-a', [['10', 3]]),
+    ranking('q2', 'fixture-b', [['10', 7]]),
+  ]);
+  assert.equal(fused.candidates.length, 1);
+  assert.equal(fused.candidates[0].ranks.length, 2, 'same qid in two channels = two legitimate RRF contributions');
+  assert.ok(
+    Math.abs(fused.candidates[0].rrfScore - (1 / (RRF_K + 3) + 1 / (RRF_K + 7))) < 1e-15,
+    'cross-channel accumulation semantics are unchanged',
+  );
+});
+
+test('D2-CE5: same qid + equal best rank + equivalent payload → deterministic collapse (no conflict)', () => {
+  const sourceUrl = { url: 'https://example.invalid/a', securityClass: 'external_unverified' };
+  const entries = [
+    ['10', 2, { source_url: sourceUrl, facts: { title: 'same' }, provenance: { route: 'r', rankOrigin: 'o' } }],
+    ['10', 2, { source_url: sourceUrl, facts: { title: 'same' }, provenance: { route: 'r', rankOrigin: 'o' } }],
+  ];
+  const forward = rrfFusion([ranking('q1', 'fixture-a', entries)]);
+  const reversed = rrfFusion([ranking('q1', 'fixture-a', [...entries].reverse())]);
+  for (const fused of [forward, reversed]) {
+    assert.deepEqual(candidateIds(fused), ['10']);
+    assert.equal(fused.candidates[0].ranks.length, 1, 'mechanically-equivalent equal-rank duplicates collapse to ONE contribution');
+    assert.equal(fused.candidates[0].ranks[0].rank, 2);
+  }
+  assert.equal(JSON.stringify(forward), JSON.stringify(reversed), 'collapse is deterministic under item order reversal');
+  assert.deepEqual(forward.rejected, [], 'equivalent collapse never synthesizes a rejection');
+});
+
+test('D2-CE6: same qid + equal best rank + CONFLICTING projected payload → FAIL CLOSED with the stable FUSION_DUPLICATE_CONFLICT identity', () => {
+  // RED-honesty guard: the new code must be an exported stable non-empty
+  // string — an undefined binding can never satisfy a code assertion.
+  assert.ok(
+    typeof FUSION_ERROR_DUPLICATE_CONFLICT === 'string' && FUSION_ERROR_DUPLICATE_CONFLICT.length > 0,
+    'FUSION_ERROR_DUPLICATE_CONFLICT must be an exported stable non-empty string',
+  );
+  // Conflicting material candidate facts at the same best rank.
+  const conflictingFacts = [
+    ['10', 2, { facts: { title: '事实A' } }],
+    ['10', 2, { facts: { title: '事实B' } }],
+  ];
+  assert.throws(
+    () => rrfFusion([ranking('q1', 'fixture-a', conflictingFacts)]),
+    (err) => err.code === FUSION_ERROR_DUPLICATE_CONFLICT,
+    'conflicting facts at the equal best rank fail closed with FUSION_DUPLICATE_CONFLICT',
+  );
+  assert.throws(
+    () => rrfFusion([ranking('q1', 'fixture-a', [...conflictingFacts].reverse())]),
+    (err) => err.code === FUSION_ERROR_DUPLICATE_CONFLICT,
+    'the conflict identity is order-independent',
+  );
+  // Conflicting material source identity at the same best rank.
+  assert.throws(
+    () => rrfFusion([ranking('q1', 'fixture-a', [
+      ['10', 2, { source_url: { url: 'https://example.invalid/a', securityClass: 'external_unverified' } }],
+      ['10', 2, { source_url: { url: 'https://example.invalid/b', securityClass: 'external_unverified' } }],
+    ])]),
+    (err) => err.code === FUSION_ERROR_DUPLICATE_CONFLICT,
+    'conflicting source_url at the equal best rank fails closed identically',
+  );
+  // DIFFERENT ranks are NOT a conflict: the lowest rank's payload wins outright.
+  const fused = rrfFusion([ranking('q1', 'fixture-a', [
+    ['10', 2, { facts: { title: '事实A' } }],
+    ['10', 7, { facts: { title: '事实B' } }],
+  ])]);
+  assert.equal(fused.candidates[0].facts.title, '事实A', 'the lowest-rank occurrence supplies the projected payload');
+  assert.equal(fused.candidates[0].ranks.length, 1);
+});
+
+test('D2-CE7: invalid/missing rank on a within-channel duplicate still fails the item contract (RANK_INVALID) — duplicate handling must not sanitize malformed ranking evidence', () => {
+  // The rank gate is per-item and fires BEFORE any duplicate resolution —
+  // an occurrence without a valid 1-based rank is a contract failure even
+  // when a valid sibling occurrence exists.
+  assert.throws(
+    () => rrfFusion([ranking('q1', 'fixture-a', [['10', 2], ['10', undefined]])]),
+    (err) => err.code === FUSION_ERROR_RANK_INVALID,
+    'a duplicated qid with one missing rank must throw RANK_INVALID (never canonicalized away)',
+  );
+  assert.throws(
+    () => rrfFusion([ranking('q1', 'fixture-a', [['10', undefined], ['10', 2]])]),
+    (err) => err.code === FUSION_ERROR_RANK_INVALID,
+    'the rank gate is order-independent across the duplicate pair',
+  );
+});
+
+test('D2-CE8: captured REAL global_search response (sanitized fixture) — the REAL within-channel triplicate questionId fuses cleanly with exactly ONE contribution (the pre-repair contract failed this real surface with FUSION_DUPLICATE_IN_CHANNEL by construction)', () => {
+  const fixturePath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', 'global-search', 'response.real-duplicate-triplicate.json');
+  const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
+  // REAL provider surface: the untouched global_search adapter projects the
+  // captured response (identity/questionId from the URL, provider-order rank,
+  // documented facts, classified source_url) — the adapter performs NO
+  // duplicate policy; the fusion layer owns it.
+  const adapter = createGlobalSearchAdapter({
+    transport: () => ({ status: 200, body: JSON.stringify(fixture) }),
+    now: () => '2026-09-10T00:00:00.000Z',
+  });
+  const result = adapter.retrieve({ query: 'D2-CE8 查询' });
+  assert.equal(result.ok, true, 'the real response envelope is contract-valid');
+  assert.equal(result.items.length, 10, 'the 10 real items project as fusible candidates');
+  const TRIPPLICATE_QID = '1943057024997913208';
+  assert.equal(
+    result.items.filter((item) => item.identity.questionId === TRIPPLICATE_QID).length,
+    3,
+    'the REAL response carries the same questionId 3× within ONE channel (provider ranks 6/8/10)',
+  );
+
+  const rankings = [{
+    channel: { query: 'D2-CE8 查询', providerId: adapter.providerId, capability: 'search' },
+    items: result.items,
+  }];
+  let defect = null;
+  let fused = null;
+  try {
+    fused = rrfFusion(rankings);
+  } catch (err) {
+    defect = err;
+  }
+  assert.equal(
+    defect,
+    null,
+    `real-provider within-channel duplicates must canonicalize, not fail the run (the pre-repair contract threw ${defect?.code} here — that throw IS the defect being repaired)`,
+  );
+
+  // 10 real items → 8 distinct canonical questions (the triplicate collapses).
+  assert.equal(fused.candidates.length, 8);
+  const trip = fused.candidates.find((c) => c.identity.questionId === TRIPPLICATE_QID);
+  assert.ok(trip, 'the triplicate id fused');
+  assert.equal(trip.ranks.length, 1, 'exactly ONE contribution for the triplicate id');
+  assert.equal(trip.ranks[0].rank, 6, 'the LOWEST provider rank (6) owns the contribution');
+  assert.equal(trip.ranks[0].channel.providerId, adapter.providerId);
+  assert.ok(Math.abs(trip.rrfScore - 1 / (RRF_K + 6)) < 1e-15, 'single rank-6 contribution score semantics');
+  assert.deepEqual(fused.rejected, [], 'canonicalization synthesizes no rejection');
 });
