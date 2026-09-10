@@ -101,7 +101,9 @@ const REPO_ROOT = path.resolve(RO_ROOT, '..');
 
 /** Pinned canonical composition identity (planner-pinned twin; T14 accepts exactly this). */
 const CANONICAL_RUNTIME_ID = 'deepseek-api-tool-less';
-const CANONICAL_MODEL = 'deepseek-v4-flash';
+// OWNER RULING 2026-09-10: authorized request model id (served naming is
+// observability only — never an equality gate).
+const CANONICAL_MODEL = 'deepseek-v4-pro';
 
 /** T03-documented first-party global_search endpoint (read-only search). */
 const GLOBAL_SEARCH_ENDPOINT = 'https://developer.zhihu.com/api/v1/content/global_search';

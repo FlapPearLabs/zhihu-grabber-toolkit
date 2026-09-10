@@ -24,7 +24,7 @@ function okChatResponse(overrides = {}, contentOverrides = {}) {
     id: 'chatcmpl-ds-test',
     object: 'chat.completion',
     created: 1750000000,
-    model: 'deepseek-v4-flash',
+    model: 'deepseek-v4-pro',
     choices: [{
       index: 0,
       message: {
@@ -45,7 +45,7 @@ function jsonOk(payload, status = 200) {
 
 test('请求锁定：端点/模型 pin、thinking 显式 disabled、无 tools、json_object', () => {
   const req = buildDeepSeekChatRequest({ projection });
-  assert.equal(req.model, 'deepseek-v4-flash');
+  assert.equal(req.model, 'deepseek-v4-pro');
   assert.deepEqual(req.thinking, { type: 'disabled' });
   assert.deepEqual(req.response_format, { type: 'json_object' });
   assert.equal('tools' in req, false);
@@ -59,7 +59,9 @@ test('请求锁定：端点/模型 pin、thinking 显式 disabled、无 tools、
 
 test('runtime 配置不可变更：端点/模型/thinking/json 模式任一偏差 fail closed', () => {
   const variants = [
-    { model: 'deepseek-v4-pro' },
+    // OWNER RULING 2026-09-10: deepseek-v4-pro is the authorized request model —
+    // only a NON-authorized request model id deviates.
+    { model: 'deepseek-v4-pro-wrong-alias' },
     { thinking: 'enabled' },
     { endpoint: 'https://evil.example.com/chat/completions' },
     { jsonMode: 'json_schema' },
@@ -94,7 +96,9 @@ test('envelope / 结构化输出：任何偏差 fail closed（含空 content、�
   );
 
   fail({ object: 'chat.completion.broken' });
-  fail({ model: 'deepseek-v4-pro' });
+  // OWNER RULING 2026-09-10: response.model (served naming) is observability
+  // only — a mismatching served label is ACCEPTED (see the OWNER RULING test);
+  // it is no longer part of the envelope gate matrix.
   fail({ choices: [] });
   fail({ choices: [{ index: 0, message: { role: 'user', content: '{}', tool_calls: [] }, finish_reason: 'stop' }] });
   // 空 content（DeepSeek JSON 模式官方警告的偶发空内容）
@@ -115,6 +119,13 @@ test('envelope / 结构化输出：任何偏差 fail closed（含空 content、�
   fail({ choices: [{ index: 0, message: { role: 'assistant', content: JSON.stringify({ summary: 'x', stance: 'evil', confidence: 'high' }), tool_calls: [] }, finish_reason: 'stop' }] });
   fail({ choices: [{ index: 0, message: { role: 'assistant', content: JSON.stringify({ summary: 'x', stance: 'positive', confidence: 'very-high' }), tool_calls: [] }, finish_reason: 'stop' }] });
   fail({ choices: [{ index: 0, message: { role: 'assistant', content: JSON.stringify({ summary: 'x', stance: 'positive', confidence: 0.5 }), tool_calls: [] }, finish_reason: 'stop' }] });
+});
+
+test('OWNER RULING 2026-09-10: served model string is observability only — response.model != authorized request model does not block the map channel', () => {
+  const out = validateDeepSeekResponse(okChatResponse({ model: 'deepseek-flash' }));
+  assert.equal(out.summary, '来源表达了一个观点。');
+  assert.equal(out.stance, 'positive');
+  assert.equal(out.confidence, 'high');
 });
 
 test('confidence 枚举 high/medium/low 均接受；数字一律拒绝', () => {

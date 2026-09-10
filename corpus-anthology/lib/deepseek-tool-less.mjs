@@ -29,7 +29,11 @@ import { assertProjection, validateMinimalMap } from './lmstudio-tool-less.mjs';
 
 export const DEEPSEEK_RUNTIME = Object.freeze({
   runtimeId: 'deepseek-api-tool-less',
-  model: 'deepseek-v4-flash',
+  // OWNER RULING 2026-09-10: the authorized REQUEST model id. The provider may
+  // route this request to its current served generation and report a different
+  // served string — served naming is OBSERVABILITY ONLY and never an equality
+  // gate (see validateDeepSeekResponse).
+  model: 'deepseek-v4-pro',
   thinking: 'disabled',
   endpoint: 'https://api.deepseek.com/chat/completions',
   jsonMode: 'json_object',
@@ -112,7 +116,7 @@ const SYSTEM_PROMPT = [
 export function buildDeepSeekChatRequest({ projection, runtime = DEEPSEEK_RUNTIME }) {
   assertProjection(projection);
   if (runtime.runtimeId !== 'deepseek-api-tool-less'
-    || runtime.model !== 'deepseek-v4-flash'
+    || runtime.model !== 'deepseek-v4-pro'
     || runtime.thinking !== 'disabled'
     || runtime.endpoint !== 'https://api.deepseek.com/chat/completions'
     || runtime.jsonMode !== 'json_object'
@@ -134,9 +138,11 @@ export function buildDeepSeekChatRequest({ projection, runtime = DEEPSEEK_RUNTIM
 
 /** DeepSeek 响应 envelope 校验（OpenAI 兼容形态；模型身份 pin；无工具调用；内容非空）。 */
 export function validateDeepSeekResponse(response, { runtime = DEEPSEEK_RUNTIME } = {}) {
+  // Served-model naming is OBSERVABILITY ONLY (owner ruling 2026-09-10): the
+  // provider may report a different generation label than the request id —
+  // never an identity gate. All other envelope guarantees stay fail-closed.
   if (!isPlainObject(response)
     || response.object !== 'chat.completion'
-    || response.model !== runtime.model
     || !Array.isArray(response.choices)
     || response.choices.length !== 1) {
     fail('response runtime identity or envelope is invalid');

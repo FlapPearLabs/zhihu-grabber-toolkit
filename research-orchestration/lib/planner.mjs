@@ -128,7 +128,7 @@ function isPlainObject(value) {
 function assertPlannerRuntime(runtime = DEEPSEEK_RUNTIME) {
   if (!isPlainObject(runtime)
     || runtime.runtimeId !== 'deepseek-api-tool-less'
-    || runtime.model !== 'deepseek-v4-flash'
+    || runtime.model !== 'deepseek-v4-pro'
     || runtime.thinking !== 'disabled'
     || runtime.endpoint !== 'https://api.deepseek.com/chat/completions'
     || runtime.jsonMode !== 'json_object'
@@ -241,9 +241,11 @@ export function buildPlannerChatRequest({ request, runtime = DEEPSEEK_RUNTIME })
  */
 export function validatePlannerResponseEnvelope(response, { runtime = DEEPSEEK_RUNTIME } = {}) {
   assertPlannerRuntime(runtime);
+  // Served-model naming is OBSERVABILITY ONLY (owner ruling 2026-09-10): the
+  // provider may report a different generation label than the request id —
+  // never an identity gate. All other envelope guarantees stay fail-closed.
   if (!isPlainObject(response)
     || response.object !== 'chat.completion'
-    || response.model !== runtime.model
     || !Array.isArray(response.choices)
     || response.choices.length !== 1) {
     fail('response runtime identity or envelope is invalid');

@@ -14,7 +14,7 @@
  * This is NOT the generic/v0.3 single-question CLI, which keeps its own
  * behavior unchanged. The P1 composition chain pins the
  * approved public-Zhihu semantic runtime (deepseek-api-tool-less /
- * deepseek-v4-flash); any other --runtime value fails closed as invalid
+ * deepseek-v4-pro request route); any other --runtime value fails closed as invalid
  * input (NO_SILENT_RUNTIME_FALLBACK — there is no fallback path here).
  *
  * Usage:

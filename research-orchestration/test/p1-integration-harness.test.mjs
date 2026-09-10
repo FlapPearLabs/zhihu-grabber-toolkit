@@ -223,7 +223,7 @@ describe('F8 — canonical runtime authority (no fallback, extraction boundary)'
   test('loadRuntimeAuthority validates the declaration', () => {
     const a = loadRuntimeAuthority();
     assert.equal(a.canonical.runtimeId, 'deepseek-api-tool-less');
-    assert.equal(a.canonical.model, 'deepseek-v4-flash');
+    assert.equal(a.canonical.model, 'deepseek-v4-pro');
     const bad = mkdtempSync(join(tmpdir(), 'p1-auth-'));
     writeFileSync(join(bad, 'runtime-authority.json'), JSON.stringify({ schema: 'runtime-authority/1', localSmoke: {} }));
     assert.throws(() => loadRuntimeAuthority(join(bad, 'runtime-authority.json')), /missing canonical/);

@@ -48,7 +48,7 @@ const CREDENTIAL = Object.freeze({
   source: 'env', configured: true, usable: true, error: 'none', key: 'sk-fake-test-key-000',
 });
 
-const DEEPSEEK_MODEL = 'deepseek-v4-flash';
+const DEEPSEEK_MODEL = 'deepseek-v4-pro';
 const DEEPSEEK_ENDPOINT = 'https://api.deepseek.com/chat/completions';
 
 function tmpWorkDir(prefix = 'planner-t18') {
@@ -130,6 +130,21 @@ test('P1-T18: valid semantic proposal passes existing T04 validation and is pers
   assert.equal(body.response_format.type, 'json_object');
   assert.deepEqual(body.thinking, { type: 'disabled' });
   assert.equal(body.tools, undefined);
+});
+
+test('OWNER RULING 2026-09-10: served model string is observability only — response.model != authorized request model does not block the planner channel', async () => {
+  const workDir = tmpWorkDir();
+  const usageSink = [];
+  const res = await proposeResearchPlan({
+    userRequest: '研究一下大家怎么看大语言模型 Agent 的落地争议',
+    workDir,
+    fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT, { model: 'deepseek-flash' })),
+    credential: CREDENTIAL,
+    usageSink,
+  });
+  assert.equal(res.ok, true, JSON.stringify({ ok: res.ok, reason: res.reason, details: res.details }));
+  // provider-side served naming is recorded as observability when reported
+  if (usageSink.length > 0) assert.equal(usageSink[0].model, 'deepseek-flash');
 });
 
 test('P1-T18: persisted plan keeps all six conceptual field classes (Spec §4.1)', async () => {
@@ -260,7 +275,9 @@ test('P1-T18: transport failure / HTTP error / non-JSON payload → runtime_unav
 test('P1-T18: envelope contract violations → runtime_unavailable (isolation/channel failures)', async () => {
   const common = { userRequest: '研究知乎上对量化交易的讨论', credential: CREDENTIAL, fetchImpl: null };
   const cases = [
-    { name: 'wrong model identity', payload: deepseekEnvelope(VALID_PLAN_TEXT, { model: 'some-other-model' }) },
+    // OWNER RULING 2026-09-10: a mismatching served model label is ACCEPTED
+    // (observability only) — removed from the violation matrix (see the
+    // OWNER RULING test above).
     { name: 'truncated completion', payload: deepseekEnvelope(VALID_PLAN_TEXT, { finish: 'length' }) },
     { name: 'model-visible tool call', payload: deepseekEnvelope(VALID_PLAN_TEXT, { toolCalls: [{ id: '1', type: 'function', function: { name: 'x', arguments: '{}' } }] }) },
     { name: 'empty assistant content', payload: deepseekEnvelope('   ') },

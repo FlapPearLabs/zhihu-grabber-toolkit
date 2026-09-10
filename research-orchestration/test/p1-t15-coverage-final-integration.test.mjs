@@ -690,7 +690,7 @@ describe('T15 full chain convergence → final reconciliation', () => {
     const final = finalizeResearchCoverage({
       coverageState, synthesisArtifact: synthesis.synthesisArtifact, workDir: work, journal,
       requireFullCoverage: true,
-      runtimeIdentity: { runtimeId: 'deepseek-api-tool-less', model: 'deepseek-v4-flash' },
+      runtimeIdentity: { runtimeId: 'deepseek-api-tool-less', model: 'deepseek-v4-pro' },
     });
     assert.equal(final.ok, true);
     assert.equal(final.coverageState.analysisCoverage.is100PercentAnalysis, true);

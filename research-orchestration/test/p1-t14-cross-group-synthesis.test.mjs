@@ -79,7 +79,7 @@ function createMockRuntime({ aspectByClaimId = {}, defaultAspect = '未分簇观
   const calls = [];
   return {
     runtimeId: T14_SYNTHESIS_RUNTIME_ID,
-    model: 'deepseek-v4-flash',
+    model: 'deepseek-v4-pro',
     __calls: calls,
     synthesize(input) {
       if (recordInput) calls.push(JSON.parse(JSON.stringify(input)));
@@ -778,7 +778,7 @@ describe('P1-T14 adversarial round 2 — single-read snapshot, coded getter fail
     const clusterB = { aspect: '同一面向', claimIds: ['c-34561234-001', 'c-23456789-003'] };
     const mkRuntime = (swap) => ({
       runtimeId: T14_SYNTHESIS_RUNTIME_ID,
-      model: 'deepseek-v4-flash',
+      model: 'deepseek-v4-pro',
       synthesize: () => ({ aspects: swap ? [clusterB, clusterA] : [clusterA, clusterB] }),
     });
     const r1 = produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: mkRuntime(false) });

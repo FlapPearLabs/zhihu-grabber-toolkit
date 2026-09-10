@@ -86,9 +86,11 @@ import {
   OWNER_T14_SYNTHESIS,
 } from './coverage-state.mjs';
 
-/** Approved synthesis runtime identity (Spec §5.2 policy — planner-pinned twin). */
+/** Approved synthesis runtime identity (Spec §5.2 policy — planner-pinned twin).
+ * OWNER RULING 2026-09-10: request model = deepseek-v4-pro; served naming is
+ * observability only (never an equality gate). */
 export const T14_SYNTHESIS_RUNTIME_ID = 'deepseek-api-tool-less';
-export const T14_SYNTHESIS_MODEL = 'deepseek-v4-flash';
+export const T14_SYNTHESIS_MODEL = 'deepseek-v4-pro';
 
 /** Frozen §8.3 claim category vocabulary (static authority — NOT embedded in the artifact). */
 const CLAIM_CATEGORIES = ['widely-shared', 'group-specific', 'minority', 'conflicting'];

@@ -3,12 +3,12 @@
   "projectNote": "Zhihu P1 proving-ground declaration. The generic harness/preflight authority reads THIS file; vendor, runtime, model, credential and ticket names live here only (enforced by a static extraction-boundary test).",
   "canonical": {
     "runtimeId": "deepseek-api-tool-less",
-    "model": "deepseek-v4-flash",
+    "model": "deepseek-v4-pro",
     "authorityModule": "corpus-anthology/lib/deepseek-tool-less.mjs",
     "credentialEnv": "DEEPSEEK_API_KEY",
     "credentialFile": ".deepseek_api_key",
     "endpoint": "https://api.deepseek.com/chat/completions",
-    "note": "authoritative declaration = frozen DEEPSEEK_RUNTIME in the authority module; credential resolution via resolveDeepSeekCredential() (env first, then 0600 file); missing credential fails closed; absolutely no fallback to the localSmoke runtime",
+    "note": "authoritative declaration = frozen DEEPSEEK_RUNTIME in the authority module; credential resolution via resolveDeepSeekCredential() (env first, then 0600 file); missing credential fails closed; absolutely no fallback to the localSmoke runtime; model = the OWNER-authorized request route (deepseek-v4-pro, ruling 2026-09-10); provider-side served naming is observability only, never an equality gate",
     "runner": {
       "file": "research-orchestration/bin/canonical-runner.mjs",
       "note": "project-owned canonical gate executed by the generic harness (runCanonicalRunner) in canonical mode only; T16 wires the dogfood topic via runner.args here (wiring is a declaration change, never an env boolean)"

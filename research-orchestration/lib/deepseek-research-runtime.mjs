@@ -11,7 +11,7 @@
  *
  * Discipline (mirrors the reviewed planner channel contract, planner.mjs):
  *   - runtime identity PINNED to the approved canonical runtime (deepseek-
- *     api-tool-less / deepseek-v4-flash) — planner-pinned twin; T14's
+ *     api-tool-less / deepseek-v4-pro request route) — planner-pinned twin; T14's
  *     assertSynthesisRuntime accepts exactly this identity;
  *   - tool-less minimal visible surface: NO tools, thinking disabled (API
  *     field), response_format json_object, temperature 0;
@@ -36,7 +36,9 @@ import { validatePlannerResponseEnvelope, PLANNER_MAX_TOKENS } from './planner.m
 
 /** Pinned identity twin (must equal the corpus-anthology frozen runtime). */
 const RESEARCH_RUNTIME_ID = 'deepseek-api-tool-less';
-const RESEARCH_MODEL = 'deepseek-v4-flash';
+// OWNER RULING 2026-09-10: authorized request model id (served naming is
+// observability only — see buildDeepSeekResearchRuntime).
+const RESEARCH_MODEL = 'deepseek-v4-pro';
 const MAX_ATTEMPTS = 3;
 const DEFAULT_TIMEOUT_MS = 180_000;
 

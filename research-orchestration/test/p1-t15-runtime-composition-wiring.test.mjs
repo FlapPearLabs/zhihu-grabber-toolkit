@@ -426,9 +426,13 @@ test('CE8: P1 composition failure is structured and final — clarification outc
   }
 });
 
-test('CE7: the production research runtime adapter pins the declared canonical identity and fails closed on envelope drift', async () => {
+test('CE7: the production research runtime adapter sends the OWNER-authorized request model (deepseek-v4-pro) and treats the provider-side served model string as observability only', async () => {
   const { buildDeepSeekResearchRuntime } = await import('../lib/deepseek-research-runtime.mjs');
-  const envelopeFor = (content, model = 'deepseek-v4-flash') => ({
+  // OWNER RULING 2026-09-10: request model = deepseek-v4-pro (currently served
+  // as the provider's Flash generation — accepted as-is); the response.model
+  // marketing/generation label is NON-BLOCKING observability, never an
+  // equality gate. All OTHER envelope guarantees remain fail-closed.
+  const envelopeFor = (content, model = 'deepseek-flash') => ({
     object: 'chat.completion',
     model,
     choices: [{ message: { role: 'assistant', content }, finish_reason: 'stop' }],
@@ -450,19 +454,25 @@ test('CE7: the production research runtime adapter pins the declared canonical i
     },
   });
   assert.equal(rt.runtimeId, 'deepseek-api-tool-less');
-  assert.equal(rt.model, 'deepseek-v4-flash');
+  assert.equal(rt.model, 'deepseek-v4-pro', 'request model pin = the OWNER-authorized route');
+  assert.equal(rt.model, T14_SYNTHESIS_MODEL, 'adapter pin and T14 pin must agree on the authorized request model');
   const out = await rt.analyze({ projection: '[BEGIN UNTRUSTED_DATA token=1] data [END]' });
   assert.equal(calls, 1);
-  assert.equal(lastBody.model, 'deepseek-v4-flash');
+  assert.equal(lastBody.model, 'deepseek-v4-pro', 'the request carries the authorized model id');
   assert.deepEqual(lastBody.tools, undefined, 'tool-less: no tools may be sent');
   assert.equal(lastBody.thinking?.type, 'disabled');
   assert.equal(out.main?.[0]?.tokenRef, '1');
 
-  // envelope model drift → fail closed (identity drift is never tolerated)
-  const driftEnvelope = envelopeFor('{"main":[],"minority":[],"contradictory":[]}', 'some-other-model');
-  const driftRt = buildDeepSeekResearchRuntime({
+  // envelope SHAPE failures still fail closed (served-model naming is the ONLY
+  // relaxed assumption): malformed envelope / non-clean finish are failures.
+  const shapeBroken = buildDeepSeekResearchRuntime({
     credential: { usable: true, key: 'test-key' },
-    fetchImpl: async () => ({ ok: true, json: async () => driftEnvelope }),
+    fetchImpl: async () => ({ ok: true, json: async () => ({ object: 'chat.completion', model: 'deepseek-flash', choices: [] }) }),
   });
-  await assert.rejects(() => driftRt.analyze({ projection: 'x' }), (e) => String(e?.message ?? '').length > 0);
+  await assert.rejects(() => shapeBroken.analyze({ projection: 'x' }), (e) => String(e?.message ?? '').length > 0);
+  const truncated = buildDeepSeekResearchRuntime({
+    credential: { usable: true, key: 'test-key' },
+    fetchImpl: async () => ({ ok: true, json: async () => ({ object: 'chat.completion', model: 'deepseek-flash', choices: [{ message: { role: 'assistant', content: '{"main":[]}' }, finish_reason: 'length' }] }) }),
+  });
+  await assert.rejects(() => truncated.analyze({ projection: 'x' }), (e) => String(e?.message ?? '').length > 0);
 });
