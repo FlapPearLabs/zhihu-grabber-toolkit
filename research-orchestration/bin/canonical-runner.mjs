@@ -38,8 +38,9 @@
  *                                      canonical runtimeId — evidence would
  *                                      be false, refused (exit 1)
  *
- * Execution boundary: the ACTUAL canonical P1 path — the existing research
- * entrypoint (bin/research.mjs) invoked with --runtime resolved from the
+ * Execution boundary: the ACTUAL canonical P1 path — the dedicated P1
+ * composition entrypoint (bin/research-p1.mjs; the runtime composition owner
+ * wired by the T15 post-merge repair) invoked with --runtime resolved from the
  * declaration (never hardcoded here), ALWAYS with --restart so canonical
  * evidence can never ride on a checkpoint produced by an earlier, possibly
  * noncanonical run; the stale result artifact is removed before the run for
@@ -55,8 +56,8 @@ import { loadRuntimeAuthority, REPO_ROOT } from './runtime-authority.mjs';
 import { checkCanonicalCredential } from './integration-preflight.mjs';
 import { sha256File } from '../lib/state.mjs';
 
-/** The canonical P1 path executed by this project-owned runner (project-owned constant; the RUNTIME comes from the declaration). */
-const RESEARCH_ENTRY_REL = 'research-orchestration/bin/research.mjs';
+/** The canonical P1 path executed by this project-owned runner (project-owned constant; the RUNTIME comes from the declaration). The generic/v0.3 single-question CLI is NOT the canonical P1 path and is never a fallback. */
+const RESEARCH_ENTRY_REL = 'research-orchestration/bin/research-p1.mjs';
 const DEFAULT_WORK_REL = 'work/canonical-research';
 
 /** Pure-ish: parse the runner CLI. Positional words = research topic; --work overrides the run work dir. */

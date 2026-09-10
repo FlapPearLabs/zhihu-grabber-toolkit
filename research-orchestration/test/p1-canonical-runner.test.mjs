@@ -14,7 +14,7 @@
  *     EXISTING preflight machine code (CANONICAL_CREDENTIAL_MISSING,
  *     presence-only) BEFORE any spawn — even when a successful spawn is
  *     available ("everything else present" must not matter);
- *   - the runner executes the ACTUAL canonical P1 path (bin/research.mjs) with
+ *   - the runner executes the ACTUAL canonical P1 path (bin/research-p1.mjs) with
  *     the runtime resolved from the declaration (never hardcoded), always
  *     --restart (no silent checkpoint reuse), and on success emits exactly one
  *     canonical-runner-evidence/1 PASS object bound to the DECLARED
@@ -178,7 +178,7 @@ describe('F8b wiring — canonical execution boundary + evidence contract (offli
     assert.equal(calls.length, 1);
     const { file, args, opts } = calls[0];
     assert.equal(file, process.execPath); // no nodeBin override in env -> process.execPath (same rule as the harness)
-    assert.equal(args[0], pathResolve(dir, 'research-orchestration', 'bin', 'research.mjs'));
+    assert.equal(args[0], pathResolve(dir, 'research-orchestration', 'bin', 'research-p1.mjs'));
     assert.ok(args.includes('--json'));
     assert.ok(args.includes('--restart')); // never ride on a prior (possibly noncanonical) checkpoint
     const rt = args.indexOf('--runtime');
