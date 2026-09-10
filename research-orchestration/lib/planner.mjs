@@ -380,6 +380,24 @@ export async function proposeResearchPlan({
   }
 
   // 6. EXISTING T04 structured validation gate (Spec §4.2 — no bypass, no coercion).
+  const groupKeyIssues = [];
+  for (let i = 0; i < v.plan.sourceGroupIntents.length; i += 1) {
+    if (v.plan.sourceGroupIntents[i].groupKey != null) {
+      groupKeyIssues.push({
+        path: `sourceGroupIntents[${i}].groupKey`,
+        message: "model-generated pre-retrieval plans must have a null groupKey (the planner has no source-identity authority and cannot know Zhihu question IDs); a non-null groupKey is fail-closed, never coerced",
+      });
+    }
+    if (!Array.isArray(v.plan.sourceGroupIntents[i].constraints) || v.plan.sourceGroupIntents[i].constraints.length > 0) {
+      groupKeyIssues.push({
+        path: `sourceGroupIntents[${i}].constraints`,
+        message: "MUST be [] for semantic planner model generation; natural language free-form semantic constraints are unsupported for model-generated plans in this profile and trigger T08 unevaluable constraint check",
+      });
+    }
+  }
+  if (groupKeyIssues.length > 0) {
+    return { ok: false, reason: PLANNER_FAILURE_PLANNER_INVALID, issues: groupKeyIssues, runtime: identity };
+  }
   const v = validatePlanJson(content);
   if (!v.ok) {
     return { ok: false, reason: PLANNER_FAILURE_PLANNER_INVALID, issues: v.issues, runtime: identity };
@@ -403,6 +421,12 @@ export async function proposeResearchPlan({
       groupKeyIssues.push({
         path: `sourceGroupIntents[${i}].groupKey`,
         message: 'model-generated pre-retrieval plans must have a null groupKey (the planner has no source-identity authority and cannot know Zhihu question IDs); a non-null groupKey is fail-closed, never coerced',
+      });
+    }
+    if (!Array.isArray(v.plan.sourceGroupIntents[i].constraints) || v.plan.sourceGroupIntents[i].constraints.length > 0) {
+      groupKeyIssues.push({
+        path: `sourceGroupIntents[${i}].constraints`,
+        message: 'MUST be [] for semantic planner model generation; natural language free-form semantic constraints are unsupported for model-generated plans in this profile and trigger T08 unevaluable constraint check',
       });
     }
   }

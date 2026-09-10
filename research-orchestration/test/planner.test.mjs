@@ -194,7 +194,7 @@ test('P1-T18: planner prompt names the exact plan schema and data-only task', as
   assert.ok(/json/i.test(system.content)); // DeepSeek JSON-mode guide requirement
   assert.equal(user.role, 'user');
   const userData = JSON.parse(user.content);
-  assert.equal(userData.userRequest, '研究知乎上对量化交易的讨论');
+  assert.equal(userData.request, '研究知乎上对量化交易的讨论');
 });
 
 // ---------------------------------------------------------------------------
@@ -578,4 +578,100 @@ test('OWNER RULING D1-CE5: planner system prompt explicitly requires groupKey MU
   assert.match(prompt, /"groupKey"[^.\n]*MUST be null/i, 'prompt must state groupKey MUST be null');
   assert.match(prompt, /no source-identity authority/i, 'prompt must explain why (no source-identity authority)');
   assert.match(prompt, /cannot know Zhihu question IDs/i, 'prompt must explain the pre-retrieval identity gap');
+});
+
+
+const FIXED_NOW = new Date('2026-08-30T10:00:00Z');
+
+function planTextWithConstraints(arr) {
+  return JSON.stringify({
+    schemaVersion: 1,
+    queryVariants: ["q", "q2"],
+    aspects: ["a"],
+    entities: ["e"],
+    opposingFramings: ["o"],
+    terminologyVariants: [],
+    sourceGroupIntents: [
+      { intent: "Test constraints", constraints: arr, groupKey: null }
+    ]
+  });
+}
+
+function planTextMultipleIntents(intents) {
+  return JSON.stringify({
+    schemaVersion: 1,
+    queryVariants: ["q", "q2"],
+    aspects: ["a"],
+    entities: ["e"],
+    opposingFramings: ["o"],
+    terminologyVariants: [],
+    sourceGroupIntents: intents
+  });
+}
+
+test('D4-CE1: constraints=["text"] fails closed', async () => {
+  const result = await proposeResearchPlan({
+    userRequest: 'Test D4', workDir: tmpWorkDir(), credential: CREDENTIAL,
+    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithConstraints(['Contains text']))),
+    now: FIXED_NOW
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, 'planner_invalid');
+  assert.ok(result.issues.some(i => i.message.includes('MUST be [] for semantic planner model generation')));
+});
+
+test('D4-CE2: constraints=[""] fails closed', async () => {
+  const result = await proposeResearchPlan({
+    userRequest: 'Test D4', workDir: tmpWorkDir(), credential: CREDENTIAL,
+    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithConstraints(['']))),
+    now: FIXED_NOW
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, 'planner_invalid');
+  assert.ok(result.issues.some(i => i.message.includes('MUST be [] for semantic planner model generation')));
+});
+
+test('D4-CE3: constraints=[] passes', async () => {
+  const result = await proposeResearchPlan({
+    userRequest: 'Test D4', workDir: tmpWorkDir(), credential: CREDENTIAL,
+    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithConstraints([]))),
+    now: FIXED_NOW
+  });
+  assert.equal(result.ok, true);
+});
+
+test('D4-CE4: multiple valid intents passes', async () => {
+  const result = await proposeResearchPlan({
+    userRequest: 'Test D4', workDir: tmpWorkDir(), credential: CREDENTIAL,
+    fetchImpl: fakeFetch(deepseekEnvelope(planTextMultipleIntents([
+      { intent: 'Valid 1', constraints: [], groupKey: null },
+      { intent: 'Valid 2', constraints: [], groupKey: null }
+    ]))),
+    now: FIXED_NOW
+  });
+  assert.equal(result.ok, true);
+});
+
+test('D4-CE5: partial valid/invalid fails closed', async () => {
+  const result = await proposeResearchPlan({
+    userRequest: 'Test D4', workDir: tmpWorkDir(), credential: CREDENTIAL,
+    fetchImpl: fakeFetch(deepseekEnvelope(planTextMultipleIntents([
+      { intent: 'Valid 1', constraints: [], groupKey: null },
+      { intent: 'Invalid 1', constraints: ['some bad string'], groupKey: null }
+    ]))),
+    now: FIXED_NOW
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, 'planner_invalid');
+});
+
+test('D4-CE6: generic validatePlanInput preserves schemaVersion 1 behavior for non-empty constraints', async () => {
+  const v = validatePlanInput(JSON.parse(planTextWithConstraints(["Valid constraint string for other caller"])));
+  assert.equal(v.ok, true);
+});
+
+test('D4-CE7: planner system prompt explicitly requires []', () => {
+  const prompt = buildPlannerSystemPrompt();
+  assert.equal(/every "constraints" array MUST be []/i.test(prompt), true);
+  assert.equal(/free-form semantic constraints are unsupported for model-generated/i.test(prompt), true);
 });
