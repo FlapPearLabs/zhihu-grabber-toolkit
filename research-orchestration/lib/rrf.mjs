@@ -1037,7 +1037,7 @@ export function rrfFusion(rankings) {
     // Canonical accumulation order (permutation-invariant → bitwise-deterministic).
     record.contributions.sort((a, b) => compareChannelKey(a.key, b.key));
     let rrfScore = 0;
-    for (const c of record.contributions) { rrfScore += 1 / (RRF_K + c.rank); console.log("RRF CALC", record.identity.questionId, c.rank, rrfScore); }
+    for (const c of record.contributions) rrfScore += 1 / (RRF_K + c.rank);
 
     const first = record.contributions[0]; // canonical-first contributing channel
     // Codex 4th-round P2 on 0e3e2bea: the canonical-first contribution's
