@@ -54,3 +54,6 @@ jobs:
 
       - name: research-orchestration planner tests
         run: node --test research-orchestration/test/planner.test.mjs
+
+      - name: research-orchestration preflight entrypoint tests
+        run: node --test research-orchestration/test/integration-preflight.test.mjs

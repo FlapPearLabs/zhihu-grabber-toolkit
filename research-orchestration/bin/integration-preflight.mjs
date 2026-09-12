@@ -29,6 +29,7 @@
 import { existsSync } from 'node:fs';
 import { resolve as pathResolve } from 'node:path';
 import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
 import { loadRuntimeAuthority, REPO_ROOT, RO_DIR } from './runtime-authority.mjs';
 
 /** Pure classification: map a list of check results to a verdict. */
@@ -170,7 +171,8 @@ async function probeLive({ mode, authority, stage }) {
 }
 
 function isMainModule() {
-  try { return import.meta.url === pathToFileURL(process.argv[1] ?? '').href; } catch { return false; }
+  if (!process.argv[1]) return false;
+  return import.meta.url === pathToFileURL(process.argv[1]).href;
 }
 if (isMainModule()) {
   const args = process.argv.slice(2);
