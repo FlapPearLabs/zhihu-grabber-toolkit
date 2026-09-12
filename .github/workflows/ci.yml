@@ -42,3 +42,15 @@ jobs:
       # 显式文件路径：避免 `node --test test/` 在 Windows 上把目录当模块解析。
       - name: repository integration tests
         run: node --test test/agent-pipeline.test.mjs
+
+      # research-orchestration planner（P1-T18 / Issue #50 D4）。
+      # 该子系统此前完全未纳入 CI，导致 PR #84 的语法错误（同一函数作用域内重复
+      # `const` 声明 + 在 validatePlanJson 之前引用 v.plan）未被拦截即合入 master。
+      # 最小防护范围：语法门 + focused planner 测试（research-orchestration 其余
+      # 套件存在既存失败，不纳入本最小修复）。
+      # 显式文件路径：避免 `node --test <dir>` 在 Windows 上把目录当模块解析。
+      - name: research-orchestration planner syntax gate
+        run: node --check research-orchestration/lib/planner.mjs
+
+      - name: research-orchestration planner tests
+        run: node --test research-orchestration/test/planner.test.mjs

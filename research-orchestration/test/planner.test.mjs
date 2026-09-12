@@ -72,7 +72,13 @@ const VALID_PLAN_TEXT = JSON.stringify({
     // Issue #48 D1 repair): a pre-retrieval model-generated plan has no
     // source-identity authority. The generic T04 contract still accepts a
     // non-null groupKey for callers with canonical identities (D1-CE4).
-    { intent: '关注反方观点', constraints: ['至少包含一个高赞反对回答'], groupKey: null },
+    // constraints MUST be [] in planner MODEL output (D4 repair, Issue #50):
+    // free-form constraint strings have no structured semantics under plan
+    // schemaVersion 1, so the frozen T08 selector fails the whole run closed
+    // (selection_constraint_unevaluable). The generic T04 contract still
+    // accepts non-empty constraints for callers that own evaluable semantics
+    // (D4-CE6).
+    { intent: '关注反方观点', constraints: [], groupKey: null },
   ],
 });
 
@@ -194,7 +200,7 @@ test('P1-T18: planner prompt names the exact plan schema and data-only task', as
   assert.ok(/json/i.test(system.content)); // DeepSeek JSON-mode guide requirement
   assert.equal(user.role, 'user');
   const userData = JSON.parse(user.content);
-  assert.equal(userData.request, '研究知乎上对量化交易的讨论');
+  assert.equal(userData.userRequest, '研究知乎上对量化交易的讨论');
 });
 
 // ---------------------------------------------------------------------------
@@ -515,7 +521,7 @@ test('P1-T18 repair P1-1: legitimate USER_REQUEST with tilde / drive-colon text 
 function planTextWithGroupKey(groupKey) {
   return JSON.stringify({
     ...JSON.parse(VALID_PLAN_TEXT),
-    sourceGroupIntents: [{ intent: '关注反方观点', constraints: ['至少包含一个高赞反对回答'], groupKey }],
+    sourceGroupIntents: [{ intent: '关注反方观点', constraints: [], groupKey }],
   });
 }
 
@@ -580,98 +586,146 @@ test('OWNER RULING D1-CE5: planner system prompt explicitly requires groupKey MU
   assert.match(prompt, /cannot know Zhihu question IDs/i, 'prompt must explain the pre-retrieval identity gap');
 });
 
+// ---------------------------------------------------------------------------
+// 9. D4 (Issue #50 POST_MERGE_CORRUPTION repair): planner-profile model-output
+//    contract — sourceGroupIntents[*].constraints MUST be [].
+//
+//    Why this is a planner-PROFILE rule and not a T04 schema change: free-form
+//    constraint strings have NO structured semantics under plan schemaVersion 1,
+//    so the frozen T08 selector (lib/source-group-selection.mjs) fails the whole
+//    run closed with `selection_constraint_unevaluable` on any non-empty
+//    constraints[] (Issue #50 D4 / P1-T16 dogfood discovery). A model-generated,
+//    pre-retrieval plan cannot supply mechanically evaluable constraints, so the
+//    planner must emit [] and carry semantic diversity in intent /
+//    queryVariants / aspects / entities / opposingFramings / terminologyVariants.
+//    The GENERIC T04 plan contract (plan-contract.mjs) is deliberately UNCHANGED:
+//    callers that own evaluable constraint semantics keep working (D4-CE6).
+// ---------------------------------------------------------------------------
 
-const FIXED_NOW = new Date('2026-08-30T10:00:00Z');
-
-function planTextWithConstraints(arr) {
+/** Plan text identical to a valid proposal except sourceGroupIntents[*].constraints. */
+function planTextWithConstraints(constraints) {
   return JSON.stringify({
-    schemaVersion: 1,
-    queryVariants: ["q", "q2"],
-    aspects: ["a"],
-    entities: ["e"],
-    opposingFramings: ["o"],
-    terminologyVariants: [],
-    sourceGroupIntents: [
-      { intent: "Test constraints", constraints: arr, groupKey: null }
-    ]
+    ...JSON.parse(VALID_PLAN_TEXT),
+    sourceGroupIntents: [{ intent: '关注反方观点', constraints, groupKey: null }],
   });
 }
 
-function planTextMultipleIntents(intents) {
-  return JSON.stringify({
-    schemaVersion: 1,
-    queryVariants: ["q", "q2"],
-    aspects: ["a"],
-    entities: ["e"],
-    opposingFramings: ["o"],
-    terminologyVariants: [],
-    sourceGroupIntents: intents
-  });
+/** Plan text identical to a valid proposal except the whole sourceGroupIntents list. */
+function planTextWithIntents(intents) {
+  return JSON.stringify({ ...JSON.parse(VALID_PLAN_TEXT), sourceGroupIntents: intents });
 }
 
-test('D4-CE1: constraints=["text"] fails closed', async () => {
-  const result = await proposeResearchPlan({
-    userRequest: 'Test D4', workDir: tmpWorkDir(), credential: CREDENTIAL,
-    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithConstraints(['Contains text']))),
-    now: FIXED_NOW
+test('D4-CE1: model-emitted non-empty constraints -> planner_invalid FAIL_CLOSED, nothing persisted', async () => {
+  const workDir = tmpWorkDir();
+  const res = await proposeResearchPlan({
+    userRequest: '研究知乎上对量化交易的讨论', workDir,
+    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithConstraints(['至少包含一个高赞反对回答']))),
+    credential: CREDENTIAL,
   });
-  assert.equal(result.ok, false);
-  assert.equal(result.reason, 'planner_invalid');
-  assert.ok(result.issues.some(i => i.message.includes('MUST be [] for semantic planner model generation')));
+  assert.equal(res.ok, false, 'non-empty constraints must fail the planner profile closed');
+  assert.equal(res.reason, PLANNER_FAILURE_PLANNER_INVALID);
+  assert.equal(res.reason, 'planner_invalid');
+  assert.ok(Array.isArray(res.issues) && res.issues.length > 0, 'structured issues must be present');
+  assert.ok(
+    res.issues.some((i) => /sourceGroupIntents\[0\]\.constraints/.test(i.path)),
+    'issue path must name the offending constraints field',
+  );
+  assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false, 'invalid plan must NOT be persisted');
+  assert.equal(loadPlan(workDir).ok, false);
 });
 
-test('D4-CE2: constraints=[""] fails closed', async () => {
-  const result = await proposeResearchPlan({
-    userRequest: 'Test D4', workDir: tmpWorkDir(), credential: CREDENTIAL,
+test('D4-CE2: constraints=[""] is still planner_invalid — emptiness is structural, not textual', async () => {
+  const workDir = tmpWorkDir();
+  const res = await proposeResearchPlan({
+    userRequest: '研究知乎上对量化交易的讨论', workDir,
     fetchImpl: fakeFetch(deepseekEnvelope(planTextWithConstraints(['']))),
-    now: FIXED_NOW
+    credential: CREDENTIAL,
   });
-  assert.equal(result.ok, false);
-  assert.equal(result.reason, 'planner_invalid');
-  assert.ok(result.issues.some(i => i.message.includes('MUST be [] for semantic planner model generation')));
+  assert.equal(res.ok, false, 'a non-empty array of blank strings must still fail closed');
+  assert.equal(res.reason, PLANNER_FAILURE_PLANNER_INVALID);
+  assert.ok(
+    res.issues.some((i) => /sourceGroupIntents\[0\]\.constraints/.test(i.path)),
+    'issue path must name the offending constraints field',
+  );
+  assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false);
+  assert.equal(loadPlan(workDir).ok, false);
 });
 
-test('D4-CE3: constraints=[] passes', async () => {
-  const result = await proposeResearchPlan({
-    userRequest: 'Test D4', workDir: tmpWorkDir(), credential: CREDENTIAL,
+test('D4-CE3: constraints=[] remains a valid planner proposal — persisted unchanged', async () => {
+  const workDir = tmpWorkDir();
+  const res = await proposeResearchPlan({
+    userRequest: '研究知乎上对量化交易的讨论', workDir,
     fetchImpl: fakeFetch(deepseekEnvelope(planTextWithConstraints([]))),
-    now: FIXED_NOW
+    credential: CREDENTIAL,
   });
-  assert.equal(result.ok, true);
+  assert.equal(res.ok, true, JSON.stringify({ ok: res.ok, reason: res.reason, issues: res.issues }));
+  const loaded = loadPlan(workDir);
+  assert.equal(loaded.ok, true);
+  assert.deepEqual(loaded.plan.sourceGroupIntents[0].constraints, []);
+  assert.equal(loaded.plan.sourceGroupIntents[0].groupKey, null);
+  assert.equal(res.planHash, planHash(loaded.plan));
 });
 
-test('D4-CE4: multiple valid intents passes', async () => {
-  const result = await proposeResearchPlan({
-    userRequest: 'Test D4', workDir: tmpWorkDir(), credential: CREDENTIAL,
-    fetchImpl: fakeFetch(deepseekEnvelope(planTextMultipleIntents([
-      { intent: 'Valid 1', constraints: [], groupKey: null },
-      { intent: 'Valid 2', constraints: [], groupKey: null }
+test('D4-CE4: multiple sourceGroupIntents, every constraints=[] -> valid and fully preserved', async () => {
+  const workDir = tmpWorkDir();
+  const intents = [
+    { intent: '关注支持方观点', constraints: [], groupKey: null },
+    { intent: '关注反方观点', constraints: [], groupKey: null },
+    { intent: '关注中立综述', constraints: [], groupKey: null },
+  ];
+  const res = await proposeResearchPlan({
+    userRequest: '研究知乎上对量化交易的讨论', workDir,
+    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithIntents(intents))),
+    credential: CREDENTIAL,
+  });
+  assert.equal(res.ok, true, JSON.stringify({ ok: res.ok, reason: res.reason, issues: res.issues }));
+  const loaded = loadPlan(workDir);
+  assert.equal(loaded.ok, true);
+  assert.deepEqual(loaded.plan.sourceGroupIntents, intents);
+});
+
+test('D4-CE5: one invalid intent among valid ones invalidates the WHOLE plan (no partial acceptance)', async () => {
+  const workDir = tmpWorkDir();
+  const res = await proposeResearchPlan({
+    userRequest: '研究知乎上对量化交易的讨论', workDir,
+    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithIntents([
+      { intent: '关注支持方观点', constraints: [], groupKey: null },
+      { intent: '关注反方观点', constraints: ['至少包含一个高赞反对回答'], groupKey: null },
     ]))),
-    now: FIXED_NOW
+    credential: CREDENTIAL,
   });
-  assert.equal(result.ok, true);
+  assert.equal(res.ok, false, 'mixed valid/invalid intents must invalidate the whole plan');
+  assert.equal(res.reason, PLANNER_FAILURE_PLANNER_INVALID);
+  assert.ok(
+    res.issues.some((i) => /sourceGroupIntents\[1\]\.constraints/.test(i.path)),
+    'the issue path must point at the offending entry index [1]',
+  );
+  assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false, 'nothing may be persisted');
+  assert.equal(loadPlan(workDir).ok, false);
 });
 
-test('D4-CE5: partial valid/invalid fails closed', async () => {
-  const result = await proposeResearchPlan({
-    userRequest: 'Test D4', workDir: tmpWorkDir(), credential: CREDENTIAL,
-    fetchImpl: fakeFetch(deepseekEnvelope(planTextMultipleIntents([
-      { intent: 'Valid 1', constraints: [], groupKey: null },
-      { intent: 'Invalid 1', constraints: ['some bad string'], groupKey: null }
-    ]))),
-    now: FIXED_NOW
-  });
-  assert.equal(result.ok, false);
-  assert.equal(result.reason, 'planner_invalid');
+test('D4-CE6: generic T04 validatePlanInput is UNCHANGED — non-empty constraints stay valid for non-planner callers', () => {
+  const constraints = ['Valid constraint string for other caller'];
+  const v = validatePlanInput(JSON.parse(planTextWithConstraints(constraints)));
+  assert.equal(v.ok, true, 'generic T04 contract must still accept non-empty constraints (no schema regression)');
+  assert.deepEqual(v.plan.sourceGroupIntents[0].constraints, constraints);
+  // The generic contract still accepts a non-null groupKey too (D1-CE4 parity).
+  assert.equal(v.plan.sourceGroupIntents[0].groupKey, null);
 });
 
-test('D4-CE6: generic validatePlanInput preserves schemaVersion 1 behavior for non-empty constraints', async () => {
-  const v = validatePlanInput(JSON.parse(planTextWithConstraints(["Valid constraint string for other caller"])));
-  assert.equal(v.ok, true);
-});
-
-test('D4-CE7: planner system prompt explicitly requires []', () => {
+test('D4-CE7: planner prompt states the constraints=[] rule and its schema example is itself valid', () => {
   const prompt = buildPlannerSystemPrompt();
-  assert.equal(/every "constraints" array MUST be []/i.test(prompt), true);
-  assert.equal(/free-form semantic constraints are unsupported for model-generated/i.test(prompt), true);
+  assert.match(prompt, /every "constraints" array MUST be \[\]/i, 'prompt must state that every constraints array MUST be []');
+  assert.match(prompt, /free-form (?:semantic )?constraints are unsupported/i, 'prompt must state free-form constraints are unsupported by this P1 planner profile');
+  // The schema example must NOT advertise constraints as free-form strings.
+  assert.equal(prompt.includes('"constraints": ["string"]'), false, 'prompt must not advertise constraints as free-form strings');
+  assert.match(prompt, /"constraints": \[\]/, 'the schema example must itself use []');
+  // Semantic diversity must be redirected to the supported carriers.
+  assert.match(
+    prompt,
+    /semantic diversity[^.\n]*"intent"[^.\n]*"queryVariants"[^.\n]*"aspects"[^.\n]*"entities"[^.\n]*"opposingFramings"[^.\n]*"terminologyVariants"/i,
+    'prompt must name the supported semantic-diversity carriers',
+  );
+  // The D1 groupKey rule must survive this repair unchanged.
+  assert.match(prompt, /"groupKey"[^.\n]*MUST be null/i, 'prompt must still state groupKey MUST be null');
 });
