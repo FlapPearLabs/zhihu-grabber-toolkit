@@ -1,0 +1,551 @@
+{
+  "schema": "p1-t16-canonical-acceptance-evidence/1",
+  "ticket": "P1-T16",
+  "issue": 48,
+  "generatedAt": "2026-09-13T14:46:21.677Z",
+  "masterSha": "9444a33b3ca24a53f8da4b9e2cb03a241925f47f",
+  "executorRole": "T16_CANONICAL_EXECUTOR",
+  "sanitization": {
+    "policy": "No credential values, no cookie/secret material, no absolute host paths, no raw corpus text. Work-relative artifact refs only. Public Zhihu question ids/urls are public identifiers and are retained as source-group identity evidence.",
+    "credentialsIncluded": false,
+    "absolutePathsIncluded": false,
+    "corpusTextIncluded": false
+  },
+  "run": {
+    "runId": "bb8a745ce60523814bd493b35bcd4593942e3a21678cf2f318d8e19c14ca3085",
+    "topic": "AI 编程工具会取代程序员吗",
+    "mode": "p1-cross-question-deep-research",
+    "runtime": "deepseek-api-tool-less",
+    "planHash": "6e0640aeed7b434af7bb8cb0126fd15f616bac5b8eba3f82cd5728a886711e26",
+    "workDirRel": "work/canonical-t16-run2-20260913T135310Z",
+    "canonicalEntrypoint": "research-orchestration/bin/canonical-runner.mjs",
+    "productionCallPath": [
+      "research-orchestration/bin/canonical-runner.mjs",
+      "research-orchestration/bin/research-p1.mjs",
+      "research-orchestration/lib/p1-runtime-composer.mjs (composeP1Research)",
+      "research-orchestration/lib/coverage-final-integration.mjs (T06–T15 stages)"
+    ],
+    "resultSha256": "f42838585acd5d263ab00bc1cb32f13c46d17ec8844acc94bc5d145f187b28b5",
+    "coverageFinalSha256": "ee25c769634bdf07df28bf642fa092a6ca4bb89a9e2cfb583860b14e0d55a6aa",
+    "verificationValid": true,
+    "disclosure": {
+      "pipeline": "p1-cross-question-deep-research",
+      "stage": "FINAL_COVERAGE_RECONCILIATION",
+      "isFullCoverage": true,
+      "complete": true,
+      "analysisCoverage": {
+        "selectedCount": 396,
+        "mappedCount": 396,
+        "analyzedCount": 396
+      },
+      "retrieval": {
+        "retrievalRounds": 1,
+        "stopReason": "query_budget_exhausted",
+        "fusedCandidateCount": 36,
+        "fusedGroupCount": 4,
+        "providerFailureCount": 0
+      },
+      "gap": null
+    },
+    "usage": [
+      {
+        "model": "deepseek-v4-pro",
+        "promptTokens": 617,
+        "completionTokens": 613,
+        "totalTokens": 1230,
+        "ms": 8131
+      }
+    ]
+  },
+  "canonicalAuthority": {
+    "declarationFileRel": "research-orchestration/bin/runtime-authority.json",
+    "runtimeIdDeclared": "deepseek-api-tool-less",
+    "modelRequested": "deepseek-v4-pro",
+    "providerServedModelObserved": "deepseek-v4-pro",
+    "servedModelIsObservabilityOnly": true,
+    "credentialSource": "declared 0600 file .deepseek_api_key (repo root) — presence-only in preflight; value never read/logged",
+    "fallbackRuntimePresent": false,
+    "forbiddenRuntimeEvidenceHits": []
+  },
+  "plannerContractD4": {
+    "satisfied": true,
+    "intentCount": 4,
+    "perIntent": [
+      {
+        "index": 0,
+        "groupKeyIsNull": true,
+        "constraintsEmpty": true
+      },
+      {
+        "index": 1,
+        "groupKeyIsNull": true,
+        "constraintsEmpty": true
+      },
+      {
+        "index": 2,
+        "groupKeyIsNull": true,
+        "constraintsEmpty": true
+      },
+      {
+        "index": 3,
+        "groupKeyIsNull": true,
+        "constraintsEmpty": true
+      }
+    ]
+  },
+  "multiProvider": {
+    "providersInvoked": [
+      {
+        "providerId": "zhihu-official-search",
+        "capability": "search",
+        "authClass": "official-secret",
+        "channelsInvoked": 8,
+        "channelsOk": 8,
+        "channelsFailed": 0,
+        "itemsReturned": 54,
+        "completeness": [
+          "unknown"
+        ]
+      },
+      {
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "authClass": "official-secret",
+        "channelsInvoked": 8,
+        "channelsOk": 8,
+        "channelsFailed": 0,
+        "itemsReturned": 80,
+        "completeness": [
+          "complete"
+        ]
+      }
+    ],
+    "totalChannels": 16,
+    "providerFailures": []
+  },
+  "retrieval": {
+    "plannedQueryVariants": [
+      "AI 代码生成工具对程序员就业的影响",
+      "AI 编程工具会取代程序员吗",
+      "AI 编程工具取代程序员的可能性",
+      "AI 编程工具能否替代程序员",
+      "AI 编程是否会取代程序员",
+      "人工智能编程工具会抢走程序员工作吗",
+      "程序员会被 AI 编程工具替代吗",
+      "程序员会被人工智能取代吗"
+    ],
+    "plannedRoutes": [
+      {
+        "providerId": "zhihu-official-search",
+        "capability": "search"
+      },
+      {
+        "providerId": "zhihu-open-platform",
+        "capability": "search"
+      }
+    ],
+    "executedRoutes": [
+      {
+        "query": "AI 编程工具会取代程序员吗",
+        "providerId": "zhihu-official-search",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "AI 编程工具会取代程序员吗",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "AI 编程是否会取代程序员",
+        "providerId": "zhihu-official-search",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "AI 编程是否会取代程序员",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "程序员会被 AI 编程工具替代吗",
+        "providerId": "zhihu-official-search",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "程序员会被 AI 编程工具替代吗",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "AI 编程工具取代程序员的可能性",
+        "providerId": "zhihu-official-search",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "AI 编程工具取代程序员的可能性",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "AI 代码生成工具对程序员就业的影响",
+        "providerId": "zhihu-official-search",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "AI 代码生成工具对程序员就业的影响",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "人工智能编程工具会抢走程序员工作吗",
+        "providerId": "zhihu-official-search",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "人工智能编程工具会抢走程序员工作吗",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "AI 编程工具能否替代程序员",
+        "providerId": "zhihu-official-search",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "AI 编程工具能否替代程序员",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "程序员会被人工智能取代吗",
+        "providerId": "zhihu-official-search",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "程序员会被人工智能取代吗",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 1
+      }
+    ],
+    "fusedCandidateCount": 36,
+    "fusedGroupCount": 4,
+    "providerFailures": [],
+    "retrievalRounds": 1,
+    "stopReason": "query_budget_exhausted"
+  },
+  "selection": {
+    "verdict": "auto",
+    "reason": "clear_best",
+    "planHashMatch": true,
+    "candidateGroupCount": 4,
+    "selectedGroups": [
+      {
+        "questionId": "2077824745589028563",
+        "score": 0.17464009619119347,
+        "sourceUrl": "https://www.zhihu.com/question/2077824745589028563",
+        "securityClass": "external_unverified"
+      },
+      {
+        "questionId": "2038411932424725710",
+        "score": 0.17183760459970138,
+        "sourceUrl": "https://www.zhihu.com/question/2038411932424725710",
+        "securityClass": "external_unverified"
+      },
+      {
+        "questionId": "1962444467077358693",
+        "score": 0.13443640464267825,
+        "sourceUrl": "https://www.zhihu.com/question/1962444467077358693",
+        "securityClass": "external_unverified"
+      },
+      {
+        "questionId": "8345110904",
+        "score": 0.12655103816361088,
+        "sourceUrl": "https://www.zhihu.com/question/8345110904",
+        "securityClass": "external_unverified"
+      }
+    ]
+  },
+  "multiGroupExecution": [
+    {
+      "questionId": "1962444467077358693",
+      "handoffValid": true,
+      "stage": "handed_off",
+      "capturedAnswerCount": 109,
+      "paginationStatus": "complete"
+    },
+    {
+      "questionId": "2038411932424725710",
+      "handoffValid": true,
+      "stage": "handed_off",
+      "capturedAnswerCount": 98,
+      "paginationStatus": "complete"
+    },
+    {
+      "questionId": "2077824745589028563",
+      "handoffValid": true,
+      "stage": "handed_off",
+      "capturedAnswerCount": 170,
+      "paginationStatus": "complete"
+    },
+    {
+      "questionId": "8345110904",
+      "handoffValid": true,
+      "stage": "handed_off",
+      "capturedAnswerCount": 19,
+      "paginationStatus": "complete"
+    }
+  ],
+  "groupVerification": {
+    "1962444467077358693": {
+      "captured": true,
+      "verified": true,
+      "partial": false,
+      "failed": false,
+      "paginationStatus": "complete",
+      "evidenceRef": "zhihu/1962444467077358693/answers.json",
+      "selectedCount": 109,
+      "verifiedCount": 109
+    },
+    "2038411932424725710": {
+      "captured": true,
+      "verified": true,
+      "partial": false,
+      "failed": false,
+      "paginationStatus": "complete",
+      "evidenceRef": "zhihu/2038411932424725710/answers.json",
+      "selectedCount": 98,
+      "verifiedCount": 98
+    },
+    "2077824745589028563": {
+      "captured": true,
+      "verified": true,
+      "partial": false,
+      "failed": false,
+      "paginationStatus": "complete",
+      "evidenceRef": "zhihu/2077824745589028563/answers.json",
+      "selectedCount": 170,
+      "verifiedCount": 170
+    },
+    "8345110904": {
+      "captured": true,
+      "verified": true,
+      "partial": false,
+      "failed": false,
+      "paginationStatus": "complete",
+      "evidenceRef": "zhihu/8345110904/answers.json",
+      "selectedCount": 19,
+      "verifiedCount": 19
+    }
+  },
+  "denseGeometry": {
+    "providerId": "transformersjs-local-onnx",
+    "modelId": "Xenova/bge-base-zh-v1.5",
+    "modelRevision": "71e50dc531959f9e04ebf190ea25b00261a0a186",
+    "vectorDimension": 768,
+    "noNewEgress": true,
+    "note": "Dense layer is fail-closed in the composer (missing provider preflight or missing per-source/target vector aborts the compose). Completion of corpus selection with 396 selected sources + 4 target vectors therefore proves the in-run dense computation succeeded. Provider independently verified offline (black-hole proxy) during environment provisioning."
+  },
+  "rce": {
+    "selectorModule": "research-orchestration/lib/rce-corpus-selector.mjs",
+    "selectedCorpusSourceCount": 396,
+    "selectedCorpusIdentity": "sha256:acabad96b744b7269bf78aebdcd5f0aef9cb2819690540cfda896a9b5a71c393",
+    "perGroupSelectionCoverage": {
+      "1962444467077358693": 1,
+      "2038411932424725710": 1,
+      "2077824745589028563": 1,
+      "8345110904": 1
+    },
+    "selectedSourceGroupCount": 4,
+    "selectedContentByGroup": {
+      "1962444467077358693": 109,
+      "2038411932424725710": 98,
+      "2077824745589028563": 170,
+      "8345110904": 19
+    },
+    "largestGroupShare": 0.4292929292929293,
+    "claimSourceDiversity": 1
+  },
+  "perGroupAnalysis": {
+    "groupRepresentationCount": 4,
+    "claimTotal": 14,
+    "groups": [
+      {
+        "groupId": "1962444467077358693",
+        "accounting": {
+          "selected": 109,
+          "verified": 109,
+          "mapped": 109,
+          "analyzed": 109
+        },
+        "claimsMain": 3,
+        "claimsMinority": 0,
+        "claimsContradictory": 0,
+        "expertEvidenceRichRefs": 7,
+        "completenessStatus": "verified"
+      },
+      {
+        "groupId": "2038411932424725710",
+        "accounting": {
+          "selected": 98,
+          "verified": 98,
+          "mapped": 98,
+          "analyzed": 98
+        },
+        "claimsMain": 3,
+        "claimsMinority": 0,
+        "claimsContradictory": 0,
+        "expertEvidenceRichRefs": 3,
+        "completenessStatus": "verified"
+      },
+      {
+        "groupId": "2077824745589028563",
+        "accounting": {
+          "selected": 170,
+          "verified": 170,
+          "mapped": 170,
+          "analyzed": 170
+        },
+        "claimsMain": 3,
+        "claimsMinority": 0,
+        "claimsContradictory": 0,
+        "expertEvidenceRichRefs": 9,
+        "completenessStatus": "verified"
+      },
+      {
+        "groupId": "8345110904",
+        "accounting": {
+          "selected": 19,
+          "verified": 19,
+          "mapped": 19,
+          "analyzed": 19
+        },
+        "claimsMain": 3,
+        "claimsMinority": 2,
+        "claimsContradictory": 0,
+        "expertEvidenceRichRefs": 4,
+        "completenessStatus": "verified"
+      }
+    ]
+  },
+  "crossGroupSynthesis": {
+    "synthesisIdentity": "sha256:6e83cf0f3d1eb4d52ee555c570414871865dd114dbdf98d47ecc38f97b3f3419",
+    "synthesizedClaimCount": 2,
+    "distinctAspects": [
+      "AI对程序员职业的替代影响",
+      "AI编程能力局限"
+    ],
+    "distinctSourceGroupsContributing": [
+      "1962444467077358693",
+      "2038411932424725710",
+      "2077824745589028563",
+      "8345110904"
+    ],
+    "categoryDistribution": {
+      "widely-shared": 1,
+      "group-specific": 1
+    },
+    "preSynthesisGuard": {
+      "guardResult": "PASS",
+      "selectedVerifiedSourceSetIdentity": "sha256:acabad96b744b7269bf78aebdcd5f0aef9cb2819690540cfda896a9b5a71c393",
+      "mappedAnalyzedSourceSetIdentity": "sha256:acabad96b744b7269bf78aebdcd5f0aef9cb2819690540cfda896a9b5a71c393"
+    },
+    "groupDifferencesPresent": true,
+    "evidenceStrengthPresent": true
+  },
+  "t15FinalCoverage": {
+    "assertion": {
+      "is100PercentAnalysis": true,
+      "basis": "MECHANICAL_SET_EQUALITY"
+    },
+    "hookConvergenceOrder": [
+      "RETRIEVAL_ROUNDS",
+      "SOURCE_GROUP_SELECTION",
+      "GROUP_EXECUTION",
+      "CORPUS_SELECTION",
+      "PER_GROUP_ANALYSIS",
+      "CROSS_SOURCE_SYNTHESIS",
+      "FINAL_COVERAGE_RECONCILIATION"
+    ],
+    "analysisCoverageCounts": {
+      "selected": 396,
+      "mapped": 396,
+      "analyzed": 396
+    },
+    "setEqualitySelectedEqualsMapped": true,
+    "setEqualitySelectedEqualsAnalyzed": true,
+    "evidenceRefIssues": {
+      "missingRefs": [],
+      "duplicateRefs": [],
+      "staleRefs": [],
+      "invalidRefs": []
+    },
+    "doubleDefense": {
+      "t14PreSynthesisGuard": {
+        "guardResult": "PASS",
+        "selectedVerifiedSourceSetIdentity": "sha256:acabad96b744b7269bf78aebdcd5f0aef9cb2819690540cfda896a9b5a71c393",
+        "mappedAnalyzedSourceSetIdentity": "sha256:acabad96b744b7269bf78aebdcd5f0aef9cb2819690540cfda896a9b5a71c393"
+      },
+      "t15FinalReconciliation": "PASS"
+    },
+    "note": "ANALYSIS_COVERAGE (100%) is asserted ONLY by the frozen T15 mechanical set equality over the analyzed set — it is NOT a retrieval-coverage claim."
+  },
+  "resumeValidation": {
+    "method": "production P1 entrypoint re-invoked on the SAME work dir WITHOUT --restart (identity-safe; no new run identity, no canonical runner invocation)",
+    "reused": true,
+    "sameRunId": true,
+    "artifactsUnchangedByResume": true,
+    "reuseOnlyOnHashBoundCompleteCheckpoint": true,
+    "repositoryAuthorizedNegativeTests": [
+      "ok 172 - state: FILE EXISTS != VALID CACHE — hash mismatch is stale",
+      "ok 173 - state: run identity mismatch → state_mismatch (no silent reuse across runs)",
+      "ok 178 - CASE D: resume skips validated completed stages (Acceptance L)",
+      "ok 179 - CASE E: stale artifact identity → re-run owning stage, no silent reuse (Acceptance L)"
+    ]
+  },
+  "genuineFailureEvidence": {
+    "controlledNegativePath": "F6 negativeGuardProbe (research-orchestration/bin/integration-harness.mjs) against the REAL run artifact identity",
+    "result": "tampered mapped identity → FAIL_CLOSED (SEAM_C_GUARD_MISMATCH), no synthesis authorized",
+    "noFalseFullOnFailureTests": [
+      "ok 279 - D6-CE6: canonical composition completes T13 → await T14 → T15 with a DELAYED async synthesize runtime, in canonical stage order",
+      "ok 280 - CE6b: a failed or clarification P1 compose never writes the binding or a coverage-final artifact",
+      "ok 281 - CE8: P1 composition failure is structured and final — clarification outcome keeps the stage vocabulary without completion"
+    ],
+    "realRecordedFailureScenario": {
+      "workDirRel": "work/canonical-t16-20260913T135310Z",
+      "terminalState": "clarification_required (material ambiguity in source-group selection)",
+      "canonicalRunnerVerdict": "FAILED / CANONICAL_RESEARCH_FAILED (exit 3)",
+      "researchResultArtifactPresent": false,
+      "coverageFinalArtifactPresent": false,
+      "cause": "environment provisioning gap (zhihu-answer-grabber node_modules absent → parse5 ERR_MODULE_NOT_FOUND → official-search provider process failure for every query)",
+      "noFalseFullOrPass": true
+    }
+  },
+  "noFallbackRefusalProbes": {
+    "canonicalRunnerWithoutCanonicalOverlay": "CANONICAL_RUNNER_MODE_REFUSED (no fallback; no work dir created)",
+    "p1EntrypointWithNonDeclaredRuntime": "invalid_input \"NO_SILENT_RUNTIME_FALLBACK\" (exit 2; no work dir created)"
+  },
+  "offlineSuite": {
+    "command": "node --test test/*.test.mjs (research-orchestration)",
+    "exitCode": 0,
+    "summary": "# tests 838 | # suites 73 | # pass 829 | # fail 0 | # cancelled 0 | # skipped 9"
+  },
+  "evidenceFiles": {
+    "canonicalRunnerStdoutRel": ".t16-evidence/run2.stdx.out (worktree-local, untracked)",
+    "offlineSuiteLogRel": ".t16-evidence/offline-suite.log (worktree-local, untracked)"
+  }
+}
