@@ -489,7 +489,7 @@ export async function composeP1Research({
     coverageState = analysis.coverageState;
     writeArtifact(workDir, PER_GROUP_CLAIMS_FILENAME, analysis.seamCArtifact);
 
-    const synthesis = produceSynthesisWithCoverage({
+    const synthesis = await produceSynthesisWithCoverage({
       coverageState, seamCArtifact: analysis.seamCArtifact, runtime: effectiveRuntime, workDir, journal,
     });
     coverageState = synthesis.coverageState;

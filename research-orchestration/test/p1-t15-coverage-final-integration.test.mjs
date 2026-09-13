@@ -345,7 +345,7 @@ async function driveChain({ workDir, plan = PLAN } = {}) {
     planHash: identity, runtime: t13MockRuntime(), workDir, journal,
   });
   coverageState = analysis.coverageState;
-  const synthesis = produceSynthesisWithCoverage({
+  const synthesis = await produceSynthesisWithCoverage({
     coverageState, seamCArtifact: analysis.seamCArtifact, runtime: t14MockRuntime(), workDir, journal,
   });
   coverageState = synthesis.coverageState;

@@ -139,6 +139,11 @@ function realAuthorRefBySourceRef(artifact) {
  * aspect partition over ONLY the controller-issued claimIds. No network, no
  * model — the offline variant asserts identity/guard/authorRef/diagnostics
  * determinism.
+ *
+ * ASYNC SEAM (D6 repair): the T14 runtime seam is Promise-returning by
+ * canonical contract, so this double is `async` — modelling the REAL
+ * production adapter shape rather than the synchronous shape that let the
+ * original contract-drift defect escape.
  */
 function recordedSynthesisRuntime() {
   const calls = [];
@@ -146,7 +151,7 @@ function recordedSynthesisRuntime() {
     runtimeId: T14_SYNTHESIS_RUNTIME_ID,
     model: T14_SYNTHESIS_MODEL,
     __calls: calls,
-    synthesize(input) {
+    async synthesize(input) {
       calls.push(JSON.parse(JSON.stringify(input)));
       return {
         aspects: input.claims.map((c) => ({ aspect: `记录回放-${c.claimId}`, claimIds: [c.claimId] })),
@@ -158,13 +163,14 @@ function recordedSynthesisRuntime() {
 /**
  * REAL LM Studio synthesis adapter (env-gated path only; localhost only, no
  * proxy). NOTE on the injection face: the T14 synthesis runtime face is
- * SYNCHRONOUS by contract (produceCrossSourceSynthesis never awaits), so the
- * real model round-trip is performed HERE (async, before composition), and the
- * live test injects a synchronous face that replays the REAL model output.
- * Every downstream stage (guard, aggregation, partition validation, §8.3
- * assembly, diagnostics) remains the ACTUAL T14 module computation on the real
- * model bytes — the model still never owns identity (the T14 module
- * re-validates the partition and fail-closes otherwise).
+ * ASYNCHRONOUS by canonical contract (`runtime.synthesize(...) → Promise`), so
+ * the live test injects an async face that replays the REAL model output.
+ * (Pre-D6 this note wrongly declared the face SYNCHRONOUS — that is precisely
+ * the contract drift this repair closes.) Every downstream stage (guard,
+ * aggregation, partition validation, §8.3 assembly, diagnostics) remains the
+ * ACTUAL T14 module computation on the real model bytes — the model still
+ * never owns identity (the T14 module re-validates the partition and
+ * fail-closes otherwise).
  */
 async function realLmStudioSynthesisPartition({
   baseUrl = process.env.P1_LMSTUDIO_BASE_URL ?? 'http://127.0.0.1:1234/v1',
@@ -281,13 +287,18 @@ async function realLmStudioSynthesisPartition({
  * adapter note above): exact approved runtime identity (planner pin discipline)
  * + real model bytes. Records its call for zero-invocation probes.
  */
-function syncRuntimeReplaying(realPartition) {
+/**
+ * Deterministic async replay double over the REAL model partition produced by
+ * the async LM Studio adapter above. ASYNC by contract (D6): the injected T14
+ * runtime face is Promise-returning, matching production.
+ */
+function asyncRuntimeReplaying(realPartition) {
   const calls = [];
   return {
     runtimeId: T14_SYNTHESIS_RUNTIME_ID,
     model: T14_SYNTHESIS_MODEL,
     __calls: calls,
-    synthesize(input) {
+    async synthesize(input) {
       calls.push(JSON.parse(JSON.stringify(input)));
       return realPartition;
     },
@@ -365,7 +376,7 @@ function writeRealSeamDArtifact(artifact) {
 // THE gate — offline deterministic variant
 // ---------------------------------------------------------------------------
 
-test('REAL_T13_TO_T14_TO_SEAM_D_CONFORMANCE: real SEAM C → amended validator → guard PASS → recorded-runtime T14 composition → frozen SEAM D validator → downstream artifact', SKIP_OPT, () => {
+test('REAL_T13_TO_T14_TO_SEAM_D_CONFORMANCE: real SEAM C → amended validator → guard PASS → recorded-runtime T14 composition → frozen SEAM D validator → downstream artifact', SKIP_OPT, async () => {
   const realSeamC = loadRealSeamC();
 
   // ---- 1. real SEAM C artifact against the FROZEN amended validator
@@ -377,7 +388,7 @@ test('REAL_T13_TO_T14_TO_SEAM_D_CONFORMANCE: real SEAM C → amended validator �
 
   // ---- 2. ACTUAL T14 composition on the real artifact (recorded runtime)
   const runtime = recordedSynthesisRuntime();
-  const result = produceCrossSourceSynthesis({
+  const result = await produceCrossSourceSynthesis({
     seamCArtifact: realSeamC,
     runtime,
     coverageState: createInitialCoverageState({ planHash: realSeamC.planHash }),
@@ -393,7 +404,7 @@ test('REAL_T13_TO_T14_TO_SEAM_D_CONFORMANCE: real SEAM C → amended validator �
   assert.equal(result.coverageState.diagnostics.new_claim_rate, 1);
 
   // offline determinism: identical logical input → byte-identical artifact
-  const again = produceCrossSourceSynthesis({ seamCArtifact: realSeamC, runtime: recordedSynthesisRuntime() });
+  const again = await produceCrossSourceSynthesis({ seamCArtifact: realSeamC, runtime: recordedSynthesisRuntime() });
   assert.equal(again.ok, true);
   assert.equal(JSON.stringify(result.artifact), JSON.stringify(again.artifact), 'offline determinism on the real artifact');
 
@@ -412,7 +423,7 @@ test('REAL_T13_TO_T14_TO_SEAM_D_CONFORMANCE: real SEAM C → amended validator �
 // guard-unequal NEGATIVE branch on REAL identities (fail-closed, zero side effects)
 // ---------------------------------------------------------------------------
 
-test('REAL guard-unequal branch: one-character identity tamper → FAIL_CLOSED, zero runtime calls, zero files written, evidence echoes both identities', SKIP_OPT, () => {
+test('REAL guard-unequal branch: one-character identity tamper → FAIL_CLOSED, zero runtime calls, zero files written, evidence echoes both identities', SKIP_OPT, async () => {
   const realSeamC = loadRealSeamC();
 
   // tamper ONE character of the mapped/analyzed identity (in-memory copy only)
@@ -427,7 +438,7 @@ test('REAL guard-unequal branch: one-character identity tamper → FAIL_CLOSED, 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'seam-d-guard-negative-'));
   try {
     const before = fs.readdirSync(tmp);
-    const result = produceCrossSourceSynthesis({
+    const result = await produceCrossSourceSynthesis({
       seamCArtifact: tampered,
       runtime,
       workDir: tmp,
@@ -490,16 +501,16 @@ test('REAL_T13_TO_T14_TO_SEAM_D_LIVE_RUNTIME: real LM Studio (qwen3-1.7b) → T1
   }));
   const realPartition = await realLmStudioSynthesisPartition({ baseUrl, model }, projectionClaims);
 
-  // ACTUAL T14 composition with the approved sync face replaying the real
-  // model bytes (see adapter note)
-  const runtime = syncRuntimeReplaying(realPartition);
-  const result = produceCrossSourceSynthesis({
+  // ACTUAL T14 composition with the async face replaying the real model
+  // bytes (see adapter note — the injected face is Promise-returning by contract)
+  const runtime = asyncRuntimeReplaying(realPartition);
+  const result = await produceCrossSourceSynthesis({
     seamCArtifact: realSeamC,
     runtime,
     coverageState: createInitialCoverageState({ planHash: realSeamC.planHash }),
   });
   assert.equal(result.ok, true, JSON.stringify(result));
-  assert.equal(runtime.__calls.length, 1, 'the sync face is invoked exactly once by the module');
+  assert.equal(runtime.__calls.length, 1, 'the async face is invoked exactly once by the module');
 
   const { nonNullRefs } = assertRealSynthesisConformance(result.artifact, realSeamC);
 

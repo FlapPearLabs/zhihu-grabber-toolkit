@@ -212,11 +212,20 @@ function dedupeBySourceRef(entries) {
  *                                         as new (no silent prior is invented).
  * @param {string} [opts.workDir]          reserved; this module performs no IO.
  *
- * @returns on success: { ok:true, artifact, coverageState }
- *          on failure:  { ok:false, code, errors?, preSynthesisGuard? } — and
- *          NEVER a synthesis artifact (fail-closed, no partial output).
+ * @returns on success (awaited): { ok:true, artifact, coverageState }
+ *          on failure (awaited): { ok:false, code, errors?, preSynthesisGuard? }
+ *          — and NEVER a synthesis artifact (fail-closed, no partial output).
+ *
+ * ASYNC SEAM CONTRACT (D6 repair): `runtime.synthesize(input)` is a Promise by
+ * canonical contract — the production DeepSeek adapter returns `chatJson(...)`,
+ * which is async. This module is therefore uniformly `async` and `await`s the
+ * runtime exactly once. There is ONE contract (Promise-returning); the module
+ * never inspects the return value for "Promise-ness", never branches on a
+ * runtime type, and never supports a `Result | Promise<Result>` union. That
+ * `await` also accepts a plain value is a JavaScript semantic and nothing more
+ * — synchronous test doubles rely on it as a convenience only.
  */
-export function produceCrossSourceSynthesis({
+export async function produceCrossSourceSynthesis({
   seamCArtifact,
   runtime = null,
   coverageState = null,
@@ -309,9 +318,17 @@ export function produceCrossSourceSynthesis({
   // 6. Runtime aspect clustering — untrusted statements sanitized FIRST
   //    (EXTERNAL_CORPUS → DATA_NOT_INSTRUCTION, Spec §10.1); the runtime sees
   //    sanitized text + controller-owned opaque tokens only.
+  //
+  //    ASYNC SEAM (D6): the runtime seam is Promise-returning by canonical
+  //    contract, so this is the SINGLE `await` on the injected runtime. The
+  //    try/catch deliberately wraps the await so the two fail-closed classes
+  //    stay disjoint and never collapse:
+  //      - Promise rejection / transport failure → T14_RUNTIME_UNAVAILABLE
+  //      - resolved but structurally invalid output → T14_RUNTIME_OUTPUT_INVALID
+  //    (the latter is validated AFTER the await, outside this catch).
   let runtimeResult;
   try {
-    runtimeResult = runtime.synthesize({
+    runtimeResult = await runtime.synthesize({
       claims: records.map((r) => ({
         claimId: r.claimId,
         groupId: r.groupId,

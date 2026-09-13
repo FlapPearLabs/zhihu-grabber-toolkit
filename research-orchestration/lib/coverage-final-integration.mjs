@@ -697,8 +697,14 @@ export async function analyzeSelectedCorpus({
  * the frozen composition) and converge the T14 synthesis diagnostics into the
  * ledger. A failed synthesis throws fail-closed — NO synthesis artifact exists
  * and the run never proceeds to final reconciliation.
+ *
+ * ASYNC SEAM (D6 repair): `produceCrossSourceSynthesis` is uniformly async
+ * (the canonical runtime seam is Promise-returning), so this stage awaits it.
+ * The stage journal record, the coverage-state persistence and the completion
+ * event are all written ONLY after the await resolves — a pending or rejected
+ * synthesis never advances the stage, exactly as before the repair.
  */
-export function produceSynthesisWithCoverage({
+export async function produceSynthesisWithCoverage({
   coverageState, seamCArtifact, runtime, workDir, priorSynthesis = null, journal,
 } = {}) {
   requireJournalAtStage(journal, STAGE_CROSS_SOURCE_SYNTHESIS);
@@ -706,7 +712,7 @@ export function produceSynthesisWithCoverage({
     failClosed(CFI_ERROR_INVALID_INPUT, 'produceSynthesisWithCoverage requires workDir');
   }
 
-  const result = produceCrossSourceSynthesis({ seamCArtifact, runtime, coverageState, priorSynthesis });
+  const result = await produceCrossSourceSynthesis({ seamCArtifact, runtime, coverageState, priorSynthesis });
   if (!result.ok) {
     failClosed(CFI_ERROR_SYNTHESIS_FAILED, `cross-source synthesis failed closed: ${String(result.code)}`, {
       code: result.code,

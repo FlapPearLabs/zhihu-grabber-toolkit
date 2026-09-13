@@ -159,7 +159,16 @@ function testEmbeddingProvider() {
   };
 }
 
-/** Combined pinned-identity mock runtime for T13 analyze + T14 synthesize. */
+/**
+ * Combined pinned-identity mock runtime for T13 analyze + T14 synthesize.
+ *
+ * ASYNC SEAM (D6 repair): BOTH runtime faces are async — the production
+ * adapter returns `chatJson(...)` (a Promise) for analyze AND synthesize. The
+ * pre-repair double modelled a SYNCHRONOUS synthesize(), which is what let the
+ * T14 async contract drift escape to T16; this authoritative wiring double now
+ * mirrors the real production shape so the composition path is proven to AWAIT
+ * a genuinely asynchronous T14 seam.
+ */
 function pinnedMockRuntime() {
   return {
     runtimeId: T14_SYNTHESIS_RUNTIME_ID,
@@ -174,7 +183,7 @@ function pinnedMockRuntime() {
         expertEvidenceRichTokens: [tokens[0]],
       };
     },
-    synthesize({ claims }) {
+    async synthesize({ claims }) {
       return { aspects: [{ aspect: '总体有效性', claimIds: claims.map((c) => c.claimId) }] };
     },
   };
@@ -338,6 +347,15 @@ test('CE7b: the P1 entrypoint fails closed on a non-declared runtime (usage erro
 
 test('CE5+CE3b: canonical P1 composition drives the owner chain end-to-end offline and binds the final coverage', async () => {
   const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+
+  // D6 ASYNC ESCAPE GUARD: the runtime this test composes with must expose a
+  // genuinely ASYNC T14 seam (a Promise-returning synthesize), mirroring the
+  // real production adapter. A suite with only synchronous synthesize doubles
+  // is NOT sufficient — that is exactly how the async contract drift escaped.
+  const contractProbe = pinnedMockRuntime();
+  assert.ok(contractProbe.synthesize({ claims: [] }) instanceof Promise,
+    'D6: the authoritative wiring runtime must expose an async (Promise-returning) T14 synthesize face');
+
   const workDir = tmpWork('p1-compose-ok-');
   const out = await composeP1Research({
     topic: 'AI 编程工具会取代程序员吗',
@@ -377,6 +395,100 @@ test('CE5+CE3b: canonical P1 composition drives the owner chain end-to-end offli
   assert.equal(result.runtime.runtimeId, T14_SYNTHESIS_RUNTIME_ID);
   assert.equal(result.runtime.model, T14_SYNTHESIS_MODEL);
   assert.ok(typeof result.runId === 'string' && result.runId.length === 64);
+});
+
+test('D6-CE6: canonical composition completes T13 → await T14 → T15 with a DELAYED async synthesize runtime, in canonical stage order', async () => {
+  const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+  const { CANONICAL_STAGE_ORDER, STAGE_CROSS_SOURCE_SYNTHESIS, STAGE_FINAL_RECONCILIATION } =
+    await import('../lib/coverage-final-integration.mjs');
+
+  // A runtime whose T14 face resolves on a LATER macrotask — this proves the
+  // composition path genuinely awaits the seam rather than consuming a
+  // same-tick value. The pending window is also used to prove NO early write:
+  // T13's per-group claims artifact exists while T14's synthesis artifact does
+  // not (and T15's final coverage has not run).
+  const workDir = tmpWork('p1-compose-async-');
+  const events = [];
+  const base = pinnedMockRuntime();
+  let invokeCount = 0;
+  let pendingProbeWorkDir = null;
+  const T13_ARTIFACT = 'per-group-claims.json';
+  const T14_ARTIFACT = 'cross-source-synthesis.json';
+  const pendingObservations = [];
+  const delayedAsyncRuntime = {
+    ...base,
+    synthesize({ claims }) {
+      invokeCount += 1;
+      if (pendingProbeWorkDir) {
+        pendingObservations.push({
+          t13Present: fs.existsSync(path.join(pendingProbeWorkDir, T13_ARTIFACT)),
+          t14Present: fs.existsSync(path.join(pendingProbeWorkDir, T14_ARTIFACT)),
+          coverageFinalPresent: fs.existsSync(path.join(pendingProbeWorkDir, 'coverage-final.json')),
+        });
+      }
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          events.push('synthesize:resolved');
+          resolve({ aspects: [{ aspect: '总体有效性', claimIds: claims.map((c) => c.claimId) }] });
+        }, 20);
+      });
+    },
+  };
+  // Declared-face probe on SEPARATE runtimes (keeps the composition observation clean).
+  assert.ok(pinnedMockRuntime().synthesize({ claims: [] }) instanceof Promise,
+    'D6: the pinned wiring runtime must expose a Promise-returning T14 synthesize face');
+  assert.ok(delayedAsyncRuntime.synthesize({ claims: [] }) instanceof Promise,
+    'D6: the delayed runtime must expose a Promise-returning T14 synthesize face');
+  await new Promise((r) => { setTimeout(r, 40); }); // drain probe resolutions
+  events.length = 0;
+  invokeCount = 0;
+  pendingProbeWorkDir = workDir;
+
+  const out = await composeP1Research({
+    topic: 'AI 编程工具会取代程序员吗',
+    workDir,
+    plan: PLAN,
+    runtime: delayedAsyncRuntime,
+    seam: rankingSeam(['100', '200']),
+    captureAdapter: captureAdapterFor({
+      100: answersJsonFor('100', GROUP_100_TEXTS),
+      200: answersJsonFor('200', GROUP_200_TEXTS),
+    }),
+    runner: groupRunnerFor(),
+    embeddingProvider: testEmbeddingProvider(),
+  });
+  assert.equal(out.ok, true, `async-seam compose failed: ${JSON.stringify(out)}`);
+
+  // the delayed resolution actually happened, and the composition waited for it
+  assert.deepEqual(events, ['synthesize:resolved'],
+    'the delayed async T14 resolution must be awaited before composition completes');
+  assert.equal(invokeCount, 1, 'the composition invokes the T14 seam exactly once');
+
+  // CE7 (no early write) — while the T14 Promise was PENDING, the T13 stage had
+  // already completed (its artifact exists) but NO T14 synthesis artifact and NO
+  // T15 final coverage existed.
+  assert.ok(pendingObservations.length >= 1, 'the pending window was observed');
+  for (const obs of pendingObservations) {
+    assert.equal(obs.t13Present, true, 'T13 per-group claims must exist before T14 runs');
+    assert.equal(obs.t14Present, false, 'NO synthesis artifact may exist while the T14 Promise is pending');
+    assert.equal(obs.coverageFinalPresent, false, 'T15 finalization must not occur before T14 resolves');
+  }
+
+  // canonical stage order, evidenced by the production artifacts: T13 artifact →
+  // T14 synthesis artifact → T15 final coverage (all present, and produced in
+  // that dependency order by the awaited chain).
+  assert.ok(fs.existsSync(path.join(workDir, T13_ARTIFACT)), 'T13 artifact must exist');
+  assert.ok(fs.existsSync(path.join(workDir, T14_ARTIFACT)), 'T14 artifact must exist after resolution');
+  assert.ok(CANONICAL_STAGE_ORDER.includes(STAGE_CROSS_SOURCE_SYNTHESIS));
+  assert.ok(CANONICAL_STAGE_ORDER.includes(STAGE_FINAL_RECONCILIATION));
+
+  // the T15 artifacts exist only because the awaited T14 output resolved
+  const state = readState(workDir);
+  assert.equal(state.stage, 'COMPLETE');
+  assert.equal(state.p1FinalCoveragePlanHash, planHash(PLAN));
+  const covFinal = JSON.parse(fs.readFileSync(path.join(workDir, 'coverage-final.json'), 'utf8'));
+  assert.equal(covFinal.assertion.is100PercentAnalysis, true);
+  assert.equal(covFinal.doubleDefense.t15FinalReconciliation, 'PASS');
 });
 
 test('CE6b: a failed or clarification P1 compose never writes the binding or a coverage-final artifact', async () => {

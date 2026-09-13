@@ -57,3 +57,24 @@ jobs:
 
       - name: research-orchestration preflight entrypoint tests
         run: node --test research-orchestration/test/integration-preflight.test.mjs
+
+      # D6 SCOPED REPAIR — T14 async runtime contract mismatch (CI ESCAPE GUARD).
+      # 背景：T14 消费方曾把 Promise-returning 的 runtime.synthesize() 当同步对象
+      # 校验，确定性产出 T14_RUNTIME_OUTPUT_INVALID（cfi_synthesis_failed @ T16）。
+      # 根因是测试替身全部使用 SYNC synthesize()，CI 因此从未覆盖真实异步 seam。
+      # 该测试套件强制包含一个真实 async synthesize + 生产形态 DeepSeek adapter
+      # （注入 fake fetch，无网络）的兼容性用例；只含同步 mock 的套件不足以防回归。
+      - name: T14 async seam syntax gates
+        run: |
+          node --check research-orchestration/lib/cross-source-synthesis.mjs
+          node --check research-orchestration/lib/coverage-final-integration.mjs
+          node --check research-orchestration/lib/p1-runtime-composer.mjs
+
+      - name: T14 async runtime seam tests (async synthesize escape guard)
+        run: node --test research-orchestration/test/p1-t14-async-runtime-seam.test.mjs
+
+      - name: T14/T15 focused contract tests
+        run: |
+          node --test research-orchestration/test/p1-t14-cross-group-synthesis.test.mjs
+          node --test research-orchestration/test/p1-t15-coverage-final-integration.test.mjs
+          node --test research-orchestration/test/p1-t15-runtime-composition-wiring.test.mjs
