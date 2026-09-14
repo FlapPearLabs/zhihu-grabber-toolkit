@@ -5,6 +5,7 @@ DOCUMENT_STATUS = APPROVED_SPEC_CANDIDATE
 PRE_EFFECTIVE_STATUS = REVIEW_PENDING
 POST_EFFECTIVE_STATUS = APPROVED
 APPROVAL_EFFECTIVE_ON =
+  0. OWNER explicitly grants a SPEC-ONLY exception to the no-master-merge-before-final-acceptance rule
   1. CONTRACT_REVIEWER PASS on this exact candidate HEAD
   2. CONSISTENCY_REVIEWER PASS on the same exact candidate HEAD
   3. candidate remains legally descended from current remote master
@@ -21,8 +22,19 @@ Date: 2026-09-14
 
 This document is a repository-native candidate for the owner-authorized Hackathon
 public demo. It is not production code, deployment evidence, or a claim that the
-public product exists. Review PASS alone does not activate it. The five
-`APPROVAL_EFFECTIVE_ON` conditions above must all be satisfied before implementation.
+public product exists. Review PASS alone does not activate it. All six
+`APPROVAL_EFFECTIVE_ON` conditions above must be satisfied before implementation.
+
+The owner request also says not to merge anything to `master` before final independent
+acceptance. That rule and this repository's merge-to-activate Spec governance form a
+real cycle: implementation cannot legally start until this Spec is effective, while
+final acceptance cannot occur before implementation. This candidate does not resolve
+that cycle by reinterpretation. A narrow, explicit owner decision allowing only this
+reviewed Spec commit to merge before implementation is condition 0. Until then:
+
+```text
+OWNER_SPEC_ONLY_MERGE_EXCEPTION_REQUIRED
+```
 
 ## 0. Authority relationship and amendment map
 
@@ -39,8 +51,9 @@ runtime, and failure contracts continue unchanged.
 | Research Orchestration §12 excludes GUI and web apps | Permit one public Next.js presentation plane for the Hackathon demo. |
 | Research Orchestration §12 excludes background queue platforms | Permit one bounded in-process FIFO controller with one active P1 child and at most three queued jobs. This is not a general job platform. |
 | Research Orchestration §12 excludes multi-user systems | Permit anonymous public requests subject to strict global and per-IP admission limits. No account, identity, tenant, or user-data system is authorized. |
-| P1 is a CLI/runtime composition | Permit a thin HTTP adapter that spawns the existing `research-p1.mjs` entrypoint. P1 remains the only research engine. |
-| Result artifacts are internal | Permit a deterministic, sanitized public projection and immutable cached real runs after provenance and hash validation. |
+| Research Orchestration §10 internal orchestration state/progress and runtime identity; P1 §6.3 orchestration state and §11 result-artifact hierarchy | Permit a coarser public job projection while preserving complete internal state. Public status must expose the current supported stage when a live job is running, but does not expose runtime/model identity. This is a public security amendment only; internal observability remains unchanged. |
+| Research Orchestration §10 CLI/runtime composition | Permit a thin HTTP adapter that spawns the existing `research-p1.mjs` entrypoint. P1 remains the only research engine. |
+| P1 §6.3 and §11, plus V0.3 internal canonical/handoff hierarchy | Permit a deterministic, sanitized public projection and immutable cached real runs after provenance and hash validation. Public projection does not become canonical data, a verified handoff, or an internal artifact authority. |
 
 This amendment does not modify the P1 planner, retrieval, source selection,
 embedding geometry or model, analysis, synthesis, coverage reconciliation,
@@ -141,6 +154,9 @@ The exact accepted object is:
 - surrounding whitespace is trimmed;
 - topic is 1–240 Unicode code points after trimming;
 - Unicode control characters are rejected;
+- topic beginning with `--` is rejected because the frozen P1 CLI interprets it as
+  an option and has no option terminator; this narrow public restriction avoids a P1
+  parser change and maps to `INVALID_TOPIC`;
 - unknown fields are rejected;
 - topic text never becomes a path, command, environment variable, model,
   provider, credential, or CLI option.
@@ -159,7 +175,8 @@ Minimum lifecycle:
 
 ```text
 QUEUED
-RUNNING with an optional supported stage
+RUNNING with a supported current stage
+CLARIFICATION_REQUIRED
 COMPLETE
 FAILED
 CANCELLED
@@ -167,8 +184,16 @@ SERVER_RESTARTED
 ```
 
 Supported stage labels are derived from actual P1 stage/event evidence and may be
-coarser than internal stages. An implementation must not claim a distinct public
-stage merely because it appears desirable in the prototype.
+coarser than internal stages. A running job must publish the current supported stage;
+it is not optional. An implementation must not claim a distinct public stage merely
+because it appears desirable in the prototype. Runtime/model identity stays in the
+internal state and is deliberately excluded from the public projection.
+
+P1 exit code 3 is projected as `CLARIFICATION_REQUIRED`, never generic failure or
+success. Version 1 has no continuation endpoint: the public response uses fixed safe
+copy instructing the user to make the question more specific and submit a new job.
+The server does not expose internal candidates or silently choose among ambiguous
+sources.
 
 Counts are included only when actual runtime evidence supports them. In particular,
 the accepted P1 does not currently prove source-by-source analysis increments such
@@ -274,6 +299,7 @@ LIVE_RESEARCH_TIMEOUT
 BACKEND_UNAVAILABLE
 SERVER_RESTARTED
 CANCELLED
+CLARIFICATION_REQUIRED
 ```
 
 The browser never receives a stack trace, absolute path, workdir, provider response,
@@ -291,6 +317,16 @@ PER_IP = 2 accepted jobs per rolling hour
 GLOBAL = 6 accepted jobs per rolling hour
 LIVE_TIMEOUT = 20 minutes
 ```
+
+The Vercel BFF is the only owner of public client-IP derivation. It removes any
+browser-supplied demo identity header and derives a canonical IP only from trusted
+platform connection metadata. It forwards that value in a dedicated header only on
+an authenticated Access-protected request. The Mac accepts that header only after the
+Cloudflare Access service-token gate; direct origin access is unavailable. The Mac
+controller owns one atomic rolling-hour admission ledger for both per-IP and global
+limits, so serverless instances cannot race independent in-memory counters. If a
+trustworthy platform IP is unavailable or malformed, the request uses a conservative
+shared unknown-client bucket; it never trusts an arbitrary browser header.
 
 The controller safely terminates a timed-out child and publishes
 `LIVE_RESEARCH_TIMEOUT`. Queue saturation publishes `QUEUE_FULL` without starting a
@@ -336,6 +372,10 @@ remote runtime model download disabled
 
 Changing the model or embedding geometry is not authorized.
 
+Deployment must materialize the exact frozen model revision outside the checkout,
+verify every required artifact against a reviewed SHA-256 manifest, disable runtime
+remote downloads, and fail readiness when any byte is absent or mismatched.
+
 ## 12. Access and network policy
 
 The Demo API listens only on `127.0.0.1:<dedicated-port>`. Cloudflare Tunnel points
@@ -347,10 +387,32 @@ Direct unauthenticated compute access must fail before reaching the Demo API.
 
 No secret URL or token is committed, logged, or included in an acceptance report.
 
+The Mac service is supervised by `launchd` unless target-host evidence establishes a
+safer native alternative. Acceptance requires login/reboot recovery, automatic restart
+after unexpected exit, bounded stdout/stderr retention, and logs that pass secret/path
+non-disclosure checks. The supervisor starts only the loopback Demo API and never an
+unrelated Mac service.
+
 ## 13. Frontend contract
 
 Production is a new Next.js App Router application. The prototype at
 `web-demo/index.html` is a visual reference only and must not be directly deployed.
+
+The frozen design authority is:
+
+```text
+BRANCH = feat/cross-question-web-demo
+COMMIT = 5331a82cb4ee703ab1c49744f2358c7305c913cf
+PATHS =
+  docs/product-design/hackathon-web-demo/PRODUCT_DESIGN_DIAGNOSIS.md
+  docs/product-design/hackathon-web-demo/ROUND_2_DESIGN_DIRECTIONS_AND_IA.md
+  docs/product-design/hackathon-web-demo/ROUND_3_AND_4_WIREFRAMES_AND_STATES.md
+  docs/product-design/hackathon-web-demo/ROUND_5_AND_6_DESIGN_SYSTEM_AND_DATA_SPEC.md
+  docs/product-design/hackathon-web-demo/ROUND_7_AND_8_MOTION_AND_HANDOFF_SPEC.md
+  web-demo/index.html
+```
+
+Implementers consume those paths from the exact commit, not a moving branch tip.
 
 The frontend preserves the Living Editorial Dossier direction:
 
@@ -414,6 +476,18 @@ No implementation or deployment ticket may be merged to master before final publ
 acceptance unless the owner separately changes that integration rule. This Spec
 candidate itself must become effective before implementation can legally begin.
 
+After the Spec-only exception and activation, the milestone uses one cumulative
+`feat/hackathon-public-demo` integration branch. Each H ticket produces a focused
+commit and an independently reviewed checkpoint on that cumulative history. A
+dependency may start only after its prerequisite checkpoint has the required exact-SHA
+PASS; the checkpoint is not reported as merged or DONE. Subsequent commits do not
+transfer an old review verdict to the new cumulative HEAD. H09 triggers fresh final
+code, security, and integration review of the exact cumulative HEAD and deployed
+configuration. Only that final PASS permits one ff-only merge of the accumulated
+branch and remote verification. This is the owner-authorized milestone execution
+topology required by the no-intermediate-merge rule; it does not waive per-ticket
+review, scope, or evidence gates.
+
 ## 16. Real acceptance
 
 H09 must perform at least one real end-to-end live run through:
@@ -433,6 +507,11 @@ peak RSS, swap before/after, CPU behavior, failure rate scope, selected/mapped/a
 counts, final status, and a sanitized evidence path.
 
 Historical runtime numbers do not establish target-host performance.
+
+A first-time participant who knows nothing about the repository must, using only the
+public URL and within three minutes, be able to understand the product, open a cached
+real result, inspect a claim and its evidence, understand the coverage limitation,
+submit live research, and observe at least one truthful state transition.
 
 ## 17. Completion definition
 
@@ -455,6 +534,29 @@ verified:
 
 Missing external authorization, credentials, source artifacts, or a real run remains
 `BLOCKED` or `NOT_RUN`; it is never upgraded to PASS from a plan or mock.
+
+The final implementation report records each of these fields with exactly one status
+from `PASS | FAIL | BLOCKED | NOT_RUN`:
+
+```text
+P1_BASELINE_SHA
+DESIGN_BASELINE_SHA
+INTEGRATION_BRANCH
+INTEGRATION_HEAD_SHA
+PUBLIC_FRONTEND
+CACHED_REAL_RUN
+LIVE_RESEARCH
+VERCEL_DEPLOYMENT
+CLOUDFLARE_TUNNEL
+CLOUDFLARE_ACCESS
+MAC_COMPUTE_SERVICE
+LOCAL_EMBEDDING
+SECRET_ISOLATION
+RATE_LIMIT
+FAILURE_ISOLATION
+MOBILE_UX
+PUBLIC_E2E
+```
 
 ## 18. Non-goals
 
