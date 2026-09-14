@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>知乎深研 · Zhihu Deep Research</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* ==========================================================================
+       TRUE APPLE EDITORIAL DESIGN FOUNDATIONS (去 AI 味 · 纯粹苹果人机工程)
+       ========================================================================== */
+    
+    :root {
+      /* Apple San Francisco Typography */
+      --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", sans-serif;
+      --font-serif: "New York", "Songti SC", "Source Han Serif SC", STSong, Georgia, serif;
+      
+      /* Apple Fluid Curve (WWDC Designing Fluid Interfaces: Critically Damped) */
+      --apple-ease: cubic-bezier(0.16, 1, 0.3, 1);
+      --apple-press: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    body {
+      font-family: var(--font-system);
+      background-color: #FFFFFF;
+      color: #1D1D1F;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
+    .apple-serif { font-family: var(--font-serif); }
+
+    /* Apple-style negative tracking for bold display titles */
+    .title-display {
+      letter-spacing: -0.03em;
+      line-height: 1.12;
+    }
+
+    .title-section {
+      letter-spacing: -0.015em;
+    }
+
+    /* Tactile Press (Emil Kowalski + Apple Haptic standard) */
+    .apple-tap {
+      transition: transform 100ms var(--apple-press), opacity 100ms ease;
+    }
+    .apple-tap:active {
+      transform: scale(0.97);
+    }
+
+    /* Apple Frosted Floating Bar */
+    .apple-nav {
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    /* Clean Subtle Rules instead of Boxed Cards */
+    .apple-divider {
+      border-color: rgba(0, 0, 0, 0.08);
+    }
+
+    /* Sheet Shadows */
+    .apple-drawer-shadow {
+      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.08);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-[#0071E3] selection:text-white">
+
+  <!-- ================= APPLE CLEAN CHROME ================= -->
+  <header class="sticky top-0 z-40 apple-nav px-6 py-3.5">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      
+      <!-- Brand: Simple, Human, No AI Buzzwords -->
+      <div class="flex items-center gap-2.5">
+        <span class="font-semibold text-base tracking-tight text-[#1D1D1F]">知乎深研</span>
+        <span class="text-xs text-[#86868B] hidden sm:inline">跨问题经验与分歧整理</span>
+      </div>
+
+      <!-- Segmented View Controller -->
+      <div class="flex items-center bg-[#E5E5EA]/70 p-0.5 rounded-lg text-xs font-medium text-[#86868B]">
+        <button id="tab-0" onclick="goToView('home', 0)" class="px-3 py-1 rounded-[6px] bg-white text-[#1D1D1F] shadow-xs transition-all">
+          研究议题
+        </button>
+        <button id="tab-1" onclick="goToView('assembly', 1)" class="px-3 py-1 rounded-[6px] transition-all">
+          整理过程
+        </button>
+        <button id="tab-2" onclick="goToView('result', 2)" class="px-3 py-1 rounded-[6px] transition-all">
+          阅读报告
+        </button>
+      </div>
+
+      <!-- Clean Status -->
+      <div class="text-xs text-[#86868B] hidden md:block">
+        23 个提问 · 396 篇回答
+      </div>
+
+    </div>
+  </header>
+
+
+  <!-- ================= VIEW 1: HOME (EDITORIAL, CONFIDENT, NO TEMPLATE SLOP) ================= -->
+  <main id="view-home" class="flex-1 max-w-3xl w-full mx-auto px-6 pt-20 pb-24">
+    
+    <!-- Hero Header: Left-aligned, quiet authority, human words -->
+    <div class="space-y-4 mb-12">
+      <h1 class="text-4xl sm:text-5xl font-semibold text-[#1D1D1F] title-display">
+        把知乎的真实经历，<br/>读成一份有据可查的研报。
+      </h1>
+      <p class="text-lg text-[#86868B] max-w-xl leading-relaxed">
+        复杂的真相很少藏在一个提问里。我们把散落在不同问题、不同答主和不同时间里的经历汇总起来，找出共识，摆明分歧。
+      </p>
+    </div>
+
+    <!-- Apple-style Clean Input Bar (Not a giant cluttered box) -->
+    <div class="mb-14">
+      <div class="relative flex items-center border border-black/15 hover:border-black/30 focus-within:border-[#0071E3] focus-within:ring-4 focus-within:ring-[#0071E3]/10 rounded-2xl bg-[#F5F5F7] p-2 transition-all">
+        <input 
+          id="query-text"
+          type="text" 
+          value="AI 编程工具真的会取代初级程序员吗？"
+          placeholder="输入一个你想在知乎系统了解的问题..."
+          class="w-full bg-transparent px-4 py-2.5 text-base text-[#1D1D1F] placeholder-[#86868B] focus:outline-none"
+        />
+        <button 
+          onclick="startRun()"
+          class="apple-tap bg-[#0071E3] hover:bg-[#0077ED] text-white text-sm font-medium px-5 py-2.5 rounded-xl shrink-0">
+          开始整理
+        </button>
+      </div>
+
+      <!-- Clean suggestions -->
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 px-1 text-xs text-[#86868B]">
+        <span>试看议题:</span>
+        <button onclick="pickQuery('AI 编程工具真的会取代初级程序员吗？')" class="text-[#1D1D1F] hover:text-[#0071E3] underline underline-offset-4 decoration-black/20">AI 会取代初级程序员吗？</button>
+        <button onclick="pickQuery('新能源汽车价格战最终会伤害消费者吗？')" class="text-[#1D1D1F] hover:text-[#0071E3] underline underline-offset-4 decoration-black/20">价格战会伤害买车人吗？</button>
+        <button onclick="pickQuery('AI Agent 创业真正的壁垒到底是什么？')" class="text-[#1D1D1F] hover:text-[#0071E3] underline underline-offset-4 decoration-black/20">Agent 创业有护城河吗？</button>
+      </div>
+    </div>
+
+    <!-- Featured Case: Editorial List Entry (No nested boxes) -->
+    <div class="pt-8 border-t apple-divider space-y-4">
+      <div class="text-xs font-semibold text-[#86868B] tracking-wider uppercase">
+        已整理好的精选报告 · 即刻阅读
+      </div>
+
+      <div 
+        onclick="goToView('result', 2)"
+        class="apple-tap group p-6 rounded-2xl bg-[#F5F5F7] hover:bg-[#EBEBED] cursor-pointer transition-colors">
+        <div class="flex items-baseline justify-between gap-4 mb-2">
+          <span class="text-xs text-[#0071E3] font-medium">真实完整案卷</span>
+          <span class="text-xs text-[#86868B]">23 个关联提问 · 396 篇回答</span>
+        </div>
+        <h2 class="text-xl font-semibold text-[#1D1D1F] group-hover:text-[#0071E3] transition-colors leading-snug">
+          AI 编程工具真的会取代初级程序员吗？
+        </h2>
+        <p class="text-sm text-[#86868B] mt-2 leading-relaxed">
+          综合了生产力实测、应届生招聘 HC 变化、生产事故定责和架构门槛。发现 1 处全行业强共识，2 处核心争议。
+        </p>
+        <div class="mt-4 flex items-center gap-1 text-xs font-semibold text-[#0071E3]">
+          <span>阅读完整报告</span>
+          <span>→</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plain, honest comparison -->
+    <div class="mt-12 pt-8 border-t apple-divider grid sm:grid-cols-2 gap-8 text-xs text-[#86868B] leading-relaxed">
+      <div>
+        <div class="font-semibold text-[#1D1D1F] mb-1.5">只搜一个提问？</div>
+        <p>你只会看到单一问题下的情绪对立和零散回答，无法还原各行各业的真实上下文。</p>
+      </div>
+      <div>
+        <div class="font-semibold text-[#1D1D1F] mb-1.5">穿透多个提问？</div>
+        <p>把招聘专家的顾虑、一线架构师的实操和外包员工的经历交叉印证，看清共识与分歧边界。</p>
+      </div>
+    </div>
+
+  </main>
+
+
+  <!-- ================= VIEW 2: PROGRESS (CLEAN, STEPPED, NOT A FAKE SCI-FI MATRIX) ================= -->
+  <main id="view-assembly" class="hidden flex-1 max-w-3xl w-full mx-auto px-6 py-14">
+    <div class="space-y-8">
+      
+      <!-- Progress Title -->
+      <div class="space-y-1 border-b apple-divider pb-6">
+        <div class="text-xs font-medium text-[#0071E3]">正在整理知乎内容</div>
+        <h2 class="text-2xl font-semibold text-[#1D1D1F]">
+          AI 编程工具真的会取代初级程序员吗？
+        </h2>
+      </div>
+
+      <!-- Steps: Clean, readable list, no pulsing neon orbs -->
+      <div class="space-y-6">
+        
+        <div class="flex items-start gap-4">
+          <div class="w-6 h-6 rounded-full bg-[#34C759] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">✓</div>
+          <div class="space-y-1">
+            <div class="text-sm font-semibold text-[#1D1D1F]">拆解出 4 个考察维度</div>
+            <p class="text-xs text-[#86868B]">涵盖：日常效率实测、大厂招聘风向、代码责任与合规、核心架构理解力。</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4">
+          <div class="w-6 h-6 rounded-full bg-[#34C759] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">✓</div>
+          <div class="space-y-1">
+            <div class="text-sm font-semibold text-[#1D1D1F]">找到 23 个相关的知乎讨论</div>
+            <p class="text-xs text-[#86868B]">选入 396 篇具有专业背景、高赞同或丰富踩坑细节的回答。</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4">
+          <div class="w-6 h-6 rounded-full bg-[#0071E3] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 animate-pulse">3</div>
+          <div class="space-y-2">
+            <div class="text-sm font-semibold text-[#1D1D1F]">正在归纳答主观点与分歧 (312/396)</div>
+            <div class="p-4 rounded-xl bg-[#F5F5F7] text-xs space-y-2">
+              <div class="text-[#1D1D1F] font-medium">发现明显分歧：</div>
+              <p class="text-[#86868B] leading-relaxed">
+                一线研发总监普遍提到“已暂停招聘单纯写业务代码的应届生”；但初创团队答主指出“代码成本降低使得更多新项目立项，总岗位反而在增加”。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4 opacity-40">
+          <div class="w-6 h-6 rounded-full bg-[#E5E5EA] text-[#86868B] flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</div>
+          <div>
+            <div class="text-sm font-semibold text-[#1D1D1F]">排版报告与核验出处</div>
+            <p class="text-xs text-[#86868B]">将结论和每位答主的原话建立引用索引。</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Action Button -->
+      <div class="pt-6">
+        <button 
+          onclick="goToView('result', 2)"
+          class="apple-tap w-full sm:w-auto bg-[#1D1D1F] hover:bg-black text-white text-sm font-medium px-6 py-3 rounded-xl">
+          直接阅读整理结果 →
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+
+  <!-- ================= VIEW 3: RESULT (EDITORIAL ESSAY + GROUNDED QUOTES) ================= -->
+  <main id="view-result" class="hidden flex-1 max-w-3xl w-full mx-auto px-6 py-14 space-y-12">
+    
+    <!-- Report Title Header: Classic Apple Editorial -->
+    <div class="space-y-4 border-b apple-divider pb-8">
+      <div class="text-xs text-[#86868B]">知乎跨问题调查 · 2026 年整理</div>
+      <h1 class="text-3xl sm:text-4xl font-semibold text-[#1D1D1F] title-display">
+        AI 编程工具真的会取代初级程序员吗？
+      </h1>
+      <p class="text-sm text-[#86868B]">
+        基于 23 个关联问题 · 396 位答主的亲身经验 · 覆盖 100% 选定语料
+      </p>
+    </div>
+
+    <!-- Section 1: Executive Summary -->
+    <section class="space-y-4">
+      <div class="text-xs font-semibold text-[#86868B] tracking-wider uppercase">01 / 结论摘要</div>
+      <div class="text-lg sm:text-xl text-[#1D1D1F] leading-relaxed apple-serif">
+        “AI 不会凭空消灭软件工程师的编制，但已经实质性焊死了‘只会搬运语法、缺乏系统理解’的初级岗位通道。知乎讨论的清晰共识是：竞争焦点已不再是代码产出速度，而是业务抽象能力与故障排查责任。”
+      </div>
+
+      <div class="pt-2 grid sm:grid-cols-3 gap-6 text-xs leading-relaxed">
+        <div>
+          <div class="font-semibold text-[#1D1D1F] mb-1">通用共识</div>
+          <p class="text-[#86868B]">单元测试、样板代码与基础脚手架编写效率提升超 40%，手写已无必要。</p>
+        </div>
+        <div>
+          <div class="font-semibold text-[#1D1D1F] mb-1">主要分歧</div>
+          <p class="text-[#86868B]">效能提升到底会导致大厂永久性缩招，还是会催生边缘业务需求爆炸。</p>
+        </div>
+        <div>
+          <div class="font-semibold text-[#1D1D1F] mb-1">生效条件</div>
+          <p class="text-[#86868B]">只有在拥有完备测试框架和清晰架构设计的成熟系统中，提效才真实成立。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: The Core Disagreement (Editorial Layout, not loud colorful cards) -->
+    <section class="space-y-6 pt-6 border-t apple-divider">
+      <div class="flex items-baseline justify-between">
+        <div class="text-xs font-semibold text-[#86868B] tracking-wider uppercase">02 / 核心争议分析</div>
+        <span class="text-xs text-[#86868B]">点击出处角标 [1] 可查看原话</span>
+      </div>
+
+      <div class="space-y-6">
+        <h3 class="text-lg font-semibold text-[#1D1D1F]">
+          争议：初级程序员的就业岗位究竟是被替代，还是被重构？
+        </h3>
+
+        <!-- Stance A -->
+        <div class="p-6 rounded-2xl bg-[#F5F5F7] space-y-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-semibold text-[#1D1D1F]">观点 A：初级编制不可避免缩减 (大厂管理层普遍看法)</span>
+            <span class="text-[#86868B]">38% 样本支持</span>
+          </div>
+          <p class="text-sm text-[#4A4A4F] leading-relaxed">
+            多位大厂研发总监在回答中提到，原本需要配备应届生完成的基础工作（如 CRUD、补充单测），现在由资深工程师直接驱动工具完成。初级岗位不再具有试错和培养周期，HC 冻结已成现实。
+          </p>
+          <div class="pt-1 flex items-center justify-between text-xs">
+            <span class="text-[#86868B]">出处：某云计算大厂研发总监回答 (3.4k 赞)</span>
+            <button onclick="openSheet(1)" class="apple-tap text-[#0071E3] font-medium hover:underline">
+              查看原话 [1] →
+            </button>
+          </div>
+        </div>
+
+        <!-- Stance B -->
+        <div class="p-6 rounded-2xl bg-[#F5F5F7] space-y-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-semibold text-[#1D1D1F]">观点 B：需求总盘子扩大（杰文斯悖论，创业者与前线视角）</span>
+            <span class="text-[#86868B]">52% 样本支持</span>
+          </div>
+          <p class="text-sm text-[#4A4A4F] leading-relaxed">
+            单行代码边际成本的下降，导致原本因成本过高而无法立项的业务（如内部工具、定制化系统）大量上线。初级程序员如果能快速掌握全栈工程能力，实际上更早获得了独当一面的机会。
+          </p>
+          <div class="pt-1 flex items-center justify-between text-xs">
+            <span class="text-[#86868B]">出处：跨境技术团队合伙人回答 (2.8k 赞)</span>
+            <button onclick="openSheet(2)" class="apple-tap text-[#0071E3] font-medium hover:underline">
+              查看原话 [2] →
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Section 3: Covered Questions (Apple List style) -->
+    <section class="space-y-4 pt-6 border-t apple-divider">
+      <div class="text-xs font-semibold text-[#86868B] tracking-wider uppercase">03 / 本次报告覆盖的知乎提问</div>
+      
+      <div class="divide-y apple-divider text-sm">
+        <div class="py-3.5 flex items-center justify-between">
+          <span class="text-[#1D1D1F]">《日常开发中，GitHub Copilot 能提高多少效率？》</span>
+          <span class="text-xs text-[#86868B]">1.8k 赞同 · 偏向提效</span>
+        </div>
+        <div class="py-3.5 flex items-center justify-between">
+          <span class="text-[#1D1D1F]">《作为研发总监，你现在招聘初级程序员的标准变了吗？》</span>
+          <span class="text-xs text-[#86868B]">3.4k 赞同 · 偏向门槛提升</span>
+        </div>
+        <div class="py-3.5 flex items-center justify-between">
+          <span class="text-[#1D1D1F]">《某团队引入 AI 编程后，生产环境故障率为何不降反升？》</span>
+          <span class="text-xs text-[#86868B]">890 赞同 · 责任与安全反思</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+
+  <!-- ================= SECTION 4: APPLE NATIVE SHEET (EVIDENCE INSPECTOR) ================= -->
+  <div id="sheet-backdrop" onclick="closeSheet()" class="hidden fixed inset-0 bg-black/20 backdrop-blur-xs z-50 transition-opacity"></div>
+
+  <aside id="sheet-drawer" class="fixed right-0 top-0 bottom-0 w-full sm:w-[460px] bg-white z-50 transform translate-x-full transition-transform duration-250 ease-out apple-drawer-shadow flex flex-col border-l apple-divider">
+    
+    <!-- Sheet Grab Bar & Header -->
+    <div class="p-6 border-b apple-divider flex items-center justify-between">
+      <div>
+        <div class="text-xs text-[#86868B]">证据来源核验</div>
+        <h3 class="text-base font-semibold text-[#1D1D1F] mt-0.5">知乎原贴与原汁原味回答</h3>
+      </div>
+      <button onclick="closeSheet()" class="apple-tap w-8 h-8 rounded-full bg-[#F5F5F7] flex items-center justify-center text-[#86868B] hover:text-[#1D1D1F]">
+        ✕
+      </button>
+    </div>
+
+    <!-- Sheet Content -->
+    <div class="p-6 overflow-y-auto space-y-6 flex-1 text-sm">
+      
+      <!-- Source Question -->
+      <div class="space-y-1">
+        <div class="text-xs text-[#86868B]">对应提问</div>
+        <div class="font-medium text-[#1D1D1F]">
+          《作为研发总监，你现在招聘初级程序员的标准变了吗？》
+        </div>
+        <a href="https://www.zhihu.com" target="_blank" class="text-xs text-[#0071E3] hover:underline inline-block pt-0.5">
+          在知乎打开原帖 ↗
+        </a>
+      </div>
+
+      <!-- Author -->
+      <div class="p-4 rounded-xl bg-[#F5F5F7] space-y-1.5">
+        <div class="flex items-center justify-between">
+          <span class="font-semibold text-xs text-[#1D1D1F]">答主：@王工</span>
+          <span class="text-xs text-[#34C759] font-medium">3,420 赞同</span>
+        </div>
+        <p class="text-xs text-[#86868B]">某云计算大厂核心研发总监 · 2024 年 11 月回答</p>
+      </div>
+
+      <!-- Actual Quote: Real words, not summarized slop -->
+      <div class="space-y-2">
+        <div class="text-xs text-[#86868B]">答主原话摘录</div>
+        <blockquote class="p-4 rounded-xl bg-[#F5F5F7] border-l-2 border-[#1D1D1F] text-[#1D1D1F] text-xs sm:text-sm leading-relaxed apple-serif italic">
+          “……我们组今年初级 HC 砍了四分之三。以前招应届生进来主要是帮忙补单元测试和写简单的 CRUD。现在组内配了工具链，一个熟练工程师带着跑直接顶过去两个新人。我们现在筛简历只看一条：能不能一眼在生成的代码里看出潜在死锁和内存泄漏。做不到的，根本不会发面试……”
+        </blockquote>
+      </div>
+
+      <!-- Context Note -->
+      <div class="space-y-1 text-xs text-[#86868B]">
+        <div class="font-semibold text-[#1D1D1F]">为什么这条证据重要？</div>
+        <p class="leading-relaxed">它反映的是具有真金白银预算决策权的管理层用人标准，而非从业者的情绪性猜测。</p>
+      </div>
+
+    </div>
+
+    <!-- Sheet Footer -->
+    <div class="p-4 border-t apple-divider">
+      <button onclick="closeSheet()" class="apple-tap w-full bg-[#1D1D1F] text-white text-xs font-medium py-3 rounded-xl">
+        关闭返回报告
+      </button>
+    </div>
+
+  </aside>
+
+
+  <!-- ================= SCRIPTING ================= -->
+  <script>
+    function goToView(name, idx) {
+      document.getElementById('view-home').classList.add('hidden');
+      document.getElementById('view-assembly').classList.add('hidden');
+      document.getElementById('view-result').classList.add('hidden');
+
+      document.getElementById('view-' + name).classList.remove('hidden');
+
+      ['tab-0', 'tab-1', 'tab-2'].forEach((id, i) => {
+        const btn = document.getElementById(id);
+        if (i === idx) {
+          btn.className = "px-3 py-1 rounded-[6px] bg-white text-[#1D1D1F] shadow-xs transition-all";
+        } else {
+          btn.className = "px-3 py-1 rounded-[6px] transition-all text-[#86868B] hover:text-[#1D1D1F]";
+        }
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function startRun() {
+      goToView('assembly', 1);
+    }
+
+    function pickQuery(txt) {
+      document.getElementById('query-text').value = txt;
+    }
+
+    function openSheet(id) {
+      document.getElementById('sheet-backdrop').classList.remove('hidden');
+      document.getElementById('sheet-drawer').classList.remove('translate-x-full');
+    }
+
+    function closeSheet() {
+      document.getElementById('sheet-drawer').classList.add('translate-x-full');
+      setTimeout(() => {
+        document.getElementById('sheet-backdrop').classList.add('hidden');
+      }, 200);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeSheet();
+      if (e.key === 'Enter' && !document.getElementById('view-home').classList.contains('hidden')) {
+        startRun();
+      }
+    });
+  </script>
+
+</body>
+</html>
