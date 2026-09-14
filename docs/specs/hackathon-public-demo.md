@@ -116,7 +116,8 @@ or long-running research state.
 The Mac owns:
 
 - the existing P1 runtime;
-- the frozen local ONNX embedding model and model cache;
+- the embedding runtime and any model/cache artifacts required by that existing
+  P1 implementation, without changing or freezing P1 OPEN_DECISION D-1;
 - server-generated workdirs, checkpoints, result artifacts, and private logs;
 - one-active-job FIFO admission and restart reconciliation;
 - core Zhihu and LLM credentials.
@@ -359,22 +360,32 @@ Secret directories are `0700`; secret files are `0600`, regular files, and not
 symlinks. A controlled parser reads data; shell `source` is forbidden. Only the
 minimum P1 environment is passed to the child.
 
-The embedding identity remains:
+### Embedding authority inheritance
+
+This Hackathon Demo Spec does not resolve or amend P1 OPEN_DECISION D-1
+(production EmbeddingProvider / model).
+
+The Demo compute layer MUST invoke the existing P1 runtime without altering its
+embedding provider/model semantics.
+
+Any concrete embedding package, provider, model, revision, dimensionality,
+quantization, cache path, or local artifact requirement observed in the current
+implementation is an implementation fact only and does not become frozen
+authority through this Spec.
+
+Deployment readiness MUST satisfy the embedding prerequisites of the exact P1
+implementation being deployed, including any integrity, availability, cache,
+egress, or fail-closed checks already required by that implementation.
+
+The Hackathon Demo layer MUST NOT independently substitute, upgrade, downgrade, or
+select another embedding provider/model.
+
+If Demo implementation requires changing P1 embedding semantics or resolving D-1,
+STOP with:
 
 ```text
-@xenova/transformers 2.17.2
-Xenova/bge-base-zh-v1.5
-revision 71e50dc531959f9e04ebf190ea25b00261a0a186
-quantized ONNX
-768 dimensions
-remote runtime model download disabled
+P1_CONTRACT_CHANGE_REQUIRED
 ```
-
-Changing the model or embedding geometry is not authorized.
-
-Deployment must materialize the exact frozen model revision outside the checkout,
-verify every required artifact against a reviewed SHA-256 manifest, disable runtime
-remote downloads, and fail readiness when any byte is absent or mismatched.
 
 ## 12. Access and network policy
 
