@@ -51,9 +51,9 @@ runtime, and failure contracts continue unchanged.
 | Research Orchestration §12 excludes GUI and web apps | Permit one public Next.js presentation plane for the Hackathon demo. |
 | Research Orchestration §12 excludes background queue platforms | Permit one bounded in-process FIFO controller with one active P1 child and at most three queued jobs. This is not a general job platform. |
 | Research Orchestration §12 excludes multi-user systems | Permit anonymous public requests subject to strict global and per-IP admission limits. No account, identity, tenant, or user-data system is authorized. |
-| Research Orchestration §10 internal orchestration state/progress and runtime identity; P1 §6.3 orchestration state and §11 result-artifact hierarchy | Permit a coarser public job projection while preserving complete internal state. Public status must expose the current supported stage when a live job is running, but does not expose runtime/model identity. This is a public security amendment only; internal observability remains unchanged. |
-| Research Orchestration §10 CLI/runtime composition | Permit a thin HTTP adapter that spawns the existing `research-p1.mjs` entrypoint. P1 remains the only research engine. |
-| P1 §6.3 and §11, plus V0.3 internal canonical/handoff hierarchy | Permit a deterministic, sanitized public projection and immutable cached real runs after provenance and hash validation. Public projection does not become canonical data, a verified handoff, or an internal artifact authority. |
+| Research Orchestration §10 artifact/observability contract; P1 §6.1–§6.2 multi-group logical state and execution semantics | Permit a coarser public job projection while preserving complete internal state. Public status must expose the current supported stage when a live job is running, but does not expose runtime/model identity. This is a public security amendment only; internal observability remains unchanged. |
+| Research Orchestration §2–§3 desired experience and thin-orchestrator boundary | Permit a thin HTTP adapter that spawns the existing `research-p1.mjs` entrypoint. P1 remains the only research engine. |
+| P1 §6.3 handoff compatibility, §8 claim/synthesis hierarchy, §9 coverage, and §11 compatibility/minimum-correct architecture; V0.3 canonical/handoff hierarchy | Permit a deterministic, sanitized public projection and immutable cached real runs after provenance and hash validation. Public projection does not become canonical data, a verified handoff, or an internal artifact authority. |
 
 This amendment does not modify the P1 planner, retrieval, source selection,
 embedding geometry or model, analysis, synthesis, coverage reconciliation,
@@ -481,12 +481,14 @@ After the Spec-only exception and activation, the milestone uses one cumulative
 commit and an independently reviewed checkpoint on that cumulative history. A
 dependency may start only after its prerequisite checkpoint has the required exact-SHA
 PASS; the checkpoint is not reported as merged or DONE. Subsequent commits do not
-transfer an old review verdict to the new cumulative HEAD. H09 triggers fresh final
-code, security, and integration review of the exact cumulative HEAD and deployed
-configuration. Only that final PASS permits one ff-only merge of the accumulated
-branch and remote verification. This is the owner-authorized milestone execution
-topology required by the no-intermediate-merge rule; it does not waive per-ticket
-review, scope, or evidence gates.
+transfer an old review verdict to the new cumulative HEAD. H09 records real public
+acceptance and performance evidence; H10 then commits the submission and demo
+documentation. Only after H10 does a fresh final code, security, contract, and
+integration review cover the exact cumulative HEAD and deployed configuration. Only
+that final PASS permits one ff-only merge of the accumulated branch and remote
+verification. This is the owner-authorized milestone execution topology required by
+the no-intermediate-merge rule; it does not waive per-ticket review, scope, or
+evidence gates.
 
 ## 16. Real acceptance
 
@@ -557,6 +559,22 @@ FAILURE_ISOLATION
 MOBILE_UX
 PUBLIC_E2E
 ```
+
+It also contains these evidence sections without substituting prose for the status
+matrix:
+
+- **A. Architecture:** the actual deployed architecture, not the planned one.
+- **B. Files changed:** grouped by H ticket.
+- **C. Tests:** every suite command and its pass/fail count.
+- **D. Deployment:** Vercel production URL, configured custom domain, and compute
+  origin status, without a secret URL or token.
+- **E. Real P1 Run:** topic, runtime duration, selected/mapped/analyzed counts, final
+  state, and sanitized evidence path.
+- **F. Performance:** peak RSS, swap delta, runtime, model load duration, CPU behavior,
+  and observed failure-rate scope.
+- **G. Remaining risks:** only risks still open at final review.
+- **H. Owner actions:** the smallest exact account, domain, authorization, or secret
+  actions still required, with no request to paste secrets into chat.
 
 ## 18. Non-goals
 
