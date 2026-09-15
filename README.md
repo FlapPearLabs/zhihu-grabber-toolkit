@@ -1,5 +1,9 @@
 # ZhiHu CLI PRO
 
+<p align="center">
+  <img src="docs/assets/zhihu-cli-pro-cover.jpg" alt="ZhiHu CLI PRO — 知乎跨问题深度研究" width="640" />
+</p>
+
 简体中文 | [English](./README_EN.md)
 
 面向知乎内容研究的 **CLI + Agent 工具链**：从问题搜索、可靠抓取、确定性验证、大语料处理，进一步扩展到 **跨问题深度研究（Cross-Question Deep Research）**。
@@ -22,7 +26,7 @@
 
 把下面这句话直接发给任何**能执行本地命令的 Coding Agent**：
 
-> 克隆 `https://github.com/FlapPearLabs/zhihu-grabber-toolkit.git` 后，先阅读根目录 `README.md`、`AGENTS.md` 与 `zhihu-answer-grabber/SKILL.md`，按仓库要求安装 Node.js 22+ 依赖并运行 preflight；优先检查本机已有的知乎登录态和认证配置，若本机已有 OpenCLI / Playwright / Chrome / Chromium / CDP 等能力则复用现有登录 session，未登录时再拉起浏览器让我本人完成扫码 / 短信 / 验证码；Cookie / Secret / API Key 都只能留在本机，不得输出到聊天、日志或 Git；配置完成后我直接用自然语言给研究任务，跨问题深度研究优先用 `research-orchestration/bin/research-p1.mjs`，单问题研究用 `research-orchestration/bin/research.mjs`。
+> 克隆 `https://github.com/FlapPearLabs/zhihu-grabber-toolkit.git` 后，先阅读根目录 `README.md`、`AGENTS.md`、`zhihu-answer-grabber/SKILL.md` 与 `corpus-anthology/SKILL.md`，按仓库要求安装 Node.js 22+ 依赖并运行 preflight；优先检查本机已有的知乎登录态和认证配置，若本机已有 OpenCLI / Playwright / Chrome / Chromium / CDP 等能力则复用现有登录 session，未登录时再拉起浏览器让我本人完成扫码 / 短信 / 验证码；Cookie / Secret / API Key 都只能留在本机，不得输出到聊天、日志或 Git；配置完成后我直接用自然语言给研究任务，跨问题深度研究优先用 `research-orchestration/bin/research-p1.mjs`，单问题研究用 `research-orchestration/bin/research.mjs`。
 
 配置好以后，你可以直接对 Agent 说：
 
