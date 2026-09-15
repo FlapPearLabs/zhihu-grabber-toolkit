@@ -22,7 +22,7 @@
 
 把下面这句话直接发给任何**能执行本地命令的 Coding Agent**：
 
-> 克隆 `https://github.com/FlapPearLabs/zhihu-grabber-toolkit.git`，先阅读根目录 `README.md`、`AGENTS.md`、`zhihu-answer-grabber/SKILL.md` 和 `corpus-anthology/SKILL.md`，按仓库要求安装 Node.js 22+ 依赖并运行 preflight；知乎 Cookie / Secret / 模型凭据只允许在本机按安全文档配置，绝不要让我粘贴到聊天、日志或 Git；配置完成后，我会直接用自然语言给你研究任务，跨问题深度研究优先使用 `research-orchestration/bin/research-p1.mjs`，普通单问题研究才使用 `research-orchestration/bin/research.mjs`。
+> 克隆 `https://github.com/FlapPearLabs/zhihu-grabber-toolkit.git` 后，先阅读根目录 `README.md`、`AGENTS.md` 与 `zhihu-answer-grabber/SKILL.md`，按仓库要求安装 Node.js 22+ 依赖并运行 preflight；优先检查本机已有的知乎登录态和认证配置，若本机已有 OpenCLI / Playwright / Chrome / Chromium / CDP 等能力则复用现有登录 session，未登录时再拉起浏览器让我本人完成扫码 / 短信 / 验证码；Cookie / Secret / API Key 都只能留在本机，不得输出到聊天、日志或 Git；配置完成后我直接用自然语言给研究任务，跨问题深度研究优先用 `research-orchestration/bin/research-p1.mjs`，单问题研究用 `research-orchestration/bin/research.mjs`。
 
 配置好以后，你可以直接对 Agent 说：
 
@@ -186,14 +186,23 @@ Mapped + Analyzed Source Set
 
 ## 快速开始
 
-### 环境
+> 这个项目明确支持：把仓库发给一个能执行本地命令的 Agent，让 Agent 自己完成环境准备与认证检查。下面以 Agent 执行为首选路径；你作为用户只在“需要本人登录”的步骤介入。
 
-- Node.js **22+**
-- Git
-- 需要真实抓取时，本机配置知乎凭据
-- 需要语义分析时，按对应 runtime 文档配置本机模型 / API credential
+### 1. 安装
 
-### 安装
+需要：
+
+- **Node.js 22+**
+- **Git**
+
+可选（不是硬依赖，但推荐让 Agent 优先复用）：
+
+- **OpenCLI**
+- **Playwright**
+- **Chrome / Chromium**
+- **Chrome DevTools Protocol / CDP**
+
+这些浏览器能力不是运行 CLI 的必需条件。但如果 Agent 发现本机已经装有其中任意一种，应优先复用已有的知乎登录 session，而不是要求你重新登录。
 
 ```bash
 git clone https://github.com/FlapPearLabs/zhihu-grabber-toolkit.git
@@ -210,9 +219,85 @@ cd ../corpus-anthology
 npm ci --registry=https://registry.npmjs.org
 ```
 
-凭据只在本机配置。**不要把 Cookie、Secret、Token 或 API Key 发给 Agent、贴进聊天或提交到 Git。**
+### 2. 先让 Agent 检查当前环境
 
-详细规则：[`zhihu-answer-grabber/references/security.md`](./zhihu-answer-grabber/references/security.md)
+进入模块目录后，先运行 preflight：
+
+```bash
+cd zhihu-answer-grabber
+node scripts/preflight.mjs --json
+```
+
+然后 Agent 应按顺序检查：
+
+1. 环境变量 `ZHIHU_COOKIE` / `ZHIHU_SECRET` 是否已存在；
+2. 本地文件 `zhihu_cookie.txt` / `zhihu_secret.txt` 是否已存在；
+3. 本机是否存在可用的 OpenCLI / Playwright / Chrome / Chromium / CDP；
+4. 若存在浏览器能力，检查当前浏览器是否已经登录 `zhihu.com`；
+5. 已有可复用登录态时，优先复用，不要重复要求你登录。
+
+> 这里只检查“是否存在 / 是否可用”。Agent 不得在终端、聊天、日志或 Markdown 里打印任何凭据内容——包括值、长度、前缀、哈希或截断值。POSIX 系统下 `zhihu_cookie.txt` / `zhihu_secret.txt` 应为 `0600` 权限，否则 loader 会拒绝读取（详见 [`zhihu-answer-grabber/references/security.md`](./zhihu-answer-grabber/references/security.md)）。
+
+### 3. 如果知乎已经登录
+
+如果当前 Chrome / Chromium 已经登录知乎，Agent 应优先复用现有 session：
+
+```text
+已有浏览器登录态
+→ 验证 zhihu.com session 是否有效
+→ 在本机完成 CLI 所需认证准备
+→ 再次运行 preflight
+→ 开始研究
+```
+
+- 不要要求你把 Cookie 手工贴进聊天。
+- 不要声称本项目已经提供正式的“从浏览器自动导入 Cookie”命令——这类能力如果尚未落地，只能描述 Agent workflow，不能写成产品内置功能。
+
+### 4. 如果知乎没有登录
+
+如果 Agent 具备 OpenCLI / Playwright / CDP 等本地能力：
+
+- 打开知乎登录页面；
+- 保持浏览器窗口可见；
+- 若知乎要求扫码、短信或验证码，**由你本人完成**；
+- 等待登录成功；
+- 在本机完成认证配置；
+- 再次运行 `node scripts/preflight.mjs --json`。
+
+如果本机存在可用的终端二维码登录工具，可以复用；但不要虚构仓库原生命令。
+
+> 项目不绕过验证码、不绕过登录权限。需要本人认证的步骤必须由你本人完成。
+
+### 5. Secret 单独处理
+
+知乎 Cookie 与知乎开放平台 Access Secret 是**两套**认证：
+
+- `zhihu_cookie.txt`（或 `ZHIHU_COOKIE`）：抓回答需要；
+- `zhihu_secret.txt`（或 `ZHIHU_SECRET`）：搜索问题需要。
+
+普通 `zhihu.com` 登录成功，**不代表** `ZHIHU_SECRET` 已经存在。Agent 应分别检查：
+
+- `ZHIHU_SECRET` 是否已设置；
+- `zhihu_secret.txt` 是否已存在。
+
+如果都没有：引导你从知乎开放平台获取，并只保存在本机。不要把 Secret 发到聊天。
+
+### 6. 最终以 preflight 为准
+
+认证准备完成后，再次运行：
+
+```bash
+node scripts/preflight.mjs --json
+```
+
+只有 preflight 确认相关能力可用，Agent 才继续抓取 / 搜索 / 研究。preflight 可能输出如下字段（只含布尔值与错误类型，不含任何凭据）：
+
+```text
+cookie_configured
+cookie_usable
+secret_configured
+secret_usable
+```
 
 ### 常用 CLI
 
@@ -248,6 +333,8 @@ node scripts/make-handoff.mjs out/<QUESTION_ID> --task digest
 ```bash
 node research-orchestration/bin/research.mjs "人工智能会如何影响教育？"
 ```
+
+如果存在实质歧义，orchestrator 最多要求一次 clarification；否则自动继续。
 
 ### 跨问题深度研究
 
