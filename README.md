@@ -1,102 +1,225 @@
-# zhihu-grabber-toolkit
+# ZhiHu CLI PRO
 
 简体中文 | [English](./README_EN.md)
 
-知乎内容抓取、验证与大语料处理工具链。
+面向知乎内容研究的 **CLI + Agent 工具链**：从问题搜索、可靠抓取、确定性验证、大语料处理，进一步扩展到 **跨问题深度研究（Cross-Question Deep Research）**。
 
-支持从 **搜索知乎问题 → 抓取可访问回答 → 确定性验证 → 大语料处理 → Research Orchestration** 的完整流程，既可以作为普通 CLI 使用，也可以直接交给能够执行本地命令的 AI Agent。
+它不只是“把知乎回答抓下来再交给模型总结”，而是把一个复杂主题拆成多个相关问题，分别检索、抓取、筛选和分析，在保留问题 / Source Group 边界、来源身份、覆盖范围和证据链的前提下，再进行跨问题综合。
 
 ```text
-Search → Grab → Verify → Process Corpus → Research
+一个复杂主题
+→ 多个相关问题 / Source Groups
+→ 多路检索与抓取
+→ 验证 + 筛选 + 去重
+→ 分组分析
+→ 跨问题综合
+→ 可追溯研究结果
 ```
 
-适合：
+当前仓库也是 **ZhiHu CLI PRO 参赛版本**的完整工程底座；线上展示负责把研究过程做得直观，真正的抓取、验证、Research Coverage Engine、跨问题分析、安全边界和验收证据都在这个仓库里。
 
-- 知乎内容归档与数据整理；
-- AI Agent / LLM 的知乎资料获取；
-- 数十到数百条回答的大语料分析；
-- 基于知乎内容的研究工作流。
+## 发给你的 Agent：一句话配置
 
-> 项目首先是一个知乎抓取工具。Research Orchestration、coverage、evidence lineage 等能力，是在真实使用中为了解决“抓得完整以后，怎样让数据继续可靠地被人和 Agent 使用”逐步形成的。
+把下面这句话直接发给任何**能执行本地命令的 Coding Agent**：
 
-**文档入口：** [快速开始](#快速开始) · [功能](#功能) · [系统设计](./docs/architecture/overview.md) · [关键设计决策](./docs/architecture/key-decisions.md) · [完整文档](./docs/README.md)
+> 克隆 `https://github.com/FlapPearLabs/zhihu-grabber-toolkit.git`，先阅读根目录 `README.md`、`AGENTS.md`、`zhihu-answer-grabber/SKILL.md` 和 `corpus-anthology/SKILL.md`，按仓库要求安装 Node.js 22+ 依赖并运行 preflight；知乎 Cookie / Secret / 模型凭据只允许在本机按安全文档配置，绝不要让我粘贴到聊天、日志或 Git；配置完成后，我会直接用自然语言给你研究任务，跨问题深度研究优先使用 `research-orchestration/bin/research-p1.mjs`，普通单问题研究才使用 `research-orchestration/bin/research.mjs`。
+
+配置好以后，你可以直接对 Agent 说：
+
+```text
+研究一下“AI 编程工具会不会取代程序员”，不要只看一个知乎问题，做跨问题深度研究，并告诉我共识、分歧、成立条件和证据来源。
+```
 
 ---
 
-## 功能
+## 为什么做这个项目
 
-仓库由三个主要模块组成：
+知乎的一个真实优势，也是普通“搜索一个问题然后总结”最容易丢掉的东西，是：**同一个现实问题往往被拆散在很多不同的问题、回答和讨论语境里。**
+
+例如“AI 编程会不会取代程序员”并不只对应一个 Question。真正值得研究的内容会散落在：
+
+- AI 编程工具当前到底能完成多少真实开发工作；
+- 哪些程序员岗位正在发生变化；
+- 企业为什么仍然需要工程师；
+- 什么任务最容易被自动化；
+- 复杂系统、责任边界、团队协作又带来了什么限制。
+
+因此项目从最初的知乎抓取器，逐步演化成了一套研究工具链：
+
+```text
+可靠获取内容
+→ 证明抓到了什么
+→ 让大语料可处理
+→ 记录来源与覆盖
+→ 多问题 / 多来源组检索
+→ 构造 selected research corpus
+→ 分组分析
+→ 只有满足完整性条件后才允许综合
+```
+
+这也是 P1 Cross-Question Deep Research 的核心：**研究对象不是一个“搜索结果页”，而是一份可验证、可追溯、带边界的研究语料集。**
+
+---
+
+## 核心能力
+
+仓库目前由三个主要模块组成：
 
 | 模块 | 作用 |
 |---|---|
-| [`zhihu-answer-grabber`](./zhihu-answer-grabber) | 搜索、单题/批量抓取、分页、断点续传、rich content、JSON/Markdown 输出、结果验证 |
-| [`corpus-anthology`](./corpus-anthology) | 分块、map、coverage/evidence verification、full digest、hierarchical digest、top-percent analysis、archive |
-| [`research-orchestration`](./research-orchestration) | 自然语言研究请求 → 搜索 → 选题 → 抓取 → 验证 → handoff → 分析 → 渲染 |
+| [`zhihu-answer-grabber`](./zhihu-answer-grabber) | 搜索、单题 / 批量抓取、分页、断点续传、rich content、JSON / Markdown 输出、确定性验证 |
+| [`corpus-anthology`](./corpus-anthology) | chunk / map、full digest、hierarchical digest、coverage / evidence verification、top-percent sampled analysis、archive |
+| [`research-orchestration`](./research-orchestration) | 单问题 Research Orchestration + P1 跨问题深度研究：planning、multi-provider retrieval、source-group selection、RCE、分组分析、受控综合、coverage reconciliation |
 
-### 抓取能力
+### 1. 可靠抓取与验证
 
 - 搜索知乎问题，并尽量补充回答数；
-- 单题全量抓取当前可访问回答；
+- 单题抓取当前可访问回答；
 - 多问题批量抓取；
 - 分页与断点续传；
-- `answers.json` + `answers.md`；
 - 问题标题、描述、topics 等 metadata；
 - 图片、外链、引用 / 脚注、代码块等 rich content；
 - 可选热门评论 enrichment；
-- 低频、无代理池、无验证码 / 权限绕过。
+- `answers.json` + `answers.md`；
+- `captured != verified`：脚本跑完不等于验收通过；
+- `verify-output` 是确定性验收门。
 
-### 验证与大语料处理
+### 2. 大语料处理
 
-- `captured != verified`：抓取完成不等于验收通过；
-- `verify-output` 是确定性验收门；
-- canonical source identity / coverage / evidence lineage 由 controller 管理；
-- 数百条回答使用 chunk → map → verify → reduce，而不是一次塞进模型；
-- 支持 full digest / hierarchical full digest；
-- 用户明确要求时可做 top-percent sampled analysis，并披露实际覆盖比例。
-
-### Research Orchestration
+不会把数百条回答一次性塞进模型。
 
 ```text
-SEARCH
-→ SELECT
-→ CAPTURE
-→ VERIFY
-→ HANDOFF
-→ ANALYZE
-→ RENDER
+Canonical Corpus
+→ Chunk
+→ Map
+→ Coverage / Evidence Verification
+→ Reduce / Hierarchical Reduce
+→ Final Result
 ```
 
-用户可以直接给出一个自然语言研究主题。系统负责调用已有可靠 primitives，并在 candidate ambiguity、verification、coverage 或 runtime failure 时显式停止，而不是静默降级。
+支持：
 
-当前稳定 Research Orchestration 仍以**单问题研究**为主：搜索多个候选后选择一个最相关问题，再抓取并分析该问题的回答。跨多个 Question / Source-group 的 P1 Deep Research 正在演进中。
+- **Full digest**：分析全部 selected canonical sources；
+- **Hierarchical full digest**：map 结果过大时继续分层聚合；
+- **Top-percent sampled analysis**：仅在用户明确要求“看高赞 / 前 X% / 快速看看”时启用，并披露真实覆盖比例；
+- canonical source identity / coverage / evidence lineage 由 controller 管理，而不是让模型自行声明。
+
+### 3. Cross-Question Deep Research
+
+P1 的生产入口：
+
+```bash
+node research-orchestration/bin/research-p1.mjs "AI 编程工具会取代程序员吗"
+```
+
+它的实际 stage order 是：
+
+```text
+PLAN
+→ MULTI-PROVIDER RETRIEVAL
+→ SOURCE-GROUP SELECTION
+→ MULTI-GROUP EXECUTION
+→ DENSE GEOMETRY + RCE
+→ PER-GROUP ANALYSIS
+→ PRE-SYNTHESIS GUARD
+→ CROSS-SOURCE SYNTHESIS
+→ FINAL COVERAGE RECONCILIATION
+→ RESULT
+```
+
+关键不是“多抓几个问题”，而是：
+
+- 保留 Question / Source Group 身份；
+- 避免单一大问题吞掉整个研究；
+- 把相关度、去重、语义关联和 coverage 放在同一个 research corpus contract 中；
+- 先分别分析每个问题，再做跨问题综合；
+- 综合前机械检查 selected / mapped / analyzed source set identity；
+- 任何关键条件无法证明时 fail closed，而不是静默缩小语料或伪造成功。
+
+---
+
+## 研究证据：P1 已完成一次 canonical 端到端验收
+
+仓库保留了可复核、已脱敏的 canonical acceptance evidence：
+
+- [`P1_T16_CANONICAL_ACCEPTANCE_EVIDENCE.md`](./docs/planning/P1_T16_CANONICAL_ACCEPTANCE_EVIDENCE.md)
+- [`P1_T16_CANONICAL_ACCEPTANCE_EVIDENCE.json`](./docs/planning/P1_T16_CANONICAL_ACCEPTANCE_EVIDENCE.json)
+
+固定研究主题：
+
+```text
+AI 编程工具会取代程序员吗
+```
+
+核心结果：
+
+| 验收项 | Canonical run 结果 |
+|---|---:|
+| Source Groups | **4** |
+| 实际调用 Retrieval Providers | **2** |
+| Selected verified sources | **396** |
+| Mapped sources | **396** |
+| Analyzed sources | **396** |
+| Analysis Coverage | **100% of selected corpus** |
+| Groups Verified | **4 / 4** |
+| Missing / duplicate / stale / invalid evidence refs | **0 / 0 / 0 / 0** |
+| Largest group share | **0.429** |
+| Acceptance rows | **17 / 17 PASS** |
+
+最重要的一条不是“396 很多”，而是：
+
+```text
+Selected Verified Source Set
+=
+Mapped + Analyzed Source Set
+=
+396 sources
+```
+
+只有集合身份机械一致，pre-synthesis guard 才允许跨问题综合。
+
+> **100% Analysis Coverage ≠ 100% Retrieval Coverage。** 当前验收只能证明 selected corpus 中的 396 条来源全部完成映射和分析；它不能、也不会声称“已经搜遍整个知乎”。Canonical run 的 retrieval completeness 仍按真实边界披露，而不是用分析覆盖率替代检索完整度。
+
+这部分是项目刻意保留的研究证据，不是 README 里的营销数字。
 
 ---
 
 ## 快速开始
 
-需要 **Node.js 22+**。
+### 环境
+
+- Node.js **22+**
+- Git
+- 需要真实抓取时，本机配置知乎凭据
+- 需要语义分析时，按对应 runtime 文档配置本机模型 / API credential
+
+### 安装
 
 ```bash
 git clone https://github.com/FlapPearLabs/zhihu-grabber-toolkit.git
-cd zhihu-grabber-toolkit/zhihu-answer-grabber
+cd zhihu-grabber-toolkit
+
+cd zhihu-answer-grabber
 npm ci --registry=https://registry.npmjs.org
 node scripts/preflight.mjs --json
+
+cd ../research-orchestration
+npm ci --registry=https://registry.npmjs.org
+
+cd ../corpus-anthology
+npm ci --registry=https://registry.npmjs.org
 ```
 
-登录凭据只在本机配置：
+凭据只在本机配置。**不要把 Cookie、Secret、Token 或 API Key 发给 Agent、贴进聊天或提交到 Git。**
 
-- `zhihu_cookie.txt`：抓回答需要；
-- `zhihu_secret.txt`：搜索问题需要；
-- model runtime credential：只在使用对应远程语义分析 runtime 时需要。
+详细规则：[`zhihu-answer-grabber/references/security.md`](./zhihu-answer-grabber/references/security.md)
 
-`preflight.mjs` 只报告“是否可用”和错误类型，不输出凭据值。
-
-### 常用命令
+### 常用 CLI
 
 在 `zhihu-answer-grabber/`：
 
 ```bash
-# 搜索问题
+# 搜索知乎问题
 node scripts/zhigrab.mjs search "关键词" --json
 
 # 单题抓取
@@ -118,7 +241,7 @@ node scripts/verify-output.mjs out/<QUESTION_ID>
 node scripts/make-handoff.mjs out/<QUESTION_ID> --task digest
 ```
 
-### 一句话研究
+### 单问题研究
 
 在仓库根目录：
 
@@ -126,207 +249,207 @@ node scripts/make-handoff.mjs out/<QUESTION_ID> --task digest
 node research-orchestration/bin/research.mjs "人工智能会如何影响教育？"
 ```
 
-如果候选问题存在实质歧义，orchestrator 最多要求一次 clarification；否则自动继续。
+### 跨问题深度研究
+
+```bash
+node research-orchestration/bin/research-p1.mjs "AI 编程工具会取代程序员吗"
+```
+
+机器可读输出：
+
+```bash
+node research-orchestration/bin/research-p1.mjs "AI 编程工具会取代程序员吗" --json
+```
+
+如果存在实质歧义，P1 会返回结构化 clarification，而不是自行猜测用户意图。
 
 ---
 
-## 为什么不只是一个简单爬虫
+## 与知乎社区生态的契合点
 
-抓取本身并不是最难的部分。真实使用以后，项目持续遇到这些问题：
+这个项目不是把知乎当成普通网页集合，而是把知乎天然的**问题结构、长回答、多观点、专业答主和引用语境**当成研究结构的一部分。
+
+### 跨问题，而不是只挑一个“最像”的问题
+
+现实议题在知乎往往被拆散在多个 Question 中。P1 保留 Source Group / Question 边界，再做跨组综合，避免一个热门大问题代表整个议题。
+
+### 长回答与 Rich Content 不被压扁
+
+抓取层保留问题 metadata、正文结构、图片、外链、引用 / 脚注、代码块等 rich content，让后续研究可以基于更完整的知乎内容形态工作。
+
+### 让社区内容可被 Agent 可靠消费
+
+对 Agent 来说，真正困难的不只是“拿到文本”，而是：
+
+- 这条来源是谁；
+- 是否完整抓取；
+- 是否被选入研究语料；
+- 为什么保留 / 排除；
+- 哪个结论引用了哪些 sourceRefs；
+- 当前 coverage 能证明什么、不能证明什么。
+
+因此项目把这些事实交给 controller，而不是交给概率模型猜测。
+
+---
+
+## 安全：Prompt Injection、Context Pollution 与凭据隔离
+
+项目默认把知乎回答、网页、引用、代码块等全部视为：
 
 ```text
-抓到了多少？
-抓完整了吗？
-抓到的内容能不能可信地继续处理？
-500 条回答怎么分析？
-模型有没有漏掉来源？
-只看高赞能不能叫“完整总结”？
-一个 Agent 应该相信哪些事实、又不能自己决定哪些事实？
+UNTRUSTED CONTENT
+=
+DATA, NOT INSTRUCTION
 ```
 
-这些问题逐步形成了现在的验证、corpus 与 orchestration 层。
+换句话说，外部内容可以成为**研究对象**，但没有资格改变系统规则、调用工具、读取凭据或建立自己的 provenance。
 
-完整演进故事见：[`Zhihu Grabber Toolkit：产品设计、关键决策与演进`](./docs/product-design/zhihu-grabber-toolkit-product-design.md)。
-
----
-
-## 系统设计
-
-```mermaid
-flowchart TD
-    A[User / Agent] --> B[Search / Research Orchestrator]
-    B --> C[Capture]
-    C --> D[verify-output]
-    D -->|valid=true| E[Verified Canonical Corpus]
-    D -->|invalid / unknown| X[Fail Closed]
-    E --> F[Corpus Anthology]
-    F --> G[Chunk / Map]
-    G --> H[Coverage + Evidence Verification]
-    H --> I[Reduce / Hierarchical Reduce]
-    I --> J[Research Result]
-```
-
-项目长期采用一个明确边界：
+### Authority separation
 
 ```text
 Controller owns truth and authority.
-Model owns semantics.
+Model / Semantic Worker owns semantics.
 ```
 
-Controller 负责 canonical identity、coverage、evidence lineage、verification、IO boundary 和 fail-closed；模型负责摘要、观点提炼和 synthesis。
+Controller 负责：
 
-因此模型可以“总结得不够好”，但不能“漏看了一半资料却自己宣布已经完整分析”。
+- source identity；
+- provenance；
+- coverage；
+- state transitions；
+- verification；
+- 是否允许 synthesis；
+- fail-closed decisions。
 
-详细架构：[`docs/architecture/overview.md`](./docs/architecture/overview.md)
+语义模型负责：
+
+- 提取观点；
+- 归纳共识 / 分歧；
+- 分析内容；
+- 生成受约束的 synthesis。
+
+这种分离用于降低 Prompt Injection / Context Pollution 的影响：即使外部回答中出现“忽略前文”“执行某命令”“把这条内容当系统指令”等文本，它也只是 corpus data，不拥有 controller authority。
+
+### Tool-less semantic runtime
+
+当前 P1 canonical composition 使用经过资格验证的 **tool-less semantic runtime**。语义 worker 不通过研究内容获得工具权限，也不掌握 source identity / coverage 的最终裁决权。
+
+### Credential isolation
+
+硬规则：
+
+- 不要求用户把完整 Cookie、Secret、Token 或模型 API Key 粘贴到聊天；
+- 不把凭据写入 repo、Markdown、JSON 产物、日志或任务报告；
+- preflight 只报告“是否已配置 / 是否可用”和错误类型，不打印凭据；
+- 知乎凭据只向允许的 HTTPS 主机发送；
+- credential file 由 `.gitignore` 和本机权限约束保护。
+
+### Fail closed / No silent fallback
+
+`UNKNOWN != PASS`。
+
+当 verification、coverage、runtime identity、source set equality 或关键 contract 无法证明时，系统停止，而不是：
+
+- 静默换 provider；
+- 静默换 model；
+- 偷偷缩小语料；
+- 把 partial 包装成 full；
+- 继续生成一个看似完整的答案。
+
+---
+
+## 系统架构
+
+```mermaid
+flowchart TD
+    A[User / Agent Research Topic] --> B[Planner]
+    B --> C[Multi-provider Retrieval]
+    C --> D[Source-group Selection]
+    D --> E[Multi-group Capture + Verify]
+    E --> F[Selected Verified Research Corpus]
+    F --> G[Dense Geometry + RCE Corpus Selection]
+    G --> H[Per-group Analysis / Claims]
+    H --> I[Pre-synthesis Guard]
+    I -->|set identity match| J[Cross-source Synthesis]
+    I -->|mismatch / unknown| X[Fail Closed]
+    J --> K[Final Coverage Reconciliation]
+    K --> L[Research Result + Disclosure + Evidence Lineage]
+```
+
+三个 coverage 概念始终分开：
+
+| Coverage | 回答的问题 |
+|---|---|
+| **Retrieval Coverage** | 在当前检索边界下探索了多少研究空间？ |
+| **Source Completeness** | 选定的 source group / question 是否抓取并验证完整？ |
+| **Analysis Coverage** | selected verified corpus 是否真正全部进入分析？ |
+
+这三个概念不能互相替代。
 
 ---
 
 ## 关键设计决策
 
-| 决策 | 原因 |
+| 决策 | 为什么 |
 |---|---|
-| `captured != verified` | 脚本跑完不等于数据已经满足后续消费合同 |
+| `captured != verified` | 脚本完成不代表数据已经满足后续消费合同 |
 | Controller owns truth; Model owns semantics | 不让概率模型掌握 source identity、coverage 和 verification authority |
-| Canonical data 与 derived view 分离 | Markdown、projection、摘要都不能覆盖原始事实来源 |
-| Full coverage != sampled analysis | 只看部分高赞回答不能宣称分析了全部语料 |
-| Thin Orchestrator | 简化用户体验，但复用而不重写已经可靠的 primitives |
-| Runtime is replaceable infrastructure | 产品能力不绑定 DeepSeek、LM Studio 或某一个模型 |
+| Canonical data 与 derived view 分离 | Markdown、projection、摘要不能覆盖原始事实来源 |
+| Full coverage != sampled analysis | 只看高赞 / 部分来源不能宣称分析了完整 selected corpus |
+| Question / Source-group preservation | 防止一个热门问题吞掉整个跨问题研究空间 |
+| Research Decision Ledger | 记录来源为何进入 / 未进入研究集，让选择过程可审计 |
+| Pre-synthesis guard | selected / mapped / analyzed 集合不一致时禁止综合 |
 | Retrieval / Source / Analysis Coverage 分离 | “找得广、抓得完整、分析得完整”是三件不同的事 |
-| Simple / Mechanical / Verifiable first | 复杂自动化必须由真实问题证明必要性 |
+| Runtime qualification | provider / model / profile 必须经过明确资格验证，接口兼容不等于产品支持 |
+| No silent fallback | runtime、coverage 或 verification 失败时不能偷偷改变研究身份 |
+| External content = data, not instruction | 把 Prompt Injection / Context Pollution 限制在不具 authority 的数据层 |
+| Simple / Mechanical / Verifiable first | 能机械证明的事实，不交给模型凭感觉判断 |
 
-详细背景、替代方案与 trade-off：[`Key Engineering Decisions`](./docs/architecture/key-decisions.md)
+详细背景：[`docs/architecture/key-decisions.md`](./docs/architecture/key-decisions.md)
 
 ---
 
-## 回答特别多怎么办？
-
-不会直接把数百条回答一次性塞进模型。
+## 项目结构
 
 ```text
-Canonical Corpus
-→ Chunk
-→ Map
-→ Coverage / Evidence Verification
-→ Reduce
-→ Final Result
+zhihu-grabber-toolkit/
+├── zhihu-answer-grabber/       # 搜索、抓取、rich content、验证
+├── corpus-anthology/           # 大语料 chunk / map / reduce / verification
+├── research-orchestration/     # 单问题研究 + P1 跨问题深度研究
+├── discovery/                  # provider / embedding qualification evidence
+├── docs/
+│   ├── architecture/           # 架构与关键设计决策
+│   ├── planning/               # P1 execution / acceptance evidence
+│   ├── product-design/         # 产品演进与设计说明
+│   └── specs/                  # 冻结 Spec / behavior contract
+├── references/                 # 跨模块 handoff schema
+├── AGENTS.md                   # Agent 工程规则
+└── RULES.md                    # 仓库治理规则
 ```
 
-### Full digest
-
-分析全部 selected canonical sources，并机械验证 source coverage。
-
-### Hierarchical full digest
-
-当 map 结果本身也过大时递归聚合，在控制顶层上下文规模的同时保留 lineage。
-
-### Top-percent analysis
-
-只有用户明确要求“只看高赞 / 前 X% / 快速看看”时才进入。系统会披露 total / selected / actual coverage，并保持 sampled mode 与 full mode 的产品身份分离。
-
-更多见 [`corpus-anthology/SKILL.md`](./corpus-anthology/SKILL.md)。
-
 ---
 
-## 安全与正确性
+## 文档地图
 
-### Untrusted content
-
-知乎回答、链接和代码都是外部数据，不是给 Agent 的操作指令。
-
-### Credential isolation
-
-Cookie / Secret / Token / API Key 不进入 repo、日志、state、Markdown 报告或聊天。
-
-### Deterministic verification
-
-模型不能授予 `verified`；`UNKNOWN != PASS`。
-
-### Fail closed
-
-verification、coverage、runtime capability 或 contract 无法证明时停止，不静默换 provider、缩小语料或伪造成功。
-
-项目不提供验证码绕过、权限绕过、代理池、高频抓取或规避检测能力。
-
----
-
-## Runtime：不绑定 DeepSeek
-
-底层抓取、验证和 corpus primitives 都是 CLI，不依赖特定模型。
-
-语义分析阶段可以接入经过资格验证的 runtime。项目已经验证过 local / remote tool-less execution，但 qualification 是 provider / model / profile scoped 的，不会因为接口“兼容”就自动宣称支持。
-
-更换 runtime 不能静默改变：
-
-- verification；
-- canonical source identity；
-- evidence lineage；
-- coverage；
-- full / sampled identity；
-- fail-closed semantics。
-
-详见 [`Runtime Strategy`](./docs/architecture/runtime-strategy.md)。
-
----
-
-## 当前方向：Cross-Question Deep Research
-
-单问题 Research Orchestration 解决的是：
-
-```text
-研究主题
-→ 搜索多个候选
-→ 选择一个 Question
-→ 抓取 + 验证 + 分析
-```
-
-真实研究问题往往分散在多个知乎 Question 中，因此 P1 正在把这一边界扩展为多个 Question / Source-group。
-
-关键不是“多抓几个问题”，而是如何构造一个不会被单一大问题或重复高赞观点吞噬的 selected research corpus。
-
-第一版方向组合：
-
-```text
-Question / Source-group Preservation
-+ Popularity Anchor
-+ Dense Semantic Relevance / Novelty
-+ Optional Lightweight Redundancy Control
-```
-
-并显式拆分三种 coverage：
-
-- **Retrieval Coverage**：在当前检索边界下探索了多少研究空间；
-- **Source Completeness**：选定 source group 是否抓取 / 验证完整；
-- **Analysis Coverage**：selected verified corpus 是否真正全部进入分析。
-
-P1 默认要求 selected verified corpus 的 Analysis Coverage = 100%，但不会声称“知乎全站 Retrieval Coverage = 100%”。
-
-设计文档：[`P1 Cross-Question Deep Research`](./docs/specs/p1-cross-question-deep-research.md)
-
----
-
-## Documentation
-
-完整文档地图：[`docs/README.md`](./docs/README.md)
-
-### 推荐阅读
+完整入口：[`docs/README.md`](./docs/README.md)
 
 | 文档 | 内容 |
 |---|---|
-| [`Architecture Overview`](./docs/architecture/overview.md) | 系统模块、数据流与 authority boundary |
+| [`Architecture Overview`](./docs/architecture/overview.md) | 模块、数据流与 authority boundary |
 | [`Key Engineering Decisions`](./docs/architecture/key-decisions.md) | 关键取舍、alternatives 与 trade-off |
-| [`Product Design & Evolution`](./docs/product-design/zhihu-grabber-toolkit-product-design.md) | 从知乎抓取到跨问题研究的产品演进 |
-| [`Runtime Strategy`](./docs/architecture/runtime-strategy.md) | local / cloud runtime 策略 |
+| [`Product Design & Evolution`](./docs/product-design/zhihu-grabber-toolkit-product-design.md) | 从抓取器到研究系统的产品演进 |
 | [`Product Behavior Contract`](./docs/product-behavior-contract.md) | 当前产品行为归一化视图 |
 | [`Research Orchestration Spec`](./docs/specs/research-orchestration-scope.md) | 单问题 research orchestration 合同 |
-| [`P1 Cross-Question Deep Research`](./docs/specs/p1-cross-question-deep-research.md) | 跨问题研究设计 |
+| [`P1 Cross-Question Deep Research`](./docs/specs/p1-cross-question-deep-research.md) | 跨问题深度研究 Spec |
+| [`P1 Canonical Acceptance Evidence`](./docs/planning/P1_T16_CANONICAL_ACCEPTANCE_EVIDENCE.md) | P1 canonical dogfood / acceptance evidence |
+| [`Runtime Strategy`](./docs/architecture/runtime-strategy.md) | local / remote runtime 与 qualification 策略 |
+| [`Security`](./zhihu-answer-grabber/references/security.md) | Credential isolation、host boundary、401/403 诊断 |
 
 ---
 
 ## Development
 
-这个仓库本身也使用 repository-driven Agent engineering。
-
-工程状态由 repo / GitHub authority 恢复，而不是依赖某一个聊天会话。对于 correctness-bearing CODE ticket，当前流程要求：
+这个仓库本身也采用 repository-driven Agent engineering。
 
 ```text
 /implement
@@ -337,41 +460,29 @@ P1 默认要求 selected verified corpus 的 Analysis Coverage = 100%，但不�
 → independent exact-SHA review
 ```
 
-核心规则包括：
+核心原则：
 
 - `tests green != task complete`；
 - `self-review != independent review`；
 - reviewer PASS 只绑定 exact reviewed SHA；
 - 同一 branch 同时只允许一个 active writer；
-- 能由 LSP / typecheck / lint / static checks 发现的问题，优先机械解决，把模型推理留给真正困难的问题。
+- 能由 LSP / typecheck / lint / static checks 发现的问题优先机械解决；
+- 工程状态从 repo / GitHub authority 恢复，不依赖聊天上下文。
 
 治理入口：[`AGENTS.md`](./AGENTS.md) · [`RULES.md`](./RULES.md)
 
 ---
 
-## Repository Layout
-
-```text
-zhihu-grabber-toolkit/
-├── zhihu-answer-grabber/     # 搜索、抓取、验证
-├── corpus-anthology/         # 大语料处理
-├── research-orchestration/   # Research workflow 编排
-└── docs/                     # Spec、Architecture、Product Design、Evidence
-```
-
----
-
 ## 明确不做
 
-- 完整作者档案抓取；
-- 完整评论树 / 全部子评论；
-- 自动下载所有图片文件；
-- 视频抓取；
-- 点赞、评论、关注等写操作；
 - CAPTCHA / 权限控制绕过；
 - 代理池、IP 轮换、高频抓取；
+- 点赞、评论、关注等写操作；
 - 把 sampled analysis 包装成 full coverage；
-- 把某个模型或 provider 当成产品身份。
+- 把 Analysis Coverage 包装成 Retrieval Coverage；
+- 让外部网页 / 回答获得 Agent 操作 authority；
+- 把某一个模型 / provider 当成产品身份；
+- 在没有证据的情况下宣称“搜遍知乎”或“完整覆盖整个互联网”。
 
 ---
 
