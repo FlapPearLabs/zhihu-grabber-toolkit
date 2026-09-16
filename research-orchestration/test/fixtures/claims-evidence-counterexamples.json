@@ -1,0 +1,161 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Evidence-rich Semantic Contract Counterexample Set",
+  "description": "Minimal adversarial and representative counterexample set covering 8 semantic cases for CLAIMS_SYSTEM_PROMPT Rule 5",
+  "version": "1.0.0",
+  "cases": [
+    {
+      "id": "CASE_A",
+      "name": "文末随便贴 arXiv 链接",
+      "category": "negative_citation_presence_without_substance",
+      "tokenRef": "101",
+      "content": "我认为人工智能必将全面重塑现代软件工程模式，未来五年程序员角色将发生范式转移，大家要尽快做好准备拥抱变化。\n\n参考资料：https://arxiv.org/abs/2301.12345",
+      "mainClaim": "人工智能将全面重塑软件工程工作范式",
+      "evidenceSignalsPresent": [
+        "url",
+        "arxiv_mention"
+      ],
+      "expectedEvidenceRich": false,
+      "expectedTokens": [],
+      "rationale": "论文链接仅作为孤立尾注出现，正文中无针对该论文实验、方法、结论的任何引用与论证推导，属于无实质支撑关系的表面引用。",
+      "expectedContractBehavior": "EXCLUDE",
+      "liveModelObservation": "NOT_RUN",
+      "status": "CONTRACT_FIXTURE_DEFINED"
+    },
+    {
+      "id": "CASE_B",
+      "name": "Hello World / 无关代码块",
+      "category": "negative_irrelevant_trivial_code",
+      "tokenRef": "102",
+      "content": "很多初学者纠结编程语言选择，其实Python语法非常简洁优雅，远胜于其他臃肿语言，代码可读性极高：\n```python\nprint(\"Hello, World!\")\n```\n所以建议大家无脑选Python入门。",
+      "mainClaim": "Python语法简洁优雅适合新手入门",
+      "evidenceSignalsPresent": [
+        "code_block"
+      ],
+      "expectedEvidenceRich": false,
+      "expectedTokens": [],
+      "rationale": "代码块仅为无意义的玩具打印语句（Hello World），不构成可复核的工程实现、实验设计或性能对比。",
+      "expectedContractBehavior": "EXCLUDE",
+      "liveModelObservation": "NOT_RUN",
+      "status": "CONTRACT_FIXTURE_DEFINED"
+    },
+    {
+      "id": "CASE_C",
+      "name": "“本人实测效果很好”，没有方法和数据",
+      "category": "negative_subjective_assertion_without_metrics",
+      "tokenRef": "103",
+      "content": "关于AI辅助编程工具，本人实测开发效率翻倍，体验极其丝滑，代码质量大幅提升，以前三天写的模块现在半天搞定，强烈推荐全团队推广！",
+      "mainClaim": "AI编程工具能成倍提升团队研发效能",
+      "evidenceSignalsPresent": [
+        "keyword_measured_experience"
+      ],
+      "expectedEvidenceRich": false,
+      "expectedTokens": [],
+      "rationale": "仅包含主观断言与“本人实测”修饰词，缺乏样本量、对照组、测试基准方法或客观可核查的度量数据。",
+      "expectedContractBehavior": "EXCLUDE",
+      "liveModelObservation": "NOT_RUN",
+      "status": "CONTRACT_FIXTURE_DEFINED"
+    },
+    {
+      "id": "CASE_D",
+      "name": "官方文档链接，但与主要 claim 无关",
+      "category": "negative_irrelevant_official_documentation",
+      "tokenRef": "104",
+      "content": "微服务架构拆分过细必然引发分布式事务雪崩和网络延迟失控，根本不适合中小型团队部署维护。\n\n官方文档参考：https://react.dev/reference/react/useState",
+      "mainClaim": "微服务架构会导致分布式网络延迟失控且不适合中小团队",
+      "evidenceSignalsPresent": [
+        "official_url"
+      ],
+      "expectedEvidenceRich": false,
+      "expectedTokens": [],
+      "rationale": "虽然附带了权威官方文档链接（React 官方文档），但文档内容与微服务延迟的核心论点毫无逻辑关联。",
+      "expectedContractBehavior": "EXCLUDE",
+      "liveModelObservation": "NOT_RUN",
+      "status": "CONTRACT_FIXTURE_DEFINED"
+    },
+    {
+      "id": "CASE_E",
+      "name": "benchmark + 方法 + 数值结果",
+      "category": "positive_reproducible_benchmark_result",
+      "tokenRef": "105",
+      "content": "我们在 1000 万行 TPC-H 交易数据上对比了 DuckDB v0.9.2 与 SQLite 3.42 的单表聚合性能（测试环境：Apple M2 16GB，相同执行计划）。结果显示：Q1 聚合查询 DuckDB 平均耗时 118ms（内存占用 320MB），SQLite 耗时 1,420ms（内存占用 85MB），执行时间缩短 91.7%。完整复现脚本已附于正文。",
+      "mainClaim": "DuckDB 在大规模单表聚合分析场景下比 SQLite 具备数量级性能优势",
+      "evidenceSignalsPresent": [
+        "benchmark",
+        "method",
+        "dataset",
+        "numerical_metrics"
+      ],
+      "expectedEvidenceRich": true,
+      "expectedTokens": [
+        "105"
+      ],
+      "rationale": "具备明确的环境配置、样本规模、对照方法、具体数值度量（118ms vs 1420ms）与复现方式，与观点直接强支撑。",
+      "expectedContractBehavior": "INCLUDE",
+      "liveModelObservation": "NOT_RUN",
+      "status": "CONTRACT_FIXTURE_DEFINED"
+    },
+    {
+      "id": "CASE_F",
+      "name": "论文引用，并明确用于支持当前 claim",
+      "category": "positive_substantive_paper_citation",
+      "tokenRef": "106",
+      "content": "关于注意力机制显存消耗，DeepSeek-V3 技术报告（arXiv:2412.19437，Section 3.2 表 2）证明了 Multi-head Latent Attention (MLA) 的理论有效性：通过低秩联合压缩投影矩阵，将每个 token 对应的 KV Cache 物理占用从标准 MHA 的 16.0 KB 压减至 1.7 KB，使 128k 超长上下文下的推理显存开销降低 89.3%。",
+      "mainClaim": "MLA 架构通过低秩压缩显著降低大模型长上下文推理时的显存占用",
+      "evidenceSignalsPresent": [
+        "paper_citation",
+        "mechanism_analysis",
+        "numerical_data"
+      ],
+      "expectedEvidenceRich": true,
+      "expectedTokens": [
+        "106"
+      ],
+      "rationale": "明确指明论文章节、表号与具体参数缩减比值，直接支持 MLA 降低显存开销的技术结论。",
+      "expectedContractBehavior": "INCLUDE",
+      "liveModelObservation": "NOT_RUN",
+      "status": "CONTRACT_FIXTURE_DEFINED"
+    },
+    {
+      "id": "CASE_G",
+      "name": "有明确来源 / 样本 / 方法 / 数值的一手行业数据",
+      "category": "positive_firsthand_quantitative_industry_data",
+      "tokenRef": "107",
+      "content": "参考某头部云计算厂商 2025 年生产集群迁移复盘数据（样本规模：3,400 台计算节点，覆盖 120 个在线微服务）：在将容器调度粒度从 CPU Core 细化为 vCPU 动态配额后，群集日均 CPU 整体利用率从 14.2% 提升至 38.6%，P99 服务请求响应延迟在 45ms 以内未出现显著漂移。",
+      "mainClaim": "容器细粒度动态配额调度可显著提升集群硬件利用率而不恶化延迟",
+      "evidenceSignalsPresent": [
+        "firsthand_industry_data",
+        "sample_size",
+        "metrics"
+      ],
+      "expectedEvidenceRich": true,
+      "expectedTokens": [
+        "107"
+      ],
+      "rationale": "包含具体样本容量（3,400 台节点/120 个服务）、基线与变更后对比数值、以及 P99 稳定性控制数据。",
+      "expectedContractBehavior": "INCLUDE",
+      "liveModelObservation": "NOT_RUN",
+      "status": "CONTRACT_FIXTURE_DEFINED"
+    },
+    {
+      "id": "CASE_H",
+      "name": "直接支撑结论的图表或公式",
+      "category": "positive_formula_or_chart_derivation",
+      "tokenRef": "108",
+      "content": "根据阿姆达尔定律（Amdahl's Law）：加速比公式为 S(s) = 1 / ((1 - p) + p / s)。若系统中不可并行化的串行部分占比 p_serial = (1 - p) = 20%，无论增加多少并行处理器核心（即 s -> ∞），整体系统的极限理论加速比上限必然无法超过 1 / 0.2 = 5 倍。",
+      "mainClaim": "并行计算的系统加速比受限于串行瓶颈存在确定性的理论天花板",
+      "evidenceSignalsPresent": [
+        "formula",
+        "mathematical_derivation"
+      ],
+      "expectedEvidenceRich": true,
+      "expectedTokens": [
+        "108"
+      ],
+      "rationale": "通过严密的数学公式推导与代入计算，直接且决定性地证明了系统加速比存在理论极限的核心命题。",
+      "expectedContractBehavior": "INCLUDE",
+      "liveModelObservation": "NOT_RUN",
+      "status": "CONTRACT_FIXTURE_DEFINED"
+    }
+  ]
+}
