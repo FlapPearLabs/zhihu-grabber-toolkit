@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: REAL_T09_TO_SEAM_A_CONFORMANCE: real reviewed producer output passes the frozen SEAM A validator
+ok 1 - REAL_T09_TO_SEAM_A_CONFORMANCE: real reviewed producer output passes the frozen SEAM A validator
+  ---
+  duration_ms: 4.264208
+  type: 'test'
+  ...
+# Subtest: negative conformance: captured-only group smuggled into a real manifest fails closed (self-verifying hash)
+ok 2 - negative conformance: captured-only group smuggled into a real manifest fails closed (self-verifying hash)
+  ---
+  duration_ms: 1.336417
+  type: 'test'
+  ...
+# Subtest: pinned producer SHA is the reviewed T09 commit (identity sanity)
+ok 3 - pinned producer SHA is the reviewed T09 commit (identity sanity)
+  ---
+  duration_ms: 0.084875
+  type: 'test'
+  ...
+# Subtest: REAL_T09_TO_T12_TO_SEAM_B_CONFORMANCE: real manifest → adapter → selector → frozen validators → accounting → determinism → downstream artifact
+ok 4 - REAL_T09_TO_T12_TO_SEAM_B_CONFORMANCE: real manifest → adapter → selector → frozen validators → accounting → determinism → downstream artifact # SKIP SEAM B real conformance needs LOCAL-ONLY artifacts not present in CI: real artifacts root (P1_REAL_DOGFOOD_ROOT / work/dogfood-t09-reval1); real embeddings JSON (<REDACTED_TEMP_PATH>); produce with bin/build-real-embeddings.mjs — see test header RUN RECIPE
+  ---
+  duration_ms: 1.503708
+  type: 'test'
+  ...
+# Subtest: REAL adapter fail-closed: tampered real manifest (manifestHash stale) → RCE_ADAPTER_MANIFEST_HASH_MISMATCH
+ok 5 - REAL adapter fail-closed: tampered real manifest (manifestHash stale) → RCE_ADAPTER_MANIFEST_HASH_MISMATCH # SKIP SEAM B real conformance needs LOCAL-ONLY artifacts not present in CI: real artifacts root (P1_REAL_DOGFOOD_ROOT / work/dogfood-t09-reval1); real embeddings JSON (<REDACTED_TEMP_PATH>); produce with bin/build-real-embeddings.mjs — see test header RUN RECIPE
+  ---
+  duration_ms: 0.238458
+  type: 'test'
+  ...
+# Subtest: REAL adapter fail-closed: missing embedding for one real candidate → RCE_ADAPTER_EMBEDDING_MISSING
+ok 6 - REAL adapter fail-closed: missing embedding for one real candidate → RCE_ADAPTER_EMBEDDING_MISSING # SKIP SEAM B real conformance needs LOCAL-ONLY artifacts not present in CI: real artifacts root (P1_REAL_DOGFOOD_ROOT / work/dogfood-t09-reval1); real embeddings JSON (<REDACTED_TEMP_PATH>); produce with bin/build-real-embeddings.mjs — see test header RUN RECIPE
+  ---
+  duration_ms: 0.28275
+  type: 'test'
+  ...
+# Subtest: T12-I3: applySelectionAccountingToCoverageState maps SEAM B accounting onto the frozen Hook 3 keys
+ok 7 - T12-I3: applySelectionAccountingToCoverageState maps SEAM B accounting onto the frozen Hook 3 keys
+  ---
+  duration_ms: 10.562209
+  type: 'test'
+  ...
+# Subtest: T12-I3: unauthorized caller / malformed artifact fail closed (no state mutation)
+ok 8 - T12-I3: unauthorized caller / malformed artifact fail closed (no state mutation)
+  ---
+  duration_ms: 1.528833
+  type: 'test'
+  ...
+# Subtest: REAL_T12_TO_T13_TO_SEAM_C_CONFORMANCE: real SEAM B → T13-I4 id re-verification → provenance → recorded-runtime composition → amended validator → downstream artifact
+ok 9 - REAL_T12_TO_T13_TO_SEAM_C_CONFORMANCE: real SEAM B → T13-I4 id re-verification → provenance → recorded-runtime composition → amended validator → downstream artifact # SKIP SEAM C real conformance needs LOCAL-ONLY artifacts not present in CI: real SEAM B artifact (P1_SEAM_B_REAL_JSON / work/p1-wave-01-integration/seam-b-real.json); real capture artifacts (P1_REAL_DOGFOOD_ROOT / work/dogfood-t09-reval1) — see test header RUN RECIPE
+  ---
+  duration_ms: 1.187958
+  type: 'test'
+  ...
+# Subtest: REAL provenance + authorRef fail-closed probes on the real capture
+ok 10 - REAL provenance + authorRef fail-closed probes on the real capture # SKIP SEAM C real conformance needs LOCAL-ONLY artifacts not present in CI: real SEAM B artifact (P1_SEAM_B_REAL_JSON / work/p1-wave-01-integration/seam-b-real.json); real capture artifacts (P1_REAL_DOGFOOD_ROOT / work/dogfood-t09-reval1) — see test header RUN RECIPE
+  ---
+  duration_ms: 0.669875
+  type: 'test'
+  ...
+# Subtest: REAL_T12_TO_T13_TO_SEAM_C_LIVE_RUNTIME: real LM Studio (qwen3-1.7b) → full-coverage composition → amended validator → seam-c-real.json
+ok 11 - REAL_T12_TO_T13_TO_SEAM_C_LIVE_RUNTIME: real LM Studio (qwen3-1.7b) → full-coverage composition → amended validator → seam-c-real.json # SKIP live runtime path is env-gated: set P1_REAL_RUNTIME=1 with LM Studio at P1_LMSTUDIO_BASE_URL (default http://127.0.0.1:1234/v1)
+  ---
+  duration_ms: 0.08625
+  type: 'test'
+  ...
+# Subtest: REAL_T13_TO_T14_TO_SEAM_D_CONFORMANCE: real SEAM C → amended validator → guard PASS → recorded-runtime T14 composition → frozen SEAM D validator → downstream artifact
+ok 12 - REAL_T13_TO_T14_TO_SEAM_D_CONFORMANCE: real SEAM C → amended validator → guard PASS → recorded-runtime T14 composition → frozen SEAM D validator → downstream artifact # SKIP SEAM D real conformance needs the LOCAL-ONLY real SEAM C artifact not present in CI (P1_SEAM_C_REAL_JSON / work/p1-wave-01-integration/seam-c-real.json) — see test header RUN RECIPE
+  ---
+  duration_ms: 1.306625
+  type: 'test'
+  ...
+# Subtest: REAL guard-unequal branch: one-character identity tamper → FAIL_CLOSED, zero runtime calls, zero files written, evidence echoes both identities
+ok 13 - REAL guard-unequal branch: one-character identity tamper → FAIL_CLOSED, zero runtime calls, zero files written, evidence echoes both identities # SKIP SEAM D real conformance needs the LOCAL-ONLY real SEAM C artifact not present in CI (P1_SEAM_C_REAL_JSON / work/p1-wave-01-integration/seam-c-real.json) — see test header RUN RECIPE
+  ---
+  duration_ms: 0.057916
+  type: 'test'
+  ...
+# Subtest: REAL_T13_TO_T14_TO_SEAM_D_LIVE_RUNTIME: real LM Studio (qwen3-1.7b) → T14 composition → frozen SEAM D validator → seam-d-real.json
+ok 14 - REAL_T13_TO_T14_TO_SEAM_D_LIVE_RUNTIME: real LM Studio (qwen3-1.7b) → T14 composition → frozen SEAM D validator → seam-d-real.json # SKIP live runtime path is env-gated: set P1_REAL_RUNTIME=1 with LM Studio at P1_LMSTUDIO_BASE_URL (default http://127.0.0.1:1234/v1)
+  ---
+  duration_ms: 0.057667
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 9
+# todo 0
+# duration_ms 219.707792

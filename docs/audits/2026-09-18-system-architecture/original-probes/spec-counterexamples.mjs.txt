@@ -1,0 +1,34 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import { pathToFileURL } from 'node:url';
+const root = process.argv[2];
+const imp = p => import(pathToFileURL(`${root}/${p}`));
+const { produceCrossSourceSynthesis } = await imp('research-orchestration/lib/cross-source-synthesis.mjs');
+const { aggregateCrossGroupClaims } = await imp('research-orchestration/lib/cross-group-aggregation.mjs');
+const fixture = () => JSON.parse(fs.readFileSync(`${root}/research-orchestration/test/fixtures/p1-seams/seam-c/group-representations.multi-group.json`));
+const runtime = {
+  runtimeId: 'deepseek-api-tool-less', model: 'deepseek-v4-pro',
+  async synthesize({claims}) { return {aspects:[{aspect:'缓存对同一负载的影响',claimIds:claims.map(c=>c.claimId)}]}; }
+};
+const base = fixture();
+for (const g of base.groupRepresentations) { g.claims.minority=[]; g.claims.contradictory=[]; }
+base.groupRepresentations[0].claims.main[0].statement='相同负载下，启用缓存会减少响应延迟';
+base.groupRepresentations[1].claims.main[0].statement='相同负载下，启用缓存会增加响应延迟';
+const cross = await produceCrossSourceSynthesis({seamCArtifact:base,runtime});
+assert.equal(cross.ok,true);
+assert.equal(cross.artifact.synthesis.claims[0].category,'widely-shared');
+assert.equal(cross.artifact.synthesis.claims[0].oppose.length,0);
+const unrelated=fixture();
+unrelated.groupRepresentations[0].claims.main.push({claimId:'c-extra',statement:'磁盘使用量随保留天数增加',sourceRefs:['23456789-a-102'],authorRef:null});
+unrelated.groupRepresentations[0].claims.contradictory[0].statement='相同负载下，启用缓存会增加响应延迟';
+const unrelatedRecord=aggregateCrossGroupClaims(unrelated).records.find(c=>c.claimId==='c-extra');
+assert.equal(unrelatedRecord.oppose[0].sourceRef,'23456789-a-103');
+const empty = await produceCrossSourceSynthesis({seamCArtifact:base,runtime:{...runtime,async synthesize({claims}) {return {aspects:[{aspect:'空的伪造观点',claimIds:[]},{aspect:'真实观点',claimIds:claims.map(c=>c.claimId)}]};}}});
+assert.equal(empty.ok,true);
+assert.ok(empty.artifact.synthesis.claims.some(c=>c.sourceClaimIds.length===0));
+const forged=fixture();
+forged.groupRepresentations[0].claims.main[0].sourceRefs=['foreign-source-not-in-selected-corpus'];
+const forgedResult=await produceCrossSourceSynthesis({seamCArtifact:forged,runtime});
+assert.equal(forgedResult.ok,true);
+assert.ok(forgedResult.artifact.synthesis.claims[0].support.some(s=>s.sourceRef==='foreign-source-not-in-selected-corpus'));
+console.log(JSON.stringify({scope:'reviewer-owned deterministic module probes; injected mock runtime; no live model or network',crossGroupOpposition:{ok:cross.ok,claim:cross.artifact.synthesis.claims[0],guard:cross.artifact.preSynthesisGuard},unrelatedInGroupOpposition:unrelatedRecord,emptyCluster:{ok:empty.ok,claims:empty.artifact.synthesis.claims},forgedLineage:{ok:forgedResult.ok,claim:forgedResult.artifact.synthesis.claims[0],guard:forgedResult.artifact.preSynthesisGuard}},null,2));

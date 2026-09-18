@@ -1,0 +1,57 @@
+[
+  {
+    "case": "complete_missing_research_plan",
+    "expected": "refuse stale completed checkpoint",
+    "observed": {
+      "ok": true,
+      "reused": true,
+      "complete": true
+    },
+    "confirmed": true
+  },
+  {
+    "case": "complete_missing_canonical_answers",
+    "removed": "zhihu/100/answers.json",
+    "expected": "refuse stale dependency",
+    "observed": {
+      "ok": true,
+      "reused": true,
+      "complete": true,
+      "isFullCoverage": true
+    },
+    "confirmed": true
+  },
+  {
+    "case": "restart_different_topic",
+    "expected": "plan for new topic or fail closed before old retrieval",
+    "observed": {
+      "code": "retrieval_failed",
+      "fetchCalls": 0,
+      "queries": [
+        "AI 编程工具 取代 程序员",
+        "AI coding 工具 岗位影响"
+      ],
+      "newStateTopic": "儿童近视防控",
+      "planUnchanged": true
+    },
+    "confirmed": true
+  },
+  {
+    "case": "clarification_resolution_ignored",
+    "expected": "valid clarification can continue same run",
+    "observed": {
+      "firstCode": "clarification_required",
+      "secondCode": "clarification_required",
+      "firstOptions": [
+        "100",
+        "200"
+      ],
+      "secondOptions": [
+        "100",
+        "200"
+      ],
+      "finalStage": "SELECT"
+    },
+    "confirmed": true
+  }
+]

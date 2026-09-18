@@ -1,0 +1,114 @@
+{
+  "auditedSha": "4bea7b30b3842a876e383977686a0abc0d68302f",
+  "transformation": "Host-specific paths replaced with labeled placeholders; log observations and assertions otherwise preserved. Synthetic fixture credential/path canaries are not real secrets.",
+  "files": [
+    {
+      "file": "evidence/architecture-counterexamples.json",
+      "originalSha256": "e3d394e2cc2fd1e3c12b389f58d4759939d746a6853cf4f73e167ee0da25013f",
+      "publishedSha256": "e3d394e2cc2fd1e3c12b389f58d4759939d746a6853cf4f73e167ee0da25013f",
+      "pathRedacted": false
+    },
+    {
+      "file": "evidence/architecture-recheck.json",
+      "originalSha256": "e3d394e2cc2fd1e3c12b389f58d4759939d746a6853cf4f73e167ee0da25013f",
+      "publishedSha256": "e3d394e2cc2fd1e3c12b389f58d4759939d746a6853cf4f73e167ee0da25013f",
+      "pathRedacted": false
+    },
+    {
+      "file": "evidence/ci.json",
+      "originalSha256": "622ea27ab973d6dbc8ba1f890e66fb73cab8d51479a7d0d37c25f2cd34669a0a",
+      "publishedSha256": "622ea27ab973d6dbc8ba1f890e66fb73cab8d51479a7d0d37c25f2cd34669a0a",
+      "pathRedacted": false
+    },
+    {
+      "file": "evidence/issue32.json",
+      "originalSha256": "470e58984177b4d1b71a0d129ff3243d8144030bb4aba6a4938324c9dbdd939a",
+      "publishedSha256": "470e58984177b4d1b71a0d129ff3243d8144030bb4aba6a4938324c9dbdd939a",
+      "pathRedacted": false
+    },
+    {
+      "file": "evidence/issue48.json",
+      "originalSha256": "d07a0bed4abaeae27c2952da4a5be1c91b27fd50a4de1ddca4cd1c052a569dfc",
+      "publishedSha256": "d07a0bed4abaeae27c2952da4a5be1c91b27fd50a4de1ddca4cd1c052a569dfc",
+      "pathRedacted": false
+    },
+    {
+      "file": "evidence/npm-grabber.log",
+      "originalSha256": "97d8e99ee98fa52f71ee01029916fd63ea40ece82dd93150a4e7421c1260ae95",
+      "publishedSha256": "97d8e99ee98fa52f71ee01029916fd63ea40ece82dd93150a4e7421c1260ae95",
+      "pathRedacted": false
+    },
+    {
+      "file": "evidence/open-issues.json",
+      "originalSha256": "02654f4d9e83c8dbd1d07c170e27e1f6fb1d11fe91cfa8ed0360a5e6c73c67b5",
+      "publishedSha256": "02654f4d9e83c8dbd1d07c170e27e1f6fb1d11fe91cfa8ed0360a5e6c73c67b5",
+      "pathRedacted": false
+    },
+    {
+      "file": "evidence/research-final.tap",
+      "originalSha256": "6ca31014b1da73c63232c86de98c6b38f7dddd3e8b9a357283731df0f784f44c",
+      "publishedSha256": "1feecfe6154846b5e1bb39b91bf2c6afca5c165f86f23f3bea73b0988e97f0db",
+      "pathRedacted": true
+    },
+    {
+      "file": "evidence/research-tests.tap",
+      "originalSha256": "7625cc7205b9d68032b68aa4147d91f929da96a708c3b9d87c0b68e2c0b94051",
+      "publishedSha256": "18b9be7389cf982a2798c158644f290ee506b5491021bfa15fc4870f063ed1d9",
+      "pathRedacted": true
+    },
+    {
+      "file": "evidence/seam-rerun.tap",
+      "originalSha256": "65ae1b2276403c20239b1bf10f04c57d584a7663c3500882b17c2d5509db3adb",
+      "publishedSha256": "dbedb538f5be71926bbf0da9bb5698d20632927f112ef529f374cd30f790aec5",
+      "pathRedacted": true
+    },
+    {
+      "file": "evidence/snapshot-integrity.json",
+      "originalSha256": "723bfa1137c7079fb6f56a197210a6afcbc3e400059149c2b9362560e1ecc253",
+      "publishedSha256": "723bfa1137c7079fb6f56a197210a6afcbc3e400059149c2b9362560e1ecc253",
+      "pathRedacted": false
+    },
+    {
+      "file": "evidence/spec-counterexamples.json",
+      "originalSha256": "2bf81e96ed15f9ccb41033a3a09c2577eb89022d8cc257785f1ac49fe5a4953e",
+      "publishedSha256": "2bf81e96ed15f9ccb41033a3a09c2577eb89022d8cc257785f1ac49fe5a4953e",
+      "pathRedacted": false
+    },
+    {
+      "file": "evidence/spec-focused-tests.log",
+      "originalSha256": "a64c642ceba548cfa31b7ad0a0aafc1791722781273833a38e1e033fcf1ec493",
+      "publishedSha256": "a64c642ceba548cfa31b7ad0a0aafc1791722781273833a38e1e033fcf1ec493",
+      "pathRedacted": false
+    },
+    {
+      "file": "evidence/spec-recheck.json",
+      "originalSha256": "2bf81e96ed15f9ccb41033a3a09c2577eb89022d8cc257785f1ac49fe5a4953e",
+      "publishedSha256": "2bf81e96ed15f9ccb41033a3a09c2577eb89022d8cc257785f1ac49fe5a4953e",
+      "pathRedacted": false
+    },
+    {
+      "file": "evidence/spec-recheck.stdout",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "publishedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pathRedacted": false
+    },
+    {
+      "file": "evidence/standards-projection-result.json",
+      "originalSha256": "acaee5814e4948e78ff2650f6d00fc91459a4127f5a086e89abbae0ffcda2ee6",
+      "publishedSha256": "acaee5814e4948e78ff2650f6d00fc91459a4127f5a086e89abbae0ffcda2ee6",
+      "pathRedacted": false
+    },
+    {
+      "file": "evidence/standards-recheck.json",
+      "originalSha256": "acaee5814e4948e78ff2650f6d00fc91459a4127f5a086e89abbae0ffcda2ee6",
+      "publishedSha256": "acaee5814e4948e78ff2650f6d00fc91459a4127f5a086e89abbae0ffcda2ee6",
+      "pathRedacted": false
+    },
+    {
+      "file": "evidence/standards-tests.tap",
+      "originalSha256": "235801feef25cf11f2001d41f6b9fcb75bd2dfd64c2eed3ea64e1e6aa295b4bc",
+      "publishedSha256": "235801feef25cf11f2001d41f6b9fcb75bd2dfd64c2eed3ea64e1e6aa295b4bc",
+      "pathRedacted": false
+    }
+  ]
+}

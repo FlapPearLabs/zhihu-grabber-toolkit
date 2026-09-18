@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {extractPerGroupClaims} from '../snapshot/research-orchestration/lib/per-group-claim-extraction.mjs';
+import {buildDeepSeekResearchRuntime} from '../snapshot/research-orchestration/lib/deepseek-research-runtime.mjs';
+const corpus=JSON.parse(fs.readFileSync(new URL('../snapshot/research-orchestration/test/fixtures/p1-seams/seam-b/selected-research-corpus.minimal.json',import.meta.url)));
+const raw='<p>示例</p><pre><code>UNTRUSTED_CODE_BODY_CANARY()</code></pre><img src="https://external.invalid/private-image-canary?q=full-url"><a href="file:///synthetic/private-canary">x</a>';
+let request;
+const runtime=buildDeepSeekResearchRuntime({credential:{usable:true,key:'synthetic-not-a-real-credential'},fetchImpl:async (_url,init)=>{request=JSON.parse(init.body);return {ok:true,json:async()=>({object:'chat.completion',choices:[{finish_reason:'stop',message:{role:'assistant',content:'{"main":[],"minority":[],"contradictory":[],"expertEvidenceRichTokens":[]}'}}]})}}});
+const result=await extractPerGroupClaims({corpus,groupId:corpus.corpus.groups[0].groupId,runtime,sourceContentLoader:()=>raw,canonicalGroupIdentityResolver:groupId=>({questionId:groupId,providerId:'official-search',capability:'searchQuestions'})});
+const user=request.messages.find(m=>m.role==='user').content;
+assert(user.includes(raw));
+console.log(JSON.stringify({rawHtmlPreserved:user.includes(raw),codeBodySent:user.includes('UNTRUSTED_CODE_BODY_CANARY()'),fullExternalImageUrlSent:user.includes('https://external.invalid/private-image-canary?q=full-url'),fileUriSent:user.includes('file:///synthetic/private-canary'),toolDefinitionsPresent:Object.hasOwn(request,'tools'),validatedEmptyClaims:true,analyzedCount:result.analyzedSourceIds.length},null,2));
