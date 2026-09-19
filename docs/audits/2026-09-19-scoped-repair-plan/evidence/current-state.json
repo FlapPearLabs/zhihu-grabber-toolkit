@@ -1,0 +1,19 @@
+{
+  "verified_at_utc": "2026-09-19T13:06:44.451320+00:00",
+  "remote_master": "4bea7b30b3842a876e383977686a0abc0d68302f",
+  "audit_product": "4bea7b30b3842a876e383977686a0abc0d68302f",
+  "audit_publication": "eb02a660cdb3ada07ee08f742e2987bb7da8b9e8",
+  "master_drift": "NONE",
+  "verification": [
+    "git fetch origin",
+    "git rev-parse origin/master origin/codex/audit-evidence-20260918",
+    "git ls-remote origin refs/heads/master refs/heads/codex/audit-evidence-20260918"
+  ],
+  "probe_results_equal_published_baseline": true,
+  "product_worktree_clean": true,
+  "product_diff_from_master_excluding_audit_package": false,
+  "full_suite_rerun": false,
+  "live_model_run": false,
+  "implementation": false,
+  "remote_writes": false
+}

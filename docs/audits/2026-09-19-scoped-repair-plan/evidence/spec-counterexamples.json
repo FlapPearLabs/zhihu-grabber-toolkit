@@ -1,0 +1,154 @@
+{
+  "scope": "reviewer-owned deterministic module probes; injected mock runtime; no live model or network",
+  "crossGroupOpposition": {
+    "ok": true,
+    "claim": {
+      "claimId": "syn-f8ba3175a7a4",
+      "aspect": "缓存对同一负载的影响",
+      "category": "widely-shared",
+      "support": [
+        {
+          "sourceRef": "23456789-a-101",
+          "groupId": "23456789",
+          "authorRef": "author-8f116bfe5d0e9a4a"
+        },
+        {
+          "sourceRef": "23456789-a-102",
+          "groupId": "23456789",
+          "authorRef": "author-8f116bfe5d0e9a4a"
+        },
+        {
+          "sourceRef": "34561234-a-201",
+          "groupId": "34561234",
+          "authorRef": "author-5b598323be3d9feb"
+        }
+      ],
+      "oppose": [],
+      "expertEvidenceRichSupport": true,
+      "sourceClaimIds": [
+        "c-23456789-001",
+        "c-34561234-001"
+      ]
+    },
+    "guard": {
+      "guardResult": "PASS",
+      "selectedVerifiedSourceSetIdentity": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+      "mappedAnalyzedSourceSetIdentity": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+    }
+  },
+  "unrelatedInGroupOpposition": {
+    "claimId": "c-extra",
+    "statement": "磁盘使用量随保留天数增加",
+    "kind": "main",
+    "groupId": "23456789",
+    "sourceRefs": [
+      "23456789-a-102"
+    ],
+    "support": [
+      {
+        "sourceRef": "23456789-a-102",
+        "groupId": "23456789",
+        "authorRef": null
+      }
+    ],
+    "oppose": [
+      {
+        "sourceRef": "23456789-a-103",
+        "groupId": "23456789",
+        "authorRef": "author-b718d5a1ba1f6dde"
+      }
+    ],
+    "expertEvidenceRichSupport": true
+  },
+  "emptyCluster": {
+    "ok": true,
+    "claims": [
+      {
+        "claimId": "syn-f8ba3175a7a4",
+        "aspect": "真实观点",
+        "category": "widely-shared",
+        "support": [
+          {
+            "sourceRef": "23456789-a-101",
+            "groupId": "23456789",
+            "authorRef": "author-8f116bfe5d0e9a4a"
+          },
+          {
+            "sourceRef": "23456789-a-102",
+            "groupId": "23456789",
+            "authorRef": "author-8f116bfe5d0e9a4a"
+          },
+          {
+            "sourceRef": "34561234-a-201",
+            "groupId": "34561234",
+            "authorRef": "author-5b598323be3d9feb"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": true,
+        "sourceClaimIds": [
+          "c-23456789-001",
+          "c-34561234-001"
+        ]
+      },
+      {
+        "claimId": "syn-4f53cda18c2b",
+        "aspect": "空的伪造观点",
+        "category": "minority",
+        "support": [],
+        "oppose": [],
+        "expertEvidenceRichSupport": false,
+        "sourceClaimIds": []
+      }
+    ]
+  },
+  "forgedLineage": {
+    "ok": true,
+    "claim": {
+      "claimId": "syn-60d8a4216cb2",
+      "aspect": "缓存对同一负载的影响",
+      "category": "conflicting",
+      "support": [
+        {
+          "sourceRef": "23456789-a-103",
+          "groupId": "23456789",
+          "authorRef": "author-b718d5a1ba1f6dde"
+        },
+        {
+          "sourceRef": "34561234-a-201",
+          "groupId": "34561234",
+          "authorRef": "author-5b598323be3d9feb"
+        },
+        {
+          "sourceRef": "foreign-source-not-in-selected-corpus",
+          "groupId": "23456789",
+          "authorRef": "author-8f116bfe5d0e9a4a"
+        }
+      ],
+      "oppose": [
+        {
+          "sourceRef": "23456789-a-103",
+          "groupId": "23456789",
+          "authorRef": "author-b718d5a1ba1f6dde"
+        },
+        {
+          "sourceRef": "foreign-source-not-in-selected-corpus",
+          "groupId": "23456789",
+          "authorRef": "author-8f116bfe5d0e9a4a"
+        }
+      ],
+      "expertEvidenceRichSupport": false,
+      "sourceClaimIds": [
+        "c-23456789-001",
+        "c-23456789-002",
+        "c-23456789-003",
+        "c-34561234-001"
+      ]
+    },
+    "guard": {
+      "guardResult": "PASS",
+      "selectedVerifiedSourceSetIdentity": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+      "mappedAnalyzedSourceSetIdentity": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+    }
+  }
+}
