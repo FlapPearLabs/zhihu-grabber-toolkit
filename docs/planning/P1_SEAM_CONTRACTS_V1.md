@@ -421,7 +421,7 @@ representation 与 canonical 不冲突、claims lineage 可回溯。
 | aggregate identity ≠ selected corpus identity（guard 不等分支输入态） | `SEAM_C_GUARD_MISMATCH` |
 | representation 与 canonical 冲突 | `SEAM_C_REPRESENTATION_CONFLICT` |
 | claims 携带非 controller-owned identity | `SEAM_C_MODEL_OWNED_IDENTITY` |
-| 缺 aggregate identity / owner 标注 | `SEAM_C_IDENTITY_ARTIFACT_INCOMPLETE` |
+| 缺 `aggregateAnalyzedIdentity` / `mappedAnalyzedSourceSetIdentity` / required `perGroup` identity mapping | `SEAM_C_IDENTITY_ARTIFACT_INCOMPLETE` |
 | semantic runtime 不可用（NO_SILENT_RUNTIME_FALLBACK） | `SEAM_C_RUNTIME_UNAVAILABLE` |
 | 单一来源读取失败（该组 fail closed） | `SEAM_C_SOURCE_FAILURE` |
 | runtime 输出违反 short-token 数据契约 | `SEAM_C_MODEL_OUTPUT_INVALID` |
