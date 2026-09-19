@@ -1,5 +1,17 @@
 # P1 Seam Contracts V1 — T09→T12→T13→T14→T15 Observable Module Contracts
 
+> **2026-09-19 amendment candidate**：文件路径与 DOCUMENT_ID 保持稳定，A/B/C 仍为 V1，
+> D 为 V2 major candidate；C 仅补充 accounting 澄清。`AMENDMENT_STATUS = AMENDMENT_CANDIDATE`，
+> `PRE_EFFECTIVE_STATUS = REVIEW_PENDING`，`OWNER_DECISIONS = FROZEN`。
+> 本次 delta 的来源、consistency matrix 与五条件生效门见
+> [P1 Spec §0.2](../specs/p1-cross-question-deep-research.md)。
+> 历史 header / R1 receipts 不授予本次 V2 PASS：新 exact HEAD 必须独立 Contract + Consistency
+> 双审 PASS、合法 current-master ancestry、ff-only 集成、fresh remote verify 后才激活；
+> 无 post-review STATUS edit，旧 PASS 不转移。未改合同的既有生效状态不被撤回。
+> `IMPLEMENTATION_AUTHORIZATION = NONE`；`TICKET_AUTHORIZATION = NONE`；
+> `READY_TO_DECOMPOSE_REPAIR_TICKETS = NO`；
+> `NEXT_LEGAL_ACTION = INDEPENDENT_CONTRACT_AND_CONSISTENCY_REVIEW`。
+
 ```text
 DOCUMENT_ID = P1_SEAM_CONTRACTS_V1
 STATUS = NON_AUTHORITATIVE_CANDIDATE
@@ -49,6 +61,13 @@ PRIVATE（不冻结）:
 Producer 可以持久化自己的 richer artifact，但必须**能确定性投影**到本合同的 canonical
 encoding（直接输出或显式 mapper）。producer persisted schema 演进时：只增可选字段 → V1 兼容；
 删除/改名/语义变化 → seam major bump + fixture/validator 更新 + 下游消费面 re-review。
+
+**本次版本应用**：各 seam 已有独立整数 `VERSION` / `seamVersion`，因此本文件保留为唯一
+seam registry，不新建竞争的 V2 文件。D 的 required shape/语义变化按上述规则从 1 升至 2，
+其 `semanticContractVersion = 2` 与 D major 绑定；不是把新 required 字段视为 V1 可选扩展。
+A/B/C 版本不变。authority authoring 阶段先形成 Spec + seam candidate；fixture/validator/consumer
+同步属于 authority 生效并另获授权后的 `FUTURE_REQUIRED_CHANGE`。在那之前现有 V1 executable
+contracts 仅证明 V1，不能将 V2 视为 implementation-ready 或用旧测试否定本次明确 amendment。
 
 ### SEAM_NOT_FROZEN procedure
 
@@ -380,6 +399,16 @@ SEAM B `selectedCorpusIdentity` 同一 identity encoding**——否则 Issue #46
 5. 任一来源失败 → 该组 fail closed，无部分结果冒充（Issue #45 STOP）。
 6. runtime unavailable → fail closed（Issue #45）。
 
+### Metadata-only accounting clarification（CD-C1；V1 shape unchanged）
+
+按 [P1 Spec §8.1](../specs/p1-cross-question-deep-research.md)，
+metadata-only selected source 也须经过允许的 T13 semantic analysis path，明确返回
+NO_EXTRACTABLE_CLAIM 或现行等价合法结果后才进入 mapped/analyzed accounting。
+`claims.main/minority/contradictory` 均可为空数组；analyzed source 不要求必须出现在某条 claim
+的 sourceRefs 中，因此现有 shape 能表达已分析但零 claim。输入/运行时/投影失败仍 fail closed；
+禁止 skip→analyzed、发明 claim 或第二写入者。全部 sources 零 claim 时 T14 仍拒绝 synthesis。
+这只澄清 P1-T13 accounting，不修改 legacy digest/map、identity encoding 或 C major version。
+
 ### VALID_SUCCESS
 
 aggregate identity 与 `selectedCorpusIdentityRef` 机械相等（guard 等分支可放行）、
@@ -433,53 +462,98 @@ credential 访问；投影安全断言由 T13/T14 测试维持（§10.1、Issue 
 
 ---
 
-## SEAM D — T14 → T15
+## SEAM D — T14 → T15（V2 major amendment candidate）
 
 ```text
 SEAM_ID = T14_TO_T15
-VERSION = 1
+VERSION = 2
+SEMANTIC_CONTRACT_VERSION = 2（与此 seam major 同步；旧 category 合同为 V1）
 PRODUCER = P1-T14 Cross-group aggregation + synthesis（Issue #46）
 CONSUMER = P1-T15 CoverageState final integration + assertion + observability（Issue #47）
-INPUT  = SEAM C artifact（representations + claims + aggregate identity）
+INPUT  = SEAM C V1 artifact（representations + claims + aggregate identity）
 OUTPUT = cross-group synthesis artifact（含 PRE-SYNTHESIS guard 证据）
          + synthesis-level 语义诊断（经 T07 hook 更新）
+AUTHORITY = P1 Spec §8 / §9.4 / §10.2 / §11；生效门见 §0.2
 ```
 
-### OUTPUT_OBSERVABLE_SHAPE（canonical fixture encoding）
+### OUTPUT_OBSERVABLE_SHAPE（V2 canonical encoding；不是当前 executable fixture）
+
+下列字段为 required，除明确标 optional 外；数组可为空的边界由后述 invariants 限定。
+`SourceClaim` 是下方静态展开定义，不是需要写入 artifact 的第二 schema。
 
 ```jsonc
 {
   "seam": "T14_TO_T15",
-  "seamVersion": 1,
+  "seamVersion": 2,
+  "semanticContractVersion": 2,
   "planHash": "<64hex>",
-  "preSynthesisGuard": {                              // Issue #46 R2 F-2：guard 证据随产物走
-    "guardResult": "PASS",                            // 仅 "PASS" 可伴随 synthesis artifact
-    "selectedVerifiedSourceSetIdentity": "sha256:<64hex>",   // = SEAM B identity
-    "mappedAnalyzedSourceSetIdentity": "sha256:<64hex>"      // = SEAM C aggregate identity
+  "preSynthesisGuard": {
+    "guardResult": "PASS",
+    "selectedVerifiedSourceSetIdentity": "sha256:<64hex>", // SEAM B
+    "mappedAnalyzedSourceSetIdentity": "sha256:<64hex>"    // SEAM C aggregate
   },
   "synthesis": {
     "synthesisIdentity": "sha256:<64hex>",
-    "claims": [
-      { "claimId": "<id>", "aspect": "<text>", "category": "widely-shared",
-        "support": [ { "sourceRef": "<canonicalSourceId>", "groupId": "<T08 groupId>", "authorRef": "<id>" } ],
-        "oppose":   [ /* 同构 */ ],
-        "expertEvidenceRichSupport": <bool> }
+    "families": [
+      {
+        "familyKey": "<controller-owned family identity>",
+        "aspect": "<discussion dimension, not proposition>",
+        "anchor": { "sourceClaimId": "<member id>", "statement": "<that claim's original statement>" },
+        "relationships": [
+          { "sourceClaimId": "<id>", "stance": "ASSERTS|OPPOSES" }
+        ],
+        "sourceClaims": [ /* SourceClaim: exact lineage for every member, see below */ ],
+        "relationStatus": "SUPPORT_ONLY|CONFLICTING",
+        "supportBreadth": "SINGLE_GROUP|MULTI_GROUP",
+        "support": [
+          { "sourceClaimId": "<ASSERTS member id>", "sourceRef": "<canonicalSourceId>",
+            "groupId": "<T08 groupId>", "authorRef": null | "<T13 authorRef>" }
+        ],
+        "oppose": [ /* same structure, only OPPOSES members */ ],
+        "expertEvidenceRichSupport": <bool>
+      }
     ],
-    // R1-F5：§8.3 category 冻结词表是静态权威，不再嵌入运行时产物的 categoryEnum 字段
-    "groupDifferences": [ /* source-group differences */ ],
-    "evidenceStrength": [ /* §8.3 */ ],
-    "discussionVolumeDifferences": { /* §8.3 */ }
+    "unresolved": [
+      {
+        "sourceClaim": { /* exactly one SourceClaim, see below */ },
+        "stance": "UNRESOLVED",
+        "relationStatus": "UNRESOLVED",
+        "supportBreadth": null
+      }
+    ],
+    "groupDifferences": [ /* source-group differences, retained */ ],
+    "evidenceStrength": [ /* P1 §8.3, retained */ ],
+    "discussionVolumeDifferences": { /* P1 §8.3, retained */ }
   },
-  "diagnostics": {                                    // 仅 T14 可写键集（见下方所有权映射）
+  "diagnostics": {
     "new_aspect_rate": <f>, "new_claim_rate": <f>, "new_expert_rate": <f>,
     "new_contradiction_rate": <f>, "claim_source_diversity": <f>
   }
 }
 ```
 
-### diagnostics 所有权映射（R1-F3：FIELD → OWNER → AUTHORITY）
+`SourceClaim` 的唯一展开形状（T13/controller 原 claim 的可解析 lineage；不是 canonical raw content）：
 
-`diagnostics` 的 REQUIRED 键集 = **T14 经冻结 T07 hook `updateSynthesisDiagnostics` 实际可写
+```jsonc
+{
+  "sourceClaimId": "<controller-resolved T13 claimId>",
+  "statement": "<original claim statement>",
+  "kind": "main|minority|contradictory",              // group-local metadata only
+  "sourceRefs": [                                  // nonempty, all original claim refs retained
+    { "sourceRef": "<canonicalSourceId>", "groupId": "<T08 groupId>",
+      "authorRef": null | "<T13 authorRef>" }
+  ]
+}
+```
+
+groups/questions 由 canonical SEAM C group identity 解析，authorRef 原样消费，未知为 null，
+不得从 sourceRef 合成作者。expert/evidence-rich 支持由 ASSERTS 的 sourceRefs 与输入
+`expertEvidenceRichRefs` 交叉核对；反对侧标记不能授予支持。此处选择具体编码仅转录冻结的 S1，
+不改变 T13 抽取体系、source identity 或 semantic-runtime 路由。
+
+### diagnostics 所有权映射（保留 R1-F3 所有权，V2 语义来源见下）
+
+`diagnostics` 的 REQUIRED 键集 = **T14 经冻结 T07 hook `updateSynthesisDiagnostics` 可写
 的键集**（coverage-state.mjs @ master；Spec §9.4）。不按命名相似度推断，逐键给出权威：
 
 | field | OWNER | AUTHORITY |
@@ -493,65 +567,130 @@ OUTPUT = cross-group synthesis artifact（含 PRE-SYNTHESIS guard 证据）
 | `selected_source_group_count` 等 selection 类 | T12 | Hook 3 `updateSelectionAccounting` —— 不经 SEAM D |
 | `capturedNotVerifiedCount` 等 completeness 类 | T09 | Hook 2 `updateSourceCompleteness` —— 不经 SEAM D |
 
+V2 `new_contradiction_rate` 只统计 canonical `relationStatus = CONFLICTING` 的 family，
+除以全部输出记录数（`families.length + unresolved.length`）；空集口径为 0，但空输入仍失败。
+不能从 legacy category 读取 contradiction；UNRESOLVED 单独披露，低比例不证明共识/无冲突。
+其余键集、T07 hook 所有权与 prior-baseline 语义保持，不新增 metrics 平台。
+
 ### IDENTITY_FIELDS
 
-`synthesisIdentity`、guard 双 identity（必须分别等于 SEAM B / SEAM C 的对应 identity）、
-`planHash`。claims 保留 supporting/opposing 的 source/group/author 结构（§8.2 禁止只留
-`support_count`）。
+`planHash`、guard 双 identity 继续绑定 B/C；`familyKey` 与 `synthesisIdentity` 由 controller
+确定性生成。familyKey 至少绑定 semantic contract version、anchor identity、成员与 stance
+规范序列，是 run-scoped 身份，不跨 run 自动合并。anchor statement 即输入 claim 原 statement，
+不能用自由文本重写被支持命题。
+
+`synthesisIdentity` 的规范 hash payload 包含 seam/semantic contract version、planHash、guard
+身份链以及除 `synthesisIdentity` 自身外的 canonical synthesis 内容：family/proposition identity、
+aspect、anchor/statement、全部逐 claim relationships/stance、relationStatus、supportBreadth、
+完整 sourceClaims lineage（含 kind、原 statement、source/group/author）、support/oppose、
+expert/evidence-rich support、unresolved records 与保留的报告 sections。使用确定性 canonical JSON
+（逐对象键排序；集合性质的数组以 controller identity 及规范内容作稳定全序，排除模型 emission
+order 的偶然影响）取 sha256；diagnostics 是派生披露，不能反过来定义命题关系。
+方向、anchor、关系、任一 canonical 维度或 lineage 变化必须改变 identity；不能仅 hash
+`sourceClaimIds` 或 legacy category。**hash != semantic proof**：有效 hash 不证明自然语言等价/
+相反判断正确，不能代替 Spec §8.4 与冻结 Repair Plan §17 的语义验收。
 
 ### REQUIRED_INVARIANTS
 
-1. synthesis artifact 存在 ⇔ guard PASS 且双 identity 机械相等（不等 → FAIL_CLOSED 且
-   NO SYNTHESIS ARTIFACT，Issue #46）。
-2. T14 不写 analyzed source-set identity（只消费，Issue #46 OUT_OF_SCOPE）。
-3. 聚合保留 supporting/opposing sources、questions/groups/authors、expert/evidence-rich
-   support（§8.2）。
-4. synthesis 区分 §8.3 全部 category；无 flat reduce、无 naive equal weight（§8.3）。
-5. diagnostics 键 ⊆ §9.4 冻结键集；经 T07 hook 如实更新（Issue #46 IN_SCOPE）。
-6. T15 只消费/比较/断言，不重算、不第二写入（Issue #47；T15 断言 = 双保险）。
+1. synthesis artifact 存在必须 guard PASS 且双 identity 机械相等；不等则 FAIL_CLOSED +
+   NO SYNTHESIS ARTIFACT。guard PASS 只是必要条件，不能让空 claims、坏 lineage 或坏关系
+   产出 synthesis（保留既有 T14_EMPTY_VERIFIED_INPUT）。T15 最终 coverage 对账双保险不削弱。
+2. T14 不写 T13 的 analyzed source-set identity；T15 只消费/比较/断言/披露，不第二写入或
+   重建关系。identity 链必须 B = C = D 的对应回显，100% accounting 不等于语义正确。
+3. 所有当前有效输入 claim 在 `families[].relationships` 与 `unresolved[].sourceClaim`
+   之间恰好归属一次。每个 family 非空，relationships 与 sourceClaims 的 ID 集合严格相等，
+   IDs 唯一且可解析；anchor 为该 family 的 member，自 stance 为 ASSERTS。
+4. resolved members 只允许 ASSERTS / OPPOSES；无法可靠确定关系只允许独立 unresolved
+   record。unresolved 不含 familyKey、anchor、relationships、support、oppose 或 legacy category，
+   不允许 family 内嵌 UNRESOLVED；保留单条 claim 的全部原 lineage，不凭空创造出处。
+5. ASSERTS 与 OPPOSES 必须相对于同 anchor、可比 scope；Aspect ≠ Proposition、kind ≠ stance。
+   support 恰为 ASSERTS claims 的全部 lineage refs，oppose 恰为 OPPOSES claims 的全部 refs，
+   每个引用带 sourceClaimId。不能将同 source 两侧 claim dedupe 丢失，也不能冒充独立来源。
+6. controller 分别派生 relationStatus 与 supportBreadth：ASSERTS 非空、OPPOSES 非空则
+   CONFLICTING，否则 SUPPORT_ONLY；ASSERTS distinct groups 为 1 则 SINGLE_GROUP、≥2 则
+   MULTI_GROUP，零支持非法。UNRESOLVED 固定 null breadth。持久值不符即拒绝。
+   main/minority/contradictory 仅留 sourceClaim metadata，不生成全局 minority/groupSalience。
+7. 同条件可判断等价/相反的 claims 必须同 family，不以全 singleton / family splitting /
+   全 unresolved 躲避明确 golden。Spec §8.3 Cases A–F 是本 seam 的必需语义例子：尤其
+   三支持组+两反对组 = CONFLICTING + MULTI_GROUP；两组 minority 支持 = SUPPORT_ONLY +
+   MULTI_GROUP；同 source 两侧 c1/c2 均保留。不能用结构校验冒充这些语义判断的证明。
+8. 保留 supporting/opposing 的 source/group/question/author 与 expert/evidence-rich support；
+   禁止 count-only claim、flat reduce、naive equal weight；discussion volume 非 truth weight。
+9. diagnostics 必需键与上述 T07 所有权保持，不从 legacy category 反读语义。合法未知可以报告，
+   不因未知自动 fail whole run；all-unresolved 仍受 Spec §8.4 的最终 COMPLETE/验收边界约束。
 
 ### VALID_SUCCESS
 
-guard PASS + identity 链一致（B = C = D 回显）、claims 结构完整、diagnostics 完整、
-lineage controller-owned。
+guard PASS + identity 链一致 + 非空输入 claims 的完整分区 + 可追溯 controller-owned lineage +
+正交状态/版本/hash 一致 + 保留 sections / diagnostics 完整；不等于 live semantic acceptance。
+`families` 可为空而 `unresolved` 非空；二者不能同时为空。resolved family 本身永不为空。
 
 ### FAIL_CLOSED
 
-| 条件 | 错误码 |
+| 条件 | 错误码 / 失败语义 |
 |---|---|
 | 缺 guard 证据 / guardResult ≠ PASS 却有 synthesis | `SEAM_D_GUARD_EVIDENCE_REQUIRED` |
 | guard 双 identity 与 B/C 来源不一致 | `SEAM_D_IDENTITY_CHAIN_BREAK` |
 | claim 只有计数字段无 source 结构 | `SEAM_D_COUNT_ONLY_CLAIM` |
 | diagnostics 出现 §9.4 之外的键 | `SEAM_D_UNKNOWN_DIAGNOSTIC_KEY` |
-| claim/category/section 结构缺失 | `SEAM_D_CLAIM_STRUCTURE_REQUIRED` / `SEAM_D_UNKNOWN_CLAIM_CATEGORY` / `SEAM_D_SYNTHESIS_SECTION_REQUIRED` / `SEAM_D_DIAGNOSTICS_INCOMPLETE` |
+| 缺 family/unresolved required shape、空 family、未知/重复/遗漏 claim、错误 anchor/stance/lineage/状态 | `SEAM_D_CLAIM_STRUCTURE_REQUIRED` / FAIL；禁止自动补关系或旧 category fallback |
+| 缺保留 synthesis sections / diagnostics | `SEAM_D_SYNTHESIS_SECTION_REQUIRED` / `SEAM_D_DIAGNOSTICS_INCOMPLETE` |
+| 全输入零合法 claim | `T14_EMPTY_VERIFIED_INPUT`，无 synthesis artifact |
+| V1、缺 semantic version、版本不匹配，或旧必填四类别接口无法表达 unresolved | `VERSION_INCOMPATIBLE / FAIL`，不得默认填值 |
+| 新版 canonical identity 与规范内容不符 | FAIL_CLOSED，不能重写 hash 授予旧产物 V2 validity |
+
+旧 `SEAM_D_UNKNOWN_CLAIM_CATEGORY` 仅属 V1 分类校验，不是 V2 canonical category authority。
+以上为 candidate fail-closed 合同，未声称当前 validator 已实现新分支。
 
 ### OWNERSHIP
 
 producer = T14（synthesis + synthesis-level diagnostics）；analyzed identity 所有权仍在
-T13；T15 拥有最终对账 / 100% assertion / 披露（唯一有权宣称完整 saturation wiring 完成，
-Ticket Graph §B）。
+T13；T15 拥有最终对账 / 100% assertion / 披露，唯一有权宣称完整 saturation wiring 完成
+（Ticket Graph §B、Issue #47），不重算关系或
+analyzed identity。模型只提语义，controller 负责接受/拒绝、source 映射与身份装配。
 
 ### CANONICAL_CONTENT_LOCATION
 
-synthesis 是 derived view；canonical 仍在各组 `answers.json`（D03）。
+synthesis 是 derived view；canonical raw content 仍在各组 `answers.json`（D03）。
+本合同的 canonical semantic state 仅指 synthesis 内语义权威，不是第二 canonical content store。
 
 ### FORBIDDEN_DUPLICATION
 
-第二 analyzed identity；flat reduce 后丢弃 supporting/opposing 结构的"计数式"聚合。
+第二 analyzed identity、第二套 T15 关系、flat reduce 丢弃 lineage 的计数式聚合；
+新建 global minority taxonomy / groupSalience、由 legacy category 反推语义。
 
 ### SECURITY_BOUNDARY
 
-synthesis 面向最终 render/披露：无 machine-private path；UNTRUSTED 投影规则在 render 侧
-继续适用（Issue #47 AC）。
+synthesis 面向最终 render/披露：无 machine-private path，statement/语义 proposal 为不可信数据；
+继承 P1 §10.1 / V2 Agent projection 安全边界，render 侧仍保持既有安全处理（Issue #47 AC）。
 
 ### BACKWARD_COMPATIBILITY / VERSIONING_RULE
 
-同 SEAM A。claim category 词表按 §8.3 冻结（静态权威，validator 内置）；diagnostics 键集 =
-T14 hook 可写集——两者扩展均需 Spec 级 authority，不得由 seam amendment 私自扩张。
+按 §0 major 规则，D VERSION 1→2；本文件名 V1 是稳定 registry 标识，不把 D V2 冒充 V1。
+V1 category artifact = HISTORICAL_ONLY，可历史展示但不能通过 V2 validator；不存在
+category→relationStatus/supportBreadth/support/oppose 的猜测迁移。只有完整原始 lineage 可取回
+并重新验证时，按 V2 re-evaluate/re-synthesize，生成新语义 artifact 和 identity；原 bytes 保留。
+
+**LEGACY_DERIVED_VIEW** 不属于上述 canonical hash payload。若另提供兼容展示，只允许从
+canonical 单向派生：CONFLICTING→conflicting；否则 MULTI_GROUP→widely-shared；否则
+SINGLE_GROUP→group-specific，同时携带两项 canonical state，不丢 Case B 的 MULTI_GROUP。
+新 synthesis 不生成 global minority；unresolved 无 legacy category，旧四选一接口须版本不兼容
+失败。改/删 legacy view 只能使视图重算或不一致拒绝，不改变 canonical identity、support/oppose
+或 diagnostics；视图文件的独立 bytes hash 只证明该文件完整性。
+
+本 candidate 生效后取代 T14 extraction 中 V1 类别优先级/kind 推断关系及低信息 identity 的
+对应条款；其历史 receipts 不改写。未来 fixtures/validator/下游消费面按 V2 同步并 re-review
+是 `FUTURE_REQUIRED_CHANGE`，不在本次 authoring 执行。required semantics 再变仍须正式
+major amendment；diagnostics 键集扩展仍需 Spec 级 authority，不得由 seam 私自扩张。
+仅可选字段的兼容扩展规则继续适用，不能由 implementation 偷改 Spec。
 
 ---
 
 ## 附：Seam → fixture / validator / test 对照
+
+下表 D 行是 **既有 V1 executable artifacts**，保留为历史/兼容性对照，不是 D V2 fixtures。
+D V2 executable contract migration = FUTURE_REQUIRED_CHANGE；当前没有 V2 test PASS 声明。
+A/B/C 的对应关系保持。
 
 | Seam | valid minimal | valid multi-group | fail-closed | TYPE_B |
 |---|---|---|---|---|

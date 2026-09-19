@@ -1,5 +1,10 @@
 # P1 Cross-Question Deep Research — Approved Spec Candidate
 
+> **2026-09-19 repair amendment candidate**：本次明确变更范围与冻结决策来源见 §0.2。
+> `OWNER_DECISIONS = FROZEN`；`FORMAL_CONTRACT_AMENDMENT = REVIEW_PENDING`。
+> 下述原 Spec conditional approval 模板保留；本次 delta 必须对新的 exact candidate HEAD
+> 重新满足全部五个生效条件，历史批准不自动转移。本次不声明修复已实现。
+
 ```text
 DOCUMENT_STATUS = APPROVED_SPEC_CANDIDATE
 PRE_EFFECTIVE_STATUS = REVIEW_PENDING
@@ -100,6 +105,64 @@ VERSION_ASSIGNMENT = UNASSIGNED
 | credential / capability-isolation boundary | **INHERITED**（§10 / §5.3） |
 | version assignment | **UNASSIGNED** |
 | P1 implementation authorization | **NONE** |
+
+### 0.2 Repair amendment（2026-09-19，conditional candidate）
+
+```text
+AMENDMENT_STATUS = AMENDMENT_CANDIDATE
+PRE_EFFECTIVE_STATUS = REVIEW_PENDING
+OWNER_DECISIONS = FROZEN
+OWNER_DECISION_SOURCE_SHA = 2387b9a9261b9830522e0da888b12ed990ee8b49
+BASE_MASTER_SHA = 4bea7b30b3842a876e383977686a0abc0d68302f
+IMPLEMENTATION_AUTHORIZATION = NONE
+TICKET_AUTHORIZATION = NONE
+READY_TO_DECOMPOSE_REPAIR_TICKETS = NO
+NEXT_LEGAL_ACTION = INDEPENDENT_CONTRACT_AND_CONSISTENCY_REVIEW
+```
+
+直接决策来源为同一 exact SHA 的
+[Owner Contract Decisions](https://github.com/FlapPearLabs/zhihu-grabber-toolkit/blob/2387b9a9261b9830522e0da888b12ed990ee8b49/docs/audits/2026-09-19-scoped-repair-plan/OWNER_CONTRACT_DECISIONS.md)
+与 [Scoped Repair Plan](https://github.com/FlapPearLabs/zhihu-grabber-toolkit/blob/2387b9a9261b9830522e0da888b12ed990ee8b49/docs/audits/2026-09-19-scoped-repair-plan/SCOPED_REPAIR_PLAN.md)
+§5–9、§17。Owner 提供该 SHA 已通过 Contract + Consistency Review 的结果；这是
+`OWNER_PROVIDED_REVIEW_RESULT`，不是本 amendment 的独立审查 receipt 或 PASS。
+
+本 delta 只 amend 下表范围；未改条款及已生效的旧合同在本 delta 生效前继续适用。
+激活仍需 header 的全部五条件：同一 exact HEAD 的 CONTRACT_REVIEWER PASS +
+CONSISTENCY_REVIEWER PASS、合法 current-master ancestry、exact reviewed HEAD ff-only
+集成、fresh remote verify。无需 post-review STATUS edit；re-form 后旧 PASS 不转移。
+Owner 冻结、正式 authority 生效、实现授权、实现验收是四个不同事实。
+
+| Owner decision | Existing authority | Amendment action | Conflict? |
+|---|---|---|---|
+| CD-B1 | P1 §8.2；Seam D V1 | §8.2 S1 命题族与立场；Seam D V2 | 差异由 candidate 明确处理，待双审/生效 |
+| CD-B2 | P1 §8/§10；Seam D V1 | 独立 unresolved、有效输出与语义验收边界 | 同上；不放宽坏 lineage / 空输入失败 |
+| CD-B3 | Seam §0 / D version rule | D major 1→2，语义版本绑定，旧产物历史隔离 | V1/V2 明确不兼容，待生效 |
+| CD-B4 | P1 §8.3/§9.4；Seam D V1 | 正交状态；legacy 单向展示；诊断读 canonical | 旧互斥 canonical taxonomy 被 candidate 替换 |
+| CD-A1/A2/A3 | P1 §4.3/§6.2/§10.2 | occurrence、闭包复用判断、legacy 缺版本拒绝 | 操作语义澄清，待双审/生效 |
+| CD-C1 | P1 §8.1/§9.3；Seam C；T13 extraction | 合法分析后的零 claim accounting；C shape/identity/version 不变 | 无 shape gap；语义澄清待生效 |
+| CD-C2 | V2 §9.2 | §10.1 inherited by reference | none；安全合同不变 |
+| CD-D1 | P1 §7 | 一次成功 resolution、冻结 pending 与幂等重试 | 计数/恢复语义澄清，待双审/生效 |
+| CD-F1 | documentation fact alignment | NO_PRODUCT_AUTHORITY_CHANGE | none；NON_BLOCKING_FOR_CORE_REPAIR |
+
+[Seam 合同](../planning/P1_SEAM_CONTRACTS_V1.md)沿用同一文件、各 seam 独立版本：
+A/B/C 仍 V1，D 候选 V2。新增 required observable semantics 是 §0 所定义的 major change；
+整数 `VERSION = 1` 的直接 major successor 为 `2`。D 的 `semanticContractVersion = 2`
+与该 major 同步绑定，不另开产品版本线；本文 `VERSION_ASSIGNMENT = UNASSIGNED` 的产品版本含义不变。
+
+本次生效后，[T14 extraction](../planning/P1_T14_CONTRACT_EXTRACTION.md) 的旧类别优先级、
+kind→opposition、category-based contradiction、仅 claimIds 派生 identity 等描述只作 V1 历史证据，
+不能覆盖 §8/§9.4 或 Seam D V2。其未冲突的 guard、lineage、所有权与 fail-closed 合同继续继承。
+[T13 extraction](../planning/P1_T13_CONTRACT_EXTRACTION.md) 的 ownership / identity 保持；
+C1 由 §8.1 明确，不将旧 empty-content 实现描述当成跳过 P1 分析的授权。
+T15 的最终集合对账与独立 100% assertion 保持（[Issue #47](https://github.com/FlapPearLabs/zhihu-grabber-toolkit/issues/47)），不重算 T13 identity 或建立第二套 T14 关系。
+
+`FUTURE_REQUIRED_CHANGE`：authority 生效并另获实施授权后，fixtures/validator、T14 producer、
+T15 与其他消费者须按 D V2 同步并重新审查。现有可执行 V1 fixture/validator 不证明 V2 合规；
+本轮不修改它们，不授权实现或拆票。
+
+`NONBLOCKING_FOLLOWUP = product-behavior-contract authority index may require later document synchronization`。
+该索引未列 P1 不改变 Applicable Specs 的 scope/amendment 层级，不是形成本 candidate 的必要修订；
+本轮不改 Product Behavior Contract、F08/RRF/D2、project-memory 或历史审计证据。
 
 ---
 
@@ -303,8 +366,15 @@ stable configuration identity 至少概念上覆盖 product mode、approved sema
 provider-route configuration identity、selector/config version；不含 credential value。
 
 下游 PLAN 之后的 retrieval / selection / capture composition / analysis 都依赖 `planHash`。持久化且有效
-的 plan 可复用；若 plan 被重新生成且 hash 改变，则必须从 PLAN/RETRIEVAL 边界使 downstream artifact
+的 plan 仅在同一 execution occurrence 且满足 §6.2 依赖闭包校验时可复用；若 plan 被重新生成且 hash 改变，则必须从 PLAN/RETRIEVAL 边界使 downstream artifact
 失效，不能静默沿用旧候选、旧 group set 或旧 corpus。
+
+稳定 research identity 与 execution occurrence 分开：显式 `restart = new execution occurrence`，
+不因 topic/config 或 plan bytes 恰好相同而复用旧 derived research stages。新 topic 必须从 PLAN
+重新开始，不能将旧 ResearchPlan、CoverageState、SelectionDecision、CorpusManifest、Claims、
+Synthesis 作为当前有效状态；同 topic 的显式 restart 亦然。occurrence 须可区分，不要求全局
+run registry 或第二状态机。canonical source bytes 保留，既有 verifier/handoff 权威不变；
+P1 research restart 不等于 `grab --fresh`，不修改 grab resume-merge 或强制重新抓取语义。
 
 ---
 
@@ -454,6 +524,33 @@ verifier / handoff authority。
 - credentials / secret-bearing header / credential path contents 永不进入 state、event、manifest、plan 或 embedding cache identity。
 - partial state 可以被报告和恢复，但不得渲染成"P1 research complete"。
 
+**Current reuse validation（CD-A2/A3）**：`COMPLETE` 记录 historically completed；
+`currently reusable` 是每次调用的 validation judgment，不新建第二套持久状态机。
+复用必须验证当前 request/effective config/contract versions、被记录输入/输出及传递依赖：
+
+```text
+request / effective config / versions
+→ bound persisted plan → frozen retrieval pool + selection
+→ valid per-group answers / handoff / derived manifest
+→ selected refs + content hashes / corpus identity
+→ T13 claims + mapped/analyzed identity
+→ T14 relation / synthesis / guard
+→ T15 coverage-final + result bytes / run-plan bindings
+```
+
+仅 `resultHash` / `coverageFinalHash` 相等不能证明该闭包有效。闭包失效则
+`REUSED_COMPLETE = FALSE`，拒绝 current reuse、报告 earliest invalid boundary、保留历史状态和
+bytes；默认不自动 network refetch 或 expensive rerun，等待显式 restart 或未来明确授权恢复。
+该限制针对 stale COMPLETE 的当前复用请求；普通 interrupted resume 继续复用仍有效的完成阶段/
+无依赖 siblings，并从适当边界继续未完成工作。复用校验本身不联网、不改写 canonical。
+
+必要 contract/semantic version、effective config identity、prompt/profile/projection version 或
+required provenance 缺失的 legacy checkpoint：`REUSE REFUSED`，不得猜旧值、静默迁移，历史
+bytes 保留。配置变化按实际依赖局部失效：planner 影响 PLAN 起，T13 影响 claims 起，T14 影响
+synthesis 起；不是因任意仓库提交使所有阶段失效。日志、展示格式、无行为注释、凭据轮换不触发
+无关语义重算；secret 及其 hash 不进入 identity。provider 实际 served-model 字符串仍仅作观测，
+不新增精确匹配门，也不引入联网 freshness 检查。
+
 ### 6.3 Handoff compatibility
 
 不修改现有单 handoff schema。P1 采用 additive composition：多个 per-group verified handoff/reference
@@ -486,6 +583,20 @@ P1 不强制每个 query 选一个 group，也不把所有检索命中全部纳�
 minimum group floor / quotas 与 numeric boundary 属 OPEN decisions；不得用"selectCandidate contract
 unchanged"掩盖 scope amendment。
 
+### 7.3 Clarification resolution / continuation（CD-D1）
+
+`at most one clarification` 的计数单位为 **one successful clarification resolution**，
+且只允许原来的一次问题。非法输入不消耗成功机会：pending decision 保持冻结，不生成第二问题，
+不重启 retrieval、不重新生成 candidate pool，也不开始 capture/model/provider 调用。
+同一已成功答案允许幂等重试并复用已验证 resolved decision；第二个不同成功选择必须拒绝。
+进程重启不能重置成功计数或 pending binding。
+
+continuation 绑定同一 run/occurrence、planHash、pool bytes identity、selector effective
+config/version、pending decision hash 与 coverage ledger；单有 poolPlanHash 不足。
+STOP 前持久化失败则 fail closed；pool 缺失/变化、config 漂移或 binding 不符时拒绝旧澄清，
+不能重检索后假装继续原选择。恢复沿用既有 T08 合法选择校验，展示 required groups、remaining
+slots 与 boundary options；不重新设计 selection 算法、阈值或允许自由文本改 plan。
+
 ---
 
 ## 8. Logical Hierarchy and Cross-source Synthesis
@@ -496,7 +607,8 @@ P1 的逻辑表示必须独立于物理 chunk packing：
 Canonical Content
 → Question / Source-group Representation
 → Claim / Aspect Representation
-→ Cross-question / Cross-source Synthesis
+→ Proposition Family + explicit Claim Stance
+→ Canonical Cross-source Synthesis State（relationStatus / supportBreadth / lineage）
 ```
 
 ### 8.1 Question / Source-group representation
@@ -512,16 +624,93 @@ Canonical Content
 
 现有 chunk/hierarchy 可承担 transport 和聚合计算，但不能用 `canonicalSourceIds` union 代替这一逻辑层。
 
-### 8.2 Claim / Aspect representation
+**Metadata-only accounting（CD-C1）**：安全投影后仅剩 safe metadata 的 selected source，
+仍必须经过允许的 T13 semantic analysis path，明确得到 `NO_EXTRACTABLE_CLAIM` 或现行等价
+合法结果后才计 analyzed。`no claim != not analyzed`；禁止跳过语义分析后标 analyzed，禁止从
+metadata 发明 claim 或静默丢 source。analyzed source-set identity 仍由 T13 唯一写入。
+Seam C 现有 accounting、各 kind 的 claims 数组与 aggregate identity 能表达这种状态，
+无 required shape/identity 变化、无 major bump。全体 selected sources 最终无合法 claim，
+仍按 §10.2 fail closed。此条只适用于 P1-T13，不扩展为 legacy digest/map 行为修改。
 
-跨 group 聚合相同/相反 claims，并保留 supporting/opposing sources、questions/groups、authors、
-expert/evidence-rich support。禁止只保留 `support_count`。
+### 8.2 Claim / Aspect → Proposition Family → Claim Stance（S1）
 
-### 8.3 Cross-source synthesis
+Aspect 是讨论维度，不是带方向与适用范围的 proposition；claim 是从某来源抽出的具体断言实例，
+不是全局事实。proposition family 是本 run 内、同一比较问题与可比条件下可判断方向的局部分组，
+不是 ontology。采用已有 claim 作为 anchor，其原 statement 定义被支持/反对的定向命题，
+不让模型另造自由文本结论改变 anchor。Claim kind（main/minority/contradictory）≠ stance。
 
-最终报告区分 widely shared、group-specific、minority/long-tail、conflicting claims、source-group
-differences、evidence strength 与 discussion-volume differences。禁止 flat reduce，也禁止 naive
-equal weight；answer count 不自动成为 epistemic weight。
+模型只用 controller 提供的 opaque claim tokens 提出 family、anchor 和 stance；canonical
+claim/source/group/author identity 与引用映射归 controller。唯一合法表示为：
+
+- **resolved families**：每个 family 非空，anchor 属于其中且自关系 `ASSERTS`；members 仅为
+  `ASSERTS`（同可比条件下支持 anchor）或 `OPPOSES`（同条件下明确否定/方向不相容）。
+- **independent unresolved records**：无法可靠归属/建立关系的输入 claim 单独保留，
+  `stance = UNRESOLVED`、`relationStatus = UNRESOLVED`、`supportBreadth = null`；
+  无 anchor、自 ASSERTS、support 或 oppose，不作为 family member。保留原 statement 与全部 lineage。
+
+两者对全部输入 claims 构成不重不漏的完整分区；不接受 family 内嵌 UNRESOLVED 的第二编码。
+不可通过空 family、补默认 stance、未知/重复 claim IDs 或任意拆分复合 claim 修补坏 proposal；
+结构错误 fail closed。无法建立原子关系的复合 claim 保留 unresolved，不自造新事实。
+
+同条件下能判定等价或相反的 claims 必须归入同一 family；不能全拆 singleton 绕过冲突。
+如同负载/指标/时间窗口下“缓存降低延迟”与“缓存增加延迟”应保留相反 stance；热缓存 P50
+与冷缓存 P99 条件不同，不因 aspect 相同制造冲突，应分开或保留 unresolved。
+不能从组内 contradictory 推导反对所有 main，也不得传播“反对反对即支持”。
+
+每个 source claim 保留 `sourceClaimId / original statement / kind / sourceRef / groupId /
+authorRef` lineage，sourceRefs 非空、来自当前有效 analyzed claim；作者未知保持 null。
+T14 验证 proposal 并从 claim lineage 装配两侧：ASSERTS→support，OPPOSES→oppose。
+同 source 的 c1 ASSERTS 与 c2 OPPOSES 必须在两侧各保留 claim lineage，不能跨两侧按 sourceRef
+去重，不宣称它们是独立来源。expert/evidence-rich support 只来自支持侧真实标记；禁止只留计数。
+
+controller 验证 identity、完整分区、非空 family、anchor 自关系、合法枚举、出处归属及 hash；
+这些不能证明自然语言关系正确：**hash != semantic proof**。T13 仍唯一写 analyzed identity；
+T14 唯一装配关系/状态/synthesis identity；T15 比较、对账、披露，不重建第二套关系。
+
+### 8.3 Canonical synthesis state 与 legacy presentation
+
+以下三维正交，不维护互斥 canonical category taxonomy：
+
+| 维度 | Canonical contract | 禁止含义 |
+|---|---|---|
+| `relationStatus` | resolved family 有 ASSERTS 且无 OPPOSES → `SUPPORT_ONLY`；两者非空 → `CONFLICTING`；独立未知记录 → `UNRESOLVED` | kind/aspect 不授予 stance；SUPPORT_ONLY 不声称外界无人反对 |
+| `supportBreadth` | 只计 ASSERTS 的 distinct groups：1→`SINGLE_GROUP`，≥2→`MULTI_GROUP`；UNRESOLVED→null | 不计反对/未知组，不等于 truth/confidence/证据独立性/consensus |
+| group-local salience | main/minority/contradictory 只在 source-claim lineage metadata 保留 | 不新增 synthesis-level groupSalience 或 global minority taxonomy |
+
+前两维由 controller 从接受后的关系与 lineage 分别派生/校验，不能直接信任模型或 legacy label。
+持久化值与重算值不符则拒绝，不能互相覆盖；anchor 自 ASSERTS 意味着 resolved 支持组不能为零。
+报告必须保留 source-group differences、evidence strength 与 discussion-volume differences；
+禁止 flat reduce、naive equal weight，answer count 不自动成为 epistemic weight。
+
+| Case | evidence（A–D/F 条件可比） | relationStatus | supportBreadth | 必须保留 |
+|---|---|---|---|---|
+| A | A/B/C support P，无 opposition | SUPPORT_ONLY | MULTI_GROUP | 三个支持组 |
+| B | A/B/C support P，D/E oppose P | CONFLICTING | MULTI_GROUP | 两维同时存在，不可二选一 |
+| C | only A supports P，无 opposition | SUPPORT_ONLY | SINGLE_GROUP | 单组出处 |
+| D | A 与 B 各一条 minority claim supports P | SUPPORT_ONLY | MULTI_GROUP | 两条 minority 仅留 lineage |
+| E | 单条 claim 关系无法可靠确定 | UNRESOLVED | null | 独立 record、原 statement/完整出处，无伪 support |
+| F | A 的同一 source：c1 ASSERTS P、c2 OPPOSES P | CONFLICTING | SINGLE_GROUP | 两侧各自 claim lineage，不能 sourceRef 去重丢一侧 |
+
+旧 `widely-shared / group-specific / minority / conflicting` 仅为 `LEGACY_DERIVED_VIEW`：
+新 resolved family 可单向有损展示 CONFLICTING→conflicting；否则 MULTI_GROUP→widely-shared；
+否则 SINGLE_GROUP→group-specific。展示仍必须携带两项 canonical state，尤其 Case B 不能丢 breadth。
+新 synthesis 不生成 global minority；旧 minority 只用于历史渲染或逐 claim metadata。
+UNRESOLVED 不产生 legacy category；旧接口强制四选一则 `VERSION_INCOMPATIBLE / FAIL`，不得填默认值。
+
+所有新语义消费者与 diagnostics 禁止 legacy category→relationStatus/supportBreadth/support/
+oppose/semantic truth 反推。改/删 legacy 视图只能触发视图重算或不一致拒绝，不能改变 canonical
+state、identity、两侧引用或 diagnostics；独立视图文件的 bytes hash 不反向定义语义 identity。
+
+### 8.4 Semantic acceptance 不可由结构通过代替
+
+关系未知可如实报告，不因 UNRESOLVED 自动 fail whole run；all-unresolved 不自动获得最终
+COMPLETE 或语义验收。明确同条件同向 golden 必须同 family 且 ASSERTS，两个以上支持组必须
+MULTI_GROUP；明确反向 golden 必须保留 OPPOSES 和 CONFLICTING，包括 Case B 的三支持组+
+两反对组同时 MULTI_GROUP。全 singleton、拆 family、全 UNRESOLVED 即使结构合法仍为验收 FAIL。
+只有预注册的信息不足 case 可将 UNKNOWN 作为期望，不得事后重标 ambiguous；任何允许明确案例
+abstention 的阈值/分母都需运行前另行 owner 批准，默认明确 goldens 全部命中。
+冻结 Repair Plan §17 的 deterministic、live semantic revalidation、full canonical acceptance
+三层义务继续适用；fake runtime/hash PASS 不能替代 live 语义证据，本 amendment 不声称已执行验收。
 
 ---
 
@@ -563,6 +752,12 @@ new_contradiction_rate
 novelty_gain
 ```
 
+`new_contradiction_rate` 的分子仅为 canonical `relationStatus = CONFLICTING` 的 family 数，
+分母为全部输出记录数（resolved families + independent unresolved records）；空集口径为 0，
+但不授权空 claims 合成成功。UNRESOLVED 单独披露；比例不证明无冲突或共识。
+禁止从 legacy category == conflicting 计算新语义诊断。其余既有诊断所有权与键集不变，
+不引入 #79 metrics 平台。
+
 以及 source-group representation / concentration diagnostics：
 
 ```text
@@ -600,6 +795,13 @@ DEFAULT_REQUIRES_IMPLEMENTATION_VALIDATION
 User request 可能包含任意文本，但它的身份是用户请求，不是外部知乎语料；Planner 结果也不是 canonical
 fact。只有外部 corpus 进入 semantic/embedding worker 时适用 V2 projection isolation / sanitization contract。
 
+**CD-C2 = INHERITED_UNCHANGED**：P1 Agent View 继承
+[V2 §9.2](v2-rich-content-fidelity.md)
+的 structure-preserving inert projection、raw code body DEFAULT OMIT 与 bounded metadata 规则，
+以及既有 URL/path 安全边界；不得静默发送完整外部图片 URL 或 file URI。
+不在 P1 复制第二套安全合同。未来代码正文语义能力须单独 Product + Spec + Security decision，
+不能用本 amendment 或 prompt 授权。
+
 ### 10.2 Default failure contract
 
 ```text
@@ -615,10 +817,14 @@ NO_SILENT_RUNTIME_FALLBACK
 - provider contract unknown → fail for that required route；
 - no valid group set → fail；
 - any required group unverified → research corpus cannot be declared complete；
-- stale group/manifest/plan dependency → invalidate and resume/re-run；
+- stale group/manifest/plan dependency → invalidate current reuse + identify earliest invalid boundary；stale COMPLETE 不自动 refetch/rerun，恢复权限与 ordinary interrupted resume 区别见 §6.2；
 - semantic runtime unavailable → fail，不能 silent provider/runtime switch；
 - embedding provider unavailable / invalid vector → `dense_layer_unavailable` / fail；
 - corpus coverage / hierarchy / evidence lineage invalid → fail；
+- legacy 缺必要版本/config identity/provenance → refuse current reuse，不猜测、不静默迁移（§6.2）；
+- malformed relation proposal / empty family / 无来源 claim → fail，不默认套旧类别；
+- 所有 selected sources 经合法 T13 分析后均无 claim → `T14_EMPTY_VERIFIED_INPUT`，无 synthesis artifact；
+- 有完整 lineage 的合法 UNRESOLVED → §8 的显式未知报告，不等于坏 lineage、空输入或自动语义验收 PASS；
 - VALID_FALSE、UNPARSEABLE、EXIT_FAILURE 保持不同 machine-readable identity。
 
 Dense embedding 是完整 P1 baseline 的 core geometry。因此当前合同默认：
@@ -643,6 +849,10 @@ REQUIRES_EXPLICIT_SPEC_AUTHORITY
 ## 11. Compatibility and Minimum-correct Architecture
 
 - P1 是 additive path；v0.3 single-question orchestration 行为不被静默迁移。
+- 本次 S1 正交语义要求 semantic contract version bump 与 Seam D major 1→2；V1 artifact
+  `HISTORICAL_ONLY`，可历史展示但不能直接通过 V2 validator。禁止从旧 category 猜新关系/广度；
+  仅完整原始 lineage 可取回并重新验证时，按 V2 re-evaluate/re-synthesize 产生新版本 artifact
+  与新 identity，不称无损 migration。缺 lineage 不转换；原 bytes 保留。
 - per-question `answers.json` / `answers.md` / `handoff.json` schema 不变。
 - verify-output、make-handoff、corpus verification、controller-owned identity/lineage 权威不变。
 - existing physical hierarchy 复用，但 P1 logical group representation 必须新增。
