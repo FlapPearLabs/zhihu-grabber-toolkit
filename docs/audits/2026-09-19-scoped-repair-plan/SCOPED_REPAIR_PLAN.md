@@ -1,16 +1,18 @@
 # SCOPED REPAIR PLAN — POST 2026-09-18 ADVERSARIAL AUDIT
 
-日期：2026-09-19。Repository：`FlapPearLabs/zhihu-grabber-toolkit`。性质：只读修复规划草稿；不是 Approved Spec、实现授权或修复验收。全文的“目标／必须”是待审查的修复约束，不表示已改变仓库权威。当前行为与建议决策分开记录；未裁决项不得交由实现者自行选择。
+日期：2026-09-19。Repository：`FlapPearLabs/zhihu-grabber-toolkit`。性质：限定范围的修复规划提案（F-RP-01 窄修订）；不是 Approved Spec、实现授权或修复验收。全文的“目标／必须”是待审查的修复约束，不表示已改变仓库权威。当前行为与建议决策分开记录；未裁决项不得交由实现者自行选择。
 
 ## 1. EXECUTIVE DECISION
 
 **按六条 lane 组织：A 复用有效性（F01/F02）、B 命题关系与证据闭包（F03/F06）、C 安全投影（F04）、D 澄清续跑（F05）、E 回归与 CI（F07）、F 现行文档校准（F08）；最关键决策是将“同议题”与“对同一有方向命题的支持／反对”分开，禁止从组内标签推导跨组语义关系。**
 
 ```text
-REPAIR_PLAN_STATUS = MORE_CONTRACT_WORK_REQUIRED
-PLAN_DRAFT = READY_FOR_INDEPENDENT_REVIEW
+REPAIR_PLAN_STATUS = READY_FOR_FINDING_SCOPED_REVIEW
+F-RP-01 = CLOSED (executor self-review; external re-review pending)
+READY_TO_DECOMPOSE_REPAIR_TICKETS = NO
+OWNER_DECISIONS = PROPOSED / PENDING OWNER DECISION
 IMPLEMENTATION_AUTHORIZATION = NONE
-NEXT_LEGAL_ACTION = CONTRACT_DECISION_REQUIRED
+NEXT_LEGAL_ACTION = FINDING_SCOPED_EXTERNAL_REVIEW
 POST_REPAIR_NEXT_CANDIDATE = #79 Minimum Observatory / Option A
 ```
 
@@ -21,8 +23,9 @@ POST_REPAIR_NEXT_CANDIDATE = #79 Minimum Observatory / Option A
 | ID | 精确问题 | 推荐，及另一可行选项 | 阻塞范围 |
 |---|---|---|---|
 | CD-B1 | 选择哪个语义关系 contract？ | S1 单锚点命题族与显式立场；S2 完整成对关系矩阵是替代，不同时实施 | B 语义实现 |
-| CD-B2 | 无法判定的关系能否伴随完整报告？ | 保留逐 claim 的 unresolved singleton，只声明来源内观点、关系未知，不宣称共识/冲突；若 owner 要求所有关系已解决，则 fail closed，不能偷偷归类 | B schema、类别解释、live acceptance |
-| CD-B3 | 新 required 关系字段、定向 claim identity 如何迁移？ | 显式新 semantic contract version；SEAM D 若 required shape/identity 变更，按既有规则 major bump，旧产物只作历史，不能静默补标签 | A/B、T15 consumer、frozen validator |
+| CD-B2 | 无法判定的关系能否伴随完整报告？ | 保留逐 claim 的独立 UNRESOLVED record（singleton 展示，不是 family），relationStatus=UNRESOLVED、supportBreadth=null；只声明来源内观点、关系未知；若 owner 要求所有关系已解决，则 fail closed，不能偷偷归类 | B schema、输出解释、live acceptance |
+| CD-B3 | 从单 category 变为正交 canonical dimensions、定向 claim identity 如何迁移？ | 必须 semantic contract version bump；SEAM D required shape/observable semantics 变化须 major bump、更新 validator/fixtures 并下游 re-review。旧产物仅 historical artifact；有原始 lineage 时按新合同 re-synthesis / re-evaluation，不从 category 猜 relation/breadth | A/B、T15 consumer、frozen validator |
+| CD-B4 | cross-source synthesis 的 canonical semantic state 如何避免维度折叠？ | proposition relation/conflict、跨 source-group 的 support breadth、group-local salience 相互正交；relationStatus 与 supportBreadth 分字段，组内 kind 仅保留在 source-claim lineage；legacy category 仅单向派生展示，不是语义权威（§5.3） | B 输出、diagnostics、兼容视图与语义验收 |
 | CD-A1 | restart 是否重跑同题的全部研究阶段？ | 是：新执行，旧 derived stages 不复用；保留 canonical 原文件，既有 capture primitive 行为不改。若希望显式 reuse-plan，须单独授权新操作 | A restart |
 | CD-A2 | COMPLETE 依赖失效是否自动联网补跑？ | 默认拒绝当前复用并给出最早失效边界；用户显式 restart/后续授权恢复。另一选项是受批准预算内自动恢复；本计划不擅自启用 | A stale COMPLETE |
 | CD-A3 | legacy checkpoint 缺语义/配置版本怎么办？ | 不可直接复用，保留历史字节，显式新执行；允许迁移则必须有可证明的 provenance，不能猜历史版本 | A migration |
@@ -31,9 +34,11 @@ POST_REPAIR_NEXT_CANDIDATE = #79 Minimum Observatory / Option A
 | CD-D1 | 一次 clarification 的计数单位是什么？ | 一次提问/一次成功解析；非法提交不消耗成功次数，但不再生成新问题，原 pending 不变；相同成功提交可幂等重试。替代为一次提交即终结，需明确告知用户 | D 非法输入及重试 |
 | CD-F1 | D2 原始裁决 receipt 尚未找到时如何校准 memory？ | 先补回可核验 receipt；找不到则 owner 明确确认窄行为描述并走文档 review，不用 merge/tests 自行追认 Approved authority | F 文档发布 |
 
-独立 reviewer 可以先审查本草稿与上述选项；全部相关决定经 owner 及必要 quorum 固定以后，才可称 execution-ready。此处不要求用户即时逐题答复，也不越过本轮只读停止条件。
+独立 reviewer 可以先审查本草稿与上述选项；全部相关决定经 owner 及必要 quorum 固定以后，才可称 execution-ready。此处不要求用户即时逐题答复，也不越过本轮计划包修订与外部复核的停止条件。
 
 ## 2. CURRENT VERIFIED STATE
+
+本节保留原计划起草时态；本次窄修订 fresh fetch 的三个 refs 与指定 SHA 均一致，记录见 supporting/f-rp-01-self-review.md。本节历史 probe/完整测试声明不代表本轮重跑。
 
 ```text
 CURRENT_REMOTE_MASTER = 4bea7b30b3842a876e383977686a0abc0d68302f
@@ -124,17 +129,17 @@ A 集中复用判定、B 集中关系解释、C 集中安全投影，均让 prod
 
 **缓存例子**：A“缓存降低延迟”、B“缓存增加延迟”属于 same aspect；它们是不同的定向 propositions，不能说 same proposition=true。若明确相同负载、基线、指标、时间与范围，则属于同一 proposition family，stance 相反，不能共同算某一条定向 synthesis claim 的 support。增加与降低是相互排斥的方向，但不一定是逻辑上的穷尽互补（可能不变）；不从 OPPOSES 推断任意第三种命题。若 A 是热缓存 P50、B 是冷缓存 P99，则条件不同，应 separate families 或 UNRESOLVED，不能制造 conflict。
 
-### 5.2 推荐最小 S1 contract（待 CD-B1/B2/B3 批准）
+### 5.2 推荐最小 S1 contract（待 CD-B1/B2/B3/B4 批准）
 
 保留 T13 原 claim 与 kind，不重构抽取体系。T14 模型一次提出 aspect 下的局部 proposition families：选一个已有 claim token 作为 anchor，并对每个 member 提出 ASSERTS / OPPOSES；无法归属的 claims 单列 UNRESOLVED。采用唯一响应contract：非空的已解析 families（数组可为空）与显式 unresolved claim-token列表，两者并集是全部输入，交集为空；不接受第二套内嵌UNRESOLVED格式。anchor 的原 statement 是明确的定向命题；不要再让模型发明自由文本“综合结论”来改变被支持对象。每个输入 claim 在接收后的“已解析 families + 独立 unresolved records”中恰好出现一次。每个 family 非空；UNRESOLVED 不属于已解析 family，controller不自动修补格式错误的关系提案。不支持复合 claim 任意拆成若干新事实，无法建立原子关系时保留 unresolved。全体 unresolved 时无已解析 family，是否允许报告仍由 CD-B2 决定。
 
-**IDENTITY**：输入 claimId/source/group/author 由 T13/controller 产生并解析；模型只选择给定 opaque tokens。familyKey 由 controller 根据 contract version、anchor identity、已验证成员及关系规范序列确定。它是 run-scoped artifact identity，**hash 不证明 semantic equivalence**，不跨 run 自动拼接。完整 synthesis hash 包含方向、anchor/statement、关系与lineage；关系改变必须改变 artifact identity，不能继续仅 hash 无方向 sourceClaimIds。
+**IDENTITY**：输入 claimId/source/group/author 由 T13/controller 产生并解析；模型只选择给定 opaque tokens。familyKey 由 controller 根据 contract version、anchor identity、已验证成员及关系规范序列确定。它是 run-scoped artifact identity，**hash 不证明 semantic equivalence**，不跨 run 自动拼接。完整 synthesis hash 包含 contract version、方向、anchor/statement、关系、relationStatus、supportBreadth 与完整 lineage（含 source-claim kind）；关系改变必须改变 artifact identity，不能继续仅 hash 无方向 sourceClaimIds。
 
 **语义完整性义务**：已能判定在同一条件下等价或相反的输入claims必须归入同一family；不能把全部claims拆成singleton来绕过冲突披露。不同条件/不同命题才分开，无法判断才UNRESOLVED。模型漏合并或错合并都是live semantic revalidation要检出的失败；结构完整分区本身不能证明该义务。
 
 **RELATION**：ASSERTS 表示与 anchor 的定向断言一致；OPPOSES 需有同条件不相容判断；UNRESOLVED 不贡献支持/反对，也不贡献 cross-group consensus。不存在仅由 kind/main 或 aspect 相同推导的默认关系。不得传播“反对反对即支持”；不得从 model relation 自造 source refs。
 
-**OWNER**：T13 仍是 analyzed identity 唯一写者；T14 是关系提案验证、category、引用装配及 synthesis identity owner；T15 比较与终态对账，不重新生成第二套关系。模型的语义判断是可错的提案，controller 拥有接受/拒绝和可审计结构。
+**OWNER**：T13 仍是 analyzed identity 唯一写者；T14 是关系提案验证、正交 canonical state、引用装配及 synthesis identity owner，另单向派生 legacy 展示视图；T15 比较与终态对账，不重新生成第二套关系。模型的语义判断是可错的提案，controller 拥有接受/拒绝和可审计结构。
 
 **VALIDATION**：controller 能证明已知唯一 claim IDs、已解析非空 families 与独立 unresolved records 合起来构成完整分区、anchor 属于该已解析 family 且自关系 ASSERTS、枚举有效、同一 member 没有互斥关系、所有 source refs 由对应 sourceClaimIds 私有映射导出、selected/analyzed 归属、版本与hash一致。controller **不能**仅靠 schema/hash 确定“热缓存”和“冷缓存”是否语义相同；该部分依赖模型质量与独立 semantic revalidation，不能声称 deterministic semantic proof。
 
@@ -142,13 +147,45 @@ A 集中复用判定、B 集中关系解释、C 集中安全投影，均让 prod
 
 **CONTROLLER AUTHORITY**：模型响应缺字段/重复/未知 ID/空簇 → 现有 fail-closed 类，不自动修正或 fallback 到旧 aspect union。结构合法但关系不明 → 按 CD-B2；推荐按提案中独立 unresolved 列表保留有原始 statement 与 lineage 的 unresolved record（singleton展示，不是family；无anchor自关系和support/oppose关系），仍保留 analysis accounting，单独披露 semantic relation 未确定。此为待批准的 reporting policy，不能把它当已允许的 semantic downgrade。
 
-### 5.3 输出与分类约束
+### 5.3 输出与正交语义约束（CD-B4 提案）
 
 针对 anchor，support 只从 ASSERTS members 的 source refs 产生，oppose 只从 OPPOSES members 产生；所有贡献 retain sourceClaimId→sourceRef→groupId→authorRef 链。`sourceClaimIds` 必须包含两侧所用 claims；旧支持/反对数组可以保留为兼容视图，但新关系 provenance 不可丢失。
 
 若同一 source 的两个不同 claims 分别支持/反对，允许两侧保留同 sourceRef 并披露不同 claim lineage；不能全局去重掉一侧或伪装成两个独立来源。作者不明仍 null；expertEvidenceRichSupport 只取支持侧真实标记，不把反对侧或 metadata 当支持。crossGroupSupport 从 ASSERTS 的 distinct groups 算，表示出处分布，不是证据独立性或真实性。
 
-推荐分类顺序：有已确认 OPPOSES → conflicting；无反对且已解析支持成员均为组内 minority → minority（保留原上下文，不宣称全球少数）；其余已解析支持来自至少两个 groups → widely-shared；否则 group-specific。unresolved 不升级共识/冲突，若 CD-B2 接受独立记录，其保留原 sourceClaimIds/sourceRefs 作为出处（不是对另一个命题的support），category 至多 group-specific 且必须同时有 relationStatus=unresolved 披露。此类别解释须通过契约审查；不能偷偷扩展冻结四类别枚举。
+**Canonical state**：保留 proposition family / anchor、逐 claim 的 ASSERTS / OPPOSES 关系与完整 lineage；无法归属者仍为独立 UNRESOLVED records。新增两个正交字段，不新增 synthesis-level `groupSalience`，也不把整个命题标成全局 minority：
+
+| 维度/字段 | 最小定义与有效值 | 不允许的解释 |
+|---|---|---|
+| proposition relation / `relationStatus` | 已解析 family 内，已验证 ASSERTS 非空且 OPPOSES 非空 → `CONFLICTING`；ASSERTS 非空且 OPPOSES 为空 → `SUPPORT_ONLY`。两侧须针对同一 anchor 且 scope 可比。独立未知记录 → `UNRESOLVED` | 不从 main/minority/contradictory 推断；SUPPORT_ONLY 仅指该 family 的已解析 evidence，没有“外界无人反对”的含义 |
+| support breadth / `supportBreadth` | 只计已验证 ASSERTS claims 所属的 distinct source groups：1 → `SINGLE_GROUP`，≥2 → `MULTI_GROUP`；独立 UNRESOLVED record 无支持关系 → `null`（不适用，不是单组或零支持结论） | 不计 OPPOSES/UNRESOLVED，不是 truth、confidence、evidence independence 或 consensus；MULTI_GROUP 只表示多个来源组有支持 evidence |
+| group-local salience / source-claim metadata | 原 main/minority/contradictory kind 连同 sourceClaimId、statement、sourceRef、groupId、authorRef 保留在可解析 lineage 中；其中 contradictory 仍只是原组标签 | 不新增全局少数/多数属性，不让原组标签决定跨源 stance、conflict 或 breadth |
+
+relationStatus 与 supportBreadth 均由 controller 从已接受的 claim-relation/lineage 表分别重算，不接受模型或 legacy category 直接授值；持久化字段与重算值不一致必须拒绝，不能用其中一维覆盖另一维。
+
+已解析 family 必有 anchor 自 ASSERTS，故支持组数不可能为 0；违反则拒绝，不补成 SINGLE_GROUP。独立 UNRESOLVED record 无 anchor 自关系、无 support/oppose，保留原出处及 `relationStatus=UNRESOLVED, supportBreadth=null`；它不能因兼容展示变成 group-specific、minority 或 SUPPORT_ONLY。整个 run 是否允许仅有这些记录仍由 CD-B2 决定；已解析 family 的状态不能覆盖 run 中另外的 unresolved records。以上“已验证”包括 controller 的结构接受与 scope 可比的语义提案要求，不把 deterministic check 当作语义真值证明。
+
+**必须可同时表达的例子**（A–D/F 的 scope 均已确认可比）：
+
+| Case | evidence / lineage | relationStatus | supportBreadth | 必须保留 |
+|---|---|---|---|---|
+| A | A/B/C 支持 P，无反对 | SUPPORT_ONLY | MULTI_GROUP | 三个支持组 |
+| B | A/B/C 支持 P，D/E 反对 P | CONFLICTING | MULTI_GROUP | 支持 breadth 与反对 evidence 同时存在，不能二选一 |
+| C | 仅 A 支持 P，无反对 | SUPPORT_ONLY | SINGLE_GROUP | 单组出处，不宣称全局共识 |
+| D | A 与 B 各有一条 minority claim 支持 P，无反对 | SUPPORT_ONLY | MULTI_GROUP | 两条原 claim 的组内 minority metadata，不提升为命题 minority |
+| E | 单条 claim 无法可靠确定关系 | UNRESOLVED | null | 独立记录、原 statement/出处；不产生伪 support |
+| F | A 内同一 source 的 c1 支持 P、c2 反对 P | CONFLICTING | SINGLE_GROUP | c1/c2 各自 stance/lineage；同 sourceRef 同时在两侧，不当成独立来源 |
+
+**Legacy category = LEGACY_DERIVED_VIEW**：现有四枚举保留用于 compatibility / historical rendering，不能成为新版 canonical semantic authority。新版本的已解析 family 可单向投影：CONFLICTING → `conflicting`；否则 MULTI_GROUP → `widely-shared`；否则 SINGLE_GROUP → `group-specific`。这个有损展示映射不定义 canonical state；必须同时展示/携带 canonical relationStatus 与 supportBreadth，Case B 即使 legacy label 为 conflicting 也不得丢失 MULTI_GROUP。`minority` 仅保留给旧产物历史渲染，新 synthesis 不生成该全局类别；组内 minority 在 lineage 展示。独立 UNRESOLVED record 不输出 legacy category，旧四枚举必填接口不能表达它，必须报告版本不兼容，不能填任一旧值交差。
+
+所有新语义消费者（含 diagnostics）必须读取 canonical 字段与 lineage，不得读取 legacy category 推断关系、支持/反对、breadth 或全局少数；不得 `legacy category → reconstruct canonical relation/breadth`。篡改/删除 legacy 视图只可导致视图重算或不一致拒绝，不可改变 canonical state/identity、support/oppose 或 diagnostics。canonical synthesis 的身份按 §5.2 计算；若兼容视图作为文件另有 bytes hash，变化仅影响其文件完整性，不反向影响 canonical semantics。
+
+**已核对的 consumer 与必要后续合同同步**（绑定 §2 MASTER_SHA，本轮只读源码）：
+
+- `research-orchestration/lib/cross-source-synthesis.mjs:95–96,178–183,350–365` 定义枚举、分配 category 并输出 artifact；`:521` 通过 category 计算 `new_contradiction_rate`。新版分子必须改为 canonical `relationStatus=CONFLICTING` 的 family 数，分母为全部输出记录数（resolved families + unresolved records），延续全记录分母与空集为 0 的机械口径；unresolved 单独披露，比例不证明无冲突或共识。不从 legacy label 计算任何新语义诊断。
+- `research-orchestration/lib/coverage-state.mjs:153–154,278` 保存/披露该 diagnostic；`coverage-final-integration.mjs:696–725,818–845` 消费 T14 产物及 ledger/guard，不能在 T15 重建另一套 relation。未来须随新版合同校验版本与正交状态传播，不改 coverage authority 或新建 evaluator。
+- `research-orchestration/test/helpers/p1-seam-contracts.mjs:33,429–430` 要求旧四类；`test/fixtures/p1-seams/seam-d/` 存在旧 category artifacts；`test/p1-t14-cross-group-synthesis.test.mjs:248–274,631–639` 固定旧分类与诊断计算。按 CD-B3 更新新版 validator/fixtures/断言并保留版本隔离的历史渲染；不能用旧断言批准新语义。
+- P1 Spec §8.1 的组内 metadata 与 §8.3 的报告区分继续可见，但新版 canonical shape、legacy 降权及诊断读取规则必须先获得所需契约批准。当前 Spec/frozen seam 不在本轮修改范围，待批准提案不冒充现行产品行为。
 
 额外 invariant：每个 synthesized claim 至少一个 source claim；每个 sourceClaimId 指向当前有效 analyzed claim；每个 family 非空；support/oppose 不得引用 sourceClaim lineage 之外的 ref；全输入无 claim 保持当前 T14_EMPTY_VERIFIED_INPUT；模型不能用空项满足“完整分区”。F06 本身是 narrow validation bug，同时说明最终产物证据闭包不足。无需用新语义算法才证明非空约束。
 
@@ -156,7 +193,7 @@ A 集中复用判定、B 集中关系解释、C 集中安全投影，均让 prod
 
 | 维度 | S1：anchor family + relative stance（推荐） | S2：完整 pairwise relation proposal |
 |---|---|---|
-| 表达 | 一次归属 + 相对既有 anchor 的立场 | 每对 claims 判 EQUIVALENT / INCOMPATIBLE / RELATED_DIFFERENT / UNRELATED / UNKNOWN |
+| 表达 | 一次归属 + 相对既有 anchor 的立场；controller 独立派生 relationStatus / supportBreadth，组内 kind 留在 lineage | 每对 claims 判 EQUIVALENT / INCOMPATIBLE / RELATED_DIFFERENT / UNRELATED / UNKNOWN |
 | semantic correctness | 清晰修复 aspect≠proposition；anchor 选择错误仍可能误判 | 能直接表示局部非传递/方向条件，信息更细，但两两错误也更多 |
 | implementation complexity | T14 新 runtime contract + controller validation/assembly；约线性输出 | 完整 O(n²) 关系与覆盖检查；等价 closure 和矛盾 cycles 需拒绝/隔离 |
 | model dependence | 依赖 family/stance 判断；controller只保结构 | 依赖每一对判断，不能把 consistency 当语义真值 |
@@ -169,7 +206,7 @@ A 集中复用判定、B 集中关系解释、C 集中安全投影，均让 prod
 
 S2 若选用：必须在 bounded input 上提出全部无序 pairs，UNKNOWN显式保留；不得把未提及边默认成 SAME。只有明示且通过结构一致性审查的 EQUIVALENT 类才可合并；不相容/未知关系禁止 controller 通过多数票补全。无需引入 KG/NLI 服务，但复杂度对目前八个 finding 不合算。
 
-推荐 S1 是最小 current defect repair；不同时加入两套算法/自动 fallback。若后续独立反例证明 S1 无法表达必需复合命题，再另行裁决，而不是预建全 claim graph。若改变既有字段语义或 required observable shape，遵守 P1_SEAM_CONTRACTS_V1:45–53 的 major/version/re-review 规则；加字段并不自动证明兼容。CD-B3 先批准 contract 与迁移，再更新 frozen fixtures，不许 fixture 倒逼语义。
+推荐 S1 是最小 current defect repair；不同时加入两套算法/自动 fallback。若后续独立反例证明 S1 无法表达必需复合命题，再另行裁决，而不是预建全 claim graph。若改变既有字段语义或 required observable shape，遵守 P1_SEAM_CONTRACTS_V1:45–53 的 major/version/re-review 规则；加字段并不自动证明兼容。CD-B3/B4 先批准 contract 与版本，再更新 frozen fixtures，不许 fixture 倒逼语义。从 single category 改为正交 canonical dimensions 必须 semantic contract version bump 与 SEAM D major bump，不能把 legacy 字段仍存在当成 V1 语义兼容。旧产物仅 historical artifact，不猜补 relation/breadth；若原始 sourceClaim lineage 可取回并重新验证，可按新合同重新判断关系、重新综合（re-synthesis / re-evaluation）并生成新版本 identity，不能称 migration by assumption。raw lineage 缺失则不可转换。
 
 ## 7. STATE / RESUME CONTRACT
 
@@ -248,6 +285,11 @@ F05与A共享run绑定，但独立于B语义推理；A完成共享composer后D�
 | complete_missing_research_plan | 拒绝reused complete | 完整闭包允许；错hash/错run拒绝 |
 | complete_missing_canonical_answers | 缺source拒绝当前complete | sibling仍可用；同count不同content拒绝 |
 | cross_group_opposite_claims | 同条件相反方向不能共同support | 同方向同条件可支持；冷/热/P50/P99不同不误冲突 |
+| multi_group_support_plus_opposition | A/B/C ASSERTS、D/E OPPOSES 同一 anchor → relationStatus=CONFLICTING 且 supportBreadth=MULTI_GROUP | 只有 legacy conflicting 或丢 breadth 即失败；不计反对组为支持组 |
+| multi_group_minority_support | A/B 两条组内 minority 均 ASSERTS → SUPPORT_ONLY + MULTI_GROUP，各自 metadata 保留 | 不输出 synthesis-level minority；只改 kind 不得改变 relation/breadth |
+| unresolved_not_group_specific | 独立 record 保留 relationStatus=UNRESOLVED、supportBreadth=null，无 support/oppose | 不输出 legacy category；旧必填接口明确不兼容，不能改 canonical truth |
+| legacy_category_is_derived_only | 改/删 legacy category 不改变 canonical relation/breadth、support/oppose、identity 或 diagnostics | 重算或拒绝不一致视图；category-only 旧产物不可猜补新字段 |
+| same_source_both_sides | 同 sourceRef 的 c1 ASSERTS、c2 OPPOSES 均保留 claim lineage → CONFLICTING + SINGLE_GROUP | 不跨两侧去重；加入第二支持组后 breadth=MULTI_GROUP，关系仍 CONFLICTING |
 | unrelated_in_group_opposition | 不凭kind自动挂反对引用 | 同group明确相反可冲突；unresolved不强判 |
 | empty_cluster | 非空输入中的任意空family拒绝 | 一个合法singleton；全空输入继续现有fail |
 | unsafe_projection | 请求无raw HTML/code body/full外图URL/file URI，必要metadata在 | 中文相邻路径/编码/伪造围栏；正常正文与lineage保留 |
@@ -276,7 +318,7 @@ F08 current stale范围：`docs/project-memory.md:246`、`lib/rrf.mjs:49–52`�
 | 分类 | 观察 | 当前scope处理 |
 |---|---|---|
 | SAME_ROOT_CAUSE A | composer:316只传topic/mode/percent/runtime；缺effective provider/config；普通resume重新从SEARCH跑 | 纳入统一reuse合同，避免F01/F02补两个if |
-| SAME_ROOT_CAUSE B | category、expertEvidenceRichSupport、crossGroupSupport、diagnostics共用错误的union/kind解释 | 随同一关系表派生，不建第二算法 |
+| SAME_ROOT_CAUSE B | category、expertEvidenceRichSupport、crossGroupSupport、diagnostics共用错误的union/kind解释 | 由同一关系表分别派生正交 canonical state 和 diagnostics；legacy category 只作单向展示，不建第二算法 |
 | SAME_ROOT_CAUSE B | empty/unknown/duplicate claim ID 与lineage closure必须在同一T14输入/输出接缝验证 | 纳入证据闭包；伪造seam不宣称生产exploit |
 | SAME_ROOT_CAUSE C | loader正确提供raw canonical，但T13全部生产caller均直用fence | 一个投影owner修复所有该路径caller |
 | SAME_ROOT_CAUSE D | poolPlanHash不是pool内容hash；selection持久化返回值未由integration处理 | 作为合法pending续跑的必要绑定/落盘条件纳入 |
@@ -312,14 +354,14 @@ T14 statement已有sanitizeProjectionText，hierarchy有安全文本投影，未
 
 - **FINDINGS**：F03、F06。
 - **ROOT CAUSE / CURRENT CONTRACT / BROKEN BEHAVIOR**：Spec §8.2要求相同/相反claims且保留引用；runtime仅aspect partition，controller错误从kind推关系；空簇仍可通过。
-- **TARGET CONTRACT**：§5–6中获批方案；定向命题+显式关系+非空lineage，controller结构确定性不冒充自然语义证明。
-- **SCOPE**：T14模型提案schema/prompt、aggregation、category/strength/diagnostics派生、必要input/output验证与relation provenance；T15必要消费/版本对照，T13 identity单写者不变。
+- **TARGET CONTRACT**：§5–6中获批方案；定向命题+显式关系+正交 relationStatus/supportBreadth+非空完整 lineage；组内 salience 留原 claim，legacy category 无语义权威，controller结构确定性不冒充自然语义证明。
+- **SCOPE**：T14模型提案schema/prompt、aggregation、正交状态/strength/diagnostics派生与单向 legacy 视图、必要input/output验证与relation provenance；T15必要消费/版本对照，T13 identity单写者不变。
 - **OUT OF SCOPE**：KG/NLI服务、trained judge、全局ontology、改检索/selector、重构T13所有claim抽取、模型自行发明canonical refs。
 - **LIKELY FILES**：cross-group-aggregation、cross-source-synthesis、pre-synthesis-guard、deepseek-research-runtime；必要coverage-final-integration、frozen seam fixtures/validator；获独立授权后窄契约文档。
 - **PRODUCTION CALLER / TEST CALLER**：composer→produceSynthesisWithCoverage→produceCrossSourceSynthesis；T14 synthesis/async与T15 wiring。
-- **TESTS / COUNTEREXAMPLES**：opposite claims、unrelated opposition、empty cluster；scope不同、未变化、UNKNOWN、duplicate/foreign ID、同source不同立场、模型输出重排、方向改变identity、无关minority不制造全局少数。
-- **EXPECTED REGRESSIONS**：旧错误类别断言必须按批准合同更新；旧无关系产物不能迁移成新共识；不能丢原statement/出处/author unknown。
-- **DEPENDENCIES / PARALLELISM**：CD-B1/B2/B3；B0非空/lineage invariant可先于S1实现，仍同owner串行；与A/C模块工作可并行，runtime prompt与C交接、T15版本整合串行。
+- **TESTS / COUNTEREXAMPLES**：opposite claims、unrelated opposition、empty cluster；scope不同、未变化、UNKNOWN、duplicate/foreign ID、同source不同立场、模型输出重排、方向改变identity、无关minority不制造全局少数；§5.3 A–F 与§10新增五项回归，尤其 conflict 与 MULTI_GROUP 同时保留。
+- **EXPECTED REGRESSIONS**：旧错误类别断言必须按批准合同更新；旧无关系产物不能迁移成新共识或猜补 breadth；新版 diagnostics 不读 legacy category；不能丢原statement/出处/author unknown/组内 kind。
+- **DEPENDENCIES / PARALLELISM**：CD-B1/B2/B3/B4；B0非空/lineage invariant可先于S1实现，仍同owner串行；与A/C模块工作可并行，runtime prompt与C交接、T15版本整合串行。
 - **IMPLEMENTATION MODEL**：GPT-6 Ultra用于contract/core semantic推导；实现high/xhigh；固定fixture录入可Sol medium，不能让它裁决关系定义。
 - **REVIEWERS**：独立semantic CONTRACT/ADVERSARIAL reviewer，自造条件变化/无关反对案例；代码review可同一独立人兼任；批准Spec/seam权威变更按Contract+Consistency两context。
 - **ACCEPTANCE**：结构和反例fixture全通过+语义live revalidation；两者分别记录。CI绿不足以授予当前P1 semantic acceptance。
@@ -421,13 +463,13 @@ flowchart TD
   CA --> N[May consider #79 Option A]
 ```
 
-每条lane都有RED→implementation→GREEN，图中E0不是测试作者。E1逐lane路由不需等I；B/C的contract版本定义先给A，实际新版本与产物在I重新验证。A中F01/F02共享判断，不拆两个并发writer；B0可以先做纯非空约束，但不能先发明stance/category定义。F独立，不成为B实现的语义前置。集成master按现有serial exact-SHA规则，图不构成merge授权。
+每条lane都有RED→implementation→GREEN，图中E0不是测试作者。E1逐lane路由不需等I；B/C的contract版本定义先给A，实际新版本与产物在I重新验证。A中F01/F02共享判断，不拆两个并发writer；B0可以先做纯非空约束，但不能先发明 stance/正交状态/legacy 视图定义。F独立，不成为B实现的语义前置。集成master按现有serial exact-SHA规则，图不构成merge授权。
 
 ## 15. EXECUTION WAVES
 
 | Wave | 内容 | 并行及停止条件 |
 |---|---|---|
-| 0 | owner决定CD表；冻结B关系/版本、A复用、C空语义、D次数；必要Approved amendment双审；E0测试清单；F找receipt | 不实施产品。未决contract对应lane停；普通固定测试策略无需重开产品方向 |
+| 0 | owner决定CD表；冻结B关系/正交状态/版本（含CD-B4）、A复用、C空语义、D次数；必要Approved amendment双审；E0测试清单；F找receipt | 不实施产品。未决contract对应lane停；普通固定测试策略无需重开产品方向 |
 | 1 | A state；B0非空再B1语义；C投影；F窄文档；各自RED/GREEN及E1路由 | A/B/C主体可并行，但runtime prompt单writer，T15/identity接口先固定；C改T13/B改T14，别同时编辑共享adapter |
 | 2 | A审查后D接composer；A/B/C版本与T15消费者整合；E2完整offline/平台 | composer/coverage-final-integration统一整合owner，逐个合入，不并发改同branch；失败回原lane |
 | 3 | 对最终组合SHA independent review；live semantic revalidation；必要完整canonical acceptance | 不用单lane旧PASS冒充组合PASS；真实模型缺席标NOT_RUN；不自动进入#79 |
@@ -451,9 +493,9 @@ flowchart TD
 
 ## 17. POST-REPAIR REVALIDATION
 
-**DETERMINISTIC CONTRACT REVALIDATION**：A–D真实生产interface的正/边/负fixtures、C实际请求body、完整offline、必要platform、旧产物invalid/新产物reusable、B关系改变的identity传播、D冻结pool与count。保存exact SHA与所有版本、命令、原输出及skip。证明controller按proposal正确装配；不证明模型自然语言关系判断正确。
+**DETERMINISTIC CONTRACT REVALIDATION**：A–D真实生产interface的正/边/负fixtures、C实际请求body、完整offline、必要platform、旧产物invalid/新产物reusable、B关系/正交状态改变的identity传播、legacy单向派生与组内metadata保留、D冻结pool与count。保存exact SHA与所有版本、命令、原输出及skip。证明controller按proposal正确装配；不证明模型自然语言关系判断正确。
 
-**LIVE MODEL SEMANTIC REVALIDATION（需要）**：因为B改变关系表达、C改变模型可见语料，fake runtime不足。使用当前批准public runtime，固定公开/合成可出网材料与cost上限，先固定期望，再执行至少以下case族：同条件同向改写、同条件相反、不同条件/P50-P99、无关组内contradictory、未变化/多方向、明确unknown、嵌套代码被省略且正文证据保留、metadata-only来源。每族记录实际输入安全projection、proposal、controller关系、synthesis及引用；人工独立逐例核对，重大伪共识/伪冲突/无引用为FAIL，UNKNOWN不可伪报命中。重复次数/预算在执行前owner接受，至少每族一个独立holdout变体，禁止看输出后改期望。**正向命中同样是阻断门**：预注册为明确同条件同向的golden必须同family且ASSERTS，至少两个groups时按已批准category规则反映跨组支持；明确同条件反向的golden必须保留OPPOSES并披露conflicting。此类明确golden若输出全singleton、拆family或全UNRESOLVED，即使无伪共识且结构全绿，仍FAIL。只有预注册为信息不足/条件无法比较的case才允许UNKNOWN作为期望通过；不得看输出后重标ambiguous。额外加入all-singleton、family-splitting、all-unresolved负控制证明验收器会拒绝漏判。若owner要允许明确案例abstention率，须在运行前另行批准阈值/分母，默认本轮明确golden要求全部命中。样本通过只证明该范围，不能承诺一般语义正确率。
+**LIVE MODEL SEMANTIC REVALIDATION（需要）**：因为B改变关系表达、C改变模型可见语料，fake runtime不足。使用当前批准public runtime，固定公开/合成可出网材料与cost上限，先固定期望，再执行至少以下case族：同条件同向改写、同条件相反、不同条件/P50-P99、无关组内contradictory、未变化/多方向、明确unknown、嵌套代码被省略且正文证据保留、metadata-only来源。每族记录实际输入安全projection、proposal、controller关系、synthesis及引用；人工独立逐例核对，重大伪共识/伪冲突/无引用为FAIL，UNKNOWN不可伪报命中。重复次数/预算在执行前owner接受，至少每族一个独立holdout变体，禁止看输出后改期望。**正向命中同样是阻断门**：预注册为明确同条件同向的golden必须同family且ASSERTS，至少两个支持groups时必须 supportBreadth=MULTI_GROUP；明确同条件反向的golden必须保留OPPOSES并披露 relationStatus=CONFLICTING。必须加入同一 P 的 A/B/C 三个支持组 + D/E 两个反对组 golden，期望同一条输出同时为 CONFLICTING + MULTI_GROUP（即 MULTI_GROUP_SUPPORT）；若只能输出 legacy conflicting 并丢失 breadth，semantic revalidation FAIL。另核对两组 minority 支持仍 MULTI_GROUP 且保留逐 claim metadata、UNRESOLVED 不伪装为 group-specific、同 source 两侧 lineage 不丢失。此类明确golden若输出全singleton、拆family或全UNRESOLVED，即使无伪共识且结构全绿，仍FAIL。只有预注册为信息不足/条件无法比较的case才允许UNKNOWN作为期望通过；不得看输出后重标ambiguous。额外加入all-singleton、family-splitting、all-unresolved负控制证明验收器会拒绝漏判。若owner要允许明确案例abstention率，须在运行前另行批准阈值/分母，默认本轮明确golden要求全部命中。样本通过只证明该范围，不能承诺一般语义正确率。
 
 **FULL CANONICAL ACCEPTANCE**：上述通过后，按当前canonical-runner声明的pipeline/runtime及最新合同运行真实retrieval→capture→verify→handoff→dense→T13→T14→T15；原始依赖bytes可取回并独立复算绑定；selected/analyzed全等、引用方向与反面保留经审查、无silent fallback、费用/模型/语料授权齐备，exact组合SHA独立验收。若语料不同，不要求复现历史396/14/2等数值；历史T16数字不是目标。
 
@@ -476,6 +518,8 @@ POST_REPAIR_NEXT_CANDIDATE = #79 Minimum Observatory / Option A
 | over-invalidation | 不用全git SHA作所有stage版本；局部失效、valid sibling保留；docs/log/credential rotation正控制 |
 | under-invalidation | 检查transitive closure及effective defaults；legacy缺版本不可猜；同count改内容负例 |
 | semantic overclassification | aspect不当proposition；scope差异/UNKNOWN不归冲突/共识；独立live holdout |
+| synthesis dimension collapse | relation/conflict ≠ support breadth ≠ group-local salience ≠ global consensus；Case B/D 阻断检查，minority 只保留原 claim metadata |
+| legacy reverse authority | canonical → legacy 单向展示；diagnostics/消费者不得读 category 推断语义；UNRESOLVED 不填旧类别，旧必填接口拒绝不兼容；版本隔离并 re-synthesis，不猜迁移 |
 | model over-authority | 只提语义，controller处理ID/partition/lineage；明示语义不能被hash证明 |
 | new provenance break | 关系两侧都追溯sourceClaim；无第二analyzed writer/canonical store；方向变化identity变化 |
 | performance regression | S1线性relation输出；闭包hash可一次读取共享依赖；测实际耗时/内存，不加未经证实cache跳过验证 |
@@ -487,13 +531,15 @@ POST_REPAIR_NEXT_CANDIDATE = #79 Minimum Observatory / Option A
 ## 20. NEXT LEGAL ACTION
 
 ```text
-NEXT_LEGAL_ACTION = CONTRACT_DECISION_REQUIRED
+F-RP-01 = CLOSED (executor self-review; external re-review pending)
+REPAIR_PLAN_STATUS = READY_FOR_FINDING_SCOPED_REVIEW
+READY_TO_DECOMPOSE_REPAIR_TICKETS = NO
+OWNER_DECISIONS = PROPOSED / PENDING OWNER DECISION
+NEXT_LEGAL_ACTION = FINDING_SCOPED_EXTERNAL_REVIEW
 ```
 
-先独立审查本草稿，裁决§1的owner选项并完成必要契约review；只有决策记录、版本规则、accepted expected behaviors齐备，才进入 `READY_TO_DECOMPOSE_REPAIR_TICKETS` 的下一授权阶段。本轮不创建票、不实现、不修改product/tests/specs/AGENTS/RULES/memory/issues、不commit/push/PR/merge。
+将本次窄修订的远端 branch / exact candidate SHA 交给外部 reviewer，仅复核 F-RP-01：relation/conflict、support breadth、group-local salience 不折叠，UNRESOLVED 不被旧类别替代，legacy category 不反向驱动语义。执行者的 CLOSED / SELF_REVIEW 不代替外部独立结论；先前 supporting/contract-review.md 与 contract-rereview.md 仅绑定其历史主稿哈希，不覆盖本候选，也不改写原 receipt。
 
-本轮产出：此20节计划、临时probe重跑JSON、D2只读remote receipts和三份分工调查草稿。使用code-review、improve-codebase-architecture、codebase-design及GitHub技能的适用部分；用户本轮限定输出优先，不执行技能中的广泛扫描、HTML候选选择或领域文档写入。子代理Architecture负责A/D，Standards负责C/F，publication_check负责E；主审负责B、authority交叉核对、计划整合与最终自校验。未调用Claude Code实施，因为本轮无实施授权。规则、门禁、项目文档和memory均未更新；本文件仅scratch草稿。
+外部定向复核后，仍需 owner 裁决 §1 的 CD-B1/B2/B3/B4 等候选并完成必要契约 review；只有决策记录、版本规则、accepted expected behaviors 齐备且获得下一阶段授权，才可进入票据拆分。当前不创建票、不实现、不改 product/tests/Spec/AGENTS/RULES/project-memory/Issues/CI，不创建 PR、不 merge。此次授权仅允许从 565647b7f6cbb5abb8aaccff3d3c3ef5e7e1296e 新建窄分支、提交/推送计划包和更新 SHA256SUMS，不覆盖原 evidence branch。
 
-### 本草稿文档检查记录
-
-主审自检20节齐全、六lane要求字段齐全，三份fresh probe JSON与审计observed深比较一致。整合review指出并已修正：UNRESOLVED与anchor规则混用、resume零调用范围过宽、误称现有framing不可伪造。另一个未参与本轮起草的Contract reviewer提出明确golden必须有正向命中，已补入§17的blocking条件与退避负控制。该过程是计划文档检查，不是产品修复PASS，不代替owner的CD决策；review receipt及后续复核身份单列保存。
+本轮修订与 finding-scoped 自检见 [supporting/f-rp-01-self-review.md](supporting/f-rp-01-self-review.md)。原 §2–4 的审计状态、probe 结果与 supporting 历史调查保持原时态；本轮没有重跑原 probes、产品 tests 或 live semantic validation，不将计划条款写成已实现证据。
