@@ -16,6 +16,7 @@
     { "file": "p1-t14-cross-group-synthesis.test.mjs", "category": "fast-deterministic" },
     { "file": "p1-t15-coverage-final-integration.test.mjs", "category": "fast-deterministic" },
     { "file": "p1-t15-runtime-composition-wiring.test.mjs", "category": "fast-deterministic" },
+    { "file": "p1-r02-occurrence-restart.test.mjs", "category": "fast-deterministic", "note": "P1-R02 (#90): real-composer restart/occurrence isolation regression; injected test doubles only, offline temp workDirs" },
 
     { "file": "coverage-state.test.mjs", "category": "full-offline" },
     { "file": "dense-geometry.test.mjs", "category": "full-offline" },

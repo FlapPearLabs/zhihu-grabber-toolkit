@@ -13,6 +13,7 @@
  */
 
 import crypto from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -58,10 +59,18 @@ export function runIdentityHash({ topic, mode, percent, runtime }) {
   return sha256(JSON.stringify({ topic, mode, percent, runtime }));
 }
 
-export function makeState({ workDir, topic, mode, percent, runtime, forceQuestionId }) {
+export function makeState({ workDir, topic, mode, percent, runtime, forceQuestionId, occurrenceId }) {
   return {
     schemaVersion: STATE_SCHEMA_VERSION,
     runId: runIdentityHash({ topic, mode, percent, runtime }),
+    // P1-R02 (#90): occurrence identity — a single execution of a (request, config)
+    // binding. Distinct from the stable runId (normalized request + config). A
+    // restart, or any non-resumable prior state, starts a NEW occurrence; an
+    // ordinary process-restart resume of the SAME prior state continues the same
+    // occurrence. The composer enforces the occurrence boundary (fresh plan
+    // proposal + archiving the prior occurrence's derived T09 state) — the id
+    // itself is the recorded identity, never a derived-state dependency key.
+    occurrenceId: typeof occurrenceId === 'string' && occurrenceId.length > 0 ? occurrenceId : randomUUID(),
     topic,
     mode,
     percent,

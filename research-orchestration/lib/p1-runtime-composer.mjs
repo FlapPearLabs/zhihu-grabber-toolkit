@@ -46,7 +46,8 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -67,6 +68,7 @@ import {
 } from './coverage-final-integration.mjs';
 import { DECISION_PROVIDER_FAILURE } from './retrieval-round-controller.mjs';
 import { SELECTION_DECISION_FILENAME } from './source-group-selection.mjs';
+import { MULTI_GROUP_STATE_FILENAME } from './multi-group-execution.mjs';
 import { CAPABILITY_SEARCH, createProviderSeam } from './provider-seam.mjs';
 import { createOfficialSearchAdapter } from './official-search-provider.mjs';
 import { createGlobalSearchAdapter } from './global-search-provider.mjs';
@@ -131,6 +133,38 @@ const CFC_SYNTHESIS_FAILED = 'synthesis_failed';
 const CFC_INCOMPLETE_ANALYSIS = 'incomplete_analysis';
 const CFC_ABORTED = 'p1_compose_aborted';
 const CFC_CLARIFICATION_REQUIRED = 'clarification_required';
+
+/**
+ * P1-R02 (#90, Issue #90): derived-state occurrence isolation.
+ *
+ * The frozen T09 resume authority (multi-group-execution resumeMultiGroupExecution)
+ * keys derived research stages on (planHash, selectionIdentity,
+ * selectionDecisionHash) — a stable CONTENT identity. That is exactly right for
+ * ordinary process-restart resume, but it cannot express that a NEW execution
+ * occurrence began: an explicit restart with an identical canonical planHash
+ * (same topic re-run) would otherwise silently reuse the PRIOR occurrence's
+ * captured/verified group state.
+ *
+ * The occurrence boundary is drawn here, in the composer (the component that
+ * owns occurrence identity), WITHOUT editing the frozen T09/T08 primitives and
+ * WITHOUT deleting canonical data: when a new occurrence starts, the prior
+ * occurrence's T09 derived state file is ARCHIVED intact (bytes preserved under
+ * a fixed `.prior-occurrence.bak` sibling). The T09 resume authority then finds
+ * no state and creates a fresh one through its own fail-closed validation
+ * (decision planHash binding stays on the canonical planHash — comparable
+ * across occurrences). Ordinary same-occurrence resume never archives, so
+ * valid plan / group-level reuse is preserved (full cross-stage zero-recompute
+ * closure is P1-R06's scope, NOT claimed here).
+ */
+const PRIOR_OCCURRENCE_ARCHIVE_SUFFIX = '.prior-occurrence.bak';
+
+function archivePriorOccurrenceDerivedState(workDir, occurrenceId) {
+  const file = path.join(workDir, MULTI_GROUP_STATE_FILENAME);
+  if (!existsSync(file)) return false;
+  renameSync(file, path.join(workDir, `${MULTI_GROUP_STATE_FILENAME}${PRIOR_OCCURRENCE_ARCHIVE_SUFFIX}`));
+  appendEvent(workDir, { event: 'prior_occurrence_state_archived', occurrenceId, file: MULTI_GROUP_STATE_FILENAME });
+  return true;
+}
 
 // ---------------------------------------------------------------------------
 // global_search sync transport bridge (composition layer's IO concern)
@@ -293,8 +327,12 @@ export async function composeP1Research({
   config = undefined,
   usageSink = null,
   restart = false,
+  planner = null,
 } = {}) {
   const fail = (code, details = null, extra = {}) => ({ ok: false, code, details: details ? sanitizeMessage(details) : null, ...extra });
+  // P1-R02 (#90): planner is injected for tests; production uses the frozen
+  // proposeResearchPlan. (Mirrors the existing runtime/seam/capture/runner seams.)
+  const propose = typeof planner === 'function' ? planner : proposeResearchPlan;
 
   // 0. input validation (USER_REQUEST class — normal validation, §10.1).
   if (!isNonEmptyString(topic) || topic.trim().length > 2000) {
@@ -317,9 +355,10 @@ export async function composeP1Research({
 
   // 1. State bootstrap / resume classification (checkpoint identity validated —
   //    FILE EXISTS != VALID CACHE). restart discards any prior checkpoint and
-  //    starts fresh (the canonical runner always passes --restart so canonical
-  //    evidence can never ride on a checkpoint from an earlier, possibly
-  //    noncanonical run).
+  //    starts a NEW occurrence (the canonical runner always passes --restart so
+  //    canonical evidence can never ride on a checkpoint from an earlier, possibly
+  //    noncanonical run). A new occurrence always proposes a fresh plan and never
+  //    silently reuses a prior occurrence's plan/derived state.
   const existing = restart ? null : readState(workDir);
   if (existing) {
     if (existing.runId !== runId) {
@@ -357,10 +396,32 @@ export async function composeP1Research({
     // is legal (Spec §4.3), and the T09 resume authority reuses still-valid groups.
   }
 
-  const state = makeState({ workDir, topic: normalizedTopic, mode, percent: null, runtime: effectiveRuntime.runtimeId });
+  // P1-R02 (#90): occurrence identity. An ordinary (non-restart) resume of a
+  // still-resumable prior checkpoint CONTINUES the same occurrence (same
+  // occurrenceId → plan/group reuse is preserved). Any other path (explicit
+  // restart, or no resumable prior state) is a NEW occurrence with a fresh id.
+  // The occurrenceId — NOT the stable runId, NOT the stochastic planHash — is
+  // what makes a restart a distinct execution (TARGET_CONTRACT: request/config
+  // separation from occurrence).
+  const isResumingOccurrence = !restart && !!existing
+    && existing.runId === runId
+    && existing.stage !== STAGE_COMPLETE
+    && existing.stage !== STAGE_FAILED;
+  const occurrenceId = isResumingOccurrence && typeof existing.occurrenceId === 'string' && existing.occurrenceId.length > 0
+    ? existing.occurrenceId
+    : randomUUID();
+
+  // P1-R02 (#90): a NEW occurrence must not consume the prior occurrence's
+  // derived research stages (T09 state) — archive them intact (bytes preserved)
+  // so the frozen T09 resume authority starts fresh for this occurrence.
+  if (!isResumingOccurrence) {
+    archivePriorOccurrenceDerivedState(workDir, occurrenceId);
+  }
+
+  const state = makeState({ workDir, topic: normalizedTopic, mode, percent: null, runtime: effectiveRuntime.runtimeId, occurrenceId });
   state.stage = STAGE_SEARCH;
   writeState(workDir, state);
-  appendEvent(workDir, { event: 'p1_compose_begin', runId, mode, runtime: effectiveRuntime.runtimeId });
+  appendEvent(workDir, { event: 'p1_compose_begin', runId, mode, runtime: effectiveRuntime.runtimeId, occurrenceId, resuming: isResumingOccurrence });
 
   const persistFailure = (code, details = null, extra = {}) => {
     state.stage = STAGE_FAILED;
@@ -375,6 +436,15 @@ export async function composeP1Research({
     //    plan, else propose through the pinned planner — never both). The
     //    injected plan is persisted through the same validate-then-write
     //    contract so the plan artifact always exists for identity binding.
+    //
+    //    P1-R02 (#90) occurrence binding: the plan is reused from disk ONLY when
+    //    this is an ORDINARY resume of the SAME occurrence (isResumingOccurrence)
+    //    AND the on-disk plan validates. An explicit restart — or any
+    //    non-resumable prior state — is a NEW occurrence and ALWAYS re-proposes a
+    //    fresh plan; a stale plan left in the work dir by a prior occurrence is
+    //    never silently loaded (the stable runId does NOT express a new
+    //    execution having occurred). The canonical plan bytes/hash remain
+    //    comparable; only the occurrence binding is what isolates executions.
     let plan = injectedPlan;
     let expectedPlanHash = null;
     if (plan) {
@@ -383,20 +453,42 @@ export async function composeP1Research({
         return persistFailure(CFC_PLANNER_FAILED, persisted.reason ?? 'plan_invalid');
       }
       expectedPlanHash = persisted.planHash;
-    } else {
+      appendEvent(workDir, { event: 'plan_persisted', planHash: expectedPlanHash, occurrenceId });
+    } else if (isResumingOccurrence) {
       const loaded = loadPlan(workDir);
       if (loaded.ok) {
         plan = loaded.plan;
         expectedPlanHash = loaded.planHash;
-        appendEvent(workDir, { event: 'plan_reused', planHash: expectedPlanHash });
+        appendEvent(workDir, { event: 'plan_reused', planHash: expectedPlanHash, occurrenceId });
       } else {
-        const proposed = await proposeResearchPlan({ userRequest: normalizedTopic, workDir, fetchImpl, usageSink });
+        const proposed = await propose({ userRequest: normalizedTopic, workDir, fetchImpl, usageSink });
         if (!proposed.ok) {
           return persistFailure(CFC_PLANNER_FAILED, proposed.details ?? proposed.reason, { plannerReason: proposed.reason ?? null });
         }
+        // Persist the proposed plan through the same validate-then-write
+        // contract (idempotent when the production planner already wrote it;
+        // required when an injected planner seam returns without writing) so
+        // the on-disk plan artifact always matches the executed plan.
+        const persisted = persistPlan(workDir, proposed.plan);
+        if (!persisted.ok) {
+          return persistFailure(CFC_PLANNER_FAILED, persisted.reason ?? 'plan_invalid');
+        }
         plan = proposed.plan;
-        expectedPlanHash = proposed.planHash;
+        expectedPlanHash = persisted.planHash;
+        appendEvent(workDir, { event: 'plan_proposed', planHash: expectedPlanHash, occurrenceId });
       }
+    } else {
+      const proposed = await propose({ userRequest: normalizedTopic, workDir, fetchImpl, usageSink });
+      if (!proposed.ok) {
+        return persistFailure(CFC_PLANNER_FAILED, proposed.details ?? proposed.reason, { plannerReason: proposed.reason ?? null });
+      }
+      const persisted = persistPlan(workDir, proposed.plan);
+      if (!persisted.ok) {
+        return persistFailure(CFC_PLANNER_FAILED, persisted.reason ?? 'plan_invalid');
+      }
+      plan = proposed.plan;
+      expectedPlanHash = persisted.planHash;
+      appendEvent(workDir, { event: 'plan_proposed', planHash: expectedPlanHash, occurrenceId, restart: restart === true });
     }
 
     // 3. Provider seam (official zhihu_search + global_search — NO substitution).
