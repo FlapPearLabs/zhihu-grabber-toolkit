@@ -1,0 +1,113 @@
+{
+  "seam": "T14_TO_T15",
+  "seamVersion": 2,
+  "semanticContractVersion": 2,
+  "planHash": "5f1a2b3c4d5e6f708192a3b4c5d6e7f80112233445566778899aabbccddeeff0",
+  "preSynthesisGuard": {
+    "guardResult": "PASS",
+    "selectedVerifiedSourceSetIdentity": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "mappedAnalyzedSourceSetIdentity": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+  },
+  "synthesis": {
+    "synthesisIdentity": "sha256:e25ae9627120e8f9457a33cd31aeef0e4d6bdeadd7096619bd7ed61cb9c7d4c7",
+    "families": [
+      {
+        "familyKey": "fam-a-1",
+        "aspect": "总体有效性（被篡改）",
+        "anchor": {
+          "sourceClaimId": "c-11111111-001",
+          "statement": "该做法在多数场景下有效"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-11111111-001",
+            "stance": "ASSERTS"
+          },
+          {
+            "sourceClaimId": "c-22222222-001",
+            "stance": "ASSERTS"
+          },
+          {
+            "sourceClaimId": "c-33333333-001",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-11111111-001",
+            "statement": "该做法在多数场景下有效",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "11111111-a-101",
+                "groupId": "11111111",
+                "authorRef": "author-aaaaaaaaaaaaaaaa"
+              }
+            ]
+          },
+          {
+            "sourceClaimId": "c-22222222-001",
+            "statement": "该做法在多数场景下有效",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "22222222-a-201",
+                "groupId": "22222222",
+                "authorRef": "author-bbbbbbbbbbbbbbbb"
+              }
+            ]
+          },
+          {
+            "sourceClaimId": "c-33333333-001",
+            "statement": "该做法在多数场景下有效",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "33333333-a-301",
+                "groupId": "33333333",
+                "authorRef": "author-cccccccccccccccc"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "MULTI_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-11111111-001",
+            "sourceRef": "11111111-a-101",
+            "groupId": "11111111",
+            "authorRef": "author-aaaaaaaaaaaaaaaa"
+          },
+          {
+            "sourceClaimId": "c-22222222-001",
+            "sourceRef": "22222222-a-201",
+            "groupId": "22222222",
+            "authorRef": "author-bbbbbbbbbbbbbbbb"
+          },
+          {
+            "sourceClaimId": "c-33333333-001",
+            "sourceRef": "33333333-a-301",
+            "groupId": "33333333",
+            "authorRef": "author-cccccccccccccccc"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": true
+      }
+    ],
+    "unresolved": [],
+    "groupDifferences": [],
+    "evidenceStrength": [],
+    "discussionVolumeDifferences": {
+      "byGroup": {}
+    }
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "claim_source_diversity": 1
+  }
+}

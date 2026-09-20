@@ -1,0 +1,92 @@
+{
+  "seam": "T14_TO_T15",
+  "seamVersion": 2,
+  "semanticContractVersion": 2,
+  "planHash": "5f1a2b3c4d5e6f708192a3b4c5d6e7f80112233445566778899aabbccddeeff0",
+  "preSynthesisGuard": {
+    "guardResult": "PASS",
+    "selectedVerifiedSourceSetIdentity": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "mappedAnalyzedSourceSetIdentity": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+  },
+  "synthesis": {
+    "synthesisIdentity": "sha256:75387eb0a0b896ceafe826ea418bbff38b490db8707ba50dd3b6edc7943dd911",
+    "families": [
+      {
+        "familyKey": "fam-f-1",
+        "aspect": "同一来源的相反断言",
+        "anchor": {
+          "sourceClaimId": "c-11111111-006",
+          "statement": "来源 A 声称该配置能提升吞吐"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-11111111-006",
+            "stance": "ASSERTS"
+          },
+          {
+            "sourceClaimId": "c-11111111-007",
+            "stance": "OPPOSES"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-11111111-006",
+            "statement": "来源 A 声称该配置能提升吞吐",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "11111111-a-106",
+                "groupId": "11111111",
+                "authorRef": "author-aaaaaaaaaaaaaaaa"
+              }
+            ]
+          },
+          {
+            "sourceClaimId": "c-11111111-007",
+            "statement": "同一来源的另一条回答声称该配置会降低吞吐",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "11111111-a-106",
+                "groupId": "11111111",
+                "authorRef": "author-aaaaaaaaaaaaaaaa"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "CONFLICTING",
+        "supportBreadth": "SINGLE_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-11111111-006",
+            "sourceRef": "11111111-a-106",
+            "groupId": "11111111",
+            "authorRef": "author-aaaaaaaaaaaaaaaa"
+          }
+        ],
+        "oppose": [
+          {
+            "sourceClaimId": "c-11111111-007",
+            "sourceRef": "11111111-a-106",
+            "groupId": "11111111",
+            "authorRef": "author-aaaaaaaaaaaaaaaa"
+          }
+        ],
+        "expertEvidenceRichSupport": false
+      }
+    ],
+    "unresolved": [],
+    "groupDifferences": [],
+    "evidenceStrength": [],
+    "discussionVolumeDifferences": {
+      "byGroup": {}
+    }
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 1,
+    "claim_source_diversity": 1
+  }
+}

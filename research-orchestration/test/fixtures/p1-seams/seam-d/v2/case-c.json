@@ -1,0 +1,69 @@
+{
+  "seam": "T14_TO_T15",
+  "seamVersion": 2,
+  "semanticContractVersion": 2,
+  "planHash": "5f1a2b3c4d5e6f708192a3b4c5d6e7f80112233445566778899aabbccddeeff0",
+  "preSynthesisGuard": {
+    "guardResult": "PASS",
+    "selectedVerifiedSourceSetIdentity": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "mappedAnalyzedSourceSetIdentity": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+  },
+  "synthesis": {
+    "synthesisIdentity": "sha256:70244417aa58bbbbffbaab275cde007761fec40f9b9d7fc57ed3b73af4433d3b",
+    "families": [
+      {
+        "familyKey": "fam-c-1",
+        "aspect": "特定条件下的适用性",
+        "anchor": {
+          "sourceClaimId": "c-11111111-003",
+          "statement": "该做法仅在冷启动阶段有效"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-11111111-003",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-11111111-003",
+            "statement": "该做法仅在冷启动阶段有效",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "11111111-a-103",
+                "groupId": "11111111",
+                "authorRef": "author-aaaaaaaaaaaaaaaa"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-11111111-003",
+            "sourceRef": "11111111-a-103",
+            "groupId": "11111111",
+            "authorRef": "author-aaaaaaaaaaaaaaaa"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": false
+      }
+    ],
+    "unresolved": [],
+    "groupDifferences": [],
+    "evidenceStrength": [],
+    "discussionVolumeDifferences": {
+      "byGroup": {}
+    }
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "claim_source_diversity": 1
+  }
+}

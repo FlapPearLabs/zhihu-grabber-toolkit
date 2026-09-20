@@ -1,0 +1,91 @@
+{
+  "seam": "T14_TO_T15",
+  "seamVersion": 2,
+  "semanticContractVersion": 2,
+  "planHash": "5f1a2b3c4d5e6f708192a3b4c5d6e7f80112233445566778899aabbccddeeff0",
+  "preSynthesisGuard": {
+    "guardResult": "PASS",
+    "selectedVerifiedSourceSetIdentity": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "mappedAnalyzedSourceSetIdentity": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+  },
+  "synthesis": {
+    "synthesisIdentity": "sha256:aa64a6bf2b3fcaa9b0dc2c30eb9392d6fbbf1821d23b7312bb1296c839e2a5aa",
+    "families": [
+      {
+        "familyKey": "fam-d-1",
+        "aspect": "长尾场景有效性",
+        "anchor": {
+          "sourceClaimId": "c-11111111-004",
+          "statement": "少数用户报告该做法在长尾场景下仍然有效"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-11111111-004",
+            "stance": "ASSERTS"
+          },
+          {
+            "sourceClaimId": "c-22222222-004",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-11111111-004",
+            "statement": "少数用户报告该做法在长尾场景下仍然有效",
+            "kind": "minority",
+            "sourceRefs": [
+              {
+                "sourceRef": "11111111-a-104",
+                "groupId": "11111111",
+                "authorRef": "author-aaaaaaaaaaaaaaaa"
+              }
+            ]
+          },
+          {
+            "sourceClaimId": "c-22222222-004",
+            "statement": "少数用户报告该做法在长尾场景下仍然有效",
+            "kind": "minority",
+            "sourceRefs": [
+              {
+                "sourceRef": "22222222-a-204",
+                "groupId": "22222222",
+                "authorRef": "author-bbbbbbbbbbbbbbbb"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "MULTI_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-11111111-004",
+            "sourceRef": "11111111-a-104",
+            "groupId": "11111111",
+            "authorRef": "author-aaaaaaaaaaaaaaaa"
+          },
+          {
+            "sourceClaimId": "c-22222222-004",
+            "sourceRef": "22222222-a-204",
+            "groupId": "22222222",
+            "authorRef": "author-bbbbbbbbbbbbbbbb"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": false
+      }
+    ],
+    "unresolved": [],
+    "groupDifferences": [],
+    "evidenceStrength": [],
+    "discussionVolumeDifferences": {
+      "byGroup": {}
+    }
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "claim_source_diversity": 1
+  }
+}
