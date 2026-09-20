@@ -29,9 +29,12 @@
  *     (retrieval_provider_contract_invalid);
  *   - contradictory ok:true + top-level failure → FAIL CLOSED
  *     (retrieval_provider_contract_invalid) — narrow hasOwnProperty guard (P1-2);
- *   - within-channel duplicate questionId → FAIL CLOSED
- *     (retrieval_provider_contract_invalid) via the rrf hard error, independent
- *     of item array order (item-order-independence, P1-4);
+ *   - within-channel duplicate questionId → resolved by rrf D2 rules, NOT a
+ *     blanket FAIL CLOSED: the lowest explicit rank contributes once (equal-best
+ *     equivalent payloads fold); only an equal-best CONFLICTING projected payload
+ *     fails closed as FUSION_DUPLICATE_CONFLICT (proxied to
+ *     retrieval_provider_contract_invalid); the resolution is item-order
+ *     independent (P1-4);
  *   - provider failure diagnostics are SAFE-PROJECTED to their machine-readable
  *     { code, class } identity at the T06 boundary; raw detail / path-bearing /
  *     non-JSON-safe (BigInt/cyclic) payloads never reach output, the pool

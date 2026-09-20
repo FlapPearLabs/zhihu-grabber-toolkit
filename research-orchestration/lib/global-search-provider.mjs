@@ -97,10 +97,12 @@
  *     (SOURCE_URL_BOUNDARY_REJECTED). There is NO adapter-level per-response
  *     duplicate policy (PR #73 round-2 C3): every well-formed question-bearing
  *     item is emitted as a candidate; if one response contains the same
- *     question more than once, the duplicates reach rrfFusion() and the frozen
- *     T06 FUSION_DUPLICATE_IN_CHANNEL gate fails the channel closed — the
- *     adapter never decides duplicate policy that belongs to the fusion layer
- *     and never creates item-order-dependent RRF contributions.
+ *     question more than once, the duplicates reach rrfFusion() and are resolved
+ *     by the fusion layer's D2 rules (lowest explicit rank contributes once;
+ *     equal-best equivalent payloads fold; only an equal-best CONFLICTING
+ *     projected payload fails closed as FUSION_DUPLICATE_CONFLICT) — the adapter
+ *     never decides duplicate policy that belongs to the fusion layer and never
+ *     creates item-order-dependent RRF contributions.
  *
  * Candidate identity (T06 §5.4 fusion contract): only CANONICAL zhihu question
  * candidates fuse. Item URLs are resolved with the existing shared extractor
@@ -112,8 +114,9 @@
  * (non-object / missing Url / unparseable URL string) carries
  * CANDIDATE_IDENTITY_INVALID — never fused, never silently dropped. There is
  * NO adapter-level per-response duplicate policy (round-2 C3): same-question
- * duplicates pass through as candidates and the frozen T06
- * FUSION_DUPLICATE_IN_CHANNEL gate owns the failure. source_url reuses the
+ * duplicates pass through as candidates and are resolved by the fusion layer
+ * per D2 (lowest explicit rank contributes once; equal-best conflict →
+ * FUSION_DUPLICATE_CONFLICT). source_url reuses the
  * repository's shared `classifyUrl` security classifier; a rejected URL
  * becomes SOURCE_URL_BOUNDARY_REJECTED.
  *
@@ -165,8 +168,10 @@
  *           CANDIDATE_IDENTITY_INVALID (contract — genuinely unusable item:
  *           non-object / missing Url / unparseable URL string) /
  *           SOURCE_URL_BOUNDARY_REJECTED (boundary). Duplicate questions are
- *           NOT a per-item identity: they pass through to the frozen T06
- *           FUSION_DUPLICATE_IN_CHANNEL gate (PR #73 round-2 C3). Non-required
+ *           NOT a per-item identity: they pass through to the fusion layer, which
+ *           resolves them per D2 (lowest explicit rank contributes once;
+ *           equal-best conflict → FUSION_DUPLICATE_CONFLICT) — the adapter owns
+ *           no duplicate policy (PR #73 round-2 C3). Non-required
  *           / unconsumed fields are tolerated, never enforced (round-3 D3).
  *
  * Security / privacy: no credentials, no machine-private paths, no untrusted

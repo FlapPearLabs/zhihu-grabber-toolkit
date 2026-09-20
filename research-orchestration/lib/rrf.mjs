@@ -46,10 +46,14 @@ import { isDeepStrictEqual } from 'node:util';
  *     are dropped at the boundary so they can never reach the returned/persisted
  *     pool artifact, regardless of how much extra payload the upstream item
  *     failure carried.
- *   - a duplicate of an already-contributed candidate within the same channel is
- *     a CONTRACT VIOLATION → hard error (FUSION_DUPLICATE_IN_CHANNEL): "keep the
- *     first / reject the second" would make scores depend on item array order
- *     (P1-4), so a within-channel duplicate fails closed regardless of order;
+ *   - a duplicate of the same questionId within the same channel is resolved by
+ *     D2 rules rather than an unconditional hard error: the lowest explicit rank
+ *     contributes once (equal-best equivalent payloads fold deterministically);
+ *     only an equal-best CONFLICTING projected payload fails closed with
+ *     FUSION_DUPLICATE_CONFLICT. The resolution is item-order-independent (P1-4)
+ *     — no score depends on array position. The frozen FUSION_DUPLICATE_IN_CHANNEL
+ *     export stays allowlisted for backward compatibility but is no longer thrown
+ *     in current production behaviour;
  *   - a duplicate CHANNEL identity across rankings (same query + providerId +
  *     capability) is a CONTRACT VIOLATION → hard error (FUSION_DUPLICATE_CHANNEL)
  *     detected BEFORE any item traversal — even disjoint candidate sets cannot
