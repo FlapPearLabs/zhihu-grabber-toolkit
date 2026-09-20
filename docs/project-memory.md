@@ -233,6 +233,13 @@
   **不构成**实现禁止；#30 已作为其后继实现 ticket 完成（CLOSED / completed）。
 - **不创建 V0.4**：VERSION_ASSIGNMENT 保持 UNASSIGNED 直至另行单独授权；V0.4 versioning 与 Research Orchestration MVP 分离。
 
+## P1-R01 CI 分类机制（durable；#89 实现沉淀）
+
+- `research-orchestration/suite-classification.json` 是现有全部核心研究 suite 的权威登记清单，由 `research-orchestration/scripts/run-classified-research-suites.mjs` 强制执行：发现的任何核心 `*.test.mjs` 必须与清单一致（未登记的新增核心 test → CI 失败；清单 ghost 条目 → 失败），遗漏不会静默变绿。
+- 五分类：`fast-deterministic`（3 平台保留门，ci.yml `test` job 显式执行）、`full-offline`（Ubuntu 每 PR/master，`research-classification` job 执行）、`historical-compat`（需历史 Git 对象 → CI `fetch-depth: 0` 提供；固定 T09 producer SHA `4789382f36d179dc13957f2c23748f169875d7a2`）、`live-gated` / `private-canonical`（普通 PR 中 NOT_RUN，绝不计入 offline 通过率）。
+- R01 只拥有登记/分类路径；每个功能修复 owner 在自己的票内把 RED→GREEN 套件登记进同一清单（不要求未来修复测试已存在）。
+- `research-orchestration` 无需 `npm ci`：lib 仅用 `node:` builtins + 相对导入；`@xenova/transformers` 仅由 `lib/embedding-provider.mjs` 在真实模型加载时 lazy-import，当前无 suite 触发，故离线 CI 不需要该依赖。需真实 embedding 的 suite 必须登记 `requires.npmInstall:true` 并由此 owner 配齐依赖。
+
 ## P1 Multi-provider Retrieval — GATE-3 Qualification（APPROVED）
 
 - **GATE-3 accepted / qualified**：官方 `global_search` API（`zhihu-open-platform / global_search`）是当前 P1 multi-provider retrieval 设计中 Official Search（`zhihu_search`）之外的**第二个**query-keyed retrieval-ranked channel。

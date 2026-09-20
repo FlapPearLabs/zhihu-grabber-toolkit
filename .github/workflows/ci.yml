@@ -78,3 +78,49 @@ jobs:
           node --test research-orchestration/test/p1-t14-cross-group-synthesis.test.mjs
           node --test research-orchestration/test/p1-t15-coverage-final-integration.test.mjs
           node --test research-orchestration/test/p1-t15-runtime-composition-wiring.test.mjs
+
+      # P1-R01 (#89): research suite classification / omission guard.
+      # 该步骤在每次 PR / master push 的三个平台上执行。它校验提交的
+      # suite-classification.json 覆盖了 research-orchestration/test/ 下发现的每一个
+      # 核心 *.test.mjs（且无 ghost 条目）；任何未登记的新增核心 test 都会让本步骤失败，
+      # 从而避免遗漏静默变绿。live / private gated suites 在此只做登记核对（NOT_RUN 清单），
+      # 不在普通 PR 中执行。
+      - name: research suite registration guard
+        run: node research-orchestration/scripts/run-classified-research-suites.mjs guard
+
+  # P1-R01 (#89): full offline + historical-compatibility 分类执行。
+  # 在每次 PR / master push 的 Ubuntu 上执行可离线运行的研究套件
+  # （historical-compat + full-offline）；live-gated / private-canonical 套件仅作为
+  # NOT_RUN 报告，绝不计入 offline 通过率。历史 Git 对象通过 fetch-depth: 0 获取，
+  # 以满足 historical-compat 套件（p1-seam-a-producer-conformance 的固定 T09 producer SHA、
+  # p1-integration-harness 的 git archive）对历史对象的需求——浅 clone 会因对象缺失而失败。
+  research-classification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history for historical Git objects)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # 显式核验历史对象存在：historical-compat 套件依赖固定 T09 producer SHA
+      # 4789382f36d179dc13957f2c23748f169875d7a2（actions/checkout 默认 fetch-depth:1
+      # 的浅 clone 不含该对象，会让 git archive 失败）。对象缺失时给出明确失败信息，
+      # 而不是把 historical 套件静默跳过。
+      - name: Verify historical Git objects are present
+        run: |
+          PINNED_SHA=4789382f36d179dc13957f2c23748f169875d7a2
+          if ! git cat-file -e "${PINNED_SHA}^{commit}"; then
+            echo "HISTORICAL-GIT-OBJECT-MISSING: pinned T09 producer SHA ${PINNED_SHA} is not present in this checkout."
+            echo "The historical-compat suites (p1-seam-a-producer-conformance / p1-integration-harness) require it."
+            echo "Ensure the checkout provisions full history (fetch-depth: 0)."
+            exit 1
+          fi
+          echo "historical Git object present: ${PINNED_SHA}"
+
+      - name: research suite classification (full offline + historical; live/private NOT_RUN)
+        run: node research-orchestration/scripts/run-classified-research-suites.mjs full-offline

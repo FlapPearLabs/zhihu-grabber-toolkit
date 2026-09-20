@@ -1,0 +1,47 @@
+{
+  "schema": "research-suite-classification/1",
+  "_notes": "P1-R01 (#89) authoritative inventory + classification of existing research-orchestration core suites. Inventoried from research-orchestration/test/*.test.mjs on the frozen planning source master @ 5fd9fe00135e3f182cd106cf7b89b15246943d49. This manifest is the single source of truth for which research suites CI must execute; the runner (scripts/run-classified-research-suites.mjs) enforces it. Each suite has exactly one category. Future repair tickets register their own RED->GREEN suites here (R01 owns only the registration path). Per-suite `requires` flags execution needs the runner must honor: workingDirectory (repo-relative cwd contract; never a machine-specific absolute path), npmInstall (set true only if a suite triggers real embedding and needs @xenova/transformers — currently NONE, because embedding-provider.mjs lazy-imports it only on real model load and no current suite does). live-gated / private-canonical suites are NOT executed in ordinary PR CI; they are reported as NOT_RUN so their absence is never counted as offline success.",
+  "node": "22",
+  "categories": [
+    "fast-deterministic",
+    "full-offline",
+    "historical-compat",
+    "live-gated",
+    "private-canonical"
+  ],
+  "suites": [
+    { "file": "planner.test.mjs", "category": "fast-deterministic" },
+    { "file": "integration-preflight.test.mjs", "category": "fast-deterministic" },
+    { "file": "p1-t14-async-runtime-seam.test.mjs", "category": "fast-deterministic" },
+    { "file": "p1-t14-cross-group-synthesis.test.mjs", "category": "fast-deterministic" },
+    { "file": "p1-t15-coverage-final-integration.test.mjs", "category": "fast-deterministic" },
+    { "file": "p1-t15-runtime-composition-wiring.test.mjs", "category": "fast-deterministic" },
+
+    { "file": "coverage-state.test.mjs", "category": "full-offline" },
+    { "file": "dense-geometry.test.mjs", "category": "full-offline" },
+    { "file": "embedding-cache.test.mjs", "category": "full-offline" },
+    { "file": "embedding-provider.test.mjs", "category": "full-offline" },
+    { "file": "global-search-provider.test.mjs", "category": "full-offline" },
+    { "file": "multi-group-execution.test.mjs", "category": "full-offline" },
+    { "file": "orchestration.test.mjs", "category": "full-offline" },
+    { "file": "p1-canonical-runner.test.mjs", "category": "full-offline" },
+    { "file": "p1-claims-prompt-contract.test.mjs", "category": "full-offline" },
+    { "file": "p1-seam-contracts.test.mjs", "category": "full-offline" },
+    { "file": "p1-t12-rce-corpus-selector.test.mjs", "category": "full-offline" },
+    { "file": "p1-t13-group-representation-claims.test.mjs", "category": "full-offline" },
+    { "file": "plan-contract.test.mjs", "category": "full-offline" },
+    { "file": "provider-seam.test.mjs", "category": "full-offline" },
+    { "file": "retrieval-round-controller.test.mjs", "category": "full-offline" },
+    { "file": "retrieval.test.mjs", "category": "full-offline" },
+    { "file": "rrf.test.mjs", "category": "full-offline" },
+    { "file": "source-group-selection.test.mjs", "category": "full-offline" },
+
+    { "file": "p1-seam-a-producer-conformance.test.mjs", "category": "historical-compat" },
+    { "file": "p1-integration-harness.test.mjs", "category": "historical-compat", "requires": { "workingDirectory": "research-orchestration" } },
+
+    { "file": "p1-seam-c-real-conformance.test.mjs", "category": "live-gated", "absence": "live LM Studio runtime (P1_REAL_RUNTIME=1) absent in ordinary PR CI; env-gated, offline variant covers deterministic assertions" },
+    { "file": "p1-seam-d-real-conformance.test.mjs", "category": "live-gated", "absence": "live LM Studio runtime (P1_REAL_RUNTIME=1) absent in ordinary PR CI; env-gated, offline variant covers deterministic assertions" },
+
+    { "file": "p1-seam-b-real-conformance.test.mjs", "category": "private-canonical", "absence": "private dogfood corpora (P1_REAL_DOGFOOD_ROOT / P1_REAL_EMBEDDINGS_JSON) absent in ordinary PR CI" }
+  ]
+}
