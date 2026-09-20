@@ -286,6 +286,15 @@
 - **运行时组合入口（P1-T15 post-merge 接线修复沉淀，2026-09-10）**：canonical 生产/验收执行路径 = 专用入口 `research-orchestration/bin/research-p1.mjs` → `lib/p1-runtime-composer.mjs`（组合 owner 阶段函数的**唯一**生产驱动方）→ `lib/coverage-final-integration.mjs`。`bin/canonical-runner.mjs` 仅改路由常量（RESEARCH_ENTRY_REL）指向该入口；v0.3 单问题 CLI 不是 canonical P1 路径、永不回退（机械 pin：入口零 fallback import、负向静态断言）。composer 只在成功路径写 `state.p1FinalCoveragePlanHash`（render 缝唯一生产写者）；失败/partial/clarification 一律 fail closed、绑定保持 null（v0.3 sampled run 天然不受影响）。DeepSeek 语义运行时适配器（`lib/deepseek-research-runtime.mjs`）双 pin runtimeId/model（planner-pinned twin，复用 planner 信封校验；有界传输重试不裁决内容——内容校验只属 T13/T14 冻结控制器）。global_search 检索 transport = composer 层同步桥（T05 seam 同步性；子进程自解析 Access Secret，仅 `{status,body}` 跨界，凭据不进 composer/seam/adapter）。P1 入口只接受 `--runtime deepseek-api-tool-less`，其余 invalid_input fail closed。CE1–CE8 wiring 反例 = `test/p1-t15-runtime-composition-wiring.test.mjs`。
 - **canonical 请求路由（OWNER RULING 2026-09-10，provider 换代兼容修复沉淀）**：授权请求模型 id = `deepseek-v4-pro`（DeepSeek runtimeId 不变 `deepseek-api-tool-less`；provider 可能将该请求路由到其当前 Flash 代模型——owner 明确接受）。provider 侧响应 `model` 字符串（如 `deepseek-flash`）是**仅观测元数据**：记录但不作为任何身份门（corpus map 通道与 planner 信封校验均已移除 `response.model === 请求模型` 精确相等假设）。其余全部 fail-closed 保证不变：请求必须发往已授权 DeepSeek 端点、工具面禁用、结构化信封/内容合同、无任何 provider/localSmoke/v0.3 回退。历史成本/证据记录中的 `deepseek-v4-flash` 字样属 historical（v0.3 T11 时期），不构成当前 authority。
 
+## P1-R04 T13 Safe Projection（durable security invariant；#92 实现沉淀）
+
+- **单一 HTML Agent projection owner**：`research-orchestration/lib/safe-content-projection.mjs`（`SAFE_PROJECTION_VERSION`，交接 R06）。real canonical loader 的 raw-content 语义不变；安全投影只发生在 T13 的模型可见边界（`per-group-claim-extraction.mjs buildUntrustedProjection` 围栏之前）。
+- **投影策略（V2 §9.2.4–9.2.9）**：raw HTML / raw code body / 完整外链 URL / file URI / 伪造 UNTRUSTED_DATA 围栏与裸 `token=<n>` 片段一律不进 semantic request；代码正文 DEFAULT OMIT → 确定性 `[CODE_BLOCK language=... lines=N omitted_by_policy]` 元数据标记；标题/段落/列表/blockquote 与正常证据文字保留；无前方括号占位符与消毒原语复用（`corpus-anthology/lib/lmstudio-projection.mjs` sanitizeProjectionText + `zhihu-answer-grabber/src/markdown-security.js` escapeUntrustedMarkdownText + parse5 白名单 renderer `rich-renderer.js`，无第二 parser/sanitizer 框架）。
+- **环境可用性语义（durable）**：renderer 经 memoized dynamic import 加载；裸 checkout（无 zhihu-answer-grabber/node_modules）中 renderer=null 时不安全降级——**含 `<` 的 markup 内容一律 fail closed（PROJECTION_RENDERER_REQUIRED），纯文本仍走 escape+sanitize 确定性路径**。生产 canonical 路径（research-p1）始终已安装 parse5。
+- **Metadata-only accounting（CD-C1）**：投影后无可提取正文的来源发确定性 `[METADATA_ONLY no_extractable_text omitted_by_policy]` 标记进真实 T13 semantic request（不 skip、不跳过分析），其合法（可空）结果之后才计 analyzed；禁止凭 metadata 编造 claim。全部零 claim 时 T14_EMPTY_VERIFIED_INPUT fail closed 不变。
+- **许可方向检查（durable 结论）**：research-orchestration/zhihu-answer-grabber 均为 AGPL-3.0-only（同许可复用 renderer 合法）；AGPL 依赖 MIT（corpus-anthology）方向合法；MIT 包未新增对 AGPL 的依赖。
+- **诚实边界**：投影是有界防御，机械移除已枚举泄漏类并提高注入成本；不承诺 prompt injection 永不成功。投影信息损失（代码体、URL、路径 token、markup）为确定性有意损失。
+
 ## Maintenance Contract
 
 - 本文件是 **Git tracked durable project memory**；GitHub master 是最终权威版本。
