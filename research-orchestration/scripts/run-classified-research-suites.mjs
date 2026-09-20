@@ -194,17 +194,30 @@ async function runFullOffline(manifest) {
   let totalFail = 0;
   const byCat = {};
   for (const r of results) {
+    // P2a (reviewer NON_BLOCKING finding): the parsed `# fail` count alone is NOT
+    // sufficient to judge PASS/FAIL. A suite killed by this runner's own 180s SIGKILL
+    // timeout (rc = -1, no `# fail` line emitted) — or any non-zero child exit — would
+    // otherwise be reported with fail=0 and silently turn GREEN. That is exactly the
+    // invariant R01 exists to forbid ("omissions must never silently turn green" /
+    // "every registered executable suite must actually be executed"). Verify the child
+    // exit status and fail hard when it is non-zero.
+    const status = r.fail > 0 ? 'FAIL' : r.skipped > 0 ? 'PASS(skip)' : 'PASS';
+    process.stdout.write(
+      `  [${r.category}] ${r.file}: tests=${r.tests} pass=${r.pass} fail=${r.fail} ` +
+        `skip=${r.skipped} rc=${r.rc} -> ${r.rc !== 0 ? 'FAIL' : status}\n`,
+    );
+    if (r.rc !== 0) {
+      fail(
+        `suite ${r.file} exited non-zero (rc=${r.rc}); a killed/timed-out or crashing ` +
+          `suite must not silently turn green`,
+      );
+    }
     byCat[r.category] = byCat[r.category] || { tests: 0, pass: 0, fail: 0, skipped: 0 };
     byCat[r.category].tests += r.tests;
     byCat[r.category].pass += r.pass;
     byCat[r.category].fail += r.fail;
     byCat[r.category].skipped += r.skipped;
     totalFail += r.fail;
-    const status = r.fail > 0 ? 'FAIL' : r.skipped > 0 ? 'PASS(skip)' : 'PASS';
-    process.stdout.write(
-      `  [${r.category}] ${r.file}: tests=${r.tests} pass=${r.pass} fail=${r.fail} ` +
-        `skip=${r.skipped} -> ${status}\n`,
-    );
   }
 
   process.stdout.write('\nCATEGORY TOTALS (executed offline):\n');
