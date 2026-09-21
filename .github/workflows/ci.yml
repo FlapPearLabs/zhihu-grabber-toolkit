@@ -89,6 +89,20 @@ jobs:
       - name: P1-R05 SEAM D V2 cutover acceptance
         run: node --test research-orchestration/test/p1-r05-v2-cutover.test.mjs
 
+      # P1-R06 (#94): dependency-closure reuse acceptance. Same REGISTERED !=
+      # EXECUTED hazard as R05: registration in suite-classification.json only
+      # satisfies the guard step — the `test` job runs exclusively the suites
+      # listed here, so without this line the R06 acceptance suite would be
+      # silently NOT_RUN in ordinary PR CI while still appearing "registered".
+      # Covers: historical COMPLETE != reusable COMPLETE (earliest-invalid
+      # boundary per dependency edge), the full 6-artifact content binding,
+      # same-count semantic mutation, legacy/missing version refusal,
+      # request/config controls, ordinary interrupted-resume re-entry, sibling
+      # preservation, call-count reuse evidence and side-effect-free refusal
+      # (no hash self-healing) — all offline through the real composed entrypoint.
+      - name: P1-R06 complete-reuse dependency closure acceptance
+        run: node --test research-orchestration/test/p1-r06-complete-reuse-closure.test.mjs
+
       # P1-R01 (#89): research suite classification / omission guard.
       # 该步骤在每次 PR / master push 的三个平台上执行。它校验提交的
       # suite-classification.json 覆盖了 research-orchestration/test/ 下发现的每一个

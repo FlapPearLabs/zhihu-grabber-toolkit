@@ -55,6 +55,21 @@ import { makeState, readState, writeState, runIdentityHash } from '../lib/state.
 import { MULTI_GROUP_STATE_FILENAME } from '../lib/multi-group-execution.mjs';
 import { SELECTION_DECISION_FILENAME } from '../lib/source-group-selection.mjs';
 import { T14_SYNTHESIS_RUNTIME_ID, T14_SYNTHESIS_MODEL } from '../lib/cross-source-synthesis.mjs';
+
+/**
+ * On-disk checkpoint binding keys, pinned as LITERALS on purpose.
+ *
+ * These strings are part of the PERSISTED checkpoint schema, so pinning the
+ * literal is a stronger stability guarantee than reading the implementation's own
+ * constant back and comparing it to itself. `N4` asserts the exported constants
+ * agree with these literals, so the two can never drift apart silently.
+ *
+ * Pinning them here also keeps this suite runnable against BASE_SHA — where the
+ * closure module does not yet exist — so the RED capture exercises the real
+ * production defect instead of dying on an import error.
+ */
+const BINDING_ACCUMULATED_POOL = 'accumulatedPool';
+const BINDING_SELECTION_DECISION = 'selectionDecision';
 import { mockVector768 } from './helpers/test-embedding-provider.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -79,6 +94,16 @@ function readEvents(workDir) {
     .split('\n')
     .filter(Boolean)
     .map((l) => JSON.parse(l));
+}
+
+/**
+ * The LAST event with the given name. `events.jsonl` is append-only across the
+ * whole work-dir lifetime, so a resumed run's own event is never the first
+ * match — a producing run also appends its own boundary/selection events.
+ */
+function lastEvent(workDir, name) {
+  const matches = readEvents(workDir).filter((e) => e.event === name);
+  return matches.length > 0 ? matches[matches.length - 1] : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -488,9 +513,12 @@ describe('P1-R06 §B — every dependency edge is load-bearing (deletion)', () =
     test(`${m.id}: ${m.label} → COMPLETE is REFUSED, no external call, earliest boundary reported`, async () => {
       const workDir = tmpWork(`p1-r06-${m.id.toLowerCase()}-`);
       await runFull(workDir);
-      const stable = snapshotWorkDir(workDir);
 
       m.mutate(workDir);
+      // snapshot AFTER the mutation: validation must not repair/rewrite what the
+      // operator (or an adversary) left on disk. A hash self-healing bug would
+      // show up as a post-validation byte difference.
+      const mutated = snapshotWorkDir(workDir);
 
       const calls = zeroCalls();
       const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
@@ -508,13 +536,11 @@ describe('P1-R06 §B — every dependency edge is load-bearing (deletion)', () =
         `${m.id}: refusal details must report the earliest invalid boundary "${m.boundary}" (got: ${detail})`,
       );
 
-      // no hash self-healing: the mutated dependency is never rewritten/repaired
+      // no hash self-healing: nothing on disk may be rewritten by validation
       const after = snapshotWorkDir(workDir);
-      for (const rel of Object.keys(after)) {
+      for (const [rel, bytes] of Object.entries(mutated)) {
         if (rel === 'events.jsonl' || rel === 'orchestration-state.json') continue;
-        if (stable[rel] !== undefined) {
-          assert.equal(after[rel], stable[rel], `${m.id}: ${rel} must not be rewritten by a failed validation`);
-        }
+        assert.equal(after[rel], bytes, `${m.id}: ${rel} must not be rewritten by a failed validation`);
       }
     });
   }
@@ -797,3 +823,743 @@ function sha256FileHex(file) {
   // local helper: the composer's recorded-hash domain is the raw file sha256
   return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 }
+
+// ===========================================================================
+// G. ordinary interrupted resume — valid earlier work is not redone
+// ===========================================================================
+
+/**
+ * Turn an in-process FAILED checkpoint into the checkpoint a KILL at `stage` would
+ * have left.
+ *
+ * The in-process failure path marks `FAILED`, which the resume gate then correctly
+ * refuses — but a process dying mid-pipeline never gets to write that marker. So
+ * the label is restored to the stage the run had reached, and NOTHING else is
+ * touched: every artifact, every content binding and every ledger byte stays
+ * exactly as the interrupted run produced it.
+ */
+function asKillShape(workDir, stage) {
+  const state = readState(workDir);
+  assert.equal(state.stage, 'FAILED', 'asKillShape: expected the in-process failure marker to restore');
+  state.stage = stage;
+  writeState(workDir, state);
+  return readState(workDir);
+}
+
+/** A T13/T14 runtime double that interrupts the composition AT the analysis stage. */
+function throwingRuntime(calls) {
+  const base = countingRuntime(calls);
+  return {
+    ...base,
+    async analyze() {
+      calls.analyze += 1;
+      throw Object.assign(new Error('synthetic interruption'), { code: 'R06_TEST_INTERRUPT' });
+    },
+  };
+}
+
+/** A capture double that interrupts the composition mid group stage. */
+function throwingCaptureAdapter(calls) {
+  return {
+    providerId: 'zhihu-session-capture',
+    capability: 'capture',
+    authClass: 'session',
+    retrieve() {
+      // Count the ATTEMPT before throwing: the adapter really was invoked, so a
+      // call-count assertion must see it.
+      if (calls) calls.capture += 1;
+      throw Object.assign(new Error('synthetic interruption'), { code: 'R06_TEST_INTERRUPT' });
+    },
+  };
+}
+
+/**
+ * Produce the checkpoint a GENUINE interruption leaves.
+ *
+ * A real interruption is the process DYING mid-pipeline (kill, power loss, container
+ * eviction), not an exception: the chain never gets to persist a FAILED marker. So
+ * this drives the real composition to fail at `at` and then restores the ONE field a
+ * kill would never have written — the stage label — leaving every other byte exactly
+ * as the run left it.
+ *
+ * Everything else is genuinely produced, not reconstructed, and `G0` pins the facts
+ * that make this faithful rather than convenient:
+ *
+ *   - the persisted ledger is the RETRIEVAL-time ledger, because
+ *     `applySourceGroupSelection` updates fusion accounting only IN MEMORY and the
+ *     group stage is what would have persisted it (fusedCandidateCount > 0,
+ *     fusedGroupCount === 0). A fixture built on a COMPLETED work dir would carry
+ *     the POST-run ledger and could make a broken resume look healthy;
+ *   - `hashes` carries exactly the stage-boundary content bindings the composer
+ *     recorded as it produced each artifact, and no terminal binding.
+ *
+ * `at: 'CAPTURE'` interrupts with NO group captured; `at: 'ANALYZE'` interrupts only
+ * after every group completed — the only shape in which group reuse is observable.
+ */
+async function runUntilInterrupt(workDir, { at = 'CAPTURE' } = {}) {
+  const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+  const calls = zeroCalls();
+  const overrides = at === 'ANALYZE'
+    ? { runtime: throwingRuntime(calls) }
+    : { captureAdapter: throwingCaptureAdapter(calls) };
+  try {
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls, overrides) });
+    assert.notEqual(out.ok, true, `an interrupted run must never report success: ${JSON.stringify(out)}`);
+  } catch {
+    // A propagating interruption is an equally valid (and equally ordinary) shape.
+  }
+  const state = readState(workDir);
+  assert.ok(state, 'runUntilInterrupt: the interrupted run left a checkpoint');
+  assert.ok(calls.search > 0, 'runUntilInterrupt: the interrupted run really did execute retrieval');
+  if (at === 'CAPTURE') assert.ok(calls.capture > 0, 'runUntilInterrupt: the interruption happened at the group stage');
+  if (at === 'ANALYZE') assert.ok(calls.analyze > 0, 'runUntilInterrupt: the interruption happened at the analysis stage');
+  return { calls, state: asKillShape(workDir, at) };
+}
+
+/**
+ * A capture double that completes the FIRST group and then interrupts, so the
+ * checkpoint is left with one genuinely finished sibling and one unfinished group
+ * — the only shape in which sibling preservation can be observed at all.
+ */
+function captureAdapterFailingOnCall(n, calls) {
+  const base = captureAdapterFor(
+    { 100: answersJsonFor('100', GROUP_100_TEXTS), 200: answersJsonFor('200', GROUP_200_TEXTS) },
+    zeroCalls(),
+  );
+  let issued = 0;
+  return {
+    ...base,
+    retrieve(args) {
+      issued += 1;
+      calls.capture += 1;
+      if (issued === n) {
+        throw Object.assign(new Error('synthetic interruption'), { code: 'R06_TEST_INTERRUPT' });
+      }
+      return base.retrieve(args);
+    },
+  };
+}
+
+describe('P1-R06 §G — ordinary interrupted resume reuses valid earlier work', () => {
+  test('G0: a GENUINE interruption leaves the stage-boundary content bindings on disk', async () => {
+    // Grounding for every resume fixture below. If the composer did not really
+    // record these bindings in the live path, the binding mechanism would be dead
+    // code and §G1–§G7 would pass against a shape the production chain never emits.
+    const workDir = tmpWork('p1-r06-g0-');
+    const { calls, state } = await runUntilInterrupt(workDir);
+
+    assert.equal(state.hashes[BINDING_ACCUMULATED_POOL], sha256FileHex(path.join(workDir, 'retrieval-rounds', 'accumulated-pool.json')), 'G0: the T06 pool binding is the REAL artifact hash');
+    assert.equal(state.hashes[BINDING_SELECTION_DECISION], sha256FileHex(path.join(workDir, SELECTION_DECISION_FILENAME)), 'G0: the T08 decision binding is the REAL artifact hash');
+    assert.equal(state.hashes.perGroupClaims, undefined, 'G0: a pre-completion checkpoint carries no terminal binding');
+    assert.ok(calls.capture > 0, 'G0: the genuine interrupt really reached the capture stage');
+
+    // Fidelity anchor: the persisted ledger is the RETRIEVAL-time ledger. The
+    // post-selection fusion accounting lives only in memory until the group stage
+    // persists it, so a reset that assumes otherwise would be unfaithful.
+    const ledger = JSON.parse(fs.readFileSync(path.join(workDir, COVERAGE_STATE), 'utf8'));
+    assert.ok(ledger.retrieval.fusedCandidateCount > 0, 'G0: the on-disk ledger carries retrieval accounting');
+    assert.equal(ledger.retrieval.fusedGroupCount, 0, 'G0: the on-disk ledger carries NO selection accounting yet');
+  });
+
+  test('G1: an interrupt after selection is resumed WITHOUT re-running retrieval', async () => {
+    const workDir = tmpWork('p1-r06-g1-');
+    await runUntilInterrupt(workDir);
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+
+    assert.equal(out.ok, true, `ordinary resume must succeed: ${JSON.stringify(out)}`);
+    assert.equal(calls.planner, 0, 'G1: the persisted plan is reused (zero planner calls)');
+    assert.equal(calls.search, 0, 'G1: retrieval is NOT re-run — the persisted T06 pool is proven reusable');
+    // No group had been captured when the interruption hit, so the group stage must
+    // legitimately run. The re-entry claim here is about RETRIEVAL, and asserting a
+    // zero capture count would be asserting something no kill could make true.
+    assert.ok(calls.capture > 0, 'G1: the group stage legitimately runs (no group existed yet)');
+
+    const events = readEvents(workDir);
+    const reentry = lastEvent(workDir, 'resume_reentry');
+    assert.ok(reentry, 'G1: the resume must record its re-entry boundary');
+    assert.equal(
+      reentry.boundary,
+      'coverage-state:source-group-selection',
+      'G1: with a reusable T08 decision the re-entry boundary is the selection stage',
+    );
+    assert.equal(reentry.reusedRetrieval, true, 'G1: the reuse is DISCLOSED, not silent');
+    assert.equal(reentry.reusedSelection, true, 'G1: the reuse is DISCLOSED, not silent');
+    // Both runs record a boundary (the producing run records its live path);
+    // exactly two total, and the resumed one is the later entry.
+    assert.equal(
+      events.filter((e) => e.event === 'resume_reentry').length,
+      2,
+      'G1: exactly one boundary per run — the producing run and the resumed run',
+    );
+  });
+
+  test('G1b: an interrupt AFTER the groups completed reuses every group artifact', async () => {
+    const workDir = tmpWork('p1-r06-g1b-');
+    await runUntilInterrupt(workDir, { at: 'ANALYZE' });
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, true, `G1b: the resume must succeed: ${JSON.stringify(out)}`);
+    assert.equal(calls.planner, 0, 'G1b: plan reused');
+    assert.equal(calls.search, 0, 'G1b: retrieval reused');
+    assert.equal(calls.capture, 0, 'G1b: the completed group stage is NOT redone');
+    assert.equal(calls.verify, 0, 'G1b: no group is re-verified');
+    assert.equal(calls.handoff, 0, 'G1b: no handoff is rewritten');
+    assert.ok(calls.analyze > 0, 'G1b: the interrupted stage itself legitimately re-runs');
+  });
+
+  test('G2: the resumed run still reaches a genuine COMPLETE', async () => {
+    const workDir = tmpWork('p1-r06-g2-');
+    await runUntilInterrupt(workDir);
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, true, 'G2: resume completes');
+
+    const state = readState(workDir);
+    assert.equal(state.stage, 'COMPLETE', 'G2: resume reaches COMPLETE');
+    assert.equal(state.p1FinalCoveragePlanHash, planHash(PLAN), 'G2: render binding restored exactly');
+    const covFinal = JSON.parse(fs.readFileSync(path.join(workDir, COVERAGE_FINAL), 'utf8'));
+    assert.equal(covFinal.assertion.is100PercentAnalysis, true, 'G2: 100% analysis is re-derived, not assumed');
+  });
+
+  test('G3: a tampered selection decision is refused by the content binding, never silently reused', async () => {
+    const workDir = tmpWork('p1-r06-g3-');
+    await runUntilInterrupt(workDir);
+
+    // Mutate the persisted decision. The checkpoint still records the ORIGINAL
+    // bytes, so the content binding is the first line of defence to fire.
+    const selPath = path.join(workDir, SELECTION_DECISION_FILENAME);
+    const decision = JSON.parse(fs.readFileSync(selPath, 'utf8'));
+    decision.planHash = 'f'.repeat(64);
+    fs.writeFileSync(selPath, `${JSON.stringify(decision, null, 2)}\n`);
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, true, `G3: the run must still succeed via the live path: ${JSON.stringify(out)}`);
+    assert.equal(calls.search, 0, 'G3: the T06 pool itself is still provably reusable (zero retrieval calls)');
+    const reentry = lastEvent(workDir, 'resume_reentry');
+    assert.ok(reentry, 'G3: the resume boundary must be recorded');
+    assert.equal(reentry.boundary, 'coverage-state:retrieval-rounds', 'G3: refusal drops the boundary back to selection');
+    assert.equal(reentry.reusedSelection, false, 'G3: the tampered decision is not reused');
+    assert.equal(reentry.selectionRefusalReason, 'content_changed', 'G3: the content binding names the tamper');
+  });
+
+  test('G3b: a RE-SEALED stale decision is refused by the T08 stale-propagation authority', async () => {
+    // Hash-resealing discipline: the byte binding must not be allowed to shadow the
+    // semantic authority. Here the tamper is re-sealed into the checkpoint so the
+    // content binding passes, and the frozen T08 decision status must be what
+    // refuses — otherwise a self-consistent forgery would earn reuse.
+    const workDir = tmpWork('p1-r06-g3b-');
+    await runUntilInterrupt(workDir);
+
+    const selPath = path.join(workDir, SELECTION_DECISION_FILENAME);
+    const decision = JSON.parse(fs.readFileSync(selPath, 'utf8'));
+    decision.planHash = 'f'.repeat(64);
+    fs.writeFileSync(selPath, `${JSON.stringify(decision, null, 2)}\n`);
+    const resealed = readState(workDir);
+    resealed.hashes[BINDING_SELECTION_DECISION] = sha256FileHex(selPath);
+    writeState(workDir, resealed);
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, true, `G3b: the run must still succeed via the live path: ${JSON.stringify(out)}`);
+    assert.equal(calls.search, 0, 'G3b: the pool binding still holds, so retrieval is still reused');
+    const reentry = lastEvent(workDir, 'resume_reentry');
+    assert.equal(reentry.reusedSelection, false, 'G3b: a re-sealed stale decision is still not reused');
+    assert.equal(
+      reentry.selectionRefusalReason,
+      'selection_plan_hash_mismatch',
+      'G3b: the refusal is the T08 semantic reason, proving the authority is actually consulted',
+    );
+  });
+
+  test('G4: a deleted accumulated pool disables re-entry (falls back to a real re-run)', async () => {
+    const workDir = tmpWork('p1-r06-g4-');
+    await runUntilInterrupt(workDir);
+    fs.rmSync(path.join(workDir, 'retrieval-rounds', 'accumulated-pool.json'));
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, true, 'G4: the run still succeeds');
+    assert.ok(calls.search > 0, 'G4: without a provably reusable pool retrieval MUST be re-run (never assumed reusable)');
+  });
+
+  test('G6: a SAME-COUNT mutation of the accumulated pool defeats reuse (content, not shape)', async () => {
+    // The point of a CONTENT binding over a shape/count check: this pool is still
+    // a well-formed T06 pool with the same number of candidates, so every
+    // structural check in the world accepts it. Only byte identity catches it.
+    const workDir = tmpWork('p1-r06-g6-');
+    await runUntilInterrupt(workDir);
+
+    const poolPath = path.join(workDir, 'retrieval-rounds', 'accumulated-pool.json');
+    const pool = JSON.parse(fs.readFileSync(poolPath, 'utf8'));
+    assert.ok(pool.candidates.length > 0, 'G6: fixture precondition — the pool has candidates');
+    const victim = pool.candidates[0];
+    const before = pool.candidates.length;
+    // Semantic, count-preserving mutation of the FIRST candidate only.
+    victim.rrfScore = Number(victim.rrfScore ?? 0) + 0.5;
+    fs.writeFileSync(poolPath, `${JSON.stringify(pool, null, 2)}\n`);
+    const mutated = JSON.parse(fs.readFileSync(poolPath, 'utf8'));
+    assert.equal(mutated.candidates.length, before, 'G6: the mutation preserved the candidate count');
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, true, `G6: the run still succeeds: ${JSON.stringify(out)}`);
+    assert.ok(
+      calls.search > 0,
+      'G6: a same-count semantic mutation MUST invalidate the pool binding and force real retrieval',
+    );
+    const reentry = lastEvent(workDir, 'resume_reentry');
+    assert.equal(reentry.reusedRetrieval, false, 'G6: retrieval is not reused from a mutated pool');
+  });
+
+  test('G7: a SAME-COUNT mutation of the selection decision defeats selection reuse only', async () => {
+    const workDir = tmpWork('p1-r06-g7-');
+    await runUntilInterrupt(workDir);
+
+    const selPath = path.join(workDir, SELECTION_DECISION_FILENAME);
+    const decision = JSON.parse(fs.readFileSync(selPath, 'utf8'));
+    const before = decision.selectedGroups.length;
+    assert.ok(before > 0, 'G7: fixture precondition — the decision selected groups');
+    decision.selectedGroups[0] = { ...decision.selectedGroups[0], rationale: 'mutated in place' };
+    fs.writeFileSync(selPath, `${JSON.stringify(decision, null, 2)}\n`);
+    assert.equal(JSON.parse(fs.readFileSync(selPath, 'utf8')).selectedGroups.length, before, 'G7: count preserved');
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, true, `G7: the run still succeeds: ${JSON.stringify(out)}`);
+    assert.equal(calls.search, 0, 'G7: the T06 pool is untouched, so retrieval is still reused');
+    const reentry = lastEvent(workDir, 'resume_reentry');
+    assert.equal(reentry.reusedRetrieval, true, 'G7: retrieval reuse is not affected');
+    assert.equal(reentry.reusedSelection, false, 'G7: the mutated decision is NOT reused');
+    assert.equal(reentry.boundary, 'coverage-state:retrieval-rounds', 'G7: the boundary drops back to selection');
+  });
+
+  test('G5: an explicit restart is a NEW occurrence and never resumes prior work', async () => {
+    const workDir = tmpWork('p1-r06-g5-');
+    await runUntilInterrupt(workDir);
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, restart: true, ...fixtures(calls) });
+    assert.equal(out.ok, true, 'G5: restart succeeds');
+    assert.ok(calls.search > 0, 'G5: a restart re-runs retrieval from scratch');
+    assert.ok(calls.capture > 0, 'G5: a restart re-captures groups (no cross-occurrence reuse)');
+    // A restart is a NEW occurrence: it must not REUSE anything. Its own boundary
+    // event is the live path (never a reuse), and the restart must not carry the
+    // prior occurrence's occurrenceId.
+    const restartBoundaries = readEvents(workDir).filter((e) => e.event === 'resume_reentry');
+    assert.equal(restartBoundaries.length, 2, 'G5: the producing run and the restart each record one boundary');
+    const [producing, restarted] = restartBoundaries;
+    assert.equal(producing.boundary, 'coverage-state:retrieval-rounds', 'G5: the producing run took the live path');
+    assert.equal(restarted.boundary, 'coverage-state:retrieval-rounds', 'G5: the restart also runs retrieval live');
+    assert.notEqual(
+      restarted.occurrenceId,
+      producing.occurrenceId,
+      'G5: an explicit restart is a NEW occurrence (a fresh occurrenceId)',
+    );
+  });
+});
+
+// ===========================================================================
+// H. sibling preservation across the group stage
+// ===========================================================================
+
+describe('P1-R06 §H — dependency-free siblings are preserved', () => {
+  test('H1: an interrupt that lost ONE group preserves the sibling that finished', async () => {
+    const workDir = tmpWork('p1-r06-h1-');
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+
+    // GENUINE partial progress: the first group completes, then the interruption.
+    const firstCalls = zeroCalls();
+    try {
+      const first = await composeP1Research({
+        topic: TOPIC,
+        workDir,
+        ...fixtures(firstCalls, { captureAdapter: captureAdapterFailingOnCall(2, firstCalls) }),
+      });
+      assert.notEqual(first.ok, true, `H1: the interrupted run must not report success: ${JSON.stringify(first)}`);
+    } catch {
+      // propagate-as-interruption is an equally valid shape
+    }
+    assert.ok(firstCalls.capture >= 1, 'H1: at least one group was captured before the interruption');
+    asKillShape(workDir, 'CAPTURE');
+
+    // The sibling that finished must be discoverable as finished, and the group
+    // that never ran must be absent — otherwise this test proves nothing.
+    const groupsRoot = path.join(workDir, 'zhihu');
+    const done = fs.existsSync(groupsRoot) ? fs.readdirSync(groupsRoot) : [];
+    const withHandoff = done.filter((qid) => fs.existsSync(path.join(groupsRoot, qid, 'handoff.json')));
+    assert.ok(withHandoff.length >= 1, `H1: a sibling really did finish (found=${JSON.stringify(done)})`);
+
+    const calls = zeroCalls();
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, true, `H1: the resume repairs what is missing and succeeds: ${JSON.stringify(out)}`);
+    assert.equal(calls.search, 0, 'H1: retrieval is still reused (the pool binding holds)');
+    assert.ok(
+      calls.capture < 2,
+      `H1: the finished sibling must NOT be re-captured (capture calls=${calls.capture})`,
+    );
+    for (const qid of ['100', '200']) {
+      assert.equal(
+        fs.existsSync(path.join(groupsRoot, qid, 'handoff.json')),
+        true,
+        `H1: group ${qid} ends with a restored verified handoff`,
+      );
+    }
+  });
+
+  test('H2: an untouched resume re-uses every group artifact without any capture', async () => {
+    const workDir = tmpWork('p1-r06-h2-');
+    await runUntilInterrupt(workDir, { at: 'ANALYZE' });
+
+    const before = new Map();
+    for (const qid of ['100', '200']) {
+      for (const f of ['answers.json', 'handoff.json']) {
+        const abs = path.join(workDir, 'zhihu', qid, f);
+        before.set(`${qid}/${f}`, fs.readFileSync(abs, 'utf8'));
+      }
+    }
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, true);
+    assert.equal(calls.capture, 0, 'H2: zero capture calls — every group artifact is reused');
+    assert.equal(calls.verify, 0, 'H2: zero verify calls');
+    assert.equal(calls.handoff, 0, 'H2: zero handoff calls');
+    for (const [key, bytes] of before.entries()) {
+      const [qid, f] = key.split('/');
+      assert.equal(
+        fs.readFileSync(path.join(workDir, 'zhihu', qid, f), 'utf8'),
+        bytes,
+        `H2: group artifact bytes unchanged for ${key}`,
+      );
+    }
+  });
+});
+
+// ===========================================================================
+// I / J. call-count evidence is the reuse proof
+// ===========================================================================
+
+describe('P1-R06 §I — call-count evidence proves reuse (not output equality)', () => {
+  test('I1: reuse is proven by zero external calls even when a same-shaped output could be faked', async () => {
+    const workDir = tmpWork('p1-r06-i1-');
+    const first = await runFull(workDir);
+    assert.ok(first.calls.search > 0, 'I1: the producing run really did call the providers');
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const second = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(second.ok, true);
+    assertZeroExternalCalls(calls, 'I1 second call');
+    assert.deepEqual(calls.searchQueries, [], 'I1: no query was issued at all');
+  });
+
+  test('I2: the retrieval-round artifacts are not rewritten by a reuse read', async () => {
+    const workDir = tmpWork('p1-r06-i2-');
+    await runFull(workDir);
+    const roundDir = path.join(workDir, 'retrieval-rounds');
+    const snapshot = {};
+    for (const entry of fs.readdirSync(roundDir, { withFileTypes: true })) {
+      if (entry.isFile()) {
+        snapshot[entry.name] = fs.readFileSync(path.join(roundDir, entry.name), 'utf8');
+      } else {
+        const poolPath = path.join(roundDir, entry.name, 'retrieval-pool.json');
+        if (fs.existsSync(poolPath)) snapshot[`${entry.name}/retrieval-pool.json`] = fs.readFileSync(poolPath, 'utf8');
+      }
+    }
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, true);
+    assert.equal(out.reused, true, 'I2: a valid COMPLETE is still reused');
+    for (const [rel, bytes] of Object.entries(snapshot)) {
+      assert.equal(
+        fs.readFileSync(path.join(roundDir, rel), 'utf8'),
+        bytes,
+        `I2: retrieval-round artifact bytes unchanged for ${rel}`,
+      );
+    }
+  });
+});
+
+describe('P1-R06 §J — refusal is side-effect free (no self-healing)', () => {
+  test('J1: a refused COMPLETE leaves the work dir byte-identical', async () => {
+    const workDir = tmpWork('p1-r06-j1-');
+    await runFull(workDir);
+    // Delete a mid-chain dependency so the closure must refuse.
+    fs.rmSync(path.join(workDir, CLAIMS_FILENAME));
+
+    const before = {};
+    const collect = (dir, prefix = '') => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+        const abs = path.join(dir, entry.name);
+        if (entry.isDirectory()) collect(abs, rel);
+        else before[rel] = fs.readFileSync(abs, 'utf8');
+      }
+    };
+    collect(workDir);
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, false, 'J1: the refused COMPLETE must fail closed');
+    assert.equal(out.reuseBoundary, 'claims', 'J1: the earliest invalid boundary is the deleted artifact');
+
+    const after = {};
+    const collectAfter = (dir, prefix = '') => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+        const abs = path.join(dir, entry.name);
+        if (entry.isDirectory()) collectAfter(abs, rel);
+        else after[rel] = fs.readFileSync(abs, 'utf8');
+      }
+    };
+    collectAfter(workDir);
+
+    // The ONLY permitted difference is the event-log append (the audit trail of
+    // the refusal itself). No artifact may be rewritten, and nothing may be
+    // re-created: a self-healing implementation would have repaired the missing
+    // claims file here.
+    for (const rel of Object.keys(before)) {
+      if (rel === 'events.jsonl') continue;
+      assert.equal(after[rel], before[rel], `J1: refusal must not rewrite ${rel}`);
+    }
+    assert.equal(
+      fs.existsSync(path.join(workDir, CLAIMS_FILENAME)),
+      false,
+      'J1: no hash self-healing — the deleted artifact must NOT be re-created by a mere validation read',
+    );
+    assertZeroExternalCalls(calls, 'J1 refusal');
+  });
+
+  test('J2: a refusal while resuming does not silently promote the checkpoint', async () => {
+    const workDir = tmpWork('p1-r06-j2-');
+    await runFull(workDir);
+    const stateBefore = readState(workDir);
+    fs.rmSync(path.join(workDir, CLAIMS_FILENAME));
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, false, 'J2: refusal fails closed');
+    const stateAfter = readState(workDir);
+    assert.equal(
+      stateAfter.stage,
+      stateBefore.stage,
+      'J2: a refused reuse must not alter the recorded stage',
+    );
+    assert.equal(calls.search, 0, 'J2: the refusal happens before any external work');
+  });
+});
+
+// ===========================================================================
+// K. zero network / zero model call by construction
+// ===========================================================================
+
+describe('P1-R06 §K — validation is side-effect free by construction', () => {
+  test('K1: closure validation performs no fetch, no model call, no planner call', async () => {
+    const workDir = tmpWork('p1-r06-k1-');
+    await runFull(workDir);
+
+    let fetchCalls = 0;
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({
+      topic: TOPIC,
+      workDir,
+      ...fixtures(calls, { fetchImpl: () => { fetchCalls += 1; throw new Error('network forbidden during validation'); } }),
+    });
+    assert.equal(out.ok, true, 'K1: reuse succeeds');
+    assert.equal(fetchCalls, 0, 'K1: zero network access during a validation-only read');
+    assertZeroExternalCalls(calls, 'K1');
+  });
+
+  test('K2: a genuine base RED scenario is reachable through the production entrypoint (missing claims)', async () => {
+    const workDir = tmpWork('p1-r06-k2-');
+    await runFull(workDir);
+    fs.rmSync(path.join(workDir, CLAIMS_FILENAME));
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, false, 'K2: the production entrypoint must refuse the broken checkpoint');
+    assert.equal(out.code, 'state_invalid', `K2: the stable refusal code is used: ${JSON.stringify(out)}`);
+  });
+});
+
+// ===========================================================================
+// L. canonical bytes are unchanged by a successful reuse
+// ===========================================================================
+
+describe('P1-R06 §L — successful reuse preserves canonical bytes', () => {
+  test('L1: reuse does not rewrite any canonical artifact', async () => {
+    const workDir = tmpWork('p1-r06-l1-');
+    await runFull(workDir);
+    const before = snapshotWorkDir(workDir);
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    const after = snapshotWorkDir(workDir);
+    for (const [rel, bytes] of Object.entries(before)) {
+      assert.equal(after[rel], bytes, `L1: ${rel} must be byte-identical after a reuse`);
+    }
+  });
+
+  test('L2: the recorded content-binding hashes match the on-disk artifacts', async () => {
+    const workDir = tmpWork('p1-r06-l2-');
+    await runFull(workDir);
+    const state = readState(workDir);
+    assert.deepEqual(
+      Object.keys(state.hashes).sort(),
+      ['coverageFinal', 'coverageState', 'perGroupClaims', 'researchPlan', 'researchResult', 'synthesis'],
+      'L2: the completion must record the FULL content-binding set (6 artifacts)',
+    );
+    for (const [key, rel] of [
+      ['researchPlan', PLAN_FILENAME],
+      ['coverageState', COVERAGE_STATE],
+      ['coverageFinal', COVERAGE_FINAL],
+      ['perGroupClaims', CLAIMS_FILENAME],
+      ['synthesis', SYNTHESIS_FILENAME],
+      ['researchResult', RESULT_FILENAME],
+    ]) {
+      assert.equal(
+        state.hashes[key],
+        sha256FileHex(path.join(workDir, rel)),
+        `L2: recorded hash for ${key} must equal the on-disk artifact bytes`,
+      );
+    }
+  });
+});
+
+// ===========================================================================
+// M–P. the production entrypoint really reaches the new validation
+// ===========================================================================
+
+describe('P1-R06 §M — the production entrypoint reaches the closure (REGISTERED != EXECUTED)', () => {
+  test('M1: the composed entrypoint (not a test-only seam) performs the refusal', async () => {
+    const workDir = tmpWork('p1-r06-m1-');
+    await runFull(workDir);
+    fs.rmSync(path.join(workDir, SYNTHESIS_FILENAME));
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, false, 'M1: a deleted synthesis must be refused');
+    assert.equal(out.reuseBoundary, 'synthesis', 'M1: the boundary names the deleted artifact');
+    assert.match(
+      String(out.details),
+      /earliest invalid boundary=synthesis/,
+      `M1: the refusal message discloses the boundary: ${out.details}`,
+    );
+  });
+
+  test('M2: the closure validator is imported by the composer (static reachability)', async () => {
+    const composerPath = path.join(RO_ROOT, 'lib', 'p1-runtime-composer.mjs');
+    const text = fs.readFileSync(composerPath, 'utf8');
+    // Assert the PROPERTY (the symbol is imported from the closure module), not the
+    // exact formatting of the import statement — an import list that legitimately
+    // grows must not fail a reachability check.
+    const importStatement = text.match(/import \{[^}]*\} from '\.\/p1-reuse-closure\.mjs';/);
+    assert.ok(importStatement, 'M2: the composer imports from the closure module');
+    assert.match(
+      importStatement[0],
+      /validateCompleteReuseClosure/,
+      'M2: the composer imports the closure validator',
+    );
+    assert.match(text, /validateCompleteReuseClosure\(\{/, 'M2: the composer CALLS the closure validator');
+    const module = await import('../lib/p1-reuse-closure.mjs');
+    assert.equal(typeof module.validateCompleteReuseClosure, 'function', 'M2: the closure validator is exported');
+  });
+
+  test('N1: every boundary identity is exported and stable', async () => {
+    // NOTE ON RED: this test is the one case whose BASE_SHA failure is module
+    // ABSENCE rather than a behaviour defect — the R06 vocabulary module is a
+    // deliverable of this ticket, so it cannot exist before the fix. Every OTHER
+    // section of this suite fails at BASE_SHA for genuine behavioural reasons
+    // (see the RED capture: §A/§B/§C/§D/§E/§F/§G/§H/§K/§L/§M/§P).
+    const m = await import('../lib/p1-reuse-closure.mjs');
+    assert.equal(m.CLOSURE_BOUNDARY_CONFIG, 'request_config');
+    assert.equal(m.CLOSURE_BOUNDARY_PLAN, 'plan');
+    assert.equal(m.CLOSURE_BOUNDARY_SELECTION, 'selection');
+    assert.equal(m.CLOSURE_BOUNDARY_GROUP, 'group');
+    assert.equal(m.CLOSURE_BOUNDARY_CLAIMS, 'claims');
+    assert.equal(m.CLOSURE_BOUNDARY_SYNTHESIS, 'synthesis');
+    assert.equal(m.CLOSURE_BOUNDARY_COVERAGE, 'coverage');
+    assert.equal(m.CLOSURE_BOUNDARY_RESULT, 'result');
+  });
+
+  test('N4: the exported checkpoint binding constants match the pinned on-disk literals', async () => {
+    // The literals are what this suite asserts against; the exported constants are
+    // what the composer writes. If they drift, the composer would write a key no
+    // test pins and the resume proof would silently stop being exercised.
+    const m = await import('../lib/p1-reuse-closure.mjs');
+    assert.equal(m.CHECKPOINT_BINDING_ACCUMULATED_POOL, BINDING_ACCUMULATED_POOL);
+    assert.equal(m.CHECKPOINT_BINDING_SELECTION_DECISION, BINDING_SELECTION_DECISION);
+  });
+
+  test('O1: the recorded refusal is auditable in the event log', async () => {
+    const workDir = tmpWork('p1-r06-o1-');
+    await runFull(workDir);
+    fs.rmSync(path.join(workDir, COVERAGE_FINAL));
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, false);
+    const events = readEvents(workDir);
+    const refusal = events.find((e) => e.event === 'p1_complete_reuse_refused');
+    assert.ok(refusal, 'O1: the refusal must be recorded as an auditable event');
+    assert.equal(refusal.boundary, 'coverage', 'O1: the recorded boundary must be the coverage stage');
+  });
+
+  test('P1: the same rules apply when the production planner seam is the real one', async () => {
+    // The production path (no injected plan) must reach the same closure. We
+    // exercise only the refusal direction so no network is required: a state
+    // file whose plan binding is absent is refused before any planner call.
+    const workDir = tmpWork('p1-r06-p1-');
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const { runtime } = fixtures(zeroCalls());
+    writeState(workDir, makeState({
+      workDir,
+      topic: TOPIC,
+      mode: P1_PIPELINE_IDENTITY,
+      percent: null,
+      runtime: runtime.runtimeId,
+      occurrenceId: crypto.randomUUID(),
+    }));
+    const state = readState(workDir);
+    state.stage = 'COMPLETE';
+    state.p1FinalCoveragePlanHash = null;
+    writeState(workDir, state);
+
+    let plannerCalls = 0;
+    const out = await composeP1Research({
+      topic: TOPIC,
+      workDir,
+      planner: async () => { plannerCalls += 1; throw new Error('planner must not run for a COMPLETE checkpoint'); },
+      runtime,
+      seam: fixtures(zeroCalls()).seam,
+      captureAdapter: fixtures(zeroCalls()).captureAdapter,
+      runner: fixtures(zeroCalls()).runner,
+      embeddingProvider: fixtures(zeroCalls()).embeddingProvider,
+    });
+    assert.equal(out.ok, false, 'P1: a COMPLETE without a render binding is refused');
+    assert.equal(plannerCalls, 0, 'P1: the refusal precedes any planner invocation');
+  });
+});
+
+void runIdentityHash;
+

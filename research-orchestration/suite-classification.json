@@ -18,6 +18,7 @@
     { "file": "p1-t15-runtime-composition-wiring.test.mjs", "category": "fast-deterministic" },
     { "file": "p1-r02-occurrence-restart.test.mjs", "category": "fast-deterministic", "note": "P1-R02 (#90): real-composer restart/occurrence isolation regression; injected test doubles only, offline temp workDirs" },
     { "file": "p1-r05-v2-cutover.test.mjs", "category": "fast-deterministic", "note": "P1-R05 (#93): SEAM D V2 cutover acceptance — Cases A-F through the real T14 producer with injected runtime doubles, claim-level lineage (no sourceRef dedupe), orthogonal relationStatus/supportBreadth, F06 fail-closed evidence partition, identity/hash recompute-compare, one-way legacy derived view, canonical diagnostics and the T15 V2 version gate. Fully offline; no real model, no network." },
+    { "file": "p1-r06-complete-reuse-closure.test.mjs", "category": "fast-deterministic", "note": "P1-R06 (#94): historical COMPLETE != currently reusable COMPLETE — the composition-level dependency closure (earliest-invalid-boundary refusal, full 6-artifact content binding, request/config controls, ordinary interrupted-resume re-entry at the highest provably reusable boundary, sibling preservation, call-count reuse evidence, side-effect-free refusal with no hash self-healing) exercised through the REAL composed entrypoint with injected test doubles. Fully offline; no real model, no network." },
 
     { "file": "coverage-state.test.mjs", "category": "full-offline" },
     { "file": "dense-geometry.test.mjs", "category": "full-offline" },

@@ -64,10 +64,22 @@ import {
   P1_PIPELINE_IDENTITY,
   COVERAGE_STATE_FILENAME,
   FINAL_COVERAGE_FILENAME,
+  RETRIEVAL_ROUNDS_DIRNAME,
+  ACCUMULATED_POOL_FILENAME,
+  STAGE_RETRIEVAL_ROUNDS,
+  STAGE_SOURCE_GROUP_SELECTION,
+  recordStage,
+  beginConvergenceJournal,
   CoverageIntegrationError,
 } from './coverage-final-integration.mjs';
 import { DECISION_PROVIDER_FAILURE } from './retrieval-round-controller.mjs';
-import { SELECTION_DECISION_FILENAME } from './source-group-selection.mjs';
+import {
+  SELECTION_DECISION_FILENAME,
+  loadSelectionDecision,
+  selectionDecisionStatus,
+  applySelectionToCoverageState,
+} from './source-group-selection.mjs';
+import { loadCoverageState } from './coverage-state.mjs';
 import { MULTI_GROUP_STATE_FILENAME } from './multi-group-execution.mjs';
 import { CAPABILITY_SEARCH, createProviderSeam } from './provider-seam.mjs';
 import { createOfficialSearchAdapter } from './official-search-provider.mjs';
@@ -83,6 +95,7 @@ import {
   appendEvent,
   runIdentityHash,
   sha256File,
+  configFingerprint,
   STAGE_SEARCH,
   STAGE_SELECT,
   STAGE_CAPTURE,
@@ -96,6 +109,7 @@ import { REQUIRED_EMBEDDING_IDENTITY } from './dense-geometry.mjs';
 import { deriveCanonicalSourceId } from './rce-input-adapter.mjs';
 import { assertArtifactSafe } from './rrf.mjs';
 import { buildDeepSeekResearchRuntime } from './deepseek-research-runtime.mjs';
+import { validateCompleteReuseClosure, CHECKPOINT_BINDING_ACCUMULATED_POOL, CHECKPOINT_BINDING_SELECTION_DECISION } from './p1-reuse-closure.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const RO_ROOT = path.resolve(HERE, '..');
@@ -164,6 +178,184 @@ function archivePriorOccurrenceDerivedState(workDir, occurrenceId) {
   renameSync(file, path.join(workDir, `${MULTI_GROUP_STATE_FILENAME}${PRIOR_OCCURRENCE_ARCHIVE_SUFFIX}`));
   appendEvent(workDir, { event: 'prior_occurrence_state_archived', occurrenceId, file: MULTI_GROUP_STATE_FILENAME });
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// P1-R06 (#94) — ordinary interrupted-resume RE-ENTRY BOUNDARY
+// ---------------------------------------------------------------------------
+
+/**
+ * Re-entry boundary discriminators. `planResumeReentry` returning `ok:false` means
+ * "cannot PROVE reusability" — the caller then falls through to re-executing the
+ * stage, which is the pre-R06 behaviour and always legal. Only a proven boundary
+ * is ever optimised, never assumed.
+ */
+const RESUME_REENTRY_RETRIEVAL_ROUNDS = 'coverage-state:retrieval-rounds';
+const RESUME_REENTRY_SOURCE_GROUP_SELECTION = 'coverage-state:source-group-selection';
+
+/** Read + parse a persisted JSON artifact; never throws, never writes. */
+function readPersistedArtifact(workDir, filename) {
+  const file = path.join(workDir, filename);
+  if (!existsSync(file)) return { ok: false, reason: 'artifact_missing' };
+  let text;
+  try {
+    text = readFileSync(file, 'utf8');
+  } catch {
+    return { ok: false, reason: 'artifact_unreadable' };
+  }
+  try {
+    return { ok: true, value: JSON.parse(text) };
+  } catch {
+    return { ok: false, reason: 'artifact_unparseable' };
+  }
+}
+
+/**
+ * Prove that a stage-boundary artifact on disk is BYTE-IDENTICAL to the artifact
+ * this checkpoint recorded when it produced that stage.
+ *
+ * An absent or malformed binding is NOT a licence to reuse: `unbound` is a
+ * refusal. That is what keeps legacy / config-less / partially-written
+ * checkpoints from silently earning reuse they never proved.
+ */
+function verifyBoundArtifact(workDir, recordedHash, relPath) {
+  if (typeof recordedHash !== 'string' || recordedHash.length === 0) return { ok: false, reason: 'unbound' };
+  const abs = path.join(workDir, relPath);
+  if (!existsSync(abs)) return { ok: false, reason: 'missing' };
+  let actual;
+  try {
+    actual = sha256File(abs);
+  } catch {
+    return { ok: false, reason: 'unreadable' };
+  }
+  if (actual !== recordedHash) return { ok: false, reason: 'content_changed' };
+  return { ok: true, path: relPath };
+}
+
+/**
+ * Decide the HIGHEST re-entry point for an ordinary (same-occurrence, non-restart)
+ * resume of an interrupted run.
+ *
+ * CONTRACT (Issue #94): "普通中断从适当边界继续；仍有效的已完成阶段 / 无依赖
+ * siblings 不重做." A completed stage may be re-entered only when the artifact it
+ * produced is PROVABLY the artifact the interrupted run left behind — not merely
+ * present, and not merely the same shape.
+ *
+ * WHY CONTENT BINDING AND NOT RE-DERIVATION. The composition layer owns none of
+ * the retrieval-pool / ledger / selection-accounting semantics; T06/T07/T08 do.
+ * A ledger CAN be rebuilt by replaying the frozen hooks from the persisted round
+ * artifact, but such a replay reproduces only the fields those hooks happen to
+ * rewrite and silently diverges on every other field of the state document
+ * (diagnostics ratios, per-entry bookkeeping). The resume would then persist a
+ * ledger that DIFFERS from the one an uninterrupted run persists for identical
+ * logical work — a fidelity defect wearing the costume of an optimisation.
+ *
+ * So the composer instead RECORDS a content hash of each stage-boundary artifact
+ * as it produces it, and a resume only has to prove those bytes are untouched.
+ * Nothing is invented, no owner semantics are duplicated, and the proof is
+ * strictly stronger: byte identity catches same-count semantic mutation that a
+ * shape or count check waves straight through.
+ *
+ * THE BOUNDARY IS DERIVED FROM THE EVIDENCE, NEVER FROM A STAGE LABEL. Whichever
+ * binding verifies decides how far back the resume may start; `state.stage` is
+ * never consulted, so a stale or forged stage label cannot widen re-entry:
+ *
+ *   - T06 pool bound and unchanged ........... retrieval need not be re-run
+ *   - + T08 decision bound and unchanged ..... selection need not be re-run
+ *   - anything else .......................... fall through and re-execute
+ *
+ * EVERY CHECK DELEGATES TO ITS OWNER rather than re-implementing it: the persisted
+ * ledger is validated and plan-bound by the T07 authority (`loadCoverageState`),
+ * the persisted decision is certified reusable by the T08 stale-propagation
+ * authority (`selectionDecisionStatus`), and the bindings are the composer's own
+ * records of what it wrote.
+ *
+ * READ-ONLY BY CONSTRUCTION: no write, no network call, and no planner /
+ * retrieval / capture / model invocation.
+ */
+function planResumeReentry({ workDir, priorState, planHash: expectedPlanHash }) {
+  if (typeof expectedPlanHash !== 'string' || expectedPlanHash.length === 0) {
+    return { ok: false, reason: 'plan_hash_missing' };
+  }
+  const recorded = priorState?.hashes;
+  if (!isPlainObject(recorded)) return { ok: false, reason: 'checkpoint_carries_no_hash_bindings' };
+
+  // The T06 pool is the artifact that proves retrieval finished AND that any
+  // decision below was made from THESE candidates.
+  const poolProof = verifyBoundArtifact(
+    workDir,
+    recorded[CHECKPOINT_BINDING_ACCUMULATED_POOL],
+    path.join(RETRIEVAL_ROUNDS_DIRNAME, ACCUMULATED_POOL_FILENAME),
+  );
+  if (!poolProof.ok) return { ok: false, reason: `accumulated_pool_${poolProof.reason}` };
+  const poolArtifact = readPersistedArtifact(
+    path.join(workDir, RETRIEVAL_ROUNDS_DIRNAME),
+    ACCUMULATED_POOL_FILENAME,
+  );
+  if (!poolArtifact.ok) return { ok: false, reason: `accumulated_pool_${poolArtifact.reason}` };
+  const pool = poolArtifact.value;
+  if (!isPlainObject(pool) || typeof pool.planHash !== 'string') {
+    return { ok: false, reason: 'accumulated_pool_not_a_canonical_t06_pool' };
+  }
+
+  // The ledger is read through its OWNER: structure validation and the plan
+  // binding are T07 semantics and are never re-implemented here. It is then used
+  // VERBATIM — the persisted state IS the authoritative state, so continuing from
+  // it invents nothing.
+  const ledger = loadCoverageState(workDir, expectedPlanHash);
+  if (!ledger.ok) return { ok: false, reason: `ledger_${ledger.reason}` };
+
+  const decisionArtifact = loadSelectionDecision(workDir);
+  const decisionProof = decisionArtifact.ok
+    ? verifyBoundArtifact(workDir, recorded[CHECKPOINT_BINDING_SELECTION_DECISION], SELECTION_DECISION_FILENAME)
+    : { ok: false, reason: `selection_decision_${decisionArtifact.reason}` };
+  if (!decisionProof.ok) {
+    return {
+      ok: true,
+      boundary: RESUME_REENTRY_RETRIEVAL_ROUNDS,
+      decision: null,
+      pool,
+      coverageState: ledger.state,
+      selectionRefusalReason: decisionProof.reason,
+    };
+  }
+  const status = selectionDecisionStatus({
+    decision: decisionArtifact.decision,
+    currentPlanHash: expectedPlanHash,
+    currentPoolPlanHash: pool.planHash,
+  });
+  if (!status.reusable) {
+    return {
+      ok: true,
+      boundary: RESUME_REENTRY_RETRIEVAL_ROUNDS,
+      decision: null,
+      pool,
+      coverageState: ledger.state,
+      selectionRefusalReason: status.reason,
+    };
+  }
+  const selected = Array.isArray(decisionArtifact.decision.selectedGroups)
+    ? decisionArtifact.decision.selectedGroups
+    : null;
+  if (selected === null || selected.length === 0) {
+    // A decision that selected nothing is not a reusable SELECTION: re-running
+    // selection is allowed to reach a different verdict, so this is a refusal.
+    return {
+      ok: true,
+      boundary: RESUME_REENTRY_RETRIEVAL_ROUNDS,
+      decision: null,
+      pool,
+      coverageState: ledger.state,
+      selectionRefusalReason: 'selection_no_selected_groups',
+    };
+  }
+  return {
+    ok: true,
+    boundary: RESUME_REENTRY_SOURCE_GROUP_SELECTION,
+    decision: decisionArtifact.decision,
+    pool,
+    coverageState: ledger.state,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -303,6 +495,10 @@ function isNonEmptyString(v) {
   return typeof v === 'string' && v.trim().length > 0;
 }
 
+function isPlainObject(v) {
+  return v !== null && typeof v === 'object' && !Array.isArray(v);
+}
+
 function sanitizeMessage(message) {
   return String(message ?? '').slice(0, 300);
 }
@@ -365,29 +561,53 @@ export async function composeP1Research({
       return fail(CFC_RUN_IDENTITY_CONFLICT, 'existing state belongs to a different run identity (topic/mode/runtime)');
     }
     if (existing.stage === STAGE_COMPLETE) {
+      // P1-R06 (#94): historical COMPLETE != currently reusable COMPLETE.
+      //
+      // The pre-repair branch checked ONLY the render binding plus the two
+      // TERMINAL artifact hashes. That is an end-of-chain existence check, not
+      // a dependency closure: deleting or semantically mutating any upstream
+      // dependency (plan / selection decision / canonical answers / handoff /
+      // T13 claims / T14 synthesis) left the terminal files byte-identical, so
+      // a FALSE COMPLETE was silently reused as { ok: true, reused: true }.
+      //
+      // Validation is now delegated to the composition-level closure validator,
+      // which walks the canonical production order and reports the EARLIEST
+      // invalid boundary. It is side-effect free: zero network, zero
+      // planner/retrieval/capture/T13/T14 model call, zero canonical write, and
+      // no hash self-healing — a refusal leaves the work dir byte-identical.
       if (existing.p1FinalCoveragePlanHash == null) {
-        return fail(CFC_STATE_INVALID, 'state says COMPLETE but carries no P1 render binding');
+        return fail(CFC_STATE_INVALID, 'state says COMPLETE but carries no P1 render binding (boundary=plan)');
       }
-      const resultPath = path.join(workDir, RESEARCH_RESULT_FILENAME);
-      const coveragePath = path.join(workDir, FINAL_COVERAGE_FILENAME);
-      // FILE EXISTS != VALID CACHE: a completed checkpoint is reused ONLY when
-      // the recorded artifact hashes still bind to the exact bytes on disk.
-      const recorded = existing.hashes ?? {};
-      let hashesValid = false;
+      let closure;
       try {
-        hashesValid = existsSync(resultPath) && existsSync(coveragePath)
-          && recorded.researchResult === sha256File(resultPath)
-          && recorded.coverageFinal === sha256File(coveragePath);
-      } catch { hashesValid = false; }
-      if (!hashesValid) {
-        return fail(CFC_STATE_INVALID, 'completed checkpoint artifacts no longer match the recorded hashes (stale/tampered — not reusable)');
+        closure = validateCompleteReuseClosure({
+          workDir,
+          state: existing,
+          boundPlanHash: existing.p1FinalCoveragePlanHash,
+          currentConfigFingerprint: configFingerprint(config),
+        });
+      } catch (error) {
+        closure = {
+          valid: false,
+          boundary: 'unreadable',
+          detail: `closure validation threw (${sanitizeMessage(error?.code ?? error?.message)})`,
+        };
       }
-      try {
-        const result = JSON.parse(readFileSync(resultPath, 'utf8'));
-        return { ok: true, reused: true, result, runId, planHash: existing.p1FinalCoveragePlanHash };
-      } catch {
-        return fail(CFC_STATE_INVALID, 'research result artifact unreadable');
+      if (!closure.valid) {
+        appendEvent(workDir, {
+          event: 'p1_complete_reuse_refused',
+          boundary: closure.boundary,
+          detail: sanitizeMessage(closure.detail),
+        });
+        return fail(
+          CFC_STATE_INVALID,
+          `completed checkpoint is not currently reusable (earliest invalid boundary=${closure.boundary}): ${closure.detail}`,
+          { reuseBoundary: closure.boundary },
+        );
       }
+      // The closure already re-read and re-validated the result artifact; return
+      // its parsed value rather than re-reading the file a second time.
+      return { ok: true, reused: true, result: closure.result, runId, planHash: existing.p1FinalCoveragePlanHash };
     }
     if (existing.stage === STAGE_FAILED) {
       return fail(CFC_FAILED_STATE_REQUIRES_RESTART, 'previous run failed — restart required (state.stage=FAILED)');
@@ -418,7 +638,7 @@ export async function composeP1Research({
     archivePriorOccurrenceDerivedState(workDir, occurrenceId);
   }
 
-  const state = makeState({ workDir, topic: normalizedTopic, mode, percent: null, runtime: effectiveRuntime.runtimeId, occurrenceId });
+  const state = makeState({ workDir, topic: normalizedTopic, mode, percent: null, runtime: effectiveRuntime.runtimeId, occurrenceId, config });
   state.stage = STAGE_SEARCH;
   writeState(workDir, state);
   appendEvent(workDir, { event: 'p1_compose_begin', runId, mode, runtime: effectiveRuntime.runtimeId, occurrenceId, resuming: isResumingOccurrence });
@@ -504,45 +724,141 @@ export async function composeP1Research({
       .map((p) => ({ providerId: p.providerId, capability: p.capability }));
 
     // 4. Stage chain — the frozen composition owner, canonical single-pass order.
-    const started = beginResearchCoverageLedger({ plan, planHash: expectedPlanHash, workDir, plannedRoutes });
-    let coverageState = started.coverageState;
-    const { journal } = started;
+    //
+    // P1-R06 (#94): `beginResearchCoverageLedger` creates AND PERSISTS an EMPTY
+    // ledger, so on an ordinary resume it would both destroy the persisted state
+    // and force retrieval + selection to re-run even when their artifacts are
+    // still valid. Plan the re-entry boundary from the PERSISTED checkpoint
+    // FIRST (read-only), and only begin a fresh ledger when no boundary is proven.
+    // `remote truth > assumption`: only a proven boundary is ever optimised.
+    const reentry = isResumingOccurrence
+      ? planResumeReentry({ workDir, priorState: existing, planHash: expectedPlanHash })
+      : { ok: false, reason: 'not_resuming' };
 
-    state.stage = STAGE_SEARCH;
-    writeState(workDir, state);
-
-    const loop = runRetrievalFeedbackLoop({
-      coverageState, plan, planHash: expectedPlanHash, workDir,
-      seam: effectiveSeam,
-      // Explicit deterministic routes: every registered search channel, in
-      // registry order — the same list recorded as plannedRoutes in the ledger.
-      channels: plannedRoutes.map((r) => ({ providerId: r.providerId })),
-      config, journal,
-    });
-    if (loop.pool === null || loop.decision === DECISION_PROVIDER_FAILURE) {
-      return persistFailure(CFC_RETRIEVAL_FAILED, `retrieval ended without a candidate pool (decision=${String(loop.decision)}, stopReason=${String(loop.stopReason)})`);
+    let coverageState;
+    let journal;
+    if (reentry.ok) {
+      // Continue the PERSISTED ledger: it is already validated and plan-bound by
+      // its owner (`loadCoverageState`), and it is used verbatim. The ledger is
+      // deliberately NOT re-created here, because that would overwrite the very
+      // state this branch just certified reusable.
+      coverageState = reentry.coverageState;
+      journal = beginConvergenceJournal();
+      appendEvent(workDir, {
+        event: 'coverage_ledger_resume', planHash: expectedPlanHash, boundary: reentry.boundary, occurrenceId,
+      });
+    } else {
+      const started = beginResearchCoverageLedger({ plan, planHash: expectedPlanHash, workDir, plannedRoutes });
+      coverageState = started.coverageState;
+      ({ journal } = started);
     }
-    coverageState = loop.coverageState;
 
+    let boundary;
+    let pool = null;
+    if (reentry.ok) {
+      // Retrieval was SKIPPED, so its canonical stage must still be journaled —
+      // the single-pass acyclic order is a journal invariant every downstream
+      // stage asserts, not an accident of which calls happened to run.
+      recordStage(journal, STAGE_RETRIEVAL_ROUNDS);
+      boundary = reentry.boundary;
+      pool = reentry.pool;
+      appendEvent(workDir, {
+        event: 'resume_reentry',
+        boundary,
+        occurrenceId,
+        reusedRetrieval: true,
+        reusedSelection: reentry.decision !== null,
+        selectionRefusalReason: reentry.selectionRefusalReason ?? null,
+      });
+    } else {
+      state.stage = STAGE_SEARCH;
+      writeState(workDir, state);
+
+      const loop = runRetrievalFeedbackLoop({
+        coverageState, plan, planHash: expectedPlanHash, workDir,
+        seam: effectiveSeam,
+        // Explicit deterministic routes: every registered search channel, in
+        // registry order — the same list recorded as plannedRoutes in the ledger.
+        channels: plannedRoutes.map((r) => ({ providerId: r.providerId })),
+        config, journal,
+      });
+      if (loop.pool === null || loop.decision === DECISION_PROVIDER_FAILURE) {
+        return persistFailure(CFC_RETRIEVAL_FAILED, `retrieval ended without a candidate pool (decision=${String(loop.decision)}, stopReason=${String(loop.stopReason)})`);
+      }
+      coverageState = loop.coverageState;
+      boundary = RESUME_REENTRY_RETRIEVAL_ROUNDS;
+      pool = loop.pool;
+      // Same event, live payload: the boundary this run STARTED at, with the reuse
+      // flags false. Recording both cases in one event keeps a single auditable
+      // answer to "from where did this run begin, and what did it reuse?".
+      appendEvent(workDir, { event: 'resume_reentry', boundary, occurrenceId, reusedRetrieval: false, reusedSelection: false });
+    }
+
+    // The T06 pool is FINAL at this point — either just produced by the loop, or
+    // proven byte-unchanged by the binding above. Recording its content hash here
+    // is exactly what lets a LATER resume skip retrieval.
+    state.hashes = {
+      ...state.hashes,
+      [CHECKPOINT_BINDING_ACCUMULATED_POOL]: sha256File(
+        path.join(workDir, RETRIEVAL_ROUNDS_DIRNAME, ACCUMULATED_POOL_FILENAME),
+      ),
+    };
     state.stage = STAGE_SELECT;
     writeState(workDir, state);
 
-    const selection = applySourceGroupSelection({ coverageState, pool: loop.pool, plan, workDir, journal });
-    if (selection.clarificationRequired) {
+    let selection = null;
+    if (boundary === RESUME_REENTRY_SOURCE_GROUP_SELECTION) {
+      // The frozen T08 authority already certified this decision reusable against
+      // the CURRENT planHash and the pool this run is bound to, and its bytes are
+      // provably unchanged. Delegation, not judgement: T08's own
+      // stale-propagation authority is the only thing that may declare a decision
+      // reusable, and the persisted decision is applied to the persisted ledger
+      // exactly as the live path would have.
+      //
+      // The persisted ledger is the RETRIEVAL-time ledger: `applySourceGroupSelection`
+      // updates the T08 fusion accounting only IN MEMORY, and the group stage is what
+      // persists it. So re-entering at the selection boundary has to perform that same
+      // in-memory step — otherwise the resumed run would carry a ledger the live run
+      // never had, and T14's `selected_source_group_count <= fusedGroupCount`
+      // invariant would fail closed on it. This is the frozen T08 hook deriving the
+      // accounting from the frozen T08 decision, not a locally invented counter, and
+      // it is idempotent because the hook SETS both counters from the decision.
+      coverageState = applySelectionToCoverageState(coverageState, reentry.decision);
+      recordStage(journal, STAGE_SOURCE_GROUP_SELECTION);
       appendEvent(workDir, {
-        event: 'clarification_required', stage: STAGE_SELECT,
-        options: (selection.decision?.clarification?.options ?? []).map((o) => o.questionId),
+        event: 'source_group_selection',
+        verdict: reentry.decision.verdict,
+        selectedGroupCount: reentry.decision.selectedGroupCount,
+        candidateGroupCount: reentry.decision.candidates.length,
+        reused: true,
       });
-      appendEvent(workDir, { event: 'stop', reason: 'clarification_required' });
-      return fail(CFC_CLARIFICATION_REQUIRED, null, {
-        clarificationRequired: true,
-        options: (selection.decision?.clarification?.options ?? []).map((o) => o.questionId),
-      });
+      selection = { ok: true, coverageState, decision: reentry.decision };
     }
-    if (!selection.ok) {
-      return persistFailure(CFC_SELECTION_FAILED, selection.code, { selectionReason: selection.code ?? null });
+
+    if (selection === null) {
+      selection = applySourceGroupSelection({ coverageState, pool, plan, workDir, journal });
+      if (selection.clarificationRequired) {
+        appendEvent(workDir, {
+          event: 'clarification_required', stage: STAGE_SELECT,
+          options: (selection.decision?.clarification?.options ?? []).map((o) => o.questionId),
+        });
+        appendEvent(workDir, { event: 'stop', reason: 'clarification_required' });
+        return fail(CFC_CLARIFICATION_REQUIRED, null, {
+          clarificationRequired: true,
+          options: (selection.decision?.clarification?.options ?? []).map((o) => o.questionId),
+        });
+      }
+      if (!selection.ok) {
+        return persistFailure(CFC_SELECTION_FAILED, selection.code, { selectionReason: selection.code ?? null });
+      }
     }
     coverageState = selection.coverageState;
+
+    // The T08 decision is FINAL here; bind it so a later resume can skip selection.
+    state.hashes = {
+      ...state.hashes,
+      [CHECKPOINT_BINDING_SELECTION_DECISION]: sha256File(path.join(workDir, SELECTION_DECISION_FILENAME)),
+    };
 
     state.stage = STAGE_CAPTURE;
     writeState(workDir, state);
@@ -659,9 +975,16 @@ export async function composeP1Research({
     state.completedStages = [STAGE_SEARCH, STAGE_SELECT, STAGE_CAPTURE, STAGE_ANALYZE, STAGE_RENDER];
     state.p1FinalCoveragePlanHash = expectedPlanHash;
     state.artifacts = { ...result.artifacts };
+    // P1-R06 (#94): record the FULL content-binding set, not just the two
+    // terminal artifacts. The reuse closure re-reads every one of these and
+    // refuses reuse when any mid-chain artifact drifted — including a
+    // SAME-COUNT semantic mutation that only a content hash can detect.
     state.hashes = {
       researchPlan: sha256File(path.join(workDir, PLAN_ARTIFACT_FILENAME)),
+      coverageState: sha256File(path.join(workDir, COVERAGE_STATE_FILENAME)),
       coverageFinal: sha256File(path.join(workDir, FINAL_COVERAGE_FILENAME)),
+      perGroupClaims: sha256File(path.join(workDir, PER_GROUP_CLAIMS_FILENAME)),
+      synthesis: sha256File(path.join(workDir, SYNTHESIS_FILENAME)),
       researchResult: sha256File(path.join(workDir, RESEARCH_RESULT_FILENAME)),
     };
     state.coverage = {

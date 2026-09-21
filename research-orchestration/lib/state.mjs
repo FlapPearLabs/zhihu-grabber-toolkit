@@ -59,7 +59,40 @@ export function runIdentityHash({ topic, mode, percent, runtime }) {
   return sha256(JSON.stringify({ topic, mode, percent, runtime }));
 }
 
-export function makeState({ workDir, topic, mode, percent, runtime, forceQuestionId, occurrenceId }) {
+/**
+ * P1-R06 (#94): deterministic content fingerprint of the composition config.
+ *
+ * `runIdentityHash` deliberately covers only the STABLE request identity
+ * (topic/mode/percent/runtime). The composition CONFIG (rounds, novelty
+ * thresholds, per-channel budgets, …) materially changes which corpus and which
+ * claims a run produces, so a checkpoint produced under config A must never be
+ * served to a request made under config B. Recording a stable fingerprint lets
+ * the reuse closure compare configs WITHOUT widening the run identity (which
+ * would have broken every existing checkpoint's runId).
+ *
+ * The config is canonicalized by key order and hashed; `undefined`/absent config
+ * fingerprints to null (the historical, config-less call shape).
+ */
+export function configFingerprint(config) {
+  if (config === undefined || config === null) return null;
+  let canonical;
+  try {
+    canonical = canonicalizeForHash(config);
+  } catch {
+    return null;
+  }
+  return sha256(canonical);
+}
+
+/** Stable JSON with recursively sorted object keys (arrays keep their order). */
+function canonicalizeForHash(value) {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value ?? null);
+  if (Array.isArray(value)) return `[${value.map((v) => canonicalizeForHash(v)).join(',')}]`;
+  const keys = Object.keys(value).sort();
+  return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalizeForHash(value[k])}`).join(',')}}`;
+}
+
+export function makeState({ workDir, topic, mode, percent, runtime, forceQuestionId, occurrenceId, config }) {
   return {
     schemaVersion: STATE_SCHEMA_VERSION,
     runId: runIdentityHash({ topic, mode, percent, runtime }),
@@ -75,6 +108,9 @@ export function makeState({ workDir, topic, mode, percent, runtime, forceQuestio
     mode,
     percent,
     runtime,
+    // P1-R06 (#94): the composition config this execution ran under. A checkpoint
+    // is reusable only for the SAME config fingerprint (see the reuse closure).
+    configFingerprint: configFingerprint(config),
     forceQuestionId: forceQuestionId ?? null,
     stage: STAGE_SEARCH,
     completedStages: [],
