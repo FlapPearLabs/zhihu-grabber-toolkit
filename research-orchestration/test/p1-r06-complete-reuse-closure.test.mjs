@@ -1864,6 +1864,217 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
     assert.equal(reentry2.reentryRefusalReason, 'coverage_state_content_changed', 'R7: the refusal names the ledger, audibly');
     assert.ok(calls2.search > 0, 'R7: the work is genuinely re-executed (no unproven byte is consumed)');
   });
+
+  test('R8 (review round-3 P0-1 / round-4): self-consistent external evidence outside checkpoint cannot grant reuse', async () => {
+    const workDir = tmpWork('p1-r06-r8-');
+    await runUntilInterrupt(workDir);
+
+    const checkpoint = readState(workDir);
+    const hashA = checkpoint.hashes[BINDING_COVERAGE_STATE];
+    assert.ok(hashA, 'R8: fixture precondition — checkpoint has committed coverageState hash A');
+
+    // Mutate canonical coverage-state to valid B (schema valid, same planHash, modified bookkeeping)
+    const ledgerPath = path.join(workDir, COVERAGE_STATE);
+    const ledger = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+    ledger.retrieval.fusedCandidateCount = Number(ledger.retrieval.fusedCandidateCount ?? 0) + 1;
+    const bytesB = `${JSON.stringify(ledger, null, 2)}\n`;
+    fs.writeFileSync(ledgerPath, bytesB);
+    const hashB = sha256File(ledgerPath);
+    assert.notEqual(hashB, hashA, 'R8: hash B must differ from committed hash A');
+
+    // Create self-consistent staging blob for B
+    const { getStagingPath } = await import('../lib/p1-runtime-composer.mjs');
+    const stagingPathB = getStagingPath(workDir, BINDING_COVERAGE_STATE, hashB);
+    fs.mkdirSync(path.dirname(stagingPathB), { recursive: true });
+    fs.writeFileSync(stagingPathB, bytesB);
+
+    // Staging for A does not exist, and checkpoint expects A
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, true, `R8: live path succeeds: ${JSON.stringify(out)}`);
+    assert.ok(calls.search > 0, 'R8: B cannot earn reuse without checkpoint authority');
+    const reentry = lastEvent(workDir, 'resume_reentry');
+    assert.equal(reentry.reusedRetrieval, false, 'R8: uncommitted evidence B is refused');
+    assert.equal(reentry.reentryRefusalReason, 'coverage_state_content_changed');
+    assert.notEqual(sha256File(ledgerPath), hashB, 'R8: canonical ledger was rewritten by live execution');
+  });
+
+  test('R8b (review round-4): cross-occurrence replay cannot override checkpoint truth', async () => {
+    const workDirA = tmpWork('p1-r06-r8b-a-');
+    const workDirB = tmpWork('p1-r06-r8b-b-');
+
+    await runUntilInterrupt(workDirA);
+    await runUntilInterrupt(workDirB);
+
+    // Mutate B's ledger to make it a distinct valid ledger
+    const ledgerPathB = path.join(workDirB, COVERAGE_STATE);
+    const ledgerB = JSON.parse(fs.readFileSync(ledgerPathB, 'utf8'));
+    ledgerB.retrieval.fusedCandidateCount = Number(ledgerB.retrieval.fusedCandidateCount ?? 0) + 1;
+    fs.writeFileSync(ledgerPathB, `${JSON.stringify(ledgerB, null, 2)}\n`);
+    const hashB = sha256File(ledgerPathB);
+
+    const checkpointA = readState(workDirA);
+    const hashA = checkpointA.hashes[BINDING_COVERAGE_STATE];
+    assert.notEqual(hashB, hashA, 'R8b: hash B must differ from hash A');
+
+    // Copy B's coverage-state into A's workDir
+    fs.copyFileSync(ledgerPathB, path.join(workDirA, COVERAGE_STATE));
+
+    // Also copy B's staging into A's staging
+    const { getStagingPath } = await import('../lib/p1-runtime-composer.mjs');
+    const stagingPathBInA = getStagingPath(workDirA, BINDING_COVERAGE_STATE, hashB);
+    fs.mkdirSync(path.dirname(stagingPathBInA), { recursive: true });
+    fs.copyFileSync(ledgerPathB, stagingPathBInA);
+
+    // A's checkpoint still expects hash A, and A has no staging for hash A
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir: workDirA, ...fixtures(calls) });
+    assert.equal(out.ok, true);
+    assert.ok(calls.search > 0, 'R8b: occurrence A refuses B replay');
+    const reentry = lastEvent(workDirA, 'resume_reentry');
+    assert.equal(reentry.reusedRetrieval, false, 'R8b: nothing is reused from replayed occurrence B');
+    assert.equal(reentry.reentryRefusalReason, 'coverage_state_content_changed');
+  });
+
+  test('R9 (review round-4): pool committed in checkpoint, crash before canonical materialize recovers from staging', async () => {
+    const workDir = tmpWork('p1-r06-r9-');
+
+    const calls1 = zeroCalls();
+    const { composeP1Research, getStagingPath } = await import('../lib/p1-runtime-composer.mjs');
+    const out1 = await composeP1Research({
+      topic: TOPIC,
+      workDir,
+      ...fixtures(calls1, {
+        crashPoint: (name) => {
+          if (name === 'after_retrieval_checkpoint_before_materialize') {
+            // Simulate crash where canonical materialization did not happen
+            fs.rmSync(path.join(workDir, POOL_REL), { force: true });
+            throw Object.assign(new Error('crash after retrieval checkpoint before materialize'), { code: 'R06_TEST_CRASH_POINT' });
+          }
+        },
+      }),
+    });
+    assert.equal(out1.ok, false, 'R9: Run 1 dies at the crash point');
+    asKillShape(workDir, 'SELECT');
+
+    // Preconditions
+    const cp = readState(workDir);
+    const expectedPoolHash = cp.hashes[BINDING_ACCUMULATED_POOL];
+    assert.ok(expectedPoolHash, 'R9: checkpoint has committed accumulatedPool hash');
+    assert.equal(fs.existsSync(path.join(workDir, POOL_REL)), false, 'R9: canonical pool is missing (lost before materialize)');
+    const stagedPoolPath = getStagingPath(workDir, BINDING_ACCUMULATED_POOL, expectedPoolHash);
+    assert.equal(sha256File(stagedPoolPath), expectedPoolHash, 'R9: staging has byte-exact committed pool');
+
+    // Run 2: resume should recover pool from staging and avoid re-running search
+    const calls2 = zeroCalls();
+    const out2 = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls2) });
+    assert.equal(out2.ok, true, `R9: resume succeeds: ${JSON.stringify(out2)}`);
+    assert.equal(calls2.search, 0, 'R9: retrieval is skipped (search = 0) because committed pool was recovered');
+    const reentry = lastEvent(workDir, 'resume_reentry');
+    assert.equal(reentry.reusedRetrieval, true, 'R9: retrieval was reused from staging');
+    assert.equal(sha256File(path.join(workDir, POOL_REL)), expectedPoolHash, 'R9: canonical pool was materialized from staging');
+  });
+
+  test('R9-precommit (review round-4 negative control): pool staged but crash before checkpoint commit re-runs retrieval', async () => {
+    const workDir = tmpWork('p1-r06-r9-pre-');
+    const calls1 = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out1 = await composeP1Research({
+      topic: TOPIC,
+      workDir,
+      ...fixtures(calls1, {
+        crashPoint: (name) => {
+          if (name === 'after_retrieval_precommit') {
+            throw Object.assign(new Error('crash after retrieval before checkpoint commit'), { code: 'R06_TEST_CRASH_POINT' });
+          }
+        },
+      }),
+    });
+    assert.equal(out1.ok, false);
+    asKillShape(workDir, 'SEARCH');
+
+    const cp = readState(workDir);
+    assert.ok(!cp.hashes?.[BINDING_ACCUMULATED_POOL], 'R9-precommit: checkpoint did not commit pool hash');
+
+    // Run 2: must re-run search because pool was not committed
+    const calls2 = zeroCalls();
+    const out2 = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls2) });
+    assert.equal(out2.ok, true);
+    assert.ok(calls2.search > 0, 'R9-precommit: uncommitted pool forces live search');
+    const reentry = lastEvent(workDir, 'resume_reentry');
+    assert.equal(reentry.reusedRetrieval, false, 'R9-precommit: uncommitted pool cannot be reused');
+  });
+
+  test('R10 (review round-4): selection decision committed in checkpoint, crash before materialize recovers from staging', async () => {
+    const workDir = tmpWork('p1-r06-r10-');
+    const calls1 = zeroCalls();
+    const { composeP1Research, getStagingPath } = await import('../lib/p1-runtime-composer.mjs');
+    const out1 = await composeP1Research({
+      topic: TOPIC,
+      workDir,
+      ...fixtures(calls1, {
+        crashPoint: (name) => {
+          if (name === 'after_selection_checkpoint_before_materialize') {
+            fs.rmSync(path.join(workDir, SELECTION_DECISION_FILENAME), { force: true });
+            throw Object.assign(new Error('crash after selection checkpoint before materialize'), { code: 'R06_TEST_CRASH_POINT' });
+          }
+        },
+      }),
+    });
+    assert.equal(out1.ok, false);
+    asKillShape(workDir, 'CAPTURE');
+
+    const cp = readState(workDir);
+    const expectedDecisionHash = cp.hashes[BINDING_SELECTION_DECISION];
+    assert.ok(expectedDecisionHash, 'R10: checkpoint committed selectionDecision hash');
+    assert.equal(fs.existsSync(path.join(workDir, SELECTION_DECISION_FILENAME)), false, 'R10: canonical decision missing');
+    const stagedDecisionPath = getStagingPath(workDir, BINDING_SELECTION_DECISION, expectedDecisionHash);
+    assert.equal(sha256File(stagedDecisionPath), expectedDecisionHash, 'R10: staging has byte-exact committed decision');
+
+    const liveSelectionsBefore = readEvents(workDir).filter(e => e.event === 'source_group_selection' && e.reused !== true).length;
+
+    // Run 2: resume should recover decision from staging without new live selection
+    const calls2 = zeroCalls();
+    const out2 = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls2) });
+    assert.equal(out2.ok, true);
+    assert.equal(calls2.search, 0, 'R10: search = 0');
+    const reentry = lastEvent(workDir, 'resume_reentry');
+    assert.equal(reentry.reusedSelection, true, 'R10: reusedSelection = true');
+    const liveSelectionsAfter = readEvents(workDir).filter(e => e.event === 'source_group_selection' && e.reused !== true).length;
+    assert.equal(liveSelectionsAfter, liveSelectionsBefore, 'R10: no new live selection execution');
+    assert.equal(sha256File(path.join(workDir, SELECTION_DECISION_FILENAME)), expectedDecisionHash, 'R10: canonical decision materialized');
+  });
+
+  test('R10-precommit (review round-4 negative control): decision staged but crash before checkpoint commit re-executes selection', async () => {
+    const workDir = tmpWork('p1-r06-r10-pre-');
+    const calls1 = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out1 = await composeP1Research({
+      topic: TOPIC,
+      workDir,
+      ...fixtures(calls1, {
+        crashPoint: (name) => {
+          if (name === 'after_selection_precommit') {
+            throw Object.assign(new Error('crash after selection before checkpoint commit'), { code: 'R06_TEST_CRASH_POINT' });
+          }
+        },
+      }),
+    });
+    assert.equal(out1.ok, false);
+    asKillShape(workDir, 'SELECT');
+
+    const cp = readState(workDir);
+    assert.ok(!cp.hashes?.[BINDING_SELECTION_DECISION], 'R10-precommit: checkpoint did not commit selectionDecision hash');
+
+    // Run 2: must re-execute selection because decision was not committed
+    const calls2 = zeroCalls();
+    const out2 = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls2) });
+    assert.equal(out2.ok, true);
+    const reentry = lastEvent(workDir, 'resume_reentry');
+    assert.equal(reentry.reusedSelection, false, 'R10-precommit: uncommitted selection cannot be reused');
+  });
 });
 
 void runIdentityHash;

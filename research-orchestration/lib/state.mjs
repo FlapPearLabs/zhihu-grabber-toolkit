@@ -149,7 +149,17 @@ export function readState(workDir) {
 export function writeState(workDir, state) {
   fs.mkdirSync(workDir, { recursive: true });
   state.updatedAt = new Date().toISOString();
-  fs.writeFileSync(stateFile(workDir), `${JSON.stringify(state, null, 2)}\n`);
+  const target = stateFile(workDir);
+  const temp = `${target}.tmp-${process.pid}-${Date.now()}`;
+  const payload = `${JSON.stringify(state, null, 2)}\n`;
+  const fd = fs.openSync(temp, 'w');
+  try {
+    fs.writeFileSync(fd, payload, 'utf8');
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+  fs.renameSync(temp, target);
 }
 
 export function appendEvent(workDir, event) {

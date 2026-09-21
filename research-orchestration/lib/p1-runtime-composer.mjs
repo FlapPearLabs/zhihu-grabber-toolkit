@@ -46,8 +46,8 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
-import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { randomUUID, createHash } from 'node:crypto';
+import { existsSync, readFileSync, renameSync, writeFileSync, copyFileSync, mkdirSync, openSync, fsyncSync, closeSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -79,7 +79,7 @@ import {
   selectionDecisionStatus,
   applySelectionToCoverageState,
 } from './source-group-selection.mjs';
-import { loadCoverageState } from './coverage-state.mjs';
+import { loadCoverageState, validateCoverageState } from './coverage-state.mjs';
 import { MULTI_GROUP_STATE_FILENAME } from './multi-group-execution.mjs';
 import { CAPABILITY_SEARCH, createProviderSeam } from './provider-seam.mjs';
 import { createOfficialSearchAdapter } from './official-search-provider.mjs';
@@ -211,12 +211,113 @@ function readPersistedArtifact(workDir, filename) {
 }
 
 /**
+ * Checkpoint-first Staging & Recovery (Issue #94, Round-4 Architecture).
+ *
+ * Checkpoint is the single source of authority and commit point.
+ * Artifact bytes are staged into content-addressed paths before checkpoint commit.
+ * Staged bytes earn reuse authority ONLY when referenced by checkpoint hash.
+ */
+export const COMMIT_STAGING_DIR = '.p1-commit-staging';
+
+export const ARTIFACT_CANONICAL_MATCH = 'CANONICAL_MATCH';
+export const ARTIFACT_STAGED_MATCH = 'STAGED_MATCH';
+export const ARTIFACT_INVALID = 'INVALID';
+export const ARTIFACT_UNBOUND = 'UNBOUND';
+
+export function getStagingPath(workDir, key, sha) {
+  return path.join(workDir, COMMIT_STAGING_DIR, key, `${sha}.json`);
+}
+
+export function stageArtifactBytes(workDir, key, bytes) {
+  const sha = createHash('sha256').update(bytes).digest('hex');
+  const target = getStagingPath(workDir, key, sha);
+  mkdirSync(path.dirname(target), { recursive: true });
+  if (existsSync(target)) {
+    try {
+      if (sha256File(target) === sha) {
+        return { sha, target };
+      }
+    } catch {
+      // re-write
+    }
+  }
+  const temp = `${target}.tmp-${process.pid}-${Date.now()}`;
+  const fd = openSync(temp, 'w');
+  try {
+    writeFileSync(fd, bytes);
+    fsyncSync(fd);
+  } finally {
+    closeSync(fd);
+  }
+  renameSync(temp, target);
+  return { sha, target };
+}
+
+export function cleanupStaging(stagedPath) {
+  try {
+    if (existsSync(stagedPath)) {
+      rmSync(stagedPath, { force: true });
+    }
+  } catch {
+    // ignore
+  }
+}
+
+export function inspectCommittedArtifact({ workDir, key, canonicalRel, expectedHash }) {
+  if (typeof expectedHash !== 'string' || expectedHash.length === 0) {
+    return { status: ARTIFACT_UNBOUND, reason: 'unbound' };
+  }
+  const canonicalAbs = path.join(workDir, canonicalRel);
+  if (existsSync(canonicalAbs)) {
+    try {
+      const actual = sha256File(canonicalAbs);
+      if (actual === expectedHash) {
+        return { status: ARTIFACT_CANONICAL_MATCH, path: canonicalRel, hash: expectedHash, absPath: canonicalAbs };
+      }
+    } catch {
+      // unreadable
+    }
+  }
+  const stagedAbs = getStagingPath(workDir, key, expectedHash);
+  if (existsSync(stagedAbs)) {
+    try {
+      const actual = sha256File(stagedAbs);
+      if (actual === expectedHash) {
+        return { status: ARTIFACT_STAGED_MATCH, stagedPath: stagedAbs, canonicalRel, hash: expectedHash, absPath: stagedAbs };
+      }
+    } catch {
+      // unreadable
+    }
+  }
+  return { status: ARTIFACT_INVALID, reason: existsSync(canonicalAbs) ? 'content_changed' : 'missing' };
+}
+
+export function materializeStagedArtifact(workDir, stagedPath, canonicalRel) {
+  const dest = path.join(workDir, canonicalRel);
+  mkdirSync(path.dirname(dest), { recursive: true });
+  if (existsSync(dest)) {
+    try {
+      if (sha256File(dest) === sha256File(stagedPath)) {
+        return;
+      }
+    } catch {
+      // proceed
+    }
+  }
+  const temp = `${dest}.tmp-${process.pid}-${Date.now()}`;
+  copyFileSync(stagedPath, temp);
+  const fd = openSync(temp, 'r');
+  try {
+    fsyncSync(fd);
+  } finally {
+    closeSync(fd);
+  }
+  renameSync(temp, dest);
+}
+
+/**
  * Prove that a stage-boundary artifact on disk is BYTE-IDENTICAL to the artifact
  * this checkpoint recorded when it produced that stage.
- *
- * An absent or malformed binding is NOT a licence to reuse: `unbound` is a
- * refusal. That is what keeps legacy / config-less / partially-written
- * checkpoints from silently earning reuse they never proved.
  */
 function verifyBoundArtifact(workDir, recordedHash, relPath) {
   if (typeof recordedHash !== 'string' || recordedHash.length === 0) return { ok: false, reason: 'unbound' };
@@ -235,20 +336,14 @@ function verifyBoundArtifact(workDir, recordedHash, relPath) {
 /**
  * Re-record the coverage ledger's content binding so the checkpoint on disk
  * ALWAYS names the ledger bytes that existed when it was written.
- *
- * The ledger is a stage-boundary artifact like the pool and the decision, but
- * unlike them it changes as stages progress, so its binding has to be refreshed
- * at every checkpoint write instead of once per stage. Call this immediately
- * before every `writeState` in the staged chain (after the stage's last ledger
- * write), so a later resume can prove the ledger bytes are the interrupted
- * run's bytes (independent-review P0-2).
  */
 function recordLedgerBinding(state, workDir) {
   const abs = path.join(workDir, COVERAGE_STATE_FILENAME);
   if (!existsSync(abs)) return;
+  const sha = sha256File(abs);
   state.hashes = {
     ...state.hashes,
-    [CHECKPOINT_BINDING_COVERAGE_STATE]: sha256File(abs),
+    [CHECKPOINT_BINDING_COVERAGE_STATE]: sha,
   };
 }
 
@@ -348,58 +443,117 @@ function planResumeReentry({ workDir, priorState, planHash: expectedPlanHash, cu
     }
   }
 
+  const materialize = [];
+
   // The coverage ledger is the substrate every downstream boundary consumes
   // (independent-review P0-2). An unproven ledger means there is NO proven
   // re-entry point: a fresh ledger has no retrieval accounting, so neither the
   // selection boundary nor the retrieval boundary can be entered safely.
-  // (The binding-lag window this refusal covers — an owner persist that landed
-  // between the last checkpoint and the kill — is the disclosed, fail-safe
-  // residual documented above; the round-3 review confirmed that no unanchored
-  // sidecar may reopen it.)
-  const ledgerProof = verifyBoundArtifact(workDir, recorded[CHECKPOINT_BINDING_COVERAGE_STATE], COVERAGE_STATE_FILENAME);
-  if (!ledgerProof.ok) return { ok: false, reason: `coverage_state_${ledgerProof.reason}` };
+  const ledgerInspect = inspectCommittedArtifact({
+    workDir,
+    key: CHECKPOINT_BINDING_COVERAGE_STATE,
+    canonicalRel: COVERAGE_STATE_FILENAME,
+    expectedHash: recorded[CHECKPOINT_BINDING_COVERAGE_STATE],
+  });
+  if (ledgerInspect.status === ARTIFACT_UNBOUND || ledgerInspect.status === ARTIFACT_INVALID) {
+    return { ok: false, reason: `coverage_state_${ledgerInspect.reason}` };
+  }
+  if (ledgerInspect.status === ARTIFACT_STAGED_MATCH) {
+    materialize.push({ key: CHECKPOINT_BINDING_COVERAGE_STATE, stagedPath: ledgerInspect.stagedPath, canonicalRel: COVERAGE_STATE_FILENAME });
+  }
 
   // The T06 pool is the artifact that proves retrieval finished AND that any
   // decision below was made from THESE candidates.
-  const poolProof = verifyBoundArtifact(
+  const poolRel = path.join(RETRIEVAL_ROUNDS_DIRNAME, ACCUMULATED_POOL_FILENAME);
+  const poolInspect = inspectCommittedArtifact({
     workDir,
-    recorded[CHECKPOINT_BINDING_ACCUMULATED_POOL],
-    path.join(RETRIEVAL_ROUNDS_DIRNAME, ACCUMULATED_POOL_FILENAME),
-  );
-  if (!poolProof.ok) return { ok: false, reason: `accumulated_pool_${poolProof.reason}` };
-  const poolArtifact = readPersistedArtifact(
-    path.join(workDir, RETRIEVAL_ROUNDS_DIRNAME),
-    ACCUMULATED_POOL_FILENAME,
-  );
-  if (!poolArtifact.ok) return { ok: false, reason: `accumulated_pool_${poolArtifact.reason}` };
-  const pool = poolArtifact.value;
+    key: CHECKPOINT_BINDING_ACCUMULATED_POOL,
+    canonicalRel: poolRel,
+    expectedHash: recorded[CHECKPOINT_BINDING_ACCUMULATED_POOL],
+  });
+  if (poolInspect.status === ARTIFACT_UNBOUND || poolInspect.status === ARTIFACT_INVALID) {
+    return { ok: false, reason: `accumulated_pool_${poolInspect.reason}` };
+  }
+  if (poolInspect.status === ARTIFACT_STAGED_MATCH) {
+    materialize.push({ key: CHECKPOINT_BINDING_ACCUMULATED_POOL, stagedPath: poolInspect.stagedPath, canonicalRel: poolRel });
+  }
+
+  let pool;
+  try {
+    pool = JSON.parse(readFileSync(poolInspect.absPath, 'utf8'));
+  } catch {
+    return { ok: false, reason: 'accumulated_pool_unparseable' };
+  }
   if (!isPlainObject(pool) || typeof pool.planHash !== 'string') {
     return { ok: false, reason: 'accumulated_pool_not_a_canonical_t06_pool' };
   }
 
   // The ledger is read through its OWNER: structure validation and the plan
-  // binding are T07 semantics and are never re-implemented here. It is then used
-  // VERBATIM — the persisted state IS the authoritative state, so continuing from
-  // it invents nothing.
-  const ledger = loadCoverageState(workDir, expectedPlanHash);
-  if (!ledger.ok) return { ok: false, reason: `ledger_${ledger.reason}` };
+  // binding are T07 semantics and are never re-implemented here.
+  let ledgerState;
+  try {
+    const raw = readFileSync(ledgerInspect.absPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    const validation = validateCoverageState(parsed);
+    if (!validation.ok) {
+      return { ok: false, reason: `ledger_${validation.reason}` };
+    }
+    if (expectedPlanHash !== null && validation.validated.planHash !== expectedPlanHash) {
+      return { ok: false, reason: 'ledger_plan_hash_mismatch' };
+    }
+    ledgerState = validation.validated;
+  } catch {
+    return { ok: false, reason: 'ledger_unreadable_or_corrupt' };
+  }
 
-  const decisionArtifact = loadSelectionDecision(workDir);
-  const decisionProof = decisionArtifact.ok
-    ? verifyBoundArtifact(workDir, recorded[CHECKPOINT_BINDING_SELECTION_DECISION], SELECTION_DECISION_FILENAME)
-    : { ok: false, reason: `selection_decision_${decisionArtifact.reason}` };
-  if (!decisionProof.ok) {
+  const decisionInspect = inspectCommittedArtifact({
+    workDir,
+    key: CHECKPOINT_BINDING_SELECTION_DECISION,
+    canonicalRel: SELECTION_DECISION_FILENAME,
+    expectedHash: recorded[CHECKPOINT_BINDING_SELECTION_DECISION],
+  });
+  if (decisionInspect.status === ARTIFACT_UNBOUND || decisionInspect.status === ARTIFACT_INVALID) {
     return {
       ok: true,
       boundary: RESUME_REENTRY_RETRIEVAL_ROUNDS,
       decision: null,
       pool,
-      coverageState: ledger.state,
-      selectionRefusalReason: decisionProof.reason,
+      coverageState: ledgerState,
+      materialize,
+      selectionRefusalReason: decisionInspect.reason,
+    };
+  }
+  if (decisionInspect.status === ARTIFACT_STAGED_MATCH) {
+    materialize.push({ key: CHECKPOINT_BINDING_SELECTION_DECISION, stagedPath: decisionInspect.stagedPath, canonicalRel: SELECTION_DECISION_FILENAME });
+  }
+
+  let decision;
+  try {
+    decision = JSON.parse(readFileSync(decisionInspect.absPath, 'utf8'));
+  } catch {
+    return {
+      ok: true,
+      boundary: RESUME_REENTRY_RETRIEVAL_ROUNDS,
+      decision: null,
+      pool,
+      coverageState: ledgerState,
+      materialize,
+      selectionRefusalReason: 'selection_decision_unparseable',
+    };
+  }
+  if (!isPlainObject(decision) || decision.type !== 'source-group-selection-decision') {
+    return {
+      ok: true,
+      boundary: RESUME_REENTRY_RETRIEVAL_ROUNDS,
+      decision: null,
+      pool,
+      coverageState: ledgerState,
+      materialize,
+      selectionRefusalReason: 'selection_decision_invalid',
     };
   }
   const status = selectionDecisionStatus({
-    decision: decisionArtifact.decision,
+    decision,
     currentPlanHash: expectedPlanHash,
     currentPoolPlanHash: pool.planHash,
   });
@@ -409,12 +563,13 @@ function planResumeReentry({ workDir, priorState, planHash: expectedPlanHash, cu
       boundary: RESUME_REENTRY_RETRIEVAL_ROUNDS,
       decision: null,
       pool,
-      coverageState: ledger.state,
+      coverageState: ledgerState,
+      materialize,
       selectionRefusalReason: status.reason,
     };
   }
-  const selected = Array.isArray(decisionArtifact.decision.selectedGroups)
-    ? decisionArtifact.decision.selectedGroups
+  const selected = Array.isArray(decision.selectedGroups)
+    ? decision.selectedGroups
     : null;
   if (selected === null || selected.length === 0) {
     // A decision that selected nothing is not a reusable SELECTION: re-running
@@ -424,16 +579,18 @@ function planResumeReentry({ workDir, priorState, planHash: expectedPlanHash, cu
       boundary: RESUME_REENTRY_RETRIEVAL_ROUNDS,
       decision: null,
       pool,
-      coverageState: ledger.state,
+      coverageState: ledgerState,
+      materialize,
       selectionRefusalReason: 'selection_no_selected_groups',
     };
   }
   return {
     ok: true,
     boundary: RESUME_REENTRY_SOURCE_GROUP_SELECTION,
-    decision: decisionArtifact.decision,
+    decision,
     pool,
-    coverageState: ledger.state,
+    coverageState: ledgerState,
+    materialize,
   };
 }
 
@@ -850,6 +1007,12 @@ export async function composeP1Research({
     let coverageState;
     let journal;
     if (reentry.ok) {
+      if (Array.isArray(reentry.materialize) && reentry.materialize.length > 0) {
+        for (const item of reentry.materialize) {
+          materializeStagedArtifact(workDir, item.stagedPath, item.canonicalRel);
+          cleanupStaging(item.stagedPath);
+        }
+      }
       // Continue the PERSISTED ledger: it is already validated and plan-bound by
       // its owner (`loadCoverageState`), and it is used verbatim. The ledger is
       // deliberately NOT re-created here, because that would overwrite the very
@@ -906,6 +1069,17 @@ export async function composeP1Research({
       // composer's accumulatedPool binding checkpoint — is the pool binding-lag
       // window (reviewer's R9).
       crashAt('after_retrieval_loop');
+
+      // Checkpoint-first staging: stage exact bytes before checkpoint commit
+      const poolRel = path.join(RETRIEVAL_ROUNDS_DIRNAME, ACCUMULATED_POOL_FILENAME);
+      const poolBytes = readFileSync(path.join(workDir, poolRel));
+      stageArtifactBytes(workDir, CHECKPOINT_BINDING_ACCUMULATED_POOL, poolBytes);
+
+      const ledgerBytes = readFileSync(path.join(workDir, COVERAGE_STATE_FILENAME));
+      stageArtifactBytes(workDir, CHECKPOINT_BINDING_COVERAGE_STATE, ledgerBytes);
+
+      crashAt('after_retrieval_precommit');
+
       // Same event, live payload: the boundary this run STARTED at, with the reuse
       // flags false. Recording both cases in one event keeps a single auditable
       // answer to "from where did this run begin, and what did it reuse?" — plus
@@ -922,11 +1096,12 @@ export async function composeP1Research({
     // The T06 pool is FINAL at this point — either just produced by the loop, or
     // proven byte-unchanged by the binding above. Recording its content hash here
     // is exactly what lets a LATER resume skip retrieval.
+    const poolRel = path.join(RETRIEVAL_ROUNDS_DIRNAME, ACCUMULATED_POOL_FILENAME);
     state.hashes = {
       ...state.hashes,
-      [CHECKPOINT_BINDING_ACCUMULATED_POOL]: sha256File(
-        path.join(workDir, RETRIEVAL_ROUNDS_DIRNAME, ACCUMULATED_POOL_FILENAME),
-      ),
+      [CHECKPOINT_BINDING_ACCUMULATED_POOL]: pool
+        ? sha256File(path.join(workDir, poolRel))
+        : state.hashes[CHECKPOINT_BINDING_ACCUMULATED_POOL],
       // P1-R06 repair (round-2 review P1-1): a successful re-entry proof has
       // just CERTIFIED the persisted decision (byte-identity against the prior
       // checkpoint's binding, plus T08's own status authority). The FIRST
@@ -944,10 +1119,23 @@ export async function composeP1Research({
     state.stage = STAGE_SELECT;
     recordLedgerBinding(state, workDir);
     writeState(workDir, state);
-    // Crash-consistency seam (round-2 review): the exact point whose clobber
-    // window P1-1 named — after the first resumed STAGE_SELECT checkpoint,
-    // before the decision binding is rewritten downstream.
+    // Crash-consistency seam: checkpoint committed, before canonical materialize
+    crashAt('after_retrieval_checkpoint_before_materialize');
     crashAt('after_select_checkpoint');
+
+    // Materialize canonical files from staging and cleanup staging
+    if (pool) {
+      const stagedPool = getStagingPath(workDir, CHECKPOINT_BINDING_ACCUMULATED_POOL, state.hashes[CHECKPOINT_BINDING_ACCUMULATED_POOL]);
+      if (existsSync(stagedPool)) {
+        materializeStagedArtifact(workDir, stagedPool, poolRel);
+        cleanupStaging(stagedPool);
+      }
+    }
+    const stagedLedger = getStagingPath(workDir, CHECKPOINT_BINDING_COVERAGE_STATE, state.hashes[CHECKPOINT_BINDING_COVERAGE_STATE]);
+    if (existsSync(stagedLedger)) {
+      materializeStagedArtifact(workDir, stagedLedger, COVERAGE_STATE_FILENAME);
+      cleanupStaging(stagedLedger);
+    }
 
     let selection = null;
     if (boundary === RESUME_REENTRY_SOURCE_GROUP_SELECTION) {
@@ -994,6 +1182,15 @@ export async function composeP1Research({
       if (!selection.ok) {
         return persistFailure(CFC_SELECTION_FAILED, selection.code, { selectionReason: selection.code ?? null });
       }
+
+      // Checkpoint-first staging: stage exact bytes before checkpoint commit
+      const decisionBytes = readFileSync(path.join(workDir, SELECTION_DECISION_FILENAME));
+      stageArtifactBytes(workDir, CHECKPOINT_BINDING_SELECTION_DECISION, decisionBytes);
+
+      const selLedgerBytes = readFileSync(path.join(workDir, COVERAGE_STATE_FILENAME));
+      stageArtifactBytes(workDir, CHECKPOINT_BINDING_COVERAGE_STATE, selLedgerBytes);
+
+      crashAt('after_selection_precommit');
     }
     coverageState = selection.coverageState;
     // Crash-consistency seam (round-3 review P1): the T08 selection call has
@@ -1011,6 +1208,20 @@ export async function composeP1Research({
     state.stage = STAGE_CAPTURE;
     recordLedgerBinding(state, workDir);
     writeState(workDir, state);
+    // Crash-consistency seam: checkpoint committed, before canonical materialize
+    crashAt('after_selection_checkpoint_before_materialize');
+
+    // Materialize canonical files from staging and cleanup staging
+    const stagedDecision = getStagingPath(workDir, CHECKPOINT_BINDING_SELECTION_DECISION, state.hashes[CHECKPOINT_BINDING_SELECTION_DECISION]);
+    if (existsSync(stagedDecision)) {
+      materializeStagedArtifact(workDir, stagedDecision, SELECTION_DECISION_FILENAME);
+      cleanupStaging(stagedDecision);
+    }
+    const stagedSelLedger = getStagingPath(workDir, CHECKPOINT_BINDING_COVERAGE_STATE, state.hashes[CHECKPOINT_BINDING_COVERAGE_STATE]);
+    if (existsSync(stagedSelLedger)) {
+      materializeStagedArtifact(workDir, stagedSelLedger, COVERAGE_STATE_FILENAME);
+      cleanupStaging(stagedSelLedger);
+    }
 
     const execution = executeSelectedGroups({
       coverageState, decision: selection.decision, planHash: expectedPlanHash, workDir,
