@@ -109,7 +109,7 @@ import { REQUIRED_EMBEDDING_IDENTITY } from './dense-geometry.mjs';
 import { deriveCanonicalSourceId } from './rce-input-adapter.mjs';
 import { assertArtifactSafe } from './rrf.mjs';
 import { buildDeepSeekResearchRuntime } from './deepseek-research-runtime.mjs';
-import { validateCompleteReuseClosure, CHECKPOINT_BINDING_ACCUMULATED_POOL, CHECKPOINT_BINDING_SELECTION_DECISION } from './p1-reuse-closure.mjs';
+import { validateCompleteReuseClosure, CHECKPOINT_BINDING_ACCUMULATED_POOL, CHECKPOINT_BINDING_SELECTION_DECISION, CHECKPOINT_BINDING_COVERAGE_STATE } from './p1-reuse-closure.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const RO_ROOT = path.resolve(HERE, '..');
@@ -233,6 +233,26 @@ function verifyBoundArtifact(workDir, recordedHash, relPath) {
 }
 
 /**
+ * Re-record the coverage ledger's content binding so the checkpoint on disk
+ * ALWAYS names the ledger bytes that existed when it was written.
+ *
+ * The ledger is a stage-boundary artifact like the pool and the decision, but
+ * unlike them it changes as stages progress, so its binding has to be refreshed
+ * at every checkpoint write instead of once per stage. Call this immediately
+ * before every `writeState` in the staged chain (after the stage's last ledger
+ * write), so a later resume can prove the ledger bytes are the interrupted
+ * run's bytes (independent-review P0-2).
+ */
+function recordLedgerBinding(state, workDir) {
+  const abs = path.join(workDir, COVERAGE_STATE_FILENAME);
+  if (!existsSync(abs)) return;
+  state.hashes = {
+    ...state.hashes,
+    [CHECKPOINT_BINDING_COVERAGE_STATE]: sha256File(abs),
+  };
+}
+
+/**
  * Decide the HIGHEST re-entry point for an ordinary (same-occurrence, non-restart)
  * resume of an interrupted run.
  *
@@ -260,9 +280,22 @@ function verifyBoundArtifact(workDir, recordedHash, relPath) {
  * binding verifies decides how far back the resume may start; `state.stage` is
  * never consulted, so a stale or forged stage label cannot widen re-entry:
  *
+ *   - composition config fingerprint agrees .... else nothing is reusable
+ *   - coverage ledger bound and unchanged ...... the resumed run keeps THE
+ *     interrupted run's own state document (see below for why this is the
+ *     substrate every downstream boundary consumes)
  *   - T06 pool bound and unchanged ........... retrieval need not be re-run
  *   - + T08 decision bound and unchanged ..... selection need not be re-run
  *   - anything else .......................... fall through and re-execute
+ *
+ * THE LEDGER IS ITSELF A BOUND ARTIFACT (independent-review P0-2). The persisted
+ * `coverage-state.json` is the state document every downstream boundary consumes,
+ * so reusing the pool/decision on top of an unproven ledger would compose proven
+ * inputs with unproven state. The composer therefore re-records the ledger's
+ * content hash at EVERY checkpoint write, and a resume that cannot prove the
+ * ledger bytes are the interrupted run's bytes has NO proven re-entry point at
+ * all — it falls through to a full re-execution rather than continuing from a
+ * state document nobody can vouch for. (Fail closed: redo work, never invent.)
  *
  * EVERY CHECK DELEGATES TO ITS OWNER rather than re-implementing it: the persisted
  * ledger is validated and plan-bound by the T07 authority (`loadCoverageState`),
@@ -270,15 +303,41 @@ function verifyBoundArtifact(workDir, recordedHash, relPath) {
  * authority (`selectionDecisionStatus`), and the bindings are the composer's own
  * records of what it wrote.
  *
+ * CONFIG IDENTITY IS PART OF THE PROOF (independent-review P0-3). `runIdentityHash`
+ * covers only the stable request identity, so the SAME runId can be resumed under
+ * a DIFFERENT composition config (rounds, thresholds, budgets) that would produce
+ * a different corpus. The COMPLETE reuse gate compares config fingerprints; the
+ * resume path does too — a checkpoint recorded under config A is never re-entered
+ * by a request made under config B, otherwise the two gates would disagree about
+ * what a "dependency of the current request" is.
+ *
  * READ-ONLY BY CONSTRUCTION: no write, no network call, and no planner /
  * retrieval / capture / model invocation.
  */
-function planResumeReentry({ workDir, priorState, planHash: expectedPlanHash }) {
+function planResumeReentry({ workDir, priorState, planHash: expectedPlanHash, currentConfigFingerprint = undefined }) {
   if (typeof expectedPlanHash !== 'string' || expectedPlanHash.length === 0) {
     return { ok: false, reason: 'plan_hash_missing' };
   }
   const recorded = priorState?.hashes;
   if (!isPlainObject(recorded)) return { ok: false, reason: 'checkpoint_carries_no_hash_bindings' };
+
+  // Config identity is the OUTERMOST gate (independent-review P0-3): a request
+  // made under a different composition config is a different request, so no
+  // stage-boundary artifact of the prior occurrence is evidence for it. The
+  // COMPLETE reuse gate enforces the same rule, so both gates agree.
+  if (currentConfigFingerprint !== undefined) {
+    const recordedFp = priorState?.configFingerprint ?? null;
+    if (recordedFp !== (currentConfigFingerprint ?? null)) {
+      return { ok: false, reason: 'config_fingerprint_mismatch' };
+    }
+  }
+
+  // The coverage ledger is the substrate every downstream boundary consumes
+  // (independent-review P0-2). An unproven ledger means there is NO proven
+  // re-entry point: a fresh ledger has no retrieval accounting, so neither the
+  // selection boundary nor the retrieval boundary can be entered safely.
+  const ledgerProof = verifyBoundArtifact(workDir, recorded[CHECKPOINT_BINDING_COVERAGE_STATE], COVERAGE_STATE_FILENAME);
+  if (!ledgerProof.ok) return { ok: false, reason: `coverage_state_${ledgerProof.reason}` };
 
   // The T06 pool is the artifact that proves retrieval finished AND that any
   // decision below was made from THESE candidates.
@@ -640,13 +699,27 @@ export async function composeP1Research({
 
   const state = makeState({ workDir, topic: normalizedTopic, mode, percent: null, runtime: effectiveRuntime.runtimeId, occurrenceId, config });
   state.stage = STAGE_SEARCH;
-  writeState(workDir, state);
+  // P1-R06 repair (independent-review P1-2): a resuming occurrence must NOT
+  // replace the durable checkpoint before the re-entry proof has decided what
+  // may be reused. The checkpoint's recorded bindings are the ONLY evidence a
+  // later process could resume from — persisting the fresh state here (before
+  // `planResumeReentry` has even run) destroyed them, so a process killed in
+  // that window turned a resumable run into a full redo it never needed. The
+  // fresh state is persisted once the proof has run (or was never applicable:
+  // a fresh occurrence owns the work dir from the start); failures before that
+  // point leave the prior checkpoint byte-identical and still resumable.
+  let checkpointAdopted = !isResumingOccurrence;
+  if (checkpointAdopted) {
+    writeState(workDir, state);
+  }
   appendEvent(workDir, { event: 'p1_compose_begin', runId, mode, runtime: effectiveRuntime.runtimeId, occurrenceId, resuming: isResumingOccurrence });
 
   const persistFailure = (code, details = null, extra = {}) => {
     state.stage = STAGE_FAILED;
     state.p1FinalCoveragePlanHash = null;
-    writeState(workDir, state);
+    if (checkpointAdopted) {
+      writeState(workDir, state);
+    }
     appendEvent(workDir, { event: 'p1_compose_failed', code });
     return fail(code, details, extra);
   };
@@ -732,8 +805,18 @@ export async function composeP1Research({
     // FIRST (read-only), and only begin a fresh ledger when no boundary is proven.
     // `remote truth > assumption`: only a proven boundary is ever optimised.
     const reentry = isResumingOccurrence
-      ? planResumeReentry({ workDir, priorState: existing, planHash: expectedPlanHash })
+      ? planResumeReentry({
+        workDir,
+        priorState: existing,
+        planHash: expectedPlanHash,
+        currentConfigFingerprint: configFingerprint(config),
+      })
       : { ok: false, reason: 'not_resuming' };
+    // The re-entry proof has now been made (or was never applicable). From here
+    // the composer owns the checkpoint and may persist its own state; a failure
+    // after this point marks the CURRENT occurrence FAILED, while a failure
+    // before it left the prior checkpoint intact and resumable (P1-2).
+    checkpointAdopted = true;
 
     let coverageState;
     let journal;
@@ -772,6 +855,7 @@ export async function composeP1Research({
       });
     } else {
       state.stage = STAGE_SEARCH;
+      recordLedgerBinding(state, workDir);
       writeState(workDir, state);
 
       const loop = runRetrievalFeedbackLoop({
@@ -790,8 +874,15 @@ export async function composeP1Research({
       pool = loop.pool;
       // Same event, live payload: the boundary this run STARTED at, with the reuse
       // flags false. Recording both cases in one event keeps a single auditable
-      // answer to "from where did this run begin, and what did it reuse?".
-      appendEvent(workDir, { event: 'resume_reentry', boundary, occurrenceId, reusedRetrieval: false, reusedSelection: false });
+      // answer to "from where did this run begin, and what did it reuse?" — plus
+      // the exact reason the persisted bindings were refused, so a resume that
+      // fell back to a full re-execution is auditable too (contract: earliest
+      // invalid boundary, audibly, on BOTH reuse gates).
+      appendEvent(workDir, {
+        event: 'resume_reentry', boundary, occurrenceId,
+        reusedRetrieval: false, reusedSelection: false,
+        reentryRefusalReason: reentry.reason ?? null,
+      });
     }
 
     // The T06 pool is FINAL at this point — either just produced by the loop, or
@@ -804,6 +895,7 @@ export async function composeP1Research({
       ),
     };
     state.stage = STAGE_SELECT;
+    recordLedgerBinding(state, workDir);
     writeState(workDir, state);
 
     let selection = null;
@@ -861,6 +953,7 @@ export async function composeP1Research({
     };
 
     state.stage = STAGE_CAPTURE;
+    recordLedgerBinding(state, workDir);
     writeState(workDir, state);
 
     const execution = executeSelectedGroups({
@@ -871,6 +964,7 @@ export async function composeP1Research({
     coverageState = execution.coverageState;
 
     state.stage = STAGE_ANALYZE;
+    recordLedgerBinding(state, workDir);
     writeState(workDir, state);
 
     // 5. Dense geometry (T11) — fail-closed when the local provider is unavailable.
@@ -889,6 +983,14 @@ export async function composeP1Research({
       journal,
     });
     coverageState = corpus.coverageState;
+    // The ledger owner persists the coverage state INSIDE each stage, so a kill
+    // between two checkpoint writes would leave the on-disk ledger NEWER than
+    // the recorded binding and a resume could no longer prove the ledger bytes.
+    // Refresh the checkpoint at every stage boundary so the binding names the
+    // ledger bytes the run actually left behind (independent-review P0-2).
+    state.stage = STAGE_ANALYZE;
+    recordLedgerBinding(state, workDir);
+    writeState(workDir, state);
 
     const analysis = await analyzeSelectedCorpus({
       coverageState, corpusArtifact: corpus.corpusArtifact, manifest: execution.manifest,
@@ -896,6 +998,9 @@ export async function composeP1Research({
     });
     coverageState = analysis.coverageState;
     writeArtifact(workDir, PER_GROUP_CLAIMS_FILENAME, analysis.seamCArtifact);
+    state.stage = STAGE_ANALYZE;
+    recordLedgerBinding(state, workDir);
+    writeState(workDir, state);
 
     const synthesis = await produceSynthesisWithCoverage({
       coverageState, seamCArtifact: analysis.seamCArtifact, runtime: effectiveRuntime, workDir, journal,
@@ -904,6 +1009,7 @@ export async function composeP1Research({
     writeArtifact(workDir, SYNTHESIS_FILENAME, synthesis.synthesisArtifact);
 
     state.stage = STAGE_RENDER;
+    recordLedgerBinding(state, workDir);
     writeState(workDir, state);
 
     // 6. FINAL reconciliation (T15; second independent defense) — 100% ONLY via
@@ -979,6 +1085,13 @@ export async function composeP1Research({
     // terminal artifacts. The reuse closure re-reads every one of these and
     // refuses reuse when any mid-chain artifact drifted — including a
     // SAME-COUNT semantic mutation that only a content hash can detect.
+    //
+    // The STAGE-BOUNDARY keys survive completion on purpose (independent-review
+    // P0-1): a completed run's first-stage dependencies (accumulated pool,
+    // selection decision) are dependencies of the completed result in exactly
+    // the same way they are for an interrupted resume, so the COMPLETE gate
+    // must be able to prove them too. Dropping them here is what let a
+    // deleted/mutated pool ride through a COMPLETE reuse.
     state.hashes = {
       researchPlan: sha256File(path.join(workDir, PLAN_ARTIFACT_FILENAME)),
       coverageState: sha256File(path.join(workDir, COVERAGE_STATE_FILENAME)),
@@ -986,6 +1099,10 @@ export async function composeP1Research({
       perGroupClaims: sha256File(path.join(workDir, PER_GROUP_CLAIMS_FILENAME)),
       synthesis: sha256File(path.join(workDir, SYNTHESIS_FILENAME)),
       researchResult: sha256File(path.join(workDir, RESEARCH_RESULT_FILENAME)),
+      [CHECKPOINT_BINDING_ACCUMULATED_POOL]: sha256File(
+        path.join(workDir, RETRIEVAL_ROUNDS_DIRNAME, ACCUMULATED_POOL_FILENAME),
+      ),
+      [CHECKPOINT_BINDING_SELECTION_DECISION]: sha256File(path.join(workDir, SELECTION_DECISION_FILENAME)),
     };
     state.coverage = {
       is100PercentAnalysis: fin.artifact.assertion.is100PercentAnalysis,

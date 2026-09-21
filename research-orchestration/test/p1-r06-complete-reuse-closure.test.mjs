@@ -70,6 +70,10 @@ import { T14_SYNTHESIS_RUNTIME_ID, T14_SYNTHESIS_MODEL } from '../lib/cross-sour
  */
 const BINDING_ACCUMULATED_POOL = 'accumulatedPool';
 const BINDING_SELECTION_DECISION = 'selectionDecision';
+// The ledger binding shares the completion set's `coverageState` key on purpose:
+// one key, one meaning — "sha256 of coverage-state.json as recorded by the
+// producer at checkpoint-write time" — refreshed by EVERY checkpoint write.
+const BINDING_COVERAGE_STATE = 'coverageState';
 import { mockVector768 } from './helpers/test-embedding-provider.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -1424,10 +1428,24 @@ describe('P1-R06 §L — successful reuse preserves canonical bytes', () => {
     const workDir = tmpWork('p1-r06-l2-');
     await runFull(workDir);
     const state = readState(workDir);
+    // The completion binding set = the 6 terminal artifacts PLUS the two
+    // first-stage dependencies (T06 pool, T08 decision) that the COMPLETE gate
+    // must prove exactly like an interrupted resume does (independent-review
+    // P0-1 — dropping them at completion is what let a deleted/mutated pool
+    // ride through a COMPLETE reuse).
     assert.deepEqual(
       Object.keys(state.hashes).sort(),
-      ['coverageFinal', 'coverageState', 'perGroupClaims', 'researchPlan', 'researchResult', 'synthesis'],
-      'L2: the completion must record the FULL content-binding set (6 artifacts)',
+      [
+        'accumulatedPool',
+        'coverageFinal',
+        'coverageState',
+        'perGroupClaims',
+        'researchPlan',
+        'researchResult',
+        'selectionDecision',
+        'synthesis',
+      ],
+      'L2: the completion must record the FULL content-binding set (6 terminal + 2 stage-boundary)',
     );
     for (const [key, rel] of [
       ['researchPlan', PLAN_FILENAME],
@@ -1436,6 +1454,8 @@ describe('P1-R06 §L — successful reuse preserves canonical bytes', () => {
       ['perGroupClaims', CLAIMS_FILENAME],
       ['synthesis', SYNTHESIS_FILENAME],
       ['researchResult', RESULT_FILENAME],
+      [BINDING_ACCUMULATED_POOL, path.join('retrieval-rounds', 'accumulated-pool.json')],
+      [BINDING_SELECTION_DECISION, SELECTION_DECISION_FILENAME],
     ]) {
       assert.equal(
         state.hashes[key],
@@ -1509,6 +1529,7 @@ describe('P1-R06 §M — the production entrypoint reaches the closure (REGISTER
     const m = await import('../lib/p1-reuse-closure.mjs');
     assert.equal(m.CHECKPOINT_BINDING_ACCUMULATED_POOL, BINDING_ACCUMULATED_POOL);
     assert.equal(m.CHECKPOINT_BINDING_SELECTION_DECISION, BINDING_SELECTION_DECISION);
+    assert.equal(m.CHECKPOINT_BINDING_COVERAGE_STATE, BINDING_COVERAGE_STATE);
   });
 
   test('O1: the recorded refusal is auditable in the event log', async () => {
@@ -1588,6 +1609,156 @@ describe('P1-R06 §M — the production entrypoint reaches the closure (REGISTER
     }
     // The load is the defect's actual failure point: it must SUCCEED on every platform.
     assert.ok(loadMultiGroupState(workDir), 'P2: the persisted group state must load back (this is what failed on Windows)');
+  });
+});
+
+// ===========================================================================
+// R. independent-review counterexamples (review-repair round 1)
+//
+// The independent adversarial review of 8bc0cdf returned VERDICT: FAIL with
+// three P0s and two P1s, each with a concrete falsification scenario. Every
+// test in this section is ONE of those scenarios, verbatim: it must fail on
+// the reviewed head and pass on the repair head. They are the reviewer's own
+// falsifications, promoted into the permanent acceptance suite.
+// ===========================================================================
+
+describe('P1-R06 §R — independent-review counterexamples (8bc0cdf verdict: FAIL)', () => {
+  const POOL_REL = path.join('retrieval-rounds', 'accumulated-pool.json');
+
+  test('R1 (review P0-1): a pool DELETED after COMPLETE is refused at the retrieval boundary, never reused', async () => {
+    const workDir = tmpWork('p1-r06-r1-');
+    await runFull(workDir);
+    fs.rmSync(path.join(workDir, POOL_REL));
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, false, 'R1: a COMPLETE whose accumulated pool is gone must NOT be reused');
+    assert.equal(out.reuseBoundary, 'retrieval_rounds', 'R1: the earliest invalid boundary is the retrieval stage');
+    assertZeroExternalCalls(calls, 'R1');
+  });
+
+  test('R1b (review P0-1): a pool SAME-COUNT-mutated after COMPLETE is refused, never reused', async () => {
+    const workDir = tmpWork('p1-r06-r1b-');
+    await runFull(workDir);
+
+    // Same-count semantic mutation, exactly the G6 tamper but applied AFTER
+    // completion: no structural check can see it, only the content binding can.
+    const poolPath = path.join(workDir, POOL_REL);
+    const pool = JSON.parse(fs.readFileSync(poolPath, 'utf8'));
+    assert.ok(pool.candidates.length > 0, 'R1b: fixture precondition — the pool has candidates');
+    const before = pool.candidates.length;
+    pool.candidates[0].rrfScore = Number(pool.candidates[0].rrfScore ?? 0) + 0.5;
+    fs.writeFileSync(poolPath, `${JSON.stringify(pool, null, 2)}\n`);
+    assert.equal(JSON.parse(fs.readFileSync(poolPath, 'utf8')).candidates.length, before, 'R1b: count preserved');
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, false, 'R1b: a mutated pool must NOT earn a COMPLETE reuse');
+    assert.equal(out.reuseBoundary, 'retrieval_rounds', 'R1b: the drift is named at the retrieval boundary');
+    assertZeroExternalCalls(calls, 'R1b');
+  });
+
+  test('R2 (review P0-2): a schema-valid, planHash-preserving ledger tamper defeats the resume — no unproven ledger is ever authoritative', async () => {
+    const workDir = tmpWork('p1-r06-r2-');
+    await runUntilInterrupt(workDir);
+
+    // Mutate the persisted ledger in a way its T07 owner cannot see: valid
+    // structure, unchanged planHash, altered bookkeeping.
+    const ledgerPath = path.join(workDir, COVERAGE_STATE);
+    const ledger = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+    ledger.retrieval.fusedCandidateCount = Number(ledger.retrieval.fusedCandidateCount ?? 0) + 1;
+    fs.writeFileSync(ledgerPath, `${JSON.stringify(ledger, null, 2)}\n`);
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, true, `R2: the run must still succeed via the live path: ${JSON.stringify(out)}`);
+    assert.ok(calls.search > 0, 'R2: an unprovable ledger forces real retrieval — the pool is never reused on top of it');
+    const reentry = lastEvent(workDir, 'resume_reentry');
+    assert.equal(reentry.reusedRetrieval, false, 'R2: nothing is reused from an unproven ledger');
+    assert.equal(reentry.reentryRefusalReason, 'coverage_state_content_changed', 'R2: the refusal is auditable and names the ledger');
+  });
+
+  test('R3 (review P0-3): a config A interruption is never resumed under config B', async () => {
+    const workDir = tmpWork('p1-r06-r3-');
+    const configA = { maxRetrievalRounds: 2 };
+    const configB = { maxRetrievalRounds: 3 };
+    {
+      const calls = zeroCalls();
+      const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+      const out = await composeP1Research({ topic: TOPIC, workDir, config: configA, ...fixtures(calls, { captureAdapter: throwingCaptureAdapter(calls) }) });
+      assert.equal(out.ok, false, 'R3: the producing run interrupts at the group stage');
+      assert.ok(calls.search > 0, 'R3: fixture precondition — config A really retrieved');
+    }
+    asKillShape(workDir, 'CAPTURE');
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, config: configB, ...fixtures(calls) });
+    assert.equal(out.ok, true, `R3: config B completes its own run: ${JSON.stringify(out)}`);
+    assert.ok(calls.search > 0, 'R3: config A retrieval/selection is NOT reusable for config B — the corpus would answer a different request');
+    const reentry = lastEvent(workDir, 'resume_reentry');
+    assert.equal(reentry.reusedRetrieval, false, 'R3: nothing from config A is reused');
+    assert.equal(reentry.reentryRefusalReason, 'config_fingerprint_mismatch', 'R3: the refusal names the config identity, audibly');
+  });
+
+  test('R4 (review P1-1): claims mutated AND coverage-final deleted reports the EARLIEST boundary (claims, not coverage)', async () => {
+    const workDir = tmpWork('p1-r06-r4-');
+    await runFull(workDir);
+
+    // Two faults: the EARLIER one is the claims content (PER_GROUP_ANALYSIS
+    // precedes FINAL_COVERAGE_RECONCILIATION). A structural check for the later
+    // boundary must never preempt the earlier boundary's content break.
+    const claimsPath = path.join(workDir, CLAIMS_FILENAME);
+    const claims = JSON.parse(fs.readFileSync(claimsPath, 'utf8'));
+    const reps = claims.groupRepresentations;
+    assert.ok(Array.isArray(reps) && reps.length > 0, 'R4: fixture must produce group representations');
+    let mutated = false;
+    for (const rep of reps) {
+      const bucket = rep.claims?.main ?? rep.claims?.minority;
+      if (Array.isArray(bucket) && bucket.length > 0) {
+        bucket[0].statement = '被篡改的陈述：计数不变但语义已改变';
+        mutated = true;
+        break;
+      }
+    }
+    assert.ok(mutated, 'R4: fixture must expose a claim to mutate');
+    fs.writeFileSync(claimsPath, `${JSON.stringify(claims, null, 2)}\n`);
+    fs.rmSync(path.join(workDir, COVERAGE_FINAL));
+
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, false, 'R4: two faults must refuse reuse');
+    assert.equal(out.reuseBoundary, 'claims', `R4: the boundary must be the EARLIEST fault (claims), got: ${String(out.reuseBoundary)}`);
+    assertZeroExternalCalls(calls, 'R4');
+  });
+
+  test('R5 (review P1-2): a failed resume attempt BEFORE the re-entry proof leaves the durable checkpoint byte-identical', async () => {
+    const workDir = tmpWork('p1-r06-r5-');
+    await runUntilInterrupt(workDir);
+    const checkpointBefore = fs.readFileSync(path.join(workDir, 'orchestration-state.json'), 'utf8');
+
+    // Kill the resume attempt INSIDE the pre-proof window: the injected seam
+    // throws before `planResumeReentry` ever runs. The checkpoint's recorded
+    // bindings are the only evidence a later process could resume from, so this
+    // failure must not persist anything over them.
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({
+      topic: TOPIC, workDir, ...fixtures(calls, { seam: { listProviders() { throw new Error('synthetic pre-proof interruption'); } } }),
+    });
+    assert.equal(out.ok, false, 'R5: the pre-proof interruption fails the attempt');
+    const checkpointAfter = fs.readFileSync(path.join(workDir, 'orchestration-state.json'), 'utf8');
+    assert.equal(checkpointAfter, checkpointBefore, 'R5: the durable checkpoint is byte-identical — the bindings survived');
+
+    // The evidence survived, so the NEXT ordinary resume still reuses retrieval.
+    const calls2 = zeroCalls();
+    const out2 = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls2) });
+    assert.equal(out2.ok, true, `R5: the follow-up resume succeeds: ${JSON.stringify(out2)}`);
+    assert.equal(calls2.search, 0, 'R5: retrieval is still reusable — the interrupted evidence was not destroyed');
   });
 });
 

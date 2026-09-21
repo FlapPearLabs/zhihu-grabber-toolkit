@@ -63,7 +63,13 @@ import {
   SEAM_D_SEMANTIC_CONTRACT_VERSION,
 } from './cross-source-synthesis.mjs';
 import { GUARD_PASS } from './pre-synthesis-guard.mjs';
-import { FINAL_COVERAGE_FILENAME, COVERAGE_STATE_FILENAME, P1_PIPELINE_IDENTITY } from './coverage-final-integration.mjs';
+import {
+  FINAL_COVERAGE_FILENAME,
+  COVERAGE_STATE_FILENAME,
+  P1_PIPELINE_IDENTITY,
+  RETRIEVAL_ROUNDS_DIRNAME,
+  ACCUMULATED_POOL_FILENAME,
+} from './coverage-final-integration.mjs';
 
 /** Work-relative artifact names produced/consumed by the composer. */
 export const PER_GROUP_CLAIMS_FILENAME = 'per-group-claims.json';
@@ -80,6 +86,7 @@ const PLAN_HASH = /^[0-9a-f]{64}$/;
  */
 export const CLOSURE_BOUNDARY_CONFIG = 'request_config';
 export const CLOSURE_BOUNDARY_PLAN = 'plan';
+export const CLOSURE_BOUNDARY_RETRIEVAL_ROUNDS = 'retrieval_rounds';
 export const CLOSURE_BOUNDARY_SELECTION = 'selection';
 export const CLOSURE_BOUNDARY_GROUP = 'group';
 export const CLOSURE_BOUNDARY_CLAIMS = 'claims';
@@ -98,15 +105,27 @@ export const CLOSURE_BOUNDARY_RESULT = 'result';
  * recorded by the producer is the only cheap proof of BYTE identity, and it is
  * what makes same-count semantic mutation detectable rather than invisible.
  *
- * The COMPLETION binding set (researchPlan / coverageState / coverageFinal /
- * perGroupClaims / synthesis / researchResult) is a separate, terminal set: the
- * completion write replaces `state.hashes` wholesale, so a COMPLETE checkpoint
- * never carries these stage-boundary keys and a pre-completion checkpoint never
- * pretends to carry the terminal ones. Missing binding ⇒ NOT BOUND ⇒ never
- * reusable (legacy/config-less checkpoints must not silently earn reuse).
+ * ONE HASH MAP, TWO VALIDATION GATES. The composer writes these keys at the
+ * moment it persists each artifact, and every checkpoint write re-records the
+ * coverage ledger, so the binding always names the bytes on disk as of that
+ * checkpoint:
+ *   - `accumulatedPool` / `selectionDecision` / `coverageState` are the
+ *     STAGE-BOUNDARY proofs an interrupted resume verifies (`planResumeReentry`);
+ *   - a COMPLETION checkpoint additionally carries the terminal keys
+ *     (researchPlan / coverageFinal / perGroupClaims / synthesis /
+ *     researchResult), which only the completion write produces.
+ * The terminal keys can never appear on a pre-completion checkpoint (only the
+ * completion write makes them), and the stage-boundary keys SURVIVE completion:
+ * an interrupted run and a completed run must prove the same first-stage
+ * dependencies, so `validateCompleteReuseClosure` requires them too.
+ *
+ * MISSING BINDING ⇒ NOT BOUND ⇒ NEVER REUSABLE. A checkpoint that predates a
+ * binding key (or was hand-stripped of one) is refused at that boundary —
+ * missing provenance is never guessed.
  */
 export const CHECKPOINT_BINDING_ACCUMULATED_POOL = 'accumulatedPool';
 export const CHECKPOINT_BINDING_SELECTION_DECISION = 'selectionDecision';
+export const CHECKPOINT_BINDING_COVERAGE_STATE = 'coverageState';
 
 function refuse(boundary, detail, extra = {}) {
   return { valid: false, boundary, detail, ...extra };
@@ -164,8 +183,15 @@ function validatePlanEdge(workDir, boundPlanHash) {
  * Delegate to the T08 owner's own staleness verdict. It binds the decision to
  * the current plan identity AND to the pool identity, so a same-planHash but
  * different selection is refused by the owner, not by a re-implementation here.
+ *
+ * The pool identity passed here is the LIVE pool's own planHash — read from the
+ * pool artifact after its content binding has already proven the bytes are the
+ * completed run's bytes. The decision's own `poolPlanHash` field is NOT
+ * evidence about the live pool: trusting it would let the decision certify the
+ * very dependency it consumes (a decision and a mutated pool could agree on a
+ * pool identity neither of them proves any more).
  */
-function validateSelectionEdge(workDir, boundPlanHash) {
+function validateSelectionEdge(workDir, boundPlanHash, livePoolPlanHash) {
   const abs = path.join(workDir, SELECTION_DECISION_FILENAME);
   if (!existsSync(abs)) {
     return refuse(CLOSURE_BOUNDARY_SELECTION, `selection decision missing (${SELECTION_DECISION_FILENAME})`);
@@ -177,7 +203,7 @@ function validateSelectionEdge(workDir, boundPlanHash) {
   const status = selectionDecisionStatus({
     decision: loaded.decision,
     currentPlanHash: boundPlanHash,
-    currentPoolPlanHash: loaded.decision?.poolPlanHash ?? null,
+    currentPoolPlanHash: livePoolPlanHash,
   });
   if (!status.reusable) {
     return refuse(CLOSURE_BOUNDARY_SELECTION, `selection decision is not reusable (${bounded(status.reason)})`);
@@ -497,6 +523,41 @@ function validateResultEdge(workDir, boundPlanHash, coverageFinal) {
 }
 
 // ---------------------------------------------------------------------------
+// producer-recorded content bindings
+// ---------------------------------------------------------------------------
+
+/** Work-relative location of the T06 accumulated pool. */
+const RETRIEVAL_POOL_REL = `${RETRIEVAL_ROUNDS_DIRNAME}/${ACCUMULATED_POOL_FILENAME}`;
+
+/**
+ * Prove that a recorded content binding still describes the bytes on disk.
+ *
+ * This is the SAME discipline the interrupted-resume path uses
+ * (`verifyBoundArtifact` in the composer): a binding that is absent, malformed,
+ * or disagrees with the file is a REFUSAL at the owning boundary — never a
+ * repair, never a re-derivation, never a guess. Missing binding ⇒ NOT BOUND.
+ */
+function verifyContentBinding(workDir, boundary, expected, rel) {
+  if (typeof expected !== 'string' || expected.length === 0) {
+    return refuse(boundary, `checkpoint carries no recorded content hash for ${rel} (incomplete binding set — not currently reusable)`);
+  }
+  const abs = path.join(workDir, rel);
+  if (!existsSync(abs)) {
+    return refuse(boundary, `recorded artifact missing: ${rel}`);
+  }
+  let actual = null;
+  try {
+    actual = sha256File(abs);
+  } catch {
+    return refuse(boundary, `recorded artifact unreadable: ${rel}`);
+  }
+  if (actual !== expected) {
+    return refuse(boundary, `recorded artifact content changed since completion (stale/tampered): ${rel}`);
+  }
+  return { valid: true };
+}
+
+// ---------------------------------------------------------------------------
 // the closure
 // ---------------------------------------------------------------------------
 
@@ -535,15 +596,40 @@ export function validateCompleteReuseClosure({ workDir, state, boundPlanHash, cu
     }
   }
 
-  // 1) plan
+  // The content hashes this checkpoint recorded as it PRODUCED each artifact.
+  // Every boundary below requires its own binding, and each boundary's binding
+  // is checked AT that boundary so a multi-fault work dir still reports the
+  // EARLIEST broken edge (a structural check for a later boundary must never
+  // preempt a content break in an earlier one).
+  const recorded = state.hashes ?? {};
+
+  // 1) plan — the owner contract (loadPlan + planHash) AND the producer's own
+  //    content binding, at the same boundary.
   const planEdge = validatePlanEdge(workDir, boundPlanHash);
   if (!planEdge.valid) return planEdge;
+  const planBinding = verifyContentBinding(workDir, CLOSURE_BOUNDARY_PLAN, recorded.researchPlan, PLAN_ARTIFACT_FILENAME);
+  if (!planBinding.valid) return planBinding;
 
-  // 2) selection decision (plan-bound)
-  const selectionEdge = validateSelectionEdge(workDir, boundPlanHash);
+  // 2) retrieval rounds — the accumulated pool is the first durable artifact of
+  //    the chain. Its bytes must be proven unchanged BEFORE the selection edge
+  //    is evaluated: the decision's own `poolPlanHash` field is a claim, not
+  //    evidence, so the selection edge is checked against the LIVE pool identity
+  //    read from these proven bytes.
+  const poolBinding = verifyContentBinding(workDir, CLOSURE_BOUNDARY_RETRIEVAL_ROUNDS, recorded.accumulatedPool, RETRIEVAL_POOL_REL);
+  if (!poolBinding.valid) return poolBinding;
+  const poolParsed = readJson(path.join(workDir, RETRIEVAL_POOL_REL));
+  if (!poolParsed.ok || !poolParsed.value || typeof poolParsed.value !== 'object'
+    || Array.isArray(poolParsed.value) || typeof poolParsed.value.planHash !== 'string') {
+    return refuse(CLOSURE_BOUNDARY_RETRIEVAL_ROUNDS, 'accumulated pool is not a canonical T06 pool artifact');
+  }
+
+  // 3) selection decision (plan-bound AND live-pool-bound)
+  const selectionEdge = validateSelectionEdge(workDir, boundPlanHash, poolParsed.value.planHash);
   if (!selectionEdge.valid) return selectionEdge;
+  const decisionBinding = verifyContentBinding(workDir, CLOSURE_BOUNDARY_SELECTION, recorded.selectionDecision, SELECTION_DECISION_FILENAME);
+  if (!decisionBinding.valid) return decisionBinding;
 
-  // 3) T09 group artifacts (canonical answers + handoff), via the frozen
+  // 4) T09 group artifacts (canonical answers + handoff), via the frozen
   //    resume authority — no second group-reuse semantics here. The authority
   //    recomputes planHash / selectionIdentity / selectionDecisionHash against
   //    the LIVE decision, so no identity needs to be threaded in from here.
@@ -552,63 +638,31 @@ export function validateCompleteReuseClosure({ workDir, state, boundPlanHash, cu
   const hashEdge = validateGroupArtifactHashes(workDir, groupEdge.multiGroupState);
   if (!hashEdge.valid) return hashEdge;
 
-  // 4) T13 claims (SEAM C)
+  // 5) T13 claims (SEAM C)
   const claimsEdge = validateClaimsEdge(workDir, boundPlanHash);
   if (!claimsEdge.valid) return claimsEdge;
+  const claimsBinding = verifyContentBinding(workDir, CLOSURE_BOUNDARY_CLAIMS, recorded.perGroupClaims, PER_GROUP_CLAIMS_FILENAME);
+  if (!claimsBinding.valid) return claimsBinding;
 
-  // 5) T14 synthesis (SEAM D V2 + guard), cross-bound to T13
+  // 6) T14 synthesis (SEAM D V2 + guard), cross-bound to T13
   const synthesisEdge = validateSynthesisEdge(workDir, boundPlanHash);
   if (!synthesisEdge.valid) return synthesisEdge;
+  const synthesisBinding = verifyContentBinding(workDir, CLOSURE_BOUNDARY_SYNTHESIS, recorded.synthesis, SYNTHESIS_FILENAME);
+  if (!synthesisBinding.valid) return synthesisBinding;
 
-  // 6) T15 final coverage (+ cross-binding to T13/T14)
+  // 7) T15 final coverage (+ cross-binding to T13/T14)
   const coverageEdge = validateCoverageAndResultEdges(workDir, boundPlanHash, claimsEdge, synthesisEdge);
   if (!coverageEdge.valid) return coverageEdge;
+  const ledgerBinding = verifyContentBinding(workDir, CLOSURE_BOUNDARY_COVERAGE, recorded.coverageState, COVERAGE_STATE_FILENAME);
+  if (!ledgerBinding.valid) return ledgerBinding;
+  const finalBinding = verifyContentBinding(workDir, CLOSURE_BOUNDARY_COVERAGE, recorded.coverageFinal, FINAL_COVERAGE_FILENAME);
+  if (!finalBinding.valid) return finalBinding;
 
-  // 7) research result (render binding)
+  // 8) research result (render binding)
   const resultEdge = validateResultEdge(workDir, boundPlanHash, coverageEdge.coverageFinal);
   if (!resultEdge.valid) return resultEdge;
-
-  // 8) Content-identity binding for the mid-chain artifacts.
-  //
-  // Structural checks above cannot see a SAME-COUNT semantic mutation: rewriting
-  // one claim statement (or one family aspect) preserves every id, count, seam
-  // identity and planHash binding, so only a CONTENT HASH can detect it. The
-  // composer records the producer's own artifact hashes at completion; here we
-  // re-read the bytes and compare. This is the same FILE EXISTS != VALID CACHE
-  // discipline the T09 group authority already uses, applied to the P1 chain —
-  // and it is deliberately checked BEFORE the terminal hashes so the reported
-  // boundary names the artifact that actually drifted.
-  const recorded = state.hashes ?? {};
-  const CONTENT_BINDINGS = [
-    [CLOSURE_BOUNDARY_CLAIMS, 'perGroupClaims', PER_GROUP_CLAIMS_FILENAME],
-    [CLOSURE_BOUNDARY_SYNTHESIS, 'synthesis', SYNTHESIS_FILENAME],
-    [CLOSURE_BOUNDARY_COVERAGE, 'coverageState', COVERAGE_STATE_FILENAME],
-    [CLOSURE_BOUNDARY_COVERAGE, 'coverageFinal', FINAL_COVERAGE_FILENAME],
-    [CLOSURE_BOUNDARY_PLAN, 'researchPlan', PLAN_ARTIFACT_FILENAME],
-    [CLOSURE_BOUNDARY_RESULT, 'researchResult', RESEARCH_RESULT_FILENAME],
-  ];
-  for (const [boundary, key, rel] of CONTENT_BINDINGS) {
-    const expected = recorded[key];
-    if (expected === undefined || expected === null) {
-      // A current-version COMPLETE must carry the FULL binding set. A checkpoint
-      // predating the binding set (or hand-stripped) is not currently reusable:
-      // missing provenance is REFUSED, never guessed.
-      return refuse(boundary, `checkpoint carries no recorded content hash for ${rel} (incomplete binding set — not currently reusable)`);
-    }
-    const abs = path.join(workDir, rel);
-    if (!existsSync(abs)) {
-      return refuse(boundary, `recorded artifact missing: ${rel}`);
-    }
-    let actual = null;
-    try {
-      actual = sha256File(abs);
-    } catch {
-      return refuse(boundary, `recorded artifact unreadable: ${rel}`);
-    }
-    if (actual !== expected) {
-      return refuse(boundary, `recorded artifact content changed since completion (stale/tampered): ${rel}`);
-    }
-  }
+  const resultBinding = verifyContentBinding(workDir, CLOSURE_BOUNDARY_RESULT, recorded.researchResult, RESEARCH_RESULT_FILENAME);
+  if (!resultBinding.valid) return resultBinding;
 
   // 9) Identity agreement between the checkpoint record and the artifacts.
   if (String(state.p1FinalCoveragePlanHash ?? '') !== String(coverageEdge.coverageFinal.planHash ?? '')) {
