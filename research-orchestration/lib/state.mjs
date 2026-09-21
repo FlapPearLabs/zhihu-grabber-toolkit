@@ -155,11 +155,24 @@ export function writeState(workDir, state) {
   const fd = fs.openSync(temp, 'w');
   try {
     fs.writeFileSync(fd, payload, 'utf8');
-    fs.fsyncSync(fd);
+    try {
+      fs.fsyncSync(fd);
+    } catch (e) {
+      if (e.code !== 'EINVAL' && e.code !== 'EPERM' && e.code !== 'EROFS') throw e;
+    }
   } finally {
     fs.closeSync(fd);
   }
-  fs.renameSync(temp, target);
+  try {
+    fs.renameSync(temp, target);
+  } catch (err) {
+    if (err.code === 'EEXIST' || err.code === 'EPERM') {
+      fs.rmSync(target, { force: true });
+      fs.renameSync(temp, target);
+    } else {
+      throw err;
+    }
+  }
 }
 
 export function appendEvent(workDir, event) {

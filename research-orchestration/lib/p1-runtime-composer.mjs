@@ -228,6 +228,29 @@ export function getStagingPath(workDir, key, sha) {
   return path.join(workDir, COMMIT_STAGING_DIR, key, `${sha}.json`);
 }
 
+function safeFsync(fd) {
+  try {
+    fsyncSync(fd);
+  } catch (err) {
+    if (err.code !== 'EINVAL' && err.code !== 'EPERM' && err.code !== 'EROFS') {
+      throw err;
+    }
+  }
+}
+
+function safeRename(temp, target) {
+  try {
+    renameSync(temp, target);
+  } catch (err) {
+    if (err.code === 'EEXIST' || err.code === 'EPERM') {
+      rmSync(target, { force: true });
+      renameSync(temp, target);
+    } else {
+      throw err;
+    }
+  }
+}
+
 export function stageArtifactBytes(workDir, key, bytes) {
   const sha = createHash('sha256').update(bytes).digest('hex');
   const target = getStagingPath(workDir, key, sha);
@@ -245,11 +268,11 @@ export function stageArtifactBytes(workDir, key, bytes) {
   const fd = openSync(temp, 'w');
   try {
     writeFileSync(fd, bytes);
-    fsyncSync(fd);
+    safeFsync(fd);
   } finally {
     closeSync(fd);
   }
-  renameSync(temp, target);
+  safeRename(temp, target);
   return { sha, target };
 }
 
@@ -306,13 +329,13 @@ export function materializeStagedArtifact(workDir, stagedPath, canonicalRel) {
   }
   const temp = `${dest}.tmp-${process.pid}-${Date.now()}`;
   copyFileSync(stagedPath, temp);
-  const fd = openSync(temp, 'r');
+  const fd = openSync(temp, 'r+');
   try {
-    fsyncSync(fd);
+    safeFsync(fd);
   } finally {
     closeSync(fd);
   }
-  renameSync(temp, dest);
+  safeRename(temp, dest);
 }
 
 /**
