@@ -185,7 +185,14 @@ function pinnedMockRuntime() {
       };
     },
     async synthesize({ claims }) {
-      return { aspects: [{ aspect: '总体有效性', claimIds: claims.map((c) => c.claimId) }] };
+      return {
+        families: [{
+          aspect: '总体有效性',
+          anchorClaimId: [...claims.map((c) => c.claimId)].sort()[0],
+          members: claims.map((c) => ({ claimId: c.claimId, stance: 'ASSERTS' })),
+        }],
+        unresolvedClaimIds: [],
+      };
     },
   };
 }
@@ -430,7 +437,14 @@ test('D6-CE6: canonical composition completes T13 → await T14 → T15 with a D
       return new Promise((resolve) => {
         setTimeout(() => {
           events.push('synthesize:resolved');
-          resolve({ aspects: [{ aspect: '总体有效性', claimIds: claims.map((c) => c.claimId) }] });
+          resolve({
+            families: [{
+              aspect: '总体有效性',
+              anchorClaimId: [...claims.map((c) => c.claimId)].sort()[0],
+              members: claims.map((c) => ({ claimId: c.claimId, stance: 'ASSERTS' })),
+            }],
+            unresolvedClaimIds: [],
+          });
         }, 20);
       });
     },
@@ -915,7 +929,10 @@ describe('P1-R04 safe projection — untrusted corpus → semantic request bound
         contradictory: [],
         expertEvidenceRichTokens: [],
       },
-      synthesisPayload: { aspects: [{ aspect: '总体有效性', claimIds: ['c-100-001'] }] },
+      synthesisPayload: {
+        families: [{ aspect: '总体有效性', anchorClaimId: 'c-100-001', members: [{ claimId: 'c-100-001', stance: 'ASSERTS' }] }],
+        unresolvedClaimIds: [],
+      },
       calls,
     });
 
@@ -1012,7 +1029,10 @@ describe('P1-R04 safe projection — untrusted corpus → semantic request bound
           expertEvidenceRichTokens: [],
         };
       },
-      synthesisPayload: { aspects: [{ aspect: '总体有效性', claimIds: ['c-100-001'] }] },
+      synthesisPayload: {
+        families: [{ aspect: '总体有效性', anchorClaimId: 'c-100-001', members: [{ claimId: 'c-100-001', stance: 'ASSERTS' }] }],
+        unresolvedClaimIds: [],
+      },
       calls,
     });
 
@@ -1074,7 +1094,7 @@ describe('P1-R04 safe projection — untrusted corpus → semantic request bound
     const calls = [];
     const runtime = await makeRecordingRuntime({
       claimsPayload: { main: [], minority: [], contradictory: [], expertEvidenceRichTokens: [] },
-      synthesisPayload: { aspects: [] },
+      synthesisPayload: { families: [], unresolvedClaimIds: [] },
       calls,
     });
 
@@ -1102,7 +1122,7 @@ describe('P1-R04 safe projection — untrusted corpus → semantic request bound
     const calls = [];
     const runtime = await makeRecordingRuntime({
       claimsPayload: { main: [], minority: [], contradictory: [], expertEvidenceRichTokens: [] },
-      synthesisPayload: { aspects: [{ aspect: '不应发生', claimIds: [] }] },
+      synthesisPayload: { families: [{ aspect: '不应发生', anchorClaimId: 'c-100-001', members: [] }], unresolvedClaimIds: [] },
       calls,
     });
 

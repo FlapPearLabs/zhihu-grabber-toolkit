@@ -156,6 +156,17 @@ export const CFI_ERROR_RESEARCH_INCOMPLETE = 'cfi_research_incomplete';
 export const CFI_ERROR_SYNTHESIS_FAILED = 'cfi_synthesis_failed';
 /** Frozen SEAM D contract code (only guardResult === 'PASS' may accompany synthesis). */
 export const CFI_ERROR_GUARD_EVIDENCE_REQUIRED = 'SEAM_D_GUARD_EVIDENCE_REQUIRED';
+/**
+ * SEAM D V2 version gate (P1-R05 / Issue #93; Spec §11 VERSIONING_RULE).
+ * T15 CONSUMES the canonical V2 state — it never rebuilds relationStatus /
+ * supportBreadth / stance / family membership from legacy categories, and it
+ * never defaults a missing semantic version into V2. A V1 artifact, a missing
+ * seamVersion, or a missing/non-2 semanticContractVersion is refused here.
+ */
+export const CFI_ERROR_SYNTHESIS_VERSION_INCOMPATIBLE = 'SEAM_D_VERSION_INCOMPATIBLE';
+/** The SEAM D V2 majors T15 accepts (from the producer owner, never guessed here). */
+export const SEAM_D_ACCEPTED_SEAM_VERSION = 2;
+export const SEAM_D_ACCEPTED_SEMANTIC_CONTRACT_VERSION = 2;
 
 /** Work-relative subdirectory holding per-round retrieval pool artifacts. */
 export const RETRIEVAL_ROUNDS_DIRNAME = 'retrieval-rounds';
@@ -834,6 +845,22 @@ export function finalizeResearchCoverage({
     });
   }
 
+  // (2b) SEAM D V2 version gate (P1-R05 / Issue #93): T15 consumes the canonical
+  // V2 state ONLY. Missing / V1 / non-2 versions are refused — no default
+  // filling, no legacy-category fallback, no relation reconstruction. This keeps
+  // a producer-V2 + consumer-V1 (or producer-V1 + consumer-V2) intermediate
+  // state impossible on master.
+  if (synthesisArtifact.seamVersion !== SEAM_D_ACCEPTED_SEAM_VERSION
+    || synthesisArtifact.semanticContractVersion !== SEAM_D_ACCEPTED_SEMANTIC_CONTRACT_VERSION) {
+    failClosed(CFI_ERROR_SYNTHESIS_VERSION_INCOMPATIBLE,
+      'synthesis artifact is not a SEAM D V2 artifact (V1 / missing / mixed semantic versions are never defaulted into V2)', {
+        seamVersion: synthesisArtifact.seamVersion ?? null,
+        semanticContractVersion: synthesisArtifact.semanticContractVersion ?? null,
+        expectedSeamVersion: SEAM_D_ACCEPTED_SEAM_VERSION,
+        expectedSemanticContractVersion: SEAM_D_ACCEPTED_SEMANTIC_CONTRACT_VERSION,
+      });
+  }
+
   // (2) consume the T14 guard evidence — frozen SEAM D: only PASS may travel
   // with a synthesis artifact; identity refs must be well-formed.
   const guard = synthesisArtifact.preSynthesisGuard;
@@ -882,6 +909,20 @@ export function finalizeResearchCoverage({
 
   persistCoverageState(workDir, reconciled);
 
+  // Canonical V2 state is READ, never reconstructed: the counters below are a
+  // pure consumption of the producer's relationStatus / supportBreadth.
+  const canonicalFamilies = Array.isArray(synthesisArtifact?.synthesis?.families)
+    ? synthesisArtifact.synthesis.families
+    : [];
+  const canonicalUnresolved = Array.isArray(synthesisArtifact?.synthesis?.unresolved)
+    ? synthesisArtifact.synthesis.unresolved
+    : [];
+  const familyCount = canonicalFamilies.length;
+  const unresolvedCount = canonicalUnresolved.length;
+  const conflictingFamilyCount = canonicalFamilies.filter((f) => f?.relationStatus === 'CONFLICTING').length;
+  const singleGroupFamilyCount = canonicalFamilies.filter((f) => f?.supportBreadth === 'SINGLE_GROUP').length;
+  const multiGroupFamilyCount = canonicalFamilies.filter((f) => f?.supportBreadth === 'MULTI_GROUP').length;
+
   const artifact = {
     schemaVersion: FINAL_COVERAGE_SCHEMA_VERSION,
     type: FINAL_COVERAGE_TYPE,
@@ -899,6 +940,22 @@ export function finalizeResearchCoverage({
         mappedAnalyzedSourceSetIdentity: guard.mappedAnalyzedSourceSetIdentity,
       },
       t15FinalReconciliation: 'PASS',
+      // SEAM D V2 canonical-state CONSUMPTION (P1-R05 / Issue #93): T15 reads
+      // the producer's canonical V2 state and echoes it. It never rebuilds
+      // relationStatus / supportBreadth / stance / family membership from
+      // legacy categories, and it never becomes an analyzed-identity writer.
+      synthesisContract: {
+        seamVersion: synthesisArtifact.seamVersion,
+        semanticContractVersion: synthesisArtifact.semanticContractVersion,
+        synthesisIdentity: isPlainObject(synthesisArtifact.synthesis)
+          ? String(synthesisArtifact.synthesis.synthesisIdentity ?? '')
+          : '',
+        familyCount,
+        unresolvedCount,
+        conflictingFamilyCount,
+        singleGroupFamilyCount,
+        multiGroupFamilyCount,
+      },
     },
     coverage: {
       retrieval: retrievalView(reconciled),

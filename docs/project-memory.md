@@ -295,6 +295,19 @@
 - **许可方向检查（durable 结论）**：research-orchestration/zhihu-answer-grabber 均为 AGPL-3.0-only（同许可复用 renderer 合法）；AGPL 依赖 MIT（corpus-anthology）方向合法；MIT 包未新增对 AGPL 的依赖。
 - **诚实边界**：投影是有界防御，机械移除已枚举泄漏类并提高注入成本；不承诺 prompt injection 永不成功。投影信息损失（代码体、URL、路径 token、markup）为确定性有意损失。
 
+## P1-R05 SEAM D V2 语义切换（durable semantic invariant；#93 实现沉淀）
+
+- **V2 是唯一现行生产语义**：T14 生产链已由 Seam D V1「category-based synthesis」切换到 Seam D V2（proposition family + claim-level stance + 正交 `relationStatus` / `supportBreadth`）。V1 仅作 **historical-only** 保留（`validateSynthesisOutput` 显式历史验证器），**不得**从 V1 字段推断 V2、不得缺版本时默认 V2、不得把 V1 洗成 V2。V1 `aspects` 提案在真实 producer 中一律 `T14_RUNTIME_OUTPUT_INVALID`。
+- **两个维度正交，永不互推**：`relationStatus ∈ {SUPPORT_ONLY, CONFLICTING, UNRESOLVED}` 与 `supportBreadth ∈ {SINGLE_GROUP, MULTI_GROUP, null}` 独立计算——冲突存在**不**折叠广度（Case B 仍是 MULTI_GROUP）；UNRESOLVED 的 breadth 恒为 `null`，不造伪 category。
+- **group-local 元数据只留本地（F03 根因已移除）**：Seam C 的 `main` / `minority` / `contradictory` / `kind` 只是 source-claim 局部元数据；**禁止**由 group-local contradictory 推导全局 OPPOSES、由 group-local minority 推导 synthesis 层 minority 命题。相反立场只能来自 T14 运行时显式提议的 `stance`。
+- **claim lineage 级身份（F06）**：canonical 身份按 claim lineage 计算，**不得**仅按 `sourceRef` 去重——同一 `sourceRef` + 不同 `sourceClaimId` + 不同 stance 必须同时存活（Case F）。family 与 unresolved 构成**完整不重叠划分**：空 family、外来/重复/缺失 claimId、family∩unresolved 重叠、anchor 非成员或 anchor 自反对、非法 stance、support/oppose 与 stance 不一致、hash 不匹配，一律 fail closed；零合法输入仍为 `T14_EMPTY_VERIFIED_INPUT`。
+- **R03 V2 验证器是唯一合同边界**：`validateSynthesisOutputV2` / `recomputeSynthesisIdentityV2`（`test/helpers/p1-seam-contracts.mjs`）是唯一 V2 可执行合同；R05 不建第二验证器。身份/哈希被篡改时**重算 + 比较 + 拒绝**，绝不静默改写后放行。数组发射顺序不影响 canonical hash。
+- **legacy 单向派生**：`legacyDerivedView` 只允许 canonical V2 → legacy 显示（CONFLICTING→conflicting；否则 MULTI_GROUP→widely-shared；否则 SINGLE_GROUP→group-specific；UNRESOLVED→null）。**禁止** legacy → relationStatus/supportBreadth 反推；该视图不进 canonical hash，删除或改动它不得改变 canonical 身份。
+- **T15 只消费、不重建**：`coverage-final-integration.mjs` 消费 canonical V2 状态并做版本守卫（缺版本 / 版本不兼容 / 非法 V2 payload → `CFI_ERROR_SYNTHESIS_VERSION_INCOMPATIBLE`），绝不从 legacy category 重建 relation/breadth/stance/family 成员；T15 不成为 analyzed identity writer（T13 仍是唯一写者）。
+- **诊断分母（冻结口径）**：`new_contradiction_rate = CONFLICTING family 数 / (families 数 + unresolved 数)`，分子只读 canonical `relationStatus`，**永不**读 legacy category；五个 T14 专属键与 T07 单一写入路径不变；`novelty_gain` 归属不变。
+- **不同范围不构成矛盾**：scope / condition / quantile / 时间窗 / 总体不同的 claim（如 P50 vs P99）不得因措辞差异被折叠为冲突；不新增 NLI 子系统——沿用冻结权威。
+- **验收面**：Cases A–F + 反规避 + TYPE_B 真实 producer 一致性 = `test/p1-r05-v2-cutover.test.mjs`（fast-deterministic，全离线、fake runtime，已纳入 CI `test` job 与登记守卫）。
+
 ## Maintenance Contract
 
 - 本文件是 **Git tracked durable project memory**；GitHub master 是最终权威版本。

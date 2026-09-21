@@ -136,7 +136,14 @@ function pinnedMockRuntime() {
       };
     },
     async synthesize({ claims }) {
-      return { aspects: [{ aspect: '总体有效性', claimIds: claims.map((c) => c.claimId) }] };
+      return {
+        families: [{
+          aspect: '总体有效性',
+          anchorClaimId: [...claims.map((c) => c.claimId)].sort()[0],
+          members: claims.map((c) => ({ claimId: c.claimId, stance: 'ASSERTS' })),
+        }],
+        unresolvedClaimIds: [],
+      };
     },
   };
 }

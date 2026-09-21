@@ -67,6 +67,7 @@ jobs:
       - name: T14 async seam syntax gates
         run: |
           node --check research-orchestration/lib/cross-source-synthesis.mjs
+          node --check research-orchestration/lib/cross-group-aggregation.mjs
           node --check research-orchestration/lib/coverage-final-integration.mjs
           node --check research-orchestration/lib/p1-runtime-composer.mjs
 
@@ -78,6 +79,15 @@ jobs:
           node --test research-orchestration/test/p1-t14-cross-group-synthesis.test.mjs
           node --test research-orchestration/test/p1-t15-coverage-final-integration.test.mjs
           node --test research-orchestration/test/p1-t15-runtime-composition-wiring.test.mjs
+
+      # P1-R05 (#93): SEAM D V2 cutover acceptance. The suite is registered as
+      # fast-deterministic in suite-classification.json (so the registration guard
+      # covers it), but the `test` job above only executes explicitly listed
+      # suites — omitting it here would let the R05 acceptance suite be silently
+      # NOT_RUN in ordinary PR CI. Cases A-F, claim lineage, F06 evidence
+      # closure, identity/hash and diagnostics all run offline on fake runtimes.
+      - name: P1-R05 SEAM D V2 cutover acceptance
+        run: node --test research-orchestration/test/p1-r05-v2-cutover.test.mjs
 
       # P1-R01 (#89): research suite classification / omission guard.
       # 该步骤在每次 PR / master push 的三个平台上执行。它校验提交的

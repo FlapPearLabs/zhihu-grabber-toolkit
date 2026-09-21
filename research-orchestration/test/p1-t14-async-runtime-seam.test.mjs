@@ -92,7 +92,11 @@ const MERGED_ASPECTS = {
   'c-23456789-003': '特定条件下的反例',
 };
 
-/** A valid T14 partition over the controller-issued claimIds (fixture-bound). */
+/**
+ * A valid SEAM D V2 T14 proposal over the controller-issued claimIds
+ * (fixture-bound). P1-R05: the runtime proposes proposition families + stance;
+ * the controller derives every identity and the orthogonal state.
+ */
 function validPartitionFor(claims) {
   const clusters = new Map();
   for (const claim of claims) {
@@ -100,7 +104,14 @@ function validPartitionFor(claims) {
     if (!clusters.has(aspect)) clusters.set(aspect, []);
     clusters.get(aspect).push(claim.claimId);
   }
-  return { aspects: [...clusters.entries()].map(([aspect, claimIds]) => ({ aspect, claimIds })) };
+  return {
+    families: [...clusters.entries()].map(([aspect, claimIds]) => ({
+      aspect,
+      anchorClaimId: [...claimIds].sort()[0],
+      members: claimIds.map((claimId) => ({ claimId, stance: 'ASSERTS' })),
+    })),
+    unresolvedClaimIds: [],
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -126,7 +137,7 @@ describe('D6 CE1 — real async synthesize shape (the production seam)', () => {
 
     assert.equal(result.ok, true, `async runtime must succeed post-repair: ${JSON.stringify(result)}`);
     // The pre-repair failure mode was T14_RUNTIME_OUTPUT_INVALID (a Promise is
-    // not a plain object with an `aspects` array) — pin the exact absence.
+    // not a plain object with a V2 `families` array) — pin the exact absence.
     assert.notEqual(result.code, 'T14_RUNTIME_OUTPUT_INVALID',
       'a Promise must NEVER be validated as a model output object');
     assert.ok(result.artifact, 'a synthesis artifact must be produced');
@@ -176,7 +187,7 @@ describe('D6 CE2 — delayed async resolution', () => {
     assert.equal(resolvedSynchronously, false, 'the timer must actually have elapse-marked the async path');
     assert.equal(result.ok, true, `T14 must wait for the late resolution: ${JSON.stringify(result)}`);
     assert.ok(result.artifact, 'the RESOLVED output (not the pending Promise) drives assembly');
-    assert.ok(result.artifact.synthesis.claims.length > 0);
+    assert.ok(result.artifact.synthesis.families.length > 0);
   });
 
   test('CE2b: resolution ordering — T14 output is derived from the LATE value, not an early snapshot', async () => {
@@ -185,14 +196,21 @@ describe('D6 CE2 — delayed async resolution', () => {
       model: T14_SYNTHESIS_MODEL,
       async synthesize({ claims }) {
         await new Promise((r) => { setTimeout(r, 10); });
-        // single aspect over ALL claims — only reachable if awaited
-        return { aspects: [{ aspect: '总体有效性', claimIds: claims.map((c) => c.claimId) }] };
+        // single proposition family over ALL claims — only reachable if awaited
+        return {
+          families: [{
+            aspect: '总体有效性',
+            anchorClaimId: 'c-23456789-001',
+            members: claims.map((c) => ({ claimId: c.claimId, stance: 'ASSERTS' })),
+          }],
+          unresolvedClaimIds: [],
+        };
       },
     };
     const result = await produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime });
     assert.equal(result.ok, true);
-    assert.equal(result.artifact.synthesis.claims.length, 1,
-      'the single late-resolved aspect must be the consumed output');
+    assert.equal(result.artifact.synthesis.families.length, 1,
+      'the single late-resolved family must be the consumed output');
   });
 });
 
@@ -254,16 +272,28 @@ describe('D6 CE3 — async rejection fails closed as runtime unavailable', () =>
 describe('D6 CE4 — asynchronously-resolved invalid output keeps its own class', () => {
   const invalidCases = [
     ['not an object', () => Promise.resolve('nope')],
-    ['no aspects array', () => Promise.resolve({ wrong: [] })],
-    ['aspects not an array', () => Promise.resolve({ aspects: 'x' })],
+    ['no families array', () => Promise.resolve({ wrong: [] })],
+    ['families not an array', () => Promise.resolve({ families: 'x', unresolvedClaimIds: [] })],
+    ['missing unresolvedClaimIds', () => Promise.resolve({ families: [] })],
     ['forged claimId (not controller-issued)', () => Promise.resolve({
-      aspects: [{ aspect: 'a', claimIds: ['FORGED-CLAIM-ID'] }],
+      families: [{ aspect: 'a', anchorClaimId: 'FORGED-CLAIM-ID', members: [{ claimId: 'FORGED-CLAIM-ID', stance: 'ASSERTS' }] }],
+      unresolvedClaimIds: [],
     })],
     ['incomplete partition (missing claims)', () => Promise.resolve({
-      aspects: [{ aspect: 'a', claimIds: ['c-23456789-001'] }],
+      families: [{ aspect: 'a', anchorClaimId: 'c-23456789-001', members: [{ claimId: 'c-23456789-001', stance: 'ASSERTS' }] }],
+      unresolvedClaimIds: [],
     })],
     ['non-string aspect', () => Promise.resolve({
-      aspects: [{ aspect: 42, claimIds: ['c-23456789-001'] }],
+      families: [{ aspect: 42, anchorClaimId: 'c-23456789-001', members: [{ claimId: 'c-23456789-001', stance: 'ASSERTS' }] }],
+      unresolvedClaimIds: [],
+    })],
+    ['illegal stance', () => Promise.resolve({
+      families: [{ aspect: 'a', anchorClaimId: 'c-23456789-001', members: [{ claimId: 'c-23456789-001', stance: 'MAYBE' }] }],
+      unresolvedClaimIds: [],
+    })],
+    ['empty family', () => Promise.resolve({
+      families: [{ aspect: 'a', anchorClaimId: 'c-23456789-001', members: [] }],
+      unresolvedClaimIds: [],
     })],
   ];
 
@@ -297,7 +327,10 @@ describe('D6 CE4 — asynchronously-resolved invalid output keeps its own class'
       runtime: {
         runtimeId: T14_SYNTHESIS_RUNTIME_ID,
         model: T14_SYNTHESIS_MODEL,
-        synthesize: () => Promise.resolve({ aspects: [{ aspect: 'a', claimIds: ['FORGED'] }] }),
+        synthesize: () => Promise.resolve({
+          families: [{ aspect: 'a', anchorClaimId: 'FORGED', members: [{ claimId: 'FORGED', stance: 'ASSERTS' }] }],
+          unresolvedClaimIds: [],
+        }),
       },
     });
     assert.equal(rejected.code, 'T14_RUNTIME_UNAVAILABLE');
@@ -384,7 +417,10 @@ describe('D6 CE5 — production-shaped DeepSeek adapter (fake fetch, no network)
   });
 
   test('CE5c: the real adapter resolving MALFORMED model output → T14_RUNTIME_OUTPUT_INVALID', async () => {
-    const fetchImpl = fakeFetchServing(() => ({ aspects: [{ aspect: 'x', claimIds: ['FORGED-CLAIM-ID'] }] }));
+    const fetchImpl = fakeFetchServing(() => ({
+      families: [{ aspect: 'x', anchorClaimId: 'FORGED-CLAIM-ID', members: [{ claimId: 'FORGED-CLAIM-ID', stance: 'ASSERTS' }] }],
+      unresolvedClaimIds: [],
+    }));
     const runtime = buildDeepSeekResearchRuntime({ fetchImpl, credential: FAKE_CREDENTIAL });
     const result = await produceCrossSourceSynthesis({
       seamCArtifact: seamCMultiGroup(),

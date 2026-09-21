@@ -56,6 +56,7 @@ import {
   CFI_ERROR_STAGE_ORDER_INVALID,
   CFI_ERROR_RETRIEVAL_FAILED,
   CFI_ERROR_GUARD_EVIDENCE_REQUIRED,
+  CFI_ERROR_SYNTHESIS_VERSION_INCOMPATIBLE,
   STAGE_RETRIEVAL_ROUNDS,
   STAGE_SOURCE_GROUP_SELECTION,
   STAGE_GROUP_EXECUTION,
@@ -216,7 +217,14 @@ function t14MockRuntime() {
     runtimeId: T14_SYNTHESIS_RUNTIME_ID,
     model: T14_SYNTHESIS_MODEL,
     synthesize({ claims }) {
-      return { aspects: [{ aspect: '总体有效性', claimIds: claims.map((c) => c.claimId) }] };
+      return {
+        families: [{
+          aspect: '总体有效性',
+          anchorClaimId: [...claims.map((c) => c.claimId)].sort()[0],
+          members: claims.map((c) => ({ claimId: c.claimId, stance: 'ASSERTS' })),
+        }],
+        unresolvedClaimIds: [],
+      };
     },
   };
 }
@@ -356,7 +364,8 @@ async function driveChain({ workDir, plan = PLAN } = {}) {
 function guardPassSynthesisArtifact(planHash0, identityHex) {
   return {
     seam: 'T14_TO_T15',
-    seamVersion: 1,
+    seamVersion: 2,
+    semanticContractVersion: 2,
     planHash: planHash0,
     preSynthesisGuard: {
       guardResult: 'PASS',
@@ -365,7 +374,7 @@ function guardPassSynthesisArtifact(planHash0, identityHex) {
     },
     synthesis: {
       synthesisIdentity: `sha256:${identityHex.split('').reverse().join('')}`,
-      claims: [], groupDifferences: [], evidenceStrength: [], discussionVolumeDifferences: { byGroup: {} },
+      families: [], unresolved: [], groupDifferences: [], evidenceStrength: [], discussionVolumeDifferences: { byGroup: {} },
     },
     diagnostics: { new_aspect_rate: 0.5, new_claim_rate: 0.5, new_expert_rate: 0.5, new_contradiction_rate: 0.5, claim_source_diversity: 0.5 },
   };
@@ -685,7 +694,7 @@ describe('T15 full chain convergence → final reconciliation', () => {
       coverageState.analysisCoverage.analyzedSourceSet,
       coverageState.analysisCoverage.selectedCorpusSourceSet,
     );
-    assert.ok(synthesis.synthesisArtifact.synthesis.claims.length > 0);
+    assert.ok(synthesis.synthesisArtifact.synthesis.families.length > 0);
 
     const final = finalizeResearchCoverage({
       coverageState, synthesisArtifact: synthesis.synthesisArtifact, workDir: work, journal,
@@ -783,7 +792,7 @@ describe('T15 full chain convergence → final reconciliation', () => {
     assert.throws(() => finalizeResearchCoverage({
       coverageState,
       synthesisArtifact: {
-        seam: 'T14_TO_T15', seamVersion: 1, planHash: PLAN_HASH,
+        seam: 'T14_TO_T15', seamVersion: 2, semanticContractVersion: 2, planHash: PLAN_HASH,
         preSynthesisGuard: { guardResult: 'FAIL_CLOSED', selectedVerifiedSourceSetIdentity: `sha256:${'a'.repeat(64)}`, mappedAnalyzedSourceSetIdentity: `sha256:${'b'.repeat(64)}` },
         synthesis: {}, diagnostics: {},
       },
@@ -791,9 +800,68 @@ describe('T15 full chain convergence → final reconciliation', () => {
     }), (e) => e.code === CFI_ERROR_GUARD_EVIDENCE_REQUIRED);
     assert.throws(() => finalizeResearchCoverage({
       coverageState,
-      synthesisArtifact: { seam: 'T14_TO_T15', seamVersion: 1, planHash: PLAN_HASH, synthesis: {}, diagnostics: {} },
+      synthesisArtifact: { seam: 'T14_TO_T15', seamVersion: 2, semanticContractVersion: 2, planHash: PLAN_HASH, synthesis: {}, diagnostics: {} },
       workDir: work, journal: fullJournal(), requireFullCoverage: true,
     }), (e) => e.code === CFI_ERROR_GUARD_EVIDENCE_REQUIRED);
+  });
+
+  test('H10 (P1-R05 #93): T15 REFUSES a non-V2 synthesis artifact — no default semantic version, no relation reconstruction', () => {
+    const work = tmpWork('t15-h10-');
+    const coverageState = createInitialCoverageState({ planHash: PLAN_HASH });
+    const guard = {
+      guardResult: 'PASS',
+      selectedVerifiedSourceSetIdentity: `sha256:${'a'.repeat(64)}`,
+      mappedAnalyzedSourceSetIdentity: `sha256:${'a'.repeat(64)}`,
+    };
+
+    // V1 artifact with a PASS guard → version-incompatible (never defaulted into V2)
+    assert.throws(() => finalizeResearchCoverage({
+      coverageState,
+      synthesisArtifact: {
+        seam: 'T14_TO_T15', seamVersion: 1, planHash: PLAN_HASH,
+        preSynthesisGuard: guard, synthesis: { claims: [] }, diagnostics: {},
+      },
+      workDir: work, journal: fullJournal(), requireFullCoverage: false,
+    }), (e) => e.code === CFI_ERROR_SYNTHESIS_VERSION_INCOMPATIBLE);
+
+    // missing semanticContractVersion (V2 seamVersion only) → refused
+    assert.throws(() => finalizeResearchCoverage({
+      coverageState,
+      synthesisArtifact: { seam: 'T14_TO_T15', seamVersion: 2, planHash: PLAN_HASH, preSynthesisGuard: guard, synthesis: {}, diagnostics: {} },
+      workDir: work, journal: fullJournal(), requireFullCoverage: false,
+    }), (e) => e.code === CFI_ERROR_SYNTHESIS_VERSION_INCOMPATIBLE);
+
+    // missing seamVersion → refused
+    assert.throws(() => finalizeResearchCoverage({
+      coverageState,
+      synthesisArtifact: { seam: 'T14_TO_T15', semanticContractVersion: 2, planHash: PLAN_HASH, preSynthesisGuard: guard, synthesis: {}, diagnostics: {} },
+      workDir: work, journal: fullJournal(), requireFullCoverage: false,
+    }), (e) => e.code === CFI_ERROR_SYNTHESIS_VERSION_INCOMPATIBLE);
+
+    // no artifact is written by the refusal
+    assert.equal(fs.existsSync(path.join(work, FINAL_COVERAGE_FILENAME)), false);
+  });
+
+  test('H11 (P1-R05 #93): T15 CONSUMES canonical V2 state — never rebuilds relation/breadth', async () => {
+    const work = tmpWork('t15-h11-');
+    const driven = await driveChain({ workDir: work });
+    const final = finalizeResearchCoverage({
+      coverageState: driven.coverageState,
+      synthesisArtifact: driven.synthesis.synthesisArtifact,
+      workDir: work, journal: driven.journal, requireFullCoverage: false,
+    });
+    assert.equal(final.ok, true, JSON.stringify(final));
+    const contract = final.artifact.doubleDefense.synthesisContract;
+    assert.equal(contract.seamVersion, 2);
+    assert.equal(contract.semanticContractVersion, 2);
+    assert.equal(contract.familyCount, driven.synthesis.synthesisArtifact.synthesis.families.length);
+    assert.equal(contract.unresolvedCount, driven.synthesis.synthesisArtifact.synthesis.unresolved.length);
+    // consumed, not reconstructed: the counters equal the producer's canonical state
+    assert.equal(contract.conflictingFamilyCount,
+      driven.synthesis.synthesisArtifact.synthesis.families.filter((f) => f.relationStatus === 'CONFLICTING').length);
+    assert.equal(contract.multiGroupFamilyCount,
+      driven.synthesis.synthesisArtifact.synthesis.families.filter((f) => f.supportBreadth === 'MULTI_GROUP').length);
+    assert.equal(contract.synthesisIdentity, driven.synthesis.synthesisArtifact.synthesis.synthesisIdentity);
   });
 
   test('H5 (CE5): convergence journal order enforced — out-of-order / repeated / missing stages refused', () => {

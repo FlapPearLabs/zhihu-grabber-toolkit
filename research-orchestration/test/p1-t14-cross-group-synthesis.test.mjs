@@ -4,19 +4,29 @@
  * P1-T14 — Cross-group Claim/Aspect aggregation + cross-source synthesis
  *          + PRE-SYNTHESIS coverage guard (Issue #46).
  *
+ * P1-R05 / Issue #93 ATOMIC CUTOVER: the production chain now emits
+ * SEAM D V2 (proposition families + claim-level stance + orthogonal
+ * relationStatus/supportBreadth + independent unresolved + complete original
+ * claim lineage). This suite was migrated from the V1 four-category
+ * assertions to the V2 canonical semantics; the behavioural expectations
+ * (structure preservation, lineage, guard-first, fail-closed, T07 ownership,
+ * determinism) are UNCHANGED — only the legacy `category` vocabulary and the
+ * V1 `synthesis.claims[]` shape are gone.
+ *
  * Authority:
  *   - docs/specs/p1-cross-question-deep-research.md §8.2 / §8.3 / §9.4 / §10.1 / §10.2
+ *     + the 2026-09-19 repair amendment (effective S1, Cases A–F).
  *   - Issue #46 (IN_SCOPE / AC / REQUIRED_TESTS / fail-closed STOP conditions)
- *   - docs/planning/P1_SEAM_CONTRACTS_V1.md §SEAM C (input) / §SEAM D (output)
+ *   - docs/planning/P1_SEAM_CONTRACTS_V1.md §SEAM C (input) / §SEAM D V2 (output)
  *   - docs/planning/P1_PARALLEL_EXECUTION_CONTRACT_V1.md §E3 (T14 packet)
  *
  * Discipline:
- *   - counterexample-first: failing tests written BEFORE the implementation;
+ *   - counterexample-first;
  *   - input = frozen SEAM C fixture (upstream T13 developed in parallel — this
  *     suite NEVER imports T13 code);
  *   - all runtime calls use injected MOCK runtimes — zero network, deterministic;
  *   - diagnostics flow ONLY through the frozen T07 hook updateSynthesisDiagnostics;
- *   - output is re-validated against the FROZEN SEAM D validator
+ *   - output is re-validated against the FROZEN SEAM D V2 validator
  *     (test/helpers/p1-seam-contracts.mjs — read-only authority).
  */
 
@@ -28,7 +38,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  validateSynthesisOutput,
+  validateSynthesisOutputV2,
   assertIdentityChain,
   walkForForbiddenKeys,
 } from './helpers/p1-seam-contracts.mjs';
@@ -71,11 +81,23 @@ const PLAN_HASH = '5f1a2b3c4d5e6f708192a3b4c5d6e7f80112233445566778899aabbccddee
 
 /**
  * Deterministic MOCK semantic runtime (Spec §5.2 class, injected — never
- * constructed network/IO inside the module under test). The mock clusters
- * claimIds into aspects according to an explicit caller-supplied map, so the
- * tests fully control the semantic stage while remaining deterministic.
+ * constructed network/IO inside the module under test).
+ *
+ * SEAM D V2: the runtime proposes proposition families with per-claim stance
+ * plus independent unresolved claims. Two ergonomic front-ends are offered:
+ *   - `aspectByClaimId` — one family per aspect, every member ASSERTS, anchor =
+ *     the lexicographically first member (a deterministic controller choice the
+ *     mock makes for readability only);
+ *   - `stanceByClaimId` — explicit per-claim stance;
+ *   - `unresolved` — claimIds proposed as independent unresolved records.
  */
-function createMockRuntime({ aspectByClaimId = {}, defaultAspect = '未分簇观点', recordInput = null } = {}) {
+function createMockRuntime({
+  aspectByClaimId = {},
+  defaultAspect = '未分簇观点',
+  stanceByClaimId = {},
+  unresolved = [],
+  recordInput = false,
+} = {}) {
   const calls = [];
   return {
     runtimeId: T14_SYNTHESIS_RUNTIME_ID,
@@ -84,15 +106,23 @@ function createMockRuntime({ aspectByClaimId = {}, defaultAspect = '未分簇观
     synthesize(input) {
       if (recordInput) calls.push(JSON.parse(JSON.stringify(input)));
       else calls.push(input);
-      const clusters = new Map();
+      const unresolvedSet = new Set(unresolved);
+      const byAspect = new Map();
       for (const claim of input.claims) {
+        if (unresolvedSet.has(claim.claimId)) continue;
         const aspect = aspectByClaimId[claim.claimId] ?? defaultAspect;
-        if (!clusters.has(aspect)) clusters.set(aspect, []);
-        clusters.get(aspect).push(claim.claimId);
+        if (!byAspect.has(aspect)) byAspect.set(aspect, []);
+        byAspect.get(aspect).push(claim.claimId);
       }
-      return {
-        aspects: [...clusters.entries()].map(([aspect, claimIds]) => ({ aspect, claimIds })),
-      };
+      const families = [...byAspect.entries()].map(([aspect, claimIds]) => ({
+        aspect,
+        anchorClaimId: [...claimIds].sort()[0],
+        members: claimIds.map((claimId) => ({
+          claimId,
+          stance: stanceByClaimId[claimId] ?? 'ASSERTS',
+        })),
+      }));
+      return { families, unresolvedClaimIds: [...unresolved] };
     },
   };
 }
@@ -113,18 +143,23 @@ function expectedCoverageState() {
   return createInitialCoverageState({ planHash: PLAN_HASH });
 }
 
+/** Convenience: the single family covering a given aspect. */
+function familyByAspect(artifact, aspect) {
+  return artifact.synthesis.families.find((f) => f.aspect === aspect);
+}
+
 /* ============================ aggregation semantics ========================= */
 
 describe('P1-T14 aggregation semantics (Spec §8.2)', () => {
-  test('cross-group aggregation keeps supporting/opposing sources with source/group/author dimensions (no support_count)', async () => {
+  test('cross-group aggregation keeps supporting/opposing lineage with source/group/author dimensions (no support_count)', async () => {
     const artifact = seamCMultiGroup();
     const result = await produceCrossSourceSynthesis({
       seamCArtifact: artifact,
       runtime: defaultRuntime(),
     });
     assert.equal(result.ok, true, JSON.stringify(result));
-    const merged = result.artifact.synthesis.claims.find((c) => c.aspect === '总体有效性');
-    assert.ok(merged, 'merged aspect cluster must exist');
+    const merged = familyByAspect(result.artifact, '总体有效性');
+    assert.ok(merged, 'merged proposition family must exist');
     const groupIds = new Set(merged.support.map((s) => s.groupId));
     assert.ok(groupIds.size >= 2, `support must span groups, got ${JSON.stringify(merged.support)}`);
     // author dimension = the SEAM C claim's controller-owned authorRef carrier
@@ -136,6 +171,8 @@ describe('P1-T14 aggregation semantics (Spec §8.2)', () => {
     for (const side of [...merged.support, ...merged.oppose]) {
       assert.equal(typeof side.sourceRef, 'string');
       assert.equal(typeof side.groupId, 'string');
+      // V2: every lineage entry binds its ORIGINAL sourceClaimId (P1-R05).
+      assert.equal(typeof side.sourceClaimId, 'string');
       assert.ok(side.authorRef === null || typeof side.authorRef === 'string', `authorRef must be null or the consumed carrier, got ${JSON.stringify(side.authorRef)}`);
       if (side.authorRef !== null) {
         assert.ok(fixtureAuthorRefs.has(side.authorRef), `authorRef ${side.authorRef} must be a SEAM C claim carrier value (verbatim consumption)`);
@@ -157,8 +194,8 @@ describe('P1-T14 aggregation semantics (Spec §8.2)', () => {
     }
     const ok = await produceCrossSourceSynthesis({ seamCArtifact: artifact, runtime: defaultRuntime() });
     assert.equal(ok.ok, true);
-    for (const synthClaim of ok.artifact.synthesis.claims) {
-      for (const side of [...synthClaim.support, ...synthClaim.oppose]) {
+    for (const family of ok.artifact.synthesis.families) {
+      for (const side of [...family.support, ...family.oppose]) {
         assert.equal(side.authorRef, authorRefBySourceRef.get(side.sourceRef),
           `${side.sourceRef}: entry authorRef must equal the SEAM C claim carrier value verbatim`);
       }
@@ -172,25 +209,24 @@ describe('P1-T14 aggregation semantics (Spec §8.2)', () => {
     const r = await produceCrossSourceSynthesis({ seamCArtifact: broken, runtime: defaultRuntime() });
     assert.equal(r.ok, true);
     const deAuthoredRef = broken.groupRepresentations[0].claims.main[0].sourceRefs[0];
-    const nullEntries = r.artifact.synthesis.claims
-      .flatMap((c) => [...c.support, ...c.oppose])
+    const nullEntries = r.artifact.synthesis.families
+      .flatMap((f) => [...f.support, ...f.oppose])
       .filter((s) => s.sourceRef === deAuthoredRef);
     assert.ok(nullEntries.length > 0, 'the de-authored sourceRef must appear in some entry');
     for (const side of nullEntries) {
       assert.equal(side.authorRef, null, 'null carrier → null authorRef (disclosed author-unknown)');
     }
-    for (const side of r.artifact.synthesis.claims.flatMap((c) => [...c.support, ...c.oppose])) {
+    for (const side of r.artifact.synthesis.families.flatMap((f) => [...f.support, ...f.oppose])) {
       assert.ok(side.authorRef === null || /^author-[0-9a-f]{16}$/.test(side.authorRef),
         `no fabricated token scheme allowed, got ${side.authorRef}`);
     }
   });
 
-  test('category precedence ratified end-to-end: conflicting > minority > widely-shared (deterministic structure, no weights)', async () => {
-    // PO ratification (P1 WAVE 01 integration train, 2026-09-05): the V1
-    // mechanical precedence is frozen as-is. This test pins the two contested
-    // precedence edges that the per-branch tests above do not.
+  test('relationStatus and supportBreadth are ORTHOGONAL and never derived from group-local kind', async () => {
+    // P1-R05: the V1 "category precedence" (conflicting > minority >
+    // widely-shared > group-specific) is GONE. Relation and breadth are two
+    // independent controller derivations; `kind` is group-local metadata only.
     const artifact = seamCMultiGroup();
-    // a second-group minority claim so an all-minority cluster can span 2 groups
     artifact.groupRepresentations[1].claims.minority.push({
       claimId: 'c-34561234-002',
       statement: '第二组的少数派观点',
@@ -199,69 +235,108 @@ describe('P1-T14 aggregation semantics (Spec §8.2)', () => {
     });
     const runtime = createMockRuntime({
       aspectByClaimId: {
-        'c-23456789-003': '冲突优先簇', // contradictory
-        'c-34561234-002': '冲突优先簇', // minority  → conflicting must WIN over minority
-        'c-23456789-002': '少数派跨组簇', // minority
-        'c-34561234-002': '少数派跨组簇', // minority → all-minority cluster spanning 2 groups:
-                                          //   minority must WIN over widely-shared
-        'c-34561234-001': '跨组主流簇', // main
-        'c-23456789-001': '跨组主流簇', // main × 2 groups → widely-shared
+        'c-23456789-003': '冲突簇', // contradictory kind, but OPPOSES stance below
+        'c-34561234-002': '冲突簇',
+        'c-23456789-002': '少数簇', // minority kind → still SUPPORT_ONLY
+        'c-34561234-001': '跨组主流簇',
+        'c-23456789-001': '跨组主流簇',
       },
+      stanceByClaimId: { 'c-34561234-002': 'OPPOSES' },
     });
     const result = await produceCrossSourceSynthesis({ seamCArtifact: artifact, runtime });
     assert.equal(result.ok, true, JSON.stringify(result));
-    const byAspect = new Map(result.artifact.synthesis.claims.map((c) => [c.aspect, c]));
-    assert.equal(byAspect.get('冲突优先簇').category, 'conflicting', 'conflicting > minority');
-    assert.equal(byAspect.get('少数派跨组簇').category, 'minority', 'minority > widely-shared (support spans 2 groups yet stays minority)');
-    assert.equal(byAspect.get('跨组主流簇').category, 'widely-shared');
+    const conflicting = familyByAspect(result.artifact, '冲突簇');
+    // relation is stance-driven: one OPPOSES member ⇒ CONFLICTING
+    assert.equal(conflicting.relationStatus, 'CONFLICTING');
+    // breadth is independent: only one ASSERTS group ⇒ SINGLE_GROUP
+    assert.equal(conflicting.supportBreadth, 'SINGLE_GROUP');
+    // a minority-kind cluster with no OPPOSES stays SUPPORT_ONLY — no global
+    // minority taxonomy is manufactured from group-local metadata
+    const minority = familyByAspect(result.artifact, '少数簇');
+    assert.equal(minority.relationStatus, 'SUPPORT_ONLY');
+    assert.ok(!Object.prototype.hasOwnProperty.call(minority, 'category'));
+    const shared = familyByAspect(result.artifact, '跨组主流簇');
+    assert.equal(shared.relationStatus, 'SUPPORT_ONLY');
+    assert.equal(shared.supportBreadth, 'MULTI_GROUP');
   });
 
-  test('expert/evidence-rich support flag is derived from SEAM C expertEvidenceRichRefs', async () => {
+  test('expert/evidence-rich support flag is derived from SEAM C expertEvidenceRichRefs (ASSERTS side only)', async () => {
     const result = await produceCrossSourceSynthesis({
       seamCArtifact: seamCMultiGroup(),
       runtime: defaultRuntime(),
     });
     assert.equal(result.ok, true);
     // claim c-23456789-001 refs 23456789-a-102 which IS an expert/evidence-rich ref
-    const expert = result.artifact.synthesis.claims.find(
-      (c) => c.aspect === '总体有效性' && c.sourceClaimIds.includes('c-23456789-001'),
-    );
-    assert.ok(expert, 'expert-backed cluster must exist');
+    const expert = result.artifact.synthesis.families
+      .find((f) => f.sourceClaims.some((c) => c.sourceClaimId === 'c-23456789-001'));
+    assert.ok(expert, 'expert-backed family must exist');
     assert.equal(expert.expertEvidenceRichSupport, true);
-    const plain = result.artifact.synthesis.claims.find((c) => c.aspect === '特定条件下的反例');
+    const plain = familyByAspect(result.artifact, '特定条件下的反例');
     assert.equal(plain.expertEvidenceRichSupport, false);
+
+    // opposition can never grant expert/evidence-rich support: the ONLY
+    // expert/evidence-rich-backed claim (c-23456789-001) is proposed OPPOSES,
+    // while a non-expert claim anchors the family.
+    const opposed = await produceCrossSourceSynthesis({
+      seamCArtifact: seamCMultiGroup(),
+      runtime: {
+        runtimeId: T14_SYNTHESIS_RUNTIME_ID,
+        model: 'deepseek-v4-pro',
+        synthesize: () => ({
+          families: [{
+            aspect: '总体有效性',
+            anchorClaimId: 'c-34561234-001',
+            members: [
+              { claimId: 'c-34561234-001', stance: 'ASSERTS' },
+              { claimId: 'c-23456789-001', stance: 'OPPOSES' },
+            ],
+          }],
+          unresolvedClaimIds: ['c-23456789-002', 'c-23456789-003'],
+        }),
+      },
+    });
+    assert.equal(opposed.ok, true, JSON.stringify(opposed));
+    const family = familyByAspect(opposed.artifact, '总体有效性');
+    assert.equal(family.relationStatus, 'CONFLICTING');
+    assert.equal(family.expertEvidenceRichSupport, false,
+      'expert/evidence-rich support must never be granted from the opposing side');
   });
 
-  test('in-group contradictory claims produce opposing sources against main claims (conflicting category)', async () => {
+  test('group-local contradictory never auto-opposes unrelated main claims (F03 root cause removed)', async () => {
     const result = await produceCrossSourceSynthesis({
       seamCArtifact: seamCMultiGroup(),
       runtime: defaultRuntime(),
     });
     assert.equal(result.ok, true);
-    const conflicting = result.artifact.synthesis.claims.find((c) => c.aspect === '特定条件下的反例');
-    assert.ok(conflicting);
-    assert.equal(conflicting.category, 'conflicting');
-    assert.ok(conflicting.oppose.length > 0, 'contradictory cluster must carry opposing sources');
-    assert.ok(conflicting.support.length > 0, 'contradictory cluster must carry its own supporting sources');
+    const family = familyByAspect(result.artifact, '特定条件下的反例');
+    assert.ok(family);
+    // the cluster contains a contradictory-kind claim, but no OPPOSES stance was
+    // proposed → there is NO opposition at all (V1 would have manufactured one).
+    assert.equal(family.relationStatus, 'SUPPORT_ONLY');
+    assert.deepEqual(family.oppose, [], 'group-local kind must never become global opposition');
+    assert.ok(family.support.length > 0, 'the family still carries its own supporting lineage');
   });
 
-  test('cross-group shared aspect is categorized widely-shared; minority-only cluster is minority', async () => {
+  test('cross-group shared proposition is MULTI_GROUP; minority-kind cluster keeps its lineage without global minority semantics', async () => {
     const artifact = seamCMultiGroup();
     const result = await produceCrossSourceSynthesis({
       seamCArtifact: artifact,
-      runtime: createMockRuntime({
-        aspectByClaimId: { ...MERGED_ASPECTS, 'c-23456789-002': '少数派声音' },
-      }),
+      runtime: createMockRuntime({ aspectByClaimId: { ...MERGED_ASPECTS, 'c-23456789-002': '少数派声音' } }),
     });
     assert.equal(result.ok, true);
-    const shared = result.artifact.synthesis.claims.find((c) => c.aspect === '总体有效性');
-    assert.equal(shared.category, 'widely-shared');
-    const minority = result.artifact.synthesis.claims.find((c) => c.aspect === '少数派声音');
+    const shared = familyByAspect(result.artifact, '总体有效性');
+    assert.equal(shared.supportBreadth, 'MULTI_GROUP');
+    assert.equal(shared.relationStatus, 'SUPPORT_ONLY');
+    const minority = familyByAspect(result.artifact, '少数派声音');
     assert.ok(minority, 'minority cluster must exist');
-    assert.equal(minority.category, 'minority');
+    assert.equal(minority.supportBreadth, 'SINGLE_GROUP');
+    assert.deepEqual(minority.sourceClaims.map((c) => c.kind), ['minority'], 'kind survives as group-local lineage metadata');
+    for (const banned of ['category', 'minority', 'groupSalience']) {
+      assert.ok(!Object.prototype.hasOwnProperty.call(minority, banned), `${banned} must not appear on a V2 family`);
+    }
   });
 
-  test('single-group non-conflicting aspect is group-specific', async () => {
+  test('single-group non-conflicting aspect is SINGLE_GROUP', async () => {
     const result = await produceCrossSourceSynthesis({
       seamCArtifact: seamCMultiGroup(),
       runtime: createMockRuntime({
@@ -269,14 +344,15 @@ describe('P1-T14 aggregation semantics (Spec §8.2)', () => {
       }),
     });
     assert.equal(result.ok, true);
-    const specific = result.artifact.synthesis.claims.find((c) => c.aspect === '仅另一问题出现的观点');
+    const specific = familyByAspect(result.artifact, '仅另一问题出现的观点');
     assert.ok(specific);
-    assert.equal(specific.category, 'group-specific');
+    assert.equal(specific.relationStatus, 'SUPPORT_ONLY');
+    assert.equal(specific.supportBreadth, 'SINGLE_GROUP');
     assert.equal(specific.support.length, 1);
     assert.equal(specific.support[0].groupId, '34561234');
   });
 
-  test('answer counts never become epistemic weight: swapping discussionVolume does not move categories or claim structure', async () => {
+  test('answer counts never become epistemic weight: swapping discussionVolume does not move relation/breadth or family structure', async () => {
     const artifactA = seamCMultiGroup();
     const artifactB = seamCMultiGroup();
     artifactB.groupRepresentations[0].discussionVolume = { answerCount: 9999 };
@@ -285,27 +361,44 @@ describe('P1-T14 aggregation semantics (Spec §8.2)', () => {
     const runB = await produceCrossSourceSynthesis({ seamCArtifact: artifactB, runtime: defaultRuntime() });
     assert.equal(runA.ok, true);
     assert.equal(runB.ok, true);
-    const catsA = runA.artifact.synthesis.claims.map((c) => [c.claimId, c.category, c.support.length, c.oppose.length]);
-    const catsB = runB.artifact.synthesis.claims.map((c) => [c.claimId, c.category, c.support.length, c.oppose.length]);
-    assert.deepEqual(catsB, catsA, 'discussion volume must not change aggregation weight');
-    // it IS披露 as a separate signal (Spec §8.1/§8.3)
+    const shape = (a) => a.artifact.synthesis.families.map((f) => [
+      f.familyKey, f.relationStatus, f.supportBreadth, f.support.length, f.oppose.length,
+    ]);
+    assert.deepEqual(shape(runB), shape(runA), 'discussion volume must not change aggregation weight');
+    // it IS disclosed as a separate signal (Spec §8.1/§8.3)
     assert.deepEqual(runB.artifact.synthesis.discussionVolumeDifferences.byGroup, { '23456789': 9999, '34561234': 1 });
   });
 
-  test('forbidden flat reduce: no weight/score/count-only fields anywhere in synthesis claims', async () => {
+  test('forbidden flat reduce: no weight/score/count-only fields anywhere in the V2 synthesis', async () => {
     const result = await produceCrossSourceSynthesis({
       seamCArtifact: seamCMultiGroup(),
       runtime: defaultRuntime(),
     });
     assert.equal(result.ok, true);
-    for (const claim of result.artifact.synthesis.claims) {
-      assert.ok(Array.isArray(claim.support) && claim.support.length > 0, 'structure must survive aggregation');
+    for (const family of result.artifact.synthesis.families) {
+      assert.ok(Array.isArray(family.support) && family.support.length > 0, 'structure must survive aggregation');
       for (const banned of ['support_count', 'weight', 'score', 'epistemicWeight']) {
-        assert.ok(!Object.prototype.hasOwnProperty.call(claim, banned), `${banned} must never appear`);
+        assert.ok(!Object.prototype.hasOwnProperty.call(family, banned), `${banned} must never appear`);
       }
     }
-    const hits = walkForForbiddenKeys(result.artifact.synthesis.claims, ['support_count']);
-    assert.deepEqual(hits, []);
+    assert.deepEqual(walkForForbiddenKeys(result.artifact.synthesis.families, ['support_count']), []);
+  });
+
+  test('aggregation emits complete original lineage and NO inferred opposition sides', async () => {
+    const records = aggregateCrossGroupClaims(seamCMultiGroup()).records;
+    assert.ok(records.length > 0);
+    for (const record of records) {
+      assert.ok(record.sourceRefs.length > 0);
+      for (const ref of record.sourceRefs) {
+        assert.equal(typeof ref.sourceRef, 'string');
+        assert.equal(typeof ref.groupId, 'string');
+        assert.ok(Object.prototype.hasOwnProperty.call(ref, 'authorRef'));
+      }
+      // P1-R05: the V1 `support`/`oppose` auto-derivation (which attached a
+      // group's contradictory claims to every main claim) is gone.
+      assert.ok(!Object.prototype.hasOwnProperty.call(record, 'oppose'));
+      assert.ok(!Object.prototype.hasOwnProperty.call(record, 'support'));
+    }
   });
 });
 
@@ -329,10 +422,12 @@ describe('P1-T14 PRE-SYNTHESIS guard — positive branch (equal → synthesis)',
     });
   });
 
-  test('module output passes the FROZEN SEAM D validator and the B→C→D identity chain', async () => {
+  test('module output passes the FROZEN SEAM D V2 validator and the B→C→D identity chain', async () => {
     const result = await produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: defaultRuntime() });
     assert.equal(result.ok, true);
-    const verdict = validateSynthesisOutput(result.artifact);
+    assert.equal(result.artifact.seamVersion, 2);
+    assert.equal(result.artifact.semanticContractVersion, 2);
+    const verdict = validateSynthesisOutputV2(result.artifact);
     assert.equal(verdict.ok, true, JSON.stringify(verdict.errors));
     const chain = assertIdentityChain(seamBMultiGroup(), seamCMultiGroup(), result.artifact);
     assert.equal(chain.ok, true, JSON.stringify(chain.errors));
@@ -543,24 +638,67 @@ describe('P1-T14 failure semantics (fail-closed, no silent fallback / degradatio
     assert.equal(runtime.__calls.length, 0, 'structural gate must reject BEFORE the runtime is ever invoked');
   });
 
-  test('runtime output is untrusted: unknown claimId / incomplete partition / unsafe aspect → fail closed', async () => {
-    const unknown = createMockRuntime({ aspectByClaimId: {}, defaultAspect: 'x' });
-    unknown.synthesize = () => ({ aspects: [{ aspect: 'a', claimIds: ['c-23456789-001', 'FORGED-CLAIM-ID'] }] });
+  test('runtime output is untrusted: unknown claimId / incomplete partition / empty family / unsafe aspect → fail closed', async () => {
+    const mk = (synthesize) => ({
+      runtimeId: T14_SYNTHESIS_RUNTIME_ID,
+      model: 'deepseek-v4-pro',
+      synthesize,
+    });
+    const all = ['c-23456789-001', 'c-34561234-001', 'c-23456789-002', 'c-23456789-003'];
+
+    const unknown = mk(() => ({
+      families: [{ aspect: 'a', anchorClaimId: 'FORGED-CLAIM-ID', members: [{ claimId: 'FORGED-CLAIM-ID', stance: 'ASSERTS' }] }],
+      unresolvedClaimIds: [],
+    }));
     const r1 = await produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: unknown });
     assert.equal(r1.ok, false);
     assert.equal(r1.code, 'T14_RUNTIME_OUTPUT_INVALID');
 
-    const incomplete = createMockRuntime({});
-    incomplete.synthesize = () => ({ aspects: [{ aspect: 'a', claimIds: ['c-23456789-001'] }] });
+    const incomplete = mk(() => ({
+      families: [{ aspect: 'a', anchorClaimId: 'c-23456789-001', members: [{ claimId: 'c-23456789-001', stance: 'ASSERTS' }] }],
+      unresolvedClaimIds: [],
+    }));
     const r2 = await produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: incomplete });
     assert.equal(r2.ok, false);
     assert.equal(r2.code, 'T14_RUNTIME_OUTPUT_INVALID');
 
-    const unsafe = createMockRuntime({});
-    unsafe.synthesize = () => ({ aspects: [{ aspect: '总体有效性', claimIds: ['c-23456789-001', 'c-34561234-001', 'c-23456789-002', 'c-23456789-003'] }, { aspect: 42, claimIds: [] }] });
-    const r3 = await produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: unsafe });
-    assert.equal(r3.ok, false);
-    assert.equal(r3.artifact, undefined);
+    // F06: an EMPTY family inside a non-empty whole must fail closed (the V1
+    // producer silently emitted a zero-lineage claim here).
+    const emptyFamily = mk(() => ({
+      families: [
+        { aspect: '总体有效性', anchorClaimId: 'c-23456789-001', members: all.map((claimId) => ({ claimId, stance: 'ASSERTS' })) },
+        { aspect: '空簇', anchorClaimId: 'c-23456789-001', members: [] },
+      ],
+      unresolvedClaimIds: [],
+    }));
+    const r3 = await produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: emptyFamily });
+    assert.equal(r3.ok, false, 'empty family must fail closed');
+    assert.equal(r3.code, 'T14_RUNTIME_OUTPUT_INVALID');
+
+    const unsafe = mk(() => ({
+      families: [
+        { aspect: '总体有效性', anchorClaimId: 'c-23456789-001', members: all.map((claimId) => ({ claimId, stance: 'ASSERTS' })) },
+        { aspect: 42, anchorClaimId: 'c-23456789-001', members: [] },
+      ],
+      unresolvedClaimIds: [],
+    }));
+    const r4 = await produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: unsafe });
+    assert.equal(r4.ok, false);
+    assert.equal(r4.artifact, undefined);
+  });
+
+  test('a V1 `aspects` proposal is never laundered into V2 (no default semantic version)', async () => {
+    const legacy = {
+      runtimeId: T14_SYNTHESIS_RUNTIME_ID,
+      model: 'deepseek-v4-pro',
+      synthesize: () => ({
+        aspects: [{ aspect: '总体有效性', claimIds: ['c-23456789-001', 'c-34561234-001', 'c-23456789-002', 'c-23456789-003'] }],
+      }),
+    };
+    const result = await produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: legacy });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, 'T14_RUNTIME_OUTPUT_INVALID');
+    assert.equal(result.artifact, undefined);
   });
 });
 
@@ -598,47 +736,45 @@ describe('P1-T14 diagnostics — written ONLY through the frozen T07 hook (exact
     );
   });
 
-  test('first-run diagnostics: no prior synthesis → prior-baseline novelty rates are 1 (fresh coverage state via the frozen hook)', async () => {
+  test('first-run diagnostics: no prior synthesis → prior-baseline novelty rates are 1', async () => {
     // I3 ratification (P1 WAVE 01 integration train, 2026-09-05): the first
     // run has NO prior synthesis — no prior is ever invented, no second
-    // diagnostics store exists; the baseline is disclosed by the rates
-    // themselves. Prior-baseline novelty rates are therefore 1. The
-    // expert/contradiction keys are structural shares per the documented
-    // formulas (P1_T14_CONTRACT_EXTRACTION.md decision 8), not prior-relative.
-    const state = expectedCoverageState(); // fresh state, no prior synthesis diagnostics
+    // diagnostics store exists.
+    const state = expectedCoverageState();
     const result = await produceCrossSourceSynthesis({
       seamCArtifact: seamCMultiGroup(),
       runtime: defaultRuntime(),
       coverageState: state,
-      // priorSynthesis deliberately omitted → everything counts as new
     });
     assert.equal(result.ok, true, JSON.stringify(result));
-    // exactly the real five-key contract
     assert.deepEqual(
       Object.keys(result.artifact.diagnostics).sort(),
       ['claim_source_diversity', 'new_aspect_rate', 'new_claim_rate', 'new_contradiction_rate', 'new_expert_rate'],
     );
     assert.equal(result.artifact.diagnostics.new_aspect_rate, 1, 'first run: every aspect is new');
     assert.equal(result.artifact.diagnostics.new_claim_rate, 1, 'first run: every claim is new');
-    // written through the FROZEN T07 hook into the coverage state (no second store)
     assert.equal(result.coverageState.diagnostics.new_aspect_rate, 1);
     assert.equal(result.coverageState.diagnostics.new_claim_rate, 1);
-    // structural shares, honest recomputation (documented formulas, not prior-relative)
-    const claims = result.artifact.synthesis.claims;
-    assert.equal(result.artifact.diagnostics.new_expert_rate,
-      claims.filter((c) => c.expertEvidenceRichSupport).length / claims.length);
-    assert.equal(result.artifact.diagnostics.new_contradiction_rate,
-      claims.filter((c) => c.category === 'conflicting').length / claims.length);
   });
 
-  test('diagnostics values are honest recomputations from the synthesis (expert/contradiction rates)', async () => {
-    const result = await produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: defaultRuntime() });
-    assert.equal(result.ok, true);
-    const claims = result.artifact.synthesis.claims;
-    const expertRate = claims.filter((c) => c.expertEvidenceRichSupport).length / claims.length;
-    const contradictionRate = claims.filter((c) => c.category === 'conflicting').length / claims.length;
-    assert.equal(result.artifact.diagnostics.new_expert_rate, expertRate);
-    assert.equal(result.artifact.diagnostics.new_contradiction_rate, contradictionRate);
+  test('new_contradiction_rate is derived from canonical relationStatus, never from a legacy category', async () => {
+    const { families, unresolved } = { families: [], unresolved: [] };
+    void families; void unresolved;
+    const result = await produceCrossSourceSynthesis({
+      seamCArtifact: seamCMultiGroup(),
+      // one OPPOSES member forces exactly one CONFLICTING family
+      runtime: createMockRuntime({
+        aspectByClaimId: MERGED_ASPECTS,
+        stanceByClaimId: { 'c-23456789-003': 'OPPOSES' },
+      }),
+    });
+    assert.equal(result.ok, true, JSON.stringify(result));
+    const f = result.artifact.synthesis.families;
+    const u = result.artifact.synthesis.unresolved;
+    const conflicting = f.filter((x) => x.relationStatus === 'CONFLICTING').length;
+    assert.equal(conflicting, 1);
+    assert.equal(result.artifact.diagnostics.new_contradiction_rate, conflicting / (f.length + u.length));
+    assert.equal(validateSynthesisOutputV2(result.artifact).ok, true);
   });
 });
 
@@ -674,8 +810,8 @@ describe('P1-T14 UNTRUSTED_CONTENT projection safety (Spec §10.1 EXTERNAL_CORPU
 
 /* ========================== lineage controller-owned ======================== */
 
-describe('P1-T14 lineage — controller-owned (every synthesis claim traceable to SEAM C)', () => {
-  test('every synthesis claim traces to claimIds + canonicalSourceIds from the SEAM C input', async () => {
+describe('P1-T14 lineage — controller-owned (every canonical claim traceable to SEAM C)', () => {
+  test('every canonical claim reference traces to claimIds + canonicalSourceIds from the SEAM C input', async () => {
     const artifact = seamCMultiGroup();
     const runtime = defaultRuntime();
     const result = await produceCrossSourceSynthesis({ seamCArtifact: artifact, runtime });
@@ -695,27 +831,41 @@ describe('P1-T14 lineage — controller-owned (every synthesis claim traceable t
       }
       refsByGroup.set(group.groupId, groupRefs);
     }
-    for (const synthClaim of result.artifact.synthesis.claims) {
-      assert.ok(synthClaim.sourceClaimIds.every((id) => knownClaimIds.has(id)), 'claimIds must trace to SEAM C');
-      for (const side of [...synthClaim.support, ...synthClaim.oppose]) {
+    const seen = new Set();
+    for (const family of result.artifact.synthesis.families) {
+      for (const claim of family.sourceClaims) {
+        assert.ok(knownClaimIds.has(claim.sourceClaimId), 'every sourceClaimId must trace to SEAM C');
+        assert.ok(!seen.has(claim.sourceClaimId), 'each claim belongs to exactly one family');
+        seen.add(claim.sourceClaimId);
+      }
+      for (const side of [...family.support, ...family.oppose]) {
         assert.ok(knownGroups.has(side.groupId), `groupId ${side.groupId} must trace to SEAM C`);
-        // every reference entry is group-scoped: the ref must exist among that
-        // group's SEAM C claims (in-group opposition traces to the group's
-        // contradictory claims — controller-owned lineage, never model-minted)
+        assert.ok(knownClaimIds.has(side.sourceClaimId), 'lineage entry must bind the original sourceClaimId');
         assert.ok(
           refsByGroup.get(side.groupId).has(side.sourceRef),
           `sourceRef ${side.sourceRef} must trace to SEAM C group ${side.groupId}`,
         );
       }
     }
+    for (const record of result.artifact.synthesis.unresolved) {
+      assert.ok(knownClaimIds.has(record.sourceClaim.sourceClaimId));
+      assert.ok(!seen.has(record.sourceClaim.sourceClaimId));
+      seen.add(record.sourceClaim.sourceClaimId);
+    }
+    // complete partition
+    assert.equal(seen.size, knownClaimIds.size, 'every input claim must belong exactly once');
   });
 
-  test('aspect labels come from the runtime but claim identity stays controller-owned', async () => {
+  test('familyKey is controller-derived and deterministic; the model never mints an identity', async () => {
     const result = await produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: defaultRuntime() });
     assert.equal(result.ok, true);
-    for (const claim of result.artifact.synthesis.claims) {
-      assert.match(claim.claimId, /^syn-[0-9a-f]{12}$/, 'synthesis claimId is controller-derived (deterministic)');
-      assert.ok(Array.isArray(claim.sourceClaimIds) && claim.sourceClaimIds.length > 0);
+    for (const family of result.artifact.synthesis.families) {
+      assert.match(family.familyKey, /^fam-[0-9a-f]{16}$/, 'familyKey is controller-derived (deterministic)');
+      assert.ok(family.sourceClaims.length > 0);
+      // anchor is a member and carries that member's ORIGINAL statement
+      const member = family.sourceClaims.find((c) => c.sourceClaimId === family.anchor.sourceClaimId);
+      assert.ok(member, 'anchor must be a member');
+      assert.equal(family.anchor.statement, member.statement, 'anchor statement is the original claim statement');
     }
   });
 });
@@ -773,23 +923,32 @@ describe('P1-T14 adversarial round 2 — single-read snapshot, coded getter fail
     assert.equal(r2.artifact, undefined);
   });
 
-  test('C5 determinism: equal-aspect clusters — synthesisIdentity is invariant under runtime emission order permutation', async () => {
-    const clusterA = { aspect: '同一面向', claimIds: ['c-23456789-001', 'c-23456789-002'] };
-    const clusterB = { aspect: '同一面向', claimIds: ['c-34561234-001', 'c-23456789-003'] };
-    const mkRuntime = (swap) => ({
-      runtimeId: T14_SYNTHESIS_RUNTIME_ID,
-      model: 'deepseek-v4-pro',
-      synthesize: () => ({ aspects: swap ? [clusterB, clusterA] : [clusterA, clusterB] }),
-    });
+  test('C5 determinism: synthesisIdentity is invariant under runtime emission order permutation', async () => {
+    const all = ['c-23456789-001', 'c-23456789-002', 'c-34561234-001', 'c-23456789-003'];
+    const mkRuntime = (swap) => {
+      const ordered = swap ? [...all].reverse() : all;
+      return {
+        runtimeId: T14_SYNTHESIS_RUNTIME_ID,
+        model: 'deepseek-v4-pro',
+        synthesize: () => ({
+          families: ordered.map((claimId) => ({
+            aspect: '同一面向',
+            anchorClaimId: claimId,
+            members: [{ claimId, stance: 'ASSERTS' }],
+          })),
+          unresolvedClaimIds: [],
+        }),
+      };
+    };
     const r1 = await produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: mkRuntime(false) });
     const r2 = await produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: mkRuntime(true) });
     assert.equal(r1.ok, true);
     assert.equal(r2.ok, true);
     assert.equal(r1.artifact.synthesis.synthesisIdentity, r2.artifact.synthesis.synthesisIdentity);
     assert.deepEqual(
-      r2.artifact.synthesis.claims.map((c) => c.claimId),
-      r1.artifact.synthesis.claims.map((c) => c.claimId),
-      'claim order must be a total order, not runtime insertion order',
+      r2.artifact.synthesis.families.map((f) => f.familyKey),
+      r1.artifact.synthesis.families.map((f) => f.familyKey),
+      'family order must be a total order, not runtime insertion order',
     );
     assert.deepEqual(r1.artifact, r2.artifact);
   });
