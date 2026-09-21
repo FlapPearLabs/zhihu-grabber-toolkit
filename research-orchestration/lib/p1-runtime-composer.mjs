@@ -79,7 +79,7 @@ import {
   selectionDecisionStatus,
   applySelectionToCoverageState,
 } from './source-group-selection.mjs';
-import { loadCoverageState, readCoverageStateWriteReceipt } from './coverage-state.mjs';
+import { loadCoverageState } from './coverage-state.mjs';
 import { MULTI_GROUP_STATE_FILENAME } from './multi-group-execution.mjs';
 import { CAPABILITY_SEARCH, createProviderSeam } from './provider-seam.mjs';
 import { createOfficialSearchAdapter } from './official-search-provider.mjs';
@@ -297,19 +297,21 @@ function recordLedgerBinding(state, workDir) {
  * all — it falls through to a full re-execution rather than continuing from a
  * state document nobody can vouch for. (Fail closed: redo work, never invent.)
  *
- * THE OWNER'S WRITES ARE SELF-VOUCHING (round-2 review P1-2). A stage owner
- * persists the ledger INSIDE its own execution, so a kill between that persist
- * and the composer's next checkpoint leaves the on-disk ledger NEWER than the
- * recorded binding. Refusing that outright would redo durably-completed work —
- * a defect under the resume invariant ("a genuinely interrupted run must be
- * resumable without redoing work it already durably completed") — while
- * accepting any content-changed ledger would reopen the tamper hole (R2). The
- * shared ledger writer closes this gap with a WRITE-AHEAD receipt: it records
- * the bytes' sha256 BEFORE writing them, so "on-disk ledger === receipt" is
- * the writer's own signature that THESE bytes are its last write — reconcilable,
- * then re-validated by the ledger owner below. A mutation matches neither the
- * binding nor the receipt and is refused exactly as before; the disclosed
- * refusal reason is unchanged.
+ * THE BINDING-LAG WINDOW IS KNOWN, DISCLOSED, AND FAIL-SAFE (round-2 review
+ * P1-2; round-3 review P0-1 analysis). A stage owner persists the ledger INSIDE
+ * its own execution, so a kill between that persist and the composer's next
+ * checkpoint leaves the on-disk ledger NEWER than the recorded binding; the
+ * resume then refuses reuse and re-executes — redundant for the interrupted
+ * run, but never unsafe. A WRITE-AHEAD sidecar receipt was attempted
+ * (e49b483) and REVERTED: the round-3 adversarial review proved (P0-1) that an
+ * unanchored sidecar is a SECOND TRUST SOURCE — rewriting it together with the
+ * ledger defeats the binding without ever touching the checkpointed evidence,
+ * which re-opens the round-1 P0-2 false-resume hole. Closing this window for
+ * real requires an atomic-commit protocol where the CHECKPOINT is the commit
+ * point (embed the artifact bytes into the checkpoint BEFORE the artifact file
+ * is written; recovery restores lagging artifact files from the checkpoint and
+ * never consumes unproven bytes) — a deliberate redesign, tracked in Issue
+ * #94, not a sidecar patch.
  *
  * EVERY CHECK DELEGATES TO ITS OWNER rather than re-implementing it: the persisted
  * ledger is validated and plan-bound by the T07 authority (`loadCoverageState`),
@@ -350,30 +352,12 @@ function planResumeReentry({ workDir, priorState, planHash: expectedPlanHash, cu
   // (independent-review P0-2). An unproven ledger means there is NO proven
   // re-entry point: a fresh ledger has no retrieval accounting, so neither the
   // selection boundary nor the retrieval boundary can be entered safely.
-  //
-  // EXCEPTION — the writer-vouched window (round-2 review P1-2): a
-  // content-changed ledger whose bytes match the write-ahead receipt is the
-  // ledger writer's OWN last write (a kill landed between the owner's persist
-  // and the composer's checkpoint). Those bytes are re-proven through the
-  // ledger owner (`loadCoverageState` below) instead of triggering a full
-  // re-execution; every other mismatch is refused exactly as before.
+  // (The binding-lag window this refusal covers — an owner persist that landed
+  // between the last checkpoint and the kill — is the disclosed, fail-safe
+  // residual documented above; the round-3 review confirmed that no unanchored
+  // sidecar may reopen it.)
   const ledgerProof = verifyBoundArtifact(workDir, recorded[CHECKPOINT_BINDING_COVERAGE_STATE], COVERAGE_STATE_FILENAME);
-  let ledgerReceiptVouched = false;
-  if (!ledgerProof.ok) {
-    let vouched = false;
-    if (ledgerProof.reason === 'content_changed') {
-      const receipt = readCoverageStateWriteReceipt(workDir);
-      if (receipt.ok) {
-        try {
-          vouched = sha256File(path.join(workDir, COVERAGE_STATE_FILENAME)) === receipt.ledgerSha256;
-        } catch {
-          vouched = false;
-        }
-      }
-    }
-    if (!vouched) return { ok: false, reason: `coverage_state_${ledgerProof.reason}` };
-    ledgerReceiptVouched = true;
-  }
+  if (!ledgerProof.ok) return { ok: false, reason: `coverage_state_${ledgerProof.reason}` };
 
   // The T06 pool is the artifact that proves retrieval finished AND that any
   // decision below was made from THESE candidates.
@@ -411,7 +395,6 @@ function planResumeReentry({ workDir, priorState, planHash: expectedPlanHash, cu
       decision: null,
       pool,
       coverageState: ledger.state,
-      ledgerReceiptVouched,
       selectionRefusalReason: decisionProof.reason,
     };
   }
@@ -427,7 +410,6 @@ function planResumeReentry({ workDir, priorState, planHash: expectedPlanHash, cu
       decision: null,
       pool,
       coverageState: ledger.state,
-      ledgerReceiptVouched,
       selectionRefusalReason: status.reason,
     };
   }
@@ -443,7 +425,6 @@ function planResumeReentry({ workDir, priorState, planHash: expectedPlanHash, cu
       decision: null,
       pool,
       coverageState: ledger.state,
-      ledgerReceiptVouched,
       selectionRefusalReason: 'selection_no_selected_groups',
     };
   }
@@ -453,7 +434,6 @@ function planResumeReentry({ workDir, priorState, planHash: expectedPlanHash, cu
     decision: decisionArtifact.decision,
     pool,
     coverageState: ledger.state,
-    ledgerReceiptVouched,
   };
 }
 
@@ -901,7 +881,6 @@ export async function composeP1Research({
         reusedRetrieval: true,
         reusedSelection: reentry.decision !== null,
         selectionRefusalReason: reentry.selectionRefusalReason ?? null,
-        ledgerReceiptVouched: reentry.ledgerReceiptVouched === true,
       });
     } else {
       state.stage = STAGE_SEARCH;
@@ -922,6 +901,11 @@ export async function composeP1Research({
       coverageState = loop.coverageState;
       boundary = RESUME_REENTRY_RETRIEVAL_ROUNDS;
       pool = loop.pool;
+      // Crash-consistency seam (round-3 review P1): the T06 loop has returned
+      // with the FINAL pool durably persisted; a kill here — before the
+      // composer's accumulatedPool binding checkpoint — is the pool binding-lag
+      // window (reviewer's R9).
+      crashAt('after_retrieval_loop');
       // Same event, live payload: the boundary this run STARTED at, with the reuse
       // flags false. Recording both cases in one event keeps a single auditable
       // answer to "from where did this run begin, and what did it reuse?" — plus
@@ -1012,6 +996,11 @@ export async function composeP1Research({
       }
     }
     coverageState = selection.coverageState;
+    // Crash-consistency seam (round-3 review P1): the T08 selection call has
+    // returned with the decision durably persisted; a kill here — before the
+    // composer's selectionDecision binding — is the decision binding-lag
+    // window (reviewer's R10).
+    crashAt('after_selection');
 
     // The T08 decision is FINAL here; bind it so a later resume can skip selection.
     state.hashes = {

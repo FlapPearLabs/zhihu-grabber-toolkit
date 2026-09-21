@@ -368,7 +368,6 @@ function snapshotWorkDir(workDir) {
     SYNTHESIS_FILENAME,
     RESULT_FILENAME,
     COVERAGE_FINAL,
-    'coverage-state.write-receipt.json',
     'orchestration-state.json',
     'events.jsonl',
   ]) {
@@ -1623,7 +1622,7 @@ describe('P1-R06 §M — the production entrypoint reaches the closure (REGISTER
 // falsifications, promoted into the permanent acceptance suite.
 // ===========================================================================
 
-describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 verdicts: FAIL)', () => {
+describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 + e49b483 verdicts: FAIL)', () => {
   const POOL_REL = path.join('retrieval-rounds', 'accumulated-pool.json');
 
   test('R1 (review P0-1): a pool DELETED after COMPLETE is refused at the retrieval boundary, never reused', async () => {
@@ -1809,7 +1808,24 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 v
     assert.equal(reentry3.reusedSelection, true, 'R6: the certified selection is NOT redone by the third resume');
   });
 
-  test('R7 (review round-2 P1-2): an owner persist that landed before the kill is re-proven at resume — the run never falls back to a full re-execution', async () => {
+  test('R7 (OPEN residual — round-2 P1-2, receipt protocol rejected by round-3 P0-1): a binding-lag after an owner persist stays FAIL-SAFE, and unproven ledger bytes are never consumed', async () => {
+    // REVIEW HISTORY. Round-2 P1-2 demanded liveness: a kill between a stage
+    // owner's final ledger persist and the composer's checkpoint refresh must
+    // not force a full re-execution. The write-ahead sidecar receipt protocol
+    // attempted for that (e49b483) was REJECTED by the round-3 adversarial
+    // review (P0-1): a receipt file outside the checkpoint is an unanchored
+    // SECOND TRUST SOURCE — rewriting it together with the ledger defeats the
+    // binding without ever touching the checkpointed evidence (R2's attack
+    // shape), and cross-occurrence receipt replay is equally unanchored. It
+    // was reverted. Closing the window for real requires an atomic-commit
+    // protocol where the CHECKPOINT is the commit point (embed artifact bytes
+    // into the checkpoint BEFORE the artifact file is written; recovery
+    // restores lagging artifact files from the checkpoint and never consumes
+    // unproven bytes) — tracked for the next repair round in Issue #94.
+    // Until then, THIS test pins the fail-safe behaviour the contract actually
+    // guarantees at this boundary: the refused resume discloses the ledger as
+    // the reason, re-executes the work itself, and NEVER treats the
+    // binding-lagging ledger bytes as authoritative.
     const workDir = tmpWork('p1-r06-r7-');
     // Run 1: run to just past the T12 corpus-selection owner — its final ledger
     // persist has landed — and die BEFORE the composer refreshed the checkpoint
@@ -1828,8 +1844,8 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 v
     assert.equal(out1.ok, false, 'R7: the crash point kills the producing run');
     asKillShape(workDir, 'ANALYZE');
 
-    // Precondition — the reviewer's window is real: the checkpoint's ledger
-    // binding names OLDER bytes than the ledger the owner left on disk.
+    // Precondition — the window is real: the checkpoint's ledger binding names
+    // OLDER bytes than the ledger the owner left on disk.
     const checkpoint = readState(workDir);
     assert.notEqual(
       checkpoint.hashes[BINDING_COVERAGE_STATE],
@@ -1837,18 +1853,16 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 v
       'R7: fixture precondition — the ledger binding is stale, exactly the P1-2 window',
     );
 
-    // Run 2: the resume must NOT punish the durable owner work with a full
-    // re-execution from retrieval. The owner's own write receipt vouches for
-    // the on-disk ledger bytes, so the proven boundaries stay proven.
+    // Run 2: the resume must NOT consume the binding-lagging ledger bytes. The
+    // fail-safe contract refuses reuse (naming the ledger, audibly) and
+    // re-executes the work through the owners.
     const calls2 = zeroCalls();
     const out2 = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls2) });
-    assert.equal(out2.ok, true, `R7: the resume completes: ${JSON.stringify(out2)}`);
-    assert.equal(calls2.search, 0, 'R7: retrieval is NOT redone — a stale binding alone must never force a rerun');
-    assert.equal(calls2.capture, 0, 'R7: completed groups are NOT recaptured');
+    assert.equal(out2.ok, true, `R7: the run completes via the live path: ${JSON.stringify(out2)}`);
     const reentry2 = lastEvent(workDir, 'resume_reentry');
-    assert.equal(reentry2.reusedRetrieval, true, 'R7: the resume re-enters at the proven boundary');
-    assert.equal(reentry2.reusedSelection, true, 'R7: selection is reused too');
-    assert.equal(reentry2.ledgerReceiptVouched, true, 'R7: the ledger bytes are accepted via the owner write receipt, audibly');
+    assert.equal(reentry2.reusedRetrieval, false, 'R7: nothing is reused from a binding-lagging ledger — fail-safe, never unsafe');
+    assert.equal(reentry2.reentryRefusalReason, 'coverage_state_content_changed', 'R7: the refusal names the ledger, audibly');
+    assert.ok(calls2.search > 0, 'R7: the work is genuinely re-executed (no unproven byte is consumed)');
   });
 });
 
