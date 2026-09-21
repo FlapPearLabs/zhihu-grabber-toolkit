@@ -51,7 +51,7 @@ import {
   AUTH_CLASS_OFFICIAL_SECRET,
 } from '../lib/provider-seam.mjs';
 import { P1_PIPELINE_IDENTITY } from '../lib/coverage-final-integration.mjs';
-import { makeState, readState, writeState, runIdentityHash } from '../lib/state.mjs';
+import { makeState, readState, writeState, runIdentityHash, sha256File } from '../lib/state.mjs';
 import { MULTI_GROUP_STATE_FILENAME, loadMultiGroupState } from '../lib/multi-group-execution.mjs';
 import { SELECTION_DECISION_FILENAME } from '../lib/source-group-selection.mjs';
 import { T14_SYNTHESIS_RUNTIME_ID, T14_SYNTHESIS_MODEL } from '../lib/cross-source-synthesis.mjs';
@@ -368,6 +368,7 @@ function snapshotWorkDir(workDir) {
     SYNTHESIS_FILENAME,
     RESULT_FILENAME,
     COVERAGE_FINAL,
+    'coverage-state.write-receipt.json',
     'orchestration-state.json',
     'events.jsonl',
   ]) {
@@ -1622,7 +1623,7 @@ describe('P1-R06 §M — the production entrypoint reaches the closure (REGISTER
 // falsifications, promoted into the permanent acceptance suite.
 // ===========================================================================
 
-describe('P1-R06 §R — independent-review counterexamples (8bc0cdf verdict: FAIL)', () => {
+describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 verdicts: FAIL)', () => {
   const POOL_REL = path.join('retrieval-rounds', 'accumulated-pool.json');
 
   test('R1 (review P0-1): a pool DELETED after COMPLETE is refused at the retrieval boundary, never reused', async () => {
@@ -1759,6 +1760,95 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf verdict: FA
     const out2 = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls2) });
     assert.equal(out2.ok, true, `R5: the follow-up resume succeeds: ${JSON.stringify(out2)}`);
     assert.equal(calls2.search, 0, 'R5: retrieval is still reusable — the interrupted evidence was not destroyed');
+  });
+
+  test('R6 (review round-2 P1-1): the first checkpoint after a successful re-entry proof never downgrades the proven selectionDecision binding', async () => {
+    const workDir = tmpWork('p1-r06-r6-');
+    // Run 1: a genuine group-stage interruption leaves a checkpoint whose pool,
+    // selectionDecision and ledger bindings are all valid and proven.
+    await runUntilInterrupt(workDir);
+    const killed = readState(workDir);
+    assert.ok(killed.hashes[BINDING_SELECTION_DECISION], 'R6: fixture precondition — the interrupted checkpoint binds the selection decision');
+
+    // Run 2: the resume proves re-entry at the selection boundary, then dies at
+    // the exact protocol point the reviewer named: AFTER the first resumed
+    // STAGE_SELECT checkpoint write, BEFORE the selection binding is rewritten
+    // downstream. A real SIGKILL persists nothing; the injected crash point
+    // throwing IS that death, and the kill-shape label is restored afterwards.
+    const calls2 = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out2 = await composeP1Research({
+      topic: TOPIC, workDir, ...fixtures(calls2, {
+        crashPoint: (name) => {
+          if (name === 'after_select_checkpoint') {
+            throw Object.assign(new Error('synthetic SIGKILL after the resumed STAGE_SELECT checkpoint'), { code: 'R06_TEST_CRASH_POINT' });
+          }
+        },
+      }),
+    });
+    assert.equal(out2.ok, false, 'R6: the crash point kills the resumed run');
+    asKillShape(workDir, 'SELECT');
+
+    // THE P1-1 PIN: the checkpoint written after the proof must STILL carry the
+    // proven decision binding. A checkpoint write may never temporarily
+    // downgrade durable evidence — a fresh state.hashes that drops it turns the
+    // next resume into a redo of a selection that was already proven reusable.
+    const after = readState(workDir);
+    assert.equal(
+      after.hashes[BINDING_SELECTION_DECISION],
+      sha256File(path.join(workDir, SELECTION_DECISION_FILENAME)),
+      'R6: the post-proof checkpoint still binds the proven selectionDecision bytes',
+    );
+
+    // Run 3: therefore the third resume must still reuse the selection.
+    const calls3 = zeroCalls();
+    const out3 = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls3) });
+    assert.equal(out3.ok, true, `R6: the third resume completes: ${JSON.stringify(out3)}`);
+    assert.equal(calls3.search, 0, 'R6: retrieval is still reused');
+    const reentry3 = lastEvent(workDir, 'resume_reentry');
+    assert.equal(reentry3.reusedSelection, true, 'R6: the certified selection is NOT redone by the third resume');
+  });
+
+  test('R7 (review round-2 P1-2): an owner persist that landed before the kill is re-proven at resume — the run never falls back to a full re-execution', async () => {
+    const workDir = tmpWork('p1-r06-r7-');
+    // Run 1: run to just past the T12 corpus-selection owner — its final ledger
+    // persist has landed — and die BEFORE the composer refreshed the checkpoint
+    // binding. This is exactly the disclosed P1-2 window.
+    const calls1 = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out1 = await composeP1Research({
+      topic: TOPIC, workDir, ...fixtures(calls1, {
+        crashPoint: (name) => {
+          if (name === 'after_corpus_selection') {
+            throw Object.assign(new Error('synthetic SIGKILL after the corpus-selection owner returned'), { code: 'R06_TEST_CRASH_POINT' });
+          }
+        },
+      }),
+    });
+    assert.equal(out1.ok, false, 'R7: the crash point kills the producing run');
+    asKillShape(workDir, 'ANALYZE');
+
+    // Precondition — the reviewer's window is real: the checkpoint's ledger
+    // binding names OLDER bytes than the ledger the owner left on disk.
+    const checkpoint = readState(workDir);
+    assert.notEqual(
+      checkpoint.hashes[BINDING_COVERAGE_STATE],
+      sha256File(path.join(workDir, COVERAGE_STATE)),
+      'R7: fixture precondition — the ledger binding is stale, exactly the P1-2 window',
+    );
+
+    // Run 2: the resume must NOT punish the durable owner work with a full
+    // re-execution from retrieval. The owner's own write receipt vouches for
+    // the on-disk ledger bytes, so the proven boundaries stay proven.
+    const calls2 = zeroCalls();
+    const out2 = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls2) });
+    assert.equal(out2.ok, true, `R7: the resume completes: ${JSON.stringify(out2)}`);
+    assert.equal(calls2.search, 0, 'R7: retrieval is NOT redone — a stale binding alone must never force a rerun');
+    assert.equal(calls2.capture, 0, 'R7: completed groups are NOT recaptured');
+    const reentry2 = lastEvent(workDir, 'resume_reentry');
+    assert.equal(reentry2.reusedRetrieval, true, 'R7: the resume re-enters at the proven boundary');
+    assert.equal(reentry2.reusedSelection, true, 'R7: selection is reused too');
+    assert.equal(reentry2.ledgerReceiptVouched, true, 'R7: the ledger bytes are accepted via the owner write receipt, audibly');
   });
 });
 

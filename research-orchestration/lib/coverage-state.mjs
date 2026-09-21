@@ -50,6 +50,23 @@ import {
 /** Canonical persisted coverage state artifact filename. */
 export const COVERAGE_STATE_FILENAME = 'coverage-state.json';
 
+/**
+ * P1-R06 (#94, round-2 independent review P1-2): write-ahead write receipt for
+ * the ledger.
+ *
+ * Every ledger persist records the sha256 of the exact bytes it is about to
+ * write BEFORE writing them. A process killed after the ledger write but
+ * before the composer's next checkpoint therefore leaves on-disk proof that
+ * the NEW ledger bytes are the writer's own last write (`ledger === receipt`),
+ * so a resume can re-prove them through the ledger owner instead of discarding
+ * every already-proven stage. A kill BEFORE the ledger write leaves the
+ * previous checkpoint binding valid; a post-hoc mutation matches neither the
+ * binding nor the receipt and is refused exactly as before. The write-AHEAD
+ * ordering is what leaves no unrecoverable window between "the owner
+ * persisted" and "the composer bound".
+ */
+export const COVERAGE_STATE_RECEIPT_FILENAME = 'coverage-state.write-receipt.json';
+
 /** Schema version. */
 export const COVERAGE_STATE_SCHEMA_VERSION = 1;
 
@@ -962,6 +979,19 @@ export function persistCoverageState(workDir, state) {
   try {
     fs.mkdirSync(workDir, { recursive: true });
     const content = JSON.stringify(validation.validated, null, 2);
+    // P1-R06 (#94, round-2 review P1-2): write-AHEAD the receipt for the exact
+    // bytes this call is about to write. Order matters: receipt first, ledger
+    // second. (The receipt hashes the FILE bytes — the same bytes the
+    // composer's checkpoint binding hashes with sha256File — not the
+    // canonical-object hash.)
+    fs.writeFileSync(
+      path.join(workDir, COVERAGE_STATE_RECEIPT_FILENAME),
+      `${JSON.stringify({
+        schemaVersion: 1,
+        ledgerSha256: crypto.createHash('sha256').update(content, 'utf8').digest('hex'),
+      }, null, 2)}\n`,
+      'utf8',
+    );
     fs.writeFileSync(filePath, content, 'utf8');
     // Return work-relative filename only — never expose absolute workDir
     return { ok: true, path: COVERAGE_STATE_FILENAME, hash: coverageStateHash(validation.validated) };
@@ -995,4 +1025,34 @@ export function loadCoverageState(workDir, expectedPlanHash = null) {
   } catch (e) {
     return { ok: false, reason: 'unparseable', error: 'unparseable', path: COVERAGE_STATE_FILENAME };
   }
+}
+
+/**
+ * P1-R06 (#94, round-2 review P1-2): read the ledger's write receipt.
+ *
+ * Returns { ok: true, ledgerSha256 } when a well-formed receipt exists; the
+ * caller compares `ledgerSha256` against the on-disk ledger bytes to decide
+ * whether a binding-lagging ledger is the writer's own last write (re-provable
+ * at resume) or an unproven mutation (refused). A missing/malformed receipt is
+ * simply `ok: false` — the resume then fails closed exactly as it did before
+ * the receipt protocol existed.
+ */
+export function readCoverageStateWriteReceipt(workDir) {
+  const receiptPath = path.join(workDir, COVERAGE_STATE_RECEIPT_FILENAME);
+  if (!fs.existsSync(receiptPath)) return { ok: false, reason: 'receipt_missing' };
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(receiptPath, 'utf8'));
+  } catch {
+    return { ok: false, reason: 'receipt_unreadable' };
+  }
+  if (
+    !isPlainObject(parsed)
+    || parsed.schemaVersion !== 1
+    || typeof parsed.ledgerSha256 !== 'string'
+    || !/^[0-9a-f]{64}$/.test(parsed.ledgerSha256)
+  ) {
+    return { ok: false, reason: 'receipt_malformed' };
+  }
+  return { ok: true, ledgerSha256: parsed.ledgerSha256 };
 }
