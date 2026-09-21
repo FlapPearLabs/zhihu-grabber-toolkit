@@ -413,6 +413,53 @@ describe('P1-R05 F06 evidence closure — fail-closed through the REAL producer 
     assert.equal(badStance.code, 'T14_RUNTIME_OUTPUT_INVALID');
   });
 
+  test('support/oppose inconsistent with stance, and invalid lineage, are rejected by the V2 validator (no healing)', async () => {
+    const result = await produce(caseB());
+    assert.equal(result.ok, true);
+    assert.equal(validateSynthesisOutputV2(result.artifact).ok, true);
+
+    const stripRef = (side) => {
+      const mutated = structuredClone(result.artifact);
+      mutated.synthesis.families[0][side].pop();
+      return mutated;
+    };
+    // Re-seal the mutated artifact with a correctly recomputed identity: the
+    // rejection below must then come from the STRUCTURAL support/stance
+    // invariant, not merely from a stale hash. (A test that only relied on the
+    // hash mismatch would pass even if the validator had no side/stance check.)
+    const reseal = (artifact) => {
+      const sealed = structuredClone(artifact);
+      sealed.synthesis.synthesisIdentity = recomputeSynthesisIdentityV2(sealed);
+      return sealed;
+    };
+    const assertStructurallyRejected = (artifact, why) => {
+      const sealed = reseal(artifact);
+      const verdict = validateSynthesisOutputV2(sealed);
+      assert.equal(verdict.ok, false, `${why} — expected structural rejection, got ${JSON.stringify(verdict.errors)}`);
+      assert.ok(
+        verdict.errors.every((e) => String(e.code) !== 'SEAM_D_SYNTHESIS_IDENTITY_MISMATCH'),
+        `${why} — rejection must be structural, not only a hash mismatch: ${JSON.stringify(verdict.errors)}`,
+      );
+      return verdict;
+    };
+
+    // The sides are a pure function of the ASSERTS/OPPOSES stances: dropping a
+    // support entry breaks that invariant and must NOT be silently re-derived.
+    assertStructurallyRejected(stripRef('support'), 'support inconsistent with the ASSERTS stance');
+    assertStructurallyRejected(stripRef('oppose'), 'oppose inconsistent with the OPPOSES stance');
+
+    // A lineage entry that lost its original sourceClaimId is invalid lineage.
+    const badLineage = structuredClone(result.artifact);
+    delete badLineage.synthesis.families[0].support[0].sourceClaimId;
+    assertStructurallyRejected(badLineage, 'a support entry without its sourceClaimId is invalid lineage');
+
+    // A claim reference that is not backed by any original source claim is
+    // unsupported — the validator must refuse, never heal it into a valid ref.
+    const unsupported = structuredClone(result.artifact);
+    unsupported.synthesis.families[0].sourceClaims[0].sourceClaimId = 'c-DOES-NOT-EXIST';
+    assertStructurallyRejected(unsupported, 'an unsupported claim reference must be rejected');
+  });
+
   test('V1 `aspects` proposal is never laundered into V2 (no missing-version defaulting)', async () => {
     const result = await produceCrossSourceSynthesis({
       seamCArtifact: base().artifact,
