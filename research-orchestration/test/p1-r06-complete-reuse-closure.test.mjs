@@ -52,7 +52,7 @@ import {
 } from '../lib/provider-seam.mjs';
 import { P1_PIPELINE_IDENTITY } from '../lib/coverage-final-integration.mjs';
 import { makeState, readState, writeState, runIdentityHash } from '../lib/state.mjs';
-import { MULTI_GROUP_STATE_FILENAME } from '../lib/multi-group-execution.mjs';
+import { MULTI_GROUP_STATE_FILENAME, loadMultiGroupState } from '../lib/multi-group-execution.mjs';
 import { SELECTION_DECISION_FILENAME } from '../lib/source-group-selection.mjs';
 import { T14_SYNTHESIS_RUNTIME_ID, T14_SYNTHESIS_MODEL } from '../lib/cross-source-synthesis.mjs';
 
@@ -1558,6 +1558,36 @@ describe('P1-R06 §M — the production entrypoint reaches the closure (REGISTER
     });
     assert.equal(out.ok, false, 'P1: a COMPLETE without a render binding is refused');
     assert.equal(plannerCalls, 0, 'P1: the refusal precedes any planner invocation');
+  });
+
+  test('P2: persisted group refs are PORTABLE, so the T09 validator can load them anywhere', async () => {
+    // Regression guard for a real WINDOWS-ONLY product defect this ticket exposed:
+    // `toWorkRelative` emitted the platform separator (`zhihu\100\answers.json`) while
+    // the T09 persisted-state validator requires the exact production ref shape
+    // (`zhihu/100/answers.json`). On Windows no captured group could EVER be loaded
+    // from a checkpoint, so group reuse was silently impossible and a checkpoint could
+    // not be reused at all — the precise opposite of this ticket's contract.
+    //
+    // The canonical form is the PORTABLE one (the composition owner already declares
+    // and normalizes to it), so asserting it here fails on Windows if the producer ever
+    // regresses, and is trivially satisfied on POSIX.
+    const workDir = tmpWork('p1-r06-p2-');
+    await runFull(workDir);
+
+    const persisted = JSON.parse(fs.readFileSync(path.join(workDir, MULTI_GROUP_STATE_FILENAME), 'utf8'));
+    assert.ok(Object.keys(persisted.groups).length > 0, 'P2: fixture precondition — the state records groups');
+    for (const [groupId, group] of Object.entries(persisted.groups)) {
+      assert.ok(!String(group.evidenceRef ?? '').includes('\\'), `P2: ${groupId} evidenceRef must be portable (got ${JSON.stringify(group.evidenceRef)})`);
+      assert.ok(!String(group.handoffRef ?? '').includes('\\'), `P2: ${groupId} handoffRef must be portable (got ${JSON.stringify(group.handoffRef)})`);
+      if (group.captured) {
+        assert.equal(group.evidenceRef, `zhihu/${group.questionId}/answers.json`, `P2: ${groupId} evidenceRef must equal the validator's literal`);
+      }
+      if (group.handoffValid) {
+        assert.equal(group.handoffRef, `zhihu/${group.questionId}/handoff.json`, `P2: ${groupId} handoffRef must equal the validator's literal`);
+      }
+    }
+    // The load is the defect's actual failure point: it must SUCCEED on every platform.
+    assert.ok(loadMultiGroupState(workDir), 'P2: the persisted group state must load back (this is what failed on Windows)');
   });
 });
 

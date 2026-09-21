@@ -234,5 +234,18 @@ export function toWorkRelative(workDir, absOrRel) {
   if (rel.startsWith('..') || path.isAbsolute(rel)) {
     throw new Error(`refusing to store out-of-work-dir path in state: ${absOrRel}`);
   }
-  return rel;
+  // P1-R06 (#94): a work-relative ref is PERSISTED, portability-normalized and
+  // compared as a string, so its canonical form is PORTABLE (POSIX separators) on
+  // every platform — not the platform separator `path.relative` happens to emit.
+  //
+  // This was a real Windows-only defect: `path.relative` yields
+  // `zhihu\100\answers.json` there, while the T09 persisted-state validator
+  // requires the exact production ref shape `zhihu/100/answers.json`. The result
+  // was that on Windows a captured group could NEVER be loaded back from a
+  // checkpoint, so group reuse was silently impossible and every resume redid the
+  // whole group stage. The composition owner already declares this canonical form
+  // and pays for it by normalizing at one consumer seam (`toPortableRef`); emitting
+  // it at the source makes producer and validator agree instead of patching each
+  // consumer. On POSIX `path.sep === '/'`, so this is a no-op there.
+  return rel.split(path.sep).join('/');
 }
