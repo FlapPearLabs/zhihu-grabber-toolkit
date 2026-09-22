@@ -132,15 +132,26 @@ export function stateFile(workDir) {
   return path.join(workDir, 'orchestration-state.json');
 }
 
+function stateReplacementBackupFile(workDir) {
+  return `${stateFile(workDir)}.replace-backup`;
+}
+
 export function eventsFile(workDir) {
   return path.join(workDir, 'events.jsonl');
 }
 
 export function readState(workDir) {
   const file = stateFile(workDir);
-  if (!fs.existsSync(file)) return null;
+  // Windows replacement may require moving the last committed checkpoint out
+  // of the target path before installing the next generation. If the process
+  // dies in that narrow window, the moved file remains the one checkpoint
+  // authority; the not-yet-renamed temp file has no authority.
+  const readable = fs.existsSync(file)
+    ? file
+    : stateReplacementBackupFile(workDir);
+  if (!fs.existsSync(readable)) return null;
   try {
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
+    return JSON.parse(fs.readFileSync(readable, 'utf8'));
   } catch {
     return null; // corrupt state → treated as absent (validated before reuse)
   }
@@ -163,14 +174,24 @@ export function writeState(workDir, state) {
   } finally {
     fs.closeSync(fd);
   }
-  // Process-crash safe replacement sequence under EEXIST/EPERM (Windows compatibility fallback).
-  // Strictly bounded to process-restart recovery; power-loss durability is not claimed.
+  // Process-crash recoverable replacement sequence under EEXIST/EPERM
+  // (Windows compatibility fallback). The prior checkpoint is MOVED, not
+  // deleted, before the new generation is installed. `readState` consults that
+  // moved checkpoint only while the canonical target is absent, so an
+  // uncommitted temp file never gains authority and there is never a choice
+  // between two active authorities. Strictly bounded to process restart;
+  // power-loss durability and physical atomic replacement are not claimed.
   try {
     fs.renameSync(temp, target);
   } catch (err) {
     if (err.code === 'EEXIST' || err.code === 'EPERM') {
-      fs.rmSync(target, { force: true });
+      const backup = stateReplacementBackupFile(workDir);
+      if (fs.existsSync(target)) {
+        fs.rmSync(backup, { force: true });
+        fs.renameSync(target, backup);
+      }
       fs.renameSync(temp, target);
+      fs.rmSync(backup, { force: true });
     } else {
       throw err;
     }

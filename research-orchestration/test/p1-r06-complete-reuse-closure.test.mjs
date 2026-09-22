@@ -1660,7 +1660,7 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
     assertZeroExternalCalls(calls, 'R1b');
   });
 
-  test('R2 (review P0-2): a schema-valid, planHash-preserving ledger tamper defeats the resume — no unproven ledger is ever authoritative', async () => {
+  test('R2 (review P0-2): a schema-valid ledger tamper is replaced by checkpoint-authorized bytes — no unproven ledger is ever authoritative', async () => {
     const workDir = tmpWork('p1-r06-r2-');
     await runUntilInterrupt(workDir);
 
@@ -1674,11 +1674,10 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
     const calls = zeroCalls();
     const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
     const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
-    assert.equal(out.ok, true, `R2: the run must still succeed via the live path: ${JSON.stringify(out)}`);
-    assert.ok(calls.search > 0, 'R2: an unprovable ledger forces real retrieval — the pool is never reused on top of it');
+    assert.equal(out.ok, true, `R2: the run must still succeed from authorized state: ${JSON.stringify(out)}`);
+    assert.equal(calls.search, 0, 'R2: recovery restores the checkpoint-authorized ledger without repeating retrieval');
     const reentry = lastEvent(workDir, 'resume_reentry');
-    assert.equal(reentry.reusedRetrieval, false, 'R2: nothing is reused from an unproven ledger');
-    assert.equal(reentry.reentryRefusalReason, 'coverage_state_content_changed', 'R2: the refusal is auditable and names the ledger');
+    assert.equal(reentry.reusedRetrieval, true, 'R2: reuse rests on checkpoint-authorized staging, never on the tampered ledger');
   });
 
   test('R3 (review P0-3): a config A interruption is never resumed under config B', async () => {
@@ -1808,7 +1807,7 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
     assert.equal(reentry3.reusedSelection, true, 'R6: the certified selection is NOT redone by the third resume');
   });
 
-  test('R7 (OPEN residual — round-2 P1-2, receipt protocol rejected by round-3 P0-1): a binding-lag after an owner persist stays FAIL-SAFE, and unproven ledger bytes are never consumed', async () => {
+  test('R7 (process-crash recovery): a binding-lag after an owner persist restores the last checkpoint-authorized ledger without repeating retrieval', async () => {
     // REVIEW HISTORY. Round-2 P1-2 demanded liveness: a kill between a stage
     // owner's final ledger persist and the composer's checkpoint refresh must
     // not force a full re-execution. The write-ahead sidecar receipt protocol
@@ -1817,15 +1816,15 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
     // SECOND TRUST SOURCE — rewriting it together with the ledger defeats the
     // binding without ever touching the checkpointed evidence (R2's attack
     // shape), and cross-occurrence receipt replay is equally unanchored. It
-    // was reverted. Closing the window for real requires an atomic-commit
-    // protocol where the CHECKPOINT is the commit point (embed artifact bytes
-    // into the checkpoint BEFORE the artifact file is written; recovery
-    // restores lagging artifact files from the checkpoint and never consumes
-    // unproven bytes) — tracked for the next repair round in Issue #94.
-    // Until then, THIS test pins the fail-safe behaviour the contract actually
-    // guarantees at this boundary: the refused resume discloses the ledger as
-    // the reason, re-executes the work itself, and NEVER treats the
-    // binding-lagging ledger bytes as authoritative.
+    // was reverted. The accepted replacement keeps the CHECKPOINT as the sole
+    // commit point: content-addressed staging is usable only when its bytes
+    // match the hash in that checkpoint. The repair retains the LAST
+    // checkpoint-authorized ledger bytes. A later owner may persist newer bytes
+    // before the composer
+    // refreshes the checkpoint; if the process dies in that window, recovery
+    // restores the older authorized ledger and resumes from it. The newer,
+    // uncommitted bytes remain non-authoritative, but already committed
+    // retrieval and selection are not repeated.
     const workDir = tmpWork('p1-r06-r7-');
     // Run 1: run to just past the T12 corpus-selection owner — its final ledger
     // persist has landed — and die BEFORE the composer refreshed the checkpoint
@@ -1853,16 +1852,16 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
       'R7: fixture precondition — the ledger binding is stale, exactly the P1-2 window',
     );
 
-    // Run 2: the resume must NOT consume the binding-lagging ledger bytes. The
-    // fail-safe contract refuses reuse (naming the ledger, audibly) and
-    // re-executes the work through the owners.
+    // Run 2: the resume must NOT consume the binding-lagging ledger bytes. It
+    // restores the last checkpoint-authorized ledger from staging, then resumes
+    // without repeating retrieval or live selection.
     const calls2 = zeroCalls();
     const out2 = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls2) });
     assert.equal(out2.ok, true, `R7: the run completes via the live path: ${JSON.stringify(out2)}`);
     const reentry2 = lastEvent(workDir, 'resume_reentry');
-    assert.equal(reentry2.reusedRetrieval, false, 'R7: nothing is reused from a binding-lagging ledger — fail-safe, never unsafe');
-    assert.equal(reentry2.reentryRefusalReason, 'coverage_state_content_changed', 'R7: the refusal names the ledger, audibly');
-    assert.ok(calls2.search > 0, 'R7: the work is genuinely re-executed (no unproven byte is consumed)');
+    assert.equal(reentry2.reusedRetrieval, true, 'R7: checkpoint-authorized retrieval is preserved');
+    assert.equal(reentry2.reusedSelection, true, 'R7: checkpoint-authorized selection is preserved');
+    assert.equal(calls2.search, 0, 'R7: committed retrieval is not repeated');
   });
 
   test('R8 (review round-3 P0-1 / round-4): self-consistent external evidence outside checkpoint cannot grant reuse', async () => {
@@ -1888,15 +1887,15 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
     fs.mkdirSync(path.dirname(stagingPathB), { recursive: true });
     fs.writeFileSync(stagingPathB, bytesB);
 
-    // Staging for A does not exist, and checkpoint expects A
+    // Checkpoint-authorized staging for A remains available; B still has no
+    // authority even though canonical B and staging B agree with each other.
     const calls = zeroCalls();
     const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
     const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
     assert.equal(out.ok, true, `R8: live path succeeds: ${JSON.stringify(out)}`);
-    assert.ok(calls.search > 0, 'R8: B cannot earn reuse without checkpoint authority');
+    assert.equal(calls.search, 0, 'R8: A is restored without allowing B to earn authority');
     const reentry = lastEvent(workDir, 'resume_reentry');
-    assert.equal(reentry.reusedRetrieval, false, 'R8: uncommitted evidence B is refused');
-    assert.equal(reentry.reentryRefusalReason, 'coverage_state_content_changed');
+    assert.equal(reentry.reusedRetrieval, true, 'R8: reuse comes from checkpoint-authorized A, not external B');
     assert.notEqual(sha256File(ledgerPath), hashB, 'R8: canonical ledger was rewritten by live execution');
   });
 
@@ -1927,15 +1926,15 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
     fs.mkdirSync(path.dirname(stagingPathBInA), { recursive: true });
     fs.copyFileSync(ledgerPathB, stagingPathBInA);
 
-    // A's checkpoint still expects hash A, and A has no staging for hash A
+    // A's checkpoint still expects hash A, whose authorized staging remains in
+    // A. Replayed B cannot displace that truth.
     const calls = zeroCalls();
     const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
     const out = await composeP1Research({ topic: TOPIC, workDir: workDirA, ...fixtures(calls) });
     assert.equal(out.ok, true);
-    assert.ok(calls.search > 0, 'R8b: occurrence A refuses B replay');
+    assert.equal(calls.search, 0, 'R8b: occurrence A restores its own authorized state without using B');
     const reentry = lastEvent(workDirA, 'resume_reentry');
-    assert.equal(reentry.reusedRetrieval, false, 'R8b: nothing is reused from replayed occurrence B');
-    assert.equal(reentry.reentryRefusalReason, 'coverage_state_content_changed');
+    assert.equal(reentry.reusedRetrieval, true, 'R8b: reuse remains anchored to occurrence A checkpoint truth');
   });
 
   test('R9 (review round-4): pool committed in checkpoint, crash before canonical materialize recovers from staging', async () => {
@@ -2075,7 +2074,69 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
     const reentry = lastEvent(workDir, 'resume_reentry');
     assert.equal(reentry.reusedSelection, false, 'R10-precommit: uncommitted selection cannot be reused');
   });
+
+  test('R11 (checkpoint replacement): a crash after moving the old checkpoint preserves that last committed authority', (t) => {
+    const workDir = tmpWork('p1-r06-r11-');
+    const original = makeState({
+      workDir,
+      topic: TOPIC,
+      mode: P1_PIPELINE_IDENTITY,
+      percent: null,
+      runtime: 'deepseek-api-tool-less',
+    });
+    original.stage = 'SELECT';
+    writeState(workDir, original);
+
+    const next = structuredClone(readState(workDir));
+    next.stage = 'CAPTURE';
+    const target = path.join(workDir, 'orchestration-state.json');
+    const nativeRename = fs.renameSync.bind(fs);
+    let targetRenameAttempts = 0;
+    t.mock.method(fs, 'renameSync', (from, to) => {
+      if (to === target && String(from).startsWith(`${target}.tmp-`)) {
+        targetRenameAttempts += 1;
+        if (targetRenameAttempts === 1) {
+          throw Object.assign(new Error('force Windows replacement fallback'), { code: 'EPERM' });
+        }
+        throw Object.assign(new Error('synthetic process crash before replacement commit'), { code: 'R06_TEST_CRASH_POINT' });
+      }
+      return nativeRename(from, to);
+    });
+
+    assert.throws(
+      () => writeState(workDir, next),
+      /synthetic process crash before replacement commit/,
+    );
+    const recovered = readState(workDir);
+    assert.ok(recovered, 'R11: the last committed checkpoint remains readable after the interrupted fallback');
+    assert.equal(recovered.stage, 'SELECT', 'R11: the uncommitted CAPTURE checkpoint never gains authority');
+    assert.equal(recovered.runId, original.runId, 'R11: recovery preserves the exact prior checkpoint identity');
+  });
+
+  test('R12 (tampered authorized staging): checkpoint hash X never accepts different staged bytes', async () => {
+    const workDir = tmpWork('p1-r06-r12-');
+    await runUntilInterrupt(workDir);
+
+    const checkpoint = readState(workDir);
+    const expected = checkpoint.hashes[BINDING_COVERAGE_STATE];
+    const canonical = path.join(workDir, COVERAGE_STATE);
+    const mutated = JSON.parse(fs.readFileSync(canonical, 'utf8'));
+    mutated.retrieval.fusedCandidateCount = Number(mutated.retrieval.fusedCandidateCount ?? 0) + 1;
+    const mutatedBytes = `${JSON.stringify(mutated, null, 2)}\n`;
+    fs.writeFileSync(canonical, mutatedBytes);
+
+    const { composeP1Research, getStagingPath } = await import('../lib/p1-runtime-composer.mjs');
+    const authorizedPath = getStagingPath(workDir, BINDING_COVERAGE_STATE, expected);
+    fs.writeFileSync(authorizedPath, mutatedBytes);
+    assert.notEqual(sha256File(authorizedPath), expected, 'R12: fixture really tampers the expected-hash staging path');
+
+    const calls = zeroCalls();
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, true, `R12: fail-closed live execution still completes: ${JSON.stringify(out)}`);
+    assert.ok(calls.search > 0, 'R12: neither canonical nor staging bytes prove hash X, so retrieval re-executes');
+    const reentry = lastEvent(workDir, 'resume_reentry');
+    assert.equal(reentry.reusedRetrieval, false, 'R12: tampered staging grants no reuse authority');
+  });
 });
 
 void runIdentityHash;
-
