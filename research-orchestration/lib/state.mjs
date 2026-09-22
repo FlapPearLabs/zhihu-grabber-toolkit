@@ -163,6 +163,8 @@ export function writeState(workDir, state) {
   } finally {
     fs.closeSync(fd);
   }
+  // Process-crash safe replacement sequence under EEXIST/EPERM (Windows compatibility fallback).
+  // Strictly bounded to process-restart recovery; power-loss durability is not claimed.
   try {
     fs.renameSync(temp, target);
   } catch (err) {
