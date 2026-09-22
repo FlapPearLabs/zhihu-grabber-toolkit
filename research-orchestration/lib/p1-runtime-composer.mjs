@@ -238,6 +238,10 @@ function safeFsync(fd) {
   }
 }
 
+// Process-crash recoverable replacement fallback for non-atomic platforms (e.g. Windows EEXIST/EPERM).
+// Physical atomic replacement across all OS/filesystems is NOT claimed.
+// If a process crash occurs during rmSync -> renameSync, the protocol guarantees fail-safe
+// recovery via checkpoint-authorized staging exact-bytes inspection (R9/R10).
 function safeRename(temp, target) {
   try {
     renameSync(temp, target);
