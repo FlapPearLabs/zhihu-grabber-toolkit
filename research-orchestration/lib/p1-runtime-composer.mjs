@@ -228,9 +228,9 @@ export function getStagingPath(workDir, key, sha) {
   return path.join(workDir, COMMIT_STAGING_DIR, key, `${sha}.json`);
 }
 
-function safeFsync(fd) {
+export function safeFsync(fd, fsyncImpl = fsyncSync) {
   try {
-    fsyncSync(fd);
+    fsyncImpl(fd);
   } catch (err) {
     if (err.code !== 'EINVAL' && err.code !== 'EPERM' && err.code !== 'EROFS') {
       throw err;
@@ -367,7 +367,11 @@ function verifyBoundArtifact(workDir, recordedHash, relPath) {
 function recordLedgerBinding(state, workDir) {
   const abs = path.join(workDir, COVERAGE_STATE_FILENAME);
   if (!existsSync(abs)) return;
-  const sha = sha256File(abs);
+  const { sha } = stageArtifactBytes(
+    workDir,
+    CHECKPOINT_BINDING_COVERAGE_STATE,
+    readFileSync(abs),
+  );
   state.hashes = {
     ...state.hashes,
     [CHECKPOINT_BINDING_COVERAGE_STATE]: sha,
@@ -419,21 +423,15 @@ function recordLedgerBinding(state, workDir) {
  * all — it falls through to a full re-execution rather than continuing from a
  * state document nobody can vouch for. (Fail closed: redo work, never invent.)
  *
- * THE BINDING-LAG WINDOW IS KNOWN, DISCLOSED, AND FAIL-SAFE (round-2 review
- * P1-2; round-3 review P0-1 analysis). A stage owner persists the ledger INSIDE
- * its own execution, so a kill between that persist and the composer's next
- * checkpoint leaves the on-disk ledger NEWER than the recorded binding; the
- * resume then refuses reuse and re-executes — redundant for the interrupted
- * run, but never unsafe. A WRITE-AHEAD sidecar receipt was attempted
- * (e49b483) and REVERTED: the round-3 adversarial review proved (P0-1) that an
- * unanchored sidecar is a SECOND TRUST SOURCE — rewriting it together with the
- * ledger defeats the binding without ever touching the checkpointed evidence,
- * which re-opens the round-1 P0-2 false-resume hole. Closing this window for
- * real requires an atomic-commit protocol where the CHECKPOINT is the commit
- * point (embed the artifact bytes into the checkpoint BEFORE the artifact file
- * is written; recovery restores lagging artifact files from the checkpoint and
- * never consumes unproven bytes) — a deliberate redesign, tracked in Issue
- * #94, not a sidecar patch.
+ * OWNER-PERSIST BINDING LAG IS RECOVERED FROM CHECKPOINT-AUTHORIZED STAGING.
+ * A stage owner persists the ledger inside its own execution, so a kill before
+ * the composer's next checkpoint can leave canonical bytes newer than the last
+ * committed binding. Every checkpoint write stages the exact ledger bytes it
+ * authorizes, and those bytes are retained while that binding can remain the
+ * recovery authority. Resume therefore restores the older authorized ledger
+ * instead of consuming the newer uncommitted bytes or repeating retrieval.
+ * The rejected write-ahead receipt remains absent: staging earns no authority
+ * by itself and is considered only at the hash named by the checkpoint.
  *
  * EVERY CHECK DELEGATES TO ITS OWNER rather than re-implementing it: the persisted
  * ledger is validated and plan-bound by the T07 authority (`loadCoverageState`),
@@ -1037,7 +1035,9 @@ export async function composeP1Research({
       if (Array.isArray(reentry.materialize) && reentry.materialize.length > 0) {
         for (const item of reentry.materialize) {
           materializeStagedArtifact(workDir, item.stagedPath, item.canonicalRel);
-          cleanupStaging(item.stagedPath);
+          if (item.key !== CHECKPOINT_BINDING_COVERAGE_STATE) {
+            cleanupStaging(item.stagedPath);
+          }
         }
       }
       // Continue the PERSISTED ledger: it is already validated and plan-bound by
@@ -1161,7 +1161,6 @@ export async function composeP1Research({
     const stagedLedger = getStagingPath(workDir, CHECKPOINT_BINDING_COVERAGE_STATE, state.hashes[CHECKPOINT_BINDING_COVERAGE_STATE]);
     if (existsSync(stagedLedger)) {
       materializeStagedArtifact(workDir, stagedLedger, COVERAGE_STATE_FILENAME);
-      cleanupStaging(stagedLedger);
     }
 
     let selection = null;
@@ -1247,7 +1246,6 @@ export async function composeP1Research({
     const stagedSelLedger = getStagingPath(workDir, CHECKPOINT_BINDING_COVERAGE_STATE, state.hashes[CHECKPOINT_BINDING_COVERAGE_STATE]);
     if (existsSync(stagedSelLedger)) {
       materializeStagedArtifact(workDir, stagedSelLedger, COVERAGE_STATE_FILENAME);
-      cleanupStaging(stagedSelLedger);
     }
 
     const execution = executeSelectedGroups({

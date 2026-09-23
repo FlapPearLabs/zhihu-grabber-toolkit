@@ -132,26 +132,120 @@ export function stateFile(workDir) {
   return path.join(workDir, 'orchestration-state.json');
 }
 
+function stateReplacementBackupFile(workDir) {
+  return `${stateFile(workDir)}.replace-backup`;
+}
+
+function stateTempFiles(workDir) {
+  const target = stateFile(workDir);
+  const dir = path.dirname(target);
+  const prefix = `${path.basename(target)}.tmp-`;
+  let entries;
+  try {
+    entries = fs.readdirSync(dir);
+  } catch (err) {
+    if (err.code === 'ENOENT') return [];
+    throw err;
+  }
+  return entries
+    .filter((name) => name.startsWith(prefix))
+    .map((name) => path.join(dir, name));
+}
+
+function inspectStateReplacement(workDir) {
+  const target = stateFile(workDir);
+  const backup = stateReplacementBackupFile(workDir);
+  if (fs.existsSync(target) || !fs.existsSync(backup)) return null;
+
+  let bytes;
+  let state;
+  try {
+    bytes = fs.readFileSync(backup);
+    state = JSON.parse(bytes.toString('utf8'));
+  } catch {
+    return null;
+  }
+  const replacedHash = crypto.createHash('sha256').update(bytes).digest('hex');
+  const marker = `${target}.tmp-replace-${replacedHash}-`;
+  const candidates = stateTempFiles(workDir).filter((file) => file.startsWith(marker));
+  if (candidates.length !== 1) return null;
+  let nextBytes;
+  let nextState;
+  try {
+    nextBytes = fs.readFileSync(candidates[0]);
+    nextState = JSON.parse(nextBytes.toString('utf8'));
+  } catch {
+    return null;
+  }
+  const nextHash = crypto.createHash('sha256').update(nextBytes).digest('hex');
+  if (!candidates[0].startsWith(`${marker}${nextHash}-`)) return null;
+  if (
+    !nextState
+    || typeof nextState !== 'object'
+    || Array.isArray(nextState)
+    || nextState.schemaVersion !== STATE_SCHEMA_VERSION
+    || typeof nextState.runId !== 'string'
+    || nextState.runId.length === 0
+    || ![...STAGES, STAGE_FAILED].includes(nextState.stage)
+  ) return null;
+  return { state, target, backup };
+}
+
+function clearStateReplacementFiles(workDir) {
+  const backup = stateReplacementBackupFile(workDir);
+  if (fs.existsSync(backup)) {
+    fs.rmSync(backup, { force: true });
+  }
+  for (const temp of stateTempFiles(workDir)) {
+    fs.rmSync(temp, { force: true });
+  }
+}
+
+function prepareStateReplacement(workDir) {
+  const target = stateFile(workDir);
+  if (fs.existsSync(target)) {
+    clearStateReplacementFiles(workDir);
+    return;
+  }
+  const recovery = inspectStateReplacement(workDir);
+  if (recovery) {
+    fs.renameSync(recovery.backup, recovery.target);
+  }
+  clearStateReplacementFiles(workDir);
+}
+
 export function eventsFile(workDir) {
   return path.join(workDir, 'events.jsonl');
 }
 
 export function readState(workDir) {
-  const file = stateFile(workDir);
-  if (!fs.existsSync(file)) return null;
-  try {
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch {
-    return null; // corrupt state → treated as absent (validated before reuse)
+  const target = stateFile(workDir);
+  // Windows replacement may require moving the last committed checkpoint out
+  // of the target path before installing the next generation. If the process
+  // dies in that narrow window, the backup is readable only when the matching
+  // in-flight temp names the backup's exact hash. Inspection stays read-only;
+  // the next explicit write restores canonical placement before committing.
+  if (fs.existsSync(target)) {
+    try {
+      return JSON.parse(fs.readFileSync(target, 'utf8'));
+    } catch {
+      return null; // corrupt state → treated as absent (validated before reuse)
+    }
   }
+  return inspectStateReplacement(workDir)?.state ?? null;
 }
 
 export function writeState(workDir, state) {
   fs.mkdirSync(workDir, { recursive: true });
+  prepareStateReplacement(workDir);
   state.updatedAt = new Date().toISOString();
   const target = stateFile(workDir);
-  const temp = `${target}.tmp-${process.pid}-${Date.now()}`;
+  const replacedHash = fs.existsSync(target) ? sha256File(target) : null;
   const payload = `${JSON.stringify(state, null, 2)}\n`;
+  const payloadHash = sha256(payload);
+  const temp = replacedHash
+    ? `${target}.tmp-replace-${replacedHash}-${payloadHash}-${process.pid}-${Date.now()}`
+    : `${target}.tmp-new-${payloadHash}-${process.pid}-${Date.now()}`;
   const fd = fs.openSync(temp, 'w');
   try {
     fs.writeFileSync(fd, payload, 'utf8');
@@ -163,18 +257,34 @@ export function writeState(workDir, state) {
   } finally {
     fs.closeSync(fd);
   }
-  // Process-crash safe replacement sequence under EEXIST/EPERM (Windows compatibility fallback).
-  // Strictly bounded to process-restart recovery; power-loss durability is not claimed.
+  // Process-crash recoverable replacement sequence under EEXIST/EPERM
+  // (Windows compatibility fallback). The prior checkpoint is MOVED, not
+  // deleted, before the new generation is installed. `readState` consults that
+  // moved checkpoint only while the canonical target is absent AND exactly one
+  // valid-checkpoint in-flight temp binds both the moved checkpoint hash and
+  // its own payload hash. The temp is only a transaction witness: its bytes
+  // never become read authority.
+  // Once temp -> target succeeds, the witness path disappears and the backup
+  // immediately loses authority even if cleanup has not run. Strictly bounded
+  // to process restart; power-loss durability and physical atomic replacement
+  // are not claimed.
+  const backup = stateReplacementBackupFile(workDir);
   try {
     fs.renameSync(temp, target);
   } catch (err) {
     if (err.code === 'EEXIST' || err.code === 'EPERM') {
-      fs.rmSync(target, { force: true });
+      if (fs.existsSync(target)) {
+        if (fs.existsSync(backup)) {
+          fs.rmSync(backup, { force: true });
+        }
+        fs.renameSync(target, backup);
+      }
       fs.renameSync(temp, target);
     } else {
       throw err;
     }
   }
+  clearStateReplacementFiles(workDir);
 }
 
 export function appendEvent(workDir, event) {
