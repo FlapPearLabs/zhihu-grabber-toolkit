@@ -383,6 +383,15 @@ function snapshotWorkDir(workDir) {
   return snap;
 }
 
+function snapshotCheckpointFiles(workDir) {
+  return Object.fromEntries(
+    fs.readdirSync(workDir)
+      .filter((name) => name.startsWith('orchestration-state.json'))
+      .sort()
+      .map((name) => [name, fs.readFileSync(path.join(workDir, name))]),
+  );
+}
+
 // ===========================================================================
 // A. a valid, complete, current-version COMPLETE is genuinely reused
 // ===========================================================================
@@ -1660,7 +1669,7 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
     assertZeroExternalCalls(calls, 'R1b');
   });
 
-  test('R2 (review P0-2): a schema-valid, planHash-preserving ledger tamper defeats the resume — no unproven ledger is ever authoritative', async () => {
+  test('R2 (review P0-2): a schema-valid ledger tamper is replaced by checkpoint-authorized bytes — no unproven ledger is ever authoritative', async () => {
     const workDir = tmpWork('p1-r06-r2-');
     await runUntilInterrupt(workDir);
 
@@ -1674,11 +1683,10 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
     const calls = zeroCalls();
     const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
     const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
-    assert.equal(out.ok, true, `R2: the run must still succeed via the live path: ${JSON.stringify(out)}`);
-    assert.ok(calls.search > 0, 'R2: an unprovable ledger forces real retrieval — the pool is never reused on top of it');
+    assert.equal(out.ok, true, `R2: the run must still succeed from authorized state: ${JSON.stringify(out)}`);
+    assert.equal(calls.search, 0, 'R2: recovery restores the checkpoint-authorized ledger without repeating retrieval');
     const reentry = lastEvent(workDir, 'resume_reentry');
-    assert.equal(reentry.reusedRetrieval, false, 'R2: nothing is reused from an unproven ledger');
-    assert.equal(reentry.reentryRefusalReason, 'coverage_state_content_changed', 'R2: the refusal is auditable and names the ledger');
+    assert.equal(reentry.reusedRetrieval, true, 'R2: reuse rests on checkpoint-authorized staging, never on the tampered ledger');
   });
 
   test('R3 (review P0-3): a config A interruption is never resumed under config B', async () => {
@@ -1808,7 +1816,7 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
     assert.equal(reentry3.reusedSelection, true, 'R6: the certified selection is NOT redone by the third resume');
   });
 
-  test('R7 (OPEN residual — round-2 P1-2, receipt protocol rejected by round-3 P0-1): a binding-lag after an owner persist stays FAIL-SAFE, and unproven ledger bytes are never consumed', async () => {
+  test('R7 (process-crash recovery): a binding-lag after an owner persist restores the last checkpoint-authorized ledger without repeating retrieval', async () => {
     // REVIEW HISTORY. Round-2 P1-2 demanded liveness: a kill between a stage
     // owner's final ledger persist and the composer's checkpoint refresh must
     // not force a full re-execution. The write-ahead sidecar receipt protocol
@@ -1817,15 +1825,15 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
     // SECOND TRUST SOURCE — rewriting it together with the ledger defeats the
     // binding without ever touching the checkpointed evidence (R2's attack
     // shape), and cross-occurrence receipt replay is equally unanchored. It
-    // was reverted. Closing the window for real requires an atomic-commit
-    // protocol where the CHECKPOINT is the commit point (embed artifact bytes
-    // into the checkpoint BEFORE the artifact file is written; recovery
-    // restores lagging artifact files from the checkpoint and never consumes
-    // unproven bytes) — tracked for the next repair round in Issue #94.
-    // Until then, THIS test pins the fail-safe behaviour the contract actually
-    // guarantees at this boundary: the refused resume discloses the ledger as
-    // the reason, re-executes the work itself, and NEVER treats the
-    // binding-lagging ledger bytes as authoritative.
+    // was reverted. The accepted replacement keeps the CHECKPOINT as the sole
+    // commit point: content-addressed staging is usable only when its bytes
+    // match the hash in that checkpoint. The repair retains the LAST
+    // checkpoint-authorized ledger bytes. A later owner may persist newer bytes
+    // before the composer
+    // refreshes the checkpoint; if the process dies in that window, recovery
+    // restores the older authorized ledger and resumes from it. The newer,
+    // uncommitted bytes remain non-authoritative, but already committed
+    // retrieval and selection are not repeated.
     const workDir = tmpWork('p1-r06-r7-');
     // Run 1: run to just past the T12 corpus-selection owner — its final ledger
     // persist has landed — and die BEFORE the composer refreshed the checkpoint
@@ -1853,16 +1861,16 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
       'R7: fixture precondition — the ledger binding is stale, exactly the P1-2 window',
     );
 
-    // Run 2: the resume must NOT consume the binding-lagging ledger bytes. The
-    // fail-safe contract refuses reuse (naming the ledger, audibly) and
-    // re-executes the work through the owners.
+    // Run 2: the resume must NOT consume the binding-lagging ledger bytes. It
+    // restores the last checkpoint-authorized ledger from staging, then resumes
+    // without repeating retrieval or live selection.
     const calls2 = zeroCalls();
     const out2 = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls2) });
     assert.equal(out2.ok, true, `R7: the run completes via the live path: ${JSON.stringify(out2)}`);
     const reentry2 = lastEvent(workDir, 'resume_reentry');
-    assert.equal(reentry2.reusedRetrieval, false, 'R7: nothing is reused from a binding-lagging ledger — fail-safe, never unsafe');
-    assert.equal(reentry2.reentryRefusalReason, 'coverage_state_content_changed', 'R7: the refusal names the ledger, audibly');
-    assert.ok(calls2.search > 0, 'R7: the work is genuinely re-executed (no unproven byte is consumed)');
+    assert.equal(reentry2.reusedRetrieval, true, 'R7: checkpoint-authorized retrieval is preserved');
+    assert.equal(reentry2.reusedSelection, true, 'R7: checkpoint-authorized selection is preserved');
+    assert.equal(calls2.search, 0, 'R7: committed retrieval is not repeated');
   });
 
   test('R8 (review round-3 P0-1 / round-4): self-consistent external evidence outside checkpoint cannot grant reuse', async () => {
@@ -1888,15 +1896,15 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
     fs.mkdirSync(path.dirname(stagingPathB), { recursive: true });
     fs.writeFileSync(stagingPathB, bytesB);
 
-    // Staging for A does not exist, and checkpoint expects A
+    // Checkpoint-authorized staging for A remains available; B still has no
+    // authority even though canonical B and staging B agree with each other.
     const calls = zeroCalls();
     const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
     const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
     assert.equal(out.ok, true, `R8: live path succeeds: ${JSON.stringify(out)}`);
-    assert.ok(calls.search > 0, 'R8: B cannot earn reuse without checkpoint authority');
+    assert.equal(calls.search, 0, 'R8: A is restored without allowing B to earn authority');
     const reentry = lastEvent(workDir, 'resume_reentry');
-    assert.equal(reentry.reusedRetrieval, false, 'R8: uncommitted evidence B is refused');
-    assert.equal(reentry.reentryRefusalReason, 'coverage_state_content_changed');
+    assert.equal(reentry.reusedRetrieval, true, 'R8: reuse comes from checkpoint-authorized A, not external B');
     assert.notEqual(sha256File(ledgerPath), hashB, 'R8: canonical ledger was rewritten by live execution');
   });
 
@@ -1927,15 +1935,15 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
     fs.mkdirSync(path.dirname(stagingPathBInA), { recursive: true });
     fs.copyFileSync(ledgerPathB, stagingPathBInA);
 
-    // A's checkpoint still expects hash A, and A has no staging for hash A
+    // A's checkpoint still expects hash A, whose authorized staging remains in
+    // A. Replayed B cannot displace that truth.
     const calls = zeroCalls();
     const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
     const out = await composeP1Research({ topic: TOPIC, workDir: workDirA, ...fixtures(calls) });
     assert.equal(out.ok, true);
-    assert.ok(calls.search > 0, 'R8b: occurrence A refuses B replay');
+    assert.equal(calls.search, 0, 'R8b: occurrence A restores its own authorized state without using B');
     const reentry = lastEvent(workDirA, 'resume_reentry');
-    assert.equal(reentry.reusedRetrieval, false, 'R8b: nothing is reused from replayed occurrence B');
-    assert.equal(reentry.reentryRefusalReason, 'coverage_state_content_changed');
+    assert.equal(reentry.reusedRetrieval, true, 'R8b: reuse remains anchored to occurrence A checkpoint truth');
   });
 
   test('R9 (review round-4): pool committed in checkpoint, crash before canonical materialize recovers from staging', async () => {
@@ -2075,7 +2083,466 @@ describe('P1-R06 §R — independent-review counterexamples (8bc0cdf + 822c528 +
     const reentry = lastEvent(workDir, 'resume_reentry');
     assert.equal(reentry.reusedSelection, false, 'R10-precommit: uncommitted selection cannot be reused');
   });
+
+  for (const replacementCode of ['EEXIST', 'EPERM']) {
+    test(`R11 (checkpoint replacement ${replacementCode}): immediate recovery converges and the old checkpoint cannot resurrect`, (t) => {
+      const workDir = tmpWork(`p1-r06-r11-${replacementCode.toLowerCase()}-`);
+      const original = makeState({
+        workDir,
+        topic: TOPIC,
+        mode: P1_PIPELINE_IDENTITY,
+        percent: null,
+        runtime: 'deepseek-api-tool-less',
+      });
+      original.stage = 'SELECT';
+      writeState(workDir, original);
+
+      const next = structuredClone(readState(workDir));
+      next.stage = 'CAPTURE';
+      const target = path.join(workDir, 'orchestration-state.json');
+      const backup = `${target}.replace-backup`;
+      const nativeRename = fs.renameSync.bind(fs);
+      let targetRenameAttempts = 0;
+      t.mock.method(fs, 'renameSync', (from, to) => {
+        if (to === target && String(from).startsWith(`${target}.tmp-`)) {
+          targetRenameAttempts += 1;
+          if (targetRenameAttempts === 1) {
+            throw Object.assign(new Error('force Windows replacement fallback'), { code: replacementCode });
+          }
+          if (targetRenameAttempts === 2) {
+            throw Object.assign(new Error('synthetic process crash before replacement commit'), { code: 'R06_TEST_CRASH_POINT' });
+          }
+        }
+        return nativeRename(from, to);
+      });
+
+      assert.throws(
+        () => writeState(workDir, next),
+        /synthetic process crash before replacement commit/,
+      );
+      const beforeRecoveryRead = snapshotCheckpointFiles(workDir);
+      assert.equal(fs.existsSync(target), false, 'R11: W2 has no canonical target');
+      assert.equal(fs.existsSync(backup), true, 'R11: W2 retains the last committed checkpoint');
+      assert.equal(
+        Object.keys(beforeRecoveryRead).filter((name) => name.includes('.tmp-')).length,
+        1,
+        'R11: W2 retains exactly one in-flight replacement candidate',
+      );
+      const recovered = readState(workDir);
+      assert.ok(recovered, 'R11: the last committed checkpoint remains readable after the interrupted fallback');
+      assert.equal(recovered.stage, 'SELECT', 'R11: the uncommitted CAPTURE checkpoint never gains authority');
+      assert.equal(recovered.runId, original.runId, 'R11: recovery preserves the exact prior checkpoint identity');
+      assert.deepEqual(
+        snapshotCheckpointFiles(workDir),
+        beforeRecoveryRead,
+        'R11: immediate recovery inspection is byte-for-byte read-only',
+      );
+
+      writeState(workDir, next);
+      assert.equal(readState(workDir).stage, 'CAPTURE', 'R11-W5: restart from W2 commits the later checkpoint');
+      assert.equal(fs.existsSync(backup), false, 'R11-W4/W5: successful commit converges past backup cleanup');
+      fs.rmSync(target);
+      const afterCanonicalLoss = readState(workDir);
+      assert.notEqual(afterCanonicalLoss?.stage, 'SELECT', 'R11: a superseded checkpoint never regains authority');
+      assert.equal(fs.existsSync(backup), false, 'R11-W5: replacement backup remains expired after canonical loss');
+    });
+  }
+
+  for (const replacementCode of ['EEXIST', 'EPERM']) {
+    test(`R11b (checkpoint replacement ${replacementCode}): a successful fallback installs the new checkpoint and removes backup`, (t) => {
+      const workDir = tmpWork(`p1-r06-r11b-${replacementCode.toLowerCase()}-`);
+      const original = makeState({
+        workDir,
+        topic: TOPIC,
+        mode: P1_PIPELINE_IDENTITY,
+        percent: null,
+        runtime: 'deepseek-api-tool-less',
+      });
+      original.stage = 'SELECT';
+      writeState(workDir, original);
+      const next = structuredClone(readState(workDir));
+      next.stage = 'CAPTURE';
+
+      const target = path.join(workDir, 'orchestration-state.json');
+      const backup = `${target}.replace-backup`;
+      const nativeRename = fs.renameSync.bind(fs);
+      let forced = false;
+      t.mock.method(fs, 'renameSync', (from, to) => {
+        if (!forced && to === target && String(from).startsWith(`${target}.tmp-`)) {
+          forced = true;
+          throw Object.assign(new Error('force Windows replacement fallback'), { code: replacementCode });
+        }
+        return nativeRename(from, to);
+      });
+
+      writeState(workDir, next);
+      assert.equal(readState(workDir).stage, 'CAPTURE');
+      assert.equal(fs.existsSync(backup), false, 'R11b: successful fallback leaves one canonical authority');
+    });
+  }
+
+  test('R11c: canonical loss after new checkpoint installation but before cleanup never revives the old backup', (t) => {
+    const workDir = tmpWork('p1-r06-r11c-');
+    const original = makeState({
+      workDir,
+      topic: TOPIC,
+      mode: P1_PIPELINE_IDENTITY,
+      percent: null,
+      runtime: 'deepseek-api-tool-less',
+    });
+    original.stage = 'SELECT';
+    writeState(workDir, original);
+    const next = structuredClone(readState(workDir));
+    next.stage = 'CAPTURE';
+
+    const target = path.join(workDir, 'orchestration-state.json');
+    const backup = `${target}.replace-backup`;
+    const nativeRename = fs.renameSync.bind(fs);
+    const nativeRm = fs.rmSync.bind(fs);
+    let forcedRename = false;
+    let newTargetInstalled = false;
+    let cleanupCrashInjected = false;
+    t.mock.method(fs, 'renameSync', (from, to) => {
+      if (!forcedRename && to === target && String(from).startsWith(`${target}.tmp-`)) {
+        forcedRename = true;
+        throw Object.assign(new Error('force Windows replacement fallback'), { code: 'EPERM' });
+      }
+      const result = nativeRename(from, to);
+      if (to === target && String(from).startsWith(`${target}.tmp-`)) {
+        newTargetInstalled = true;
+      }
+      return result;
+    });
+    t.mock.method(fs, 'rmSync', (file, options) => {
+      if (file === backup && newTargetInstalled && !cleanupCrashInjected) {
+        cleanupCrashInjected = true;
+        throw Object.assign(new Error('synthetic crash before backup cleanup'), { code: 'R06_TEST_CRASH_POINT' });
+      }
+      return nativeRm(file, options);
+    });
+
+    assert.throws(() => writeState(workDir, next), /synthetic crash before backup cleanup/);
+    assert.equal(JSON.parse(fs.readFileSync(target, 'utf8')).stage, 'CAPTURE', 'R11c: W3 installed the new canonical checkpoint');
+    assert.equal(fs.existsSync(backup), true, 'R11c: W3 still has the superseded backup before cleanup');
+    fs.rmSync(target);
+    assert.equal(readState(workDir), null, 'R11c: removed canonical cannot reveal the old SELECT checkpoint without an in-flight replacement');
+  });
+
+  test('R11c-W6: restart after new checkpoint installation reads the new canonical without mutating stale backup', (t) => {
+    const workDir = tmpWork('p1-r06-r11c-w6-');
+    const original = makeState({
+      workDir,
+      topic: TOPIC,
+      mode: P1_PIPELINE_IDENTITY,
+      percent: null,
+      runtime: 'deepseek-api-tool-less',
+    });
+    original.stage = 'SELECT';
+    writeState(workDir, original);
+    const next = structuredClone(readState(workDir));
+    next.stage = 'CAPTURE';
+
+    const target = path.join(workDir, 'orchestration-state.json');
+    const backup = `${target}.replace-backup`;
+    const nativeRename = fs.renameSync.bind(fs);
+    const nativeRm = fs.rmSync.bind(fs);
+    let forcedRename = false;
+    let newTargetInstalled = false;
+    t.mock.method(fs, 'renameSync', (from, to) => {
+      if (!forcedRename && to === target && String(from).startsWith(`${target}.tmp-`)) {
+        forcedRename = true;
+        throw Object.assign(new Error('force Windows replacement fallback'), { code: 'EPERM' });
+      }
+      const result = nativeRename(from, to);
+      if (to === target && String(from).startsWith(`${target}.tmp-`)) newTargetInstalled = true;
+      return result;
+    });
+    t.mock.method(fs, 'rmSync', (file, options) => {
+      if (file === backup && newTargetInstalled) {
+        newTargetInstalled = false;
+        throw Object.assign(new Error('synthetic crash before backup cleanup'), { code: 'R06_TEST_CRASH_POINT' });
+      }
+      return nativeRm(file, options);
+    });
+
+    assert.throws(() => writeState(workDir, next), /synthetic crash before backup cleanup/);
+    const beforeRead = snapshotCheckpointFiles(workDir);
+    assert.equal(readState(workDir).stage, 'CAPTURE', 'R11c-W6: newly installed canonical wins');
+    assert.deepEqual(snapshotCheckpointFiles(workDir), beforeRead, 'R11c-W6: restart inspection is read-only');
+  });
+
+  test('R11d: a direct successful write removes a pre-existing stale replacement backup', () => {
+    const workDir = tmpWork('p1-r06-r11d-');
+    const original = makeState({
+      workDir,
+      topic: TOPIC,
+      mode: P1_PIPELINE_IDENTITY,
+      percent: null,
+      runtime: 'deepseek-api-tool-less',
+    });
+    original.stage = 'SELECT';
+    writeState(workDir, original);
+    const target = path.join(workDir, 'orchestration-state.json');
+    const backup = `${target}.replace-backup`;
+    const next = structuredClone(readState(workDir));
+    next.stage = 'CAPTURE';
+    fs.copyFileSync(target, backup);
+
+    writeState(workDir, next);
+    assert.equal(fs.existsSync(backup), false, 'R11d: any successful commit expires an older backup');
+    fs.rmSync(target);
+    assert.equal(readState(workDir), null, 'R11d: stale SELECT cannot resurrect after canonical loss');
+  });
+
+  test('R11d-W7/W8: a stale backup beside a newer canonical is ignored read-only and has no authority after canonical loss', () => {
+    const workDir = tmpWork('p1-r06-r11d-w8-');
+    const original = makeState({
+      workDir,
+      topic: TOPIC,
+      mode: P1_PIPELINE_IDENTITY,
+      percent: null,
+      runtime: 'deepseek-api-tool-less',
+    });
+    original.stage = 'SELECT';
+    writeState(workDir, original);
+    const target = path.join(workDir, 'orchestration-state.json');
+    const backup = `${target}.replace-backup`;
+    const oldBytes = fs.readFileSync(target);
+    const next = structuredClone(readState(workDir));
+    next.stage = 'CAPTURE';
+    writeState(workDir, next);
+    fs.writeFileSync(backup, oldBytes);
+    fs.writeFileSync(`${target}.tmp-unrelated`, JSON.stringify(next));
+
+    const beforeRead = snapshotCheckpointFiles(workDir);
+    assert.equal(readState(workDir).stage, 'CAPTURE', 'R11d-W7: canonical always wins over stale backup');
+    assert.deepEqual(snapshotCheckpointFiles(workDir), beforeRead, 'R11d-W7: validation does not clean or promote files');
+
+    fs.rmSync(target);
+    const beforeMissingRead = snapshotCheckpointFiles(workDir);
+    assert.equal(readState(workDir), null, 'R11d-W8: backup existence plus an unrelated temp grants no authority');
+    assert.deepEqual(snapshotCheckpointFiles(workDir), beforeMissingRead, 'R11d-W8: fail-closed inspection remains read-only');
+  });
+
+  test('R11e: write-phase recovery promotion and stale-backup cleanup I/O failures propagate fail-closed', async (t) => {
+    const makeOriginal = (workDir) => {
+      const state = makeState({
+        workDir,
+        topic: TOPIC,
+        mode: P1_PIPELINE_IDENTITY,
+        percent: null,
+        runtime: 'deepseek-api-tool-less',
+      });
+      state.stage = 'SELECT';
+      writeState(workDir, state);
+      return state;
+    };
+
+    await t.test('promotion failure', (tt) => {
+      const workDir = tmpWork('p1-r06-r11e-promote-');
+      makeOriginal(workDir);
+      const target = path.join(workDir, 'orchestration-state.json');
+      const backup = `${target}.replace-backup`;
+      const next = structuredClone(readState(workDir));
+      next.stage = 'CAPTURE';
+      const expected = Object.assign(new Error('checkpoint promotion failed'), { code: 'EIO' });
+      const nativeRename = fs.renameSync.bind(fs);
+      let targetRenameAttempts = 0;
+      tt.mock.method(fs, 'renameSync', (from, to) => {
+        if (from === backup && to === target) throw expected;
+        if (to === target && String(from).startsWith(`${target}.tmp-`)) {
+          targetRenameAttempts += 1;
+          if (targetRenameAttempts === 1) {
+            throw Object.assign(new Error('force Windows replacement fallback'), { code: 'EPERM' });
+          }
+          if (targetRenameAttempts === 2) {
+            throw Object.assign(new Error('synthetic process crash before replacement commit'), { code: 'R06_TEST_CRASH_POINT' });
+          }
+        }
+        return nativeRename(from, to);
+      });
+      assert.throws(() => writeState(workDir, next), /synthetic process crash/);
+      assert.throws(() => writeState(workDir, next), (err) => err === expected);
+    });
+
+    await t.test('cleanup failure', (tt) => {
+      const workDir = tmpWork('p1-r06-r11e-cleanup-');
+      makeOriginal(workDir);
+      const target = path.join(workDir, 'orchestration-state.json');
+      const backup = `${target}.replace-backup`;
+      const next = structuredClone(readState(workDir));
+      next.stage = 'CAPTURE';
+      fs.copyFileSync(target, backup);
+      const expected = Object.assign(new Error('stale backup cleanup failed'), { code: 'EIO' });
+      const nativeRm = fs.rmSync.bind(fs);
+      tt.mock.method(fs, 'rmSync', (file, options) => {
+        if (file === backup) throw expected;
+        return nativeRm(file, options);
+      });
+      assert.throws(() => writeState(workDir, next), (err) => err === expected);
+    });
+  });
+
+  test('R11f: malformed backup is never promoted into canonical authority', () => {
+    const workDir = tmpWork('p1-r06-r11f-');
+    const target = path.join(workDir, 'orchestration-state.json');
+    const backup = `${target}.replace-backup`;
+    fs.writeFileSync(backup, '{not-json\n');
+    assert.equal(readState(workDir), null);
+    assert.equal(fs.existsSync(target), false, 'R11f: corrupt backup cannot become canonical');
+  });
+
+  for (const witnessShape of ['unrelated', 'malformed', 'ambiguous']) {
+    test(`R11f-${witnessShape}: an unprovable replacement witness never authorizes a backup`, () => {
+      const workDir = tmpWork(`p1-r06-r11f-${witnessShape}-`);
+      const target = path.join(workDir, 'orchestration-state.json');
+      const backup = `${target}.replace-backup`;
+      const original = makeState({
+        workDir,
+        topic: TOPIC,
+        mode: P1_PIPELINE_IDENTITY,
+        percent: null,
+        runtime: 'deepseek-api-tool-less',
+      });
+      original.stage = 'SELECT';
+      const backupBytes = `${JSON.stringify(original, null, 2)}\n`;
+      fs.writeFileSync(backup, backupBytes);
+      const backupHash = crypto.createHash('sha256').update(backupBytes).digest('hex');
+      const witnessPrefix = `${target}.tmp-replace-${backupHash}-`;
+      const next = structuredClone(original);
+      next.stage = 'CAPTURE';
+      const validPayload = `${JSON.stringify(next, null, 2)}\n`;
+      const firstPayload = witnessShape === 'malformed'
+        ? '{not-json\n'
+        : witnessShape === 'unrelated'
+          ? '{}\n'
+          : validPayload;
+      const firstHash = crypto.createHash('sha256').update(firstPayload).digest('hex');
+      fs.writeFileSync(`${witnessPrefix}${firstHash}-one`, firstPayload);
+      if (witnessShape === 'ambiguous') {
+        const second = structuredClone(next);
+        second.stage = 'VERIFY';
+        const secondPayload = `${JSON.stringify(second, null, 2)}\n`;
+        const secondHash = crypto.createHash('sha256').update(secondPayload).digest('hex');
+        fs.writeFileSync(`${witnessPrefix}${secondHash}-two`, secondPayload);
+      }
+
+      const beforeRead = snapshotCheckpointFiles(workDir);
+      assert.equal(readState(workDir), null, `R11f-${witnessShape}: backup fails closed`);
+      assert.deepEqual(snapshotCheckpointFiles(workDir), beforeRead, `R11f-${witnessShape}: inspection remains read-only`);
+    });
+  }
+
+  test('R11g (W1): a rename error before backup creation preserves the old canonical checkpoint unchanged', (t) => {
+    const workDir = tmpWork('p1-r06-r11g-');
+    const original = makeState({
+      workDir,
+      topic: TOPIC,
+      mode: P1_PIPELINE_IDENTITY,
+      percent: null,
+      runtime: 'deepseek-api-tool-less',
+    });
+    original.stage = 'SELECT';
+    writeState(workDir, original);
+    const next = structuredClone(readState(workDir));
+    next.stage = 'CAPTURE';
+    const target = path.join(workDir, 'orchestration-state.json');
+    const backup = `${target}.replace-backup`;
+    const expected = Object.assign(new Error('checkpoint rename failed'), { code: 'EIO' });
+    const nativeRename = fs.renameSync.bind(fs);
+    t.mock.method(fs, 'renameSync', (from, to) => {
+      if (to === target && String(from).startsWith(`${target}.tmp-`)) throw expected;
+      return nativeRename(from, to);
+    });
+    assert.throws(() => writeState(workDir, next), (err) => err === expected);
+    assert.equal(fs.existsSync(backup), false, 'R11g: W1 occurs before backup creation');
+    const beforeRead = snapshotCheckpointFiles(workDir);
+    assert.equal(readState(workDir).stage, 'SELECT', 'R11g: old canonical remains authoritative');
+    assert.deepEqual(snapshotCheckpointFiles(workDir), beforeRead, 'R11g: W1 inspection is read-only');
+  });
+
+  test('R11h: safeFsync tolerates only the process-crash portability error set', async () => {
+    const { safeFsync } = await import('../lib/p1-runtime-composer.mjs');
+    for (const code of ['EINVAL', 'EPERM', 'EROFS']) {
+      let observedFd = null;
+      safeFsync(47, (fd) => {
+        observedFd = fd;
+        throw Object.assign(new Error(`synthetic ${code}`), { code });
+      });
+      assert.equal(observedFd, 47, `R11h: ${code} path receives the original descriptor`);
+    }
+
+    for (const code of ['EIO', 'ENOSPC', 'EBADF']) {
+      const expected = Object.assign(new Error(`synthetic ${code}`), { code });
+      assert.throws(() => safeFsync(53, () => { throw expected; }), (err) => err === expected);
+    }
+  });
+
+  test('R11i: production run-identity refusal inspects a recoverable foreign backup without canonical writes', async (t) => {
+    const workDir = tmpWork('p1-r06-r11i-');
+    const foreign = makeState({
+      workDir,
+      topic: '另一个研究主题',
+      mode: P1_PIPELINE_IDENTITY,
+      percent: null,
+      runtime: 'deepseek-api-tool-less',
+    });
+    foreign.stage = 'SELECT';
+    writeState(workDir, foreign);
+    const nextForeign = structuredClone(readState(workDir));
+    nextForeign.stage = 'CAPTURE';
+
+    const target = path.join(workDir, 'orchestration-state.json');
+    const nativeRename = fs.renameSync.bind(fs);
+    let targetRenameAttempts = 0;
+    t.mock.method(fs, 'renameSync', (from, to) => {
+      if (to === target && String(from).startsWith(`${target}.tmp-`)) {
+        targetRenameAttempts += 1;
+        if (targetRenameAttempts === 1) {
+          throw Object.assign(new Error('force Windows replacement fallback'), { code: 'EPERM' });
+        }
+        if (targetRenameAttempts === 2) {
+          throw Object.assign(new Error('synthetic process crash before replacement commit'), { code: 'R06_TEST_CRASH_POINT' });
+        }
+      }
+      return nativeRename(from, to);
+    });
+    assert.throws(() => writeState(workDir, nextForeign), /synthetic process crash/);
+
+    const before = snapshotCheckpointFiles(workDir);
+    const calls = zeroCalls();
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, false);
+    assert.equal(out.code, 'run_identity_conflict');
+    assertZeroExternalCalls(calls, 'R11i');
+    assert.deepEqual(snapshotCheckpointFiles(workDir), before, 'R11i: refusal leaves replacement state byte-identical');
+  });
+
+  test('R12 (tampered authorized staging): checkpoint hash X never accepts different staged bytes', async () => {
+    const workDir = tmpWork('p1-r06-r12-');
+    await runUntilInterrupt(workDir);
+
+    const checkpoint = readState(workDir);
+    const expected = checkpoint.hashes[BINDING_COVERAGE_STATE];
+    const canonical = path.join(workDir, COVERAGE_STATE);
+    const mutated = JSON.parse(fs.readFileSync(canonical, 'utf8'));
+    mutated.retrieval.fusedCandidateCount = Number(mutated.retrieval.fusedCandidateCount ?? 0) + 1;
+    const mutatedBytes = `${JSON.stringify(mutated, null, 2)}\n`;
+    fs.writeFileSync(canonical, mutatedBytes);
+
+    const { composeP1Research, getStagingPath } = await import('../lib/p1-runtime-composer.mjs');
+    const authorizedPath = getStagingPath(workDir, BINDING_COVERAGE_STATE, expected);
+    fs.writeFileSync(authorizedPath, mutatedBytes);
+    assert.notEqual(sha256File(authorizedPath), expected, 'R12: fixture really tampers the expected-hash staging path');
+
+    const calls = zeroCalls();
+    const out = await composeP1Research({ topic: TOPIC, workDir, ...fixtures(calls) });
+    assert.equal(out.ok, true, `R12: fail-closed live execution still completes: ${JSON.stringify(out)}`);
+    assert.ok(calls.search > 0, 'R12: neither canonical nor staging bytes prove hash X, so retrieval re-executes');
+    const reentry = lastEvent(workDir, 'resume_reentry');
+    assert.equal(reentry.reusedRetrieval, false, 'R12: tampered staging grants no reuse authority');
+  });
 });
 
 void runIdentityHash;
-
