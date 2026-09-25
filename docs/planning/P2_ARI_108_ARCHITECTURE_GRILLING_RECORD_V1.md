@@ -180,10 +180,14 @@ DISPOSITION = REPAIRED（新增 SEAM G §G.5.1）
 
 ### A-1 — 信任边界："把 targeted 字符串加入 trustedPlanStrings 就是开了后门"
 
-不成立。合同要求该集合**只能**由 controller 已授权 action ledger 派生，且每个成员仍被
-`isPlanBoundarySafeString` 重新判定（比非成员的 provider-content lens **更严**）。
-这不是放宽，而是把 targeted 成员从"更宽的 lens"提升到"与 plan-owned 同等的严 lens"。
-`rrf.mjs` R11 的"`trustedPlanStrings` 不是 general caller-defined trust bypass"约束被逐字保留。
+~~不成立。~~ **本条 A-1 的原始论证已被独立交叉审查推翻，见 §6.1。**
+
+修订后结论（以 §6.1 为准）：合同要求该集合**只能**由 controller 已授权 action ledger 派生这一条成立；
+但"走 plan 边界就等于更严"**不成立** —— 两 lens 互不包含，且 `rrf.test.mjs:996-1008`
+机械证明"列入信任集"在既有代码里是**放宽**（同一字符串未列入 = `unsafe_string`，列入 = `ok:true`）。
+因此信任门改为**双 lens 交集** `isPlanBoundarySafeString(s) AND isBoundarySafeString(s)`。
+`rrf.mjs` R11 的"`trustedPlanStrings` 不是 general caller-defined trust bypass"约束被逐字保留，
+且新增约束：信任集**不用于** artifact-walk 扩展。
 
 ### A-2 — 生产 caller 缺失
 
@@ -248,4 +252,68 @@ P1_AUTHORITY_CHANGE_REQUIRED = 否（唯一 P1 接触面是 additive 默认 0 �
 USER_DECISION_REQUIRED = NONE
 CONTRACT_CONFLICT = NONE
 NEXT_LEGAL_ACTION = FRESH INDEPENDENT REVIEW（exact candidate SHA）
+```
+
+---
+
+## 6. 独立交叉审查（ROUND 1）→ finding-scoped 修复
+
+```text
+REVIEWED_HEAD   = e18a3f16285ad3ba930d65f65c06d9c94d77bd6f
+CHANNELS        = ① CLAUDE_OPUS_4_6_EFFORT_MAX  ② WORKBUDDY_DEEPSEEK_V4_1_FLASH
+                  （原定新鲜 Codex 通道因账户级配额耗尽不可用，经用户授权改道；
+                   两条通道均 READ_ONLY / EXACT_SHA / 未参与本候选起草）
+VERDICTS        = ① CHANGES_REQUESTED / BLOCKERS = NONE
+                  ② CHANGES_REQUESTED / BLOCKERS = NONE
+```
+
+### 6.1 两 reviewer 冲突的唯一裁定：字符串信任门（lens 强弱）
+
+两位 reviewer 对同一处给出**方向相反**的判断：
+
+```text
+CLAUDE   F-03（P2）：措辞不准 —— 旧稿称"列入 trustedPlanStrings 后更严"
+DEEPSEEK RF-01（P1）：判断倒置 —— plan lens 实际【更弱】，列入信任集是【放宽】
+```
+
+作者回代码自证（CODE IS AUTHORITY）：
+
+```text
+rrf.mjs:271           PRIVATE_PATH_SHAPE      拒绝任意 ≥2 段绝对路径 / 盘符根 / ~
+plan-contract.mjs:106 PRIVATE_PATH_SHAPE      只拒绝 profile 根（/Users /home C:\Users ~）
+plan-contract.mjs:130 isPlanBoundarySafeString 无 URL 分支
+rrf.mjs:444           isBoundarySafeUrlString  https-only / no-userinfo / 多层编码凭据检查
+rrf.test.mjs:996-1008 F8 机械证据：
+                      '/etc/hosts 文件的作用'
+                        → 未列入 trustedPlanStrings  = unsafe_string（拒绝）
+                        → 列入 trustedPlanStrings    = ok:true      （放行）
+```
+
+→ **裁定：DeepSeek RF-01 成立，Claude F-03 偏轻。**
+旧稿"更严、不是放宽"的表述**整条作废**。修复后的信任门 = **双 lens 交集**
+（`isPlanBoundarySafeString(s) AND isBoundarySafeString(s)`），任一 lens 判不安全即 REJECTED。
+补充约束：信任集**不用于** artifact-walk 扩展，三处调用点零改动。
+
+### 6.2 修复清单（6 条，全部 finding-scoped）
+
+| # | 来源 | 修复 |
+|---|---|---|
+| 1 | F-03 / RF-01 | 信任门改双 lens 交集 + 作废声明（key-decisions D12-3、SEAM F.3、SPEC §D3） |
+| 2 | F-01 / RF-02 | 新增 **D12-7 / SEAM F.7**：点名唯一入口 `runMultiQueryRetrieval`（retrieval.mjs:494）+ additive 可选参数 `targetedQueries`（缺省 null）；禁止另起 `seam.retrieve + rrfFusion` 组合；OUTPUT_CONTRACT 更正为真实形状 `{ok,pool,poolHash,file}`（:492/:798） |
+| 3 | F-01 / RF-02 | P1 接触面由"一处"更正为**两处 additive**：round controller `targetedAttempts`、retrieval.mjs `targetedQueries` |
+| 4 | F-02 / RF-04 | MVP 授权面收窄为 **`planOwnedStringRef` only**；`queryText` 一律 REJECTED（`FREE_FORM_QUERY_NOT_AUTHORIZED_IN_MVP`） |
+| 5 | RF-03 | 新增 **D12-8**：去重/attempt 作用域 = OCCURRENCE，键 = `gapIdentityCore`（不含 `diagnosisRound`）；`diagnosisRound` 仅审计 |
+| 6 | RF-05 | C4 措辞由"付费检索后崩溃"改为"**commit point 之后**崩溃"（不再夸大覆盖范围） |
+
+### 6.3 闸门结论（修复后）
+
+```text
+ROUND_1_REPAIR = FINDINGS_FOUND_AND_REPAIRED
+FINDINGS_TOTAL = 6（P0 ×0，P1 ×5，P2 ×1；其中 1 条为 reviewer 冲突裁定）
+UNREPAIRED = 0
+NEW_PRODUCT_SCOPE_INTRODUCED = NO（反而收窄：自由文本 queryText 被移除出 MVP）
+P1_AUTHORITY_CHANGE_REQUIRED = 否（接触面仍为两处 additive、缺省保行为不变）
+USER_DECISION_REQUIRED = NONE
+CONTRACT_CONFLICT = NONE
+NEXT_LEGAL_ACTION = FINDING_SCOPED RE-REVIEW（新 exact SHA）→ PASS → STOP
 ```

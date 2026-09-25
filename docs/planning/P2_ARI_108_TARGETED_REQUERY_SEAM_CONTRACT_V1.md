@@ -46,8 +46,10 @@ SPEC_AUTHORITY_NOTE = 本文不发明新语义；与 P1 Approved Spec 冲突时 
                   && providerFailuresThisRound.length === 0
                   && cumulativeAttemptsCount >= plannedRoutes.length
 · assertArtifactSafe(value, { trustedPlanStrings })：
-    成员 → isPlanBoundarySafeString（plan 边界，更严）
-    非成员 → isBoundarySafeString（provider-content lens，更宽）
+    成员 → isPlanBoundarySafeString（plan lens）
+    非成员 → isBoundarySafeString（provider-content lens）
+    ★ 两 lens 互不包含，"谁更严"的判断是错的（见 F.3）
+    ★ 定向成员须同时过两 lens（交集门），见 F.3
 · coverage-state 的 trustedPlanStrings 目前 = new Set(retrieval.plannedQueryVariants)
 · 累积去重键 = canonical questionId（/^[1-9]\d*$/）；channel 键 = query::providerId::capability
 · ResearchCoverageState schemaVersion = 1，canonicalize 输出固定键集
@@ -92,6 +94,20 @@ gapId = sha256( 'p2-ari-gap/v1:' + canonicalJson({
 - `gapId` 由 **controller** 计算与赋值；模型不得提供 `gapId`。
 - 相同 `(planHash, occurrenceId, gapType, subjectKey)` 在**同一 diagnosisRound**内
   必须收敛为同一个 `gapId`（同 gap 不得被重复创建）。
+
+**跨轮稳定身份（D12-8，交叉审查修复 RF-03）**：
+
+```text
+gapIdentityCore = sha256( 'p2-ari-gap-core/v1:' + canonicalJson({
+                    planHash, occurrenceId, gapType, subjectKey }) )   // 不含 diagnosisRound
+gapId           = gapIdentityCore + ':' + diagnosisRound               // 全身份，含轮次
+```
+
+- **所有去重与计数键一律用 `gapIdentityCore`**（E.6 dedupeKey、E.5(5) per-gap attempt
+  上界）。`diagnosisRound` **只作审计字段**，不得进入任何去重 / 计数键。
+- 反例（旧稿缺陷）：若把 `diagnosisRound` 留在键里，同一 gap 在下一轮会拿到新的
+  `gapId`，等价查询可被再次授权，per-gap 上界也随之归零 —— C1 只被"同轮内"兜住，
+  跨轮重复仅靠全局 `maxQueryBudget` 兜底。
 
 ### E.3 subjectKey（controller-mechanical 主语身份）
 
@@ -149,7 +165,7 @@ Issue #108 §4 的 materiality / confidence 字段在 MVP 内只作为【审计�
 ```text
 TargetedQueryProposal（UNTRUSTED）必填：
   gapId                 必须与 E.2 已存在的 gapId 精确匹配
-  queryText?            新字符串（可选）
+  queryText?            新字符串（可选）—— **MVP 内不得被授权**，见下方 MVP 约束
   planOwnedStringRef?   { field, index } 或精确字符串（可选）
   requestedProviderScope?  通道子集（可选；默认 = plannedRoutes 全通道）
   intent?               语义说明（可选，仅审计用）
@@ -158,19 +174,36 @@ TargetedQueryProposal（UNTRUSTED）必填：
   · queryText 与 planOwnedStringRef 二者至少存在一个；
   · 二者都存在时，controller 以 planOwnedStringRef 为准（更小机制优先）；
   · 缺失 gapId / gapId 不存在 → 丢弃 proposal（FAIL_CLOSED），不得推断、不得新建 gap。
+
+MVP 约束（交叉审查修复 C2 / RF-04，对应 D12-3）：
+  · **MVP 只授权 `planOwnedStringRef` 形式的 proposal**；
+    `queryText`（模型自由文本）在 MVP 内一律 REJECTED，rejectionCode =
+    `FREE_FORM_QUERY_NOT_AUTHORIZED_IN_MVP`。
+  · 理由：E.5 全部判定都是**结构性**判定，没有任何一条评估查询与 gap 的语义相关性；
+    因此"字符串安全但与 gap 无关"的查询能通过全部判定 —— 反例 C2 在旧稿里只被
+    **部分**机检兜住。解法不是造语义相关性判定器（与 E.3.1 禁止内容归因冲突，
+    且属未授权的新生产设施），而是把授权面收窄到已计划、已验证的 plan-owned 材料
+    （G-A3）：`aspects` / `opposingFramings` / `terminologyVariants` / `entities` /
+    `sourceGroupIntents[].intent` 已足以覆盖 MVP 的全部 gap 类型。
+  · 代价：无法表达 plan 之外的查询意图。该代价在 MVP 内被接受，
+    留待 #107 产出评估证据后再议（DEFERRED，见 key-decisions D12 非决策条款）。
 ```
 
 ### E.5 Controller 校验（授权前必须通过的全部判定）
 
 ```text
 1. gapId 存在且 gapType ∈ E.1 枚举
-2. 目标字符串过 plan-boundary 门（isPlanBoundarySafeString 等价判定）
+2. 目标字符串过 **双 lens 交集门**（D12-3）：
+     isPlanBoundarySafeString(s) AND isBoundarySafeString(s)
+   —— 只过 plan lens 的旧写法已被作废：两 lens 互不包含，且在既有代码里
+      "列入信任集"是放宽（rrf.test.mjs:996-1008 F8 为机械证据）。
 3. 信任类可判定，且 ∈ { PLAN_OWNED, TARGETED_CONTROLLER_AUTHORIZED }
 4. 父 gap 溯源显式（targetedActionId → gapId 必填，不可为空）
-5. per-gap attempt 未越界（attempt <= maxAttemptsPerGap）
-6. 归一化查询在 (gapId, providerScope) 内不重复（见 E.6）
+5. per-gap attempt 未越界（attempt <= maxAttemptsPerGap，**以 gapIdentityCore 计数**）
+6. 归一化查询在 (gapIdentityCore, providerScope) 内不重复（见 E.6）
 7. 全局 budget 有剩余（attemptsBudgetCount + 本动作尝试数 <= maxQueryBudget）
 8. providerScope ⊆ plannedRoutes（不得引入新 provider / 新 capability）
+9. **MVP：proposal 必须以 planOwnedStringRef 形式给出**（E.4 MVP 约束）
 ```
 
 任一不通过 → `status = REJECTED` + 稳定的 machine-readable `rejectionCode`。
@@ -185,10 +218,12 @@ normalizedQuery = 目标字符串
                   → 连续空白折叠为单个空格
                   → 大小写折叠（casefold）
 
-dedupeKey = sha256( canonicalJson({ gapId, normalizedQuery, providerScope }) )
+dedupeKey = sha256( canonicalJson({ gapIdentityCore, normalizedQuery, providerScope }) )
 ```
 
-- 同一 `dedupeKey` 在同一 gap 内**只允许授权一次**（覆盖 C1：同一 gap 反复触发等价查询）。
+- 同一 `dedupeKey` 在**同一 occurrence 内**（不是"同一轮内"）**只允许授权一次**
+  （覆盖 C1：同一 gap 反复触发等价查询，含跨轮重复）。
+  键中使用 `gapIdentityCore`（不含 diagnosisRound）是 D12-8 的强制要求。
 - 该判据是**字符串等价**判据，不是语义相似度判据：
   本文**不**授权 embedding 相似度去重（那属于 #112 实验范围，且会带来新的生产设施）。
 
@@ -254,23 +289,45 @@ PLAN_OWNED                     —— 字符串精确取自已验证 plan 的字
                                     terminologyVariants.term / .variants /
                                     sourceGroupIntents.intent / .constraints）
 TARGETED_CONTROLLER_AUTHORIZED —— 新字符串，经 E.5 全部判定后由 controller 授权
+                                  **MVP 内不开放**（E.4 MVP 约束）
 UNCLASSIFIED                   —— 其余一切（FAIL_CLOSED，不得执行）
 ```
 
-信任集派生规则（**这是 D12-3 的机械落点**）：
+信任门 = **授权时**的双 lens 交集（**这是 D12-3 的机械落点**）：
 
 ```text
-trustedStringsForArtifactWalk =
-    new Set( plan.queryVariants
-             ∪ { a.query | a ∈ targetedActions, a.status ∈ { AUTHORIZED, COMMITTED, EVALUATED, RESOLVED } } )
+admit(s)  ⟺  isPlanBoundarySafeString(s)   // plan 边界，plan-contract.mjs:130
+          AND isBoundarySafeString(s)      // provider-content 边界，rrf.mjs:421
 ```
 
-- 第二个集合**只能**由 controller 已授权的 action ledger 确定性派生，
-  不是 caller 传入的任意集合（沿用 `rrf.mjs` R11 的"`trustedPlanStrings` 不是
-  general caller-defined trust bypass"约束）；
-- 每个成员在 walk 中仍被 `isPlanBoundarySafeString` 重新判定（plan 边界更严），
-  与既有 plan-owned 成员完全同等待遇；
-- **禁止**把模型文本、provider 内容或未授权 proposal 的字符串并入该集合。
+代码事实（两 lens 互不包含，**不存在谁更严**）：
+
+```text
+· rrf.mjs:271  PRIVATE_PATH_SHAPE 拒绝任意 ≥2 段绝对路径 + 盘符根 + ~
+  plan-contract.mjs:106 只拒绝 profile 根（/Users /home C:\Users ~）
+· plan lens 无 URL 分支；provider lens 对 URL 走 https-only / no-userinfo / 多层编码凭据检查
+· 机械证据（仓库自带测试，非推断）rrf.test.mjs:996-1008（F8）：
+    '/etc/hosts 文件的作用' 未列入 → unsafe_string；列入 trustedPlanStrings → ok:true
+```
+
+- **作废的旧表述**：本文件早期版本称定向成员"走 plan 边界（更严），与既有
+  plan-owned 成员同等待遇"。该表述**已作废** —— 在既有代码里列入信任集是**放宽**
+  （见上）；只走 plan lens 会把这条既有放宽扩展到新字符串。
+- 双 lens 交集使任一字符串的被接受集合 **⊆ 未信任基线**的被接受集合，
+  因此不引入任何放宽；这仍不是"general caller-defined trust bypass"
+  （沿用 `rrf.mjs` R11 约束）：准入是机械门，不是调用方任意传集合。
+
+**信任集不用于 artifact walk 扩展（与旧稿的实质差异）**：
+
+```text
+MVP 不向 assertArtifactSafe 的既有调用点传入任何扩展 trustedPlanStrings。
+retrieval.mjs / coverage-final-integration.mjs / source-group-selection.mjs
+三处既有调用点逐字不变；trustedPlanStrings 仍 = 既有 plan.queryVariants 集合。
+定向字符串若出现在 provider 结果中 → 按 provider-content 判定（= 基线处理，
+FAIL_CLOSED；代价已在 key-decisions D12「代价」中声明，可归因、可审计、不静默）。
+```
+
+- **禁止**把模型文本、provider 内容或未授权 proposal 的字符串并入任何信任集合。
 
 ### F.4 Provenance（到父 gap 的显式溯源）
 
@@ -346,6 +403,52 @@ evaluateRetrievalRound 增加一个可选显式输入：
 · 该输入由 controller 从 targeted ledger 确定性导出，不由 caller 任意提供；
 · 不得反向把 targeted 尝试写进 executedRoutes 来"顺手"让它被看见
   （那会污染 plannedCoverageCount 与 saturation 前置，并跨越既有 hook 所有权边界）。
+```
+
+### F.7 Execution path（交叉审查修复 F-01；D12-7 的机械落点）
+
+旧稿只写了"复用既有 T06 retrieval primitive（复用，不重写）+ 新增检索入口 = NO"，
+但**没有点名执行路径**，而 targeted 查询按定义不在 `plan.queryVariants` 里 ——
+`runMultiQueryRetrieval` 无法执行它（retrieval.mjs:547）。施工方只有三条路，
+其中两条与既有冻结条款冲突。本节冻结唯一解法：
+
+```text
+唯一入口 = runMultiQueryRetrieval（retrieval.mjs:494），以 additive 可选参数调用：
+
+  runMultiQueryRetrieval({
+    plan, planHash, seam, channels, workDir,
+    targetedQueries = null          // ← 新增，缺省 null
+  })
+
+· targetedQueries === null（缺省）
+    → 逐字执行今天的  for (const query of validated.plan.queryVariants)（:547）
+· targetedQueries = [q1, q2, ...]
+    → 只以这些查询 × providerScope 通道执行一次
+    → plan / planHash 绑定仍为【原 plan】（plan artifact 不可变，planHash 不变）
+    → 返回形状仍为 { ok: true, pool, poolHash, file }（JSDoc :492 / return :798）
+```
+
+```text
+MUST     = 只走这一个入口；结果经既有 rrfFusion → pool → assertArtifactSafe 路径
+MUST_NOT = ① 在 runMultiQueryRetrieval 之外另行组合
+             seam.retrieve + rrfFusion + pool merge + assertArtifactSafe
+             （= 第二管线，与「无第二检索子系统」直接冲突，且两份实现必然漂移）
+           ② 新建第二个检索入口
+           ③ 改写 plan artifact 或 planHash 绑定
+```
+
+**OUTPUT_CONTRACT 更正**：旧稿写的
+`{ channels[], ok, itemCount, retrievedAt, completeness, auth_class }` 是 **channel
+record** 的形状，**不是** `runMultiQueryRetrieval` 的返回形状。真实返回 =
+`{ ok: true, pool, poolHash, file }`（`retrieval.mjs:492` JSDoc、`:798` return）。
+旧稿此处属实为错，已更正；seam map S5 同步更正。
+
+**由此确定的 P1 接触面（两处，均为 additive 且缺省保行为不变）**：
+
+```text
+(1) retrieval-round-controller.mjs：targetedAttempts = { executed, failed }，缺省 0/0
+(2) retrieval.mjs：runMultiQueryRetrieval 的 targetedQueries，缺省 null
+artifact-walk 调用点 = 零改动；trustedPlanStrings = 零改动（见 F.3）
 ```
 
 ---
@@ -509,10 +612,10 @@ SATURATED 只表示"当前检索策略下边际信息增益已衰减"，
 
 | ID | 反例 | 合同落点 |
 |---|---|---|
-| C1 | 同一 gap 反复触发等价查询 | E.6 dedupeKey + E.5(6) |
-| C2 | 模型提出似是而非的无关查询 | E.5(2)(3) + E.7 REJECTED |
-| C3 | targeted 字符串含 provider-like 不可信内容 | F.3 UNCLASSIFIED / plan 边界门 |
-| C4 | 付费检索后、后续分析前崩溃 | F.5 COMMIT_POINT + DUPLICATE_REPLAY_RULE |
+| C1 | 同一 gap 反复触发等价查询（**含跨轮**） | E.6 dedupeKey（键 = gapIdentityCore）+ E.5(6) |
+| C2 | 模型提出似是而非的无关查询 | E.4 MVP 约束（只授权 planOwnedStringRef）+ E.5(9) + E.7 REJECTED |
+| C3 | targeted 字符串含 provider-like 不可信内容 | F.3 双 lens 交集门 + UNCLASSIFIED FAIL_CLOSED |
+| C4 | **commit point 之后**、后续分析前崩溃 | F.5 COMMIT_POINT + DUPLICATE_REPLAY_RULE |
 | C5 | commit point 之前崩溃 | F.5 安全重跑一次 |
 | C6 | 查询只返回重复来源 | G.1 + G.2 |
 | C7 | CONTRADICTION_GAP 再次取到同一侧 | G.3 + G.4 |

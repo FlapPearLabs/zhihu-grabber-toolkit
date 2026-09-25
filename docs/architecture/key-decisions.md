@@ -441,16 +441,39 @@ D12-2  DYNAMIC QUERY IDENTITY
         · 原 plan artifact 保持不可变；动态查询只以 targetedActionId 被引用。
 
 D12-3  DYNAMIC QUERY TRUST
-        只有两个可授权信任类：
+        信任类（封闭枚举）：
         · PLAN_OWNED            —— 精确取自已验证 plan 的既有字符串材料
                                    （queryVariants / opposingFramings / entities /
                                      terminologyVariants.term|variants /
                                      sourceGroupIntents.intent|constraints）
         · TARGETED_CONTROLLER_AUTHORIZED —— 新字符串，必须由 controller 授权，绑定
-                                   targetedActionId + 父 gapId，并过 plan-boundary 字符串门。
+                                   targetedActionId + 父 gapId。
+        · **MVP 授权面 = PLAN_OWNED only**；TARGETED_CONTROLLER_AUTHORIZED（模型自由文本）
+          在 MVP 内**不开放**（DEFERRED，理由见"为什么 MVP 不接受自由文本 queryText"）。
         · 未分类字符串 FAIL_CLOSED，不得执行。
-        · 禁止把 trustedPlanStrings 扩成任意字符串集合；信任集只能由 controller 自身
-          已授权的 action ledger 确定性派生，且成员仍须逐个重过 plan boundary。
+
+        信任门 = **双 lens 交集**（不是"与 plan 自有字符串同等处理"）：
+        候选字符串必须【同时】通过
+          isPlanBoundarySafeString（plan 边界，plan-contract.mjs:130）
+        AND isBoundarySafeString（provider-content 边界，rrf.mjs:421）。
+        代码事实（两 lens 互不包含，不存在谁更严）：
+          · rrf.mjs:271 PRIVATE_PATH_SHAPE 拒绝任意 ≥2 段绝对路径；
+            plan-contract.mjs:106 只拒绝 profile 根（/Users /home C:\Users ~）；
+          · plan lens 无 URL 分支；provider lens 对 URL 走 https-only / no-userinfo /
+            多层编码凭据检查。
+        机械证据（仓库自带测试，非推断）：rrf.test.mjs:996-1008（F8）——
+          '/etc/hosts 文件的作用' 未列入 trustedPlanStrings 时被拒（unsafe_string），
+          列入后被接受（ok:true）。
+        → 结论：在既有代码里"列入信任集"确实是**放宽**（不是更严）。只走 plan lens
+          的旧写法会把这条既有放宽扩展到新字符串，本文档早期版本的"更严、不是放宽"
+          表述**已作废**。双 lens 交集使任一字符串的被接受集合 ⊆ 未信任基线的
+          被接受集合，因此不引入任何放宽。
+
+        信任集**不**用于 artifact walk 扩展（这是与旧稿的另一处实质差异）：
+        MVP **不**向 assertArtifactSafe 的既有调用点传入扩展 trustedPlanStrings；
+        retrieval.mjs / coverage-final-integration.mjs / source-group-selection.mjs
+        三处既有调用点逐字不变。定向字符串若出现在 provider 结果中，
+        按 provider-content 处理（即基线处理，FAIL_CLOSED，代价已声明）。
 
 D12-4  ATTEMPT / ROUTE / STOP ACCOUNTING
         · targeted 尝试计入 budget 分母（attemptsBudgetCount vs maxQueryBudget）。
@@ -469,6 +492,26 @@ D12-6  BUDGET
         · 复用既有 maxQueryBudget + maxRetrievalRounds；新增最小的 per-gap attempt bound
           与 per-gap 归一化 query 去重。
         · 不新建 token / money cost controller。
+
+D12-7  EXECUTION PATH（交叉审查后新增；原候选缺此决策）
+        · 唯一检索入口仍是 runMultiQueryRetrieval。定向查询通过 **additive 可选参数**
+          targetedQueries 传入；缺省 null → 逐字执行今天的
+          `for (const query of validated.plan.queryVariants)`（retrieval.mjs:547）。
+        · 禁止在 runMultiQueryRetrieval 之外另行组合
+          seam.retrieve + rrfFusion + pool merge + assertArtifactSafe
+          —— 那等于第二管线，违反本节"明确排除"条款。
+        · 因此 P1 接触面是**两处** additive、缺省保行为不变的点：
+          (1) retrieval-round-controller：targetedAttempts = { executed, failed }，缺省 0/0
+          (2) runMultiQueryRetrieval：targetedQueries，缺省 null
+          artifact-walk 调用点零改动、trustedPlanStrings 零改动。
+
+D12-8  DEDUPE / ATTEMPT 的作用域 = OCCURRENCE，不是 ROUND（交叉审查后新增）
+        · dedupeKey 与 per-gap attempt bound 一律以 **gapIdentityCore** 为键，
+          即 gapId 去掉 diagnosisRound 后的稳定部分（planHash + occurrenceId +
+          gapType + subjectKey）。
+        · 反例：若把 diagnosisRound 留在键里，同一 gap 在下一轮会拿到新 gapId，
+          等价查询可被再次授权、per-gap 上界也随之归零 —— C1 只被"同轮内"兜住。
+        · diagnosisRound 仅作审计字段，不进入任何去重 / 计数键。
 ```
 
 ### 为什么
@@ -487,6 +530,17 @@ mutate plan 会把"加一条针对性查询"变成"作废全部下游产物"，�
 本决策的做法是：信任集从 **controller 已授权的 action ledger** 确定性派生，
 且每个成员仍被 `isPlanBoundarySafeString` 重新判定 —— 通道仍在 controller 手里。
 
+**为什么 MVP 不接受自由文本 queryText**：这是交叉审查两条独立裁决的共同落点。
+E.5 的八道判定全是**结构性**判定（gapId 存在、字符串门、信任类、溯源、attempt 上界、
+dedupe、预算、providerScope），没有任何一条评估 `queryText` 与 gap 的**语义相关性**。
+因此"一条字符串安全但与 gap 无关的查询"能通过全部判定并被授权 —— 反例 C2
+（模型提出似是而非的无关查询）在旧稿里只是**部分**被机检兜住。
+MVP 的解法不是造一个语义相关性判定器（那会是未授权的新生产设施，且与 E.3.1
+"禁止内容归因"冲突），而是把授权面收窄到 `planOwnedStringRef`：
+plan 里已有 `opposingFramings` / `terminologyVariants` / `entities` /
+`sourceGroupIntents[].intent` 这些**已验证、尚未被执行**的字符串（G-A3 的既有欠账），
+足够覆盖 MVP 的全部 gap 类型。自由文本留到 #107 有评估证据后再议。
+
 **为什么 saturation 前置不能被 targeted 污染**：`plannedRoutes` 当前是
 `seam.listProviders().filter(capability === 'search')` 的**通道身份列表**，长度等于搜索通道数，
 不是 query × provider 全集。若让 targeted 尝试混入该前置分母，等于让少量定向查询
@@ -496,7 +550,10 @@ mutate plan 会把"加一条针对性查询"变成"作废全部下游产物"，�
 ### 代价
 
 - 新增一个 controller-owned 持久化 artifact（gap / targeted action ledger）与其校验；
-- `assertArtifactSafe` 的调用点必须显式传入派生出的扩展信任集，漏传即 fail closed；
+- 定向字符串在**授权时**过双 lens 交集门（D12-3）；既有 artifact-walk 调用点零改动，
+  代价是：定向字符串若出现在 provider 结果中按 provider-content 判定，可能 FAIL_CLOSED
+  地拒绝整批产物（可归因、可审计，不静默）；
+- `runMultiQueryRetrieval` 增加一个 additive 可选参数（D12-7），缺省与今天逐字等价；
 - 检索阶段多一个受控子阶段，STOP 决策面从"轮次"扩展到"轮次 + targeted actions"；
 - AUTHORITY_GAP 在 MVP 内**默认无法被机械判定为 RESOLVED**（#111 未实现），
   必须以 `UNRESOLVED` / `UNKNOWN` 诚实记录，不能靠热度或流行度代理。
@@ -505,6 +562,7 @@ mutate plan 会把"加一条针对性查询"变成"作废全部下游产物"，�
 
 ```text
 · 通用 Gap 框架 / 大 gap taxonomy            —— DEFERRED
+· 模型自由文本 queryText（TARGETED_CONTROLLER_AUTHORIZED）—— MVP 不开放，DEFERRED
 · 泛化 adaptive planner（#110）              —— DESIGN_ONLY，本节不解锁
 · 学到的查询策略 / RL / 通用调度器            —— DEFERRED
 · token / money / provider 成本平台           —— DEFERRED（NEW_COST_CONTROLLER_REQUIRED = NO）

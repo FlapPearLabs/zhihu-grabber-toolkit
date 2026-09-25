@@ -218,19 +218,26 @@ RETRY_OWNER     = controller（按 action identity 幂等）
 BUDGET_OWNER    = controller
 STOP_OWNER      = controller
 
-INPUT_CONTRACT  = { 原 plan（不可变）+ query 覆盖集 + channels=plannedRoutes 通道 }
-OUTPUT_CONTRACT = 与既有 `runMultiQueryRetrieval` 同形状的
-                  { channels[], ok, itemCount, retrievedAt, completeness, auth_class }
+INPUT_CONTRACT  = { 原 plan（不可变，planHash 绑定保持为原 plan）
+                    + targetedQueries（additive 可选，缺省 null）
+                    + channels ⊆ plannedRoutes 通道 }
+OUTPUT_CONTRACT = 既有 `runMultiQueryRetrieval` 的真实返回形状
+                  { ok: true, pool, poolHash, file }（retrieval.mjs:492 / :798）
+                  ※ 旧稿写的 { channels[], ok, itemCount, ... } 是 channel record 形状，已更正
 
 SYNC / ASYNC    = SYNC
 LEGAL_STATES    = 复用既有 T06 输出形状（第二检索子系统 = 非法）
-ILLEGAL_STATES  = 新 provider 基础设施；绕过 provider seam；静默 provider fallback
+ILLEGAL_STATES  = 新 provider 基础设施；绕过 provider seam；静默 provider fallback；
+                  在 runMultiQueryRetrieval 之外另行组合 seam.retrieve + rrfFusion
 FAIL_OPEN / FAIL_CLOSED = FAIL_CLOSED（沿用既有 T06 / seam 的失败身份）
-MUST            = 走既有 provider adapter + seam；planHash 绑定保持为原 plan；
-                  结果经既有安全投影与 `assertArtifactSafe`
-MUST_NOT        = 不得新建搜索子系统；不得改 plan artifact；不得绕过 RRF
+MUST            = 走既有 provider adapter + seam；走唯一入口 `runMultiQueryRetrieval`
+                  （以 targetedQueries 参数调用，缺省与今天逐字等价）；
+                  planHash 绑定保持为原 plan；结果经既有安全投影与 `assertArtifactSafe`
+MUST_NOT        = 不得新建搜索子系统；不得新建第二个检索入口；不得改 plan artifact；
+                  不得绕过 RRF；不得在唯一入口之外复制 channel 构建 / 融合 / 池写入
 
-PRODUCTION_CALLER = 检索阶段 controller → 既有 retrieval primitive
+PRODUCTION_CALLER = 检索阶段 controller → `runMultiQueryRetrieval`（唯一入口）
+                    （contract F.7 冻结：参数化既有 primitive，而非另起组合路径）
 TEST_CALLER       = 同上（实现授权后）
 OBSERVABLE_PRODUCTION_EFFECT = 一次真实 provider 检索（付费/限速消耗）+ targeted round 产物
 ```
@@ -408,7 +415,10 @@ OBSERVABLE_PRODUCTION_EFFECT = 既有 STOP 语义零变化；gap 层多一条 bo
 
 ```text
 新增 provider adapter           = NO
-新增检索入口                     = NO（复用既有 retrieval primitive）
+新增检索入口                     = NO（既有**唯一**入口 `runMultiQueryRetrieval`
+                                   以 additive 可选参数 `targetedQueries` 被调用；
+                                   不存在第二个入口、也不存在第二个
+                                   seam.retrieve+rrfFusion 组合点）
 新增排序 / 打分规则               = NO（复用既有 RRF）
 新增 canonical identity 规则      = NO（复用既有 questionId 规则）
 新增 corpus / 索引 / 向量库       = NO
