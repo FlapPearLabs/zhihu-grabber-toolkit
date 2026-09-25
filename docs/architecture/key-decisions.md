@@ -394,6 +394,140 @@ contract 把两者拆开后，AGENTS.md §8 本就允许的跨分支并行施工
 
 ---
 
+## D12 — P2-ARI Targeted Re-query：Gap / 动态查询的身份与授权边界
+
+> **命名守卫**：本节 `P2-ARI` = `P2 / ADAPTIVE_RESEARCH_INTELLIGENCE`（#107–#112），
+> 与 2026-08-25 Product Direction 的 `LEGACY P2 = AUTHOR / PERSONAL INTELLIGENCE` 无关。
+>
+> `STATUS = CANDIDATE`（候选权威；未经 independent review + 授权集成前不生效）
+> `IMPLEMENTATION_AUTHORIZATION = NONE`
+> `BASE_SHA = 7915e84a20b62086c53d045549329111098ca11e`
+> `BRANCH = spec/p2-ari-f02-targeted-requery`
+> `DECISION_RECORD_MECHANISM = SUFFICIENT_EXISTING_MECHANISM`（本节即记录车辆；不新建 `docs/adr/`）
+
+### 问题
+
+P1 的检索语义是**闭合**的：
+
+```text
+Planner → 已验证 plan（planHash）→ queryVariants × provider channels
+        → 确定性 RRF → accumulated Candidate Pool → dense geometry
+        → RCE selection → analysis → synthesis → coverage / STOP
+```
+
+P2-ARI #108 要引入的第一类新事物，是**在证据已被观察之后才产生的查询**。它同时触碰 P1 三条既有权威：
+
+1. `planHash` 是下游产物的依赖身份（`plan-contract.mjs` §4.3）——任何 plan 改动都会让下游变 stale；
+2. 持久化产物的信任分类只有 `plan-owned`（`trustedPlanStrings`，目前 = `plan.queryVariants`）与
+   `provider-content` 两档（`rrf.mjs assertArtifactSafe`）——动态查询两档都不是；
+3. `cumulativeAttemptsCount` / `plannedRoutes` / `maxQueryBudget` / `SATURATED` 的记账语义
+   （`retrieval-round-controller.mjs`）——动态查询是否被计入，会改变 STOP 行为。
+
+若这些不在分解 ticket 之前冻结，施工 Agent 只能自行创设语义，而 self-created semantics 正是 D02
+（Controller owns truth）要防的东西。
+
+### 决策
+
+```text
+D12-1  GAP STATE
+        Gap = controller-owned DERIVED orchestration state。
+        · 语义、身份、持久化、resolution 全部归 controller；模型只能 proposal。
+        · 独立于 ResearchCoverageState（不写入、不改 COVERAGE_STATE_SCHEMA_VERSION）。
+        · 由 planHash 锚定；planHash 变化 → 该 gap ledger 不再可复用。
+
+D12-2  DYNAMIC QUERY IDENTITY
+        = 子级 TargetedQueryAction（child targeted-retrieval action）。
+        · 不 mutate 原 plan、不改 planHash、不新建 plan amendment schema。
+        · 原 plan artifact 保持不可变；动态查询只以 targetedActionId 被引用。
+
+D12-3  DYNAMIC QUERY TRUST
+        只有两个可授权信任类：
+        · PLAN_OWNED            —— 精确取自已验证 plan 的既有字符串材料
+                                   （queryVariants / opposingFramings / entities /
+                                     terminologyVariants.term|variants /
+                                     sourceGroupIntents.intent|constraints）
+        · TARGETED_CONTROLLER_AUTHORIZED —— 新字符串，必须由 controller 授权，绑定
+                                   targetedActionId + 父 gapId，并过 plan-boundary 字符串门。
+        · 未分类字符串 FAIL_CLOSED，不得执行。
+        · 禁止把 trustedPlanStrings 扩成任意字符串集合；信任集只能由 controller 自身
+          已授权的 action ledger 确定性派生，且成员仍须逐个重过 plan boundary。
+
+D12-4  ATTEMPT / ROUTE / STOP ACCOUNTING
+        · targeted 尝试计入 budget 分母（attemptsBudgetCount vs maxQueryBudget）。
+        · targeted 尝试不计入 SATURATED 前置分母；该前置仍只用
+          plannedCoverageCount vs plannedRoutes.length（P1 语义逐字保持不变）。
+        · plannedRoutes 永不被 targeted action 改写（它当前是 provider 通道身份列表，
+          不是 query × provider 全集）。
+        · targeted action 既不能制造 SATURATED，也不能阻止 SATURATED。
+
+D12-5  DURABLE COMMIT / RESUME
+        · checkpoint-first：commit point = 记录 targeted action binding hash 的 writeState。
+        · deterministic action identity 决定重放；已 committed 且 binding hash 校验通过
+          → 绝不重复付费检索。
+
+D12-6  BUDGET
+        · 复用既有 maxQueryBudget + maxRetrievalRounds；新增最小的 per-gap attempt bound
+          与 per-gap 归一化 query 去重。
+        · 不新建 token / money cost controller。
+```
+
+### 为什么
+
+**为什么 gap 必须放在 ResearchCoverageState 之外**：`canonicalizeCoverageState` 输出固定键集，
+新增 gap ledger 等于 `COVERAGE_STATE_SCHEMA_VERSION` 变更 —— 那是 P1 权威变更，不该由 #108 顺手完成。
+放在同级的 controller-owned artifact 里，既保留了 D02 的所有权边界，又让 P1 的账本语义零改动。
+
+**为什么不能 mutate plan**：`planHash` 是下游依赖身份（`planDependencyStatus`），
+`loadCoverageState(workDir, expectedPlanHash)` 会因 `stale_plan_hash` 拒绝整个 ledger。
+mutate plan 会把"加一条针对性查询"变成"作废全部下游产物"，代价与收益完全不成比例。
+
+**为什么不能简单扩 trustedPlanStrings**：`assertArtifactSafe` 的注释已经写明
+"trustedPlanStrings 不是 general caller-defined trust bypass"。让它变成任意字符串集合，
+等于给一条从模型文本直达持久化信任集的通道（`rrf.mjs` 的 R11 修复正是为堵这类通道）。
+本决策的做法是：信任集从 **controller 已授权的 action ledger** 确定性派生，
+且每个成员仍被 `isPlanBoundarySafeString` 重新判定 —— 通道仍在 controller 手里。
+
+**为什么 saturation 前置不能被 targeted 污染**：`plannedRoutes` 当前是
+`seam.listProviders().filter(capability === 'search')` 的**通道身份列表**，长度等于搜索通道数，
+不是 query × provider 全集。若让 targeted 尝试混入该前置分母，等于让少量定向查询
+机械地"证明"计划检索空间已被覆盖 —— 那正是 D07 与 `SATURATION_SEMANTICS_DISCLAIMER`
+要禁止的说法。
+
+### 代价
+
+- 新增一个 controller-owned 持久化 artifact（gap / targeted action ledger）与其校验；
+- `assertArtifactSafe` 的调用点必须显式传入派生出的扩展信任集，漏传即 fail closed；
+- 检索阶段多一个受控子阶段，STOP 决策面从"轮次"扩展到"轮次 + targeted actions"；
+- AUTHORITY_GAP 在 MVP 内**默认无法被机械判定为 RESOLVED**（#111 未实现），
+  必须以 `UNRESOLVED` / `UNKNOWN` 诚实记录，不能靠热度或流行度代理。
+
+### 非决策 / 明确延迟
+
+```text
+· 通用 Gap 框架 / 大 gap taxonomy            —— DEFERRED
+· 泛化 adaptive planner（#110）              —— DESIGN_ONLY，本节不解锁
+· 学到的查询策略 / RL / 通用调度器            —— DEFERRED
+· token / money / provider 成本平台           —— DEFERRED（NEW_COST_CONTROLLER_REQUIRED = NO）
+· BM25 / FTS / vector DB / 第二检索子系统     —— 明确排除
+· 独立 ADR 制度（docs/adr/）                  —— 不创建（见本节 DECISION_RECORD_MECHANISM）
+· #109 Escape Probe 的实现                    —— 不在本节范围
+```
+
+### 与 P1 / #109 的交互
+
+```text
+P1：检索原语、provider seam、RRF、identity、provenance、candidate pool、
+    coverage / STOP 全部复用，零重写。P1 账本 schema 不改。
+    （唯一受影响的 P1 记账语义是 budget 分母需要看到 targeted 尝试 ——
+      以 additive / 默认 0 的显式输入接入，未启用 #108 时行为逐字不变。）
+
+#109：Escape Probe 是 pre-stop 挑战策略。它同样是"观察证据之后的新查询"，
+      因此它必须复用本节的 TargetedQueryAction 身份与授权机制，而不是另建一套。
+      #109 当前状态仍是 WAIT_FOR_108_ARCHITECTURE，本节不推进它。
+```
+
+---
+
 ## 决策之间的关系
 
 这些决策并不是孤立规则：
