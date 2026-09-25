@@ -474,10 +474,26 @@ D12-3  DYNAMIC QUERY TRUST
         MVP **不**向 assertArtifactSafe 的既有调用点传入扩展 trustedPlanStrings。
         既有调用点共**四处**，全部逐字不变（旧稿只列三处，漏了 coverage-state.mjs）：
 
-          (1) retrieval.mjs:761                   new Set(validated.plan.queryVariants)
-          (2) coverage-final-integration.mjs:444   new Set(plan.queryVariants)
-          (3) source-group-selection.mjs:1110      trustedPlanStrings（由 (2) 透传）
-          (4) coverage-state.mjs:519               new Set(ret.plannedQueryVariants)
+          (1) retrieval.mjs:761
+              assertArtifactSafe(pool, { trustedPlanStrings:
+                new Set(validated.plan.queryVariants) })
+          (2) coverage-final-integration.mjs:444
+              assertArtifactSafe(accumulatedPool, { trustedPlanStrings:
+                new Set(Array.isArray(plan.queryVariants) ? plan.queryVariants : []) })
+          (3) source-group-selection.mjs:1110
+              assertArtifactSafe(plainDecision, { trustedPlanStrings })
+              ← 由 coverage-final-integration.mjs:488-490 的
+                persistSelectionDecision(workDir, decision, { trustedPlanStrings:
+                  new Set(Array.isArray(plan?.queryVariants) ? plan.queryVariants : []) })
+                透传而来（**不是**从 (2) 透传；两者同源于 plan.queryVariants）
+          (4) coverage-state.mjs:519
+              assertArtifactSafe(state, { trustedPlanStrings:
+                new Set(ret.plannedQueryVariants) })
+
+        注：`assertArtifactSafe` 在 lib/ 内共 8 处生产调用点；上述四处是**传了
+        trustedPlanStrings** 的那四处（另四处 —— multi-group-execution.mjs:727、
+        coverage-final-integration.mjs:983、p1-runtime-composer.mjs:1421/:1429 ——
+        不传信任集，与本约束无关）。
 
         ★ (4) 是唯一【可运行时改写 + 单 lens】的信任集来源 —— 这是实质风险，不是计数问题：
             · coverage-state.mjs:631-632 updateCoverageState 可写

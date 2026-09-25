@@ -438,6 +438,9 @@ OBSERVABLE_PRODUCTION_EFFECT = 既有 STOP 语义零变化；gap 层多一条 bo
 · GAP → 直接检索           —— 不存在（必须经 S3 授权）
 · 模型 → trustedPlanStrings —— 不存在
 · targeted → plannedRoutes 写入 —— 不存在（plannedRoutes 只由 provider registry 决定）
+· targeted → coverageState.retrieval.plannedQueryVariants 写入 —— 不存在
+  （唯一可运行时改写 + 单 plan lens 的信任集来源 = coverage-state.mjs:519；
+    写入会重新打开 R1 要关闭的放宽向量。详见 SEAM F.3 / key-decisions D12-3）
 · targeted → SATURATED     —— 不存在
 · targeted → retrievalRounds 自增 —— 不存在（targeted action 不是 P1 round）
 ```

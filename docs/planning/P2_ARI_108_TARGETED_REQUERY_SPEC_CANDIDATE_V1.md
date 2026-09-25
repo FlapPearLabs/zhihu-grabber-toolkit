@@ -191,10 +191,15 @@ admit(s) ⟺ isPlanBoundarySafeString(s) AND isBoundarySafeString(s)
 · 信任集【不】用于 artifact walk 扩展：MVP 不向 assertArtifactSafe 既有调用点
   传入扩展 trustedPlanStrings。既有调用点共**四处**，逐字不变（旧稿只列三处，
   漏了 coverage-state.mjs）：
-    (1) retrieval.mjs:761                  new Set(validated.plan.queryVariants)
-    (2) coverage-final-integration.mjs:444  new Set(plan.queryVariants)
-    (3) source-group-selection.mjs:1110     trustedPlanStrings（由 (2) 透传）
-    (4) coverage-state.mjs:519              new Set(ret.plannedQueryVariants)
+    (1) retrieval.mjs:761   new Set(validated.plan.queryVariants)
+    (2) coverage-final-integration.mjs:444
+        new Set(Array.isArray(plan.queryVariants) ? plan.queryVariants : [])
+    (3) source-group-selection.mjs:1110  trustedPlanStrings
+        ← 由 coverage-final-integration.mjs:488-490 persistSelectionDecision 透传
+          （**不是**从 (2) 透传；两者同源于 plan.queryVariants）
+    (4) coverage-state.mjs:519  new Set(ret.plannedQueryVariants)
+  （assertArtifactSafe 在 lib/ 内共 8 处生产调用点；以上四处是传了 trustedPlanStrings
+    的那四处，另四处不传信任集）
   ★ (4) 是唯一【可运行时改写 + 单 lens】的信任集来源：coverage-state.mjs:631-632
     可写 retrieval.plannedQueryVariants，且 :312 只跑 isPlanBoundarySafeString
     （单 plan lens）—— 正是 R1 要关闭的放宽向量。
@@ -320,7 +325,8 @@ round_budget     → 不新建。targeted action 不是 P1 round，不自增 ret
 ```text
 · Gap 必须绑定到"已验证研究状态"中的具体对象（aspect / opposingFraming / sourceGroupIntent）
 · 未知 gap 类型可记录，【不得】转成检索动作
-· 同 gap 在同一 diagnosisRound 内必须收敛为同一 gapId（不得重复创建）
+· 同 gap 必须收敛为同一 `gapIdentityCore`（不得重复创建）—— **跨 diagnosisRound 亦成立**；
+  仅审计用的 `diagnosisRound` 不进任何去重 / 计数键（D12-8）
 · 不得从同一未解决状态无限生成新 gap：per-gap attempt bound + dedupeKey 双重约束
 ```
 
@@ -449,6 +455,7 @@ IDENTITY_REPLAY_CONFLICT —— resume 期间发现同 id 不同内容 → 保�
 
 ```text
 IMPLEMENTATION_AUTHORIZATION = NONE
+TICKET_AUTHORIZATION         = NONE
 
 · #107（Research Evaluation Harness）是评估依赖，当前 OPEN
 · 本 Spec 可以先于 #107 完成而设计，但：

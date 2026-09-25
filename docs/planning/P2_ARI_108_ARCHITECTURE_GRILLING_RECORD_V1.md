@@ -424,3 +424,59 @@ USER_DECISION_REQUIRED = NONE
 CONTRACT_CONFLICT = NONE
 NEXT_LEGAL_ACTION = FINDING_SCOPED RE-REVIEW（新 exact SHA，第三轮）→ PASS → STOP
 ```
+
+---
+
+## 8. FINDING-SCOPED RE-REVIEW（ROUND 3）→ 收敛
+
+```text
+REVIEWED_HEAD   = b8dc1c2815ddff90b05632ece91160765104bee1
+CHANNELS        = ① INDEPENDENT_REVIEWER_OPUS_4_6（--effort max）
+                  ② WORKBUDDY_DEEPSEEK_V4_1_FLASH
+VERDICTS        = ① PASS_WITH_NONBLOCKING_FINDINGS / BLOCKERS = NONE
+                  ② PASS_WITH_NONBLOCKING_FINDINGS / BLOCKERS = NONE
+                  （② 附带声明：其沙箱禁用 Bash，故 HEAD/BASE 未经其机械复核，
+                    由 ① 用 fresh ls-remote 补验通过 —— 见 §7.5 同一陷阱）
+```
+
+### 8.1 判定
+
+```text
+B1        PASS（两通道各自 grep 全树：传 trustedPlanStrings 的生产调用点恰为 4 处，
+              无第五处；(4) 可改写 + 单 lens 属性属实；新禁止在四份文档一致且与
+              D12-4 / F.6.1 同级）
+B2        PASS（E.2 只剩唯一活定义；旧公式仅存于"已作废"标记与 §7.3 历史记录）
+NITS      PASS（双 lens 措辞 / §5 回指 / TICKET_AUTHORIZATION 均已落地）
+REGRESSION PASS（R1–R6 全 PASS；`git diff 7915e84..HEAD -- <代码目录>` = 空）
+GATES     G-1..G-9 全 PASS
+```
+
+### 8.2 折叠的 cosmetic 残留（非阻塞，作者自行补正）
+
+| 残留 | 补正 |
+|---|---|
+| 调用点 (2) 引用省略 `Array.isArray(...) ? ... : []` 保护 | 三处引用改为逐字 |
+| 调用点 (3) 误标"由 (2) 透传" | 改为：由 `coverage-final-integration.mjs:488-490` `persistSelectionDecision` 透传；两者同源于 `plan.queryVariants` |
+| "共四处"易被读成 `assertArtifactSafe` 总数 | 加注：lib/ 内共 8 处生产调用点，其中 4 处传信任集 |
+| SPEC §17:451 只有 `IMPLEMENTATION_AUTHORIZATION` | 补 `TICKET_AUTHORIZATION = NONE` |
+| SPEC §6 收敛表述仍限"同一 diagnosisRound 内" | 改为跨轮亦成立（以 `gapIdentityCore` 收敛） |
+| SEAM MAP §4 未列新的 sibling 禁止 | 补 `targeted → coverageState.retrieval.plannedQueryVariants 写入 —— 不存在` |
+
+### 8.3 闸门结论（终）
+
+```text
+CANDIDATE_STATUS            = CANDIDATE（已通过双通道独立审查，未经授权集成）
+REVIEW_CONVERGENCE          = ROUND 3 / 双通道 PASS_WITH_NONBLOCKING_FINDINGS / BLOCKERS = NONE
+UNREPAIRED                  = 0
+IMPLEMENTATION_AUTHORIZATION = NONE
+TICKET_AUTHORIZATION        = NONE
+PRODUCT_CODE_CHANGE         = NONE
+TEST_BEHAVIOR_CHANGE        = NONE
+ISSUE_CHANGE                = NONE
+USER_DECISION_REQUIRED      = NONE
+CONTRACT_CONFLICT           = NONE
+NEXT_GATE                   = SPEC_INTEGRATION_AND_APPROVAL（须另行授权）
+NEXT_LEGAL_ACTION           = STOP（不建 ticket、不实现、不合并）
+```
+
+> 独立审查通过 **不等于** 生产价值证明，也 **不等于** 实现授权（#107 依赖未解）。
