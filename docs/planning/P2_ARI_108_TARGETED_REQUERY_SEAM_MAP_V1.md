@@ -164,7 +164,9 @@ ILLEGAL_STATES  = 未授权即进入检索；信任类缺失；gapId 不存在�
                   同一 (gapId, normalizedQuery, providerScope) 重复授权；
                   超出 per-gap attempt bound；超出全局 maxQueryBudget
 FAIL_OPEN / FAIL_CLOSED = FAIL_CLOSED
-MUST            = 逐条过 plan-boundary 字符串门；写清父 gap 溯源；分配 deterministic identity
+MUST            = 逐条过**双 lens 交集**字符串门（isPlanBoundarySafeString AND
+                  isBoundarySafeString，见 SEAM F.3 / key-decisions D12-3 —— 单写
+                  "plan-boundary 门"是不完整表述）；写清父 gap 溯源；分配 deterministic identity
 MUST_NOT        = 不得把 trustedPlanStrings 扩成任意集合；不得让模型文本自授权；
                   不得为同一 gap 反复授权等价查询
 

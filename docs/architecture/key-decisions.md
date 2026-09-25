@@ -401,6 +401,7 @@ contract 把两者拆开后，AGENTS.md §8 本就允许的跨分支并行施工
 >
 > `STATUS = CANDIDATE`（候选权威；未经 independent review + 授权集成前不生效）
 > `IMPLEMENTATION_AUTHORIZATION = NONE`
+> `TICKET_AUTHORIZATION = NONE`
 > `BASE_SHA = 7915e84a20b62086c53d045549329111098ca11e`
 > `BRANCH = spec/p2-ari-f02-targeted-requery`
 > `DECISION_RECORD_MECHANISM = SUFFICIENT_EXISTING_MECHANISM`（本节即记录车辆；不新建 `docs/adr/`）
@@ -470,10 +471,24 @@ D12-3  DYNAMIC QUERY TRUST
           被接受集合，因此不引入任何放宽。
 
         信任集**不**用于 artifact walk 扩展（这是与旧稿的另一处实质差异）：
-        MVP **不**向 assertArtifactSafe 的既有调用点传入扩展 trustedPlanStrings；
-        retrieval.mjs / coverage-final-integration.mjs / source-group-selection.mjs
-        三处既有调用点逐字不变。定向字符串若出现在 provider 结果中，
-        按 provider-content 处理（即基线处理，FAIL_CLOSED，代价已声明）。
+        MVP **不**向 assertArtifactSafe 的既有调用点传入扩展 trustedPlanStrings。
+        既有调用点共**四处**，全部逐字不变（旧稿只列三处，漏了 coverage-state.mjs）：
+
+          (1) retrieval.mjs:761                   new Set(validated.plan.queryVariants)
+          (2) coverage-final-integration.mjs:444   new Set(plan.queryVariants)
+          (3) source-group-selection.mjs:1110      trustedPlanStrings（由 (2) 透传）
+          (4) coverage-state.mjs:519               new Set(ret.plannedQueryVariants)
+
+        ★ (4) 是唯一【可运行时改写 + 单 lens】的信任集来源 —— 这是实质风险，不是计数问题：
+            · coverage-state.mjs:631-632 updateCoverageState 可写
+              retrieval.plannedQueryVariants；
+            · coverage-state.mjs:312 只对其逐条跑 isPlanBoundarySafeString（**单 plan lens**），
+              再交给 :519 的 artifact walk —— 正是 R1 要关闭的那条放宽向量。
+          → **新增禁止（与 D12-4 禁写 plannedRoutes、F.6.1 禁写 executedRoutes 同级）**：
+            MVP 禁止把定向字符串写入 coverageState.retrieval.plannedQueryVariants。
+
+        定向字符串若出现在 provider 结果中，按 provider-content 处理
+        （即基线处理，FAIL_CLOSED，代价已声明）。
 
 D12-4  ATTEMPT / ROUTE / STOP ACCOUNTING
         · targeted 尝试计入 budget 分母（attemptsBudgetCount vs maxQueryBudget）。

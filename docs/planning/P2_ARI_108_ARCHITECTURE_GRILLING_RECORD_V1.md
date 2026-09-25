@@ -11,6 +11,8 @@ MODE          = FINDING_SCOPED ADVERSARIAL REVIEW（不是第二次架构设计�
 METHODOLOGY   = 仓库既有 grilling 方法（针对所有权 / 身份 / 持久化 / 重放 / 信任边界 /
                 预算语义 / STOP 语义 / 生产 caller / 重复执行 / 第二管线 / 不必要抽象 逐项攻击）
 IMPLEMENTATION_AUTHORIZATION = NONE
+TICKET_AUTHORIZATION         = NONE
+PRODUCT_CODE_CHANGE          = NONE
 BASE_SHA      = 7915e84a20b62086c53d045549329111098ca11e
 BRANCH        = spec/p2-ari-f02-targeted-requery
 ```
@@ -248,7 +250,11 @@ GRILLING = FINDINGS_FOUND_AND_REPAIRED
 FINDINGS_TOTAL = 7（P0 ×3，P1 ×4）
 UNREPAIRED = 0
 NEW_PRODUCT_SCOPE_INTRODUCED = NO
-P1_AUTHORITY_CHANGE_REQUIRED = 否（唯一 P1 接触面是 additive 默认 0 的显式输入）
+P1_AUTHORITY_CHANGE_REQUIRED = 否
+                              （本节写于交叉审查之前，彼时记为"唯一"接触面；
+                                经 §6 修正为**两处** additive —— round controller
+                                targetedAttempts + retrieval.mjs targetedQueries，
+                                均缺省保行为不变。以 §6.2/§6.3 为准）
 USER_DECISION_REQUIRED = NONE
 CONTRACT_CONFLICT = NONE
 NEXT_LEGAL_ACTION = FRESH INDEPENDENT REVIEW（exact candidate SHA）
@@ -292,7 +298,10 @@ rrf.test.mjs:996-1008 F8 机械证据：
 → **裁定：DeepSeek RF-01 成立，Claude F-03 偏轻。**
 旧稿"更严、不是放宽"的表述**整条作废**。修复后的信任门 = **双 lens 交集**
 （`isPlanBoundarySafeString(s) AND isBoundarySafeString(s)`），任一 lens 判不安全即 REJECTED。
-补充约束：信任集**不用于** artifact-walk 扩展，三处调用点零改动。
+补充约束：信任集**不用于** artifact-walk 扩展，**四处**调用点零改动
+（retrieval.mjs:761 / coverage-final-integration.mjs:444 / source-group-selection.mjs:1110 /
+coverage-state.mjs:519）；并对 coverage-state 那条**新增**"禁止把定向字符串写入
+`retrieval.plannedQueryVariants`"的硬约束 —— 它是唯一可运行时改写且只过单 plan lens 的信任集。
 
 ### 6.2 修复清单（6 条，全部 finding-scoped）
 
@@ -316,4 +325,102 @@ P1_AUTHORITY_CHANGE_REQUIRED = 否（接触面仍为两处 additive、缺省保�
 USER_DECISION_REQUIRED = NONE
 CONTRACT_CONFLICT = NONE
 NEXT_LEGAL_ACTION = FINDING_SCOPED RE-REVIEW（新 exact SHA）→ PASS → STOP
+```
+
+---
+
+## 7. FINDING-SCOPED RE-REVIEW（ROUND 2）→ 第二轮修复
+
+```text
+REVIEWED_HEAD   = 7bdad0cb7a284d0e486fdc5cf873aa67fc169bdb
+CHANNELS        = ① INDEPENDENT_REVIEWER_OPUS_4_6_FINDING_SCOPED_R2
+                  ② WORKBUDDY_DEEPSEEK_V4_1_FLASH / FINDING_SCOPED_RE-REVIEW
+VERDICTS        = ① PASS_WITH_NONBLOCKING_FINDINGS / BLOCKERS = NONE（R1–R6 全 PASS）
+                  ② CHANGES_REQUESTED / BLOCKERS = B1 + B2
+```
+
+### 7.1 两通道一致确认的部分（不争论）
+
+R2 / R3 / R4 / R6 双通道全部 PASS：
+
+```text
+R2  runMultiQueryRetrieval 是 retrieval.mjs 唯一导出函数；:547 默认循环逐字忠实；
+    :492/:798 返回形状 {ok,pool,poolHash,file} 属实；seam.retrieve(:552) 与
+    rrfFusion(:716) 在 lib/ 内各只有一个调用点 → 不存在第二组合点。
+R3  cumulativeAttemptsCount(:242) 与 BUDGET_STOP 分母 maxQueryBudget(:288)、
+    SATURATED 前置分母 plannedRoutes.length(:305-306) 均未被改动；
+    targetedAttempts 缺省 0/0 时 plannedCoverageCount 逐字等于旧值。
+R4  MVP = planOwnedStringRef only 在全部 7 处文档中一致；无残留授权模型查询串。
+R6  C4 已限定为"commit point 之后"，C5 覆盖之前；单一 commit point + 锚定
+    state.hashes + validateArtifactCheckpoint，第二未锚定凭证被显式禁止。
+```
+
+### 7.2 B1 —— 信任集调用点漏列第四处（两通道都发现，定级不同）
+
+```text
+CLAUDE   NIT-A（non-blocking）：漏列 coverage-state.mjs:519
+DEEPSEEK B1（BLOCKING）：同一处，且指出它是唯一【可运行时改写 + 单 lens】的信任集
+```
+
+作者回代码自证（四处调用点，机械枚举）：
+
+```text
+(1) retrieval.mjs:761                  new Set(validated.plan.queryVariants)
+(2) coverage-final-integration.mjs:444 new Set(plan.queryVariants)
+(3) source-group-selection.mjs:1110    trustedPlanStrings（由 (2) 透传）
+(4) coverage-state.mjs:519             new Set(ret.plannedQueryVariants)   ← 旧稿漏列
+```
+
+且 (4) 确有实质风险（DeepSeek 定级更准）：
+
+```text
+coverage-state.mjs:631-632  updateCoverageState 可写 retrieval.plannedQueryVariants
+coverage-state.mjs:312      只对其逐条跑 isPlanBoundarySafeString（单 plan lens）
+                            → 再交给 :519 的 artifact walk
+                            → 正是 R1 要关闭的那条放宽向量
+```
+
+→ **裁定：按 DeepSeek 的 BLOCKING 定级处理。** 四处调用点已在四份文档中补齐，
+并**新增硬约束**：MVP 禁止把定向字符串写入 `coverageState.retrieval.plannedQueryVariants`
+（与 D12-4 禁写 `plannedRoutes`、F.6.1 禁写 `executedRoutes` 同级）。
+
+### 7.3 B2 —— E.2 出现两个互斥的 gapId 定义（仅 DeepSeek 发现）
+
+```text
+旧 E.2:85-91  gapId = sha256('p2-ari-gap/v1:' + …含 diagnosisRound)
+旧 E.2:103    gapId = gapIdentityCore + ':' + diagnosisRound
+→ 字段集与构造方式互斥（hash 内 vs 拼接、前缀不同）→ 实现者无法推出确定性身份
+```
+
+→ 已合并为**唯一定义**：`gapIdentityCore`（不含 `diagnosisRound`）+ `gapId = core + ':' + round`；
+旧公式显式标注"已整条作废"。
+
+### 7.4 三条 non-blocking nit（Claude NIT-A/B/C，已一并修复）
+
+| nit | 修复 |
+|---|---|
+| NIT-A 调用点漏列 | 见 §7.2（按 blocking 处理） |
+| NIT-B SEAM_MAP S3 / SPEC §9 仍写"plan-boundary 字符串门"（单 lens 表述） | 改为**双 lens 交集门** |
+| NIT-C §5 仍写"唯一 P1 接触面" | 已加注指向 §6.2/§6.3（两处） |
+
+### 7.5 附：一条 reviewer 事实性错误（记录以免后续引用）
+
+Claude R2 报 `BASE_VERIFIED = master @ 1e711d0a…，7915e84 不在 master 上`。
+作者机械核验：本 worktree 的**本地** remote-tracking ref `origin/master` 确实是
+`1e711d0a`（陈旧 P1-R06 分支 tip），但 **fresh `git ls-remote --refs origin`** 显示
+remote `refs/heads/master = 7915e84a20b62086c53d045549329111098ca11e`，
+且 `git merge-base --is-ancestor 7915e84 HEAD` = 真、`diff 7915e84..HEAD -- <代码目录>` = 空。
+→ **以 fresh ls-remote 为准；本地 tracking ref 不可作为 base 证据。**
+
+### 7.6 闸门结论（第二轮修复后）
+
+```text
+ROUND_2_REPAIR = FINDINGS_FOUND_AND_REPAIRED
+FINDINGS_TOTAL = 5（B1 + B2 + 3 nits）
+UNREPAIRED = 0
+NEW_PRODUCT_SCOPE_INTRODUCED = NO（只补枚举 + 新增一条"禁止写入"约束）
+P1_AUTHORITY_CHANGE_REQUIRED = 否
+USER_DECISION_REQUIRED = NONE
+CONTRACT_CONFLICT = NONE
+NEXT_LEGAL_ACTION = FINDING_SCOPED RE-REVIEW（新 exact SHA，第三轮）→ PASS → STOP
 ```

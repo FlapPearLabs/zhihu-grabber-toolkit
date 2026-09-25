@@ -189,8 +189,16 @@ admit(s) ⟺ isPlanBoundarySafeString(s) AND isBoundarySafeString(s)
 
 ```text
 · 信任集【不】用于 artifact walk 扩展：MVP 不向 assertArtifactSafe 既有调用点
-  传入扩展 trustedPlanStrings；retrieval.mjs / coverage-final-integration.mjs /
-  source-group-selection.mjs 三处调用点逐字不变
+  传入扩展 trustedPlanStrings。既有调用点共**四处**，逐字不变（旧稿只列三处，
+  漏了 coverage-state.mjs）：
+    (1) retrieval.mjs:761                  new Set(validated.plan.queryVariants)
+    (2) coverage-final-integration.mjs:444  new Set(plan.queryVariants)
+    (3) source-group-selection.mjs:1110     trustedPlanStrings（由 (2) 透传）
+    (4) coverage-state.mjs:519              new Set(ret.plannedQueryVariants)
+  ★ (4) 是唯一【可运行时改写 + 单 lens】的信任集来源：coverage-state.mjs:631-632
+    可写 retrieval.plannedQueryVariants，且 :312 只跑 isPlanBoundarySafeString
+    （单 plan lens）—— 正是 R1 要关闭的放宽向量。
+    → **禁止**把定向字符串写入 coverageState.retrieval.plannedQueryVariants
 · 定向字符串若出现在 provider 结果中 → 按 provider-content 判定（基线处理，FAIL_CLOSED）
 · 沿用 rrf.mjs R11：这不是 general caller-defined trust bypass（准入是机械门）
 · 模型文本、provider 内容、未授权 proposal 一律不并入
@@ -370,7 +378,8 @@ artifact-walk 调用点零改动；trustedPlanStrings 零改动。
 ## 10. Trust / security
 
 ```text
-· 目标字符串必须过 plan-boundary 字符串门（与 plan 验证同一合同）
+· 目标字符串必须过**双 lens 交集**字符串门（isPlanBoundarySafeString AND
+  isBoundarySafeString；单写"plan-boundary 门"是不完整表述）
 · 信任类封闭枚举：PLAN_OWNED / TARGETED_CONTROLLER_AUTHORIZED / UNCLASSIFIED（fail closed）
 · 信任集第二成员集合只能由 controller 已授权 ledger 派生；成员仍被重新判定
 · 禁止把 trustedPlanStrings 扩成任意 caller 字符串集合（rrf.mjs R11 约束）

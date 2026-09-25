@@ -28,7 +28,8 @@ SPEC_AUTHORITY_NOTE = 本文不发明新语义；与 P1 Approved Spec 冲突时 
 ## 0. 本文件是什么、不是什么
 
 - 冻结 #108 引入的**跨模块可观察合同**，使实现 ticket 能在冻结面上做 contract test；
-- **不**创建 P2 通用框架；**不**冻结私有函数名 / 文件布局 / 内部状态机实现；
+- **不**创建 P2-ARI 通用框架（命名守卫：`P2-ARI` = `P2 / ADAPTIVE_RESEARCH_INTELLIGENCE`，
+  不得与 LEGACY P2 = AUTHOR / PERSONAL INTELLIGENCE 混淆）；**不**冻结私有函数名 / 文件布局 / 内部状态机实现；
 - **不**改动 P1 SEAM A/B/C/D 的任何版本或字段；
 - **不**授权实现（见 `IMPLEMENTATION_AUTHORIZATION = NONE`）。
 
@@ -82,26 +83,26 @@ AUTHORITY_GAP     —— 现有 evidence 以评论/二手材料为主，期望�
 ### E.2 Gap identity
 
 ```text
-gapId = sha256( 'p2-ari-gap/v1:' + canonicalJson({
-          planHash,                 // 64hex，plan-contract 权威
-          occurrenceId,             // state.mjs（P1-R02）——gap 不跨 occurrence 复用
-          gapType,                  // E.1 枚举成员
-          subjectKey,               // controller-mechanical 主语身份，见 E.3
-          diagnosisRound            // 产生该诊断的检索轮 index（非负整数）
-        }) )
-```
-
-- `gapId` 由 **controller** 计算与赋值；模型不得提供 `gapId`。
-- 相同 `(planHash, occurrenceId, gapType, subjectKey)` 在**同一 diagnosisRound**内
-  必须收敛为同一个 `gapId`（同 gap 不得被重复创建）。
-
-**跨轮稳定身份（D12-8，交叉审查修复 RF-03）**：
-
-```text
 gapIdentityCore = sha256( 'p2-ari-gap-core/v1:' + canonicalJson({
-                    planHash, occurrenceId, gapType, subjectKey }) )   // 不含 diagnosisRound
-gapId           = gapIdentityCore + ':' + diagnosisRound               // 全身份，含轮次
+                    planHash,        // 64hex，plan-contract 权威
+                    occurrenceId,    // state.mjs（P1-R02）——gap 不跨 occurrence 复用
+                    gapType,         // E.1 枚举成员
+                    subjectKey       // controller-mechanical 主语身份，见 E.3
+                  }) )               // ★ 不含 diagnosisRound
+
+gapId           = gapIdentityCore + ':' + diagnosisRound
+                  // diagnosisRound = 产生该诊断的检索轮 index（非负整数），仅审计
 ```
+
+- **本文件只有这一个 `gapId` 定义。** 早期版本曾并列第二个公式
+  `sha256('p2-ari-gap/v1:' + …含 diagnosisRound)`，**已整条作废** ——
+  两个公式的字段集与构造方式互斥（hash 内 vs 拼接、前缀不同），
+  实现者无法推出确定性身份。
+- `gapId` 由 **controller** 计算与赋值；模型不得提供 `gapId`。
+- 相同 `(planHash, occurrenceId, gapType, subjectKey)` 必须收敛为同一个
+  `gapIdentityCore`（同 gap 不得被重复创建）—— **跨轮亦成立**。
+
+**跨轮稳定身份（D12-8，交叉审查修复 RF-03）** —— 即上面唯一定义中的 `gapIdentityCore`：
 
 - **所有去重与计数键一律用 `gapIdentityCore`**（E.6 dedupeKey、E.5(5) per-gap attempt
   上界）。`diagnosisRound` **只作审计字段**，不得进入任何去重 / 计数键。
@@ -321,8 +322,19 @@ admit(s)  ⟺  isPlanBoundarySafeString(s)   // plan 边界，plan-contract.mjs:
 
 ```text
 MVP 不向 assertArtifactSafe 的既有调用点传入任何扩展 trustedPlanStrings。
-retrieval.mjs / coverage-final-integration.mjs / source-group-selection.mjs
-三处既有调用点逐字不变；trustedPlanStrings 仍 = 既有 plan.queryVariants 集合。
+既有调用点共**四处**，全部逐字不变（旧稿只列三处，漏了 coverage-state.mjs）：
+
+  (1) retrieval.mjs:761                   new Set(validated.plan.queryVariants)
+  (2) coverage-final-integration.mjs:444   new Set(plan.queryVariants)
+  (3) source-group-selection.mjs:1110      trustedPlanStrings（由 (2) 透传）
+  (4) coverage-state.mjs:519               new Set(ret.plannedQueryVariants)
+
+★ (4) 是唯一【可运行时改写 + 单 lens】的信任集来源（实质风险，非计数问题）：
+    · coverage-state.mjs:631-632 updateCoverageState 可写 retrieval.plannedQueryVariants；
+    · coverage-state.mjs:312 只对其逐条跑 isPlanBoundarySafeString（**单 plan lens**），
+      再交给 :519 的 artifact walk —— 正是 R1 要关闭的那条放宽向量。
+  → **新增禁止**：MVP 禁止把定向字符串写入 coverageState.retrieval.plannedQueryVariants。
+
 定向字符串若出现在 provider 结果中 → 按 provider-content 判定（= 基线处理，
 FAIL_CLOSED；代价已在 key-decisions D12「代价」中声明，可归因、可审计、不静默）。
 ```
