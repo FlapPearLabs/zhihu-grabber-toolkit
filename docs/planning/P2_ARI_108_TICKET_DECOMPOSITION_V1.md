@@ -6,8 +6,11 @@
 
 ```text
 DOCUMENT_ID = P2_ARI_108_TICKET_DECOMPOSITION_V1
-STATUS = REVIEW_PENDING
-AUTHORITY_CLASS = NON_AUTHORITATIVE_PLANNING_CANDIDATE
+STATUS = APPROVED / INTEGRATED（15 票 P2A-T01…T15 与 19 条直接边语义冻结，
+         语义 = 被审 SHA 1de3c5481d876fefc2c59f17206a65e0b62fcff8，未因提升而改写）
+AUTHORITY_CLASS = AUTHORITATIVE_TICKET_PLAN（PLANNING / EXECUTION TICKET PLAN）
+                  —— repository-native 等价词汇；参照 AGENTS.md §5.1
+                  "Approved Spec / governance authority change" 的双 reviewer quorum
 BASE_MASTER_SHA = 504021b8965956d19fe4a17a9181cfe2c6bba93f
 BRANCH = planning/p2-ari-f02-ticket-decomposition
 TARGET_ISSUE = #108（P2-F02 Gap-aware Targeted Re-query）
@@ -19,7 +22,12 @@ SCOPE = 仅本文件 + P2_ARI_108_TICKET_GRAPH_V1.md；零代码 / 零 Spec / �
 TICKET_COUNT = 15（P2A-T01 … P2A-T15）
 TARGET_STATUS = NOT_IMPLEMENTED
 IMPLEMENTATION_AUTHORIZATION = NONE
-ISSUE_CREATION_AUTHORIZATION = NONE
+ISSUE_CREATION_AUTHORIZATION = YES
+  —— 仅授权按本文发布 15 张 #108 child Issue；
+     Issue 创建授权 **≠** 实现授权（IMPLEMENTATION_AUTHORIZATION 仍为 NONE）
+REVIEWED_PLANNING_SHA = 1de3c5481d876fefc2c59f17206a65e0b62fcff8
+REVIEWED_PLANNING_BRANCH = planning/p2-ari-f02-ticket-decomposition
+PROMOTION_BASE = 1de3c5481d876fefc2c59f17206a65e0b62fcff8（提升只改状态/权威元数据）
 VERSION_ASSIGNMENT = UNASSIGNED
 PROJECT_MEMORY_UPDATE_REQUIRED = NO
 REVIEWED_CANDIDATE_SHA = 2e40724b6405d50e80737aa9a07a76f1b92fe601
@@ -34,7 +42,9 @@ Date: 2026-09-26
   × 重新设计 #108 架构（D1–D6 / D12-1..D12-8 一律不重开）
   × 新 seam、新语义、新 Spec 条款
   × 实现授权（IMPLEMENTATION_AUTHORIZATION = NONE）
-  × GitHub child Issue 创建授权（ISSUE_CREATION_AUTHORIZATION = NONE）
+  × GitHub child Issue 的**执行**授权（ISSUE_CREATION_AUTHORIZATION = YES 仅授权发布
+    Issue 文本；每张 child Issue 初始状态 = PLANNED_NOT_AUTHORIZED，
+    Problem statement 之外不得据此开工）
   × 产品价值声明（#108 是否提升研究质量依赖 #107，见 §9）
   ```
 - 任何 ticket 的定义存在 **≠** 该 ticket 已被授权执行。实现授权发生在
@@ -933,12 +943,35 @@ GUARD_FREE_FORM_QUERY_NOT_AUTHORIZED_IN_MVP = PRESENT
 ## 12. 状态与下一 gate
 
 ```text
-STATUS = REVIEW_PENDING
+STATUS = APPROVED / INTEGRATED
+AUTHORITY_CLASS = AUTHORITATIVE_TICKET_PLAN
 IMPLEMENTATION_AUTHORIZATION = NONE
-ISSUE_CREATION_AUTHORIZATION = NONE
-NEXT_LEGAL_ACTION = INDEPENDENT_TICKET_GRAPH_REVIEW（exact SHA，READ_ONLY，NO_REPAIR）
-NEXT_GATE = TICKET_GRAPH_INTEGRATION_AND_ISSUE_CREATION_AUTHORIZATION
+ISSUE_CREATION_AUTHORIZATION = YES
+NEXT_LEGAL_ACTION = 按本文发布 15 张 #108 child Issue（文本一致性源自本文档集成版本）
+NEXT_GATE = P2A_INITIAL_START_GATE（单独授权；dependency-ready ≠ implementation-authorized）
 ```
 
 > 架构批准 **不等于** 实现授权，也 **不等于** 产品价值已证明（#107 OPEN）。
-> 本文不创建任何 GitHub child Issue，不启动 #109/#110/#111/#112。
+> 本文不启动 #109/#110/#111/#112。
+
+## 12.1 提升（promotion）provenance
+
+```text
+REVIEWED_PLANNING_SHA   = 1de3c5481d876fefc2c59f17206a65e0b62fcff8
+REVIEWED_PLANNING_BRANCH = planning/p2-ari-f02-ticket-decomposition
+BASE_MASTER_SHA         = 504021b8965956d19fe4a17a9181cfe2c6bba93f
+PROMOTION_DELTA         = 仅本文档 + P2_ARI_108_TICKET_GRAPH_V1.md 的
+                          状态 / 权威 / provenance 元数据（ticket 正文零改写）
+PROMOTION_SEMANTIC_CHANGE = NONE（15 票、19 直接边、互逆、无环、所有权矩阵全部不变）
+PROMOTION_REVIEW_QUORUM = AGENTS.md §5.1「Approved Spec / governance authority change」
+                          = 1 × CONTRACT_REVIEWER + 1 × CONSISTENCY_REVIEWER，同 exact HEAD
+PROMOTION_REVIEW_VERDICT = 见 §12.2（append-only 补全）
+ISSUE_CREATION_AUTHORIZATION_USED_AFTER_INTEGRATION = 待发布后回填
+DEPENDENCY_READY_SET    = { P2A-T01, P2A-T02, P2A-T04 }（记录用，**未**授权启动）
+INVARIANT               = Issue 创建授权 ≠ 实现授权；
+                          #107 只外部阻塞 P2A-T15；T01–T14 NOT BLOCKED BY #107
+```
+
+提升前的 CANDIDATE 阶段闸门史实（`REVIEW_PENDING` + `NEXT_GATE =
+TICKET_GRAPH_INTEGRATION_AND_ISSUE_CREATION_AUTHORIZATION`）保留在 git history
+（`planning/p2-ari-f02-ticket-decomposition` @ `1de3c54`）中，不在本文内静默改写。
