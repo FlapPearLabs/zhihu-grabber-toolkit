@@ -28,6 +28,8 @@ ISSUE_CREATION_AUTHORIZATION = YES
 REVIEWED_PLANNING_SHA = 1de3c5481d876fefc2c59f17206a65e0b62fcff8
 REVIEWED_PLANNING_BRANCH = planning/p2-ari-f02-ticket-decomposition
 PROMOTION_BASE = 1de3c5481d876fefc2c59f17206a65e0b62fcff8（提升只改状态/权威元数据）
+PROMOTION_BRANCH = planning/p2-ari-f02-ticket-graph-integration（本文档提升后所在分支；
+                   BRANCH 字段保留为**被审** planning 分支，避免 CANDIDATE 期史实被覆写）
 VERSION_ASSIGNMENT = UNASSIGNED
 PROJECT_MEMORY_UPDATE_REQUIRED = NO
 REVIEWED_CANDIDATE_SHA = 2e40724b6405d50e80737aa9a07a76f1b92fe601
@@ -47,8 +49,10 @@ Date: 2026-09-26
     Problem statement 之外不得据此开工）
   × 产品价值声明（#108 是否提升研究质量依赖 #107，见 §9）
   ```
-- 任何 ticket 的定义存在 **≠** 该 ticket 已被授权执行。实现授权发生在
-  `TICKET_GRAPH_INTEGRATION_AND_ISSUE_CREATION_AUTHORIZATION` 之后的独立 gate。
+- 任何 ticket 的定义存在 **≠** 该 ticket 已被授权执行。
+  CANDIDATE 阶段的 `TICKET_GRAPH_INTEGRATION_AND_ISSUE_CREATION_AUTHORIZATION` gate
+  已由本次提升（见 §12.1 / §12.2）完成；实现授权仍属**另一个**独立 gate =
+  `P2A_INITIAL_START_GATE`（dependency-ready ≠ implementation-authorized）。
 
 ---
 
@@ -975,3 +979,31 @@ INVARIANT               = Issue 创建授权 ≠ 实现授权；
 提升前的 CANDIDATE 阶段闸门史实（`REVIEW_PENDING` + `NEXT_GATE =
 TICKET_GRAPH_INTEGRATION_AND_ISSUE_CREATION_AUTHORIZATION`）保留在 git history
 （`planning/p2-ari-f02-ticket-decomposition` @ `1de3c54`）中，不在本文内静默改写。
+
+## 12.2 提升审查记录（append-only）
+
+```text
+PROMOTION_REVIEWED_HEAD = 73a0e9caff4b4d10ed0b06b142c92754f588a564
+PROMOTION_BASE          = 1de3c5481d876fefc2c59f17206a65e0b62fcff8
+PROMOTION_REVIEWER_1    = CONTRACT_REVIEWER（fresh / 只读 / exact SHA，独立 subagent）
+PROMOTION_REVIEWER_2    = CONSISTENCY_REVIEWER（fresh / 只读 / 同一 exact HEAD，独立 subagent）
+QUORUM_SOURCE           = AGENTS.md §5.1「Approved Spec / governance authority change」
+VERDICT_1 = PASS_WITH_NONBLOCKING_FINDINGS / OPEN_BLOCKERS = NONE
+VERDICT_2 = PASS_WITH_NONBLOCKING_FINDINGS / OPEN_BLOCKERS = NONE
+OVERALL_VERDICT         = PASS_WITH_NONBLOCKING_FINDINGS（BLOCKERS = NONE → 允许 ff-only 集成）
+```
+
+两条合起来，`OPEN_BLOCKERS = NONE`。非阻塞 finding 共 5 条（两条 reviewer 重叠给出同一批），
+全部只落在**状态/元数据/残留措辞**层，最小修复已按 finding-scoped 处理：
+
+```text
+N-1 GRAPH「本图不创建 Issue」残留            → 改为「本文档自身不执行出版动作」
+N-2 DEC §0「实现授权发生在已撤销 gate 之后」 → 改为 P2A_INITIAL_START_GATE + 保留史实指认
+N-3 DEC §12.1 前向引用不存在的 §12.2        → 本节（§12.2）已补
+N-4 BRANCH 字段（被审 planning 分支）与提升后分支名不同 → 增补 PROMOTION_BRANCH 消歧，
+    不覆写 BRANCH（避免改写 CANDIDATE 期史实）
+N-5 同上：GRAPH header 同步增补 PROMOTION_BRANCH
+```
+
+上述修复**未**触碰任何 ticket 正文、票数/边集、所有权矩阵、覆盖矩阵或授权等级；
+`IMPLEMENTATION_AUTHORIZATION` 仍为 `NONE`（文档级 + 15 票级）。

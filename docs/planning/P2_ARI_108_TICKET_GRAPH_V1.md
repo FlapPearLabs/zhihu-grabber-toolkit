@@ -9,7 +9,8 @@ STATUS = APPROVED / INTEGRATED（19 条直接边语义冻结；
          语义 = 被审 SHA 1de3c5481d876fefc2c59f17206a65e0b62fcff8）
 AUTHORITY_CLASS = AUTHORITATIVE_TICKET_PLAN（PLANNING / EXECUTION TICKET PLAN）
 BASE_MASTER_SHA = 504021b8965956d19fe4a17a9181cfe2c6bba93f
-BRANCH = planning/p2-ari-f02-ticket-decomposition
+BRANCH = planning/p2-ari-f02-ticket-decomposition（被审 planning 分支）
+PROMOTION_BRANCH = planning/p2-ari-f02-ticket-graph-integration（提升后所在分支）
 TICKET_COUNT = 15
 DIRECT_DEPENDENCY_EDGES = 19
 IMPLEMENTATION_AUTHORIZATION = NONE
@@ -21,7 +22,9 @@ NEXT_GATE = P2A_INITIAL_START_GATE（单独授权）
 ```
 
 详细合同、字段与覆盖矩阵见 [Decomposition](P2_ARI_108_TICKET_DECOMPOSITION_V1.md)。
-本图不创建 Issue、不激活实现、不修改 Approved Spec / Seam / D12。
+本文档**自身不执行**出版动作（不在此文件里声明任何 Issue 的存在或结论）；Issue 发布由
+`ISSUE_CREATION_AUTHORIZATION = YES` 授权的独立阶段、按 Decomposition 集成版本原文执行。
+本图不激活实现、不修改 Approved Spec / Seam / D12。
 
 ---
 
