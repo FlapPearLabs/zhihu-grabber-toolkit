@@ -128,7 +128,9 @@ state.hashes / checkpoint binding                 P2A-T06（唯一提交点写�
 retrieval.mjs（targetedQueries）                  P2A-T02
 retrieval-round-controller.mjs（targetedAttempts）P2A-T07
 coverageState.*                                   无票可写（P1 语义零改动；由 P2A-T11 断言）
-accumulated pool                                  P2A-T02（经既有累积路径）+ P2A-T09 编排
+targeted round pool（round work-dir 产物）         P2A-T02（唯一；经 retrieval.mjs:761 安全 walk）
+accumulated pool（accumulated-pool.json）          P2A-T09（唯一写者，位于 coverage-final-
+                                                  integration.mjs；T02 只产出 round pool 交其累积）
 最终产物 gap 区块                                 P2A-T10
 ```
 
@@ -215,8 +217,8 @@ TRUST_GATE_OWNER                   = P2A-T04（纯判定）+ P2A-T11（可执行
 - **IN_SCOPE**: `retrieval.mjs` 的 additive 参数与分支、providerScope 通道构造（复用既有
   `resolveChannels`）、planHash 绑定不变、返回形状不变、既有安全投影复用、
   **本票只负责 `retrieval.mjs:761` 的 round-pool 安全 walk（`assertArtifactSafe`，既有调用点零改动）**；
-  accumulated-pool 的安全 walk 与持久化由 P2A-T09 负责（该文件面独占），本票不得改动
-  `coverage-final-integration.mjs`、focused tests。
+  accumulated-pool 的安全 walk 与持久化由 P2A-T09 负责（该文件面独占），
+  本票**不得改动 `coverage-final-integration.mjs`**；本票自身的 focused tests 不受此限制。
 - **OUT_OF_SCOPE**: 新 provider / 新 capability / 新排序规则 / 新 canonical identity 规则 /
   第二入口 / 在入口外复制融合逻辑 / 改 plan artifact / 任何 `trustedPlanStrings` 变更。
 - **PRODUCER**: 既有 T06 retrieval primitive（参数化后）
@@ -794,20 +796,6 @@ provider seam / 安全投影 / 持久化 walk —— 全部由 T11/T13 的**不�
 | S9 | resolution 与 expectedInformation 机械绑定；无谓词 → UNKNOWN 且 UNRESOLVED / 不得热度代理、不得把 operational failure 写成证据结论 | T08 |
 | S10 | 未解决 gap 留在产物并保持可见 / 不得用 SATURATED 覆盖 unresolved 真值 | T10 |
 | S11 | SATURATED 前置 = plannedCoverageCount；BUDGET_STOP 分母 = maxQueryBudget / 不得让 targeted 制造 saturation、不得让预算耗尽伪装成饱和 | T07 + T13 |
-
-S11 的 H-1…H-8 逐条落点（便于机检）：
-
-```text
-H-1 plannedRoutes 非改写                      → T07（断言）+ T13（回归）
-H-2 SATURATED 前置分母不含 targeted           → T07
-H-3 BUDGET_STOP 分母 = attemptsBudgetCount
-    vs maxQueryBudget（含 targeted）          → T07
-H-4 targeted 不自增 retrievalRounds           → T07
-H-5 targeted 不制造也不阻止 SATURATED         → T07 + T13
-H-6 operational failure ≠ resolved ≠ saturation → T08 + T13
-H-7 模型不得产出 CONTINUE/STOP/SATURATED/RESOLVED → T08
-H-8 run 层 STOP → 非终态 gap 显式落定并保持可见 → T08 + T10
-```
 | E.1 | 封闭枚举；未知类型可记录但不得转检索动作 | T01 |
 | E.2 | 唯一 `gapId` 定义；`gapIdentityCore` 不含 `diagnosisRound`；跨轮收敛 | T01 + T12 |
 | E.3 | subjectKey 三分支；无 intent 时不得塌缩为常数 | T01 |
@@ -834,6 +822,22 @@ H-8 run 层 STOP → 非终态 gap 显式落定并保持可见 → T08 + T10
 | H-6/H-7 | operational failure ≠ resolved/saturation；模型不得产出 CONTINUE/STOP/SATURATED/RESOLVED | T08 |
 | H-8 | run 层 STOP → 非终态 gap 显式落定并保持可见 | T08 + T10 |
 | §5 反例索引 C1–C12 | 全部可机械复现 | T11 / T12 / T13 |
+
+### 7.1 SEAM H 逐条落点（H-1…H-8，便于机检）
+
+上表对 SEAM H 先给范围行（`H-1…H-5` / `H-6/H-7` / `H-8`），此处逐条展开，避免
+`H-3` / `H-4` 只以范围出现：
+
+| 条款 | 内容 | Ticket |
+|---|---|---|
+| H-1 | `plannedRoutes` 永不被 targeted action 改写 | T07（断言）+ T13（回归） |
+| H-2 | SATURATED 前置分母 = `plannedCoverageCount` vs `plannedRoutes.length`（不含 targeted） | T07 |
+| H-3 | BUDGET_STOP 分母 = `attemptsBudgetCount` vs `maxQueryBudget`（**含** targeted） | T07 |
+| H-4 | targeted action 不自增 `retrievalRounds` | T07 |
+| H-5 | targeted 既不能制造 SATURATED，也不能阻止 SATURATED | T07 + T13 |
+| H-6 | operational failure ≠ gap resolved ≠ saturation ≠ "成功但无结果的证据" | T08 + T13 |
+| H-7 | 模型不得产出 CONTINUE / STOP / SATURATED / RESOLVED 中的任何一个 | T08 |
+| H-8 | run 层 STOP 时非终态 gap 显式落定并保持可见 | T08 + T10 |
 
 ## 8. 反例 → 可执行测试归属
 
@@ -903,6 +907,13 @@ COUNTEREXAMPLE_COVERAGE            = COMPLETE（C1–C12 全部出现）
 GUARD_#109 / #110 / #111 / #112    = PRESENT ×4
 GUARD_FREE_FORM_QUERY_NOT_AUTHORIZED_IN_MVP = PRESENT
 ```
+
+> R1 finding-scoped repair（独立 ticket-graph 审查 `59c7a7e` 的 3 条非阻塞 finding）后
+> 已**重跑**同一脚本：上述全部指标不变（15 票 / 19 边 / 互逆 OK / 无环 / 无传递直边 /
+> 语义依赖闭包 COMPLETE / 必填字段 ALL_PRESENT）。R2 复审又指出 2 条非阻塞残留
+> （§7 的 H 细表切断 GFM 表格；T02 IN_SCOPE 措辞与自身 focused tests 冲突），已一并修
+> 正：H 细表移到 §7.1 独立小节；T02 措辞限定为"不得改动 `coverage-final-integration.mjs`"；
+> §4 单一写者矩阵把 `accumulated pool` 明确为 **T09 唯一写者**，T02 只写 targeted round pool。
 
 ### 11.2 逐条结论
 
