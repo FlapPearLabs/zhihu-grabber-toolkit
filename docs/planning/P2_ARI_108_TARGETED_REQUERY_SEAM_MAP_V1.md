@@ -5,16 +5,21 @@
 
 ```text
 DOCUMENT_ID   = P2_ARI_108_TARGETED_REQUERY_SEAM_MAP_V1
-STATUS        = CANDIDATE
-AUTHORITY_CLASS = PLANNING / ARCHITECTURE CANDIDATE
+STATUS        = APPROVED（S1–S11 归属已随 Spec 批准而冻结）
+PREVIOUS_STATUS = CANDIDATE
+AUTHORITY_CLASS = PLANNING / ARCHITECTURE CONTRACT（冻结；语义唯一权威见 SPEC_AUTHORITY）
 IMPLEMENTATION_AUTHORIZATION = NONE
-TICKET_AUTHORIZATION = NONE
+TICKET_AUTHORIZATION = TICKET_DECOMPOSITION_ONLY
 BASE_SHA      = 7915e84a20b62086c53d045549329111098ca11e
-BRANCH        = spec/p2-ari-f02-targeted-requery
+REVIEWED_CANDIDATE_SHA = 2e40724b6405d50e80737aa9a07a76f1b92fe601
+PROMOTION_BRANCH = spec/p2-ari-f02-spec-approval
 TARGET_ISSUE  = #108（P2-F02 Gap-aware Targeted Re-query）
 COMPANION     = P2_ARI_108_TARGETED_REQUERY_SEAM_CONTRACT_V1.md
-               P2_ARI_108_TARGETED_REQUERY_SPEC_CANDIDATE_V1.md
-DECISION_RECORD = docs/architecture/key-decisions.md D12
+               ../specs/p2-ari-f02-targeted-requery.md（语义唯一权威，已 APPROVED）
+DECISION_RECORD = docs/architecture/key-decisions.md D12（已 APPROVED）
+SPEC_AUTHORITY = ../specs/p2-ari-f02-targeted-requery.md
+STATUS_CHANGE_NOTE  = 本文件保留在 docs/planning/（参照 P1_SEAM_CONTRACTS_V1 的仓库既有约定）；
+                      本次 promotion 只改状态/权威元数据，不改任何 seam 归属或代码事实基线。
 CODE_AUTHORITY_AT_BASE_SHA =
   research-orchestration/lib/{plan-contract,planner,retrieval,rrf,provider-seam,
   coverage-state,retrieval-round-controller,coverage-final-integration,state,

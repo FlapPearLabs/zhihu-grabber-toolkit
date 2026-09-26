@@ -1,30 +1,69 @@
-# P2-ARI #108 — Gap-aware Targeted Re-query Spec Candidate V1
+# P2-ARI #108 — Gap-aware Targeted Re-query — Approved Spec V1
 
 > **命名守卫**：本文 `P2-ARI` = `P2 / ADAPTIVE_RESEARCH_INTELLIGENCE`（#107–#112），
 > 指 adaptive-research-intelligence backlog。它**不是** 2026-08-25 Product Direction 中的
 > `LEGACY P2 = AUTHOR / PERSONAL INTELLIGENCE`。本文不修改、不重解释、不覆盖 LEGACY P2。
 
 ```text
-DOCUMENT_ID   = P2_ARI_108_TARGETED_REQUERY_SPEC_CANDIDATE_V1
-STATUS        = CANDIDATE
+DOCUMENT_ID   = P2_ARI_108_TARGETED_REQUERY_SPEC
+PREVIOUS_DOCUMENT_ID = P2_ARI_108_TARGETED_REQUERY_SPEC_CANDIDATE_V1
+STATUS        = APPROVED
+PREVIOUS_STATUS = CANDIDATE
+APPROVED      = YES（已满足下方 APPROVAL_EFFECTIVE_ON 全部条件）
+IMPLEMENTATION_STATUS = NOT_IMPLEMENTED（架构合同已批准 ≠ 功能已实现）
 IMPLEMENTATION_AUTHORIZATION = NONE
-TICKET_AUTHORIZATION = NONE
-APPROVED      = NO（未经 independent review + 授权集成，不得被当作 Approved Spec 消费）
-LOCATION_NOTE = 有意放 docs/planning/ 而非 docs/specs/：
-                docs/specs/ 是 Applicable Approved Specs 的位置，
-                CANDIDATE 不得与之同处以免被误读为已批准权威。
+TICKET_AUTHORIZATION = TICKET_DECOMPOSITION_ONLY
+                       （仅授权 ticket 分解规划；不授权实现、不授权施工）
+READY_TO_DECOMPOSE_TICKETS = YES
+NEXT_AUTHORIZED_STAGE = TICKET_DECOMPOSITION
+VERSION_ASSIGNMENT = UNASSIGNED
+LOCATION_NOTE = 本文已按仓库既有约定从 docs/planning/ 提升至 docs/specs/
+                （Applicable Approved Specs 的位置）。CANDIDATE 时期"不得与 docs/specs/
+                同处以免被误读为已批准权威"的限制已随批准解除。
+                seam map / seam contract / grilling record 按仓库既有约定
+                （参照 P1_SEAM_CONTRACTS_V1）继续留在 docs/planning/，
+                语义唯一权威是本文。
 BASE_SHA      = 7915e84a20b62086c53d045549329111098ca11e
-BRANCH        = spec/p2-ari-f02-targeted-requery
+REVIEWED_CANDIDATE_SHA = 2e40724b6405d50e80737aa9a07a76f1b92fe601
+REVIEWED_CANDIDATE_BRANCH = spec/p2-ari-f02-targeted-requery
+PROMOTION_BRANCH = spec/p2-ari-f02-spec-approval
 TARGET_ISSUE  = #108（P2-F02）
 PHASE         = P2 / ADAPTIVE_RESEARCH_INTELLIGENCE
 RELATION_TO_P1 = POST-P1 ADAPTIVE RETRIEVAL（复用，不重写）
 EVALUATION_DEPENDENCY = #107 / P2-F01 Research Evaluation Harness
 HISTORICAL_PREDECESSOR = #53（closed / not_planned；历史事实，不改写）
-COMPANION     = P2_ARI_108_TARGETED_REQUERY_SEAM_MAP_V1.md
-               P2_ARI_108_TARGETED_REQUERY_SEAM_CONTRACT_V1.md
-               P2_ARI_108_ARCHITECTURE_GRILLING_RECORD_V1.md
-DECISION_RECORD = docs/architecture/key-decisions.md D12
+COMPANION     = ../planning/P2_ARI_108_TARGETED_REQUERY_SEAM_MAP_V1.md
+               ../planning/P2_ARI_108_TARGETED_REQUERY_SEAM_CONTRACT_V1.md
+               ../planning/P2_ARI_108_ARCHITECTURE_GRILLING_RECORD_V1.md
+DECISION_RECORD = ../architecture/key-decisions.md D12
 ```
+
+### 0. Approval provenance（compact record，非 review transcript）
+
+```text
+APPROVAL_EFFECTIVE_ON =
+  1. 独立审查对 exact candidate HEAD 2e40724b6405d50e80737aa9a07a76f1b92fe601 双通道 PASS
+  2. 该 exact candidate HEAD 仍具有合法 current-master ancestry
+     （merge-base(master, candidate) = 7915e84a20b62086c53d045549329111098ca11e）
+  3. CANDIDATE → APPROVED 的 promotion delta 经独立审查 PASS（仅状态/位置/权威元数据）
+  4. 集成后的 exact HEAD 被 ff-only merge 到 remote master
+  5. remote master 被重新 fetch 并机械验证包含该 exact commit
+
+APPROVAL_PROVENANCE =
+  REVIEWED_CANDIDATE_SHA = 2e40724b6405d50e80737aa9a07a76f1b92fe601
+  CODEX  = PASS / OPEN_BLOCKERS = NONE / NEW_FINDINGS = NONE
+  CLAUDE = PASS / OPEN_BLOCKERS = NONE / NEW_FINDINGS = NONE
+  EXACT_FINAL_SHA_REVIEWED = YES
+  注：更早的 Codex sandbox 失败是能力性失败（capability failure），
+      不是内容发现；不得被改写为成功审查。完整 grilling / review 史实保留在
+      ../planning/P2_ARI_108_ARCHITECTURE_GRILLING_RECORD_V1.md 与提交历史中，
+      本文档不复制整份审查 transcript。
+```
+
+> **APPROVED SPEC != IMPLEMENTED FEATURE。**
+> 本文批准的是 **架构与 seam 合同**，冻结到足以支撑下游实现规划；
+> 它**不是**实现授权，也**不是**"#108 生产价值已证明"的声明。
+> `#107 / P2-F01 Research Evaluation Harness` 仍是 OPEN 评估依赖（见 §17）。
 
 ---
 
@@ -445,17 +484,18 @@ IDENTITY_REPLAY_CONFLICT —— resume 期间发现同 id 不同内容 → 保�
 
 ## 15. Seam map
 
-见 `P2_ARI_108_TARGETED_REQUERY_SEAM_MAP_V1.md`（S1–S11，逐 seam 归属）。
+见 `../planning/P2_ARI_108_TARGETED_REQUERY_SEAM_MAP_V1.md`（S1–S11，逐 seam 归属）。
 
 ## 16. Contracts
 
-见 `P2_ARI_108_TARGETED_REQUERY_SEAM_CONTRACT_V1.md`（SEAM E / F / G / H，V1）。
+见 `../planning/P2_ARI_108_TARGETED_REQUERY_SEAM_CONTRACT_V1.md`（SEAM E / F / G / H，V1）。
 
 ## 17. Evaluation dependency（#107）
 
 ```text
 IMPLEMENTATION_AUTHORIZATION = NONE
-TICKET_AUTHORIZATION         = NONE
+TICKET_AUTHORIZATION         = TICKET_DECOMPOSITION_ONLY
+                               （ticket 分解规划授权；不授权实现）
 
 · #107（Research Evaluation Harness）是评估依赖，当前 OPEN
 · 本 Spec 可以先于 #107 完成而设计，但：
@@ -547,20 +587,27 @@ TICKET_AUTHORIZATION         = NONE
 ## 22. Implementation authorization state
 
 ```text
-SPEC_STATUS                = CANDIDATE
-APPROVED                   = NO
+SPEC_STATUS                = APPROVED
+APPROVED                   = YES
+IMPLEMENTATION_STATUS      = NOT_IMPLEMENTED
 IMPLEMENTATION_AUTHORIZATION = NONE
-TICKET_AUTHORIZATION       = NONE
-READY_TO_DECOMPOSE_TICKETS = NO
+TICKET_AUTHORIZATION       = TICKET_DECOMPOSITION_ONLY
+                             （ticket 分解规划授权 ≠ 实现授权）
+READY_TO_DECOMPOSE_TICKETS = YES
+NEXT_AUTHORIZED_STAGE      = TICKET_DECOMPOSITION
 PRODUCT_CODE_CHANGE         = NONE
 TEST_BEHAVIOR_CHANGE        = NONE
 ISSUE_CHANGE                = NONE
-NEXT_LEGAL_ACTION           = INDEPENDENT_REVIEW（exact SHA）→ PASS
-                              → 另行授权的 SPEC_INTEGRATION_AND_APPROVAL
-                              → 之后才允许 ticket 分解
+EVALUATION_DEPENDENCY       = #107 / P2-F01（OPEN）
+NEXT_LEGAL_ACTION           = 另行授权的 TICKET_DECOMPOSITION
+                              （本文档不自动启动分解，不授权实现）
 ```
 
 > 架构通过 **不等于** 生产价值证明，也 **不等于** 实现授权。
-> 正确序列：
+> 已完成的序列：
 > `Architecture Decision → Seam Map / Contract → Spec Candidate → Grilling
->   → Independent Review → PASS → STOP`
+>   → Independent Review → PASS → SPEC_INTEGRATION_AND_APPROVAL → APPROVED`
+>
+> 授权不等于实现：`TICKET_AUTHORIZATION = TICKET_DECOMPOSITION_ONLY` 只表示
+> **ticket 分解规划**被授权；`IMPLEMENTATION_AUTHORIZATION = NONE` 保持不变，
+> 实现仍需另行授权，且受 #107 评估依赖约束。

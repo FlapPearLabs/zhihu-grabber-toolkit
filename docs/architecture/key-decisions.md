@@ -399,11 +399,21 @@ contract 把两者拆开后，AGENTS.md §8 本就允许的跨分支并行施工
 > **命名守卫**：本节 `P2-ARI` = `P2 / ADAPTIVE_RESEARCH_INTELLIGENCE`（#107–#112），
 > 与 2026-08-25 Product Direction 的 `LEGACY P2 = AUTHOR / PERSONAL INTELLIGENCE` 无关。
 >
-> `STATUS = CANDIDATE`（候选权威；未经 independent review + 授权集成前不生效）
+> `STATUS = APPROVED`（架构决策权威；已通过 independent review 并经授权集成）
+> `PREVIOUS_STATUS = CANDIDATE`（候选阶段的史实不改写了；本次只做状态提升）
 > `IMPLEMENTATION_AUTHORIZATION = NONE`
-> `TICKET_AUTHORIZATION = NONE`
+> `IMPLEMENTATION_STATUS = NOT_IMPLEMENTED`
+> `TICKET_AUTHORIZATION = TICKET_DECOMPOSITION_ONLY`（仅授权 ticket 分解规划；不授权实现）
+> `READY_TO_DECOMPOSE_TICKETS = YES`
+> `NEXT_AUTHORIZED_STAGE = TICKET_DECOMPOSITION`
 > `BASE_SHA = 7915e84a20b62086c53d045549329111098ca11e`
-> `BRANCH = spec/p2-ari-f02-targeted-requery`
+> `REVIEWED_CANDIDATE_SHA = 2e40724b6405d50e80737aa9a07a76f1b92fe601`
+> `REVIEWED_CANDIDATE_BRANCH = spec/p2-ari-f02-targeted-requery`
+> `PROMOTION_BRANCH = spec/p2-ari-f02-spec-approval`
+> `SPEC_AUTHORITY = docs/specs/p2-ari-f02-targeted-requery.md`（语义唯一权威）
+> `SEAM_AUTHORITY = docs/planning/P2_ARI_108_TARGETED_REQUERY_SEAM_{MAP,CONTRACT}_V1.md`
+> `EVALUATION_DEPENDENCY = #107 / P2-F01 Research Evaluation Harness`（OPEN；架构批准 ≠ 价值证明 ≠ 实现授权）
+> `APPROVAL_PROVENANCE = CODEX PASS / CLAUDE PASS on 2e40724（OPEN_BLOCKERS = NONE）；promotion delta 另经独立审查`
 > `DECISION_RECORD_MECHANISM = SUFFICIENT_EXISTING_MECHANISM`（本节即记录车辆；不新建 `docs/adr/`）
 
 ### 问题

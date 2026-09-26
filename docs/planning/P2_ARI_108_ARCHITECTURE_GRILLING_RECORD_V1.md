@@ -480,3 +480,29 @@ NEXT_LEGAL_ACTION           = STOP（不建 ticket、不实现、不合并）
 ```
 
 > 独立审查通过 **不等于** 生产价值证明，也 **不等于** 实现授权（#107 依赖未解）。
+>
+> **本节（§8.3）是 CANDIDATE 阶段的闸门史实，不随 promotion 改写**；
+> 其中的 `TICKET_AUTHORIZATION = NONE` / `NEXT_LEGAL_ACTION = STOP`
+> 描述的是该阶段状态，不是 promotion 之后的状态。见 §9。
+
+---
+
+## 9. Promotion record（append-only，不改写上文）
+
+```text
+PROMOTION_STAGE   = SPEC_INTEGRATION_AND_APPROVAL（已另行授权并执行）
+REVIEWED_CANDIDATE_SHA  = 2e40724b6405d50e80737aa9a07a76f1b92fe601
+PROMOTION_BRANCH  = spec/p2-ari-f02-spec-approval
+SPEC_PROMOTED_TO  = docs/specs/p2-ari-f02-targeted-requery.md（Applicable Approved Specs 位置）
+SPEC_STATUS       = APPROVED
+IMPLEMENTATION_AUTHORIZATION = NONE
+IMPLEMENTATION_STATUS        = NOT_IMPLEMENTED
+TICKET_AUTHORIZATION         = TICKET_DECOMPOSITION_ONLY（ticket 分解规划授权 ≠ 实现授权）
+NEXT_AUTHORIZED_STAGE        = TICKET_DECOMPOSITION
+EVALUATION_DEPENDENCY        = #107 / P2-F01（OPEN）
+```
+
+- 本文件保留在 `docs/planning/`，作为 #108 candidate 阶段的 grilling / 独立审查史实；
+- promotion 只改状态、位置与权威元数据，不重新设计架构、不改 D12-1..D12-8 任一决策、
+  不改 seam 语义、不授权实现；
+- 上文 §1–§8 的内容逐字保留，不因批准而被重写或删除。
