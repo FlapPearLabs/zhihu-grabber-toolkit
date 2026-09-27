@@ -58,6 +58,7 @@ Zhihu Grabber Toolkit 的文档入口。
 | [`AGENTS.md`](../AGENTS.md) | repository-driven Agent execution / review / merge workflow |
 | [`RULES.md`](../RULES.md) | credential、canonical data、scope、Git、review 等 hard invariants |
 | [`Project Memory`](./project-memory.md) | durable long-lived project facts；不是运行状态或 changelog |
+| [`Kanban Control Plane Contract`](./kanban-control-plane-contract.md) | GitHub Project 视图层与 Issue / Ticket Graph 的生命周期对齐合同；helper 见 [`scripts/kanban-status-transition.mjs`](../scripts/kanban-status-transition.mjs) |
 
 ## Module Documentation
 
