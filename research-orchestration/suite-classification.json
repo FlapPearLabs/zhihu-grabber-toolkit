@@ -32,6 +32,7 @@
     { "file": "p1-seam-contracts.test.mjs", "category": "full-offline" },
     { "file": "p1-t12-rce-corpus-selector.test.mjs", "category": "full-offline" },
     { "file": "p1-t13-group-representation-claims.test.mjs", "category": "full-offline" },
+    { "file": "p2a-t01-gap-ledger-identity.test.mjs", "category": "full-offline", "note": "P2A-T01 (#113): Targeted Re-query gap ledger artifact + gap identity (SEAM E.1/E.2/E.3/E.8, D12-1/D12-8). Closed gapType enum, subjectKey construction, gapIdentityCore/gapId, deterministic ordering, ledger schema round-trip + fail-closed validation, work-dir-relative persistence, coverage-state keyset regression. Fully offline; injected workDirs only, no network, no model, no retrieval IO." },
     { "file": "plan-contract.test.mjs", "category": "full-offline" },
     { "file": "provider-seam.test.mjs", "category": "full-offline" },
     { "file": "retrieval-round-controller.test.mjs", "category": "full-offline" },
