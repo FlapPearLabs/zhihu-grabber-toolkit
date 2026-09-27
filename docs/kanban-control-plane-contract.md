@@ -8,10 +8,26 @@
 DOCUMENT_ID = KANBAN_CONTROL_PLANE_CONTRACT
 STATUS = CANDIDATE
 AUTHORITY_CLASS = ENGINEERING_CONTROL_PLANE_CONTRACT
-BOARD = FlapPearLabs / "Zhihu Engineering Control Board"  (GitHub Projects V2)
+BOARD = "Zhihu Engineering Control Board"  (GitHub Projects V2)
+PROJECT_NUMBER = 1
+PROJECT_ID = PVT_kwHOCQ5LDs4Bk2mX
+PROJECT_URL = https://github.com/users/FlapPearLabs/projects/1
+PROJECT_OWNER = FlapPearLabs
+PROJECT_OWNER_TYPE = User          ← NOT an Organization
 REPO = FlapPearLabs/zhihu-grabber-toolkit
 HELPER = scripts/kanban-status-transition.mjs
+PROJECT_IO_END_TO_END = VERIFIED   ← see §9
 ```
+
+> **Owner-type 陷阱（本仓必须记住）**：`FlapPearLabs` 是 **User 账号**，不是 Organization
+> （`gh api users/FlapPearLabs` → `type: "User"`；`gh api user/orgs` 为空；仓库 `owner_type` = `User`）。
+> 因此任何沿组织语义写下的路径都会失败：
+> - GraphQL **不得**用 `organization(login:...)` 解析该 owner；
+> - 正确写法是 `repositoryOwner(login:...){ ... on ProjectV2Owner{ ... } }` ——
+>   该 interface 由 `User` 与 `Organization` 共同实现，两种 owner 都能解析。
+> - 反例：把 `organization(...)` 与 `user(...)` 作为**并列根字段**同时查询**不可行** ——
+>   GraphQL 会同时执行两者，错误的那条返回 `Could not resolve to an Organization`，
+>   而响应中只要存在 `errors` 数组，整个调用就会被误判为失败，尽管正确的分支已经解析成功。
 
 ---
 
@@ -203,9 +219,90 @@ BOARD_FIELD_SET          !=  BOARD_STATE_CORRECT
 ```
 
 - `--self-test` 只校验映射表与迁移闭包，不接触 GitHub。
-- Helper 的**真实 project I/O 路径**必须在目标 Project 存在且 token 具备
-  `read:project` / `project` 后单独验证；在此之前该路径为 `UNVERIFIED`。
+- Helper 的**真实 project I/O 路径**已在 `read:project` / `project` 到位后单独验证（见 §9）；
+  验证结论只对**被验证的 exact HEAD 与被观察的 board 状态**成立，不自动继承到后续修改。
 - 本文件不授予任何实现授权，也不改变任何 ticket 的授权状态。
 - 把本合同的稳定条款提升进 `AGENTS.md`（`AGENTS.md` §2.1.8 的 workflow governance 路径）
   属于 governance authority change，需要
   `CONTRACT_REVIEWER + CONSISTENCY_REVIEWER` 同 exact HEAD PASS，不在本次范围内。
+
+---
+
+## 9. 看板配置与验证记录
+
+### 9.1 字段
+
+```text
+Status        = PVTSSF_lAHOCQ5LDs4Bk2mXzhjloGo   (8 值闭集；由 GitHub 默认 Status 就地改写，字段 ID 未变)
+Stage         = PVTSSF_lAHOCQ5LDs4Bk2mXzhjloVw   DESIGN_ONLY / EXPERIMENT_READY / ACTIVE_FEATURE /
+                                                 EXTERNAL_DEPENDENCY / IMPLEMENTATION
+Risk          = PVTSSF_lAHOCQ5LDs4Bk2mXzhjloXk   LOW / MEDIUM / HIGH / SECURITY
+Dependency    = PVTSSF_lAHOCQ5LDs4Bk2mXzhjloXo   READY / BLOCKED / EXTERNAL_BLOCKED
+Authorization = PVTSSF_lAHOCQ5LDs4Bk2mXzhjloXs   NONE / AUTHORIZED
+Ticket        = PVTF_lAHOCQ5LDs4Bk2mXzhjloXw     文本（T01…T15）
+```
+
+未创建任何 SHA / branch / CI-run 字段 —— 那些属于 Issue 与 Git 证据。
+
+### 9.2 视图
+
+视图由 GraphQL `createProjectV2View` + `updateProjectV2View` 程序化创建；
+CLI 的 `gh project` **没有** view 子命令，`createProjectV2View` 的 `configuration`
+也只接受 `visibleFieldIds`，**filter 只能在 `updateProjectV2View` 阶段设置**。
+
+| # | 名称 | layout | filter |
+|---|---|---|---|
+| 2 | `CURRENT STAGE` | BOARD | `-status:BACKLOG -status:DONE` |
+| 3 | `P2-ARI ROADMAP` | TABLE | *(空 — 项目内即 #107–#127)* |
+| 4 | `BLOCKED` | TABLE | `dependency:BLOCKED,EXTERNAL_BLOCKED` |
+| 5 | `DONE` | TABLE | `status:DONE` |
+
+创建项目时自动生成的空白默认视图 `View 1` 已删除。
+
+未知项：filter 字符串由 GraphQL 接受并原样存回，但**其语义正确性未经独立验证**
+（API 不做过滤校验）。首次人工打开视图时应目视核对命中集合。
+
+### 9.3 初始化状态（2026-09-27，基于当时的 fresh 证据）
+
+```text
+DONE                  = T01 #113, T04 #116
+REVIEW                = T05 #117          (授权 + 分支已推送 + PR #128 OPEN)
+READY (未授权)        = T02 #114, T03 #115, T07 #119
+BACKLOG / Dep=BLOCKED = T06 #118, T08 #120 … T14 #126
+BACKLOG / Dep=EXTERNAL_BLOCKED = T15 #127（#107 为非 DAG 外部依赖）
+顶层特征 #107–#112     = BACKLOG，Stage 描述性，Authorization = NONE
+```
+
+证据来源：Ticket Graph V1 `§3` 直接边与 `§5` RISK 表（@origin/master）、各 Issue 正文的
+`IMPLEMENTATION_AUTHORIZATION`、#117 的 **START GATE 评论**（`GATE_RESULT = PASS`，
+`IMPLEMENTATION_AUTHORIZATION = SCOPED_TO_P2A_T05_ONLY`）、远端分支
+`work/p2a-t05-bounded-authorization-action-identity` 与 PR #128。
+
+> 教训：`#117` 的 START GATE 结论**不在 Issue 正文里，而在评论里**。
+> 只读 Issue body 会得出"该票未授权"的错误结论。判定授权**必须同时读评论**。
+
+### 9.4 Helper I/O 验证（对 candidate HEAD 实测）
+
+```text
+read  路径：--issue 117 --event REMOTE_CANDIDATE_PUSHED --dry-run  → NOOP (status 已 = REVIEW)   exit 0
+read  路径：同上去掉 --dry-run                                     → NOOP (未写入)               exit 0
+写入  路径：先将 #114 故意扰动为 BACKLOG，再调用
+            --issue 114 --event DEPENDENCY_RECOMPUTED_READY         → APPLIED BACKLOG -> READY    exit 0
+            re-read 核验 status=READY / authorization=NONE / dependency=READY（Authorization 未被触碰）
+拒绝  路径：--issue 113 --event IMPLEMENTATION_LANE_CREATED --dry-run
+            → REFUSED，reason = TERMINAL_STATUS_HAS_NO_OUT_EDGE（DONE 无出边）                     exit 1
+```
+
+### 9.5 运行前提（否则 helper 会以 exit 2 失败）
+
+```text
+- token 需具备 `project`（含读）；缺失时 helper 报 ENVIRONMENT_FAILURE 并给出修复命令。
+- 环境中的 GH_TOKEN 若存在但失效，会**遮蔽** keyring 凭据并让所有调用 401；
+  helper 继承父进程环境，因此调用前必须确保 GH_TOKEN 指向有效凭据或已 unset。
+```
+
+### 9.6 授权语义（防误读）
+
+`Authorization` 只写 `NONE` / `AUTHORIZED`，且 `AUTHORIZED` 必须能回溯到 Issue（含评论）中的
+START GATE PASS 记录。T05 的授权来自 #117 的 START GATE 评论，因此其为 `AUTHORIZED`；
+若将来发现卡片与 Issue 证据冲突，按 §6 处理，**不得**为整卡观感改写授权字段。
