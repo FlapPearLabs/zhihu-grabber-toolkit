@@ -965,6 +965,125 @@ test('S3 LEGAL_STATES: a T04 DROPPED and a T04 REJECTED both map to REJECTED, di
 });
 
 // ===========================================================================
+// FINAL CONVERGENCE (fix/p2a-t05-final-convergence) — F2 / F5 counterexamples
+//
+// Authority:
+//   F2 — S3 FAIL_OPEN / FAIL_CLOSED = FAIL_CLOSED; the single-action path already
+//        refuses malformed explicit budget state; a silent reset to 0 would
+//        regrant the entire query budget (fail-OPEN) from corrupted state.
+//   F5 — E.4: `intent` is "仅审计用"; E.8 / D12-5: model-supplied material must not
+//        rank gaps or move budget. The batch tie-break must therefore be a
+//        function of AUTHORIZATION-RELEVANT content only.
+// ===========================================================================
+
+test('F2: an explicitly invalid batch attemptsBudgetCount FAILS CLOSED (no silent budget reset)', () => {
+  const invalid = [-1, 1.5, '3', null, Number.NaN, true, [], {}, 2n];
+  for (const bad of invalid) {
+    assert.throws(
+      () => authorizeTargetedActionBatch([proposal()], context({ attemptsBudgetCount: bad })),
+      (err) => err.code === AUTHORIZATION_ERROR_INVALID,
+      `batch must REFUSE attemptsBudgetCount=${String(bad)} rather than resetting it to 0`,
+    );
+  }
+});
+
+test('F2: a MISSING batch attemptsBudgetCount keeps the documented zero default', () => {
+  const ctx = context();
+  delete ctx.attemptsBudgetCount;
+  const result = authorizeTargetedActionBatch([proposal()], ctx);
+  assert.equal(result.decisions[0].status, AUTHORIZATION_STATUS_AUTHORIZED);
+  assert.equal(result.nextState.attemptsBudgetCount, 2);
+});
+
+test('F2: the batch and single-action paths agree on malformed budget state', () => {
+  for (const bad of [-1, 1.5, '3', null]) {
+    assert.throws(
+      () => authorizeTargetedAction(proposal(), context({ attemptsBudgetCount: bad })),
+      (err) => err.code === AUTHORIZATION_ERROR_INVALID,
+    );
+    assert.throws(
+      () => authorizeTargetedActionBatch([proposal()], context({ attemptsBudgetCount: bad })),
+      (err) => err.code === AUTHORIZATION_ERROR_INVALID,
+    );
+  }
+});
+
+test('F2: a valid explicit batch attemptsBudgetCount is still honoured (no over-tightening)', () => {
+  const result = authorizeTargetedActionBatch(
+    [proposal()],
+    context({ attemptsBudgetCount: 8, maxQueryBudget: 10 }),
+  );
+  assert.equal(result.decisions[0].status, AUTHORIZATION_STATUS_AUTHORIZED);
+  assert.equal(result.nextState.attemptsBudgetCount, 10);
+});
+
+/** Two distinct plan-owned queries on the SAME gap, with only one budget slot. */
+function twoQueryPlan() {
+  return makePlan({ queryVariants: ['alpha beta', 'alpha gamma'] });
+}
+
+function runSameGapBatch(proposals) {
+  return authorizeTargetedActionBatch(
+    proposals,
+    context({ plan: twoQueryPlan(), maxQueryBudget: 2, attemptsBudgetCount: 0 }),
+  );
+}
+
+const authorizedQueries = (result) => result.decisions
+  .filter((d) => d.status === AUTHORIZATION_STATUS_AUTHORIZED)
+  .map((d) => d.query);
+
+test('F5: changing ONLY the audit-only intent cannot change which query is authorized', () => {
+  const first = runSameGapBatch([
+    proposal({ planOwnedStringRef: { field: 'queryVariants', index: 0 }, intent: 'aaa' }),
+    proposal({ planOwnedStringRef: { field: 'queryVariants', index: 1 }, intent: 'zzz' }),
+  ]);
+  const flipped = runSameGapBatch([
+    proposal({ planOwnedStringRef: { field: 'queryVariants', index: 0 }, intent: 'zzz' }),
+    proposal({ planOwnedStringRef: { field: 'queryVariants', index: 1 }, intent: 'aaa' }),
+  ]);
+  assert.deepEqual(authorizedQueries(first), authorizedQueries(flipped),
+    'the audit-only intent must not select the authorized query');
+  assert.deepEqual(
+    first.decisions.map((d) => d.query),
+    flipped.decisions.map((d) => d.query),
+    'nor may it reorder the consumption sequence',
+  );
+  assert.deepEqual(authorizedQueries(first), ['alpha beta']);
+});
+
+test('F5: the same-gap tie-break is driven by authorization-relevant content', () => {
+  const result = runSameGapBatch([
+    proposal({ planOwnedStringRef: { field: 'queryVariants', index: 1 }, intent: 'aaa' }),
+    proposal({ planOwnedStringRef: { field: 'queryVariants', index: 0 }, intent: 'zzz' }),
+  ]);
+  assert.deepEqual(authorizedQueries(result), ['alpha beta'],
+    'planOwnedStringRef decides, regardless of the intent text');
+});
+
+test('F5: the inert queryText cannot control priority either', () => {
+  const result = runSameGapBatch([
+    proposal({ planOwnedStringRef: { field: 'queryVariants', index: 1 }, queryText: 'aaa' }),
+    proposal({ planOwnedStringRef: { field: 'queryVariants', index: 0 }, queryText: 'zzz' }),
+  ]);
+  assert.deepEqual(authorizedQueries(result), ['alpha beta']);
+});
+
+test('F5: entries identical in authorization-relevant content denote the SAME action', () => {
+  // Same gapId + same planOwnedStringRef + same scope => same normalizedQuery =>
+  // same dedupeKey. Deleting either audit annotation cannot change WHAT is
+  // authorized, only the position of two equivalent entries.
+  const result = runSameGapBatch([
+    proposal({ intent: 'aaa' }),
+    proposal({ intent: 'zzz' }),
+  ]);
+  assert.equal(authorizedQueries(result).length, 1);
+  assert.deepEqual(authorizedQueries(result), ['alpha beta']);
+  const rejected = result.decisions.filter((d) => d.status === AUTHORIZATION_STATUS_REJECTED);
+  assert.equal(rejected[0].rejectionCode, REJECTION_DEDUPE_ALREADY_AUTHORIZED);
+});
+
+// ===========================================================================
 // fixtures sanity (guards the oracles themselves)
 // ===========================================================================
 

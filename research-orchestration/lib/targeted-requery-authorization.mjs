@@ -123,6 +123,21 @@
  *     e.g. `UNKNOWN_GAP_ID` for a dropped proposal vs `FREE_FORM_QUERY_NOT_
  *     AUTHORIZED_IN_MVP` for a refused one), so the audit trail still separates
  *     "could not be attributed to a gap" from "attributed and refused".
+ *
+ * 11. (final convergence) EXPLICIT INVALID BUDGET STATE FAILS CLOSED, AND ONLY
+ *     AUTHORIZATION-RELEVANT FIELDS MAY ORDER A BATCH.
+ *     · `attemptsBudgetCount`: ABSENT → the documented default 0; any other
+ *       explicitly supplied value must be a non-negative integer. Silently
+ *       resetting a malformed value would regrant the entire query budget from
+ *       corrupted state — fail-OPEN, which S3 forbids. Both the single-action and
+ *       batch paths share one validator so they cannot drift apart.
+ *     · Batch ordering uses only the authorization-relevant projection
+ *       (`gapId` + plan-owned source + requested scope). `intent` and `queryText`
+ *       are audit-only / inert (E.4) and must never rank a proposal, otherwise
+ *       model-supplied explanatory text would choose which query consumes the
+ *       remaining budget (E.8 / D12-5). Two entries whose projection is identical
+ *       denote the SAME action (same gapId + same plan-owned source + same scope
+ *       ⇒ same dedupeKey), so a projection tie cannot change WHAT is authorized.
  */
 
 import crypto from 'node:crypto';
@@ -249,6 +264,20 @@ function isNonEmptyString(value) {
 
 function isPositiveInteger(value) {
   return Number.isInteger(value) && value > 0;
+}
+
+/**
+ * `attemptsBudgetCount` validation (D4). ABSENT → the documented default 0; any
+ * other explicitly supplied value must be a non-negative integer, else the
+ * request FAILS CLOSED (see design decision 11). Shared by the single-action and
+ * batch paths so the two cannot drift apart.
+ */
+function requireAttemptsBudgetCount(value) {
+  if (value === undefined) return 0;
+  if (!Number.isInteger(value) || value < 0) {
+    throw authorizationError('attemptsBudgetCount must be a non-negative integer');
+  }
+  return value;
 }
 
 // ---------------------------------------------------------------------------
@@ -620,15 +649,12 @@ export function authorizeTargetedAction(rawProposal, contextInput = {}) {
     planHash,
     maxAttemptsPerGap = DEFAULT_MAX_ATTEMPTS_PER_GAP,
     maxQueryBudget,
-    attemptsBudgetCount = 0,
   } = contextInput;
 
   // ---- caller wiring is validated fail-closed (not an authorization verdict) ---
   if (!isPositiveInteger(maxAttemptsPerGap)) throw authorizationError('maxAttemptsPerGap must be a positive integer');
   if (!isPositiveInteger(maxQueryBudget)) throw authorizationError('maxQueryBudget must be a positive integer');
-  if (!Number.isInteger(attemptsBudgetCount) || attemptsBudgetCount < 0) {
-    throw authorizationError('attemptsBudgetCount must be a non-negative integer');
-  }
+  const attemptsBudgetCount = requireAttemptsBudgetCount(contextInput.attemptsBudgetCount);
   if (!isNonEmptyString(runId)) throw authorizationError('runId must be a non-empty string');
   if (!isNonEmptyString(occurrenceId)) throw authorizationError('occurrenceId must be a non-empty string');
   requirePlanHash(planHash);
@@ -776,13 +802,16 @@ export function authorizeTargetedAction(rawProposal, contextInput = {}) {
  *
  * Gaps competing for the remaining budget are consumed in ASCENDING `gapId`
  * order — the T01-frozen comparator is REUSED (imported), not re-implemented.
- * The comparator is total: proposals that bind the SAME gapId are tie-broken on
- * their canonical JSON, so the consumption order is a deterministic function of
- * the proposal CONTENT and never of the caller's array order.
+ * The comparator is total over the AUTHORIZATION-RELEVANT PROJECTION built by
+ * `authorizationOrderKey`, so the consumption order is a deterministic function
+ * of what the action IS, never of the caller's array order.
  *
- * The comparator reads only `gapId` and the proposal's canonical form. It never
- * reads `materiality` / `confidence`: E.8 / D12-5 keep those model-supplied
- * scores audit-only, so no model score can rank a gap or move budget.
+ * AUDIT-ONLY AND INERT FIELDS ARE EXCLUDED FROM ORDERING. `intent` (E.4 "仅审计用")
+ * and `queryText` (inert under E.4's precedence rule) cannot rank a proposal:
+ * including them would let model-supplied explanatory text choose which query
+ * consumes the remaining budget, which E.8 / D12-5 forbid. `materiality` /
+ * `confidence` never reach this module as proposal fields, and are likewise
+ * never read from a gap record here.
  *
  * State is THREADED, never mutated: only an AUTHORIZED action advances the
  * per-gap attempt index, registers its dedupe key and consumes budget. The
@@ -791,20 +820,34 @@ export function authorizeTargetedAction(rawProposal, contextInput = {}) {
  *
  * SCOPE NOTE (E.8 literally reads "多个 gap 竞争预算"): the ascending-`gapId` rule
  * constrains cross-GAP competition. Two proposals for the SAME gap are not
- * competing gaps; their relative order is fixed deterministically by content
- * rather than by any priority semantics, which is the narrowest reading that
- * invents no ordering rule the contract does not state.
+ * competing gaps; their relative order is fixed deterministically by
+ * authorization-relevant content rather than by any priority semantics, which is
+ * the narrowest reading that invents no ordering rule the contract does not
+ * state. Two entries whose projection is byte-identical denote the SAME action
+ * (same gapId + same plan-owned source + same scope ⇒ same normalizedQuery ⇒
+ * same dedupeKey), so such a tie cannot change WHAT is authorized.
  */
+function authorizationOrderKey(proposal) {
+  if (!isPlainObject(proposal)) {
+    return { gapId: '', planOwnedStringRef: null, requestedProviderScope: null };
+  }
+  return {
+    gapId: typeof proposal.gapId === 'string' ? proposal.gapId : '',
+    planOwnedStringRef: proposal.planOwnedStringRef ?? null,
+    requestedProviderScope: proposal.requestedProviderScope ?? null,
+  };
+}
+
 export function authorizeTargetedActionBatch(rawProposals, contextInput = {}) {
   if (!isPlainObject(contextInput)) throw authorizationError('authorization context must be a plain object');
   const list = Array.isArray(rawProposals) ? rawProposals : [];
-  const ordered = [...list].sort(compareGapsByGapId);
+  const ordered = [...list].sort(
+    (a, b) => compareGapsByGapId(authorizationOrderKey(a), authorizationOrderKey(b)),
+  );
 
   let attemptCounts = { ...normalizeAttemptIndex(contextInput.attemptsByGapIdentityCore) };
   const dedupeKeys = normalizeDedupeKeys(contextInput.authorizedDedupeKeys);
-  const startingBudgetCount = Number.isInteger(contextInput.attemptsBudgetCount) && contextInput.attemptsBudgetCount >= 0
-    ? contextInput.attemptsBudgetCount
-    : 0;
+  const startingBudgetCount = requireAttemptsBudgetCount(contextInput.attemptsBudgetCount);
   let consumedChannelAttempts = 0;
 
   const decisions = [];
