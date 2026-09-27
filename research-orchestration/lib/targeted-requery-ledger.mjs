@@ -36,6 +36,35 @@
  * artifact. The persisted artifact is byte-deterministic (canonical record
  * order + canonical key order) so that identical logical input always produces
  * identical bytes and an identical hash.
+ *
+ * Design decisions recorded explicitly (reviewers should audit these rather
+ * than infer intent from the code):
+ *
+ *   1. NO `assertArtifactSafe` walk on this artifact — deliberate, not an
+ *      omission. Passing no trust set would reject plan-legal strings (the
+ *      repo's own F8 evidence: `'/etc/hosts 文件的作用'`), and passing a trust
+ *      set would be exactly the `trustedPlanStrings` widening that D12-3 / R11
+ *      forbid. Per E.3 the ledger's string fields are controller-mechanical
+ *      PLAN-OWNED material, so they are gated by the plan lens
+ *      (`isPlanBoundarySafeString`) only. The artifact-walk consumer, if any,
+ *      belongs to the producer wiring owned by a later ticket — not here.
+ *
+ *   2. Stored records are kept in canonical E.8 order. E.8 mandates ascending
+ *      `gapId` for BUDGET consumption; requiring the same order on disk is a
+ *      persistence-shape decision (it makes the serialized bytes and therefore
+ *      the artifact hash order-independent). It adds no product semantics: the
+ *      selection contract is unchanged, and consumers may still re-sort.
+ *
+ *   3. `declaredGapType` is stored alongside the normalized `gapType` so that
+ *      E.1's "unknown types may be RECORDED" keeps what the controller actually
+ *      declared; it is validated (boundary-safe + must normalize to `gapType`)
+ *      and is never used as an identity input.
+ *
+ *   4. For `UNKNOWN_GAP_TYPE` this primitive requires the controller to declare
+ *      `subjectKey` explicitly. E.3 freezes subject construction only for the
+ *      three closed types, so there is nothing to derive from; inventing a
+ *      prefix or falling back to a constant would both be unauthorized (and a
+ *      constant would additionally collapse unrelated gaps into one identity).
  */
 
 import crypto from 'node:crypto';
@@ -564,6 +593,7 @@ export function persistLedger(workDir, ledger) {
   const verdict = validateLedger(ledger);
   if (!verdict.ok) throw ledgerError(`refusing to persist an invalid ledger: ${verdict.reason}`);
   const payload = serializeLedger(verdict.validated);
+  const hash = ledgerHash(verdict.validated);
   const target = ledgerFile(workDir);
   try {
     fs.mkdirSync(workDir, { recursive: true });
@@ -583,7 +613,7 @@ export function persistLedger(workDir, ledger) {
   } catch {
     throw ledgerError('failed to persist the targeted-requery ledger');
   }
-  return { ok: true, path: LEDGER_FILENAME, hash: sha256(payload) };
+  return { ok: true, path: LEDGER_FILENAME, hash };
 }
 
 /**
@@ -608,7 +638,7 @@ export function loadLedger(workDir, expectedPlanHash = null) {
   return {
     ok: true,
     ledger: verdict.validated,
-    hash: sha256(serializeLedger(verdict.validated)),
+    hash: ledgerHash(verdict.validated),
     path: LEDGER_FILENAME,
   };
 }
