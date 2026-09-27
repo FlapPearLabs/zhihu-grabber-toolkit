@@ -33,6 +33,7 @@
     { "file": "p1-t12-rce-corpus-selector.test.mjs", "category": "full-offline" },
     { "file": "p1-t13-group-representation-claims.test.mjs", "category": "full-offline" },
     { "file": "p2a-t01-gap-ledger-identity.test.mjs", "category": "full-offline", "note": "P2A-T01 (#113): Targeted Re-query gap ledger artifact + gap identity (SEAM E.1/E.2/E.3/E.8, D12-1/D12-8). Closed gapType enum, subjectKey construction, gapIdentityCore/gapId, deterministic ordering, ledger schema round-trip + fail-closed validation, work-dir-relative persistence, coverage-state keyset regression. Fully offline; injected workDirs only, no network, no model, no retrieval IO." },
+    { "file": "p2a-t04-trust-gate.test.mjs", "category": "full-offline", "note": "P2A-T04 (#116): trust & string-safety gate (SEAM E.4 / E.5(1)(2)(3)(9) / F.3, D12-3). Dual-lens INTERSECTION admission matrix (plan-legal/provider-illegal refused), planOwnedStringRef resolution (closed field enum + exact-string membership), queryText FREE_FORM_QUERY_NOT_AUTHORIZED_IN_MVP, UNCLASSIFIED fail-closed, closed rejectionCode set, gapId binding + E.1 gapType closure, no trustedPlanStrings widening, zero IO / determinism source guards. Fully offline; injected gap resolver + literal plan fixtures, no network, no model, no retrieval IO." },
     { "file": "plan-contract.test.mjs", "category": "full-offline" },
     { "file": "provider-seam.test.mjs", "category": "full-offline" },
     { "file": "retrieval-round-controller.test.mjs", "category": "full-offline" },
