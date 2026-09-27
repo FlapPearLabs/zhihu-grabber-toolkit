@@ -164,10 +164,23 @@ export const DEFAULT_MAX_ATTEMPTS_PER_GAP = 2;
 /**
  * Stable machine-readable rejection codes owned by this ticket.
  *
- * The set enumerates exactly the codes a DECISION can carry. A malformed
- * authorization *input* (bad `plannedRoutes`, missing `maxQueryBudget`, …) is a
- * caller wiring error and fails closed with a typed throw instead — so it has no
- * verdict code, and no unreachable member is listed here.
+ * Every member below is returned by an adjudicated check in
+ * `authorizeTargetedAction`, with ONE precisely-scoped exception that is stated
+ * here rather than claimed away:
+ *
+ *   · `REJECTION_GAP_IDENTITY_CORE_UNRESOLVED` and
+ *     `REJECTION_NORMALIZED_QUERY_EMPTY` are DEFENSIVE guards on the T04 seam.
+ *     Their preconditions are currently guaranteed upstream — T04 only ADMITS a
+ *     proposal whose `gapId` has a resolvable identity core, and only ADMITS a
+ *     plan-owned string that the provider lens accepts (a whitespace-only string
+ *     is refused as `PLAN_OWNED_STRING_UNSAFE`). They are retained so that a
+ *     future upstream relaxation surfaces as a REJECTED verdict with a stable
+ *     code, instead of an uncaught cross-module contract error. The focused suite
+ *     pins both preconditions, and asserts both codes are members of this set.
+ *
+ * A malformed authorization *input* (bad `plannedRoutes`, missing `maxQueryBudget`,
+ * …) is a caller wiring error and fails closed with a typed throw instead, so it
+ * has no verdict code and is deliberately absent from this set.
  */
 export const REJECTION_PROPOSAL_NOT_ADMITTED = 'PROPOSAL_NOT_ADMITTED';
 export const REJECTION_GAP_IDENTITY_CORE_UNRESOLVED = 'GAP_IDENTITY_CORE_UNRESOLVED';

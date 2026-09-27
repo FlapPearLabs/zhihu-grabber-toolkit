@@ -704,7 +704,49 @@ test('E.7: rejection codes form a closed, stable, duplicate-free set', () => {
   assert.equal(new Set(REJECTION_CODES).size, REJECTION_CODES.length);
   assert.ok(REJECTION_CODES.includes(REJECTION_BUDGET_EXCEEDED));
   assert.ok(REJECTION_CODES.includes(REJECTION_DEDUPE_ALREADY_AUTHORIZED));
+  assert.ok(REJECTION_CODES.includes(REJECTION_GAP_IDENTITY_CORE_UNRESOLVED));
+  assert.ok(REJECTION_CODES.includes(REJECTION_NORMALIZED_QUERY_EMPTY));
   assert.equal(Object.isFrozen(REJECTION_CODES), true);
+});
+
+test('defensive T04-seam guards: their upstream preconditions are PINNED', () => {
+  // `PER_GAP...`-style guards are live; the two below are defensive, because T04
+  // already refuses the inputs that would reach them. Pin those preconditions so
+  // that a future T04 relaxation turns this test red instead of silently making
+  // an "unreachable" branch live.
+  //
+  // (a) T04 never ADMITS a gapId without a resolvable identity core.
+  const offShape = authorizeTargetedAction(proposal({ gapId: 'not-a-well-formed-gap-id' }), context());
+  assert.equal(offShape.status, AUTHORIZATION_STATUS_REJECTED);
+  assert.equal(offShape.rejectionCode, REJECTION_PROPOSAL_NOT_ADMITTED);
+  assert.equal(offShape.rejectionDetail, 'UNKNOWN_GAP_ID');
+
+  // (b) T04 never ADMITS a query that normalises to empty (the provider lens
+  //     refuses whitespace-only material before T05 ever sees it).
+  const whitespacePlan = makePlan({ queryVariants: ['   '] });
+  const emptyQuery = authorizeTargetedAction(
+    proposal({ planOwnedStringRef: { field: 'queryVariants', index: 0 } }),
+    context({ plan: whitespacePlan }),
+  );
+  assert.equal(emptyQuery.status, AUTHORIZATION_STATUS_REJECTED);
+  assert.equal(emptyQuery.rejectionCode, REJECTION_PROPOSAL_NOT_ADMITTED);
+  assert.equal(emptyQuery.rejectionDetail, 'PLAN_OWNED_STRING_UNSAFE');
+});
+
+test('S3: the decision key set is frozen so an accidental superset cannot drift in', () => {
+  const expected = [
+    'actionChannelAttemptCount', 'attempt', 'dedupeKey', 'gapId', 'gapIdentityCore',
+    'normalizedQuery', 'occurrenceId', 'planHash', 'providerScope', 'query',
+    'queryTrustClass', 'rejectionCode', 'rejectionDetail', 'runId', 'status',
+    'targetedActionId',
+  ].sort();
+  const authorized = authorizeTargetedAction(proposal(), context());
+  const rejected = authorizeTargetedAction(
+    proposal({ requestedProviderScope: ['nope'] }),
+    context(),
+  );
+  assert.deepEqual(Object.keys(authorized).sort(), expected);
+  assert.deepEqual(Object.keys(rejected).sort(), expected, 'the decision shape is total');
 });
 
 test('E.8: multiple gaps competing for budget are consumed in ascending gapId order', () => {
