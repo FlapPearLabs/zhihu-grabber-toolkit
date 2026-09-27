@@ -722,7 +722,7 @@ the Executor must state the exact objective reason.
 **Skill Responsibility Boundaries**:
 - `/implement`: Mandatory engineering entrypoint for substantive CODE implementation; establishes implementation strategy, scope discipline, and execution plan.
 - `/tdd`: Governs correctness-first RED → GREEN execution; derives test obligations prior to code modification.
-- `/simplify`: Occurs only AFTER correctness is established and tests are green; performs proportionate cleanup and simplification; MUST NOT change behavior, alter contracts, or broaden architecture.
+- `/simplify-code`: Occurs only AFTER correctness is established and tests are green; performs proportionate cleanup and simplification; MUST NOT change behavior, alter contracts, or broaden architecture. (Canonical installed invocation name; verified against the local `SKILL.md` frontmatter `name` field. A skill's slash name is whatever its own `SKILL.md` declares — not what this document assumes.)
 - `/code-review`: Adversarial self-review tool for Executor prior to push/handoff; does NOT satisfy independent review quorum (`SELF_REVIEW != INDEPENDENT_REVIEW`).
 
 AGENTS.md routes to skills and establishes responsibility boundaries; it does not copy or reproduce whole skill manuals.

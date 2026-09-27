@@ -23,6 +23,20 @@ jobs:
           node-version: ${{ matrix.node-version }}
           # 未启用 npm cache（setup-node 默认不缓存；lockfile 位于 zhihu-answer-grabber/ 子目录）
 
+      # WorkBuddy 首轮 bootstrap 投递契约（CODEBUDDY.md）。零依赖，放在依赖安装之前。
+      # 背景：WorkBuddy 首轮只在
+      # ["CODEBUDDY.md", ".codebuddy/CODEBUDDY.md", "AGENTS.md"] 中取第一个存在者注入，
+      # 并在 MAX_GUIDANCE_CHARS 处截断（WorkBuddy 5.5.3 实测 = 8000，按 JS string length
+      # 计量）；RULES.md 根本不在该清单内。本步骤在以下情况失败：
+      #   - bootstrap 指针会被运行时截断（超过仓库安全上限 7000 chars）
+      #   - 丢失任一必备权威指针（RULES / AGENTS / project-memory / Specs / Issue）
+      #   - 开始把 AGENTS.md 正文内联进来（指针变成了手册）
+      #   - 出现权限授予 / gate 豁免语句，或缺少「不覆盖 RULES/AGENTS」声明
+      # 该步骤只校验投递契约；它不证明运行时确实选中了 CODEBUDDY.md，
+      # 也不证明 agent 随后真的读完了完整权威。
+      - name: CODEBUDDY.md bootstrap delivery contract
+        run: node scripts/validate-codebuddy-bootstrap.mjs
+
       # parse5 是 zhihu-answer-grabber 的运行时依赖（src/asset-extractor.js）：缺失时测试套件
       # 在 import 阶段即 ERR_MODULE_NOT_FOUND；根级集成测试 spawn 的同一 CLI 也需要它。
       # corpus-anthology 无任何依赖（亦无 lockfile），无需安装步骤。
