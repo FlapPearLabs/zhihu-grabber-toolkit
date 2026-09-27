@@ -354,16 +354,23 @@ function ghGraphql(query, variables) {
   }
 }
 
+// `repositoryOwner` resolves BOTH user-owned and organization-owned projects.
+// Querying `organization(...)` and `user(...)` as sibling root fields does NOT work:
+// GraphQL executes both, the wrong one returns a "Could not resolve to an Organization"
+// error, and any error array makes the whole response fail even though the correct
+// branch resolved. `ProjectV2Owner` is implemented by User and Organization alike.
 const PROJECT_BY_NUMBER = `
 query($login:String!,$number:Int!){
-  organization(login:$login){ projectV2(number:$number){ id number title url } }
-  user(login:$login){ projectV2(number:$number){ id number title url } }
+  repositoryOwner(login:$login){
+    ... on ProjectV2Owner{ projectV2(number:$number){ id number title url } }
+  }
 }`;
 
 const PROJECT_BY_TITLE = `
 query($login:String!){
-  organization(login:$login){ projectsV2(first:100){ nodes{ id number title url } } }
-  user(login:$login){ projectsV2(first:100){ nodes{ id number title url } } }
+  repositoryOwner(login:$login){
+    ... on ProjectV2Owner{ projectsV2(first:100){ nodes{ id number title url } } }
+  }
 }`;
 
 const STATUS_FIELD = `
@@ -403,11 +410,9 @@ query($owner:String!,$name:String!,$number:Int!){
 }`;
 
 function pickProject(payload) {
-  const fromOrg = payload && payload.organization ? payload.organization : null;
-  const fromUser = payload && payload.user ? payload.user : null;
-  return (fromOrg && (fromOrg.projectV2 || fromOrg.projectsV2)) ||
-    (fromUser && (fromUser.projectV2 || fromUser.projectsV2)) ||
-    null;
+  const owner = payload && payload.repositoryOwner ? payload.repositoryOwner : null;
+  if (!owner) return null;
+  return owner.projectV2 || owner.projectsV2 || null;
 }
 
 function findStatusField(projectId) {
