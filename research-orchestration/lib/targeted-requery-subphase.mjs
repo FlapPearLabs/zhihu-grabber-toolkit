@@ -64,7 +64,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { isValidPlanHashFormat } from './plan-contract.mjs';
-import { appendEvent } from './state.mjs';
+import { appendEvent, validateArtifactCheckpoint } from './state.mjs';
 import {
   RETRIEVAL_POOL_FILENAME,
   RETRIEVAL_POOL_SCHEMA_VERSION,
@@ -88,11 +88,13 @@ import {
   authorizeTargetedAction,
 } from './targeted-requery-authorization.mjs';
 import {
+  ACTION_STATUS_AUTHORIZED,
   ACTION_STATUS_COMMITTED,
   ACTION_STATUS_EVALUATED,
   ACTION_STATUS_FAILED_OPERATIONAL,
   ACTIONS_FILENAME,
   advanceActionStatus,
+  COMMITTED_SET,
   createActionsArtifact,
   decideTargetedReplay,
   loadActionsArtifact,
@@ -103,7 +105,9 @@ import {
   registerAuthorizedAction,
   RESUME_REUSE,
   RESUME_RERUN,
+  RESUME_BLOCKED,
   TARGETED_BINDING_PREFIX,
+  targetedBindingKey,
 } from './targeted-requery-lifecycle.mjs';
 import {
   RESOLUTION_FILENAME,
@@ -319,108 +323,133 @@ export function runTargetedSubphase({
     // E.7: a gap with no admissible controller proposal is NEVER silently re-run.
     if (proposal === undefined) continue;
 
-    const countsSoFar = computeTargetedAttemptCounts({ actions: actionsArtifact.targetedActions });
-    const decision = authorizeTargetedAction(proposal, {
-      plan,
-      resolveGap,
-      plannedRoutes,
-      runId,
-      occurrenceId,
-      planHash: expectedPlanHash,
-      maxAttemptsPerGap,
-      maxQueryBudget,
-      attemptsBudgetCount: countsSoFar.executed + countsSoFar.failed,
-      attemptsByGapIdentityCore: attemptsByGapIdentityCore(actionsArtifact.targetedActions),
-      authorizedDedupeKeys: actionsArtifact.targetedActions
-        .filter((r) => r.status !== ACTION_STATUS_FAILED_OPERATIONAL)
-        .map((r) => r.dedupeKey)
-        .filter((k) => isNonEmptyString(k)),
-    });
+    // ---- F.5 RECOVERY FIRST (never re-authorize a recorded action) -----------
+    // A gap that already carries a recorded action is resolved by the frozen replay
+    // decision BEFORE any authorization attempt. Ordering matters: the T05 dedupe
+    // gate deliberately rejects a dedupe key it has already seen, so authorizing
+    // first would REJECT the very action whose durable evidence we must recover
+    // (EQUIVALENT_QUERY_ALREADY_AUTHORIZED) — silently dropping already-paid
+    // committed candidates and making F.5's REUSE structurally unreachable.
+    const prior = latestActionForGap(actionsArtifact, gap.gapId);
+    let action;
+    let mergedPool = null;
 
-    if (decision.status !== AUTHORIZATION_STATUS_AUTHORIZED) {
-      actionsArtifact = recordRejectedDecision(actionsArtifact, decision, proposal);
+    if (prior !== null) {
+      const replay = decideTargetedReplay({
+        workDir,
+        state: currentState,
+        artifact: actionsArtifact,
+        identity: identityOf(prior),
+      });
+      if (replay.decision === RESUME_BLOCKED) continue; // non-advancing terminal: fail closed
+      if (replay.decision === RESUME_REUSE) {
+        // A committed-set action with a valid bound hash: never repeat the paid
+        // retrieval, and never drop the evidence already bought.
+        mergedPool = readBoundTargetedPool(workDir, prior.artifactRel);
+        if (mergedPool !== null) targetedPools.push(mergedPool);
+        reusedActionIds.push(prior.targetedActionId);
+        continue;
+      }
+      // RERUN.
+      if (COMMITTED_SET.includes(prior.status)) {
+        // The record is COMMITTED but the checkpoint never carried its binding (a
+        // crash between the record persist and `writeState`). The artifact bytes and
+        // the record's own binding ARE durable, so the correct recovery COMPLETES the
+        // checkpoint commit — it never repeats the paid retrieval. Bytes that no
+        // longer validate cannot be recovered: fail closed, never fabricate.
+        const recovered = recoverCheckpointBinding({ workDir, record: prior, state: currentState });
+        if (recovered === null) continue;
+        currentState = recovered;
+        mergedPool = readBoundTargetedPool(workDir, prior.artifactRel);
+        if (mergedPool !== null) targetedPools.push(mergedPool);
+      }
+      action = prior;
+    } else {
+      const countsSoFar = computeTargetedAttemptCounts({ actions: actionsArtifact.targetedActions });
+      const decision = authorizeTargetedAction(proposal, {
+        plan,
+        resolveGap,
+        plannedRoutes,
+        runId,
+        occurrenceId,
+        planHash: expectedPlanHash,
+        maxAttemptsPerGap,
+        maxQueryBudget,
+        attemptsBudgetCount: countsSoFar.executed + countsSoFar.failed,
+        attemptsByGapIdentityCore: attemptsByGapIdentityCore(actionsArtifact.targetedActions),
+        authorizedDedupeKeys: actionsArtifact.targetedActions
+          .filter((r) => r.status !== ACTION_STATUS_FAILED_OPERATIONAL)
+          .map((r) => r.dedupeKey)
+          .filter((k) => isNonEmptyString(k)),
+      });
+
+      if (decision.status !== AUTHORIZATION_STATUS_AUTHORIZED) {
+        actionsArtifact = recordRejectedDecision(actionsArtifact, decision, proposal);
+        persistActionsArtifact(workDir, actionsArtifact);
+        if (isNonEmptyString(decision.gapId)) rejectedActionIds.push(decision.gapId);
+        continue;
+      }
+
+      actionsArtifact = registerAuthorizedAction(actionsArtifact, decision);
       persistActionsArtifact(workDir, actionsArtifact);
-      if (isNonEmptyString(decision.gapId)) rejectedActionIds.push(decision.gapId);
-      continue;
+      [action] = actionsArtifact.targetedActions.filter((r) => r.targetedActionId === decision.targetedActionId);
     }
 
-    const targetedActionId = decision.targetedActionId;
-    actionsArtifact = registerAuthorizedAction(actionsArtifact, decision);
-    persistActionsArtifact(workDir, actionsArtifact);
-
-    // ---- T06 replay decision (READ-ONLY): reuse a proven-committed result ----
-    const replay = decideTargetedReplay({
-      workDir,
-      state: currentState,
-      artifact: actionsArtifact,
-      identity: {
-        runId: decision.runId,
-        occurrenceId: decision.occurrenceId,
-        planHash: decision.planHash,
-        gapId: decision.gapId,
-        attempt: decision.attempt,
-        normalizedQuery: decision.normalizedQuery,
-        providerScope: decision.providerScope,
-      },
-    });
-
-    if (replay.decision === RESUME_REUSE) {
-      // A COMMITTED action with a valid bound hash: never repeat the paid retrieval.
-      const bound = actionsArtifact.targetedActions.find((r) => r.targetedActionId === targetedActionId);
-      const boundPool = readBoundTargetedPool(workDir, bound?.artifactRel ?? null);
-      if (boundPool !== null) targetedPools.push(boundPool);
-      reusedActionIds.push(targetedActionId);
-      continue;
-    }
+    const targetedActionId = action.targetedActionId;
 
     // ---- T02 execution (the ONLY retrieval route) ----------------------------
-    const roundDir = path.join(workDir, TARGETED_SUBPHASE_DIRNAME, `action-${targetedActionId}`);
-    const res = runMultiQueryRetrieval({
-      plan,
-      planHash: expectedPlanHash,
-      seam,
-      channels,
-      workDir: roundDir,
-      targetedQueries: [decision.normalizedQuery],
-    });
+    // Only a still-AUTHORIZED action is executed; a recovered COMMITTED action
+    // already has its durable product and must never be re-run.
+    if (action.status === ACTION_STATUS_AUTHORIZED) {
+      const roundDir = path.join(workDir, TARGETED_SUBPHASE_DIRNAME, `action-${targetedActionId}`);
+      const res = runMultiQueryRetrieval({
+        plan,
+        planHash: expectedPlanHash,
+        seam,
+        channels,
+        workDir: roundDir,
+        targetedQueries: [action.normalizedQuery],
+      });
 
-    if (!res.ok) {
-      // Operational failure: AUTHENTICALLY recorded as FAILED_OPERATIONAL (one
-      // in-edge from AUTHORIZED) — never fabricated as resolved, never retried here
-      // (the STOP / budget owner decides policy, not this sub-phase).
-      actionsArtifact = advanceActionStatusSafely(
-        actionsArtifact, targetedActionId, ACTION_STATUS_FAILED_OPERATIONAL, { event: 'EXECUTE_FAILED', reason: 'operational' },
-      );
-      persistActionsArtifact(workDir, actionsArtifact);
-      continue;
+      if (!res.ok) {
+        // Operational failure: AUTHENTICALLY recorded as FAILED_OPERATIONAL (one
+        // in-edge from AUTHORIZED) — never fabricated as resolved, never retried
+        // here (the STOP / budget owner decides policy, not this sub-phase).
+        actionsArtifact = advanceActionStatusSafely(
+          actionsArtifact, targetedActionId, ACTION_STATUS_FAILED_OPERATIONAL, { event: 'EXECUTE_FAILED', reason: 'operational' },
+        );
+        persistActionsArtifact(workDir, actionsArtifact);
+        continue;
+      }
+
+      mergedPool = res.pool;
+      targetedPools.push(res.pool);
+      targetedQueries.push(action.normalizedQuery);
+      crashAt('after_targeted_execution');
+
+      // ---- T06 commit point (checkpoint-first), reused verbatim ---------------
+      const artifactRel = path.join(TARGETED_SUBPHASE_DIRNAME, `action-${targetedActionId}`, RETRIEVAL_POOL_FILENAME);
+      const artifactBytes = fs.readFileSync(path.join(roundDir, RETRIEVAL_POOL_FILENAME));
+      const prepared = prepareTargetedCommit({
+        workDir,
+        artifact: actionsArtifact,
+        state: currentState,
+        targetedActionId,
+        artifactRel,
+        artifactBytes,
+      });
+      actionsArtifact = prepared.artifact;
+      currentState = prepared.state;
+      // crashAt window: bytes + binding + COMMITTED record are durable, the checkpoint
+      // is NOT yet committed → "no completion evidence" (one safe re-run / recovery).
+      crashAt('after_targeted_commit_prepare');
+      finalizeTargetedCommit(workDir, currentState);
+      executedActionIds.push(targetedActionId);
     }
-
-    targetedPools.push(res.pool);
-    targetedQueries.push(decision.normalizedQuery);
-    crashAt('after_targeted_execution');
-
-    // ---- T06 commit point (checkpoint-first), reused verbatim -----------------
-    const artifactRel = path.join(TARGETED_SUBPHASE_DIRNAME, `action-${targetedActionId}`, RETRIEVAL_POOL_FILENAME);
-    const artifactBytes = fs.readFileSync(path.join(roundDir, RETRIEVAL_POOL_FILENAME));
-    const prepared = prepareTargetedCommit({
-      workDir,
-      artifact: actionsArtifact,
-      state: currentState,
-      targetedActionId,
-      artifactRel,
-      artifactBytes,
-    });
-    actionsArtifact = prepared.artifact;
-    currentState = prepared.state;
-    // crashAt window: bytes + binding + COMMITTED record are durable, the checkpoint
-    // is NOT yet committed → "no completion evidence" (one safe re-run).
-    crashAt('after_targeted_commit_prepare');
-    finalizeTargetedCommit(workDir, currentState);
-    executedActionIds.push(targetedActionId);
 
     // ---- T08 re-evaluation (RESOLVED only when a predicate says so) ----------
     const priorQuestionIds = [...new Set(accumulatedPool.candidates.map((c) => String(c.identity.questionId)))];
-    const targetedQuestionIds = res.pool.candidates.map((c) => String(c.identity.questionId));
+    const targetedQuestionIds = (mergedPool?.candidates ?? []).map((c) => String(c.identity.questionId));
     const framing = framingForGap === null
       ? defaultFramingForGap(gap, plan, provenance)
       : framingForGap(gap);
@@ -500,6 +529,47 @@ function attemptsByGapIdentityCore(records) {
     counts[core] = (counts[core] ?? 0) + 1;
   }
   return counts;
+}
+
+/** The exact F.1 identity field set of a persisted action record (F.5 replay input). */
+function identityOf(record) {
+  return {
+    runId: record.runId,
+    occurrenceId: record.occurrenceId,
+    planHash: record.planHash,
+    gapId: record.gapId,
+    attempt: record.attempt,
+    normalizedQuery: record.normalizedQuery,
+    providerScope: record.providerScope,
+  };
+}
+
+/** Highest-attempt recorded action for a gap, or null. Deterministic. */
+function latestActionForGap(artifact, gapId) {
+  const forGap = artifact.targetedActions.filter((r) => r.gapId === gapId);
+  if (forGap.length === 0) return null;
+  return forGap.reduce((best, r) => (Number(r.attempt) >= Number(best.attempt) ? r : best));
+}
+
+/**
+ * Complete a checkpoint commit whose record binding was already made durable but
+ * whose `writeState` never ran (a crash between the COMMITTED record persist and the
+ * checkpoint commit). This is the checkpoint-completion recovery: it neither repeats
+ * the paid retrieval nor invents a credential — it copies the action's OWN durable
+ * binding hash into `state.hashes` under T06's namespaced key and commits.
+ *
+ * Returns the next state, or `null` when the bound bytes no longer validate (a
+ * missing/corrupted artifact cannot be recovered — fail closed rather than claim).
+ */
+function recoverCheckpointBinding({ workDir, record, state }) {
+  const bindingKey = record.bindingKey ?? targetedBindingKey(record.targetedActionId);
+  const bindingHash = record.bindingHash;
+  if (!isNonEmptyString(bindingHash) || !isNonEmptyString(record.artifactRel)) return null;
+  const check = validateArtifactCheckpoint(workDir, record.artifactRel, bindingHash);
+  if (!check.ok) return null;
+  const nextState = { ...(state ?? {}), hashes: { ...((state ?? {}).hashes ?? {}), [bindingKey]: bindingHash } };
+  finalizeTargetedCommit(workDir, nextState);
+  return nextState;
 }
 
 /** Advance a status, tolerating an already-advanced record (idempotent re-entry). */

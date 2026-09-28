@@ -40,6 +40,9 @@ import {
   decideTargetedReplay,
 } from '../lib/targeted-requery-lifecycle.mjs';
 import { RESOLUTION_BASIS_DUPLICATE_ONLY } from '../lib/targeted-requery-resolution.mjs';
+import { composeP1Research } from '../lib/p1-runtime-composer.mjs';
+import { T14_SYNTHESIS_RUNTIME_ID, T14_SYNTHESIS_MODEL } from '../lib/cross-source-synthesis.mjs';
+import { mockVector768 } from './helpers/test-embedding-provider.mjs';
 
 const HERE = path.dirname(new URL(import.meta.url).pathname);
 const LIB = path.resolve(HERE, '..', 'lib');
@@ -416,6 +419,56 @@ test('F2 — after a completed run the committed action is REUSEd (never re-exec
   assert.equal(replay.decision, RESUME_REUSE);
 });
 
+test('F3 — re-running after a pre-checkpoint crash RECOVERS the durable committed evidence without paying again', () => {
+  const workDir = tmpWorkDir();
+  const fixture = buildFixture();
+  const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+  const gap = contradictionGap(pool);
+  const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]);
+
+  assert.throws(() => runTargetedSubphase({
+    ...args,
+    crashAt: (label) => { if (label === 'after_targeted_commit_prepare') throw new Error('simulated SIGKILL'); },
+  }), /simulated SIGKILL/);
+  const callsAfterCrash = fixture.adapter.__calls();
+
+  // The re-run must NOT be rejected by the dedupe gate and must NOT re-query.
+  const recovered = runTargetedSubphase(subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]));
+
+  assert.equal(fixture.adapter.__calls(), callsAfterCrash, 'no repeated paid retrieval');
+  assert.equal(recovered.executedActionIds.length, 0, 'nothing was re-executed');
+  assert.equal(recovered.reusedActionIds.length, 0, 'this was a checkpoint completion, not a reuse');
+  const record = recovered.actionsArtifact.targetedActions.find((r) => r.gapId === gap.gapId);
+  const bindingKey = `${TARGETED_BINDING_PREFIX}${record.targetedActionId}`;
+  assert.match(String(recovered.state.hashes[bindingKey]), /^[0-9a-f]{64}$/, 'the checkpoint binding was completed');
+  assert.equal(record.status, ACTION_STATUS_RESOLVED, 'the recovered action was evaluated to a real conclusion');
+  const ids = recovered.pool.candidates.map((c) => c.identity.questionId);
+  assert.ok(ids.includes('900') && ids.includes('901'), 'the already-paid candidates were NOT dropped');
+});
+
+test('F4 — a second complete run over the same work dir REUSEs (zero new retrieval, same pool)', () => {
+  const workDir = tmpWorkDir();
+  const fixture = buildFixture();
+  const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+  const gap = contradictionGap(pool);
+
+  const first = runTargetedSubphase(subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]));
+  const callsAfterFirst = fixture.adapter.__calls();
+  const second = runTargetedSubphase({
+    ...subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]),
+    state: first.state,
+  });
+
+  assert.equal(fixture.adapter.__calls(), callsAfterFirst, 'a reuse must never repeat the paid retrieval');
+  assert.equal(second.reusedActionIds.length, 1);
+  assert.equal(second.executedActionIds.length, 0);
+  assert.deepEqual(
+    second.pool.candidates.map((c) => c.identity.questionId),
+    first.pool.candidates.map((c) => c.identity.questionId),
+    'the reused pool is identical',
+  );
+});
+
 // ---------------------------------------------------------------------------
 // G. default equivalence (source-level; the untouched P1 suites are the runtime
 //    evidence and are run unchanged by the classified gate)
@@ -428,4 +481,170 @@ test('G1 — the composer only runs the sub-phase behind an opt-in guard (defaul
   assert.ok(guard >= 0, 'the opt-in guard must exist');
   assert.ok(guard < call, 'the call must be inside the opt-in guard');
   assert.equal((source.match(/targetedSubphase\s*=\s*null/g) ?? []).length, 1, 'default value must be null (disabled)');
+});
+
+// ---------------------------------------------------------------------------
+// G2. FULL-CHAIN default equivalence (REQUIRED_TESTS: 缺省等价性（全链路对照）)
+// Two real composeP1Research runs over injected offline doubles — one with the
+// parameter absent, one with `targetedSubphase: null` — must produce the identical
+// canonical artifact set, and NEITHER may produce a targeted artifact.
+// ---------------------------------------------------------------------------
+
+const G2_PLAN = {
+  schemaVersion: 1,
+  queryVariants: ['AI 编程工具 取代 程序员', 'AI coding 工具 岗位影响'],
+  aspects: ['岗位影响'],
+  entities: [],
+  opposingFramings: [],
+  terminologyVariants: [],
+  sourceGroupIntents: [],
+};
+
+const G2_TEXTS = { 100: ['回答一：总体上有效。', '回答二：小样本下有反例。'], 200: ['回答三：另一个问题下的经验。'] };
+
+function g2SearchResult(providerId, questionIds) {
+  return {
+    ok: true,
+    provider_id: providerId,
+    capability: CAPABILITY_SEARCH,
+    auth_class: AUTH_CLASS_OFFICIAL_SECRET,
+    retrieved_at: '2026-09-29T00:00:00.000Z',
+    items: questionIds.map((questionId, i) => ({
+      identity: { kind: 'candidate', questionId },
+      provenance: { route: 'fixture', rank: i + 1, rankOrigin: 'fixture_order' },
+      source_url: null,
+      facts: {},
+    })),
+    completeness: { status: COMPLETENESS_UNKNOWN, evidence: { signal: 'absent', reason: 'fixture' } },
+  };
+}
+
+function g2Seam() {
+  return createProviderSeam({
+    adapters: [
+      { providerId: 'fixture-official', capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET, retrieve: () => g2SearchResult('fixture-official', ['100', '200']) },
+      { providerId: 'fixture-global', capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET, retrieve: () => g2SearchResult('fixture-global', ['100', '200']) },
+    ],
+  });
+}
+
+function g2CaptureAdapter() {
+  return {
+    providerId: 'zhihu-session-capture',
+    capability: 'capture',
+    authClass: 'session',
+    retrieve({ questionId, outDir }) {
+      const dir = path.join(outDir, String(questionId));
+      fs.mkdirSync(dir, { recursive: true });
+      const texts = G2_TEXTS[String(questionId)] ?? [];
+      fs.writeFileSync(path.join(dir, 'answers.json'), `${JSON.stringify({
+        questionId,
+        questionTitle: `问题 ${questionId}`,
+        answers: texts.map((content, i) => ({ id: `${questionId}-a-${i + 1}`, content, excerpt: content, author: `作者${questionId}`, voteupCount: 5 - i })),
+      }, null, 2)}\n`);
+      return {
+        ok: true,
+        provider_id: 'zhihu-session-capture',
+        capability: 'capture',
+        auth_class: 'session',
+        retrieved_at: '2026-09-29T00:00:00.000Z',
+        items: [{ identity: { kind: 'group', questionId: String(questionId) }, provenance: { route: 'fixture-capture', rank: 1, rankOrigin: 'fixture' }, facts: { capturedAnswerCount: texts.length } }],
+        completeness: { status: 'complete', evidence: { basis: 'fixture_complete_pagination' } },
+      };
+    },
+  };
+}
+
+function g2Runner() {
+  return (name, args) => {
+    if (name === 'zhihu-verify') {
+      const doc = JSON.parse(fs.readFileSync(path.join(args[0], 'answers.json'), 'utf8'));
+      return { status: 0, stdout: JSON.stringify({ valid: true, questionId: String(doc.questionId), capturedAnswerCount: doc.answers.length, reportedAnswerCount: doc.answers.length }) };
+    }
+    if (name === 'zhihu-handoff') {
+      const dir = args[0];
+      const doc = JSON.parse(fs.readFileSync(path.join(dir, 'answers.json'), 'utf8'));
+      fs.writeFileSync(path.join(dir, 'handoff.json'), `${JSON.stringify({ questionId: String(doc.questionId), task: 'digest', sourceType: 'session-capture', generatedBy: 'fixture' }, null, 2)}\n`);
+      return { status: 0, stdout: '' };
+    }
+    if (name === 'corpus-verify-handoff') return { status: 0, stdout: JSON.stringify({ valid: true }) };
+    throw new Error(`unexpected runner command: ${name}`);
+  };
+}
+
+function g2EmbeddingProvider() {
+  return { preflight: async () => ({ ok: true }), embed: async (texts) => ({ vectors: texts.map(() => mockVector768(7)) }) };
+}
+
+function g2Runtime() {
+  return {
+    runtimeId: T14_SYNTHESIS_RUNTIME_ID,
+    model: T14_SYNTHESIS_MODEL,
+    analyze: async ({ projection }) => {
+      const tokens = [...String(projection).matchAll(/\[BEGIN UNTRUSTED_DATA token=([A-Za-z0-9]+)/g)].map((m) => m[1]);
+      return {
+        main: [{ tokenRef: tokens[0], statement: '主流观点' }],
+        minority: [{ tokenRef: tokens[tokens.length - 1], statement: '少数派观点' }],
+        contradictory: [],
+        expertEvidenceRichTokens: [tokens[0]],
+      };
+    },
+    synthesize: async ({ claims }) => ({
+      families: [{ aspect: '总体有效性', anchorClaimId: [...claims.map((c) => c.claimId)].sort()[0], members: claims.map((c) => ({ claimId: c.claimId, stance: 'ASSERTS' })) }],
+      unresolvedClaimIds: [],
+    }),
+  };
+}
+
+/** Every file under workDir, work-relative, excluding the timestamped volatile ones. */
+function artifactInventory(workDir) {
+  const out = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const abs = path.join(dir, entry.name);
+      if (entry.isDirectory()) { walk(abs); continue; }
+      const rel = path.relative(workDir, abs);
+      if (rel === 'orchestration-state.json' || rel === 'events.jsonl' || rel === '.p1-commit-staging' || rel.startsWith('.p1-commit-staging/')) continue;
+      out.push(rel);
+    }
+  };
+  walk(workDir);
+  return out.sort();
+}
+
+function g2ComposeArgs(workDir) {
+  return {
+    topic: 'AI 编程工具会取代程序员吗',
+    workDir,
+    plan: G2_PLAN,
+    runtime: g2Runtime(),
+    seam: g2Seam(),
+    captureAdapter: g2CaptureAdapter(),
+    runner: g2Runner(),
+    embeddingProvider: g2EmbeddingProvider(),
+  };
+}
+
+test('G2 — a real full-chain run is byte-equivalent with the parameter absent vs explicitly null, and creates no targeted artifact', async () => {
+  const dirAbsent = tmpWorkDir('p2a-t09-g2-absent');
+  const dirNull = tmpWorkDir('p2a-t09-g2-null');
+
+  const absent = await composeP1Research(g2ComposeArgs(dirAbsent));
+  assert.equal(absent.ok, true, `compose (param absent) failed: ${JSON.stringify(absent)}`);
+
+  const explicitNull = await composeP1Research({ ...g2ComposeArgs(dirNull), targetedSubphase: null });
+  assert.equal(explicitNull.ok, true, `compose (param null) failed: ${JSON.stringify(explicitNull)}`);
+
+  // identical canonical artifact inventory
+  assert.deepEqual(artifactInventory(dirAbsent), artifactInventory(dirNull));
+
+  // and NO targeted artifact / sub-phase directory in either
+  for (const dir of [dirAbsent, dirNull]) {
+    const inventory = artifactInventory(dir);
+    assert.equal(
+      inventory.some((rel) => rel.includes('targeted-requery')),
+      false,
+      `the default path must create no targeted artifact (${dir})`,
+    );
+  }
 });

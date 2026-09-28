@@ -1112,7 +1112,12 @@ export async function composeP1Research({
       // `runMultiQueryRetrieval({..., targetedQueries})` seam (no second pipeline).
       // ---------------------------------------------------------------------
       if (targetedSubphase !== null) {
+        // The opt-in config may supply ONLY sub-phase policy (proposals,
+        // maxQueryBudget, maxAttemptsPerGap, framingForGap); the wiring below is
+        // spread LAST so a config can never redirect the work dir, plan, checkpoint
+        // state, seam or crash seam.
         const targeted = runTargetedSubphase({
+          ...targetedSubphase,
           workDir,
           plan,
           planHash: expectedPlanHash,
@@ -1124,11 +1129,7 @@ export async function composeP1Research({
           accumulatedPool: pool,
           state,
           crashAt,
-          ...targetedSubphase,
         });
-        if (!targeted.ok) {
-          return persistFailure(CFC_RETRIEVAL_FAILED, `targeted sub-phase failed closed: ${String(targeted.code ?? 'unknown')}`);
-        }
         pool = targeted.pool;
         // Adopt the targeted checkpoint bindings into the composition checkpoint so
         // the checkpoint-first commit point stays the ONLY trust root (F.5 / AC5).
