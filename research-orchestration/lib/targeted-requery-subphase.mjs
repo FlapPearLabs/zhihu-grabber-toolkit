@@ -296,10 +296,23 @@ export function runTargetedSubphase({
   const actionable = gaps.filter((gap) => gapTypeAllowsRetrievalAction(gap.gapType));
 
   // ---- 3. artifacts (create when absent; the composer owns the work dir) -----
+  // The two persisted artifacts are anchored on BOTH planHash and occurrenceId.
+  // `loadActionsArtifact` / `loadResolutionArtifact` only check the planHash, and
+  // the composer archives just the group-level derived state across occurrences
+  // (P1-R02) — so a NEW occurrence in a reused work dir would load the PRIOR
+  // occurrence's artifact and every later `registerAuthorizedAction` would throw
+  // on the occurrenceId anchor, aborting the whole composition (CFC_ABORTED).
+  //
+  // The occurrence anchor is checked HERE, in the orchestrator, rather than by
+  // widening T06's / T08's frozen loader signatures: this ticket owns orchestration,
+  // not the lifecycle persistence surface. A stale anchor is treated exactly like a
+  // stale planHash — not reusable, rebuild from scratch for this occurrence.
   const loadedActions = loadActionsArtifact(workDir, expectedPlanHash);
-  let actionsArtifact = loadedActions.ok ? loadedActions.artifact : createActionsArtifact({ planHash: expectedPlanHash, occurrenceId });
+  let actionsArtifact = loadedActions.ok && loadedActions.artifact.occurrenceId === occurrenceId
+    ? loadedActions.artifact
+    : createActionsArtifact({ planHash: expectedPlanHash, occurrenceId });
   const loadedResolution = loadResolutionArtifact(workDir, expectedPlanHash);
-  let resolutionArtifact = loadedResolution.ok
+  let resolutionArtifact = loadedResolution.ok && loadedResolution.artifact.occurrenceId === occurrenceId
     ? loadedResolution.artifact
     : createResolutionArtifact({ planHash: expectedPlanHash, occurrenceId });
 
@@ -371,10 +384,13 @@ export function runTargetedSubphase({
         // contract's "承认可能重复付费一次" cost statement is about.
         action = prior;
       } else if (FINAL_EVIDENCE_STATUSES.includes(prior.status)) {
-        // A terminal conclusion already exists; its binding no longer validates, so
-        // the evidence bytes behind it cannot be re-read. Keep the conclusion (it is
-        // append-only history and is never rewritten here) and re-expose whatever
-        // pool is still readable. No re-payment: the query was already paid for.
+        // A terminal conclusion already exists and is append-only history, never
+        // rewritten here. Its evidence bytes are gone, but the CONCLUSION still
+        // stands — so unlike the non-terminal case below there is nothing left to
+        // decide, and surfacing a hard failure would abort a run over evidence the
+        // contract has already concluded without. The loss is recorded rather than
+        // hidden: the gap keeps its terminal verdict and the caller can see that no
+        // product was contributed this pass.
         mergedPool = readBoundTargetedPool(workDir, prior.artifactRel);
         if (mergedPool !== null) targetedPools.push(mergedPool);
         reusedActionIds.push(prior.targetedActionId);

@@ -514,6 +514,88 @@ test('F3c — a committed action whose bytes are gone FAILS CLOSED instead of re
   );
 });
 
+test('H1 — a NEW occurrence in a reused work dir does NOT load the prior occurrence artifacts', () => {
+  const workDir = tmpWorkDir();
+  const fixture = buildFixture();
+  const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+  const gap = contradictionGap(pool);
+
+  // Occurrence A populates the work dir. Occurrence B (same planHash, same workDir)
+  // must not inherit it: `loadActionsArtifact` only checks planHash, and the
+  // composer archives only the group-level state, so without an occurrence anchor
+  // check the very first `registerAuthorizedAction` throws on the occurrenceId
+  // anchor and aborts the whole composition.
+  const first = runTargetedSubphase(subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]));
+  assert.equal(first.actionsArtifact.occurrenceId, OCCURRENCE);
+
+  const second = runTargetedSubphase({
+    ...subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]),
+    occurrenceId: 'occurrence-b',
+  });
+
+  assert.equal(second.actionsArtifact.occurrenceId, 'occurrence-b', 'the anchor is occurrence B');
+  assert.equal(second.ok, true, 'a new occurrence must not abort on the stale anchor');
+  assert.equal(
+    second.actionsArtifact.targetedActions.every((r) => r.occurrenceId === 'occurrence-b'),
+    true,
+    'every persisted record belongs to the current occurrence',
+  );
+  assert.equal(
+    second.actionsArtifact.targetedActions.some((r) => r.occurrenceId === OCCURRENCE),
+    false,
+    "no record from the prior occurrence survived into the new one",
+  );
+});
+
+test('H2 — the composer carries prior targeted bindings across a resume so F.5 REUSE is reachable in production', () => {
+  const source = fs.readFileSync(path.join(LIB, 'p1-runtime-composer.mjs'), 'utf8');
+  // F.4 proved REUSE only by handing `first.state` back in by hand. The production
+  // path builds state via `makeState` (empty `hashes`), so without an explicit
+  // carry-over `decideTargetedReplay` can never see a binding and the round pool is
+  // re-read WITHOUT its hash check — the checkpoint would stop being the trust root.
+  assert.ok(
+    /TARGETED_BINDING_PREFIX/.test(source),
+    'the composer must reference the targeted binding namespace',
+  );
+  assert.ok(
+    /isResumingOccurrence[\s\S]{0,400}existing\?\.hashes/.test(source),
+    'the targeted bindings must be carried from the prior checkpoint on a resume',
+  );
+  // Only the targeted namespace may be adopted; stage bindings keep their own proof.
+  const carry = source.slice(source.indexOf('TARGETED_BINDING_PREFIX'));
+  assert.ok(
+    /key\.startsWith\(TARGETED_BINDING_PREFIX\)/.test(carry),
+    'the carry-over must be namespaced to targeted-action:* only',
+  );
+});
+
+test('H3 — a terminal conclusion whose evidence bytes are gone keeps the verdict instead of aborting', () => {
+  const workDir = tmpWorkDir();
+  const fixture = buildFixture();
+  const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+  const gap = contradictionGap(pool);
+  const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]);
+
+  const first = runTargetedSubphase(args);
+  const record = first.actionsArtifact.targetedActions.find((r) => r.gapId === gap.gapId);
+  assert.equal(record.status, ACTION_STATUS_RESOLVED, 'precondition: a terminal conclusion exists');
+  // Destroy the evidence AND the checkpoint binding: the verdict stands, the bytes do not.
+  fs.rmSync(path.join(workDir, TARGETED_SUBPHASE_DIRNAME), { recursive: true, force: true });
+
+  const second = runTargetedSubphase({ ...args, state: { hashes: {} } });
+  assert.equal(second.ok, true, 'a lost artifact must not abort a run whose conclusion is already final');
+  assert.equal(
+    second.actionsArtifact.targetedActions.find((r) => r.gapId === gap.gapId).status,
+    ACTION_STATUS_RESOLVED,
+    'the append-only terminal verdict is never rewritten',
+  );
+  assert.deepEqual(
+    second.pool.candidates.map((c) => c.identity.questionId),
+    pool.candidates.map((c) => c.identity.questionId),
+    'no product was contributed this pass, and none was invented',
+  );
+});
+
 test('F4 — a second complete run over the same work dir REUSEs (zero new retrieval, same pool)', () => {
   const workDir = tmpWorkDir();
   const fixture = buildFixture();

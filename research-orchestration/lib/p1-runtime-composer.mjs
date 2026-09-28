@@ -72,7 +72,8 @@ import {
   beginConvergenceJournal,
   CoverageIntegrationError,
 } from './coverage-final-integration.mjs';
-import { runTargetedSubphase } from './targeted-requery-subphase.mjs';
+import { runTargetedSubphase, TARGETED_SUBPHASE_DIRNAME } from './targeted-requery-subphase.mjs';
+import { TARGETED_BINDING_PREFIX } from './targeted-requery-lifecycle.mjs';
 import { DECISION_PROVIDER_FAILURE } from './retrieval-round-controller.mjs';
 import {
   SELECTION_DECISION_FILENAME,
@@ -761,6 +762,9 @@ function isPlainObject(v) {
   return v !== null && typeof v === 'object' && !Array.isArray(v);
 }
 
+/** Canonical lowercase 64-hex content hash shape (the only binding value shape). */
+const HEX64_BINDING = /^[0-9a-f]{64}$/;
+
 function sanitizeMessage(message) {
   return String(message ?? '').slice(0, 300);
 }
@@ -1030,6 +1034,22 @@ export async function composeP1Research({
     // after this point marks the CURRENT occurrence FAILED, while a failure
     // before it left the prior checkpoint intact and resumable (P1-2).
     checkpointAdopted = true;
+
+    // The targeted sub-phase's completion evidence lives in the PRIOR checkpoint's
+    // `targeted-action:*` bindings (F.5: the checkpoint is the only trust root).
+    // `makeState` starts from empty `hashes`, so without carrying these across the
+    // resume boundary `decideTargetedReplay` could never see a binding and F.5's
+    // REUSE branch would be unreachable on every production resume — a paid
+    // retrieval would be re-run and the round pool re-read WITHOUT its hash check.
+    // Only the targeted namespace is adopted here; stage bindings keep their own
+    // re-entry proof (`planResumeReentry`) and are never inherited by assumption.
+    if (isResumingOccurrence && isPlainObject(existing?.hashes)) {
+      for (const [key, value] of Object.entries(existing.hashes)) {
+        if (key.startsWith(TARGETED_BINDING_PREFIX) && typeof value === 'string' && HEX64_BINDING.test(value)) {
+          state.hashes[key] = value;
+        }
+      }
+    }
 
     let coverageState;
     let journal;
