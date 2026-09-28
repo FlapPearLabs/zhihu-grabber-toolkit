@@ -64,7 +64,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { isValidPlanHashFormat } from './plan-contract.mjs';
-import { appendEvent, validateArtifactCheckpoint } from './state.mjs';
+import { appendEvent } from './state.mjs';
 import {
   RETRIEVAL_POOL_FILENAME,
   RETRIEVAL_POOL_SCHEMA_VERSION,
@@ -89,14 +89,13 @@ import {
 } from './targeted-requery-authorization.mjs';
 import {
   ACTION_STATUS_AUTHORIZED,
-  ACTION_STATUS_COMMITTED,
   ACTION_STATUS_EVALUATED,
   ACTION_STATUS_FAILED_OPERATIONAL,
   ACTIONS_FILENAME,
   advanceActionStatus,
-  COMMITTED_SET,
   createActionsArtifact,
   decideTargetedReplay,
+  FINAL_EVIDENCE_STATUSES,
   loadActionsArtifact,
   persistActionsArtifact,
   prepareTargetedCommit,
@@ -104,10 +103,8 @@ import {
   recordRejectedDecision,
   registerAuthorizedAction,
   RESUME_REUSE,
-  RESUME_RERUN,
   RESUME_BLOCKED,
   TARGETED_BINDING_PREFIX,
-  targetedBindingKey,
 } from './targeted-requery-lifecycle.mjs';
 import {
   RESOLUTION_FILENAME,
@@ -323,16 +320,27 @@ export function runTargetedSubphase({
     // E.7: a gap with no admissible controller proposal is NEVER silently re-run.
     if (proposal === undefined) continue;
 
-    // ---- F.5 RECOVERY FIRST (never re-authorize a recorded action) -----------
-    // A gap that already carries a recorded action is resolved by the frozen replay
-    // decision BEFORE any authorization attempt. Ordering matters: the T05 dedupe
-    // gate deliberately rejects a dedupe key it has already seen, so authorizing
-    // first would REJECT the very action whose durable evidence we must recover
-    // (EQUIVALENT_QUERY_ALREADY_AUTHORIZED) — silently dropping already-paid
-    // committed candidates and making F.5's REUSE structurally unreachable.
+    // ---- F.5 REPLAY FIRST (the frozen decision outranks authorization) -------
+    // A gap that already carries a recorded action is resolved by T06's replay
+    // decision BEFORE any authorization attempt. Two frozen rules make this
+    // ordering mandatory, not stylistic:
+    //   (1) F.5: `AUTHORIZED`-only records and hash-mismatch / missing-artifact
+    //       cases take the SAFE RE-RUN ONCE branch. Re-authorizing would route
+    //       through T05's dedupe gate, which rejects a dedupe key it has already
+    //       seen (EQUIVALENT_QUERY_ALREADY_AUTHORIZED) and would make F.5's
+    //       mandated re-run structurally unreachable.
+    //   (2) F.5 / P1-R06: the checkpoint is the ONLY trust root. The COMMITTED
+    //       record's own `bindingHash` is NOT anchored by the checkpoint (it is
+    //       outside the F.1 identity, so it never self-verifies), so promoting it
+    //       into `state.hashes` here would manufacture a completion credential
+    //       from an unanchored second source — the exact P0 pattern P1-R06
+    //       revoked. When `state.hashes[bindingKey]` is absent or mismatched the
+    //       contract answer is a RE-RUN, admitting the possible double payment
+    //       that `UNKNOWN != PASS` demands. Never fabricate completion evidence.
     const prior = latestActionForGap(actionsArtifact, gap.gapId);
     let action;
     let mergedPool = null;
+    let advanceToTerminal = false;
 
     if (prior !== null) {
       const replay = decideTargetedReplay({
@@ -343,27 +351,63 @@ export function runTargetedSubphase({
       });
       if (replay.decision === RESUME_BLOCKED) continue; // non-advancing terminal: fail closed
       if (replay.decision === RESUME_REUSE) {
-        // A committed-set action with a valid bound hash: never repeat the paid
-        // retrieval, and never drop the evidence already bought.
+        // A committed-set action whose checkpoint binding validates: never repeat
+        // the paid retrieval, and never drop the evidence already bought. REUSE
+        // covers the WHOLE committed set, including the two non-terminal members
+        // COMMITTED / EVALUATED — a crash between the commit point and the T08
+        // conclusion leaves exactly those statuses behind, and skipping them
+        // outright would strand the gap with no terminal forever (S10: no gap may
+        // silently vanish). So REUSE skips only the PAID retrieval; the T08
+        // evaluation still has to run for a non-terminal status.
+        mergedPool = readBoundTargetedPool(workDir, prior.artifactRel);
+        if (mergedPool !== null) targetedPools.push(mergedPool);
+        reusedActionIds.push(prior.targetedActionId);
+        advanceToTerminal = !FINAL_EVIDENCE_STATUSES.includes(prior.status);
+        action = prior;
+      } else if (prior.status === ACTION_STATUS_AUTHORIZED) {
+        // F.5's plain safe re-run: an AUTHORIZED-only record carries no completion
+        // evidence, so the single retrieval entry point below runs it for real. This
+        // is the only re-run branch that may pay again — and it is the branch the
+        // contract's "承认可能重复付费一次" cost statement is about.
+        action = prior;
+      } else if (FINAL_EVIDENCE_STATUSES.includes(prior.status)) {
+        // A terminal conclusion already exists; its binding no longer validates, so
+        // the evidence bytes behind it cannot be re-read. Keep the conclusion (it is
+        // append-only history and is never rewritten here) and re-expose whatever
+        // pool is still readable. No re-payment: the query was already paid for.
         mergedPool = readBoundTargetedPool(workDir, prior.artifactRel);
         if (mergedPool !== null) targetedPools.push(mergedPool);
         reusedActionIds.push(prior.targetedActionId);
         continue;
-      }
-      // RERUN.
-      if (COMMITTED_SET.includes(prior.status)) {
-        // The record is COMMITTED but the checkpoint never carried its binding (a
-        // crash between the record persist and `writeState`). The artifact bytes and
-        // the record's own binding ARE durable, so the correct recovery COMPLETES the
-        // checkpoint commit — it never repeats the paid retrieval. Bytes that no
-        // longer validate cannot be recovered: fail closed, never fabricate.
-        const recovered = recoverCheckpointBinding({ workDir, record: prior, state: currentState });
-        if (recovered === null) continue;
-        currentState = recovered;
+      } else {
+        // COMMITTED / EVALUATED with a MISSING or MISMATCHED checkpoint binding:
+        // there is no completion evidence, and F.5 forbids manufacturing any (the
+        // record's own bindingHash is not checkpoint-anchored — promoting it is the
+        // P1-R06 unanchored-second-credential P0). F.5's "safe re-run once" cannot be
+        // executed as a fresh authorization either: E.6's dedupeKey covers
+        // {gapIdentityCore, normalizedQuery, providerScope} and deliberately excludes
+        // `attempt`, so re-authorizing this exact query would be rejected as
+        // EQUIVALENT_QUERY_ALREADY_AUTHORIZED — re-paying is structurally impossible
+        // without breaking a frozen contract. The only honest in-scope move is to
+        // finish the T08 conclusion for the record that exists, using whatever bytes
+        // are still readable.
         mergedPool = readBoundTargetedPool(workDir, prior.artifactRel);
-        if (mergedPool !== null) targetedPools.push(mergedPool);
+        if (mergedPool === null) {
+          // The paid evidence is genuinely gone AND no terminal was ever reached.
+          // Continuing would report `ok: true` while silently dropping a paid
+          // action — a silent wrong value. Fail closed with a typed error instead:
+          // UNKNOWN must surface, not be laundered into a clean result.
+          throw subphaseError(
+            `no completion evidence and no readable product for targeted action ${prior.targetedActionId} `
+            + `(status ${prior.status}, replay ${replay.reason}): the paid retrieval cannot be re-paid `
+            + 'because E.6 dedupe forbids re-authorizing the same equivalent query, so this needs an '
+            + 'explicit operator decision rather than a synthesized conclusion',
+          );
+        }
+        targetedPools.push(mergedPool);
+        advanceToTerminal = true;
+        action = prior;
       }
-      action = prior;
     } else {
       const countsSoFar = computeTargetedAttemptCounts({ actions: actionsArtifact.targetedActions });
       const decision = authorizeTargetedAction(proposal, {
@@ -398,8 +442,12 @@ export function runTargetedSubphase({
     const targetedActionId = action.targetedActionId;
 
     // ---- T02 execution (the ONLY retrieval route) ----------------------------
-    // Only a still-AUTHORIZED action is executed; a recovered COMMITTED action
-    // already has its durable product and must never be re-run.
+    // Only a still-AUTHORIZED action is executed. Every committed-set record
+    // carries its durable product already: re-running the retrieval for one of
+    // those would pay twice for the same query, which E.6's dedupe makes illegal
+    // and F.5's C4 forbids. The one branch that DOES re-execute is the
+    // AUTHORIZED-only safe re-run above — the contract's acknowledged possible
+    // double payment, admitted precisely because it has no evidence to prove it.
     if (action.status === ACTION_STATUS_AUTHORIZED) {
       const roundDir = path.join(workDir, TARGETED_SUBPHASE_DIRNAME, `action-${targetedActionId}`);
       const res = runMultiQueryRetrieval({
@@ -441,39 +489,47 @@ export function runTargetedSubphase({
       actionsArtifact = prepared.artifact;
       currentState = prepared.state;
       // crashAt window: bytes + binding + COMMITTED record are durable, the checkpoint
-      // is NOT yet committed → "no completion evidence" (one safe re-run / recovery).
+      // is NOT yet committed → "no completion evidence". F.5's answer is a safe
+      // re-run once; the recovery branch above picks the recorded action back up and
+      // carries it to its terminal without re-paying.
       crashAt('after_targeted_commit_prepare');
       finalizeTargetedCommit(workDir, currentState);
       executedActionIds.push(targetedActionId);
     }
 
     // ---- T08 re-evaluation (RESOLVED only when a predicate says so) ----------
-    const priorQuestionIds = [...new Set(accumulatedPool.candidates.map((c) => String(c.identity.questionId)))];
-    const targetedQuestionIds = (mergedPool?.candidates ?? []).map((c) => String(c.identity.questionId));
-    const framing = framingForGap === null
-      ? defaultFramingForGap(gap, plan, provenance)
-      : framingForGap(gap);
-    const predicateResult = evaluateResolution({
-      gapType: gap.gapType,
-      priorQuestionIds,
-      targetedQuestionIds,
-      declaredFraming: framing?.declaredFraming ?? null,
-      coveredFramings: framing?.coveredFramings ?? null,
-    });
-    actionsArtifact = advanceActionStatusSafely(actionsArtifact, targetedActionId, ACTION_STATUS_EVALUATED, { event: 'EVALUATE' });
-    actionsArtifact = advanceActionStatusSafely(actionsArtifact, targetedActionId, predicateResult.status, { event: 'CONCLUDE' });
-    persistActionsArtifact(workDir, actionsArtifact);
+    // A resumed action already carrying a terminal conclusion keeps it verbatim:
+    // re-deriving it here would re-run the predicate against the CURRENT turn's
+    // accumulated pool and could rewrite append-only history. Only a record that
+    // still owes a conclusion is evaluated here.
+    if (advanceToTerminal || !FINAL_EVIDENCE_STATUSES.includes(action.status)) {
+      const priorQuestionIds = [...new Set(accumulatedPool.candidates.map((c) => String(c.identity.questionId)))];
+      const targetedQuestionIds = (mergedPool?.candidates ?? []).map((c) => String(c.identity.questionId));
+      const framing = framingForGap === null
+        ? defaultFramingForGap(gap, plan, provenance)
+        : framingForGap(gap);
+      const predicateResult = evaluateResolution({
+        gapType: gap.gapType,
+        priorQuestionIds,
+        targetedQuestionIds,
+        declaredFraming: framing?.declaredFraming ?? null,
+        coveredFramings: framing?.coveredFramings ?? null,
+      });
+      actionsArtifact = advanceActionStatusSafely(actionsArtifact, targetedActionId, ACTION_STATUS_EVALUATED, { event: 'EVALUATE' });
+      actionsArtifact = advanceActionStatusSafely(actionsArtifact, targetedActionId, predicateResult.status, { event: 'CONCLUDE' });
+      persistActionsArtifact(workDir, actionsArtifact);
 
-    resolutionArtifact = recordResolution(resolutionArtifact, {
-      gapId: gap.gapId,
-      gapIdentityCore: gap.gapIdentityCore,
-      targetedActionId,
-      status: predicateResult.status,
-      resolutionPredicateRef: predicateResult.resolutionPredicateRef,
-      resolutionBasis: predicateResult.resolutionBasis,
-      newEvidenceIds: predicateResult.newEvidenceIds,
-    });
-    persistResolutionArtifact(workDir, resolutionArtifact);
+      resolutionArtifact = recordResolution(resolutionArtifact, {
+        gapId: gap.gapId,
+        gapIdentityCore: gap.gapIdentityCore,
+        targetedActionId,
+        status: predicateResult.status,
+        resolutionPredicateRef: predicateResult.resolutionPredicateRef,
+        resolutionBasis: predicateResult.resolutionBasis,
+        newEvidenceIds: predicateResult.newEvidenceIds,
+      });
+      persistResolutionArtifact(workDir, resolutionArtifact);
+    }
   }
 
   // ---- 4. augment the accumulated pool (T09's single writer face) ------------
@@ -549,27 +605,6 @@ function latestActionForGap(artifact, gapId) {
   const forGap = artifact.targetedActions.filter((r) => r.gapId === gapId);
   if (forGap.length === 0) return null;
   return forGap.reduce((best, r) => (Number(r.attempt) >= Number(best.attempt) ? r : best));
-}
-
-/**
- * Complete a checkpoint commit whose record binding was already made durable but
- * whose `writeState` never ran (a crash between the COMMITTED record persist and the
- * checkpoint commit). This is the checkpoint-completion recovery: it neither repeats
- * the paid retrieval nor invents a credential — it copies the action's OWN durable
- * binding hash into `state.hashes` under T06's namespaced key and commits.
- *
- * Returns the next state, or `null` when the bound bytes no longer validate (a
- * missing/corrupted artifact cannot be recovered — fail closed rather than claim).
- */
-function recoverCheckpointBinding({ workDir, record, state }) {
-  const bindingKey = record.bindingKey ?? targetedBindingKey(record.targetedActionId);
-  const bindingHash = record.bindingHash;
-  if (!isNonEmptyString(bindingHash) || !isNonEmptyString(record.artifactRel)) return null;
-  const check = validateArtifactCheckpoint(workDir, record.artifactRel, bindingHash);
-  if (!check.ok) return null;
-  const nextState = { ...(state ?? {}), hashes: { ...((state ?? {}).hashes ?? {}), [bindingKey]: bindingHash } };
-  finalizeTargetedCommit(workDir, nextState);
-  return nextState;
 }
 
 /** Advance a status, tolerating an already-advanced record (idempotent re-entry). */

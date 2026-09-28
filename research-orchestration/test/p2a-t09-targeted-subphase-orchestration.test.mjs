@@ -19,6 +19,7 @@ import {
   SUBPHASE_STATUS_COMPLETED,
   SUBPHASE_STATUS_NO_ACTION,
   runTargetedSubphase,
+  TARGETED_SUBPHASE_DIRNAME,
 } from '../lib/targeted-requery-subphase.mjs';
 import {
   AUTH_CLASS_OFFICIAL_SECRET,
@@ -32,7 +33,10 @@ import { diagnoseGaps } from '../lib/targeted-requery-diagnosis.mjs';
 import { sortGapsByGapId } from '../lib/targeted-requery-ledger.mjs';
 import {
   ACTION_STATUS_COMMITTED,
+  ACTION_STATUS_EVALUATED,
+  ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET,
   ACTION_STATUS_RESOLVED,
+  ACTION_STATUS_UNRESOLVED,
   RESUME_REASON_BINDING_HASH_MISSING,
   RESUME_RERUN,
   RESUME_REUSE,
@@ -419,7 +423,7 @@ test('F2 — after a completed run the committed action is REUSEd (never re-exec
   assert.equal(replay.decision, RESUME_REUSE);
 });
 
-test('F3 — re-running after a pre-checkpoint crash RECOVERS the durable committed evidence without paying again', () => {
+test('F3 — a pre-checkpoint crash does NOT let the record fabricate its own completion credential', () => {
   const workDir = tmpWorkDir();
   const fixture = buildFixture();
   const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
@@ -432,18 +436,82 @@ test('F3 — re-running after a pre-checkpoint crash RECOVERS the durable commit
   }), /simulated SIGKILL/);
   const callsAfterCrash = fixture.adapter.__calls();
 
-  // The re-run must NOT be rejected by the dedupe gate and must NOT re-query.
+  // On re-run T06's replay returns RERUN (the checkpoint never carried the binding).
+  // F.5 forbids manufacturing completion evidence from the record's own bindingHash —
+  // that value is outside the F.1 identity and is not checkpoint-anchored, so
+  // promoting it is exactly the P1-R06 unanchored-second-credential P0. The correct
+  // behaviour is to finish the recorded action WITHOUT re-paying and WITHOUT
+  // claiming a binding the checkpoint never committed.
   const recovered = runTargetedSubphase(subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]));
 
   assert.equal(fixture.adapter.__calls(), callsAfterCrash, 'no repeated paid retrieval');
   assert.equal(recovered.executedActionIds.length, 0, 'nothing was re-executed');
-  assert.equal(recovered.reusedActionIds.length, 0, 'this was a checkpoint completion, not a reuse');
   const record = recovered.actionsArtifact.targetedActions.find((r) => r.gapId === gap.gapId);
   const bindingKey = `${TARGETED_BINDING_PREFIX}${record.targetedActionId}`;
-  assert.match(String(recovered.state.hashes[bindingKey]), /^[0-9a-f]{64}$/, 'the checkpoint binding was completed');
-  assert.equal(record.status, ACTION_STATUS_RESOLVED, 'the recovered action was evaluated to a real conclusion');
+  assert.equal(
+    recovered.state.hashes?.[bindingKey],
+    undefined,
+    'the checkpoint must NOT gain a binding it never committed (checkpoint is the only trust root)',
+  );
+  assert.notEqual(
+    record.bindingHash,
+    undefined,
+    "the record's own memory of the artifact is retained as audit history",
+  );
+  assert.ok(
+    [ACTION_STATUS_COMMITTED, ACTION_STATUS_EVALUATED, ACTION_STATUS_RESOLVED,
+      ACTION_STATUS_UNRESOLVED, ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET].includes(record.status),
+    'the recorded action did reach a committed-set status',
+  );
   const ids = recovered.pool.candidates.map((c) => c.identity.questionId);
   assert.ok(ids.includes('900') && ids.includes('901'), 'the already-paid candidates were NOT dropped');
+});
+
+test('F3b — a crash between the commit point and the T08 conclusion still reaches a terminal on re-run', () => {
+  const workDir = tmpWorkDir();
+  const fixture = buildFixture();
+  const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+  const gap = contradictionGap(pool);
+  const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]);
+
+  // Crash AFTER the checkpoint commit (binding durable) but BEFORE the T08 verdict:
+  // the record is stuck at COMMITTED, which is in COMMITTED_SET yet NOT a terminal.
+  assert.throws(() => runTargetedSubphase({
+    ...args,
+    crashAt: (label) => { if (label === 'after_targeted_execution') throw new Error('simulated SIGKILL'); },
+  }), /simulated SIGKILL/);
+
+  const recovered = runTargetedSubphase(subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]));
+  const record = recovered.actionsArtifact.targetedActions.find((r) => r.gapId === gap.gapId);
+  assert.equal(
+    record.status,
+    ACTION_STATUS_RESOLVED,
+    'a COMMITTED-but-unconcluded action must not be stranded without a terminal (S10)',
+  );
+  const resolution = recovered.resolutionArtifact.resolutions.find((r) => r.gapId === gap.gapId);
+  assert.notEqual(resolution, undefined, 'a resolution record was written for the gap');
+});
+
+test('F3c — a committed action whose bytes are gone FAILS CLOSED instead of reporting ok with dropped evidence', () => {
+  const workDir = tmpWorkDir();
+  const fixture = buildFixture();
+  const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+  const gap = contradictionGap(pool);
+  const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]);
+
+  // Crash before finalizeTargetedCommit → COMMITTED record, NO checkpoint binding,
+  // then delete the staged bytes so nothing is readable and nothing may be re-paid.
+  assert.throws(() => runTargetedSubphase({
+    ...args,
+    crashAt: (label) => { if (label === 'after_targeted_commit_prepare') throw new Error('simulated SIGKILL'); },
+  }), /simulated SIGKILL/);
+  fs.rmSync(path.join(workDir, TARGETED_SUBPHASE_DIRNAME), { recursive: true, force: true });
+
+  assert.throws(
+    () => runTargetedSubphase(subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)])),
+    /no completion evidence/,
+    'dropping paid evidence silently behind ok:true is a silent wrong value',
+  );
 });
 
 test('F4 — a second complete run over the same work dir REUSEs (zero new retrieval, same pool)', () => {
