@@ -182,6 +182,18 @@ export const RETRIEVAL_FAILURE_CHANNEL_DUPLICATE = 'retrieval_channel_duplicate'
 export const RETRIEVAL_FAILURE_PROVIDER_CONTRACT_INVALID = 'retrieval_provider_contract_invalid';
 export const RETRIEVAL_FAILURE_POOL_WRITE = 'retrieval_pool_write_failed';
 
+/**
+ * P2A-T02 (#114): the additive targeted-query list contract. A non-empty array of
+ * non-empty strings. Deliberately shape-only: whether a string is ADMISSIBLE as a
+ * targeted query is the T04 dual-lens trust gate's decision (E.5/F.3), and this
+ * module must not re-implement it. Anything that is not a well-formed list fails
+ * closed before any IO.
+ */
+function isTargetedQueryList(value) {
+  if (!Array.isArray(value) || value.length === 0) return false;
+  return value.every((entry) => isNonEmptyString(entry));
+}
+
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
@@ -488,6 +500,18 @@ function resolveChannels(seam, channels) {
  *                                  the seam's single unambiguous search provider;
  *                                  a malformed non-array fails closed
  *                                  (retrieval_invalid_input) before any IO
+ * @param {Array}  [opts.targetedQueries]  P2A-T02 (#114) additive targeted-query
+ *                                  seam (SEAM F.7 / D12-7). Absent / null keeps the
+ *                                  historical behaviour VERBATIM (plan.queryVariants
+ *                                  in plan order). When given it must be a NON-EMPTY
+ *                                  array of non-empty strings: the SAME single-pass
+ *                                  loop then executes exactly those queries × the
+ *                                  resolved channels. The plan artifact and the
+ *                                  planHash binding are unchanged, the return shape is
+ *                                  unchanged, and the result still goes through the
+ *                                  one existing rrfFusion → pool → assertArtifactSafe
+ *                                  path. A malformed value fails closed
+ *                                  (retrieval_invalid_input) BEFORE any IO.
  * @param {string} opts.workDir     work directory for the pool artifact
  * @returns {object} { ok:true, pool, poolHash, file } | { ok:false, reason, details? }
  */
@@ -496,7 +520,7 @@ export function runMultiQueryRetrieval(opts = {}) {
   // options value would throw a TypeError before validation. Normalize first so
   // ANY non-object input falls through to the fail-closed module-input check.
   const options = isPlainObject(opts) ? opts : {};
-  const { plan, planHash: expectedPlanHash, seam, channels = [], workDir } = options;
+  const { plan, planHash: expectedPlanHash, seam, channels = [], targetedQueries = null, workDir } = options;
   // 1. module-input validation (fail closed; no IO before this).
   if (!isPlainObject(plan) || !isPlainObject(seam) || typeof seam.retrieve !== 'function'
     || typeof seam.listProviders !== 'function' || !isNonEmptyString(workDir)) {
@@ -541,10 +565,25 @@ export function runMultiQueryRetrieval(opts = {}) {
   const resolved = resolveChannels(seam, channels);
   if (!resolved.ok) return resolved;
 
-  // 4. single-pass execution: plan query order × resolved channel order.
+  // 3b. P2A-T02 (#114) — the additive targeted-query seam (SEAM F.7 / D12-7).
+  //     Absent / null = the historical plan.queryVariants sequence, verbatim.
+  //     A malformed value fails CLOSED before any IO: an empty batch is a no-op
+  //     round, and a non-string entry cannot be a plan-owned query. The offending
+  //     value is never echoed back (it may be path/credential-shaped).
+  if (targetedQueries !== null && !isTargetedQueryList(targetedQueries)) {
+    return failure(RETRIEVAL_FAILURE_INVALID_INPUT, {
+      reason: 'targetedQueries_must_be_a_non_empty_array_of_non_empty_strings',
+    });
+  }
+  // The ONLY thing this ticket parameterises is WHICH plan-owned query strings the
+  // single existing loop executes. Plan identity, channel resolution, fusion,
+  // pooling, the safety walk and the return shape are all untouched.
+  const executionQueries = targetedQueries === null ? validated.plan.queryVariants : targetedQueries;
+
+  // 4. single-pass execution: query order × resolved channel order.
   const channelRecords = [];
   const rankings = [];
-  for (const query of validated.plan.queryVariants) {
+  for (const query of executionQueries) {
     for (const provider of resolved.providers) {
       const channel = { query, providerId: provider.providerId, capability: CAPABILITY_SEARCH };
       let result;
