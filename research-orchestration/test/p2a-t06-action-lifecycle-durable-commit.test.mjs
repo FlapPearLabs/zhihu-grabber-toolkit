@@ -822,6 +822,35 @@ test('C15 — a committed action cannot be committed a second time (no silent re
   assert.equal(readState(workDir).hashes[targetedBindingKey(TARGETED_ACTION_ID_A)], ARTIFACT_HASH);
 });
 
+test('C18 — a bound action cannot have its binding rewritten by a later advance', () => {
+  const committed = advanceActionStatus(
+    artifactWithAuthorizedAction(),
+    TARGETED_ACTION_ID_A,
+    ACTION_STATUS_COMMITTED,
+    {
+      event: 'COMMIT',
+      bindingKey: targetedBindingKey(TARGETED_ACTION_ID_A),
+      bindingHash: ARTIFACT_HASH,
+      artifactRel: ARTIFACT_REL,
+    },
+  );
+  const bound = committed.targetedActions[0];
+  assert.equal(bound.bindingHash, ARTIFACT_HASH);
+  // advancing further with a DIFFERENT binding is refused (fail closed)
+  assert.throws(
+    () => advanceActionStatus(committed, TARGETED_ACTION_ID_A, ACTION_STATUS_EVALUATED, {
+      bindingHash: 'b'.repeat(64),
+    }),
+    (err) => err.code === LIFECYCLE_ERROR_INVALID,
+  );
+  // ... but the normal advance (no binding supplied) preserves it exactly
+  const evaluated = advanceActionStatus(committed, TARGETED_ACTION_ID_A, ACTION_STATUS_EVALUATED);
+  assert.equal(evaluated.targetedActions[0].status, ACTION_STATUS_EVALUATED);
+  assert.equal(evaluated.targetedActions[0].bindingKey, bound.bindingKey);
+  assert.equal(evaluated.targetedActions[0].bindingHash, ARTIFACT_HASH);
+  assert.equal(evaluated.targetedActions[0].artifactRel, ARTIFACT_REL);
+});
+
 test('C17 — a replay decision can be recorded as audit without changing the status', () => {
   const workDir = freshWorkDir();
   const committed = commitTargetedAction({

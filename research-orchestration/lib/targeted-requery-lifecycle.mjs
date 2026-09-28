@@ -859,6 +859,21 @@ export function advanceActionStatus(artifact, targetedActionId, nextStatus, opti
     artifactRel = null,
   } = options;
 
+  // Once an action carries a binding, that binding is IMMUTABLE. Letting a later
+  // advance rewrite it would let the record's memory of the committed artifact drift
+  // away from the checkpoint that is the trust root (the replay decision always
+  // re-validates bytes, so this could only cause a spurious re-run — never a false
+  // reuse — but a drift between the record and the trust root is still a defect).
+  if (found.record.bindingKey !== null && bindingKey !== null && bindingKey !== found.record.bindingKey) {
+    throw lifecycleError('refusing to rewrite the bindingKey of an already-bound action');
+  }
+  if (found.record.bindingHash !== null && bindingHash !== null && bindingHash !== found.record.bindingHash) {
+    throw lifecycleError('refusing to rewrite the bindingHash of an already-bound action');
+  }
+  if (found.record.artifactRel !== null && artifactRel !== null && artifactRel !== found.record.artifactRel) {
+    throw lifecycleError('refusing to rewrite the artifactRel of an already-bound action');
+  }
+
   const nextRecord = {
     ...found.record,
     status: nextStatus,
@@ -967,10 +982,12 @@ export function stageTargetedArtifact(workDir, rel, bytes) {
 }
 
 /**
- * Steps (a)–(c) of the commit point, WITHOUT the checkpoint commit:
+ * Steps (a)–(c) of the commit point, WITHOUT the checkpoint commit (see the header's
+ * design decision 4 for the realised order, which this docstring must match):
  *   (a) round artifact bytes durable + fsynced,
- *   (b) its hash bound into `state.hashes[bindingKey]`,
- *   (c) the action advanced to COMMITTED and persisted + fsynced.
+ *   (b) the action advanced to COMMITTED and persisted + fsynced,
+ *   (c) the artifact hash placed into `state.hashes[bindingKey]` (in memory only —
+ *       it reaches disk in step (d), `finalizeTargetedCommit`).
  *
  * The caller's `state` is NOT mutated: the returned state is a fresh object that the
  * caller must hand to `finalizeTargetedCommit`. Split here is what makes the crash
@@ -1023,6 +1040,11 @@ export function prepareTargetedCommit({
 /**
  * Step (d) of the commit point: `writeState` — the checkpoint commit.
  * This is the only durable fact that counts as completion evidence.
+ *
+ * The function writes exactly the state it is handed: passing anything other than the
+ * state returned by `prepareTargetedCommit` (or an equivalent that already carries the
+ * binding in `hashes`) would commit a checkpoint without the targeted binding, which
+ * is by design "no completion evidence" — i.e. one safe re-run, never a false claim.
  */
 export function finalizeTargetedCommit(workDir, state) {
   writeState(workDir, state);
