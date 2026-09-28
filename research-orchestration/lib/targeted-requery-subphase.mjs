@@ -384,15 +384,25 @@ export function runTargetedSubphase({
         // contract's "承认可能重复付费一次" cost statement is about.
         action = prior;
       } else if (FINAL_EVIDENCE_STATUSES.includes(prior.status)) {
-        // A terminal conclusion already exists and is append-only history, never
-        // rewritten here. Its evidence bytes are gone, but the CONCLUSION still
-        // stands — so unlike the non-terminal case below there is nothing left to
-        // decide, and surfacing a hard failure would abort a run over evidence the
-        // contract has already concluded without. The loss is recorded rather than
-        // hidden: the gap keeps its terminal verdict and the caller can see that no
-        // product was contributed this pass.
+        // A terminal conclusion exists, but its binding does not validate and its
+        // bytes are gone. F.5 has NO terminal exemption for this case:
+        //   hash 不匹配 / 产物缺失 → 视为未提交，安全重跑一次
+        // The verdict being append-only history does not make the missing bytes
+        // optional, because nothing downstream reads the resolution artifact at
+        // all — the augmented pool is the ONLY downstream-consumable product of a
+        // targeted action. Returning `ok: true` here would silently drop paid
+        // evidence from the one channel that carries it. Fail closed, exactly like
+        // the non-terminal branch below; the asymmetry that made this `continue`
+        // was a design preference of mine and the frozen contract overrules it.
         mergedPool = readBoundTargetedPool(workDir, prior.artifactRel);
-        if (mergedPool !== null) targetedPools.push(mergedPool);
+        if (mergedPool === null) {
+          throw subphaseError(
+            `no completion evidence and no readable product for targeted action ${prior.targetedActionId} `
+            + `(terminal status ${prior.status}, replay ${replay.reason}): the augmented pool is the only `
+            + 'downstream-consumable product of a targeted action, so ok:true would silently drop paid evidence',
+          );
+        }
+        targetedPools.push(mergedPool);
         reusedActionIds.push(prior.targetedActionId);
         continue;
       } else {
@@ -510,6 +520,10 @@ export function runTargetedSubphase({
       // carries it to its terminal without re-paying.
       crashAt('after_targeted_commit_prepare');
       finalizeTargetedCommit(workDir, currentState);
+      // The commit point is now COMPLETE: bytes durable, COMMITTED record durable,
+      // binding in the checkpoint. A crash here leaves a record that is COMMITTED
+      // but not yet concluded — the exact window REUSE + advanceToTerminal covers.
+      crashAt('after_targeted_commit_finalize');
       executedActionIds.push(targetedActionId);
     }
 

@@ -765,6 +765,28 @@ function isPlainObject(v) {
 /** Canonical lowercase 64-hex content hash shape (the only binding value shape). */
 const HEX64_BINDING = /^[0-9a-f]{64}$/;
 
+/**
+ * The `targeted-action:*` bindings carried in a checkpoint's `hashes`.
+ *
+ * These are the F.5 completion evidence for the targeted sub-phase, and they
+ * deliberately live in their own namespace, disjoint from the stage-boundary keys
+ * (`targetedBindingKey`). Both the resume boundary and the terminal checkpoint
+ * rebuild must preserve them: a checkpoint that drops them silently downgrades
+ * "proven committed" back to "no evidence", which is how a paid retrieval ends up
+ * re-run. Stage-boundary keys get their own re-entry proof; the targeted namespace
+ * gets none, so it is carried by identity and shape-validated.
+ */
+function targetedBindingsOf(hashes) {
+  if (!isPlainObject(hashes)) return {};
+  const out = {};
+  for (const [key, value] of Object.entries(hashes)) {
+    if (key.startsWith(TARGETED_BINDING_PREFIX) && typeof value === 'string' && HEX64_BINDING.test(value)) {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
 function sanitizeMessage(message) {
   return String(message ?? '').slice(0, 300);
 }
@@ -1043,12 +1065,8 @@ export async function composeP1Research({
     // retrieval would be re-run and the round pool re-read WITHOUT its hash check.
     // Only the targeted namespace is adopted here; stage bindings keep their own
     // re-entry proof (`planResumeReentry`) and are never inherited by assumption.
-    if (isResumingOccurrence && isPlainObject(existing?.hashes)) {
-      for (const [key, value] of Object.entries(existing.hashes)) {
-        if (key.startsWith(TARGETED_BINDING_PREFIX) && typeof value === 'string' && HEX64_BINDING.test(value)) {
-          state.hashes[key] = value;
-        }
-      }
+    if (isResumingOccurrence) {
+      Object.assign(state.hashes, targetedBindingsOf(existing?.hashes));
     }
 
     let coverageState;
@@ -1460,7 +1478,13 @@ export async function composeP1Research({
     // the same way they are for an interrupted resume, so the COMPLETE gate
     // must be able to prove them too. Dropping them here is what let a
     // deleted/mutated pool ride through a COMPLETE reuse.
+    // The targeted-action:* namespace is carried THROUGH this rebuild: it is
+    // rebuilt from scratch here (no spread), and dropping it would erase the
+    // sub-phase's F.5 completion evidence from the final checkpoint — the exact
+    // "no evidence ⇒ re-run the paid retrieval" downgrade the resume boundary
+    // above exists to prevent.
     state.hashes = {
+      ...targetedBindingsOf(state.hashes),
       researchPlan: sha256File(path.join(workDir, PLAN_ARTIFACT_FILENAME)),
       coverageState: sha256File(path.join(workDir, COVERAGE_STATE_FILENAME)),
       coverageFinal: sha256File(path.join(workDir, FINAL_COVERAGE_FILENAME)),

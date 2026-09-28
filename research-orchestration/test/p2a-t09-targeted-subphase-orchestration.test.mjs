@@ -28,13 +28,16 @@ import {
   createProviderSeam,
 } from '../lib/provider-seam.mjs';
 import { planHash } from '../lib/plan-contract.mjs';
+import { makeState, writeState } from '../lib/state.mjs';
 import { runMultiQueryRetrieval } from '../lib/retrieval.mjs';
 import { diagnoseGaps } from '../lib/targeted-requery-diagnosis.mjs';
 import { sortGapsByGapId } from '../lib/targeted-requery-ledger.mjs';
 import {
+  ACTIONS_FILENAME,
   ACTION_STATUS_COMMITTED,
   ACTION_STATUS_EVALUATED,
   ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET,
+  ACTION_STATUS_FAILED_OPERATIONAL,
   ACTION_STATUS_RESOLVED,
   ACTION_STATUS_UNRESOLVED,
   RESUME_REASON_BINDING_HASH_MISSING,
@@ -43,7 +46,7 @@ import {
   TARGETED_BINDING_PREFIX,
   decideTargetedReplay,
 } from '../lib/targeted-requery-lifecycle.mjs';
-import { RESOLUTION_BASIS_DUPLICATE_ONLY } from '../lib/targeted-requery-resolution.mjs';
+import { RESOLUTION_BASIS_DUPLICATE_ONLY, RESOLUTION_FILENAME } from '../lib/targeted-requery-resolution.mjs';
 import { composeP1Research } from '../lib/p1-runtime-composer.mjs';
 import { T14_SYNTHESIS_RUNTIME_ID, T14_SYNTHESIS_MODEL } from '../lib/cross-source-synthesis.mjs';
 import { mockVector768 } from './helpers/test-embedding-provider.mjs';
@@ -474,14 +477,36 @@ test('F3b — a crash between the commit point and the T08 conclusion still reac
   const gap = contradictionGap(pool);
   const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]);
 
-  // Crash AFTER the checkpoint commit (binding durable) but BEFORE the T08 verdict:
-  // the record is stuck at COMMITTED, which is in COMMITTED_SET yet NOT a terminal.
+  // Crash AFTER the checkpoint commit (binding durable, so the replay decision is
+  // REUSE) but BEFORE the T08 verdict: the record is stuck at COMMITTED, which is in
+  // COMMITTED_SET yet is NOT one of FINAL_EVIDENCE_STATUSES. This is the window the
+  // REUSE branch's `advanceToTerminal` exists for — the pre-commit
+  // `after_targeted_execution` label exercises the AUTHORIZED re-run path instead.
   assert.throws(() => runTargetedSubphase({
     ...args,
-    crashAt: (label) => { if (label === 'after_targeted_execution') throw new Error('simulated SIGKILL'); },
+    crashAt: (label) => { if (label === 'after_targeted_commit_finalize') throw new Error('simulated SIGKILL'); },
   }), /simulated SIGKILL/);
 
-  const recovered = runTargetedSubphase(subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]));
+  const crashed = fs.readFileSync(path.join(workDir, ACTIONS_FILENAME), 'utf8');
+  assert.equal(
+    JSON.parse(crashed).targetedActions.some((r) => r.status === ACTION_STATUS_COMMITTED),
+    true,
+    'precondition: a COMMITTED-but-unconcluded record is on disk',
+  );
+
+  const callsAfterCrash = fixture.adapter.__calls();
+  // The recovered run must receive the PERSISTED checkpoint — the commit point is
+  // complete, so the binding is on disk. Handing it a fresh empty `state` would
+  // reproduce the production bug this suite exists to catch (makeState starts from
+  // `hashes: {}`), and the replay decision would downgrade a proven REUSE to RERUN.
+  const persisted = JSON.parse(fs.readFileSync(path.join(workDir, 'orchestration-state.json'), 'utf8'));
+  const recovered = runTargetedSubphase({
+    ...subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]),
+    state: persisted,
+  });
+
+  assert.equal(fixture.adapter.__calls(), callsAfterCrash, 'REUSE must not repeat the paid retrieval');
+  assert.equal(recovered.reusedActionIds.length, 1, 'the committed binding made this a REUSE');
   const record = recovered.actionsArtifact.targetedActions.find((r) => r.gapId === gap.gapId);
   assert.equal(
     record.status,
@@ -490,6 +515,8 @@ test('F3b — a crash between the commit point and the T08 conclusion still reac
   );
   const resolution = recovered.resolutionArtifact.resolutions.find((r) => r.gapId === gap.gapId);
   assert.notEqual(resolution, undefined, 'a resolution record was written for the gap');
+  const ids = recovered.pool.candidates.map((c) => c.identity.questionId);
+  assert.ok(ids.includes('900') && ids.includes('901'), 'the committed evidence was carried forward');
 });
 
 test('F3c — a committed action whose bytes are gone FAILS CLOSED instead of reporting ok with dropped evidence', () => {
@@ -569,7 +596,7 @@ test('H2 — the composer carries prior targeted bindings across a resume so F.5
   );
 });
 
-test('H3 — a terminal conclusion whose evidence bytes are gone keeps the verdict instead of aborting', () => {
+test('H3 — a terminal conclusion whose evidence bytes are gone FAILS CLOSED (F.5 has no terminal exemption)', () => {
   const workDir = tmpWorkDir();
   const fixture = buildFixture();
   const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
@@ -579,21 +606,97 @@ test('H3 — a terminal conclusion whose evidence bytes are gone keeps the verdi
   const first = runTargetedSubphase(args);
   const record = first.actionsArtifact.targetedActions.find((r) => r.gapId === gap.gapId);
   assert.equal(record.status, ACTION_STATUS_RESOLVED, 'precondition: a terminal conclusion exists');
-  // Destroy the evidence AND the checkpoint binding: the verdict stands, the bytes do not.
+  // Destroy the evidence AND the checkpoint binding: the verdict stands, the bytes
+  // do not. F.5 says hash-mismatch / missing-artifact → treat as uncommitted, with
+  // no terminal exemption, and nothing downstream reads the resolution artifact —
+  // the augmented pool is the only downstream-consumable product. So this must
+  // fail closed rather than report ok:true with the paid pool dropped.
   fs.rmSync(path.join(workDir, TARGETED_SUBPHASE_DIRNAME), { recursive: true, force: true });
 
-  const second = runTargetedSubphase({ ...args, state: { hashes: {} } });
-  assert.equal(second.ok, true, 'a lost artifact must not abort a run whose conclusion is already final');
+  assert.throws(
+    () => runTargetedSubphase({ ...args, state: { hashes: {} } }),
+    /no completion evidence and no readable product/,
+    'a terminal verdict must not license silently dropping its evidence',
+  );
+});
+
+test('I1 — a full-chain composeP1Research run with the sub-phase ENABLED executes and augments the pool', async () => {
+  // G2 only proves the DISABLED path is byte-identical. Nothing ran the enabled
+  // wiring end-to-end, so an argument-plumbing regression (wrong `state`/`crashAt`
+  // forwarding at the composer call site) would be invisible.
+  const workDir = tmpWorkDir('p2a-t09-i1-enabled');
+
+  // Reuse the G2 offline doubles verbatim so the ONLY difference from G2 is the
+  // targetedSubphase parameter itself. The plan gains ONE opposing framing: a T04
+  // proposal must reference a plan-owned string, so without it the sub-phase would
+  // (correctly) find no admissible proposal and this test would prove nothing.
+  const plan = { ...G2_PLAN, opposingFramings: ['AI 编程工具 无法取代 程序员'] };
+  const args = g2ComposeArgs(workDir);
+  // gapId is derived from occurrenceId, and the composer mints a RANDOM occurrence
+  // for a fresh work dir — so a proposal computed before the run could never match.
+  // Pre-seeding a resumable checkpoint pins the occurrence, which is also the
+  // production shape this test needs (it is a RESUME, not a fresh start).
+  const occurrenceId = 'occurrence-i1';
+  const seeded = makeState({
+    workDir,
+    topic: args.topic,
+    mode: 'p1-cross-question-deep-research',
+    percent: null,
+    runtime: g2Runtime().runtimeId,
+    occurrenceId,
+    config: args.config ?? {},
+  });
+  seeded.stage = 'search';
+  writeState(workDir, seeded);
+
+  const diagnosed = sortGapsByGapId(diagnoseGaps({
+    plan,
+    executedQueryProvenance: [...plan.queryVariants],
+    planHash: planHash(plan),
+    occurrenceId,
+    diagnosisRound: 0,
+  }).records);
+  const proposals = diagnosed.map((gap) => ({
+    gapId: gap.gapId,
+    planOwnedStringRef: { field: 'opposingFramings', index: 0 },
+  }));
+  assert.ok(proposals.length >= 1, 'precondition: the plan yields at least one diagnosable gap');
+
+  const result = await composeP1Research({
+    ...args,
+    plan,
+    targetedSubphase: {
+      proposals,
+      maxQueryBudget: 10,
+      maxAttemptsPerGap: 2,
+    },
+  });
+  assert.equal(result.ok, true, `compose (sub-phase enabled) failed: ${JSON.stringify(result)}`);
+
+  const actions = JSON.parse(fs.readFileSync(path.join(workDir, ACTIONS_FILENAME), 'utf8'));
+  assert.ok(actions.targetedActions.length >= 1, 'the enabled sub-phase authorized at least one action');
+  assert.ok(
+    actions.targetedActions.every((r) => r.status === ACTION_STATUS_RESOLVED
+      || r.status === ACTION_STATUS_UNRESOLVED
+      || r.status === ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET),
+    'every composer-driven action reached a terminal conclusion',
+  );
+
+  // The checkpoint must carry the targeted binding — this is the F.5 trust root,
+  // and the same key the composer now re-adopts on a resume.
+  const checkpoint = JSON.parse(fs.readFileSync(path.join(workDir, 'orchestration-state.json'), 'utf8'));
+  const bindingKeys = Object.keys(checkpoint.hashes ?? {}).filter((k) => k.startsWith(TARGETED_BINDING_PREFIX));
   assert.equal(
-    second.actionsArtifact.targetedActions.find((r) => r.gapId === gap.gapId).status,
-    ACTION_STATUS_RESOLVED,
-    'the append-only terminal verdict is never rewritten',
+    bindingKeys.length,
+    actions.targetedActions.filter((r) => r.status !== ACTION_STATUS_FAILED_OPERATIONAL).length,
+    'every committed action is anchored in the checkpoint',
   );
-  assert.deepEqual(
-    second.pool.candidates.map((c) => c.identity.questionId),
-    pool.candidates.map((c) => c.identity.questionId),
-    'no product was contributed this pass, and none was invented',
-  );
+  for (const key of bindingKeys) {
+    assert.match(checkpoint.hashes[key], /^[0-9a-f]{64}$/, `${key} is a canonical content hash`);
+  }
+
+  const resolution = JSON.parse(fs.readFileSync(path.join(workDir, RESOLUTION_FILENAME), 'utf8'));
+  assert.ok(resolution.resolutions.length >= 1, 'a resolution was recorded through the composer');
 });
 
 test('F4 — a second complete run over the same work dir REUSEs (zero new retrieval, same pool)', () => {
