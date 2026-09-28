@@ -47,7 +47,7 @@ import {
   decideTargetedReplay,
 } from '../lib/targeted-requery-lifecycle.mjs';
 import { RESOLUTION_BASIS_DUPLICATE_ONLY, RESOLUTION_FILENAME } from '../lib/targeted-requery-resolution.mjs';
-import { composeP1Research, targetedBindingsOf } from '../lib/p1-runtime-composer.mjs';
+import { composeP1Research } from '../lib/p1-runtime-composer.mjs';
 import { T14_SYNTHESIS_RUNTIME_ID, T14_SYNTHESIS_MODEL } from '../lib/cross-source-synthesis.mjs';
 import { mockVector768 } from './helpers/test-embedding-provider.mjs';
 
@@ -574,28 +574,6 @@ test('H1 — a NEW occurrence in a reused work dir does NOT load the prior occur
   );
 });
 
-test('H2 — the composer carries prior targeted bindings across a resume so F.5 REUSE is reachable in production', () => {
-  const source = fs.readFileSync(path.join(LIB, 'p1-runtime-composer.mjs'), 'utf8');
-  // F.4 proved REUSE only by handing `first.state` back in by hand. The production
-  // path builds state via `makeState` (empty `hashes`), so without an explicit
-  // carry-over `decideTargetedReplay` can never see a binding and the round pool is
-  // re-read WITHOUT its hash check — the checkpoint would stop being the trust root.
-  assert.ok(
-    /TARGETED_BINDING_PREFIX/.test(source),
-    'the composer must reference the targeted binding namespace',
-  );
-  assert.ok(
-    /isResumingOccurrence[\s\S]{0,400}existing\?\.hashes/.test(source),
-    'the targeted bindings must be carried from the prior checkpoint on a resume',
-  );
-  // Only the targeted namespace may be adopted; stage bindings keep their own proof.
-  const carry = source.slice(source.indexOf('TARGETED_BINDING_PREFIX'));
-  assert.ok(
-    /key\.startsWith\(TARGETED_BINDING_PREFIX\)/.test(carry),
-    'the carry-over must be namespaced to targeted-action:* only',
-  );
-});
-
 test('H3 — a terminal conclusion whose evidence bytes are gone FAILS CLOSED (F.5 has no terminal exemption)', () => {
   const workDir = tmpWorkDir();
   const fixture = buildFixture();
@@ -620,43 +598,88 @@ test('H3 — a terminal conclusion whose evidence bytes are gone FAILS CLOSED (F
   );
 });
 
-test('H2 — a composer RESUME carries a real targeted binding across, making F.5 REUSE reachable', async () => {
-  // H2 used to be source-regex only, and I1 seeds an EMPTY checkpoint — so the
-  // carry-over at the resume boundary had zero runtime evidence. This drives the
-  // production path: a checkpoint that genuinely carries targeted-action:*
-  // bindings, a resuming occurrence, and an assertion that they survive AND that
-  // the replay decision reaches REUSE (zero extra retrieval) because of them.
+test('H2 — a real composer RESUME carries a real targeted binding across, making F.5 REUSE reachable', async () => {
+  // This must drive the PRODUCTION path, not re-type the composer's one-line
+  // carry-over: seed a resumable checkpoint, run composeP1Research so the sub-phase
+  // commits real bindings, kill the run, then resume (restart=false) and assert the
+  // bindings survived the resume boundary AND that they are what make the next run
+  // a REUSE. A semantic regression in the composer's resume branch (wrong state
+  // object, wrong `existing` reference) would break real F.5 reachability while a
+  // hand-rolled copy of the same line kept passing.
   const workDir = tmpWorkDir('p2a-t09-h2-resume');
-  const fixture = buildFixture();
-  const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
-  const gap = contradictionGap(pool);
+  const args = g2ComposeArgs(workDir);
+  const plan = { ...G2_PLAN, opposingFramings: ['AI 编程工具无法取代 程序员'] };
+  const occurrenceId = 'occurrence-h2';
 
-  // A real committed run produces a real binding in a real checkpoint.
-  const first = runTargetedSubphase(subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]));
-  const actionId = first.executedActionIds[0];
-  assert.ok(actionId, 'precondition: the first run committed an action');
-  const bindingKey = `${TARGETED_BINDING_PREFIX}${actionId}`;
-  assert.equal(first.state.hashes[bindingKey] !== undefined, true, 'precondition: a binding exists');
-
-  // Run the composer's carry-over against that persisted checkpoint.
-  writeState(workDir, first.state);
-  const existing = readState(workDir);
-  const fresh = makeState({
-    workDir, topic: 't', mode: 'm', percent: null, runtime: 'r', occurrenceId: OCCURRENCE, config: {},
+  const seeded = makeState({
+    workDir,
+    topic: args.topic,
+    mode: 'p1-cross-question-deep-research',
+    percent: null,
+    runtime: args.runtime.runtimeId,
+    occurrenceId,
+    config: {},
   });
-  assert.equal(Object.keys(fresh.hashes).length, 0, 'precondition: a fresh state starts with no hashes');
-  Object.assign(fresh.hashes, targetedBindingsOf(existing.hashes));
-  assert.equal(fresh.hashes[bindingKey], first.state.hashes[bindingKey], 'the binding survived the resume boundary');
+  seeded.stage = 'search';
+  writeState(workDir, seeded);
 
-  // And that carried binding is what makes the replay decision a REUSE.
-  const second = runTargetedSubphase({
-    ...subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]),
-    state: fresh,
-  });
-  assert.equal(second.reusedActionIds.length, 1, 'the carried binding produced a REUSE, not a re-run');
-  assert.equal(second.executedActionIds.length, 0);
-  const ids = second.pool.candidates.map((c) => c.identity.questionId);
-  assert.ok(ids.includes('900') && ids.includes('901'), 'the reused evidence is in the pool');
+  const proposals = sortGapsByGapId(diagnoseGaps({
+    plan,
+    executedQueryProvenance: [...plan.queryVariants],
+    planHash: planHash(plan),
+    occurrenceId,
+    diagnosisRound: 0,
+  }).records).map((gap) => ({
+    gapId: gap.gapId,
+    planOwnedStringRef: { field: 'opposingFramings', index: 0 },
+  }));
+
+  const targetedSubphase = { proposals, maxQueryBudget: 10, maxAttemptsPerGap: 2 };
+
+  // Establish real bindings: a full composition with the sub-phase enabled.
+  const first = await composeP1Research({ ...args, plan, targetedSubphase });
+  assert.equal(first.ok, true, `first pass failed: ${JSON.stringify(first)}`);
+
+  const afterFirst = readState(workDir);
+  const carriedKeys = Object.keys(afterFirst.hashes ?? {}).filter((k) => k.startsWith(TARGETED_BINDING_PREFIX));
+  assert.ok(carriedKeys.length >= 1, `precondition: real bindings exist (got ${JSON.stringify(carriedKeys)})`);
+  for (const key of carriedKeys) {
+    assert.match(afterFirst.hashes[key], /^[0-9a-f]{64}$/, `${key} is a canonical hash`);
+  }
+
+  // Simulate a process SIGKILLed after the sub-phase committed: the durable
+  // checkpoint a real kill leaves is non-terminal. A `crashPoint` throw CANNOT
+  // produce this state — the composer catches every throw and marks the run FAILED,
+  // which forces a restart and therefore a NEW occurrence, so no binding would ever
+  // be carried. Rewinding `stage` is the faithful stand-in for those bytes.
+  writeState(workDir, { ...afterFirst, stage: 'search' });
+
+  // Second pass: an ordinary resume (restart defaults to false). The composer's
+  // resume boundary must adopt those bindings, which is the ONLY thing that lets
+  // decideTargetedReplay return REUSE instead of re-paying.
+  const second = await composeP1Research({ ...args, plan, targetedSubphase });
+  assert.equal(second.ok, true, `resume failed: ${JSON.stringify(second)}`);
+
+  const actions = JSON.parse(fs.readFileSync(path.join(workDir, ACTIONS_FILENAME), 'utf8'));
+  const terminal = actions.targetedActions.filter((r) => r.status === ACTION_STATUS_RESOLVED
+    || r.status === ACTION_STATUS_UNRESOLVED
+    || r.status === ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET);
+  assert.ok(terminal.length >= 1, 'the resumed run still carries terminal conclusions');
+
+  // The resume must not have created a SECOND action for work already paid for:
+  // a re-payment shows up as a duplicate commit under a new id.
+  const actionIds = actions.targetedActions.map((r) => r.targetedActionId);
+  assert.equal(new Set(actionIds).size, actionIds.length, 'no duplicate action was created by the resume');
+  for (const r of actions.targetedActions) {
+    const commits = r.audit.filter((a) => a.event === 'COMMIT').length;
+    assert.ok(commits <= 1, `action ${r.targetedActionId.slice(0, 8)} committed ${commits} times`);
+  }
+
+  // The final checkpoint must STILL hold the bindings (terminal rebuild preserves
+  // them) — otherwise the next resume would re-pay.
+  const finalState = readState(workDir);
+  const finalKeys = Object.keys(finalState.hashes ?? {}).filter((k) => k.startsWith(TARGETED_BINDING_PREFIX));
+  assert.deepEqual(finalKeys.sort(), carriedKeys.sort(), 'bindings survive all the way to the final checkpoint');
 });
 
 test('H4 — a committed artifact whose bytes were tampered with is refused, not merged', () => {
