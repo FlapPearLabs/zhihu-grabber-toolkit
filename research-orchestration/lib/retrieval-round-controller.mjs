@@ -171,6 +171,7 @@ export function evaluateRetrievalRound({
   totalCandidatesCount,
   executedRoutesThisRound = [],
   providerFailuresThisRound = [],
+  targetedAttempts = null,
   config = {},
 } = {}) {
   const stateValidation = validateCoverageState(coverageState);
@@ -233,6 +234,34 @@ export function evaluateRetrievalRound({
     throw err;
   }
 
+  // P2A-T07 (#119) / F.6.1 — the ONLY additive #108 seam on this controller.
+  // Absent / null keeps the historical behaviour verbatim (P1 semantics, zero
+  // regression). The counts are DERIVED by the caller from the targeted ledger via
+  // the counts are derived by the caller from the targeted ledger — never invented here,
+  // and they must never leak into plannedCoverageCount (H-2 / F.6).
+  let resolvedTargetedAttempts = { executed: 0, failed: 0 };
+  if (targetedAttempts !== null && targetedAttempts !== undefined) {
+    if (!isPlainObject(targetedAttempts)) {
+      const err = new Error('targetedAttempts must be a plain object { executed, failed }');
+      err.code = CONTROLLER_ERROR_INVALID_INPUT;
+      throw err;
+    }
+    const keys = Object.keys(targetedAttempts).sort();
+    if (keys.length !== 2 || keys[0] !== 'executed' || keys[1] !== 'failed') {
+      const err = new Error('targetedAttempts must be exactly { executed, failed }');
+      err.code = CONTROLLER_ERROR_INVALID_INPUT;
+      throw err;
+    }
+    for (const key of ['executed', 'failed']) {
+      if (!isNonNegativeInteger(targetedAttempts[key])) {
+        const err = new Error(`targetedAttempts.${key} must be a non-negative integer`);
+        err.code = CONTROLLER_ERROR_INVALID_INPUT;
+        throw err;
+      }
+    }
+    resolvedTargetedAttempts = { executed: targetedAttempts.executed, failed: targetedAttempts.failed };
+  }
+
   const resolvedConfig = resolveRoundControllerConfig(config);
 
   // Cumulative accounting
@@ -240,6 +269,12 @@ export function evaluateRetrievalRound({
   const existingProviderFailures = coverageState.retrieval.providerFailures;
   const cumulativeExecutedRoutesCount = existingExecutedRoutes.length + executedRoutesThisRound.length;
   const cumulativeAttemptsCount = existingExecutedRoutes.length + executedRoutesThisRound.length + existingProviderFailures.length + providerFailuresThisRound.length;
+  // P2A-T07 (#119) / F.6: the TWO denominators.
+  // plannedCoverageCount is VERBATIM the old cumulativeAttemptsCount (saturation
+  // precondition, targeted attempts excluded — H-2/H-5); attemptsBudgetCount adds
+  // the targeted channel attempts (BUDGET_STOP denominator — H-3).
+  const plannedCoverageCount = cumulativeAttemptsCount;
+  const attemptsBudgetCount = cumulativeAttemptsCount + resolvedTargetedAttempts.executed + resolvedTargetedAttempts.failed;
 
   // Compute novelty gain: new / total
   const noveltyGain = totalCandidatesCount > 0 ? Number((newCandidatesCount / totalCandidatesCount).toFixed(6)) : 0;
@@ -258,6 +293,9 @@ export function evaluateRetrievalRound({
       roundIndex,
       noveltyGain,
       cumulativeExecutedRoutesCount,
+      plannedCoverageCount,
+      attemptsBudgetCount,
+      targetedAttempts: resolvedTargetedAttempts,
       totalCandidatesCount,
       saturationSemantics: null,
       shouldStop: true,
@@ -275,6 +313,9 @@ export function evaluateRetrievalRound({
       roundIndex,
       noveltyGain,
       cumulativeExecutedRoutesCount,
+      plannedCoverageCount,
+      attemptsBudgetCount,
+      targetedAttempts: resolvedTargetedAttempts,
       totalCandidatesCount,
       saturationSemantics: null,
       shouldStop: true,
@@ -285,13 +326,16 @@ export function evaluateRetrievalRound({
   }
 
   // 3. Check Budget Stop: Query budget exhausted
-  if (cumulativeAttemptsCount >= resolvedConfig.maxQueryBudget) {
+  if (attemptsBudgetCount >= resolvedConfig.maxQueryBudget) {
     return {
       decision: DECISION_BUDGET_STOP,
       stopReason: 'query_budget_exhausted',
       roundIndex,
       noveltyGain,
       cumulativeExecutedRoutesCount,
+      plannedCoverageCount,
+      attemptsBudgetCount,
+      targetedAttempts: resolvedTargetedAttempts,
       totalCandidatesCount,
       saturationSemantics: null,
       shouldStop: true,
@@ -303,7 +347,7 @@ export function evaluateRetrievalRound({
 
   // 4. Check Saturation (only if roundIndex >= minRoundsBeforeSaturation and NO provider failures in this round and all planned routes attempted)
   const totalPlannedRoutes = coverageState.retrieval.plannedRoutes.length;
-  if (roundIndex >= resolvedConfig.minRoundsBeforeSaturation && providerFailuresThisRound.length === 0 && cumulativeAttemptsCount >= totalPlannedRoutes) {
+  if (roundIndex >= resolvedConfig.minRoundsBeforeSaturation && providerFailuresThisRound.length === 0 && plannedCoverageCount >= totalPlannedRoutes) {
     if (newCandidatesCount === 0) {
       return {
         decision: DECISION_SATURATED,
@@ -311,6 +355,9 @@ export function evaluateRetrievalRound({
         roundIndex,
         noveltyGain: 0,
         cumulativeExecutedRoutesCount,
+      plannedCoverageCount,
+      attemptsBudgetCount,
+      targetedAttempts: resolvedTargetedAttempts,
         totalCandidatesCount,
         saturationSemantics: SATURATION_SEMANTICS_DISCLAIMER,
         shouldStop: true,
@@ -327,6 +374,9 @@ export function evaluateRetrievalRound({
         roundIndex,
         noveltyGain,
         cumulativeExecutedRoutesCount,
+      plannedCoverageCount,
+      attemptsBudgetCount,
+      targetedAttempts: resolvedTargetedAttempts,
         totalCandidatesCount,
         saturationSemantics: SATURATION_SEMANTICS_DISCLAIMER,
         shouldStop: true,
@@ -344,6 +394,9 @@ export function evaluateRetrievalRound({
     roundIndex,
     noveltyGain,
     cumulativeExecutedRoutesCount,
+    plannedCoverageCount,
+    attemptsBudgetCount,
+    targetedAttempts: resolvedTargetedAttempts,
     totalCandidatesCount,
     saturationSemantics: null,
     shouldStop: false,
