@@ -72,6 +72,7 @@ import {
   beginConvergenceJournal,
   CoverageIntegrationError,
 } from './coverage-final-integration.mjs';
+import { runTargetedSubphase } from './targeted-requery-subphase.mjs';
 import { DECISION_PROVIDER_FAILURE } from './retrieval-round-controller.mjs';
 import {
   SELECTION_DECISION_FILENAME,
@@ -786,6 +787,7 @@ export async function composeP1Research({
   restart = false,
   planner = null,
   crashPoint = null,
+  targetedSubphase = null,
 } = {}) {
   const fail = (code, details = null, extra = {}) => ({ ok: false, code, details: details ? sanitizeMessage(details) : null, ...extra });
   // P1-R02 (#90): planner is injected for tests; production uses the frozen
@@ -1091,7 +1093,56 @@ export async function composeP1Research({
       coverageState = loop.coverageState;
       boundary = RESUME_REENTRY_RETRIEVAL_ROUNDS;
       pool = loop.pool;
-      // Crash-consistency seam (round-3 review P1): the T06 loop has returned
+
+      // ---------------------------------------------------------------------
+      // P2A-T09 (#121) — targeted sub-phase.
+      //
+      // POSITION IS THE CONTRACT: this runs INSIDE STAGE_SEARCH and strictly
+      // BEFORE `applySourceGroupSelection` below. It journals NO new stage (the
+      // convergence journal's single-pass acyclic order is untouched).
+      //
+      // DISABLED BY DEFAULT: `targetedSubphase === null` (the default) makes this
+      // block a no-op, so the #108-off composition path is byte-identical to the
+      // historical one. When enabled, the sub-phase is the single writer of the
+      // augmented accumulated pool (merged through the SAME RRF/canonical identity
+      // and re-walked by `assertArtifactSafe`), and every downstream stage consumes
+      // the larger pool with ZERO change.
+      //
+      // The only retrieval route it may use is T02's additive
+      // `runMultiQueryRetrieval({..., targetedQueries})` seam (no second pipeline).
+      // ---------------------------------------------------------------------
+      if (targetedSubphase !== null) {
+        const targeted = runTargetedSubphase({
+          workDir,
+          plan,
+          planHash: expectedPlanHash,
+          runId,
+          occurrenceId,
+          seam: effectiveSeam,
+          channels: plannedRoutes.map((r) => ({ providerId: r.providerId })),
+          plannedRoutes,
+          accumulatedPool: pool,
+          state,
+          crashAt,
+          ...targetedSubphase,
+        });
+        if (!targeted.ok) {
+          return persistFailure(CFC_RETRIEVAL_FAILED, `targeted sub-phase failed closed: ${String(targeted.code ?? 'unknown')}`);
+        }
+        pool = targeted.pool;
+        // Adopt the targeted checkpoint bindings into the composition checkpoint so
+        // the checkpoint-first commit point stays the ONLY trust root (F.5 / AC5).
+        if (targeted.state !== null) state.hashes = targeted.state.hashes;
+        appendEvent(workDir, {
+          event: 'targeted_subphase',
+          status: targeted.status,
+          gapsDiagnosed: targeted.gaps.length,
+          executed: targeted.counts.executed,
+          failed: targeted.counts.failed,
+        });
+      }
+
+      // Crash-consistency seam: the T06 loop has returned
       // with the FINAL pool durably persisted; a kill here — before the
       // composer's accumulatedPool binding checkpoint — is the pool binding-lag
       // window (reviewer's R9).
