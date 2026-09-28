@@ -776,7 +776,7 @@ const HEX64_BINDING = /^[0-9a-f]{64}$/;
  * re-run. Stage-boundary keys get their own re-entry proof; the targeted namespace
  * gets none, so it is carried by identity and shape-validated.
  */
-function targetedBindingsOf(hashes) {
+export function targetedBindingsOf(hashes) {
   if (!isPlainObject(hashes)) return {};
   const out = {};
   for (const [key, value] of Object.entries(hashes)) {

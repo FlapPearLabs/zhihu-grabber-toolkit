@@ -28,8 +28,8 @@ import {
   createProviderSeam,
 } from '../lib/provider-seam.mjs';
 import { planHash } from '../lib/plan-contract.mjs';
-import { makeState, writeState } from '../lib/state.mjs';
-import { runMultiQueryRetrieval } from '../lib/retrieval.mjs';
+import { makeState, readState, writeState } from '../lib/state.mjs';
+import { RETRIEVAL_POOL_FILENAME, runMultiQueryRetrieval } from '../lib/retrieval.mjs';
 import { diagnoseGaps } from '../lib/targeted-requery-diagnosis.mjs';
 import { sortGapsByGapId } from '../lib/targeted-requery-ledger.mjs';
 import {
@@ -47,7 +47,7 @@ import {
   decideTargetedReplay,
 } from '../lib/targeted-requery-lifecycle.mjs';
 import { RESOLUTION_BASIS_DUPLICATE_ONLY, RESOLUTION_FILENAME } from '../lib/targeted-requery-resolution.mjs';
-import { composeP1Research } from '../lib/p1-runtime-composer.mjs';
+import { composeP1Research, targetedBindingsOf } from '../lib/p1-runtime-composer.mjs';
 import { T14_SYNTHESIS_RUNTIME_ID, T14_SYNTHESIS_MODEL } from '../lib/cross-source-synthesis.mjs';
 import { mockVector768 } from './helpers/test-embedding-provider.mjs';
 
@@ -617,6 +617,72 @@ test('H3 — a terminal conclusion whose evidence bytes are gone FAILS CLOSED (F
     () => runTargetedSubphase({ ...args, state: { hashes: {} } }),
     /no completion evidence and no readable product/,
     'a terminal verdict must not license silently dropping its evidence',
+  );
+});
+
+test('H2 — a composer RESUME carries a real targeted binding across, making F.5 REUSE reachable', async () => {
+  // H2 used to be source-regex only, and I1 seeds an EMPTY checkpoint — so the
+  // carry-over at the resume boundary had zero runtime evidence. This drives the
+  // production path: a checkpoint that genuinely carries targeted-action:*
+  // bindings, a resuming occurrence, and an assertion that they survive AND that
+  // the replay decision reaches REUSE (zero extra retrieval) because of them.
+  const workDir = tmpWorkDir('p2a-t09-h2-resume');
+  const fixture = buildFixture();
+  const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+  const gap = contradictionGap(pool);
+
+  // A real committed run produces a real binding in a real checkpoint.
+  const first = runTargetedSubphase(subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]));
+  const actionId = first.executedActionIds[0];
+  assert.ok(actionId, 'precondition: the first run committed an action');
+  const bindingKey = `${TARGETED_BINDING_PREFIX}${actionId}`;
+  assert.equal(first.state.hashes[bindingKey] !== undefined, true, 'precondition: a binding exists');
+
+  // Run the composer's carry-over against that persisted checkpoint.
+  writeState(workDir, first.state);
+  const existing = readState(workDir);
+  const fresh = makeState({
+    workDir, topic: 't', mode: 'm', percent: null, runtime: 'r', occurrenceId: OCCURRENCE, config: {},
+  });
+  assert.equal(Object.keys(fresh.hashes).length, 0, 'precondition: a fresh state starts with no hashes');
+  Object.assign(fresh.hashes, targetedBindingsOf(existing.hashes));
+  assert.equal(fresh.hashes[bindingKey], first.state.hashes[bindingKey], 'the binding survived the resume boundary');
+
+  // And that carried binding is what makes the replay decision a REUSE.
+  const second = runTargetedSubphase({
+    ...subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]),
+    state: fresh,
+  });
+  assert.equal(second.reusedActionIds.length, 1, 'the carried binding produced a REUSE, not a re-run');
+  assert.equal(second.executedActionIds.length, 0);
+  const ids = second.pool.candidates.map((c) => c.identity.questionId);
+  assert.ok(ids.includes('900') && ids.includes('901'), 'the reused evidence is in the pool');
+});
+
+test('H4 — a committed artifact whose bytes were tampered with is refused, not merged', () => {
+  const workDir = tmpWorkDir();
+  const fixture = buildFixture();
+  const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+  const gap = contradictionGap(pool);
+  const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]);
+
+  runTargetedSubphase(args);
+  // Locate the committed round product and append a candidate, keeping it valid JSON.
+  const dir = fs.readdirSync(path.join(workDir, TARGETED_SUBPHASE_DIRNAME))
+    .find((d) => d.startsWith('action-'));
+  const poolFile = path.join(workDir, TARGETED_SUBPHASE_DIRNAME, dir, RETRIEVAL_POOL_FILENAME);
+  const parsed = JSON.parse(fs.readFileSync(poolFile, 'utf8'));
+  parsed.candidates.push({
+    ...parsed.candidates[0],
+    identity: { kind: 'candidate', questionId: '999999' },
+  });
+  fs.writeFileSync(poolFile, JSON.stringify(parsed, null, 2));
+
+  // The bytes are parseable and correctly shaped — only the hash reveals the edit.
+  assert.throws(
+    () => runTargetedSubphase({ ...args, state: { hashes: {} } }),
+    /no completion evidence and no readable product/,
+    'a tampered-but-parseable artifact must fail closed, never be merged behind ok:true',
   );
 });
 

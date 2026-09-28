@@ -64,7 +64,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { isValidPlanHashFormat } from './plan-contract.mjs';
-import { appendEvent } from './state.mjs';
+import { appendEvent, validateArtifactCheckpoint } from './state.mjs';
 import {
   RETRIEVAL_POOL_FILENAME,
   RETRIEVAL_POOL_SCHEMA_VERSION,
@@ -372,7 +372,7 @@ export function runTargetedSubphase({
         // outright would strand the gap with no terminal forever (S10: no gap may
         // silently vanish). So REUSE skips only the PAID retrieval; the T08
         // evaluation still has to run for a non-terminal status.
-        mergedPool = readBoundTargetedPool(workDir, prior.artifactRel);
+        mergedPool = readBoundTargetedPool(workDir, prior.artifactRel, prior.artifactHash);
         if (mergedPool !== null) targetedPools.push(mergedPool);
         reusedActionIds.push(prior.targetedActionId);
         advanceToTerminal = !FINAL_EVIDENCE_STATUSES.includes(prior.status);
@@ -394,7 +394,7 @@ export function runTargetedSubphase({
         // evidence from the one channel that carries it. Fail closed, exactly like
         // the non-terminal branch below; the asymmetry that made this `continue`
         // was a design preference of mine and the frozen contract overrules it.
-        mergedPool = readBoundTargetedPool(workDir, prior.artifactRel);
+        mergedPool = readBoundTargetedPool(workDir, prior.artifactRel, prior.artifactHash);
         if (mergedPool === null) {
           throw subphaseError(
             `no completion evidence and no readable product for targeted action ${prior.targetedActionId} `
@@ -417,7 +417,7 @@ export function runTargetedSubphase({
         // without breaking a frozen contract. The only honest in-scope move is to
         // finish the T08 conclusion for the record that exists, using whatever bytes
         // are still readable.
-        mergedPool = readBoundTargetedPool(workDir, prior.artifactRel);
+        mergedPool = readBoundTargetedPool(workDir, prior.artifactRel, prior.artifactHash);
         if (mergedPool === null) {
           // The paid evidence is genuinely gone AND no terminal was ever reached.
           // Continuing would report `ok: true` while silently dropping a paid
@@ -644,9 +644,23 @@ function advanceActionStatusSafely(artifact, targetedActionId, nextStatus, optio
   return advanceActionStatus(artifact, targetedActionId, nextStatus, options);
 }
 
-/** Read a previously committed targeted round pool from its bound work-relative path. */
-function readBoundTargetedPool(workDir, artifactRel) {
-  if (!isNonEmptyString(artifactRel)) return null;
+/**
+ * Read a previously committed targeted round pool from its bound work-relative
+ * path.
+ *
+ * `expectedHash` is REQUIRED whenever one is known, and the bytes are verified
+ * against it through the same `validateArtifactCheckpoint` the commit point and
+ * the replay decision use — no second hash formula, and no unverified read. A
+ * tampered-but-still-parseable artifact is exactly the case a shape check alone
+ * cannot see: without this it would be merged into the augmented pool and
+ * returned as `ok: true`, carrying bytes no checkpoint ever vouched for. When the
+ * expected hash is unknown, the bytes are NOT trusted (returns null) rather than
+ * being accepted on the strength of a JSON parse.
+ */
+function readBoundTargetedPool(workDir, artifactRel, expectedHash) {
+  if (!isNonEmptyString(artifactRel) || !isNonEmptyString(expectedHash)) return null;
+  const check = validateArtifactCheckpoint(workDir, artifactRel, expectedHash);
+  if (!check.ok) return null;
   const abs = path.join(workDir, artifactRel);
   if (!fs.existsSync(abs)) return null;
   try {
