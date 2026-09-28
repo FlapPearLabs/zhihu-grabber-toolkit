@@ -27,6 +27,7 @@ import {
   COMPLETENESS_UNKNOWN,
   createProviderSeam,
 } from '../lib/provider-seam.mjs';
+import { assertArtifactSafe } from '../lib/rrf.mjs';
 import { planHash } from '../lib/plan-contract.mjs';
 import { makeState, readState, writeState } from '../lib/state.mjs';
 import { RETRIEVAL_POOL_FILENAME, runMultiQueryRetrieval } from '../lib/retrieval.mjs';
@@ -208,6 +209,52 @@ test('A3 — the two frozen P1 contact surfaces are exactly retrieval.mjs and re
     const source = stripComments(fs.readFileSync(path.join(LIB, file), 'utf8'));
     assert.equal(/targetedQueries|targetedAttempts/.test(source), false, `${file} must carry no targeted contact surface`);
   }
+});
+
+test('A5 — the augmented walk NEVER extends trustedPlanStrings with targeted strings (F.3 / D12-3)', () => {
+  // FROZEN: "MVP 不向 assertArtifactSafe 的既有调用点传入任何扩展
+  // trustedPlanStrings" (seam contract F.3, D12-3, seam map §3). Listing a string
+  // in the trust set is a RELAXATION — it exempts that string from the
+  // provider-content lens — and T04's admission gate is the INTERSECTION of two
+  // lenses, so feeding admitted targeted strings into the walk would extend a
+  // single-lens relaxation to new strings. T11's acceptance criterion is
+  // precisely that targeted strings appear in no trustedPlanStrings.
+  const source = stripComments(fs.readFileSync(path.join(LIB, 'targeted-requery-subphase.mjs'), 'utf8'));
+  assert.equal(
+    /normalizedQuery[^\n]*trustedPlanStrings|trustedPlanStrings[^\n]*normalizedQuery/.test(source),
+    false,
+    'a targeted query string must never flow into a trustedPlanStrings set',
+  );
+  assert.equal(
+    /extraTrustedStrings/.test(source),
+    false,
+    'the extraTrustedStrings escape hatch must not exist',
+  );
+  // The walk must build its trust set from plan.queryVariants alone.
+  assert.ok(
+    /const trusted = new Set\(Array\.isArray\(plan\.queryVariants\) \? plan\.queryVariants : \[\]\);/.test(source),
+    'the augmented walk trust set is plan.queryVariants and nothing else',
+  );
+  // And behaviourally: a targeted string that the UNTRUSTED baseline would reject
+  // must still be refused, proving the trust list is not laundering it.
+  const seam = createProviderSeam({ adapters: [fixtureSearchAdapter('fixture-a', () => {
+    throw new Error('no provider call expected');
+  })] });
+  const walked = assertArtifactSafe({
+    schemaVersion: 1,
+    type: 'retrieval-pool',
+    planHash: PLAN_HASH,
+    channels: [],
+    candidates: [{
+      identity: { kind: 'candidate', questionId: '900' },
+      provenance: { route: 'fixture', rank: 1, rankOrigin: 'fixture_order' },
+      source_url: '/etc/hosts 文件的作用',
+      facts: {},
+    }],
+    rejected: [],
+    criteria: { fusion: 'rrf', scope: 'x', retrievalRounds: 1 },
+  }, { trustedPlanStrings: new Set(PLAN.queryVariants) });
+  assert.equal(walked.ok, false, 'an unsafe string in provider content stays unsafe without being trusted');
 });
 
 test('A4 — the frozen accumulated-pool artifact-walk call site is byte-unchanged', () => {

@@ -318,7 +318,6 @@ export function runTargetedSubphase({
 
   let currentState = state;
   const targetedPools = [];
-  const targetedQueries = [];
   const executedActionIds = [];
   const reusedActionIds = [];
   const rejectedActionIds = [];
@@ -498,7 +497,6 @@ export function runTargetedSubphase({
 
       mergedPool = res.pool;
       targetedPools.push(res.pool);
-      targetedQueries.push(action.normalizedQuery);
       crashAt('after_targeted_execution');
 
       // ---- T06 commit point (checkpoint-first), reused verbatim ---------------
@@ -574,7 +572,6 @@ export function runTargetedSubphase({
       expectedPlanHash,
       accumulatedPool,
       targetedPools,
-      extraTrustedStrings: targetedQueries,
     });
 
   // ---- 5. T07 counting (must come from the frozen ledger export) -------------
@@ -677,17 +674,27 @@ function readBoundTargetedPool(workDir, artifactRel, expectedHash) {
  * with the SAME artifact-safety contract, and re-persist it to the same canonical
  * path (work-relative; deterministic).
  *
- * `extraTrustedStrings` are the T04-admitted targeted query strings: they already
- * passed the plan boundary lens at admission, so trusting them here is the same
- * plan-boundary contract the round-level walk applies — NOT a caller-defined bypass.
+ * TRUST SET: the walk uses `plan.queryVariants` and NOTHING else — byte-identical
+ * in shape to the four frozen call sites (F.3 / D12-3 / Seam Map §3: "MVP 不向
+ * assertArtifactSafe 的既有调用点传入任何扩展 trustedPlanStrings"). The targeted
+ * query strings are deliberately NOT added.
+ *
+ * An earlier revision of this module added them, on the reasoning that T04 had
+ * already admitted them, so trusting them here "is the same plan-boundary contract".
+ * That reasoning was wrong twice over: listing a string in the trust set is a
+ * RELAXATION (per the contract's own worked example), and T04's gate is the
+ * INTERSECTION of two lenses (`isPlanBoundarySafeString` AND `isBoundarySafeString`),
+ * whereas the walk's trust list exempts a string from the provider-content lens
+ * entirely. Adding them would have extended a single-lens relaxation to new
+ * strings — the exact regression F.3 was written to forbid, and it would have
+ * pre-empted T11's acceptance criterion that targeted strings appear in no
+ * trustedPlanStrings. The targeted strings pass on their own merits: having
+ * cleared both lenses at admission, they also clear the untrusted baseline.
  */
-function augmentAccumulatedPool({ workDir, plan, expectedPlanHash, accumulatedPool, targetedPools, extraTrustedStrings }) {
+function augmentAccumulatedPool({ workDir, plan, expectedPlanHash, accumulatedPool, targetedPools }) {
   const candidates = mergeCandidates(accumulatedPool, targetedPools);
   const channels = mergeChannels(accumulatedPool, targetedPools);
-  const trusted = new Set([
-    ...(Array.isArray(plan.queryVariants) ? plan.queryVariants : []),
-    ...extraTrustedStrings,
-  ]);
+  const trusted = new Set(Array.isArray(plan.queryVariants) ? plan.queryVariants : []);
   const pool = {
     schemaVersion: RETRIEVAL_POOL_SCHEMA_VERSION,
     type: RETRIEVAL_POOL_TYPE,
