@@ -6,8 +6,22 @@
 
 ```text
 DOCUMENT_ID   = P2_ARI_108_F5_CHECKPOINT_ANCHORED_LEDGER_AMENDMENT_V1
-STATUS        = CANDIDATE（待独立 architecture/contract 审查；尚未批准）
-PREVIOUS_STATUS = NONE（本文件为新文件；不改写任何既有权威的 STATUS）
+STATUS        = APPROVED（经三轮 fresh independent 审查；见 REVIEW_RECEIPTS）
+PREVIOUS_STATUS = CANDIDATE（候选阶段的史实保留不改写；本次只做状态提升）
+REVIEW_RECEIPTS =
+  R1  ARCHITECTURE  REVIEWED_EXACT_SHA = 828f0bd845580e4da4dc43429b803e923d050720
+      VERDICT = CHANGES_REQUESTED  OPEN_P0_P1 = 0P0/1P1 + 3P2  → 修复于 5c4a37ce
+  R2  CONTRACT     REVIEWED_EXACT_SHA = 5c4a37ceac8883efda1e6f6bb5d69d01dc3f6888
+      VERDICT = PASS_WITH_NON_BLOCKING  OPEN_P0_P1 = 0P0/0P1 + 4P2  → 修复于 a12cb2d
+  R3  VERIFICATION REVIEWED_EXACT_SHA = a12cb2df13d352f254977ecfeadd950066fc17c4
+      VERDICT = PASS_WITH_NON_BLOCKING  OPEN_P0_P1 = 0P0/0P1 + 4P2  → 修复于 719e911c
+      （R1 与 R2 为不同 reviewer 视角；R3 为对修复本身的独立复核，executor ≠ reviewer）
+  MODEL_REQUESTED = DeepSeek V4.1 Flash → GLM 5.3 → DeepSeek V4 Pro
+  MODEL_ACTUAL    = DeepSeek V4 Pro（前两者持续 429 限流）
+  FALLBACK_REASON = MODEL_UNAVAILABLE_OR_RATE_LIMIT
+  OPEN_BLOCKERS   = NONE
+  注意：R2/R3 的 4 项 P2 均为文档一致性 / 元数据层面，已在 719e911c 修复并经 R3 确认；
+        批准所依据的是「三轮审查后 P0=0、P1=0 且所有 finding 已闭合」，非「无 finding」。
 AMENDS        = docs/planning/P2_ARI_108_TARGETED_REQUERY_SEAM_CONTRACT_V1.md §F.5
                 docs/specs/p2-ari-f02-targeted-requery.md §12
                 docs/architecture/key-decisions.md D12
@@ -284,9 +298,28 @@ G6  CASE 2 断言 dedupe 门【未被调用】（证明 E.6 绕开而非放宽�
 ## 6. 授权状态
 
 ```text
-IMPLEMENTATION_AUTHORIZATION = NONE
-本文 STATUS = CANDIDATE —— 尚未批准，不授权任何实现
+STATUS = APPROVED（三轮 fresh independent 审查：P0=0、P1=0、所有 finding 已闭合）
 
-NEXT = 独立 architecture/contract review（fresh independent reviewer；executor ≠ reviewer）
-PASS 后才可扩大实现授权（届时另行记录授权范围，覆盖 T06-owned checkpoint surface）
+IMPLEMENTATION_AUTHORIZATION = SCOPED_TO_F5_LEDGER_ANCHORING
+  授权范围（仅此四类 surface，越界即需重新授权）：
+    1. targeted-requery-lifecycle.mjs   —— ledger 字节的 content-addressed 暂存 + 锚点写入
+    2. targeted-requery-subphase.mjs    —— 授权后锚定；resume 改读 checkpoint 锚定版本
+    3. p1-runtime-composer.mjs          —— :1038 排除条件扩一个 key；终态/resume 携带该 key
+    4. state.mjs                        —— 【不改】（仅复用 writeState / validateArtifactCheckpoint）
+  附带授权：对应测试文件（新增或修改）
+
+  仍然禁止（越界即 CONTRACT_VIOLATION）：
+    · 改 E.6 dedupeKey 字段集
+    · 改 T06 LEGAL_TRANSITIONS
+    · 改 F.5 / spec §12 的产品措辞
+    · 引入 sidecar receipt / 第二信任根
+    · 顺带修 §4 的两项 P2（gap ledger 持久化 / budget preflight）
+      → 二者虽不阻塞本修正案，但需各自独立的 finding-scoped 授权
+
+  授权依据 = owner 在 #130 的 decision comment（授权路径 = 修正案 → 独立审查 → PASS 后自动扩授权）
+  接受条件 = §5 的 G1–G6 全部由真实测试钉死；G6 尤为关键（证明 E.6 被绕开而非被放宽）
+
+NEXT_LEGAL_ACTION = 以修正后的 T09 candidate（60ee327a）为基线重新形成合法的
+                    T09 repair candidate，并合入本授权范围内的修复
+BLOCKED_BY = NONE（本修正案不再是阻塞项）
 ```
