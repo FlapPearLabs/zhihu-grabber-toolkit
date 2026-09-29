@@ -64,7 +64,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { isValidPlanHashFormat } from './plan-contract.mjs';
-import { appendEvent, validateArtifactCheckpoint } from './state.mjs';
+import { appendEvent, validateArtifactCheckpoint, writeState } from './state.mjs';
 import {
   RETRIEVAL_POOL_FILENAME,
   RETRIEVAL_POOL_SCHEMA_VERSION,
@@ -80,6 +80,7 @@ import {
   gapTypeAllowsRetrievalAction,
   normalizeSubjectString,
   opposingFramingSubjectKey,
+  persistLedger,
   sortGapsByGapId,
 } from './targeted-requery-ledger.mjs';
 import { diagnoseGaps } from './targeted-requery-diagnosis.mjs';
@@ -92,19 +93,25 @@ import {
   ACTION_STATUS_EVALUATED,
   ACTION_STATUS_FAILED_OPERATIONAL,
   ACTIONS_FILENAME,
+  actionsArtifactBytes,
   advanceActionStatus,
+  anchorLedgerVersion,
   createActionsArtifact,
   decideTargetedReplay,
   FINAL_EVIDENCE_STATUSES,
+  LEDGER_CHECKPOINT_KEY,
+  LEDGER_STAGING_KEY,
   loadActionsArtifact,
   persistActionsArtifact,
   prepareTargetedCommit,
   finalizeTargetedCommit,
+  readAnchoredLedger,
   recordRejectedDecision,
   registerAuthorizedAction,
   RESUME_REUSE,
   RESUME_BLOCKED,
   TARGETED_BINDING_PREFIX,
+  targetedBindingKey,
 } from './targeted-requery-lifecycle.mjs';
 import {
   RESOLUTION_FILENAME,
@@ -117,6 +124,42 @@ import {
 import { computeTargetedAttemptCounts } from './targeted-requery-attempts.mjs';
 
 export const SUBPHASE_ERROR_INVALID = 'p2a_targeted_requery_subphase_invalid';
+
+/**
+ * F.6 / F.6.1 — the PLANNED half of the global attempt budget, read straight off the
+ * coverage state the frozen P1 retrieval loop maintains.
+ *
+ * `attemptsBudgetCount` is defined by the frozen contract as
+ *
+ *     attemptsBudgetCount = 计划 executedRoutes + 计划 providerFailures
+ *                           + targetedExecutedCount + targetedFailedCount
+ *
+ * and the ledger can only ever supply the second line. The planned line is NOT
+ * derivable from the ledger (the ledger never sees a planned round), and the
+ * targeted line is NOT derivable from the coverage state (D4 forbids writing
+ * targeted attempts back into `executedRoutes`). Each counter therefore has
+ * exactly one honest source, and the budget is the sum of both.
+ *
+ * This is a PURE READ of an already-validated coverage state — no new
+ * `ResearchCoverageState` field, no write, no new round semantics. Without it the
+ * authorization preflight (E.5(7), `authorization.mjs`) can only see the targeted
+ * half, which is precisely the "不得静默超出全局预算" failure Spec §13 forbids.
+ */
+export function computePlannedAttemptCount(coverageState) {
+  if (!isPlainObject(coverageState)) {
+    throw subphaseError('computePlannedAttemptCount requires a coverage state plain object');
+  }
+  const retrieval = coverageState.retrieval;
+  if (!isPlainObject(retrieval)) {
+    throw subphaseError('computePlannedAttemptCount requires a coverage state with a retrieval section');
+  }
+  const executedRoutes = retrieval.executedRoutes;
+  const providerFailures = retrieval.providerFailures;
+  if (!Array.isArray(executedRoutes) || !Array.isArray(providerFailures)) {
+    throw subphaseError('computePlannedAttemptCount requires executedRoutes[] and providerFailures[]');
+  }
+  return executedRoutes.length + providerFailures.length;
+}
 
 /** No actionable gap (or no admissible proposal) — a legal, non-failing outcome. */
 export const SUBPHASE_STATUS_NO_ACTION = 'NO_ACTION';
@@ -151,6 +194,10 @@ function isNonEmptyString(value) {
 
 function isPositiveInteger(value) {
   return Number.isInteger(value) && value > 0;
+}
+
+function isNonNegativeInteger(value) {
+  return Number.isInteger(value) && value >= 0;
 }
 
 /**
@@ -258,9 +305,22 @@ export function runTargetedSubphase({
   proposals = [],
   maxQueryBudget,
   maxAttemptsPerGap,
+  // F.6 — the PLANNED half of the global attempt budget, resolved by the composition
+  // owner via the exported `computePlannedAttemptCount(coverageState)` from the live
+  // coverage state it owns. Required (non-negative integer): the budget preflight must
+  // see planned + targeted, and a targeted-only denominator silently under-counts the
+  // money already spent on the frozen P1 rounds.
+  plannedAttemptsBudgetCount = null,
   state = null,
   crashAt = () => {},
   framingForGap = null,
+  // F.5.1 — injected by the composition layer, which owns the content-addressed
+  // staging directory. `stageLedgerBytes(bytes) -> sha256` publishes a version;
+  // `resolveAnchoredBytes(sha) -> bytes|null` returns the bytes the checkpoint anchors.
+  // Injection is required by the module graph (composer -> subphase -> lifecycle), so the
+  // lifecycle cannot import the staging helper without a cycle.
+  stageLedgerBytes = null,
+  resolveAnchoredBytes = null,
 } = {}) {
   // ---- fail-closed input gates (no artifact is produced on any failure) -------
   if (!isNonEmptyString(workDir)) throw subphaseError('workDir must be a non-empty string');
@@ -277,6 +337,13 @@ export function runTargetedSubphase({
   if (!Array.isArray(proposals)) throw subphaseError('proposals must be an array');
   if (!isPositiveInteger(maxQueryBudget)) throw subphaseError('maxQueryBudget must be a positive integer');
   if (!isPositiveInteger(maxAttemptsPerGap)) throw subphaseError('maxAttemptsPerGap must be a positive integer');
+  if (!isNonNegativeInteger(plannedAttemptsBudgetCount)) {
+    throw subphaseError(
+      'plannedAttemptsBudgetCount must be a non-negative integer: the global attempt budget denominator '
+      + '(F.6) is planned executedRoutes + planned providerFailures + targeted executed + targeted failed, '
+      + 'so its planned half cannot be omitted',
+    );
+  }
   if (state !== null && !isPlainObject(state)) throw subphaseError('state must be a plain object or null');
   if (typeof crashAt !== 'function') throw subphaseError('crashAt must be a function');
   if (framingForGap !== null && typeof framingForGap !== 'function') throw subphaseError('framingForGap must be a function or null');
@@ -290,6 +357,21 @@ export function runTargetedSubphase({
     occurrenceId,
     diagnosisRound: SUBPHASE_DIAGNOSIS_ROUND,
   });
+
+  // S1 / F.4 — persist the controller-owned gap ledger. T03 is READ-ONLY BY
+  // CONSTRUCTION and deliberately hands the persistence decision to this controller
+  // ("the persistence decision belongs to the controller (T09) using T01's own
+  // persistLedger"), so without this line the diagnosed gaps exist only in memory and
+  // S1's OBSERVABLE_PRODUCTION_EFFECT (a new controller-owned gap ledger artifact)
+  // never happens. `diagnoseGaps` already returns a ledger built with T01 primitives,
+  // so this is a single write with T01's own determinism guarantee (canonical gapId
+  // order -> byte-identical output for identical logical content).
+  //
+  // It is written BEFORE any authorization so a crash mid-sub-phase still leaves an
+  // observable record of what was diagnosed. It is NOT a trust root: nothing reads it
+  // back for authority (the action ledger anchor is the only trust root), so it needs
+  // no checkpoint binding of its own.
+  persistLedger(workDir, diagnosed.ledger);
 
   // ---- 2. deterministic gapId-ascending selection (E.8) ----------------------
   const gaps = sortGapsByGapId(diagnosed.records);
@@ -307,16 +389,51 @@ export function runTargetedSubphase({
   // widening T06's / T08's frozen loader signatures: this ticket owns orchestration,
   // not the lifecycle persistence surface. A stale anchor is treated exactly like a
   // stale planHash — not reusable, rebuild from scratch for this occurrence.
-  const loadedActions = loadActionsArtifact(workDir, expectedPlanHash);
-  let actionsArtifact = loadedActions.ok && loadedActions.artifact.occurrenceId === occurrenceId
-    ? loadedActions.artifact
-    : createActionsArtifact({ planHash: expectedPlanHash, occurrenceId });
+  // F.5.1 AUTHORITY_RULE — the authoritative ledger is the version the CHECKPOINT
+  // anchors, not whatever the canonical file currently holds. The canonical file is
+  // overwritten in place, so after a crash between the COMMITTED ledger write and the
+  // checkpoint commit it holds a NEWER version that no checkpoint vouches for; reading
+  // it would let an unproven record drive dedupe / lifecycle / completion — exactly the
+  // P0 unanchored-second-credential pattern (P1-R06).
+  //
+  // The three cases are deliberately NOT collapsed:
+  //   · a checkpoint exists and anchors a version  → that version is authoritative
+  //   · a checkpoint exists but anchors nothing    → fail closed; the canonical file is
+  //     NOT a fallback (this is CASE 1b: an authorization persisted without its anchor
+  //     is an authorization the checkpoint cannot prove, so it must not be honoured)
+  //   · no checkpoint at all (fresh composition)    → start a new ledger
+  let currentState = state;
+  const priorState = currentState;
+  let actionsArtifact;
+  if (priorState === null) {
+    actionsArtifact = createActionsArtifact({ planHash: expectedPlanHash, occurrenceId });
+  } else {
+    const anchored = resolveAnchoredBytes === null
+      ? null
+      : readAnchoredLedger(priorState, resolveAnchoredBytes);
+    const hasAnchor = typeof priorState.hashes?.[LEDGER_CHECKPOINT_KEY] === 'string'
+      && priorState.hashes[LEDGER_CHECKPOINT_KEY].length === 64;
+    if (anchored === null && hasAnchor) {
+      // Anchored, but the anchored bytes are unrecoverable -> CASE 3b, fail closed.
+      throw subphaseError(
+        'the checkpoint anchors an action-ledger version whose bytes are unrecoverable '
+        + '(UNKNOWN != PASS: refusing to fall back to the unanchored canonical ledger)',
+      );
+    }
+    if (anchored === null) {
+      // A checkpoint exists but never anchored a ledger. Canonical bytes are unproven.
+      actionsArtifact = createActionsArtifact({ planHash: expectedPlanHash, occurrenceId });
+    } else if (anchored.occurrenceId === occurrenceId) {
+      actionsArtifact = anchored;
+    } else {
+      actionsArtifact = createActionsArtifact({ planHash: expectedPlanHash, occurrenceId });
+    }
+  }
   const loadedResolution = loadResolutionArtifact(workDir, expectedPlanHash);
   let resolutionArtifact = loadedResolution.ok && loadedResolution.artifact.occurrenceId === occurrenceId
     ? loadedResolution.artifact
     : createResolutionArtifact({ planHash: expectedPlanHash, occurrenceId });
 
-  let currentState = state;
   const targetedPools = [];
   const executedActionIds = [];
   const reusedActionIds = [];
@@ -371,7 +488,12 @@ export function runTargetedSubphase({
         // outright would strand the gap with no terminal forever (S10: no gap may
         // silently vanish). So REUSE skips only the PAID retrieval; the T08
         // evaluation still has to run for a non-terminal status.
-        mergedPool = readBoundTargetedPool(workDir, prior.artifactRel, prior.artifactHash);
+        // F.5.1: the expected hash is the CHECKPOINT BINDING (`state.hashes[bindingKey]`),
+        // never `prior.artifactHash`. The record's own field lives inside the ledger,
+        // which is exactly the unanchored second credential P1-R06 ruled a P0: reading
+        // bytes against it would let a tampered-but-parseable ledger vouch for itself.
+        // `decideTargetedReplay` has already proven this binding is present and 64-hex.
+        mergedPool = readBoundTargetedPool(workDir, prior.artifactRel, currentState.hashes[targetedBindingKey(prior.targetedActionId)]);
         if (mergedPool !== null) targetedPools.push(mergedPool);
         reusedActionIds.push(prior.targetedActionId);
         advanceToTerminal = !FINAL_EVIDENCE_STATUSES.includes(prior.status);
@@ -393,7 +515,7 @@ export function runTargetedSubphase({
         // evidence from the one channel that carries it. Fail closed, exactly like
         // the non-terminal branch below; the asymmetry that made this `continue`
         // was a design preference of mine and the frozen contract overrules it.
-        mergedPool = readBoundTargetedPool(workDir, prior.artifactRel, prior.artifactHash);
+        mergedPool = readBoundTargetedPool(workDir, prior.artifactRel, currentState.hashes[targetedBindingKey(prior.targetedActionId)]);
         if (mergedPool === null) {
           throw subphaseError(
             `no completion evidence and no readable product for targeted action ${prior.targetedActionId} `
@@ -405,18 +527,20 @@ export function runTargetedSubphase({
         reusedActionIds.push(prior.targetedActionId);
         continue;
       } else {
-        // COMMITTED / EVALUATED with a MISSING or MISMATCHED checkpoint binding:
-        // there is no completion evidence, and F.5 forbids manufacturing any (the
-        // record's own bindingHash is not checkpoint-anchored — promoting it is the
-        // P1-R06 unanchored-second-credential P0). F.5's "safe re-run once" cannot be
-        // executed as a fresh authorization either: E.6's dedupeKey covers
-        // {gapIdentityCore, normalizedQuery, providerScope} and deliberately excludes
-        // `attempt`, so re-authorizing this exact query would be rejected as
-        // EQUIVALENT_QUERY_ALREADY_AUTHORIZED — re-paying is structurally impossible
-        // without breaking a frozen contract. The only honest in-scope move is to
-        // finish the T08 conclusion for the record that exists, using whatever bytes
-        // are still readable.
-        mergedPool = readBoundTargetedPool(workDir, prior.artifactRel, prior.artifactHash);
+        // COMMITTED / EVALUATED with a MISSING or MISMATCHED checkpoint binding, reached
+        // from a ledger that is NOT the anchored version. With F.5.1 in place this is now
+        // a defensive branch rather than the expected path: the anchored ledger version
+        // is what resume reads, so a crash between the COMMITTED ledger write and the
+        // checkpoint commit presents an AUTHORIZED record (handled above) and never
+        // reaches here. The branch is kept because fail-closed must hold even if a future
+        // caller hands us an unanchored ledger.
+        //
+        // F.5 still forbids manufacturing completion evidence, and a re-run still cannot
+        // be obtained by re-authorizing (E.6's dedupeKey excludes `attempt`). So the only
+        // honest in-scope move is to finish the T08 conclusion for the record that exists,
+        // using whatever bytes are still readable — and to read them against the CHECKPOINT
+        // binding, never against the record's own unanchored `artifactHash`.
+        mergedPool = readBoundTargetedPool(workDir, prior.artifactRel, currentState.hashes[targetedBindingKey(prior.targetedActionId)]);
         if (mergedPool === null) {
           // The paid evidence is genuinely gone AND no terminal was ever reached.
           // Continuing would report `ok: true` while silently dropping a paid
@@ -435,6 +559,13 @@ export function runTargetedSubphase({
       }
     } else {
       const countsSoFar = computeTargetedAttemptCounts({ actions: actionsArtifact.targetedActions });
+      // F.6 / E.5(7): the preflight denominator is BOTH halves of the budget. The
+      // targeted half below is the ledger pure function; the planned half
+      // (`plannedAttemptsBudgetCount`) is the frozen P1 coverage state, resolved by the
+      // composition owner that owns it and gated fail-closed at the top of this
+      // function. The preflight therefore sees the same four-term sum
+      // `evaluateRetrievalRound` computes for `attemptsBudgetCount` — never a
+      // targeted-only or planned-only denominator.
       const decision = authorizeTargetedAction(proposal, {
         plan,
         resolveGap,
@@ -444,7 +575,10 @@ export function runTargetedSubphase({
         planHash: expectedPlanHash,
         maxAttemptsPerGap,
         maxQueryBudget,
-        attemptsBudgetCount: countsSoFar.executed + countsSoFar.failed,
+        // F.6: planned + targeted. The caller resolves the planned half with the
+        // exported `computePlannedAttemptCount(coverageState)`; this module adds the
+        // ledger's own targeted half. Neither half may be substituted for the other.
+        attemptsBudgetCount: plannedAttemptsBudgetCount + countsSoFar.executed + countsSoFar.failed,
         attemptsByGapIdentityCore: attemptsByGapIdentityCore(actionsArtifact.targetedActions),
         authorizedDedupeKeys: actionsArtifact.targetedActions
           .filter((r) => r.status !== ACTION_STATUS_FAILED_OPERATIONAL)
@@ -461,6 +595,23 @@ export function runTargetedSubphase({
 
       actionsArtifact = registerAuthorizedAction(actionsArtifact, decision);
       persistActionsArtifact(workDir, actionsArtifact);
+      // F.5.1 ANCHOR 1 — an authorization is a decision to spend money, so it must be
+      // checkpoint-anchored too. Without this, a crash before the commit point would
+      // leave an AUTHORIZED record in the canonical file that NO checkpoint vouches for,
+      // and resume (which now trusts only the anchored version) could not honour it —
+      // the ledger anchor and the record would disagree about what was authorized.
+      //
+      // The staged copy is published FIRST and its exact bytes are hashed, so the hash
+      // in `state.hashes` describes bytes that can actually be recovered later. This
+      // authorization decision is its own atomic event with its own `writeState`; it is
+      // not a second commit point for the retrieval, which still commits only at
+      // `finalizeTargetedCommit`.
+      if (stageLedgerBytes !== null) {
+        const ledgerBytes = actionsArtifactBytes(actionsArtifact);
+        const ledgerHash = stageLedgerBytes(ledgerBytes);
+        currentState = anchorLedgerVersion(currentState, actionsArtifact, ledgerHash);
+        writeState(workDir, currentState);
+      }
       [action] = actionsArtifact.targetedActions.filter((r) => r.targetedActionId === decision.targetedActionId);
     }
 
@@ -509,6 +660,12 @@ export function runTargetedSubphase({
         targetedActionId,
         artifactRel,
         artifactBytes,
+        // F.5.1 ANCHOR 2 — the commit point also anchors the COMMITTED ledger version
+        // and publishes its exact bytes under their content address. It runs BEFORE the
+        // crash window below so the anchored version is always recoverable by the time
+        // the checkpoint names it. The checkpoint itself is still committed exactly
+        // once, by `finalizeTargetedCommit` below — this is not a second commit point.
+        stageLedgerBytes,
       });
       actionsArtifact = prepared.artifact;
       currentState = prepared.state;

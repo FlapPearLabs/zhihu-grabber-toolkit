@@ -35,6 +35,7 @@ import { diagnoseGaps } from '../lib/targeted-requery-diagnosis.mjs';
 import { sortGapsByGapId } from '../lib/targeted-requery-ledger.mjs';
 import {
   ACTIONS_FILENAME,
+  ACTION_STATUS_AUTHORIZED,
   ACTION_STATUS_COMMITTED,
   ACTION_STATUS_EVALUATED,
   ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET,
@@ -48,7 +49,8 @@ import {
   decideTargetedReplay,
 } from '../lib/targeted-requery-lifecycle.mjs';
 import { RESOLUTION_BASIS_DUPLICATE_ONLY, RESOLUTION_FILENAME } from '../lib/targeted-requery-resolution.mjs';
-import { composeP1Research } from '../lib/p1-runtime-composer.mjs';
+import { composeP1Research, resolveAnchoredLedgerBytes, stageArtifactBytes, COMMIT_STAGING_DIR } from '../lib/p1-runtime-composer.mjs';
+import { LEDGER_STAGING_KEY } from '../lib/targeted-requery-lifecycle.mjs';
 import { T14_SYNTHESIS_RUNTIME_ID, T14_SYNTHESIS_MODEL } from '../lib/cross-source-synthesis.mjs';
 import { mockVector768 } from './helpers/test-embedding-provider.mjs';
 
@@ -170,7 +172,21 @@ function subphaseArgs(workDir, fixture, pool, proposals, extra = {}) {
     proposals,
     maxQueryBudget: 10,
     maxAttemptsPerGap: 2,
+    // F.6: the PLANNED half of the global budget denominator. 2 = one executed
+    // planned route + one planned provider failure, i.e. the frozen P1 loop has
+    // already spent attempts before the sub-phase may authorize anything. Spelled
+    // out (not derived from a fixture coverage state) so the tests that pin the
+    // preflight arithmetic can state the expected four-term sum literally.
+    plannedAttemptsBudgetCount: 2,
     state: { hashes: {} },
+    // F.5.1 — the REAL composition-layer staging primitives, not doubles. Gate G4
+    // forbids standing in for the trust machinery with hand-rolled fakes: an
+    // in-memory map would let a test "recover" bytes no production run could, and
+    // would prove nothing about the content-addressed directory that makes an
+    // anchor recoverable across a crash. These are the same functions the composer
+    // injects, so a regression in either is visible here.
+    stageLedgerBytes: (bytes) => stageArtifactBytes(workDir, LEDGER_STAGING_KEY, bytes).sha,
+    resolveAnchoredBytes: (sha) => resolveAnchoredLedgerBytes(workDir, sha),
     ...extra,
   };
 }
@@ -486,32 +502,36 @@ test('F3 — a pre-checkpoint crash does NOT let the record fabricate its own co
   }), /simulated SIGKILL/);
   const callsAfterCrash = fixture.adapter.__calls();
 
-  // On re-run T06's replay returns RERUN (the checkpoint never carried the binding).
-  // F.5 forbids manufacturing completion evidence from the record's own bindingHash —
-  // that value is outside the F.1 identity and is not checkpoint-anchored, so
-  // promoting it is exactly the P1-R06 unanchored-second-credential P0. The correct
-  // behaviour is to finish the recorded action WITHOUT re-paying and WITHOUT
-  // claiming a binding the checkpoint never committed.
+  // F.5.1 CASE 2 (the #130 core crash window): the COMMITTED ledger bytes are durable
+  // in staging, but `finalizeTargetedCommit` never ran, so the checkpoint still anchors
+  // the PRE-commit ledger version. Resume reads ONLY that anchored version, so it sees
+  // AUTHORIZED — never COMMITTED — and takes F.5's plain safe re-run branch: the
+  // retrieval is paid for a second time ONCE, which the contract admits, because the
+  // crash proves nothing. What it must never do is read the newer unanchored COMMITTED
+  // version, or claim a binding the checkpoint never committed.
+  const callsBeforeResume = fixture.adapter.__calls();
   const recovered = runTargetedSubphase(subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]));
 
-  assert.equal(fixture.adapter.__calls(), callsAfterCrash, 'no repeated paid retrieval');
-  assert.equal(recovered.executedActionIds.length, 0, 'nothing was re-executed');
-  const record = recovered.actionsArtifact.targetedActions.find((r) => r.gapId === gap.gapId);
-  const bindingKey = `${TARGETED_BINDING_PREFIX}${record.targetedActionId}`;
-  assert.equal(
-    recovered.state.hashes?.[bindingKey],
-    undefined,
-    'the checkpoint must NOT gain a binding it never committed (checkpoint is the only trust root)',
+  assert.ok(
+    fixture.adapter.__calls() > callsBeforeResume,
+    'CASE 2: resume from the anchored AUTHORIZED version re-runs the paid retrieval exactly once',
   );
-  assert.notEqual(
-    record.bindingHash,
-    undefined,
-    "the record's own memory of the artifact is retained as audit history",
+  const record = recovered.actionsArtifact.targetedActions.find((r) => r.gapId === gap.gapId);
+  assert.equal(
+    recovered.actionsArtifact.targetedActions.filter((r) => r.gapId === gap.gapId).length,
+    1,
+    'the re-run REUSES the recorded action — it must not authorize a second record (E.6 / CASE 2)',
   );
   assert.ok(
     [ACTION_STATUS_COMMITTED, ACTION_STATUS_EVALUATED, ACTION_STATUS_RESOLVED,
       ACTION_STATUS_UNRESOLVED, ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET].includes(record.status),
     'the recorded action did reach a committed-set status',
+  );
+  const bindingKey = `${TARGETED_BINDING_PREFIX}${record.targetedActionId}`;
+  assert.match(
+    String(recovered.state.hashes?.[bindingKey] ?? ''),
+    /^[0-9a-f]{64}$/,
+    'the completed re-run commits its own binding at the one writeState commit point',
   );
   const ids = recovered.pool.candidates.map((c) => c.identity.questionId);
   assert.ok(ids.includes('900') && ids.includes('901'), 'the already-paid candidates were NOT dropped');
@@ -573,19 +593,28 @@ test('F3c — a committed action whose bytes are gone FAILS CLOSED instead of re
   const gap = contradictionGap(pool);
   const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]);
 
-  // Crash before finalizeTargetedCommit → COMMITTED record, NO checkpoint binding,
-  // then delete the staged bytes so nothing is readable and nothing may be re-paid.
+  // Crash before finalizeTargetedCommit → COMMITTED bytes durable, NO checkpoint
+  // commit. Then destroy the round product, so neither the anchored ledger nor any
+  // staged copy can yield a readable product and nothing may be re-paid.
   assert.throws(() => runTargetedSubphase({
     ...args,
     crashAt: (label) => { if (label === 'after_targeted_commit_prepare') throw new Error('simulated SIGKILL'); },
   }), /simulated SIGKILL/);
   fs.rmSync(path.join(workDir, TARGETED_SUBPHASE_DIRNAME), { recursive: true, force: true });
 
-  assert.throws(
-    () => runTargetedSubphase(subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)])),
-    /no completion evidence/,
-    'dropping paid evidence silently behind ok:true is a silent wrong value',
-  );
+  // F.5.1 CASE 2 + the "no readable product" branch: resume reads the ANCHORED
+  // (pre-commit) ledger, so the action is AUTHORIZED and F.5 mandates one safe
+  // re-run. The re-run pays again and produces a FRESH product, so it succeeds —
+  // that is the contract's admitted double payment, not a silent drop.
+  //
+  // The genuinely unrecoverable case is CASE 3b, covered by H3b below. Here what
+  // must be pinned is that a re-run never reports ok:true on the strength of a
+  // product whose bytes are gone: the paid pool is regenerated, not laundered.
+  const recovered = runTargetedSubphase(subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]));
+  assert.equal(recovered.ok, true, 'the mandated safe re-run regenerates the product');
+  assert.equal(recovered.executedActionIds.length, 1, 'exactly one re-run happened');
+  const ids = recovered.pool.candidates.map((c) => c.identity.questionId);
+  assert.ok(ids.length > 0, 'the augmented pool carries the freshly paid evidence');
 });
 
 test('H1 — a NEW occurrence in a reused work dir does NOT load the prior occurrence artifacts', () => {
@@ -621,7 +650,7 @@ test('H1 — a NEW occurrence in a reused work dir does NOT load the prior occur
   );
 });
 
-test('H3 — a terminal conclusion whose evidence bytes are gone FAILS CLOSED (F.5 has no terminal exemption)', () => {
+test('H3 — a checkpoint-anchored ledger whose bytes are gone FAILS CLOSED (F.5.1 CASE 3b)', () => {
   const workDir = tmpWorkDir();
   const fixture = buildFixture();
   const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
@@ -631,17 +660,25 @@ test('H3 — a terminal conclusion whose evidence bytes are gone FAILS CLOSED (F
   const first = runTargetedSubphase(args);
   const record = first.actionsArtifact.targetedActions.find((r) => r.gapId === gap.gapId);
   assert.equal(record.status, ACTION_STATUS_RESOLVED, 'precondition: a terminal conclusion exists');
-  // Destroy the evidence AND the checkpoint binding: the verdict stands, the bytes
-  // do not. F.5 says hash-mismatch / missing-artifact → treat as uncommitted, with
-  // no terminal exemption, and nothing downstream reads the resolution artifact —
-  // the augmented pool is the only downstream-consumable product. So this must
-  // fail closed rather than report ok:true with the paid pool dropped.
-  fs.rmSync(path.join(workDir, TARGETED_SUBPHASE_DIRNAME), { recursive: true, force: true });
+  assert.match(
+    String(first.state.hashes?.[LEDGER_STAGING_KEY] ?? ''),
+    /^[0-9a-f]{64}$/,
+    'precondition: the checkpoint anchors the ledger version',
+  );
+
+  // Destroy BOTH the canonical ledger and its content-addressed copy, so the
+  // anchored version is unrecoverable. The round product still exists and still
+  // hashes correctly — so nothing about the ACTION is wrong; what is missing is the
+  // authority to decide which ledger version counts. F.5.1 CASE 3b therefore fails
+  // closed instead of silently rebuilding an empty ledger (which would re-authorize
+  // and re-pay for gaps already paid for) or trusting the canonical file.
+  fs.rmSync(path.join(workDir, ACTIONS_FILENAME), { force: true });
+  fs.rmSync(path.join(workDir, COMMIT_STAGING_DIR), { recursive: true, force: true });
 
   assert.throws(
-    () => runTargetedSubphase({ ...args, state: { hashes: {} } }),
-    /no completion evidence and no readable product/,
-    'a terminal verdict must not license silently dropping its evidence',
+    () => runTargetedSubphase({ ...args, state: first.state }),
+    /anchors an action-ledger version whose bytes are unrecoverable/,
+    'an unrecoverable anchor must surface UNKNOWN, never be washed into a clean re-authorize',
   );
 });
 
@@ -749,8 +786,14 @@ test('H4 — a committed artifact whose bytes were tampered with is refused, not
   fs.writeFileSync(poolFile, JSON.stringify(parsed, null, 2));
 
   // The bytes are parseable and correctly shaped — only the hash reveals the edit.
+  // Resume hands over the REAL persisted checkpoint, so `readBoundTargetedPool` looks
+  // the artifact up against the checkpoint binding (F.5.1: never the record's own
+  // unanchored `artifactHash`) and the tampered bytes fail that check. F.5 has no
+  // terminal exemption for this, so it must fail closed rather than merge unverified
+  // content behind ok:true.
+  const persisted = JSON.parse(fs.readFileSync(path.join(workDir, 'orchestration-state.json'), 'utf8'));
   assert.throws(
-    () => runTargetedSubphase({ ...args, state: { hashes: {} } }),
+    () => runTargetedSubphase({ ...args, state: persisted }),
     /no completion evidence and no readable product/,
     'a tampered-but-parseable artifact must fail closed, never be merged behind ok:true',
   );
@@ -1036,4 +1079,369 @@ test('G2 — a real full-chain run is byte-equivalent with the parameter absent 
       `the default path must create no targeted artifact (${dir})`,
     );
   }
+});
+
+// ---------------------------------------------------------------------------
+// F.5 amendment acceptance gates G1–G6 (docs/planning/
+// P2_ARI_108_F5_CHECKPOINT_ANCHORED_LEDGER_AMENDMENT_V1.md §5).
+//
+// These are the gates the owner made binding on this repair. G1/G2 are
+// source-level by construction ("verbatim unchanged" is not observable at
+// runtime); G4/G5/G6 must be REAL runs — no crashPoint-instead-of-SIGKILL,
+// no source regex standing in for a resume.
+// ---------------------------------------------------------------------------
+
+test('G1 — the E.6 dedupeKey field set is VERBATIM unchanged, and `attempt` is excluded from it', async () => {
+  const { computeDedupeKey } = await import('../lib/targeted-requery-authorization.mjs');
+  const source = fs.readFileSync(path.join(LIB, 'targeted-requery-authorization.mjs'), 'utf8');
+  // The formula object literal is the field set — no DEDUPE_KEY_FIELDS constant
+  // exists in this implementation, so pin the literal itself.
+  assert.match(
+    source,
+    /export function computeDedupeKey\(\{ gapIdentityCore, normalizedQuery, providerScope \} = \{\}\)/,
+    'computeDedupeKey destructures exactly the three frozen E.6 fields',
+  );
+
+  // Behavioural proof beats a regex: the key is a pure function of those three
+  // fields, so an added `attempt` field would change the digest. Same inputs, two
+  // different (hypothetical) attempt numbers, must still hash identically — this is
+  // exactly why F.5's re-run can reuse an AUTHORIZED record instead of authorizing
+  // a new one.
+  const core = 'a'.repeat(64);
+  const scope = [{ providerId: 'fixture-a', capability: CAPABILITY_SEARCH }];
+  const key = computeDedupeKey({ gapIdentityCore: core, normalizedQuery: 'framing-a', providerScope: scope });
+  assert.equal(
+    computeDedupeKey({ gapIdentityCore: core, normalizedQuery: 'framing-a', providerScope: scope }),
+    key,
+    'the dedupe key is deterministic',
+  );
+  // Order-independence of providerScope (F.1 "顺序无关") is part of the same field set.
+  assert.equal(
+    computeDedupeKey({ gapIdentityCore: core, normalizedQuery: 'framing-a', providerScope: [...scope].reverse() }),
+    key,
+    'providerScope order does not change the key',
+  );
+  assert.equal(
+    /attempt/.test(source.match(/export function computeDedupeKey[\s\S]*?\n\}/)[0]),
+    false,
+    '`attempt` does not appear anywhere in computeDedupeKey — E.6 is verbatim',
+  );
+});
+
+test('G2 — the T06 LEGAL_TRANSITIONS table is VERBATIM unchanged (no committed→authorized edge)', async () => {
+  const { LEGAL_TRANSITIONS } = await import('../lib/targeted-requery-lifecycle.mjs');
+  const {
+    ACTION_STATUS_PROPOSED,
+    ACTION_STATUS_REJECTED,
+  } = await import('../lib/targeted-requery-lifecycle.mjs');
+  const source = fs.readFileSync(path.join(LIB, 'targeted-requery-lifecycle.mjs'), 'utf8');
+  assert.match(source, /export const LEGAL_TRANSITIONS = Object\.freeze\(\{/);
+
+  // The amendment's entire mechanism is "CASE 2 resume sees AUTHORIZED and takes the
+  // EXISTING safe re-run branch". That works only because committed → authorized was
+  // NOT quietly added here. Assert the exact table, edge for edge.
+  assert.deepEqual(
+    LEGAL_TRANSITIONS[ACTION_STATUS_AUTHORIZED],
+    [ACTION_STATUS_COMMITTED, ACTION_STATUS_FAILED_OPERATIONAL],
+    'AUTHORIZED still has exactly two out-edges',
+  );
+  assert.deepEqual(
+    LEGAL_TRANSITIONS[ACTION_STATUS_COMMITTED],
+    [ACTION_STATUS_EVALUATED],
+    'COMMITTED still advances only to EVALUATED — no un-commit edge was added',
+  );
+  assert.deepEqual(LEGAL_TRANSITIONS[ACTION_STATUS_REJECTED], [], 'REJECTED is still terminal');
+  assert.deepEqual(
+    LEGAL_TRANSITIONS[ACTION_STATUS_FAILED_OPERATIONAL],
+    [],
+    'FAILED_OPERATIONAL is still terminal',
+  );
+  for (const terminal of [ACTION_STATUS_RESOLVED, ACTION_STATUS_UNRESOLVED, ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET]) {
+    assert.deepEqual(LEGAL_TRANSITIONS[terminal], [], `${terminal} is still terminal`);
+  }
+  assert.equal(
+    Object.values(LEGAL_TRANSITIONS).some((edges) => edges.includes(ACTION_STATUS_AUTHORIZED)),
+    true,
+    'PROPOSED → AUTHORIZED still exists (first authorization is still legal)',
+  );
+});
+
+test('G3 — resume staging cleanup must NOT delete the still-anchored ledger version', () => {
+  const source = fs.readFileSync(path.join(LIB, 'p1-runtime-composer.mjs'), 'utf8');
+  // The amendment is explicit that this is a REQUIRED one-line change, not a
+  // free parameter: without it `cleanupStaging` deletes the only recoverable
+  // bytes of the anchored ledger and every resume becomes CASE 3b fail-closed.
+  assert.match(
+    source,
+    /item\.key\s*!==\s*CHECKPOINT_BINDING_COVERAGE_STATE\s*&&\s*item\.key\s*!==\s*LEDGER_STAGING_KEY/,
+    'the resume materialize loop excludes the ledger staging key from cleanupStaging',
+  );
+});
+
+test('G4 — every F.5.1 crash window has a REAL run, and each anchors what it claims to', () => {
+  // CASE 1 — crash BEFORE the commit point. Durable: the pre-commit ledger.
+  // The checkpoint keeps anchoring it, so resume recovers an AUTHORIZED record.
+  {
+    const workDir = tmpWorkDir('g4-case1');
+    const fixture = buildFixture();
+    const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+    const gap = contradictionGap(pool);
+    const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]);
+    assert.throws(() => runTargetedSubphase({
+      ...args,
+      crashAt: (label) => { if (label === 'after_targeted_execution') throw new Error('killed before commit'); },
+    }), /killed before commit/);
+    const recovered = runTargetedSubphase(args);
+    assert.equal(recovered.actionsArtifact.targetedActions.length, 1, 'CASE 1: the AUTHORIZED record is recovered, not duplicated');
+  }
+
+  // CASE 2 — crash BETWEEN (b) and (d): COMMITTED bytes durable, checkpoint NOT
+  // committed. This is the #130 core window and the one the amendment exists for.
+  {
+    const workDir = tmpWorkDir('g4-case2');
+    const fixture = buildFixture();
+    const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+    const gap = contradictionGap(pool);
+    const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]);
+    assert.throws(() => runTargetedSubphase({
+      ...args,
+      crashAt: (label) => { if (label === 'after_targeted_commit_prepare') throw new Error('killed between b and d'); },
+    }), /killed between b and d/);
+    // The checkpoint on disk was never written after the AUTHORIZED anchor, so it
+    // still points at the PRE-commit ledger. Reading it must yield AUTHORIZED —
+    // proof that the newer COMMITTED bytes in staging do NOT participate.
+    const persisted = JSON.parse(fs.readFileSync(path.join(workDir, 'orchestration-state.json'), 'utf8'));
+    const anchoredBytes = resolveAnchoredLedgerBytes(workDir, persisted.hashes[LEDGER_STAGING_KEY]);
+    assert.notEqual(anchoredBytes, null, 'the anchored ledger version is still recoverable after the crash');
+    const anchored = JSON.parse(anchoredBytes.toString('utf8'));
+    assert.equal(
+      anchored.targetedActions[0].status,
+      ACTION_STATUS_AUTHORIZED,
+      'CASE 2: the ANCHORED version is AUTHORIZED — the durable-but-uncommitted COMMITTED version is excluded',
+    );
+  }
+
+  // CASE 3 — crash AFTER (d): the commit point is complete, so resume REUSEs and
+  // never pays twice. This is what the amendment claims finally became reachable.
+  {
+    const workDir = tmpWorkDir('g4-case3');
+    const fixture = buildFixture();
+    const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+    const gap = contradictionGap(pool);
+    const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]);
+    assert.throws(() => runTargetedSubphase({
+      ...args,
+      crashAt: (label) => { if (label === 'after_targeted_commit_finalize') throw new Error('killed after d'); },
+    }), /killed after d/);
+    const callsAfterCrash = fixture.adapter.__calls();
+    const persisted = JSON.parse(fs.readFileSync(path.join(workDir, 'orchestration-state.json'), 'utf8'));
+    const recovered = runTargetedSubphase({ ...args, state: persisted });
+    assert.equal(fixture.adapter.__calls(), callsAfterCrash, 'CASE 3: REUSE never re-pays');
+    assert.equal(recovered.reusedActionIds.length, 1, 'CASE 3: the committed binding makes this a REUSE');
+  }
+
+  // CASE 3b — the anchored bytes are gone. Fail closed (also pinned by H3).
+  {
+    const workDir = tmpWorkDir('g4-case3b');
+    const fixture = buildFixture();
+    const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+    const gap = contradictionGap(pool);
+    const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]);
+    const first = runTargetedSubphase(args);
+    fs.rmSync(path.join(workDir, COMMIT_STAGING_DIR), { recursive: true, force: true });
+    fs.rmSync(path.join(workDir, ACTIONS_FILENAME), { force: true });
+    assert.throws(
+      () => runTargetedSubphase({ ...args, state: first.state }),
+      /bytes are unrecoverable/,
+      'CASE 3b: an unrecoverable anchor fails closed',
+    );
+  }
+});
+
+test('G5 — after a resume, every targetedActionId commits EXACTLY once', () => {
+  const workDir = tmpWorkDir('g5-once');
+  const fixture = buildFixture();
+  const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+  const gap = contradictionGap(pool);
+  const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]);
+
+  const first = runTargetedSubphase(args);
+  const persisted = JSON.parse(fs.readFileSync(path.join(workDir, 'orchestration-state.json'), 'utf8'));
+  // Resume TWICE. Each resume must reuse, never re-authorize and never re-pay,
+  // and the ledger must never grow a second record for the same action.
+  runTargetedSubphase({ ...args, state: persisted });
+  const third = runTargetedSubphase({ ...args, state: persisted });
+
+  const ids = third.actionsArtifact.targetedActions.map((r) => r.targetedActionId);
+  assert.equal(new Set(ids).size, ids.length, 'no duplicate targetedActionId in the ledger');
+  assert.equal(third.actionsArtifact.targetedActions.length, 1, 'exactly one record survives');
+  assert.equal(third.executedActionIds.length, 0, 'the resumes never executed anything');
+  assert.equal(third.reusedActionIds.length, 1, 'the resumes reused the single committed action');
+  assert.equal(third.rejectedActionIds.length, 0, 'a proven commit is never re-litigated as a dedupe rejection');
+  assert.equal(first.actionsArtifact.targetedActions[0].targetedActionId, ids[0], 'the identity is stable across resumes');
+});
+
+test('G6 — CASE 2 BYPASSES the E.6 dedupe gate: the gate is never CALLED, not merely relaxed', () => {
+  const workDir = tmpWorkDir('g6-dedupe-bypass');
+  const fixture = buildFixture();
+  const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+  const gap = contradictionGap(pool);
+  const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]);
+
+  // Crash between (b) and (d): the durable ledger now contains an AUTHORIZED record.
+  // A re-authorization of the same proposal would carry the SAME dedupeKey, because
+  // E.6 excludes `attempt` — so if resume went through `authorizeTargetedAction` it
+  // would be REJECTED as EQUIVALENT_QUERY_ALREADY_AUTHORIZED and F.5's mandated
+  // re-run would be unreachable. Counting the dedupe rejections in the resulting
+  // ledger is therefore a direct mechanical proof that the gate was never entered.
+  assert.throws(() => runTargetedSubphase({
+    ...args,
+    crashAt: (label) => { if (label === 'after_targeted_commit_prepare') throw new Error('killed between b and d'); },
+  }), /killed between b and d/);
+
+  const recovered = runTargetedSubphase(args);
+  const records = recovered.actionsArtifact.targetedActions;
+  const dedupeRejections = records.filter((r) => r.status === 'REJECTED'
+    && String(r.rejectionCode ?? '').includes('DEDUPE'));
+  assert.equal(
+    dedupeRejections.length,
+    0,
+    'G6: the dedupe gate produced NO rejection — resume reused the AUTHORIZED record instead of re-authorizing',
+  );
+  assert.equal(
+    records.filter((r) => r.gapId === gap.gapId).length,
+    1,
+    'G6: exactly one action exists; a second authorization would have been a second record',
+  );
+  assert.ok(
+    !records.some((r) => r.status === 'REJECTED' && String(r.rejectionCode ?? '').includes('DEDUPE')),
+    'G6: E.6 is BYPASSED, not widened — the frozen dedupe still rejects duplicates, resume simply never asks',
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Finding #3 — global budget preflight must see BOTH halves.
+//
+// The mechanical requirement, stated by the owner:
+//   attemptsBudgetCount = planned executedRoutes + planned providerFailures
+//                          + targeted executed + targeted failed
+// Neither a planned-only nor a targeted-only denominator satisfies it, and the
+// amendment made this urgent: it is what makes F.5's safe re-run reachable, and a
+// re-run is real paid IO.
+// ---------------------------------------------------------------------------
+
+test('BUDGET-1 — the authorization preflight DENOMINATOR is planned + targeted, not targeted alone', async () => {
+  const { computePlannedAttemptCount } = await import('../lib/targeted-requery-subphase.mjs');
+  const coverageState = {
+    retrieval: {
+      executedRoutes: [
+        { query: 'q1', providerId: 'p', capability: CAPABILITY_SEARCH, roundIndex: 1 },
+        { query: 'q2', providerId: 'p', capability: CAPABILITY_SEARCH, roundIndex: 1 },
+      ],
+      providerFailures: [
+        { code: 'X', class: 'unknown', providerId: 'p', roundIndex: 1 },
+      ],
+    },
+  };
+  assert.equal(computePlannedAttemptCount(coverageState), 3, 'planned half = 2 executedRoutes + 1 providerFailure');
+
+  // The same coverage state, fed through the REAL composer path. maxQueryBudget = 4
+  // leaves exactly 1 attempt; the targeted action's providerScope is 1 channel, so
+  // 3 + 1 = 4 <= 4 is authorized. If the preflight saw ONLY the targeted half it
+  // would compute 0 + 1 <= 4 and stay silent about the 3 already spent — and a
+  // second targeted action would then be authorized on an exhausted budget.
+  const workDir = tmpWorkDir('budget-denominator');
+  const fixture = buildFixture();
+  const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+  const gap = contradictionGap(pool);
+
+  const fits = runTargetedSubphase(subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)], {
+    maxQueryBudget: 4,
+    plannedAttemptsBudgetCount: computePlannedAttemptCount(coverageState),
+  }));
+  assert.equal(fits.actionsArtifact.targetedActions.length, 1, '3 planned + 1 targeted = 4 fits the budget');
+
+  // maxQueryBudget = 3: 3 + 1 > 3 must be REJECTED as a budget refusal. A
+  // targeted-only denominator would compute 0 + 1 <= 3 and authorize it.
+  const workDir2 = tmpWorkDir('budget-denominator-tight');
+  const fixture2 = buildFixture();
+  const pool2 = baseAccumulatedPool(fixture2.seam, fixture2.channels, path.join(workDir2, 'base'));
+  const gap2 = contradictionGap(pool2);
+  const tight = runTargetedSubphase(subphaseArgs(workDir2, fixture2, pool2, [proposalFor(gap2, 0)], {
+    maxQueryBudget: 3,
+    plannedAttemptsBudgetCount: computePlannedAttemptCount(coverageState),
+  }));
+  assert.equal(tight.executedActionIds.length, 0, 'no action executed once the planned spend exhausts the budget');
+  assert.equal(tight.actionsArtifact.targetedActions.length, 0, 'no action was ever authorized');
+  // Rejections live in the artifact's own `rejected[]` ledger (T06's shape), not as
+  // a status on `targetedActions[]`.
+  assert.equal(tight.actionsArtifact.rejected.length, 1, 'the proposal is REJECTED — the planned half is visible to E.5(7)');
+  assert.match(
+    String(tight.actionsArtifact.rejected[0].rejectionCode ?? ''),
+    /BUDGET/,
+    'the rejection carries the budget refusal code',
+  );
+});
+
+test('BUDGET-2 — the preflight refuses to run without the planned half (fail closed, never under-count)', async () => {
+  const { computePlannedAttemptCount } = await import('../lib/targeted-requery-subphase.mjs');
+  assert.equal(typeof computePlannedAttemptCount, 'function');
+  // A coverage state missing either array is a caller bug, not a zero budget.
+  assert.throws(() => computePlannedAttemptCount(null), /plain object/);
+  assert.throws(() => computePlannedAttemptCount({ retrieval: {} }), /executedRoutes/);
+
+  const workDir = tmpWorkDir('budget-required');
+  const fixture = buildFixture();
+  const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+  const gap = contradictionGap(pool);
+  const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]);
+  assert.throws(
+    () => runTargetedSubphase({ ...args, plannedAttemptsBudgetCount: undefined }),
+    /plannedAttemptsBudgetCount/,
+    'omitting the planned half must fail closed rather than silently authorize on the targeted half alone',
+  );
+});
+
+test('BUDGET-3 — the round loop forwards the targeted half into BOTH evaluateRetrievalRound call sites', () => {
+  const source = fs.readFileSync(path.join(LIB, 'coverage-final-integration.mjs'), 'utf8');
+  const stripped = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  // Both branches — the normal round AND the all-providers-failed round — must
+  // carry `targetedAttempts`. Omitting it on the failure branch would under-count
+  // the budget exactly when the run is already degrading.
+  const calls = stripped.match(/evaluateRetrievalRound\(\{[\s\S]*?\n\s*\}\)/g) ?? [];
+  assert.equal(calls.length, 2, 'the loop has exactly two evaluateRetrievalRound call sites');
+  for (const [i, call] of calls.entries()) {
+    assert.match(call, /targetedAttempts\s*,/, `call site ${i + 1} forwards targetedAttempts`);
+  }
+  // And the loop must accept it as an additive, default-null parameter.
+  assert.match(
+    source,
+    /targetedAttempts = null,/,
+    'runRetrievalFeedbackLoop takes targetedAttempts as an additive default-null input',
+  );
+});
+
+test('BUDGET-4 — the composer derives the loop targeted half from the ANCHORED ledger, never the canonical file', () => {
+  const source = fs.readFileSync(path.join(LIB, 'p1-runtime-composer.mjs'), 'utf8');
+  assert.match(
+    source,
+    /readAnchoredLedger\(state,\s*\(sha\)\s*=>\s*resolveAnchoredLedgerBytes\(workDir,\s*sha\)\)/,
+    'the pre-loop budget read goes through the checkpoint-anchored ledger',
+  );
+  assert.match(
+    source,
+    /computeTargetedAttemptCounts\(\{\s*actions:\s*anchoredPriorLedger\.targetedActions\s*\}\)/,
+    'the counts come from the deterministic ledger export, never a hand-built number',
+  );
+  assert.match(
+    source,
+    /targetedAttempts:\s*priorTargetedAttempts/,
+    'the derived counts are what the loop receives',
+  );
+  // The planned half the sub-phase needs is likewise derived, not supplied by config.
+  assert.match(
+    source,
+    /plannedAttemptsBudgetCount:\s*computePlannedAttemptCount\(coverageState\)/,
+    'the sub-phase preflight gets the planned half from the live coverage state',
+  );
 });

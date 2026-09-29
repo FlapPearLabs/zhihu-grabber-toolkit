@@ -306,6 +306,17 @@ function projectChannelFailures(channelRecords, roundIndex) {
  */
 export function runRetrievalFeedbackLoop({
   coverageState, plan, planHash: expectedPlanHash, workDir, seam, channels, config, journal,
+  // P2A-T07 (#119) / F.6.1 — the additive #108 input on the round controller.
+  // `targetedAttempts = { executed, failed }` is the TARGETED half of the global
+  // attempt budget, derived by the caller (T09) from the targeted action ledger via
+  // the deterministic `computeTargetedAttemptCounts` export — never invented here.
+  //
+  // The round controller already adds it to the planned half it derives from
+  // `coverageState.retrieval`, so passing it is all that is needed for
+  //   attemptsBudgetCount = planned executedRoutes + planned providerFailures
+  //                          + targeted executed + targeted failed
+  // Default null keeps the historical behaviour verbatim (zero regression for #108-off).
+  targetedAttempts = null,
 } = {}) {
   if (!isPlainObject(plan) || !isNonEmptyString(expectedPlanHash) || !isNonEmptyString(workDir) || !isPlainObject(seam)) {
     failClosed(CFI_ERROR_INVALID_INPUT, 'runRetrievalFeedbackLoop requires plan, planHash, workDir, seam');
@@ -344,6 +355,10 @@ export function runRetrievalFeedbackLoop({
           totalCandidatesCount: accumulated.size,
           executedRoutesThisRound: [],
           providerFailuresThisRound,
+          // F.6.1: the all-provider-failure round is still a round against the global
+          // budget, so the targeted half must be visible on this branch too — otherwise
+          // BUDGET_STOP would under-count exactly when the run is already failing.
+          targetedAttempts,
           config,
         });
         coverageState = applyRoundEvaluationToCoverageState(coverageState, evaluation);
@@ -403,6 +418,8 @@ export function runRetrievalFeedbackLoop({
       totalCandidatesCount: accumulated.size,
       executedRoutesThisRound,
       providerFailuresThisRound,
+      // F.6.1: the additive targeted half of `attemptsBudgetCount`.
+      targetedAttempts,
       config,
     });
     coverageState = applyRoundEvaluationToCoverageState(coverageState, evaluation);

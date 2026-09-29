@@ -72,8 +72,9 @@ import {
   beginConvergenceJournal,
   CoverageIntegrationError,
 } from './coverage-final-integration.mjs';
-import { runTargetedSubphase, TARGETED_SUBPHASE_DIRNAME } from './targeted-requery-subphase.mjs';
-import { TARGETED_BINDING_PREFIX } from './targeted-requery-lifecycle.mjs';
+import { runTargetedSubphase, TARGETED_SUBPHASE_DIRNAME, computePlannedAttemptCount } from './targeted-requery-subphase.mjs';
+import { TARGETED_BINDING_PREFIX, LEDGER_CHECKPOINT_KEY, LEDGER_STAGING_KEY, ACTIONS_FILENAME, readAnchoredLedger } from './targeted-requery-lifecycle.mjs';
+import { computeTargetedAttemptCounts } from './targeted-requery-attempts.mjs';
 import { DECISION_PROVIDER_FAILURE } from './retrieval-round-controller.mjs';
 import {
   SELECTION_DECISION_FILENAME,
@@ -319,6 +320,31 @@ export function inspectCommittedArtifact({ workDir, key, canonicalRel, expectedH
     }
   }
   return { status: ARTIFACT_INVALID, reason: existsSync(canonicalAbs) ? 'content_changed' : 'missing' };
+}
+
+/**
+ * F.5.1 — resolve the action-ledger bytes a checkpoint anchors, or `null`.
+ *
+ * Single definition of "read the anchored ledger version", shared by the sub-phase
+ * injection and the composition-level budget pre-read. It returns bytes ONLY when a
+ * stored artifact (canonical or staged) hashes to exactly the anchored sha256; every
+ * other outcome is `null`, which callers must treat as "no authority" rather than
+ * falling back to whatever the canonical file currently holds. Keeping one resolver
+ * means the two call sites cannot drift into trusting different things.
+ */
+export function resolveAnchoredLedgerBytes(workDir, sha) {
+  const inspect = inspectCommittedArtifact({
+    workDir,
+    key: LEDGER_STAGING_KEY,
+    canonicalRel: ACTIONS_FILENAME,
+    expectedHash: sha,
+  });
+  if (inspect.status !== ARTIFACT_STAGED_MATCH && inspect.status !== ARTIFACT_CANONICAL_MATCH) return null;
+  try {
+    return readFileSync(inspect.absPath);
+  } catch {
+    return null;
+  }
 }
 
 export function materializeStagedArtifact(workDir, stagedPath, canonicalRel) {
@@ -784,6 +810,14 @@ function targetedBindingsOf(hashes) {
       out[key] = value;
     }
   }
+  // F.5.1: the action-ledger anchor is in the same trust namespace and must survive a
+  // resume boundary and a terminal checkpoint rebuild for the same reason: dropping it
+  // silently downgrades "which ledger version is authoritative" to "no authority at all",
+  // which is the fail-closed CASE 3b rather than a recoverable state. Carried by exact
+  // identity (a single known key) and shape-validated as 64-hex.
+  if (typeof hashes[LEDGER_CHECKPOINT_KEY] === 'string' && HEX64_BINDING.test(hashes[LEDGER_CHECKPOINT_KEY])) {
+    out[LEDGER_CHECKPOINT_KEY] = hashes[LEDGER_CHECKPOINT_KEY];
+  }
   return out;
 }
 
@@ -1075,7 +1109,13 @@ export async function composeP1Research({
       if (Array.isArray(reentry.materialize) && reentry.materialize.length > 0) {
         for (const item of reentry.materialize) {
           materializeStagedArtifact(workDir, item.stagedPath, item.canonicalRel);
-          if (item.key !== CHECKPOINT_BINDING_COVERAGE_STATE) {
+          // F.5.1 / gate G3: the coverage ledger and the targeted action ledger are both
+          // "the substrate a downstream boundary consumes" — the coverage ledger because
+          // every boundary reads it, the action ledger because it is the sole authority
+          // for dedupe / lifecycle / completion. Deleting the staged copy of either while
+          // the checkpoint still anchors that exact sha256 would destroy the only
+          // recoverable bytes and force the fail-closed path on the next resume.
+          if (item.key !== CHECKPOINT_BINDING_COVERAGE_STATE && item.key !== LEDGER_STAGING_KEY) {
             cleanupStaging(item.stagedPath);
           }
         }
@@ -1117,6 +1157,28 @@ export async function composeP1Research({
       recordLedgerBinding(state, workDir);
       writeState(workDir, state);
 
+      // ---------------------------------------------------------------------
+      // F.6 / F.6.1 — the targeted half of the global attempt budget, for the
+      // BUDGET_STOP denominator of the frozen round loop.
+      //
+      // The loop runs BEFORE the targeted sub-phase, so at this point the only
+      // targeted attempts that exist are the ones already recorded in the
+      // CHECKPOINT-ANCHORED ledger of the prior occurrence state (F.5.1): an
+      // action paid for earlier but whose commit point was never reached is
+      // precisely a payment the budget must still account for. Deriving them from
+      // the anchored version — never the raw canonical file, which after a crash
+      // can hold a NEWER unproven version — is what keeps this read inside the
+      // single trust root (P1-R06).
+      //
+      // Absent an anchor there is no authority for any targeted count, so the
+      // input stays `null` and the controller keeps its verbatim historical
+      // `attemptsBudgetCount`. That is the default-zero path, not a fallback.
+      // ---------------------------------------------------------------------
+      const anchoredPriorLedger = readAnchoredLedger(state, (sha) => resolveAnchoredLedgerBytes(workDir, sha));
+      const priorTargetedAttempts = anchoredPriorLedger === null
+        ? null
+        : computeTargetedAttemptCounts({ actions: anchoredPriorLedger.targetedActions });
+
       const loop = runRetrievalFeedbackLoop({
         coverageState, plan, planHash: expectedPlanHash, workDir,
         seam: effectiveSeam,
@@ -1124,6 +1186,9 @@ export async function composeP1Research({
         // registry order — the same list recorded as plannedRoutes in the ledger.
         channels: plannedRoutes.map((r) => ({ providerId: r.providerId })),
         config, journal,
+        // F.6.1: additive; the controller adds this to the planned half it derives
+        // from `coverageState.retrieval`, giving the contract's four-term sum.
+        targetedAttempts: priorTargetedAttempts,
       });
       if (loop.pool === null || loop.decision === DECISION_PROVIDER_FAILURE) {
         return persistFailure(CFC_RETRIEVAL_FAILED, `retrieval ended without a candidate pool (decision=${String(loop.decision)}, stopReason=${String(loop.stopReason)})`);
@@ -1167,6 +1232,18 @@ export async function composeP1Research({
           accumulatedPool: pool,
           state,
           crashAt,
+          // F.5.1 — the composition layer owns the content-addressed staging directory and
+          // injects the two primitives the sub-phase needs. Injection rather than a direct
+          // import is forced by the module graph (composer -> subphase -> lifecycle): the
+          // lifecycle must not import this module back, or the cycle would make the trust
+          // decision and the byte-movement mutually dependent.
+          stageLedgerBytes: (bytes) => stageArtifactBytes(workDir, LEDGER_STAGING_KEY, bytes).sha,
+          resolveAnchoredBytes: (sha) => resolveAnchoredLedgerBytes(workDir, sha),
+          // F.6 / E.5(7): the PLANNED half of the global budget denominator, read from
+          // the live coverage state this layer owns (the loop has just returned it).
+          // Without it the authorization preflight would see only the targeted half
+          // and could authorize work the global budget cannot pay for.
+          plannedAttemptsBudgetCount: computePlannedAttemptCount(coverageState),
         });
         pool = targeted.pool;
         // Adopt the targeted checkpoint bindings into the composition checkpoint so

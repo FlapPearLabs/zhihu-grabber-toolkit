@@ -259,6 +259,110 @@ export const ACTIONS_FILENAME = 'targeted-requery-actions.json';
  */
 export const TARGETED_BINDING_PREFIX = 'targeted-action:';
 
+/**
+ * F.5.1 (amendment `fc95f17`, #130 owner decision A) — the checkpoint key that anchors
+ * the CURRENT AUTHORITATIVE action-ledger version.
+ *
+ * WHY THIS IS NOT JUST "one more state.hashes entry": the canonical ledger file is
+ * overwritten IN PLACE, so a hash recorded against the current file would still lose the
+ * previous bytes once a newer COMMITTED version overwrites them. The anchored version
+ * therefore gets a CONTENT-ADDRESSED identity: its bytes are also staged under
+ * `.p1-commit-staging/<key>/<sha>.json`, which nothing overwrites, and resume reads the
+ * anchored version from there. A newer version on disk that the checkpoint does not
+ * anchor is NOT authoritative and must not drive dedupe / lifecycle / completion.
+ *
+ * The key is a single hyphenated name, deliberately DISJOINT from:
+ *   - every `STAGES` member (`SEARCH`, `SELECT`, ... `FAILED`), so the existing
+ *     `validateCheckpoint` walk can never mistake it for a stage artifact;
+ *   - `TARGETED_BINDING_PREFIX` ('targeted-action:'), which is colon-suffixed and
+ *     therefore can never match this key.
+ */
+export const LEDGER_CHECKPOINT_KEY = 'targeted-action-ledger';
+
+/** The staging sub-namespace for the action ledger's content-addressed versions. */
+export const LEDGER_STAGING_KEY = 'targeted-action-ledger';
+
+/**
+ * The EXACT bytes `persistActionsArtifact` would write for this artifact.
+ *
+ * F.5.1 needs the ledger's content-addressed identity, and the staged copy is only
+ * useful if it is byte-identical to the canonical file — otherwise the anchored sha256
+ * and `state.hashes[LEDGER_CHECKPOINT_KEY]` would describe bytes that no file holds.
+ * Both the canonical write and the staged write therefore serialize through this ONE
+ * function; there is no second serialization formula that could drift.
+ *
+ * Exported (additively) so the orchestrator can stage the same bytes. This does not
+ * change `persistActionsArtifact`'s behaviour or signature.
+ */
+export function actionsArtifactBytes(artifact) {
+  return serializeArtifact(canonicalArtifact(requireArtifact(artifact)));
+}
+
+/**
+ * F.5.1 ANCHOR — put the ledger's content-addressed version into the checkpoint.
+ *
+ * Returns a NEW state; the caller's state is not mutated. `ledgerHash` must be the
+ * sha256 of the bytes produced by `actionsArtifactBytes` for the SAME artifact that
+ * was staged, so the checkpoint anchors exactly the bytes that can be recovered.
+ *
+ * This adds a key to `state.hashes` and nothing else: it does not create a second
+ * trust root, does not touch the per-action `targetedBindingKey` entries, and does not
+ * alter the commit point (`writeState` remains the only durable commit).
+ */
+export function anchorLedgerVersion(state, artifact, ledgerHash) {
+  if (!isPlainObject(state)) throw lifecycleError('orchestration state must be a plain object');
+  if (!isNonEmptyString(ledgerHash) || !HEX64.test(ledgerHash)) {
+    throw lifecycleError('ledgerHash must be 64 lowercase hex characters');
+  }
+  // Validate before anchoring: never record a hash for bytes that are not a ledger.
+  requireArtifact(artifact);
+  return {
+    ...state,
+    hashes: { ...(state.hashes ?? {}), [LEDGER_CHECKPOINT_KEY]: ledgerHash },
+  };
+}
+
+/**
+ * F.5.1 READ — return the checkpoint-anchored ledger version, or null.
+ *
+ * `resolveAnchoredBytes(ledgerHash)` is injected by the composition layer, which owns
+ * the content-addressed staging directory. Injection (rather than a direct import)
+ * is required because the module graph is composer -> subphase -> lifecycle: importing
+ * the staging helper here would create a cycle. The lifecycle therefore owns the
+ * TRUST DECISION and the composition layer owns the byte movement.
+ *
+ * Fail-closed by construction: a missing anchor, an unparsable/short hash, a resolver
+ * that cannot produce the bytes, or bytes whose sha256 does not match the anchor all
+ * return null. A newer ledger version sitting unanchored in the work dir is NEVER
+ * returned — that is the whole point of the anchor.
+ */
+export function readAnchoredLedger(state, resolveAnchoredBytes) {
+  if (!isPlainObject(state)) return null;
+  const expected = state.hashes?.[LEDGER_CHECKPOINT_KEY];
+  if (typeof expected !== 'string' || !HEX64.test(expected)) return null;
+  if (typeof resolveAnchoredBytes !== 'function') {
+    throw lifecycleError('resolveAnchoredBytes must be a function');
+  }
+  let bytes;
+  try {
+    bytes = resolveAnchoredBytes(expected);
+  } catch {
+    return null;
+  }
+  if (bytes === null || bytes === undefined) return null;
+  const buffer = Buffer.isBuffer(bytes) ? bytes : Buffer.from(String(bytes), 'utf8');
+  if (sha256(buffer) !== expected) return null; // bytes do not match the anchor
+  let parsed;
+  try {
+    parsed = JSON.parse(buffer.toString('utf8'));
+  } catch {
+    return null;
+  }
+  const verdict = validateActionsArtifact(parsed);
+  if (!verdict.ok) return null;
+  return verdict.validated;
+}
+
 export const ACTION_RECORD_KEYS = Object.freeze([
   'artifactHash',
   'artifactRel',
@@ -1002,9 +1106,17 @@ export function prepareTargetedCommit({
   targetedActionId,
   artifactRel,
   artifactBytes,
+  // F.5.1 — optional content-addressed stager for the action-ledger version this
+  // commit anchors. Supplied by the composition layer (the owner of the staging
+  // directory); absent, no ledger anchor is recorded, because an anchor whose bytes
+  // cannot be recovered is worse than no anchor at all.
+  stageLedgerBytes = null,
 } = {}) {
   const validated = requireArtifact(artifact);
   if (!isPlainObject(state)) throw lifecycleError('orchestration state must be a plain object');
+  if (stageLedgerBytes !== null && typeof stageLedgerBytes !== 'function') {
+    throw lifecycleError('stageLedgerBytes must be a function or null');
+  }
   const found = findRecord(validated, targetedActionId);
   if (found === null) throw lifecycleError(`unknown targetedActionId: ${String(targetedActionId)}`);
   if (found.record.status !== ACTION_STATUS_AUTHORIZED) {
@@ -1023,10 +1135,48 @@ export function prepareTargetedCommit({
   });
   persistActionsArtifact(workDir, nextArtifact);
 
-  const nextState = {
-    ...state,
-    hashes: { ...(state.hashes ?? {}), [bindingKey]: staged.hash },
-  };
+  // F.5.1 ANCHOR 2 — the ledger has just advanced to COMMITTED, so the checkpoint must
+  // anchor THAT version. Its hash is derived from the exact bytes `persistActionsArtifact`
+  // wrote (one serialization formula, so the two can never disagree), and it lands in the
+  // SAME `state.hashes` as the per-action binding, so `finalizeTargetedCommit`'s single
+  // `writeState` makes both visible atomically. No new commit point is introduced.
+  //
+  // The ANCHOR is only recorded when the caller can also PRESERVE those bytes: the
+  // canonical file is overwritten in place by the next ledger write (the T08 conclusion
+  // advances COMMITTED → EVALUATED → RESOLVED), so an anchor recorded without a
+  // content-addressed copy left behind would name bytes that stop existing — and an
+  // unrecoverable anchor is strictly worse than no anchor, because it converts a
+  // recoverable "no authority, start a new ledger" into a hard fail-closed. The
+  // composition layer owns that staging directory, so it passes the primitive here and
+  // the decision stays with whoever can actually publish the bytes. Callers that do not
+  // pass it keep the historical (pre-amendment) behaviour verbatim.
+  const nextState = { ...state, hashes: { ...(state.hashes ?? {}), [bindingKey]: staged.hash } };
+  if (typeof stageLedgerBytes === 'function') {
+    // PUBLISH FIRST, THEN ANCHOR. The anchor is only meaningful if the bytes it
+    // names exist under their content address, so the stager runs before the hash is
+    // recorded — and the recorded hash is the stager's own return value, not a second
+    // computation of the same bytes. One serialization formula
+    // (`actionsArtifactBytes`) feeds both, so they cannot disagree; if the stager is
+    // ever handed different bytes, the equality check below fails closed rather than
+    // anchoring a version nobody can recover.
+    const ledgerBytes = Buffer.from(actionsArtifactBytes(nextArtifact), 'utf8');
+    const stagedLedgerHash = stageLedgerBytes(ledgerBytes);
+    const expectedLedgerHash = sha256(ledgerBytes);
+    if (stagedLedgerHash !== expectedLedgerHash) {
+      throw lifecycleError(
+        `staged action-ledger version does not match its content hash `
+        + `(staged ${String(stagedLedgerHash)}, expected ${expectedLedgerHash})`,
+      );
+    }
+    return {
+      ok: true,
+      artifact: nextArtifact,
+      state: anchorLedgerVersion(nextState, nextArtifact, stagedLedgerHash),
+      hash: staged.hash,
+      rel: staged.path,
+      bindingKey,
+    };
+  }
   return {
     ok: true,
     artifact: nextArtifact,
