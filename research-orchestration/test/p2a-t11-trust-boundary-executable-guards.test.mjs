@@ -577,8 +577,28 @@ test('C3: NO trust set in lib/ derives its elements from a targeted surface', ()
  * through an intermediate or a mutation still resolves to these names.
  *
  * Non-global so `.test` carries no `lastIndex` state between call sites.
+ *
+ * r7 P2-1: THE REAL TARGETED FIELD NAMES WERE MISSING. The list above is all
+ * `targeted*`-shaped identifiers, and that is exactly backwards — the code's own
+ * C1 comment names what a targeted query string actually arrives as
+ * (`targetedPools[].channels[].query`, `proposals[].queryText`), and NONE of
+ * `query`, `queryText`, `rawQuery`, `channels`, `candidates`, `proposals`,
+ * `actions`, `accumulatedPool` was in the set. So
+ *
+ *     const trusted = new Set(proposals.map((p) => p.queryText));
+ *
+ * reached the trust set, the walk resolved `proposals` as an ordinary
+ * plan-shaped name, and the verdict came back clean. It is a fail-open, and
+ * unlike the other two findings it needs no rename and no exotic chain — it
+ * needs the real field name, which is the shape the codebase actually uses.
+ * The walk is what makes a closed list sufficient, so the list has to be closed
+ * over the REAL carriers.
+ *
+ * `query` alone does not match `plan.queryVariants` or `queryText`: `\b` on both
+ * sides means `queryVariants` has no word boundary after `query`, so the
+ * production trust set is unaffected.
  */
-const TARGETED_SURFACE = /\b(targetedPools|targetedActions|targetedActionId|targetedQuer|targetedString|authorizedAction|evaluatedGaps|diagnosedLedger|normalizedQuery|targetedQuery)\b/;
+const TARGETED_SURFACE = /\b(targetedPools|targetedActions|targetedActionId|targetedQuer|targetedString|authorizedAction|evaluatedGaps|diagnosedLedger|normalizedQuery|targetedQuery|queryText|rawQuery|channels|candidates|proposals|accumulatedPool|actions|query)\b/;
 
 /**
  * Language and library vocabulary that is never a trust input.
@@ -1081,6 +1101,62 @@ test('C3b: MUTATION PROOF — the three widenings the security review found are 
         'function f({ plan, targetedPools }) {',
         '  const trusted = new Set(plan.queryVariants);',
         '  [].concat(targetedPools).forEach((p) => trusted.add(p.query));',
+        '  const opts = { trustedPlanStrings: trusted };',
+        '  return assertArtifactSafe(pool, opts);',
+        '}',
+      ].join('\n'),
+    },
+    {
+      // r7 P1-1. The walk filtered vocabulary by SPELLING, so any honest local
+      // named after a library method — `filter`, `map`, `keys`, `result`, `fs`
+      // — was dropped instead of followed. Those are legal JavaScript variable
+      // names, so the guard could be defeated by renaming ONE local, which is
+      // the cheapest bypass in this whole file and the exact class of rename
+      // the provenance walk exists to survive. The filter is now positional: a
+      // vocabulary word with a BINDING is a variable, and a variable is read.
+      name: 'r7 P1-1: a local whose NAME collides with a library method carries targeted bytes',
+      src: [
+        'function f({ plan, targetedPools }) {',
+        '  const filter = targetedPools.flatMap((tp) => tp.channels.map((c) => c.query));',
+        '  const trusted = new Set(filter);',
+        '  const opts = { trustedPlanStrings: trusted };',
+        '  return assertArtifactSafe(pool, opts);',
+        '}',
+      ].join('\n'),
+    },
+    {
+      // r7 P1-2. The literal-root fallback tested `/^[[({]\s*[}\])]?$/`, which
+      // `[]` passes and `["seed"]` does not. So the equally idiomatic
+      //
+      //   ["seed"].concat(targetedPools).forEach((p) => trusted.add(p.query))
+      //
+      // reported the root `["seed"]`, never walked `targetedPools`, and the
+      // trust set read as clean. A literal's seed is a datum the chain also
+      // carries and the targeted collection is in the arguments either way, so
+      // the empty/non-empty distinction has no principled basis: ANY
+      // bracket-led root now contributes its first link's arguments.
+      name: 'r7 P1-2: a NON-EMPTY literal chain root still hides first-link arguments',
+      src: [
+        'function f(plan, targetedPools) {',
+        '  const trusted = new Set(plan.queryVariants);',
+        '  ["seed"].concat(targetedPools).forEach((p) => trusted.add(p.query));',
+        '  const opts = { trustedPlanStrings: trusted };',
+        '  return assertArtifactSafe(pool, opts);',
+        '}',
+      ].join('\n'),
+    },
+    {
+      // r7 P2-1. Every entry in TARGETED_SURFACE was `targeted*`-shaped, while
+      // the code's own C1 comment names the real carriers —
+      // `targetedPools[].channels[].query`, `proposals[].queryText` — none of
+      // which matched. The walk resolved `proposals` as an ordinary plan-shaped
+      // name and returned a clean verdict. Unlike the two findings above this
+      // needs no rename and no exotic chain: it needs the real field name, so
+      // it is the least contrived bypass of the three.
+      name: 'r7 P2-1: the REAL targeted field name widens the set with no rename at all',
+      src: [
+        'function f(plan, proposals) {',
+        '  const trusted = new Set(proposals.map((p) => p.queryText));',
         '  const opts = { trustedPlanStrings: trusted };',
         '  return assertArtifactSafe(pool, opts);',
         '}',

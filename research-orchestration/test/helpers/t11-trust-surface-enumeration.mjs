@@ -379,9 +379,29 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8, budge
   function bindingsOf(name) {
     const out = [];
     // Declarations and reassignments: const/let/var NAME = ...  |  NAME = ...
+    //
+    // MATCHED AGAINST A PARAMETER-BLANKED COPY (r7 P1-1 fallout). The regex has
+    // no way to tell an assignment from a DEFAULT VALUE, so
+    //
+    //   function checkStringList(value, field, issues, { minEntries = 0 } = {}) {
+    //     … issues.push({ path: field, message: 'must be an array' }); …
+    //
+    // matched `minEntries = 0 } = {}) { … issues.push({…})` as one assignment
+    // whose right-hand side is a fragment of the function BODY. That fragment
+    // became an evidence expression, and the identifier walk over it read the
+    // words inside a string literal — `must`, `be`, `an`, `array` — as free
+    // variables. The result was forty blind spots on the F.3 boundary's own
+    // production line, every one of them a word out of an error message.
+    //
+    // So parameter lists are blanked (length preserved, so the match index still
+    // addresses the original text) before the regex runs, and the expression is
+    // sliced from the ORIGINAL source. The defect was never that the regex was
+    // too loose about `=`; it was that it was reading a place where `=` means
+    // something else entirely.
+    const scannable = blankParameterLists(source);
     const assign = new RegExp(`\\b(?:const|let|var)?\\s*\\b${escapeRe(name)}\\s*=\\s*([^;]+);`, 'g');
-    for (let m = assign.exec(source); m !== null; m = assign.exec(source)) {
-      out.push({ kind: 'assign', expr: m[1] });
+    for (let m = assign.exec(scannable); m !== null; m = assign.exec(scannable)) {
+      out.push({ kind: 'assign', expr: source.slice(m.index, m.index + m[0].length) });
     }
     // Function PARAMETER, including object destructuring:
     //   function augmentAccumulatedPool({ plan, targetedPools }) { … }
@@ -404,9 +424,25 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8, budge
     // the trust set there — and it holds for any method name. That generality
     // is the point: the fourth review's P1-2 was a list containing only
     // `add|delete`, and a list of verbs survives only until the next verb.
-    const receiver = new RegExp(`\\b${escapeRe(name)}\\s*\\.\\s*[A-Za-z_$][\\w$]*\\s*\\(\\s*([^)]*)`, 'g');
+    //
+    // ARGUMENTS ARE READ BY BRACKET PAIRING, NOT BY `[^)]*` (r7 P1-1 fallout).
+    // The character class stops at the FIRST `)`, which is not the end of the
+    // argument list whenever an argument contains a call or an object literal:
+    //
+    //   issues.push({ path: issuePath, message: 'must be a string (no coercion)' });
+    //
+    // was cut to `{ path: issuePath, message: 'must be a string (no coercion` —
+    // an unterminated string. The identifier walk over that fragment then read
+    // the prose inside the message as free variables, and `checkStringLeaf`
+    // reported `must`, `be`, `a`, `string`, `no`, `coercion` as blind spots on
+    // the F.3 boundary's own production line. Pairing to the matching `)` is
+    // what "the arguments" means; `[^)]*` was never that.
+    const receiver = new RegExp(`\\b${escapeRe(name)}\\s*\\.\\s*[A-Za-z_$][\\w$]*\\s*\\(`, 'g');
     for (let m = receiver.exec(source); m !== null; m = receiver.exec(source)) {
-      out.push({ kind: 'mutate', expr: m[1] });
+      const args = readCallArguments(source, m.index + m[0].length - 1);
+      if (args !== null) {
+        for (const arg of args) out.push({ kind: 'mutate', expr: arg });
+      }
     }
 
     // ARGUMENT mutation: `Object.assign(trusted, targetedPools)` — the trust
@@ -428,11 +464,22 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8, budge
       // as a PROPERTY (`opts.trusted`), because that is a read of someone
       // else's field rather than this set being written into.
       const asFirstArg = new RegExp(
-        `\\b[A-Za-z_$][\\w$]*\\s*\\(\\s*(?<![.\\w$])${escapeRe(name)}\\s*,([^)]*)`,
+        `\\b[A-Za-z_$][\\w$]*\\s*\\(\\s*(?<![.\\w$])${escapeRe(name)}\\s*,`,
         'g',
       );
       for (let m = asFirstArg.exec(source); m !== null; m = asFirstArg.exec(source)) {
-        out.push({ kind: 'mutate', expr: m[1] });
+        // Bracket pairing again (r7 P1-1 fallout): `[^)]*` truncated the
+        // remainder at the first `)` inside a nested call or object literal and
+        // left an unterminated string, which the identifier walk read as prose.
+        // `readCallArguments` already returns the arguments split on top-level
+        // commas, so the trust set itself — which the pattern has just consumed
+        // up to its comma — is element 0 and the written-into values follow.
+        const args = readCallArguments(source, m.index + m[0].length - 1);
+        if (args !== null) {
+          for (const arg of args) {
+            if (arg !== name) out.push({ kind: 'mutate', expr: arg });
+          }
+        }
       }
     }
     out.push(...callbackReceiverBindingsOf(source, name));
@@ -506,7 +553,33 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8, budge
         // did not, so the same identifier was clean on one path and a finding
         // on the other. One vocabulary, applied at every place a name is
         // followed.
-        if (RESERVED.has(ident) || PROVENANCE_VOCABULARY.has(ident)) continue;
+        //
+        // BUT A NAME IN THE VOCABULARY IS NOT AUTOMATICALLY VOCABULARY (r7
+        // P1-1). This filter is SPELLING-based, and the vocabulary is full of
+        // ordinary, legal JavaScript variable names: `map`, `filter`, `keys`,
+        // `values`, `join`, `concat`, `push`, `slice`, `key`, `path`,
+        // `message`, `result`, `ok`, `reason`, `issue`, `fs`, `process`,
+        // `crypto`. So
+        //
+        //     const filter = targetedPools.flatMap((tp) => tp.channels.map(...));
+        //     const trusted = new Set(filter);
+        //
+        // never followed `filter` at all: the walk saw a name it had been told
+        // was a library method, concluded there was nothing to resolve, and
+        // reported the trust set as clean. That is a fail-OPEN, and it is
+        // reachable by a one-word RENAME of an otherwise honest binding — the
+        // exact class of rename the provenance walk exists to survive. The
+        // `fs`/`process`/`crypto` entries make it worse: a name the engine
+        // itself declares "never a trust input" is a plausible carrier.
+        //
+        // The fix is to stop filtering by spelling and filter by POSITION. A
+        // vocabulary word in method position (`.map(`, `.filter(`, `new Set(`)
+        // is a method call and carries no data; the same word as a BARE name is
+        // a variable that may hold anything. So a vocabulary word is skipped
+        // only when the module has no binding that explains it — and this file
+        // already has the function that answers that question, so a colliding
+        // name is followed rather than dropped.
+        if (isVocabularyOnly(source, ident)) continue;
         walk(ident, depth + 1);
       }
     }
@@ -518,10 +591,177 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8, budge
   // local, not an unresolvable trust input. The walk above recurses into such
   // names because it cannot see arrow-function scope; un-mark them here so a
   // lambda does not read as a blind spot.
+  //
+  // THE QUALIFIER MATTERS (r7 P1-1 fallout). The body route reports a nested
+  // blind spot as `callee.name`, so by the time it reaches here the name is
+  // `validatePlanInput.must`, not `must`. A bare `locallyBoundNames(source).has(
+  // 'validatePlanInput.must')` is false, the entry survives, and the F.3
+  // boundary's own production line fills with blind spots that have nothing to
+  // do with any real threat — the noise-to-signal failure that makes a guard's
+  // actual findings get waived. So the comparison is made on the LAST SEGMENT,
+  // which is the name the walk was actually asking about.
+  const locals = locallyBoundNames(source);
   for (const name of [...unresolvable]) {
-    if (locallyBoundNames(source).has(name)) unresolvable.delete(name);
+    const bare = name.includes('.') ? name.slice(name.lastIndexOf('.') + 1) : name;
+    if (locals.has(name) || locals.has(bare)) unresolvable.delete(name);
   }
   return { expressions: [...expressions], unresolvable: [...unresolvable] };
+}
+
+/**
+ * Is this identifier REALLY vocabulary in this module, or is it a local that
+ * merely shares a spelling with a library method?
+ *
+ * r7 P1-1. The walk used to skip a name whenever `RESERVED` or
+ * `PROVENANCE_VOCABULARY` contained its SPELLING, which silently dropped any
+ * honest binding named `filter`, `map`, `keys`, `result`, `fs` and the rest.
+ * Those are all legal JavaScript variable names, so the guard could be defeated
+ * by renaming one local — a fail-open, and the cheapest possible bypass.
+ *
+ * The distinction that actually matters is whether a BINDING explains the name:
+ *
+ *   - a name bound in this module (`const filter = …`, a parameter, a
+ *     destructured property, a `for…of` head) is a VARIABLE and its value has to
+ *     be read, whatever it is spelled;
+ *   - a name with no binding is whatever the vocabulary says it is — a method
+ *     in `.map(…)`, a keyword, a Node module namespace — and carries no data.
+ *
+ * So the binding query is the test, and it is the same query `bindingsOf` makes,
+ * *not* a second, weaker spelling heuristic. A vocabulary word that happens to
+ * be shadowed is followed; an unshadowed one is not.
+ *
+ * @param {string} source module source
+ * @param {string} ident the identifier about to be followed
+ * @returns {boolean} true when the name is genuinely vocabulary here
+ */
+function isVocabularyOnly(source, ident) {
+  if (!RESERVED.has(ident) && !PROVENANCE_VOCABULARY.has(ident)) return false;
+  // `trustedPlanStrings` is the trust set's MEMBER NAME, not a variable, and it
+  // is in the vocabulary precisely so the enclosing call graph is not dragged in.
+  // It is never a binding of its own, so the generic rule below would keep it
+  // filtered — asserted here so that stays true if the vocabulary ever changes.
+  if (ident === 'trustedPlanStrings') return true;
+  return !hasBindingIn(source, ident);
+}
+
+/** True when this module binds `name` in any form the walk can explain. */
+function hasBindingIn(source, name) {
+  // Declaration or assignment. `[^=;]` rejects `==` so a comparison is not read
+  // as an assignment, and the leading `(?<![.\w$])` keeps `x.filter = …` from
+  // counting as a binding of a bare `filter`.
+  if (new RegExp(`(?<![.\\w$])(?:const|let|var)\\s+${escapeRe(name)}\\s*=(?!=)`).test(source)) {
+    return true;
+  }
+  if (new RegExp(`(?<![.\\w$])${escapeRe(name)}\\s*=(?!=)[^=]`).test(source)) return true;
+
+  // Parameter / destructured-property / callback-parameter bindings.
+  //
+  // An OBJECT KEY is deliberately NOT evidence. `{ must: 'be a string' }` in
+  // `plan-contract.mjs` is data, not a binding, and treating it as one made
+  // thirty-odd prose words (`must`, `be`, `a`, `no`, `exactly`, …) look like
+  // shadowed variables — the walk then chased them and reported the F.3
+  // boundary's own production line as full of blind spots. Only a position
+  // that genuinely introduces a NAME counts.
+  for (const list of functionParameterLists(source)) {
+    for (const p of list) {
+      const inner = /^\s*\{([\s\S]*)\}\s*$/.exec(p);
+      if (inner) {
+        for (const m of inner[1].split(',')) {
+          if (m.split(':').pop().trim() === name) return true;
+        }
+        continue;
+      }
+      if (p.trim() === name) return true;
+    }
+  }
+  for (const arrow of [/\(([^()]*)\)\s*=>/g, /\(([A-Za-z_$][\w$]*)\)\s*=>/g]) {
+    for (let m = arrow.exec(source); m !== null; m = arrow.exec(source)) {
+      for (const p of m[1].split(',')) {
+        const t = p.trim();
+        if (t === name || t.split(':').pop().trim() === name) return true;
+      }
+    }
+  }
+  return loopHeadBindingsOf(source, name).length > 0;
+}
+
+/**
+ * Replace the INSIDE of every function signature's parameter list with spaces,
+ * preserving length so an index found in the result still addresses the original
+ * source.
+ *
+ * A default value in a parameter list (`{ minEntries = 0 } = {}`) is
+ * syntactically an assignment but semantically a binding, and a regex that
+ * looks for `NAME = …;` cannot tell the two apart. Blanking the list removes the
+ * ambiguity at its source instead of adding another pattern to the pile.
+ *
+ * @param {string} source
+ * @returns {string} a same-length copy with parameter-list interiors blanked
+ */
+function blankParameterLists(source) {
+  const out = source.split('');
+  const fn = /\bfunction\b/g;
+  // Blank from the `=` that introduces a DEFAULT VALUE to the end of that
+  // default, keeping the parameter's own NAME visible.
+  //
+  // Blanking the whole list would be simpler and wrong: `runMultiQueryRetrieval(opts = {})`
+  // binds `opts`, and that binding is exactly what
+  // `assertArtifactSafe(pool, { trustedPlanStrings: new Set(validated.plan.queryVariants) })`
+  // depends on. Erasing the name left the production trust set unresolvable —
+  // the guard failing on honest code, which is the same noise-to-signal failure
+  // as reporting a real threat and getting it waived. The NAME is the binding;
+  // only the default's right-hand side is the thing that must not be read as an
+  // assignment target.
+  const blankDefaultValue = (from, to) => {
+    let i = from;
+    while (i < to) {
+      const ch = source[i];
+      if (ch === '(' || ch === '[' || ch === '{') {
+        // Blank a nested bracket's interior, keeping its delimiters, so the
+        // `=` that follows it is still visible.
+        let d = 0;
+        for (let k = i; k < to; k += 1) {
+          const c = source[k];
+          if (c === '(' || c === '[' || c === '{') d += 1;
+          else if (c === ')' || c === ']' || c === '}') {
+            d -= 1;
+            if (d === 0) { i = k; break; }
+          }
+        }
+        for (let k = i + 1; k < to; k += 1) {
+          if (out[k] !== '\n') out[k] = ' ';
+        }
+        i += 1;
+        continue;
+      }
+      if (ch === ',') { i += 1; continue; }
+      // `name = default` — blank the default only.
+      for (let k = i; k < to; k += 1) {
+        if (out[k] !== '\n') out[k] = ' ';
+      }
+      break;
+    }
+  };
+  for (let m = fn.exec(source); m !== null; m = fn.exec(source)) {
+    const open = source.indexOf('(', m.index);
+    if (open === -1) continue;
+    let depth = 0;
+    for (let i = open; i < source.length && i - open < 2000; i += 1) {
+      const ch = source[i];
+      if (ch === '(') depth += 1;
+      else if (ch === ')') {
+        depth -= 1;
+        if (depth === 0) { blankDefaultValue(open + 1, i); break; }
+      }
+    }
+  }
+  // Arrow functions with a parenthesised parameter list: `(a, b = 1) => …`.
+  const arrow = /\(([^()]*)\)\s*=>/g;
+  for (let m = arrow.exec(source); m !== null; m = arrow.exec(source)) {
+    const open = m.index;
+    blankDefaultValue(open + 1, open + 1 + m[1].length);
+  }
+  return out.join('');
 }
 
 /** Identifiers bound as callback parameters or destructured bindings anywhere. */
@@ -903,7 +1143,11 @@ export function resolveCallReturnProvenance(source, callName, { budget, maxHops 
   expressions.add(text);
   const pending = new Set();
   for (const ident of provenanceIdentifiersIn(text)) {
-    if (RESERVED.has(ident) || PROVENANCE_VOCABULARY.has(ident)) continue;
+    // r7 P1-1: spelling-based vocabulary filtering dropped honest locals named
+    // `filter`/`map`/`result`/… on this route too, which is how the same bypass
+    // stayed green through BOTH routes. `isVocabularyOnly` asks whether a
+    // binding explains the name instead of what the name is spelled.
+    if (isVocabularyOnly(source, ident)) continue;
     // The function's own name appears inside its body (recursion, or a
     // reference to itself in a string check). Following it would resolve to the
     // same function forever and report `name.name` as an unresolvable binding —
@@ -1033,6 +1277,26 @@ export function resolveNameInModule(source, ident, { scope = '', budget } = {}) 
     // be treated as answered, and this route exists precisely because that
     // short-circuit is what hid a targeted string in `plan-contract.mjs`.
     return { expressions: [], unresolvable: [], pendingImports: [ident] };
+  }
+  // Route 4a — a local of the SCOPE, reached only after the earlier routes ran.
+  //
+  // r7 P1-1 fallout. `resolveCallReturnProvenance` reads a callee body and then
+  // asks about every name in it, passing that body as `scope`. Route 1 already
+  // covers names the SCOPE binds, so a body-local is normally answered there —
+  // but Route 1 tests `scopeBoundNames`, which only sees declarations, `for`
+  // heads, destructuring and PARAMETERS. A name introduced some other way, or
+  // one that only looks bound, fell through to here and was reported as a blind
+  // spot in a module the guard had just finished reading. Once the walk follows
+  // vocabulary-colliding locals (the r7 P1-1 fix), `plan-contract.mjs`'s own
+  // prose words surfaced this: `validatePlanInput.must`, `.be`, `.a`, and forty
+  // more, all reported as unresolved on the F.3 boundary's own production line.
+  //
+  // Reporting a name as a blind spot that the SAME text visibly binds is the
+  // one thing this guard must never do — it converts "I cannot see this" into
+  // "I checked this", which is strictly worse than missing a rule. So the
+  // full local-binding set is consulted before declaring a blind spot.
+  if (scope !== '' && locallyBoundNames(scope).has(ident)) {
+    return { expressions: [`local \`${ident}\``], unresolvable: [] };
   }
   return { expressions: [], unresolvable: [ident] };
 }
@@ -1228,7 +1492,28 @@ export function resolveImportedCallReturnProvenance(libDir, file, callName, { bu
 function parameterBindingsOf(source, name) {
   const out = [];
   for (const params of functionParameterLists(source)) {
-    if (params.includes(name)) out.push({ kind: 'param', expr: name });
+    // A parameter is `NAME`, `NAME = default`, or `{ NAME }` / `{ NAME: alias }`.
+    // `Array.prototype.includes` is EXACT equality, so it matched only the
+    // first shape: `runMultiQueryRetrieval(opts = {})` was not recognised as
+    // binding `opts` at all, and the F.3 boundary's own production trust set —
+    // `assertArtifactSafe(pool, { trustedPlanStrings: new Set(validated.plan
+    // .queryVariants) })`, inside that function — came back `unresolvable`.
+    //
+    // That defect was invisible until the r7 P1-1 fix stopped the assign rule
+    // from producing a malformed body fragment for the same parameter: the
+    // fragment used to supply a bogus expression, and the bogus expression is
+    // what kept the assertion green. Two wrongs, and the second one was
+    // load-bearing. So the comparison is on the parameter's own NAME, with the
+    // default value stripped, rather than on the whole parameter text.
+    for (const p of params) {
+      const bare = p.split('=')[0].trim();
+      if (bare === name) { out.push({ kind: 'param', expr: name }); break; }
+      const inner = /^\s*\{([\s\S]*)\}\s*$/.exec(bare);
+      if (!inner) continue;
+      for (const piece of inner[1].split(',')) {
+        if (piece.split(':').pop().trim() === name) { out.push({ kind: 'param', expr: name }); break; }
+      }
+    }
   }
   return out;
 }
@@ -1510,17 +1795,27 @@ function methodChainRootsOf(text) {
       if (receiver !== '') roots.push(receiver);
       chainOpen = false;
     }
-    // A literal root carries no data, so the chain's actual source is in the
-    // FIRST LINK'S ARGUMENTS: `[].concat(targetedPools).forEach(f)` and
+    // A LITERAL root carries no variable data, so the chain's actual source is
+    // in the FIRST LINK'S ARGUMENTS: `[].concat(targetedPools).forEach(f)` and
     // `Object.assign([], targetedPools).forEach(f)` both put the targeted
-    // collection there, and reporting `[]` as the receiver finds nothing. This
-    // is not a trick: an empty literal as the head of a chain is the standard
-    // way to write "start a fresh collection", so the arguments are where the
-    // data has to be.
-    if (/^[[({]\s*[}\])]?$/.test(receiver)) {
+    // collection there, and reporting `[]` as the receiver finds nothing. An
+    // empty literal as the head of a chain is the standard way to write "start a
+    // fresh collection", so the arguments are where the data has to be.
+    //
+    // AND THE LITERAL NEED NOT BE EMPTY (r7 P1-2). The sixth review's fix tested
+    // `/^[[({]\s*[}\])]?$/`, which `[]` passes and `["seed"]` does not — so
+    //
+    //     ["seed"].concat(targetedPools).forEach((p) => trusted.add(p.query))
+    //
+    // reported the root `["seed"]`, never walked `targetedPools`, and the trust
+    // set read as clean. The empty/non-empty distinction has no principled
+    // basis here: a literal's SEED is a datum the chain also carries, and the
+    // targeted collection is in the arguments either way. So ANY bracket-led
+    // root takes its first link's arguments as roots too.
+    if (/^[[({]/.test(receiver)) {
       const args = readCallArguments(text, m.index + m[0].length - 1);
       if (args !== null) {
-        for (const arg of splitTopLevelMembers(args)) {
+        for (const arg of args) {
           const t = arg.trim();
           if (t !== '') roots.push(t);
         }
