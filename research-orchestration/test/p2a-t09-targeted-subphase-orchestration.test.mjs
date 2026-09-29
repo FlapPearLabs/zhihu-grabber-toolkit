@@ -50,6 +50,7 @@ import {
 } from '../lib/targeted-requery-lifecycle.mjs';
 import { RESOLUTION_BASIS_DUPLICATE_ONLY, RESOLUTION_FILENAME } from '../lib/targeted-requery-resolution.mjs';
 import { composeP1Research, resolveAnchoredLedgerBytes, stageArtifactBytes, COMMIT_STAGING_DIR } from '../lib/p1-runtime-composer.mjs';
+import { CHECKPOINT_BINDING_COVERAGE_STATE } from '../lib/p1-reuse-closure.mjs';
 import { LEDGER_STAGING_KEY } from '../lib/targeted-requery-lifecycle.mjs';
 import { T14_SYNTHESIS_RUNTIME_ID, T14_SYNTHESIS_MODEL } from '../lib/cross-source-synthesis.mjs';
 import { mockVector768 } from './helpers/test-embedding-provider.mjs';
@@ -509,8 +510,38 @@ test('F3 — a pre-checkpoint crash does NOT let the record fabricate its own co
   // retrieval is paid for a second time ONCE, which the contract admits, because the
   // crash proves nothing. What it must never do is read the newer unanchored COMMITTED
   // version, or claim a binding the checkpoint never committed.
+  //
+  // The resume MUST be handed the real persisted checkpoint. Passing the default
+  // `state: { hashes: {} }` would take the "no anchor at all" branch instead, which
+  // starts a brand-new ledger — the test would then prove nothing about the anchored
+  // read this amendment exists to establish.
+  const persisted = JSON.parse(fs.readFileSync(path.join(workDir, 'orchestration-state.json'), 'utf8'));
+  assert.match(
+    String(persisted.hashes?.[LEDGER_STAGING_KEY] ?? ''),
+    /^[0-9a-f]{64}$/,
+    'precondition: the checkpoint on disk anchors the pre-commit ledger version',
+  );
+  // The distinguishing evidence, checked BEFORE the resume mutates anything: the
+  // ANCHORED version is AUTHORIZED while the canonical file already says COMMITTED.
+  // If the implementation reverted to reading the canonical ledger, resume would see
+  // COMMITTED and REUSE — which is exactly the P0 this amendment revokes.
+  const anchoredBytes = resolveAnchoredLedgerBytes(workDir, persisted.hashes[LEDGER_STAGING_KEY]);
+  assert.equal(
+    JSON.parse(anchoredBytes.toString('utf8')).targetedActions[0].status,
+    ACTION_STATUS_AUTHORIZED,
+    'CASE 2: the anchored version is AUTHORIZED',
+  );
+  assert.equal(
+    JSON.parse(fs.readFileSync(path.join(workDir, ACTIONS_FILENAME), 'utf8')).targetedActions[0].status,
+    ACTION_STATUS_COMMITTED,
+    'CASE 2: the canonical file holds the newer COMMITTED version that must NOT be trusted',
+  );
+
   const callsBeforeResume = fixture.adapter.__calls();
-  const recovered = runTargetedSubphase(subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]));
+  const recovered = runTargetedSubphase({
+    ...subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]),
+    state: persisted,
+  });
 
   assert.ok(
     fixture.adapter.__calls() > callsBeforeResume,
@@ -605,12 +636,14 @@ test('F3c — a committed action whose bytes are gone FAILS CLOSED instead of re
   // F.5.1 CASE 2 + the "no readable product" branch: resume reads the ANCHORED
   // (pre-commit) ledger, so the action is AUTHORIZED and F.5 mandates one safe
   // re-run. The re-run pays again and produces a FRESH product, so it succeeds —
-  // that is the contract's admitted double payment, not a silent drop.
-  //
-  // The genuinely unrecoverable case is CASE 3b, covered by H3b below. Here what
-  // must be pinned is that a re-run never reports ok:true on the strength of a
-  // product whose bytes are gone: the paid pool is regenerated, not laundered.
-  const recovered = runTargetedSubphase(subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]));
+  // that is the contract's admitted double payment, not a silent drop. The resume is
+  // handed the REAL persisted checkpoint; the default empty `hashes` would instead
+  // take the "no authority" branch and prove nothing about the anchored read.
+  const persisted = JSON.parse(fs.readFileSync(path.join(workDir, 'orchestration-state.json'), 'utf8'));
+  const recovered = runTargetedSubphase({
+    ...subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]),
+    state: persisted,
+  });
   assert.equal(recovered.ok, true, 'the mandated safe re-run regenerates the product');
   assert.equal(recovered.executedActionIds.length, 1, 'exactly one re-run happened');
   const ids = recovered.pool.candidates.map((c) => c.identity.questionId);
@@ -906,7 +939,7 @@ test('F4 — a second complete run over the same work dir REUSEs (zero new retri
 //    evidence and are run unchanged by the classified gate)
 // ---------------------------------------------------------------------------
 
-test('G1 — the composer only runs the sub-phase behind an opt-in guard (default off)', () => {
+test('OPTIN-1 — the composer only runs the sub-phase behind an opt-in guard (default off)', () => {
   const source = fs.readFileSync(path.join(LIB, 'p1-runtime-composer.mjs'), 'utf8');
   const guard = source.indexOf('if (targetedSubphase !== null) {');
   const call = source.indexOf('runTargetedSubphase(');
@@ -1057,7 +1090,7 @@ function g2ComposeArgs(workDir) {
   };
 }
 
-test('G2 — a real full-chain run is byte-equivalent with the parameter absent vs explicitly null, and creates no targeted artifact', async () => {
+test('OPTIN-2 — a real full-chain run is byte-equivalent with the parameter absent vs explicitly null, and creates no targeted artifact', async () => {
   const dirAbsent = tmpWorkDir('p2a-t09-g2-absent');
   const dirNull = tmpWorkDir('p2a-t09-g2-null');
 
@@ -1166,15 +1199,20 @@ test('G2 — the T06 LEGAL_TRANSITIONS table is VERBATIM unchanged (no committed
   );
 });
 
-test('G3 — resume staging cleanup must NOT delete the still-anchored ledger version', () => {
+test('G3 — resume staging cleanup must NOT delete a still-anchored ledger version', async () => {
+  const { stagingKeysAnchoredByCheckpoint } = await import('../lib/p1-runtime-composer.mjs');
+  const anchored = stagingKeysAnchoredByCheckpoint();
+  // Assert the MEMBERSHIP, not the text of a comparison: the property that matters is
+  // "the ledger staging key is on the do-not-clean list", and a source regex over an
+  // inline `key !== A && key !== B` chain only proves the characters are present.
+  assert.equal(anchored.has(LEDGER_STAGING_KEY), true, 'the anchored action ledger is never cleaned on resume');
+  assert.equal(anchored.has(CHECKPOINT_BINDING_COVERAGE_STATE), true, 'the anchored coverage ledger is never cleaned on resume');
+  // And the loop must actually consult the set rather than re-implementing the rule.
   const source = fs.readFileSync(path.join(LIB, 'p1-runtime-composer.mjs'), 'utf8');
-  // The amendment is explicit that this is a REQUIRED one-line change, not a
-  // free parameter: without it `cleanupStaging` deletes the only recoverable
-  // bytes of the anchored ledger and every resume becomes CASE 3b fail-closed.
   assert.match(
     source,
-    /item\.key\s*!==\s*CHECKPOINT_BINDING_COVERAGE_STATE\s*&&\s*item\.key\s*!==\s*LEDGER_STAGING_KEY/,
-    'the resume materialize loop excludes the ledger staging key from cleanupStaging',
+    /if \(!anchoredStagingKeys\.has\(item\.key\)\) cleanupStaging\(item\.stagedPath\);/,
+    'the materialize loop gates cleanup on the anchored-key set',
   );
 });
 
@@ -1292,30 +1330,44 @@ test('G6 — CASE 2 BYPASSES the E.6 dedupe gate: the gate is never CALLED, not 
   // A re-authorization of the same proposal would carry the SAME dedupeKey, because
   // E.6 excludes `attempt` — so if resume went through `authorizeTargetedAction` it
   // would be REJECTED as EQUIVALENT_QUERY_ALREADY_AUTHORIZED and F.5's mandated
-  // re-run would be unreachable. Counting the dedupe rejections in the resulting
-  // ledger is therefore a direct mechanical proof that the gate was never entered.
+  // re-run would be unreachable.
   assert.throws(() => runTargetedSubphase({
     ...args,
     crashAt: (label) => { if (label === 'after_targeted_commit_prepare') throw new Error('killed between b and d'); },
   }), /killed between b and d/);
 
-  const recovered = runTargetedSubphase(args);
+  // Hand the resume the REAL persisted checkpoint. This is what makes the assertion
+  // meaningful: the anchored ledger carries an AUTHORIZED record whose dedupeKey is
+  // already registered, so a re-authorization would be visibly rejected. With the
+  // default empty `hashes` the code would take the "no authority" branch, build an
+  // empty ledger, and never consult the dedupe gate at all — passing vacuously.
+  const persisted = JSON.parse(fs.readFileSync(path.join(workDir, 'orchestration-state.json'), 'utf8'));
+  const recovered = runTargetedSubphase({ ...args, state: persisted });
+
   const records = recovered.actionsArtifact.targetedActions;
-  const dedupeRejections = records.filter((r) => r.status === 'REJECTED'
-    && String(r.rejectionCode ?? '').includes('DEDUPE'));
+  // Rejections are recorded in the artifact's own `rejected[]` ledger (T06's shape),
+  // not as a status on `targetedActions[]` — so that is where a dedupe refusal would
+  // actually appear if the gate had been entered.
+  const rejections = recovered.actionsArtifact.rejected ?? [];
   assert.equal(
-    dedupeRejections.length,
+    rejections.length,
     0,
-    'G6: the dedupe gate produced NO rejection — resume reused the AUTHORIZED record instead of re-authorizing',
+    'G6: authorization was never re-entered, so the dedupe gate produced no rejection',
   );
   assert.equal(
     records.filter((r) => r.gapId === gap.gapId).length,
     1,
     'G6: exactly one action exists; a second authorization would have been a second record',
   );
-  assert.ok(
-    !records.some((r) => r.status === 'REJECTED' && String(r.rejectionCode ?? '').includes('DEDUPE')),
-    'G6: E.6 is BYPASSED, not widened — the frozen dedupe still rejects duplicates, resume simply never asks',
+  // The audit trail is the direct evidence of which branch ran. `REGISTER_AUTHORIZED`
+  // appearing exactly once and being PRECEDED by nothing in this resume proves the
+  // record was carried over from the anchored ledger, not re-created: a fresh
+  // authorization would have appended a second REGISTER_AUTHORIZED for the same id.
+  const registerEvents = records.flatMap((r) => (r.audit ?? []).filter((e) => e.event === 'REGISTER_AUTHORIZED'));
+  assert.equal(
+    registerEvents.length,
+    1,
+    'G6: exactly one REGISTER_AUTHORIZED in the action history — the resume did not re-authorize',
   );
 });
 
@@ -1421,7 +1473,7 @@ test('BUDGET-3 — the round loop forwards the targeted half into BOTH evaluateR
   );
 });
 
-test('BUDGET-4 — the composer derives the loop targeted half from the ANCHORED ledger, never the canonical file', () => {
+test('BUDGET-4 — the composer derives the loop targeted half from the ANCHORED ledger', () => {
   const source = fs.readFileSync(path.join(LIB, 'p1-runtime-composer.mjs'), 'utf8');
   assert.match(
     source,
@@ -1443,5 +1495,18 @@ test('BUDGET-4 — the composer derives the loop targeted half from the ANCHORED
     source,
     /plannedAttemptsBudgetCount:\s*computePlannedAttemptCount\(coverageState\)/,
     'the sub-phase preflight gets the planned half from the live coverage state',
+  );
+
+  // The precise property, stated as a behaviour rather than as prose. The resolver
+  // MAY look at the canonical file — but only ever returns bytes whose sha256 equals
+  // the anchor, so a newer unanchored version can never match. Verified by handing it
+  // an anchor that nothing on disk satisfies and requiring `null` (never "the best
+  // available" bytes, which is what an unanchored fallback would look like).
+  const workDir = tmpWorkDir('budget-4-anchor');
+  fs.writeFileSync(path.join(workDir, ACTIONS_FILENAME), JSON.stringify({ targetedActions: [{ status: 'COMMITTED' }] }));
+  assert.equal(
+    resolveAnchoredLedgerBytes(workDir, 'f'.repeat(64)),
+    null,
+    'an anchor no artifact satisfies yields null — the canonical file is never an unanchored fallback',
   );
 });

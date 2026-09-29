@@ -411,8 +411,15 @@ export function runTargetedSubphase({
     const anchored = resolveAnchoredBytes === null
       ? null
       : readAnchoredLedger(priorState, resolveAnchoredBytes);
+    // Both discriminators use the SAME shape test on purpose. `readAnchoredLedger`
+    // accepts an anchor only when it is 64 lowercase hex, so `hasAnchor` must agree;
+    // if it merely counted 64 characters, a non-hex value would be reported as
+    // "anchored but unrecoverable" here while the reader treated it as "no anchor" —
+    // two different verdicts for one value. Both outcomes are fail-closed either
+    // way, but disagreeing classifications are how a real corruption turns into a
+    // confusing failure later.
     const hasAnchor = typeof priorState.hashes?.[LEDGER_CHECKPOINT_KEY] === 'string'
-      && priorState.hashes[LEDGER_CHECKPOINT_KEY].length === 64;
+      && /^[0-9a-f]{64}$/.test(priorState.hashes[LEDGER_CHECKPOINT_KEY]);
     if (anchored === null && hasAnchor) {
       // Anchored, but the anchored bytes are unrecoverable -> CASE 3b, fail closed.
       throw subphaseError(

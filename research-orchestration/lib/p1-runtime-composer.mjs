@@ -821,6 +821,30 @@ function targetedBindingsOf(hashes) {
   return out;
 }
 
+/**
+ * F.5.1: staged-artifact keys whose bytes the checkpoint still anchors, and which
+ * therefore must survive `cleanupStaging` on the resume materialize path.
+ *
+ * This is a SET rather than an inline `key !== A && key !== B` chain because the
+ * safety property is "never delete bytes a checkpoint anchors", and a set is where
+ * that property can be stated once, extended safely, and tested directly instead of
+ * by pattern-matching a source line.
+ */
+const anchoredStagingKeys = new Set([
+  CHECKPOINT_BINDING_COVERAGE_STATE,
+  LEDGER_STAGING_KEY,
+]);
+
+/**
+ * Which staged keys must NOT be cleaned on the resume materialize path because the
+ * checkpoint still anchors them. Exported so the G3 gate can assert the actual
+ * membership rather than pattern-match a source line — a regex on an inline
+ * comparison proves the text is present, not that the property holds.
+ */
+export function stagingKeysAnchoredByCheckpoint() {
+  return new Set(anchoredStagingKeys);
+}
+
 function sanitizeMessage(message) {
   return String(message ?? '').slice(0, 300);
 }
@@ -1109,15 +1133,19 @@ export async function composeP1Research({
       if (Array.isArray(reentry.materialize) && reentry.materialize.length > 0) {
         for (const item of reentry.materialize) {
           materializeStagedArtifact(workDir, item.stagedPath, item.canonicalRel);
-          // F.5.1 / gate G3: the coverage ledger and the targeted action ledger are both
-          // "the substrate a downstream boundary consumes" — the coverage ledger because
-          // every boundary reads it, the action ledger because it is the sole authority
-          // for dedupe / lifecycle / completion. Deleting the staged copy of either while
-          // the checkpoint still anchors that exact sha256 would destroy the only
-          // recoverable bytes and force the fail-closed path on the next resume.
-          if (item.key !== CHECKPOINT_BINDING_COVERAGE_STATE && item.key !== LEDGER_STAGING_KEY) {
-            cleanupStaging(item.stagedPath);
-          }
+          // F.5.1: a staged artifact must survive cleanup whenever the checkpoint
+          // still anchors its exact sha256. Two keys qualify:
+          //   · the coverage ledger — every boundary reads it;
+          //   · the targeted action ledger — the sole authority for dedupe / lifecycle /
+          //     completion. Deleting its staged copy while the checkpoint anchors that
+          //     hash would destroy the only recoverable bytes and force the CASE 3b
+          //     fail-closed path on the next resume.
+          // `planResumeReentry` currently enumerates only the three stage-boundary
+          // keys, so the ledger key is a no-op TODAY; it is kept because that set is
+          // owned by the reuse-closure module and may grow, and the failure it prevents
+          // is silent and permanent (every later resume fails closed) rather than loud.
+          // G3 pins the real property: no cleanup may remove bytes the checkpoint anchors.
+          if (!anchoredStagingKeys.has(item.key)) cleanupStaging(item.stagedPath);
         }
       }
       // Continue the PERSISTED ledger: it is already validated and plan-bound by
