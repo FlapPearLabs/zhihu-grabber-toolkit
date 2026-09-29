@@ -101,7 +101,10 @@ import {
   FINAL_EVIDENCE_STATUSES,
   LEDGER_CHECKPOINT_KEY,
   LEDGER_STAGING_KEY,
-  loadActionsArtifact,
+  // `loadActionsArtifact` is deliberately NOT imported. It is the one loader in this
+  // module's dependency set that reads the CANONICAL ledger file without consulting
+  // the checkpoint, so keeping it available here would make the revoked P0 a
+  // one-token regression away.
   persistActionsArtifact,
   prepareTargetedCommit,
   finalizeTargetedCommit,
@@ -398,9 +401,7 @@ export function runTargetedSubphase({
   //
   // The three cases are deliberately NOT collapsed:
   //   · a checkpoint exists and anchors a version  → that version is authoritative
-  //   · a checkpoint exists but anchors nothing    → fail closed; the canonical file is
-  //     NOT a fallback (this is CASE 1b: an authorization persisted without its anchor
-  //     is an authorization the checkpoint cannot prove, so it must not be honoured)
+  //   · a checkpoint exists but anchors nothing    → CASE 1b, fail closed
   //   · no checkpoint at all (fresh composition)    → start a new ledger
   let currentState = state;
   const priorState = currentState;
@@ -428,7 +429,29 @@ export function runTargetedSubphase({
       );
     }
     if (anchored === null) {
-      // A checkpoint exists but never anchored a ledger. Canonical bytes are unproven.
+      // CASE 1b — a checkpoint exists but never anchored a ledger, while the work
+      // dir holds a ledger nobody vouches for. That is precisely the window where
+      // ANCHOR 1 crashed: the AUTHORIZED record was persisted, but the `writeState`
+      // that would have anchored it never completed.
+      //
+      // The amendment requires this to FAIL CLOSED rather than start fresh, and the
+      // reason is worth stating because starting fresh looks harmless and is not:
+      // the unanchored ledger may name an authorization, and re-authorizing the same
+      // proposal is free while re-running its retrieval is not. Starting a new ledger
+      // silently discards a decision the checkpoint cannot prove, so a corruption
+      // anomaly would be swallowed and the run would report a clean start. UNKNOWN
+      // must surface (B-layer: UNKNOWN != PASS).
+      //
+      // "No ledger on disk either" is the genuine fresh-composition case and is
+      // allowed to start clean — there is nothing unproven to discard.
+      const unanchoredLedgerPresent = fs.existsSync(path.join(workDir, ACTIONS_FILENAME));
+      if (unanchoredLedgerPresent) {
+        throw subphaseError(
+          'the checkpoint anchors no action-ledger version but an unanchored ledger exists on disk '
+          + '(F.5.1 CASE 1b: an authorization persisted without its anchor is an authorization the '
+          + 'checkpoint cannot prove — refusing to discard it and start clean)',
+        );
+      }
       actionsArtifact = createActionsArtifact({ planHash: expectedPlanHash, occurrenceId });
     } else if (anchored.occurrenceId === occurrenceId) {
       actionsArtifact = anchored;

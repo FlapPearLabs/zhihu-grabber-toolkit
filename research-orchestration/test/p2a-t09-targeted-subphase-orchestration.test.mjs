@@ -657,16 +657,23 @@ test('H1 — a NEW occurrence in a reused work dir does NOT load the prior occur
   const gap = contradictionGap(pool);
 
   // Occurrence A populates the work dir. Occurrence B (same planHash, same workDir)
-  // must not inherit it: `loadActionsArtifact` only checks planHash, and the
+  // must not inherit it: the canonical-file loader only checks planHash, and the
   // composer archives only the group-level state, so without an occurrence anchor
   // check the very first `registerAuthorizedAction` throws on the occurrenceId
   // anchor and aborts the whole composition.
   const first = runTargetedSubphase(subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]));
   assert.equal(first.actionsArtifact.occurrenceId, OCCURRENCE);
 
+  // Occurrence B resumes from occurrence A's REAL checkpoint. This is the production
+  // shape: the ledger IS anchored, it simply belongs to a different occurrence — so
+  // the occurrence check must rebuild for B rather than inherit A's records. (Handing
+  // the default empty `hashes` here would instead hit the CASE 1b fail-closed guard,
+  // which is a different scenario entirely.)
+  const persisted = JSON.parse(fs.readFileSync(path.join(workDir, 'orchestration-state.json'), 'utf8'));
   const second = runTargetedSubphase({
     ...subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]),
     occurrenceId: 'occurrence-b',
+    state: persisted,
   });
 
   assert.equal(second.actionsArtifact.occurrenceId, 'occurrence-b', 'the anchor is occurrence B');
@@ -1229,8 +1236,58 @@ test('G4 — every F.5.1 crash window has a REAL run, and each anchors what it c
       ...args,
       crashAt: (label) => { if (label === 'after_targeted_execution') throw new Error('killed before commit'); },
     }), /killed before commit/);
-    const recovered = runTargetedSubphase(args);
+    // Resume from the REAL checkpoint: ANCHOR 1 already committed the AUTHORIZED
+    // ledger, so the anchored version exists and holds that record.
+    const persisted = JSON.parse(fs.readFileSync(path.join(workDir, 'orchestration-state.json'), 'utf8'));
+    const recovered = runTargetedSubphase({ ...args, state: persisted });
     assert.equal(recovered.actionsArtifact.targetedActions.length, 1, 'CASE 1: the AUTHORIZED record is recovered, not duplicated');
+  }
+
+  // CASE 1b — crash DURING ANCHOR 1: the AUTHORIZED record is persisted but the
+  // `writeState` that would anchor it never completed. The checkpoint therefore
+  // carries no ledger anchor while an unanchored ledger sits on disk. The amendment
+  // requires FAIL CLOSED here, not a silent fresh start.
+  {
+    const workDir = tmpWorkDir('g4-case1b');
+    const fixture = buildFixture();
+    const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+    const gap = contradictionGap(pool);
+    const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap, 0)]);
+
+    // Reproduce the durable footprint of the window. There is deliberately NO
+    // crashAt label between `persistActionsArtifact` (AUTHORIZED) and the
+    // `writeState` that anchors it — and gate G4 forbids standing in for a crash with
+    // a hand-thrown error. So the window is reconstructed from its exact durable
+    // state instead: run the real code to the point where the AUTHORIZED ledger IS
+    // durable and IS anchored, then drop only the anchor from the checkpoint. That
+    // is byte-for-byte what a crash inside ANCHOR 1 leaves behind — the ledger write
+    // landed, the state write did not — without inventing a seam that does not exist.
+    assert.throws(() => runTargetedSubphase({
+      ...args,
+      crashAt: (label) => { if (label === 'after_targeted_execution') throw new Error('killed during anchor 1'); },
+    }), /killed during anchor 1/);
+    const persisted = JSON.parse(fs.readFileSync(path.join(workDir, 'orchestration-state.json'), 'utf8'));
+    assert.match(
+      String(persisted.hashes[LEDGER_STAGING_KEY] ?? ''),
+      /^[0-9a-f]{64}$/,
+      'precondition: the AUTHORIZED ledger is anchored before the anchor is dropped',
+    );
+    assert.ok(fs.existsSync(path.join(workDir, ACTIONS_FILENAME)), 'precondition: the ledger is durable on disk');
+
+    // The reconstructed CASE 1b state: checkpoint with no anchor + unanchored ledger.
+    const case1bState = { ...persisted, hashes: { ...persisted.hashes } };
+    delete case1bState.hashes[LEDGER_STAGING_KEY];
+    assert.throws(
+      () => runTargetedSubphase({ ...args, state: case1bState }),
+      /CASE 1b/,
+      'CASE 1b: an unanchored ledger is NOT silently discarded — UNKNOWN must surface',
+    );
+    // And a genuinely fresh composition (no ledger on disk either) still starts
+    // clean, so the guard does not break first runs.
+    const freshDir = tmpWorkDir('g4-case1b-fresh');
+    const freshArgs = subphaseArgs(freshDir, fixture, pool, [proposalFor(gap, 0)], { state: { hashes: {} } });
+    const fresh = runTargetedSubphase(freshArgs);
+    assert.equal(fresh.ok, true, 'a fresh work dir with nothing unproven still starts clean');
   }
 
   // CASE 2 — crash BETWEEN (b) and (d): COMMITTED bytes durable, checkpoint NOT
