@@ -19,7 +19,9 @@ REVIEWED_CODE = 3e4240fe841eed8c3239a2395c9a425fa5c2e7ed（master：lifecycle / 
                 ∪ 60ee327a27eb59e3bc5389c35bbdbdf2482f76ac（T09 候选，未合入，从 3e4240fe 分叉：
                   targeted-requery-subphase.mjs **只存在于此分支**，不在 master 上）
 SEMANTIC_AUTHORITY_UNCHANGED =
-                docs/specs/p2-ari-f02-targeted-requery.md（本文不发明新语义，只解冻 F.5 的可执行性）
+                docs/specs/p2-ari-f02-targeted-requery.md
+                （除 §0 标注的那一处规范性扩展外，本文不发明新语义，
+                  只解冻 F.5 的可执行性）
 ```
 
 ## 0. 本文是什么、不是什么
@@ -200,7 +202,8 @@ ANCHOR 2 — targeted commit point（既有 writeState，不新增 commit point�
 【不需要】改动:
   · E.6 dedupeKey 字段集            —— 逐字不动
   · T06 LEGAL_TRANSITIONS            —— 逐字不动
-  · F.5 / spec §12 的产品措辞         —— 逐字不动（本文只补可执行性前提）
+  · F.5 / spec §12 的产品措辞         —— 逐字不动（除 §0 标注的 AUTHORITY_RULE
+                                          fail-closed 这一处规范性扩展外，只补可执行性前提）
   · round artifact 布局               —— T09 已用 per-action 路径
                                       （`subphase.mjs:503` `action-<id>/retrieval-pool.json`），
                                       天然不可变，无需改动
@@ -212,7 +215,7 @@ ANCHOR 2 — targeted commit point（既有 writeState，不新增 commit point�
 
 **结论：机制充分，不触发 SEAM_NOT_FROZEN。** 证据：`stageArtifactBytes`（`p1-runtime-composer.mjs:258`）
 写入 `.p1-commit-staging/<key>/<sha>.json`，路径由内容 hash 决定、旧版本不会被覆盖；
-`inspectCommittedArtifact`（`:291`）在 canonical 不匹配时正是去 staging 按 hash 找
+`inspectCommittedArtifact`（`:293`）在 canonical 不匹配时正是去 staging 按 hash 找
 （返回 `STAGED_MATCH`）。这与 P1-R06 已在生产中使用的 coverage ledger / accumulated pool
 恢复机制**完全同构**（`p1-runtime-composer.mjs:470-556` 的 materialize 流程）。
 

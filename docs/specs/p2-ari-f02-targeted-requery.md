@@ -459,8 +459,8 @@ artifact-walk 调用点零改动；trustedPlanStrings 零改动。
   （见 SEAM F §F.5.1，2026-09-29 修正案追加；冻结自 #130 owner decision A。
     §12 上文「安全重跑一次」原文逐字保留、未改一字。
     注：上一条 bullet 的 fail-closed 语义是「checkpoint 是唯一信任根 / UNKNOWN != PASS」
-    在 ledger 上的【首次规范应用】，属规范性扩展而非纯可执行性补齐——CASE 1b 明确标出
-    它带来的产品可观察行为变化。）
+    在 ledger 上的【首次规范应用】，属规范性扩展而非纯可执行性补齐——其产品可观察后果是：
+    首次授权在锚定写入之前崩溃时，将 fail-closed 或重新授权，而不再从 canonical 文件恢复。）
 ```
 
 ## 13. STOP interaction
