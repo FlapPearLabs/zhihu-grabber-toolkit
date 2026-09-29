@@ -15,6 +15,9 @@ TARGET_ISSUE  = #130（SEAM_NOT_FROZEN = F.5）→ 关闭后重新形成合法�
 OWNER_DECISION = A — ANCHOR_ACTION_LEDGER_IN_CHECKPOINT
                 （记于 #130 comment，append-only；本文是该决定的架构落地）
 BASE_SHA      = 3e4240fe841eed8c3239a2395c9a425fa5c2e7ed
+REVIEWED_CODE = 3e4240fe841eed8c3239a2395c9a425fa5c2e7ed（master：lifecycle / authorization / state / composer）
+                ∪ 60ee327a27eb59e3bc5389c35bbdbdf2482f76ac（T09 候选，未合入，从 3e4240fe 分叉：
+                  targeted-requery-subphase.mjs **只存在于此分支**，不在 master 上）
 SEMANTIC_AUTHORITY_UNCHANGED =
                 docs/specs/p2-ari-f02-targeted-requery.md（本文不发明新语义，只解冻 F.5 的可执行性）
 ```
@@ -42,7 +45,9 @@ F.5 `DUPLICATE_REPLAY_RULE` 与 spec §12 都写下：
 hash 不匹配 / 产物缺失 → 视为未提交，安全重跑一次
 ```
 
-但这条规则在 BASE 上**没有任何可执行路径**（每条均为 BASE `3e4240fe…` 机械读出，非推测）：
+但这条规则在当前代码上**没有任何可执行路径**。下表每条均为**机械读出，非推测**；
+注意行 #3/#3b/#3c 引用的 `targeted-requery-subphase.mjs` **只存在于 T09 候选 `60ee327a…`**
+（未合入，从 `3e4240fe…` 分叉），不在 master 上——这一区分是实质性的，不是引用格式问题：
 
 | # | 冻结事实 | 机械证据 | 后果 |
 |---|---|---|---|
@@ -79,7 +84,7 @@ AUTHORITY_RULE =
 | 需要的能力 | 复用的既有 primitive | 位置 |
 |---|---|---|
 | content-addressed 字节暂存 | `stageArtifactBytes(workDir, key, bytes)` → `.p1-commit-staging/<key>/<sha>.json` | `p1-runtime-composer.mjs:258` |
-| 按 hash 定位/取回 | `inspectCommittedArtifact({workDir, key, canonicalRel, expectedHash})` → `CANONICAL_MATCH` / `STAGED_MATCH` / `INVALID` / `UNBOUND` | `p1-runtime-composer.mjs:291` |
+| 按 hash 定位/取回 | `inspectCommittedArtifact({workDir, key, canonicalRel, expectedHash})` → `CANONICAL_MATCH` / `STAGED_MATCH` / `INVALID` / `UNBOUND` | `p1-runtime-composer.mjs:293` |
 | checkpoint 唯一提交点 | `writeState(workDir, state)` | `state.mjs:238` |
 | 字节校验 | `validateArtifactCheckpoint(workDir, rel, expectedHash)` | `state.mjs:311` |
 | 文件替换协议 | fsync → temp → rename（`persistActionsArtifact` 已用同一协议） | `targeted-requery-lifecycle.mjs:641` |
@@ -96,6 +101,17 @@ CASE 1 — crash BEFORE commit
   resume: 读到旧 ledger ⇒ 该 action 状态 = 旧值（通常 AUTHORIZED 或更早）
           → 走既有 AUTHORIZED「plain safe re-run」分支 ⇒ 安全重跑，不进 dedupe
   ✅ 满足 owner constraint #5；E.6 逐字不动
+
+CASE 1b — crash DURING ANCHOR 1（授权已 persist，writeState 未完成）  ← 首轮审查补入
+  durable: 新的 AUTHORIZED ledger 字节（canonical + staging 都有）
+  checkpoint: 仍指向【旧】ledger 版本
+  resume: 只读锚定版 ⇒ 看到的是该 action 授权【之前】的 ledger
+          · 已有旧版本 → 走既有路径，下一轮重新授权（安全；授权在 IO 之前，无重复付费）
+          · 首次授权、checkpoint 无该 key → fail-closed，UNKNOWN 上浮
+  ✅ 不产生虚假完成证据，不违反 constraint #5
+  ⚠️ 诚实的行为变化：当前实现用 canonical 读取，首次授权崩溃后仍能恢复该 AUTHORIZED 记录；
+     本修正案要求只认锚定版，故此窗口从「可恢复」变为「fail-closed / 重新授权」。
+     这是「不猜」的代价，属 owner constraint #4 的必然结果。
 
 CASE 2 — crash BETWEEN (b) and (d)  ← #130 的核心 crash window
   durable: 新 ledger 字节（COMMITTED），staging 里有 content-addressed 副本
@@ -120,7 +136,7 @@ CASE 3b — checkpoint 锚定的 ledger 版本字节已丢失
 ### 2.3 为什么这让 E.6 逐字不需要改
 
 ```text
-subphase.mjs:432  authorizeTargetedAction(...) 只在 `prior === null` 分支被调用
+subphase.mjs:438  authorizeTargetedAction(...) 只在 `prior === null` 分支被调用
 
 若 checkpoint 锚定的 ledger 版本可恢复 ⇒
   prior !== null  且  prior.status === ACTION_STATUS_AUTHORIZED
@@ -130,10 +146,20 @@ subphase.mjs:432  authorizeTargetedAction(...) 只在 `prior === null` 分支被
 
 **这是 owner 拒绝 B 选项的机械依据**：B 会改写冻结的 dedupe 不变式；A 在架构层彻底绕开它。
 
-**必须诚实标出的边界**：CASE 2 的「安全重跑」执行时 `attempt` 会变化。但它**不是**「重新授权」——
-`targetedActionId` 仍是 ledger 中那条 `AUTHORIZED` 记录的原 id，不新增 record、不新增 dedupeKey、
-不进 dedupe 门。它是「同一条**已授权** action 的重跑」，不是「同一个 query 的第二次授权」。
-两者在 F.5 / E.6 语义下不是同一件事。实现时必须保证 `targetedActionId` 不变（否则会踩 F.1 identity）。
+**必须诚实标出的边界（2026-09-29 首轮审查后更正）**：重跑**复用原记录**——
+`subphase.mjs:378-384` 是 `action = prior`，`attempt` 与 `targetedActionId` **均不变**。
+这正是它「不是第二次授权」的原因，而不是「attempt 会变但 id 不变」。
+
+更正理由：F.1 的 `TARGETED_ACTION_ID_FIELDS` **包含 `attempt`**
+（`targeted-requery-authorization.mjs:385-393`），`computeTargetedActionId` 对其取哈希。
+若 `attempt` 真的变化，`targetedActionId` 必然随之变化 —— 那就构成新身份、新 record、
+新 dedupeKey，反而正是被 E.6 拒绝的那件事。故「attempt 变而 id 不变」在 F.1 下自相矛盾，
+本文原表述已作废。正确表述更强也更干净：重跑不新增任何身份，因此不进 dedupe 门、
+不重复计入 F.6 预算（`findRecord` 是 `findIndex`，每个 id 至多一条 record；
+`computeTargetedAttemptCounts` 按 record 计数）。
+
+仍需实现阶段保证的只有一条：**不得**在重跑路径上调用 `registerAuthorizedAction`
+或以任何方式新增 record —— 那会把重跑变成第二次授权并踩 E.6。
 
 ### 2.4 两处 checkpoint 锚点（owner constraint #6 的落点）
 
@@ -186,14 +212,19 @@ ANCHOR 2 — targeted commit point（既有 writeState，不新增 commit point�
 （返回 `STAGED_MATCH`）。这与 P1-R06 已在生产中使用的 coverage ledger / accumulated pool
 恢复机制**完全同构**（`p1-runtime-composer.mjs:470-556` 的 materialize 流程）。
 
-**唯一新增风险 —— staging 清理**（已机械核实，结论 = 沿用既有先例，无需新机制）：
+**唯一新增风险 —— staging 清理**（已机械核实；结论 = 必须改一行代码，不是零成本）：
 
-`cleanupStaging`（`:283`）在 resume materialize 流程里会删除 staging 字节
-（`:1039`，但 `:1038` **显式排除** `CHECKPOINT_BINDING_COVERAGE_STATE`）。排除的理由由该处代码
-自己写明：coverage ledger 是下游每个边界都消费的地基。action ledger 同属此类——它是
-dedupe / lifecycle / completion 判定的唯一权威来源。**故实现时 action ledger 必须与 coverage
-ledger 同等对待（保留仍被 `state.hashes[LEDGER_CHECKPOINT_KEY]` 锚定的那一版）**，沿用既有
-排除机制即可，不新造 retention 策略。此项列为实现阶段强制检查点（§5 G3）。
+`cleanupStaging`（`:283`）在 resume materialize 流程里会删除 staging 字节。`:1038` 的排除是
+**硬编码单个 key** 的比较：
+
+```js
+if (item.key !== CHECKPOINT_BINDING_COVERAGE_STATE) { cleanupStaging(item.stagedPath); }
+```
+
+action ledger 若以新 key `targeted-action-ledger` 暂存，`'targeted-action-ledger' !==
+CHECKPOINT_BINDING_COVERAGE_STATE` 为真 ⇒ 该循环会**删掉仍被 checkpoint 锚定的那一版**
+⇒ 触发 CASE 3b fail-closed。故实现**必须**把 `:1038` 扩为同时排除 `LEDGER_CHECKPOINT_KEY`。
+这是**必需的一行代码改动**，不是「沿用既有机制即可」的零成本参数。列为强制检查点（§5 G3）。
 
 ## 3. 对既有权威的最小修改（append-only，不改写历史）
 

@@ -430,8 +430,10 @@ AUTHORITY_RULE =
   ANCHOR 2 commit：(a) 字节 fsync (b) COMMITTED + persist + stage + 两个 hash 入内存
                     (c) ↑仅内存 (d) writeState = 唯一 commit point（语义不变）
 
-四种 crash 窗口：
+五种 crash 窗口：
   BEFORE commit       → 读到旧 ledger → AUTHORIZED 分支「plain safe re-run」（不进 dedupe）
+  DURING ANCHOR 1     → 读到旧 ledger；有旧版则重新授权，首次授权则 fail-closed
+                        （诚实的行为变化：不再以 canonical 文件为权威）
   BETWEEN (b) and (d) → 只读锚定版 → 看到 AUTHORIZED → 安全重跑一次
                         （staging 中的 COMMITTED 版本【不】参与判断）
   AFTER (d)           → COMMITTED + binding 有效 → REUSE（绝不重新付费）
@@ -440,8 +442,11 @@ AUTHORITY_RULE =
 E.6 / LEGAL_TRANSITIONS 逐字不动：
   authorizeTargetedAction 只在 `prior === null` 分支被调用；
   锚定版可恢复 ⇒ prior.status === AUTHORIZED ⇒ 走既有重跑分支 ⇒ dedupe 门不参与。
-  ⚠️ 重跑时 attempt 会变化，但 targetedActionId 不变 —— 这是「同一条已授权 action 的重跑」，
-     不是「同一 query 的第二次授权」；实现必须保证 id 不变（否则违反 F.1 identity）。
+  ✅ 重跑【复用原记录】（`action = prior`）：attempt 与 targetedActionId 均不变。
+     F.1 的 TARGETED_ACTION_ID_FIELDS 包含 attempt，故「attempt 变而 id 不变」自相矛盾；
+     正因为身份不变，重跑才是「同一条已授权 action 的重跑」而非「同一 query 的第二次授权」，
+     不新增 record / dedupeKey，不重复计入 F.6 预算。
+  ⚠️ 实现禁令：重跑路径【不得】调用 registerAuthorizedAction 或新增任何 record。
 ```
 
 ### F.6 Attempt accounting（SEAM F → SEAM H 的计数契约）
