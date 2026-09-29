@@ -151,10 +151,39 @@ function classifyAt(lines, idx) {
   // function read the trust set out of it". If the answer is no, the call is
   // unparsed — never silently untrusted. A literal `{}` or a member expression
   // with no `trustedPlanStrings` IS readable, and C3 resolves it below.
+  //
+  // THE FIFTH REVIEW FOUND THE REMAINDER OF THE SAME BUG, AND IT IS A WIRING
+  // MISMATCH RATHER THAN A MISSED CASE. A bare identifier used to land in
+  // `call-untrusted` here, on the grounds that the resolver CAN read it — and
+  // C3 does have a `__opts__NAME` branch that reads it. But C3 iterates
+  // `trusted + unparsed`, so the branch was dead: a call classified as
+  // untrusted is examined by nobody, so the one classification that had a
+  // working resolver behind it was the one that never reached it. The C3b
+  // "P1-2 OPTIONS OBJECT" case still passed, because it calls the predicate
+  // directly with a hand-built call object and so never goes through this
+  // classifier at all — a mutation proof that skipped the routing it was
+  // written to cover.
+  //
+  // The fix is the alignment, not a new rule: a second argument this
+  // classifier cannot read is `unparsed` (fail loud in A1, examined by C3), and
+  // a second argument it CAN read is only `call-untrusted` when reading it
+  // finds no trust set — which is a question for the resolver, not for a
+  // syntactic guess made here.
+  //
+  // ONE carve-out keeps the noise down, and it is narrow on purpose. A second
+  // argument that is an EMPTY object literal — or an object literal whose
+  // members are all statically visible and none of them is
+  // `trustedPlanStrings` — provably carries no trust set, so it stays
+  // `call-untrusted` and C3 never has to resolve it. Everything else, INCLUDING
+  // a bare identifier, goes to `unparsed` where the `__opts__` branch can
+  // answer it properly. Routing the empty case the long way would have C3
+  // report `no statically readable trustedPlanStrings member` as an
+  // unresolvable on code that is correct, which is how a guard teaches its
+  // readers to ignore it.
   const secondArg = readSecondArgument(args);
   if (secondArg === null) return { kind: 'call-untrusted', spanEnd: end, callText };
-  if (!isReadableLiteralOptions(secondArg)) return { kind: 'unparsed', spanEnd: end, callText };
-  return { kind: 'call-untrusted', spanEnd: end, callText };
+  if (isProvablyTrustSetFree(secondArg)) return { kind: 'call-untrusted', spanEnd: end, callText };
+  return { kind: 'unparsed', spanEnd: end, callText };
 }
 
 /**
@@ -183,24 +212,68 @@ function readSecondArgument(args) {
 }
 
 /**
- * Whether the second argument is a literal this helper can read a trust set out
- * of: an object literal, a member expression, or nothing at all.
+ * Whether a second argument PROVABLY carries no trust set, so the call is
+ * honestly `call-untrusted` and needs no resolution.
  *
- * Anything with an operator that can PRODUCE a value at runtime — `??`, `||`,
- * `&&`, a call, a conditional — is not readable, because what it evaluates to
- * is not in the text. Those are reported `unparsed` so the guard fails closed
- * instead of assuming "no trust set".
+ * This replaces `isReadableLiteralOptions`, which asked the opposite question —
+ * "can this be read?" — and produced a classification nobody acted on. The
+ * distinction matters because the two questions have different failure modes:
+ * answering "readable" wrongly routes a call away from every examiner (the
+ * fifth review's P1-2), while answering "provably empty" wrongly only adds a
+ * reportable unresolvable. The second is recoverable; the first is a hole.
+ *
+ * So the test is deliberately one-sided. It returns true ONLY for an object
+ * literal whose keys are all statically visible and plainly not
+ * `trustedPlanStrings`:
+ *
+ *     {}                        — nothing
+ *     { a: 1, b: 2 }            — nothing
+ *     { trustedPlanStrings: xs }— NOT provably free; the member is right there
+ *
+ * A bare identifier is never provably free: whether the options object holds a
+ * trust set is a property of its binding, and a binding is exactly what the
+ * `__opts__` resolver exists to read. So `assertArtifactSafe(pool, opts)` goes
+ * to `unparsed` and gets examined.
+ *
+ * @param {string} secondArg the balanced second-argument slice
+ * @returns {boolean}
  */
-function isReadableLiteralOptions(secondArg) {
-  if (/[?:]/.test(secondArg.replace(/\?\./g, ''))) return false;
-  if (/\|\||&&/.test(secondArg)) return false;
-  // A call expression anywhere in the argument produces a runtime value.
-  if (/[A-Za-z_$][\w$]*\s*\(/.test(secondArg)) return false;
-  // An identifier on its own is a binding whose value lives in an assignment
-  // the resolver can read — `__opts__NAME` handles it. It IS readable, and
-  // treating it as unreadable here would move a case that C3 can genuinely
-  // decide into the noise bucket.
+function isProvablyTrustSetFree(secondArg) {
+  if (!/^\{[\s\S]*\}$/.test(secondArg)) return false;
+  // `trustedPlanStrings` anywhere in the literal — as a key, a shorthand, or a
+  // spread that could carry one — is enough to disqualify it.
+  if (/\btrustedPlanStrings\b/.test(secondArg)) return false;
+  // A spread or a computed key can introduce members this text does not show,
+  // so the literal is not closed over its own keys.
+  if (/\.\.\./.test(secondArg)) return false;
+  if (/\[\s*[^'"\]]/.test(secondArg)) return false;
+  // Every remaining member must be a plain `key:` with a literal-ish value. A
+  // bare `key` (shorthand) is fine: it is still a visible, named key.
+  for (const member of splitTopLevelMembers(secondArg.slice(1, -1))) {
+    const t = member.trim();
+    if (t === '') continue;
+    if (!/^[A-Za-z_$][\w$]*\s*[:,]/.test(t) && !/^['"][^'"]*['"]\s*:/.test(t)) return false;
+  }
   return true;
+}
+
+/** Split an object literal's body on commas that are not nested inside anything. */
+function splitTopLevelMembers(body) {
+  const out = [];
+  let depth = 0;
+  let current = '';
+  for (const ch of body) {
+    if (ch === '(' || ch === '[' || ch === '{') depth += 1;
+    else if (ch === ')' || ch === ']' || ch === '}') depth -= 1;
+    if (ch === ',' && depth === 0) {
+      out.push(current);
+      current = '';
+      continue;
+    }
+    current += ch;
+  }
+  if (current.trim() !== '') out.push(current);
+  return out;
 }
 
 /**
@@ -362,6 +435,7 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8, budge
         out.push({ kind: 'mutate', expr: m[1] });
       }
     }
+    out.push(...callbackReceiverBindingsOf(source, name));
     return out;
   }
 
@@ -1198,6 +1272,25 @@ function destructuredAliasBindingsOf(source, name) {
  * a Set: the loop may be feeding any downstream use of the trust set, and a
  * gate would reintroduce the position-blindness that made the fourth review's
  * P1-2 possible.
+ *
+ * SCOPE, NOT JUST POSITION. The fifth review's P2 was right that a bare
+ * "any loop binding of this name, anywhere" rule conflates two different
+ * variables that share a spelling:
+ *
+ *     for (const pool of targetedPools) { … }      // `pool` HERE is a loop var
+ *     const trusted = new Set(pool.queryVariants); // `pool` HERE is the param
+ *
+ * The trust set reads the SECOND `pool` and the loop has nothing to do with
+ * it. Position alone does not separate them — the read comes AFTER the loop
+ * head, so a "is it referenced later?" test still fires. What separates them
+ * is that a `for (const x of …)` head binds `x` for the LOOP BODY only, and
+ * the loop body is the braced block that follows. A reference outside that
+ * block is a different binding of the same name.
+ *
+ * So a loop head is reported only when the name is also read INSIDE the loop
+ * body. That is the shape the rule exists for — `for (const c of candidates)
+ * trusted.add(c.rawQuery)` — and it is exactly the shape that makes the
+ * iterated collection a real input to the trust set.
  */
 function loopHeadBindingsOf(source, name) {
   const out = [];
@@ -1205,12 +1298,17 @@ function loopHeadBindingsOf(source, name) {
   // may carry a keyword prefix and may be a destructuring pattern, in which case
   // the member names are what get bound.
   const decl = new RegExp(
-    `\\bfor\\s*\\(\\s*(?:const|let|var)\\s+([^;)]*?)\\s+(?:of|in)\\s+([^;)]+?)\\s*\\)`,
+    `\\bfor\\s*\\(\\s*(?:const|let|var)\\s+([^;)]*?)\\s+(?:of|in)\\s+([^;)]+?)\\s*\\)\\s*\\{`,
     'g',
   );
+  const usesName = new RegExp(`\\b${escapeRe(name)}\\b`);
   for (let m = decl.exec(source); m !== null; m = decl.exec(source)) {
     const pattern = m[1].trim();
     const iterated = m[2].trim();
+    // The loop BODY is the block this head opens. Only a read inside it is
+    // governed by this binding.
+    const body = readBraceBlock(source, m.index + m[0].length - 1);
+    if (body === null || !usesName.test(body)) continue;
     const inner = /^\{([\s\S]*)\}$/.exec(pattern);
     if (inner) {
       // `for (const { rawQuery } of candidates)` binds the MEMBER names, and
@@ -1224,6 +1322,146 @@ function loopHeadBindingsOf(source, name) {
     if (pattern === name) out.push({ kind: 'loop-head', expr: iterated });
   }
   return out;
+}
+
+/** The text inside the `{…}` block whose opening brace is at `open`, or null. */
+function readBraceBlock(source, open) {
+  let depth = 0;
+  for (let i = open; i < source.length; i += 1) {
+    const ch = source[i];
+    if (ch === '{') depth += 1;
+    else if (ch === '}') {
+      depth -= 1;
+      if (depth === 0) return source.slice(open + 1, i);
+    }
+  }
+  return null;
+}
+
+/**
+ * The RECEIVER of a host call whose CALLBACK mutates the trust set.
+ *
+ * WHY THIS HAD TO BE ADDED (fifth review, P1-1)
+ * ---------------------------------------------
+ * `loopHeadBindingsOf` connects a loop variable to the collection it iterates.
+ * Nothing connected a CALLBACK PARAMETER to the value being iterated, and the
+ * idiomatic form of the same widening is a method call, not a `for` loop:
+ *
+ *     targetedPools.forEach((p) => p.channels.forEach((c) => trusted.add(c.channel.query)));
+ *
+ * The receiver rule above did capture `c.channel.query` — and `c` is a
+ * callback parameter, so it correctly resolves to "local, nothing further" and
+ * the walk stops. `targetedPools` is the RECEIVER of the outer `.forEach`, and
+ * no rule read it, so the targeted surface never entered the evidence and the
+ * suite stayed green. Note this one needs no rename and no indirection: the
+ * targeted name is spelled out in the source, and the guard still missed it,
+ * which is a worse failure than the alias holes because there is nothing an
+ * author has to avoid.
+ *
+ * So: when a mutation of the trust set appears inside an arrow function or
+ * function expression that is an ARGUMENT to a call, the call's receiver is a
+ * binding of the data that reaches the trust set, and it is followed like any
+ * other. The mutation must be inside the callback for this to fire — a
+ * `targetedPools.forEach(…)` that never touches the trust set contributes
+ * nothing, and matching every call in the file regardless would drown the
+ * walk in the same 101-expression noise the argument rule had to be gated
+ * against.
+ *
+ * @param {string} source module source
+ * @param {string} name the trust-set variable
+ * @returns {Array<{kind: string, expr: string}>}
+ */
+function callbackReceiverBindingsOf(source, name) {
+  const out = [];
+  const mutation = new RegExp(`\\b${escapeRe(name)}\\s*\\.\\s*[A-Za-z_$][\\w$]*\\s*\\(`);
+  // CHEAP GATE FIRST, THEN THE EXPENSIVE SCAN. `bindingsOf` is called once per
+  // distinct name the walk reaches, and each call re-scans the whole module with
+  // every rule in this file. Adding one rule that scans unconditionally turned
+  // that into a per-name full-module rescan, and the walk — which is
+  // transitively recursive — multiplied it: the fifth review's own bypass hung
+  // the process with a heap OOM (exit 137) before it could report anything.
+  //
+  // So this rule asks the cheapest possible question first — does the module
+  // contain ANY method call on this name at all? — and only then pays for the
+  // statement scan. A name that is never a receiver of anything costs one
+  // substring test.
+  if (!mutation.test(source)) return out;
+
+  // A STATEMENT that mutates the trust set inside a callback, together with the
+  // full receiver chain of the host call it belongs to.
+  //
+  // Chaining is the whole difficulty. `targetedPools.map(p => p.channels)
+  // .forEach(cs => …trusted.add(…))` is one statement, and the mutation sits in
+  // the LAST link's argument while the targeted name is in the FIRST link's
+  // receiver. Matching per-link — which is what the first version did, and what
+  // the first version of the fifth review's own bypass exploited — finds the
+  // `.map` link with no mutation in its arguments and the `.forEach` link with
+  // a mutation and a receiver that is `)` rather than a name, so neither fires
+  // and the statement reads as clean. So the chain is walked as a unit and its
+  // ROOT receiver is what gets reported.
+  //
+  // The scan is bounded to the MUTATING STATEMENT rather than the whole module:
+  // once the cheap gate has said a mutation exists, only the text around that
+  // mutation can contain the callback it sits in, and slicing to the enclosing
+  // statement keeps this rule's cost independent of module size.
+  const at = source.search(mutation);
+  if (at === -1) return out;
+  const lineStart = source.lastIndexOf('\n', at) + 1;
+  let lineEnd = source.indexOf('\n', at);
+  if (lineEnd === -1) lineEnd = source.length;
+  const text = source.slice(lineStart, lineEnd);
+  if (!/\(\s*[A-Za-z_$][\w$]*\s*\)\s*=>/.test(text) && !/\bfunction\s*\(/.test(text)) return out;
+  for (const receiver of methodChainRootsOf(text)) {
+    if (receiver === name) continue;
+    out.push({ kind: 'callback-receiver', expr: receiver });
+  }
+  return out;
+}
+
+/**
+ * The ROOT receiver of every method chain in one statement.
+ *
+ *     targetedPools.map(f).forEach(g)   ->  ['targetedPools']
+ *     rows.filter(f).forEach(g)          ->  ['rows']
+ *
+ * A chain is a run of `.name(` links; the receiver of the first link is the
+ * only name the whole chain's data flows from, so it is the only one worth
+ * following. Returns every chain's root in the text, so a statement carrying
+ * two independent chains contributes both.
+ *
+ * @param {string} text one statement
+ * @returns {string[]}
+ */
+function methodChainRootsOf(text) {
+  const roots = [];
+  // A chain link: an identifier followed by `.name(`.
+  //
+  // THE `g` FLAG IS LOAD-BEARING, and its absence is what hung this function
+  // at exit 137 through two rewrites. Without `g`, `RegExp.prototype.exec`
+  // IGNORES `lastIndex` and restarts at 0 on every call, so the loop kept
+  // re-matching the first link forever, pushing to `roots` without bound until
+  // the heap died. With `g`, `lastIndex` is the scan position and the loop
+  // advances monotonically.
+  const link = /([A-Za-z_$][\w$]*)\s*\.\s*[A-Za-z_$][\w$]*\s*\(/g;
+  let depth = 0;
+  let scannedTo = 0;
+  while (scannedTo <= text.length) {
+    const ch = text[scannedTo];
+    if (ch === '(' || ch === '[') { depth += 1; scannedTo += 1; continue; }
+    if (ch === ')' || ch === ']') { depth -= 1; scannedTo += 1; continue; }
+    if (depth !== 0) { scannedTo += 1; continue; }
+    link.lastIndex = scannedTo;
+    const m = link.exec(text);
+    if (m === null) break;
+    // A link found at depth 0 is the ROOT of its chain. Links inside the
+    // arguments are skipped by the depth counter above, which is what keeps
+    // `f(a.b(x))` from reporting `a` as a chain root.
+    roots.push(m[1]);
+    // Continue scanning after this link's opening paren; the depth counter
+    // takes the scan back out to zero on the matching `)`.
+    scannedTo = m.index + m[0].length;
+  }
+  return roots;
 }
 
 /** Every function signature's parameter list, split into trimmed member names. */

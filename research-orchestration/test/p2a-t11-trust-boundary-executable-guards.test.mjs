@@ -142,6 +142,89 @@ test('A1: the trust-set call surface is ENUMERATED, with nothing left unparsed',
   );
 });
 
+test('A1b: EVERY shape the enumerator files as `unparsed` is one C3 will actually examine', () => {
+  // A GUARD ON THE ROUTING, because the fifth review's P1-2 was not a missed
+  // shape at all — it was two correct components disagreeing about where a call
+  // goes.
+  //
+  //   the classifier:  a bare-identifier second argument is READABLE, so this
+  //                    call has no trust set  ->  `call-untrusted`
+  //   C3:             examines `trusted + unparsed`, and `untrusted` by nobody
+  //
+  // So the `__opts__NAME` branch — the code that can resolve exactly that shape
+  // — was unreachable from the real call path, and every options-object widening
+  // was waved through. C3b did not catch it because C3b calls the predicate
+  // directly with a hand-built call object and therefore never goes through the
+  // classifier at all: the mutation proof was exercising a different route than
+  // production takes.
+  //
+  // The invariant is now asserted directly, on a synthetic module, because the
+  // production one cannot produce the shape (A1 already requires its `unparsed`
+  // list to be empty, and a case that only fires on synthetic input is exactly
+  // the case that used to rot unnoticed). The property:
+  //
+  //   the union of what C3 examines and what is provably trust-set-free
+  //   is everything — nothing is silently dropped between the two components.
+  //
+  // `untrustedCallSiteFiles` is the honest home for a provably-empty call, so
+  // the assertion is that `trusted ∪ unparsed ∪ untrusted` covers every call the
+  // enumerator found, AND that no call classified `untrusted` carries a second
+  // argument the resolver would have to look at.
+  const dir = mkdtempSync(path.join(tmpdir(), 't11-a1b-'));
+  try {
+    writeFileSync(path.join(dir, 'synthetic.mjs'), [
+      // Each of these is a DIFFERENT reason a call could be invisible, and each
+      // one is a shape the guard claims to handle.
+      'export function widened(plan, targetedPools) {',
+      '  const opts = { trustedPlanStrings: new Set([...plan.queryVariants, ...targetedPools.map((t) => t.rawQuery)]) };',
+      '  return assertArtifactSafe(pool, opts);',            // bare identifier
+      '}',
+      'export function degraded(plan) {',
+      '  const opts = { trustedPlanStrings: new Set(plan.queryVariants) };',
+      '  return assertArtifactSafe(pool, opts ?? {});',      // operator
+      '}',
+      'export function computed(plan) {',
+      '  return assertArtifactSafe(pool, makeOpts(plan));',  // call
+      '}',
+      'export function clean(pool) {',
+      '  return assertArtifactSafe(pool, {});',               // provably free
+      '}',
+      'export function noOptions(pool) {',
+      '  return assertArtifactSafe(pool);',                   // no second arg
+      '}',
+    ].join('\n'));
+    const e = enumerateAssertArtifactSafeCallSurface(dir);
+    const examined = [...e.trusted, ...e.unparsed];
+    const lines = e.files.flatMap((f) => f.calls).map((c) => c.line);
+    assert.equal(
+      examined.length + e.untrusted.length,
+      lines.length,
+      'every enumerated call must be either examined by C3 or provably trust-set-free',
+    );
+    // The three shapes that DO carry a trust set must all be examined. This is
+    // the assertion that would have failed before the fix: `widened` and
+    // `degraded` were both filed as `untrusted` and examined by nobody.
+    const examinedText = examined.map((c) => c.text).join('\n');
+    for (const marker of ['assertArtifactSafe(pool, opts);', 'assertArtifactSafe(pool, opts ?? {});', 'assertArtifactSafe(pool, makeOpts(plan));']) {
+      assert.ok(
+        examinedText.includes(marker),
+        `C3 must examine \`${marker}\` — it carries a trust set the resolver can read`,
+      );
+    }
+    // And the two provably-free shapes must NOT become noise: routing them the
+    // long way would have C3 report an unresolvable on correct code.
+    const untrustedText = e.untrusted.map((c) => c.text).join('\n');
+    for (const marker of ['assertArtifactSafe(pool, {});', 'assertArtifactSafe(pool);']) {
+      assert.ok(
+        untrustedText.includes(marker),
+        `\`${marker}\` provably carries no trust set and must stay out of C3's way`,
+      );
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('A2: a trust set only ever RELAXES the provider-content lens, never the plan lens', () => {
   // The contract's own worked example (rrf.test.mjs:996-1008 / F8): a
   // plan-valid but provider-unsafe string is ACCEPTED when trusted. Execute it.
@@ -922,6 +1005,56 @@ test('C3b: MUTATION PROOF — the three widenings the security review found are 
         '}',
       ].join('\n'),
     },
+    // THE FIFTH REVIEW'S TWO FINDINGS, AS CASES. Both were MISSED by the
+    // fourth revision, and the first of them is the worse of the two kinds of
+    // hole this guard has produced: it needs no rename, no alias and no
+    // computed name. The targeted surface is spelled out in the source and the
+    // guard still missed it, because `targetedPools` was the RECEIVER of a
+    // `.forEach` whose CALLBACK held the mutation, and nothing connected a
+    // callback parameter to the value being iterated.
+    {
+      name: 'P1-1 receiver: a callback mutates the set from a targeted receiver',
+      src: [
+        'function f({ plan, targetedPools }) {',
+        '  const trusted = new Set(plan.queryVariants);',
+        '  targetedPools.forEach((p) => p.channels.forEach((c) => trusted.add(c.channel.query)));',
+        '  const opts = { trustedPlanStrings: trusted };',
+        '  return assertArtifactSafe(pool, opts);',
+        '}',
+      ].join('\n'),
+    },
+    {
+      // The chained form, which is what the first version of the fix still
+      // missed: the mutation sits in the LAST link's argument and the targeted
+      // name in the FIRST link's receiver, so a per-link match finds neither.
+      name: 'P1-1 receiver: the same widening through a method CHAIN',
+      src: [
+        'function f({ plan, targetedPools }) {',
+        '  const trusted = new Set(plan.queryVariants);',
+        '  targetedPools.map((p) => p.channels).forEach((cs) => cs.forEach((c) => trusted.add(c.query)));',
+        '  const opts = { trustedPlanStrings: trusted };',
+        '  return assertArtifactSafe(pool, opts);',
+        '}',
+      ].join('\n'),
+    },
+    {
+      // P1-2 was a WIRING mismatch rather than a missed shape: the classifier
+      // decided a bare-identifier second argument was "readable" and filed it
+      // under `call-untrusted`, while C3 only ever examines `trusted +
+      // unparsed`. So the `__opts__` branch that can resolve exactly that shape
+      // was dead code, and the case passed only because it called the
+      // predicate directly with a hand-built call object. This case goes through
+      // the same hand-built path C3b always has, and a separate assertion in
+      // A1's territory covers the routing; what matters here is that the shape
+      // is fatal to the predicate itself.
+      name: 'P1-2 routing: the widening behind a bare-identifier options object',
+      src: [
+        'function f({ plan, targetedPools }) {',
+        '  const opts = { trustedPlanStrings: new Set([...plan.queryVariants, ...targetedPools.map((tp) => tp.rawQuery)]) };',
+        '  return assertArtifactSafe(pool, opts);',
+        '}',
+      ].join('\n'),
+    },
   ];
 
   for (const { name, src, libFiles } of CASES) {
@@ -988,6 +1121,35 @@ test('C3b: MUTATION PROOF — the three widenings the security review found are 
     resolveTrustSetProvenance(realSrc, 'trusted').expressions.join(' | '),
     /plan\.queryVariants/,
     'precondition: and from plan.queryVariants specifically',
+  );
+
+  // (5) FALSE-POSITIVE CONTROL for the loop-head rule, which the fifth review
+  //     correctly flagged as scope-blind. A loop over a targeted surface that
+  //     the trust set never reads is not a widening, and reporting it would be
+  //     the noise-to-signal failure that gets real findings waived.
+  //
+  //     Deliberately uses distinct names (`row` vs `plan`). The review's own
+  //     example reused one name for both the loop variable and the plan, which
+  //     makes the case ambiguous — a guard that reports `targetedPools` there
+  //     is arguably right, and a test built on an ambiguous example cannot
+  //     distinguish "correctly strict" from "correctly noisy".
+  const unrelatedLoop = [
+    'function buildTrustSet({ plan, targetedPools }) {',
+    '  for (const row of targetedPools) { void row; }',
+    '  const trusted = new Set(plan.queryVariants);',
+    '  const opts = { trustedPlanStrings: trusted };',
+    '  return assertArtifactSafe(pool, opts);',
+    '}',
+  ].join('\n');
+  const unrelatedVerdict = c3TrustSurfaceVerdict(unrelatedLoop, {
+    file: 'synthetic.mjs',
+    line: 1,
+    text: 'return assertArtifactSafe(pool, opts);',
+  });
+  assert.deepEqual(
+    unrelatedVerdict.violations,
+    [],
+    'a loop over a targeted surface the trust set never reads is NOT a violation',
   );
 });
 
