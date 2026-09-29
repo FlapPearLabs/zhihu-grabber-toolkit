@@ -72,6 +72,8 @@ import {
   beginConvergenceJournal,
   CoverageIntegrationError,
 } from './coverage-final-integration.mjs';
+import { runTargetedSubphase, TARGETED_SUBPHASE_DIRNAME } from './targeted-requery-subphase.mjs';
+import { TARGETED_BINDING_PREFIX } from './targeted-requery-lifecycle.mjs';
 import { DECISION_PROVIDER_FAILURE } from './retrieval-round-controller.mjs';
 import {
   SELECTION_DECISION_FILENAME,
@@ -760,6 +762,31 @@ function isPlainObject(v) {
   return v !== null && typeof v === 'object' && !Array.isArray(v);
 }
 
+/** Canonical lowercase 64-hex content hash shape (the only binding value shape). */
+const HEX64_BINDING = /^[0-9a-f]{64}$/;
+
+/**
+ * The `targeted-action:*` bindings carried in a checkpoint's `hashes`.
+ *
+ * These are the F.5 completion evidence for the targeted sub-phase, and they
+ * deliberately live in their own namespace, disjoint from the stage-boundary keys
+ * (`targetedBindingKey`). Both the resume boundary and the terminal checkpoint
+ * rebuild must preserve them: a checkpoint that drops them silently downgrades
+ * "proven committed" back to "no evidence", which is how a paid retrieval ends up
+ * re-run. Stage-boundary keys get their own re-entry proof; the targeted namespace
+ * gets none, so it is carried by identity and shape-validated.
+ */
+function targetedBindingsOf(hashes) {
+  if (!isPlainObject(hashes)) return {};
+  const out = {};
+  for (const [key, value] of Object.entries(hashes)) {
+    if (key.startsWith(TARGETED_BINDING_PREFIX) && typeof value === 'string' && HEX64_BINDING.test(value)) {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
 function sanitizeMessage(message) {
   return String(message ?? '').slice(0, 300);
 }
@@ -786,6 +813,7 @@ export async function composeP1Research({
   restart = false,
   planner = null,
   crashPoint = null,
+  targetedSubphase = null,
 } = {}) {
   const fail = (code, details = null, extra = {}) => ({ ok: false, code, details: details ? sanitizeMessage(details) : null, ...extra });
   // P1-R02 (#90): planner is injected for tests; production uses the frozen
@@ -1029,6 +1057,18 @@ export async function composeP1Research({
     // before it left the prior checkpoint intact and resumable (P1-2).
     checkpointAdopted = true;
 
+    // The targeted sub-phase's completion evidence lives in the PRIOR checkpoint's
+    // `targeted-action:*` bindings (F.5: the checkpoint is the only trust root).
+    // `makeState` starts from empty `hashes`, so without carrying these across the
+    // resume boundary `decideTargetedReplay` could never see a binding and F.5's
+    // REUSE branch would be unreachable on every production resume — a paid
+    // retrieval would be re-run and the round pool re-read WITHOUT its hash check.
+    // Only the targeted namespace is adopted here; stage bindings keep their own
+    // re-entry proof (`planResumeReentry`) and are never inherited by assumption.
+    if (isResumingOccurrence) {
+      Object.assign(state.hashes, targetedBindingsOf(existing?.hashes));
+    }
+
     let coverageState;
     let journal;
     if (reentry.ok) {
@@ -1091,7 +1131,57 @@ export async function composeP1Research({
       coverageState = loop.coverageState;
       boundary = RESUME_REENTRY_RETRIEVAL_ROUNDS;
       pool = loop.pool;
-      // Crash-consistency seam (round-3 review P1): the T06 loop has returned
+
+      // ---------------------------------------------------------------------
+      // P2A-T09 (#121) — targeted sub-phase.
+      //
+      // POSITION IS THE CONTRACT: this runs INSIDE STAGE_SEARCH and strictly
+      // BEFORE `applySourceGroupSelection` below. It journals NO new stage (the
+      // convergence journal's single-pass acyclic order is untouched).
+      //
+      // DISABLED BY DEFAULT: `targetedSubphase === null` (the default) makes this
+      // block a no-op, so the #108-off composition path is byte-identical to the
+      // historical one. When enabled, the sub-phase is the single writer of the
+      // augmented accumulated pool (merged through the SAME RRF/canonical identity
+      // and re-walked by `assertArtifactSafe`), and every downstream stage consumes
+      // the larger pool with ZERO change.
+      //
+      // The only retrieval route it may use is T02's additive
+      // `runMultiQueryRetrieval({..., targetedQueries})` seam (no second pipeline).
+      // ---------------------------------------------------------------------
+      if (targetedSubphase !== null) {
+        // The opt-in config may supply ONLY sub-phase policy (proposals,
+        // maxQueryBudget, maxAttemptsPerGap, framingForGap); the wiring below is
+        // spread LAST so a config can never redirect the work dir, plan, checkpoint
+        // state, seam or crash seam.
+        const targeted = runTargetedSubphase({
+          ...targetedSubphase,
+          workDir,
+          plan,
+          planHash: expectedPlanHash,
+          runId,
+          occurrenceId,
+          seam: effectiveSeam,
+          channels: plannedRoutes.map((r) => ({ providerId: r.providerId })),
+          plannedRoutes,
+          accumulatedPool: pool,
+          state,
+          crashAt,
+        });
+        pool = targeted.pool;
+        // Adopt the targeted checkpoint bindings into the composition checkpoint so
+        // the checkpoint-first commit point stays the ONLY trust root (F.5 / AC5).
+        if (targeted.state !== null) state.hashes = targeted.state.hashes;
+        appendEvent(workDir, {
+          event: 'targeted_subphase',
+          status: targeted.status,
+          gapsDiagnosed: targeted.gaps.length,
+          executed: targeted.counts.executed,
+          failed: targeted.counts.failed,
+        });
+      }
+
+      // Crash-consistency seam: the T06 loop has returned
       // with the FINAL pool durably persisted; a kill here — before the
       // composer's accumulatedPool binding checkpoint — is the pool binding-lag
       // window (reviewer's R9).
@@ -1388,7 +1478,13 @@ export async function composeP1Research({
     // the same way they are for an interrupted resume, so the COMPLETE gate
     // must be able to prove them too. Dropping them here is what let a
     // deleted/mutated pool ride through a COMPLETE reuse.
+    // The targeted-action:* namespace is carried THROUGH this rebuild: it is
+    // rebuilt from scratch here (no spread), and dropping it would erase the
+    // sub-phase's F.5 completion evidence from the final checkpoint — the exact
+    // "no evidence ⇒ re-run the paid retrieval" downgrade the resume boundary
+    // above exists to prevent.
     state.hashes = {
+      ...targetedBindingsOf(state.hashes),
       researchPlan: sha256File(path.join(workDir, PLAN_ARTIFACT_FILENAME)),
       coverageState: sha256File(path.join(workDir, COVERAGE_STATE_FILENAME)),
       coverageFinal: sha256File(path.join(workDir, FINAL_COVERAGE_FILENAME)),
