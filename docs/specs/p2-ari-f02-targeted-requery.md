@@ -453,6 +453,9 @@ artifact-walk 调用点零改动；trustedPlanStrings 零改动。
 · resume 校验失败（hash 不匹配 / 产物缺失）→ 安全重跑一次，不得猜测复用
 · targeted sub-phase 位于 STAGE_SEARCH 内、T08 选组之前
   （T08 之后改 selectedCorpusSourceSet 会连带清空 mapped/analyzed 与 evidenceRefIssues）
+· ledger 权威版本 = checkpoint 锚定的那一版；磁盘上更新但未被锚定的版本不得参与
+  dedupe / lifecycle / completion 判断（见 SEAM F §F.5.1，2026-09-29 修正案追加；
+  冻结自 #130 owner decision A。§12 上文「安全重跑一次」原文逐字保留、未改一字）
 ```
 
 ## 13. STOP interaction

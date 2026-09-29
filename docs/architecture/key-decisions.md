@@ -623,6 +623,36 @@ P1：检索原语、provider seam、RRF、identity、provenance、candidate pool
 #109：Escape Probe 是 pre-stop 挑战策略。它同样是"观察证据之后的新查询"，
       因此它必须复用本节的 TargetedQueryAction 身份与授权机制，而不是另建一套。
       #109 当前状态仍是 WAIT_FOR_108_ARCHITECTURE，本节不推进它。
+
+### D12 修正段 — Action ledger 锚定进 checkpoint（2026-09-29，#130 owner decision A）
+
+> **append-only**：D12 的 `STATUS = APPROVED` 及其全部既有内容**逐字保留、未改一字**。
+> 本段只追加一条决策，不改写任何历史。`IMPLEMENTATION_AUTHORIZATION` 仍为 `NONE`。
+
+**问题**：F.5 要求「hash 不匹配 / 产物缺失 → 安全重跑一次」，但在 `3e4240fe…` 上该规则
+**没有任何可执行路径**——`targeted-requery-actions.json` 原地覆盖、授权路径不写 checkpoint、
+E.6 `dedupeKey` 刻意排除 `attempt` 使重新授权被拒。冻结面彼此不矛盾，缺的是可执行性前提。
+
+**决策**：
+
+```text
+LEDGER_ANCHORED_IN_CHECKPOINT =
+  action ledger 每次权威性变化时，先把新字节写入 content-addressed staging 路径，
+  再把该字节 sha256 写入 state.hashes['targeted-action-ledger']；
+  resume 只承认 checkpoint 锚定的那一版。
+  两处锚点：授权时（新增该决定的 commit point）、targeted commit point（不新增 commit point，
+  两个 hash 与 action binding 在同一个 writeState 中原子可见）。唯一 commit point 仍只有 writeState。
+  复用 p1-runtime-composer 的 stageArtifactBytes / inspectCommittedArtifact 与
+  state.mjs 的 writeState / validateArtifactCheckpoint —— 不新造第二 checkpoint 系统。
+  E.6 dedupeKey 字段集、T06 LEGAL_TRANSITIONS 逐字不动：
+  重跑走「已授权 action 的重跑」分支，根本不进 dedupe 门。
+```
+
+**理由**：唯一信任根仍是 checkpoint。给 ledger 一个 checkpoint 可恢复的不可变身份，
+既让 F.5 的 REUSE 分支第一次真正可达，又不给「未锚定第二凭据」留下任何位置。
+
+**状态**：`STATUS = CANDIDATE`（修正案待独立 architecture/contract 审查），
+推导全文见 `docs/planning/P2_ARI_108_F5_CHECKPOINT_ANCHORED_LEDGER_AMENDMENT_V1.md`。
 ```
 
 ---

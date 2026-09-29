@@ -401,6 +401,49 @@ DUPLICATE_REPLAY_RULE =
         → 视为未提交，安全重跑一次；旧记录按 append-only 保留审计痕迹
 ```
 
+#### F.5.1 Action ledger 权威版本判定（2026-09-29 修正案追加；owner decision A）
+
+> **append-only**：F.5 原文逐字保留、未改一字。本节只补齐 F.5「安全重跑一次」的**可执行性前提**——
+> 在 BASE `3e4240fe…` 上该规则**没有任何可执行路径**（`actions.json` 原地覆盖 +
+> 授权路径不写 checkpoint + E.6 dedupe 排除 `attempt`），冻结面本身无矛盾，缺的是前提。
+> 语义唯一权威仍是 Spec §12；本节不发明新语义。
+> 记于 #130 owner decision（A — ANCHOR_ACTION_LEDGER_IN_CHECKPOINT）；
+> 完整推导见 `docs/planning/P2_ARI_108_F5_CHECKPOINT_ANCHORED_LEDGER_AMENDMENT_V1.md`。
+
+```text
+LEDGER_CHECKPOINT_KEY = 'targeted-action-ledger'
+LEDGER_STAGING_KEY    = 'targeted-action-ledger'   （复用既有 COMMIT_STAGING_DIR）
+LEDGER_CANONICAL_REL  = 'targeted-requery-actions.json'   （ACTIONS_FILENAME，逐字不动）
+
+AUTHORITY_RULE =
+  ledger 的权威版本 = state.hashes[LEDGER_CHECKPOINT_KEY] 指向的那一版字节
+  · 缺该 key ⇒ 无权威 ledger ⇒ fail-closed（【不】得以「canonical 文件存在」为权威）
+  · canonical 上存在更新但未被 checkpoint 锚定的字节
+    → 【不得】参与 dedupe / lifecycle / completion 判断
+
+复用既有 primitive（不新造第二 checkpoint 系统）：
+  stageArtifactBytes / inspectCommittedArtifact（p1-runtime-composer.mjs）
+  + writeState / validateArtifactCheckpoint（state.mjs）
+
+两处锚点（唯一 commit point 仍只有 writeState）：
+  ANCHOR 1 授权时：persist → stage → state.hashes[LEDGER_CHECKPOINT_KEY] → writeState
+  ANCHOR 2 commit：(a) 字节 fsync (b) COMMITTED + persist + stage + 两个 hash 入内存
+                    (c) ↑仅内存 (d) writeState = 唯一 commit point（语义不变）
+
+四种 crash 窗口：
+  BEFORE commit       → 读到旧 ledger → AUTHORIZED 分支「plain safe re-run」（不进 dedupe）
+  BETWEEN (b) and (d) → 只读锚定版 → 看到 AUTHORIZED → 安全重跑一次
+                        （staging 中的 COMMITTED 版本【不】参与判断）
+  AFTER (d)           → COMMITTED + binding 有效 → REUSE（绝不重新付费）
+  锚定版本字节丢失     → fail-closed（UNKNOWN != PASS）
+
+E.6 / LEGAL_TRANSITIONS 逐字不动：
+  authorizeTargetedAction 只在 `prior === null` 分支被调用；
+  锚定版可恢复 ⇒ prior.status === AUTHORIZED ⇒ 走既有重跑分支 ⇒ dedupe 门不参与。
+  ⚠️ 重跑时 attempt 会变化，但 targetedActionId 不变 —— 这是「同一条已授权 action 的重跑」，
+     不是「同一 query 的第二次授权」；实现必须保证 id 不变（否则违反 F.1 identity）。
+```
+
 ### F.6 Attempt accounting（SEAM F → SEAM H 的计数契约）
 
 ```text
