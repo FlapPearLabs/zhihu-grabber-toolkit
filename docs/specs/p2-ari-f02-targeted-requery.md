@@ -454,8 +454,13 @@ artifact-walk 调用点零改动；trustedPlanStrings 零改动。
 · targeted sub-phase 位于 STAGE_SEARCH 内、T08 选组之前
   （T08 之后改 selectedCorpusSourceSet 会连带清空 mapped/analyzed 与 evidenceRefIssues）
 · ledger 权威版本 = checkpoint 锚定的那一版；磁盘上更新但未被锚定的版本不得参与
-  dedupe / lifecycle / completion 判断（见 SEAM F §F.5.1，2026-09-29 修正案追加；
-  冻结自 #130 owner decision A。§12 上文「安全重跑一次」原文逐字保留、未改一字）
+  dedupe / lifecycle / completion 判断
+  · 缺该锚点 ⇒ 无权威 ledger ⇒ fail-closed；【不得】以「canonical 文件存在」为权威
+  （见 SEAM F §F.5.1，2026-09-29 修正案追加；冻结自 #130 owner decision A。
+    §12 上文「安全重跑一次」原文逐字保留、未改一字。
+    注：上一条 bullet 的 fail-closed 语义是「checkpoint 是唯一信任根 / UNKNOWN != PASS」
+    在 ledger 上的【首次规范应用】，属规范性扩展而非纯可执行性补齐——CASE 1b 明确标出
+    它带来的产品可观察行为变化。）
 ```
 
 ## 13. STOP interaction

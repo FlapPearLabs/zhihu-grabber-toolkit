@@ -407,6 +407,10 @@ DUPLICATE_REPLAY_RULE =
 > 在 BASE `3e4240fe…` 上该规则**没有任何可执行路径**（`actions.json` 原地覆盖 +
 > 授权路径不写 checkpoint + E.6 dedupe 排除 `attempt`），冻结面本身无矛盾，缺的是前提。
 > 语义唯一权威仍是 Spec §12；本节不发明新语义。
+> ⚠️ 口径更正（2026-09-29 独立 contract 审查后）：`AUTHORITY_RULE` 中
+> 「缺该 key ⇒ fail-closed、不得以 canonical 存在为权威」是「checkpoint 是唯一信任根 /
+> UNKNOWN != PASS」在 ledger 上的**首次规范应用**，属**规范性扩展**，而非纯可执行性补齐。
+> 该规范性承诺已同步写入 Spec §12（不得只留在 planning 层）。CASE 1b 已标出其产品可观察后果。
 > 记于 #130 owner decision（A — ANCHOR_ACTION_LEDGER_IN_CHECKPOINT）；
 > 完整推导见 `docs/planning/P2_ARI_108_F5_CHECKPOINT_ANCHORED_LEDGER_AMENDMENT_V1.md`。
 
@@ -430,7 +434,7 @@ AUTHORITY_RULE =
   ANCHOR 2 commit：(a) 字节 fsync (b) COMMITTED + persist + stage + 两个 hash 入内存
                     (c) ↑仅内存 (d) writeState = 唯一 commit point（语义不变）
 
-五种 crash 窗口：
+四种 crash 窗口 + 一种恢复失败条件：
   BEFORE commit       → 读到旧 ledger → AUTHORIZED 分支「plain safe re-run」（不进 dedupe）
   DURING ANCHOR 1     → 读到旧 ledger；有旧版则重新授权，首次授权则 fail-closed
                         （诚实的行为变化：不再以 canonical 文件为权威）

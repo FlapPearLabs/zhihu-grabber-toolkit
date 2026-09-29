@@ -626,14 +626,17 @@ P1：检索原语、provider seam、RRF、identity、provenance、candidate pool
 
 ### D12 修正段 — Action ledger 锚定进 checkpoint（2026-09-29，#130 owner decision A）
 
-> **append-only**：D12 的 `STATUS = APPROVED` 及其全部既有内容**逐字保留、未改一字**。
-> 本段只追加一条决策，不改写任何历史。`IMPLEMENTATION_AUTHORIZATION` 仍为 `NONE`。
+> **`PENDING` — 本段尚未取得与 D12 同等的权威层级。** D12 的 `STATUS = APPROVED` 及其全部
+> 既有内容**逐字保留、未改一字**；本段只是候选决策，**不得**被读作 D12 的一部分。
+> 若获批准，应提升为独立决策 **D13 — LEDGER_ANCHORED_IN_CHECKPOINT**（引用 D12），
+> 而不是长期内嵌在 APPROVED 的 D12 内部。
+> `IMPLEMENTATION_AUTHORIZATION` 仍为 `NONE`。
 
 **问题**：F.5 要求「hash 不匹配 / 产物缺失 → 安全重跑一次」，但在 `3e4240fe…` 上该规则
 **没有任何可执行路径**——`targeted-requery-actions.json` 原地覆盖、授权路径不写 checkpoint、
 E.6 `dedupeKey` 刻意排除 `attempt` 使重新授权被拒。冻结面彼此不矛盾，缺的是可执行性前提。
 
-**决策**：
+**候选决策**：
 
 ```text
 LEDGER_ANCHORED_IN_CHECKPOINT =

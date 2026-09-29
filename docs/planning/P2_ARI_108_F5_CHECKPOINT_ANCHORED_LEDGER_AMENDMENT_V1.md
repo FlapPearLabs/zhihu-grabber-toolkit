@@ -35,6 +35,10 @@ SEMANTIC_AUTHORITY_UNCHANGED =
 - **不**新建第二 checkpoint 系统（复用 `p1-runtime-composer.mjs` 的 content-addressed staging +
   `state.mjs` 的 `writeState` / `validateArtifactCheckpoint`）；
 - **不**改 F.5 的产品语义，只补齐它的可执行性前提；
+- **一处例外必须诚实标注**：`AUTHORITY_RULE` 的「缺锚点 ⇒ fail-closed、不得以 canonical 存在为权威」
+  是「checkpoint 是唯一信任根 / UNKNOWN != PASS」在 ledger 上的**首次规范应用**，属**规范性扩展**
+  （见 §2.2 CASE 1b 的产品可观察后果）。该承诺已同步写入 Spec §12，不只留在 planning 层；
+  其余部分仍是不发明新语义的纯可执行性补齐；
 - **不**授权实现（`IMPLEMENTATION_AUTHORIZATION = NONE`，见 §6）。
 
 ## 1. 问题陈述：F.5 的「安全重跑一次」在当前代码下不可达
@@ -231,7 +235,7 @@ CHECKPOINT_BINDING_COVERAGE_STATE` 为真 ⇒ 该循环会**删掉仍被 checkpo
 ```text
 1. docs/planning/P2_ARI_108_TARGETED_REQUERY_SEAM_CONTRACT_V1.md §F.5
    追加 F.5.1「ledger 权威版本判定」，逐字保留 F.5 原文
-   → 新增: AUTHORITY_RULE + 四种 crash 窗口的恢复行为（§2.2）
+   → 新增: AUTHORITY_RULE + 四种 crash 窗口与一种恢复失败条件的恢复行为（§2.2）
    → 不改: COMMIT_POINT 措辞、E.6、LEGAL_TRANSITIONS
 
 2. docs/specs/p2-ari-f02-targeted-requery.md §12
@@ -252,6 +256,13 @@ P2-1  persist the controller-owned gap ledger（S1 / F.4）
 P2-2  global budget preflight 必须覆盖 planned attempts + targeted attempts（F.6 / §11）
 ```
 
+**⚠️ 但必须诚实标出耦合方向（2026-09-29 独立 contract 审查补入）**：本修正案让 F.5 的
+「安全重跑」第一次**真正可达**，而重跑是**一次真实的付费 IO**；同时 §2.3 的「不重复计入 F.6 预算」
+对**记账**是正确的（复用原 record、不新增 record），却恰恰意味着这次重跑支出
+**既不计入 F.6 计数、也不进入 global budget preflight**。因此本修正案把 P2-2 的缺口
+从「理论暴露」放大为「实际暴露」。**P2-2 仍不阻塞本修正案**（二者修复正交），
+但实现阶段应把 P2-2 与本修正案一并落地，避免新增一条可达但不计入预算的付费路径。
+
 本文**不**顺带修这两项，也**不**为其扩授权。
 
 ## 5. 实现阶段的强制检查点（授权扩大后才生效）
@@ -260,7 +271,8 @@ P2-2  global budget preflight 必须覆盖 planned attempts + targeted attempts�
 G1  E.6 dedupeKey 字段集逐字未变（source-level assertion）
 G2  T06 LEGAL_TRANSITIONS 逐字未变（source-level assertion）
 G3  cleanupStaging 不得删除仍被 state.hashes[LEDGER_CHECKPOINT_KEY] 锚定的版本
-G4  四个 crash 窗口各有一个真实测试（不得用 crashPoint 手工抛错冒充 SIGKILL，
+G4  四个 crash 窗口 + 字节丢失恢复失败条件各有一个真实测试
+    （不得用 crashPoint 手工抛错冒充 SIGKILL，
     不得用源码正则冒充 resume —— 参见 T09 已踩过的两个测试保真度缺陷）
 G5  resume 后每个 targetedActionId 恰好一次 COMMIT
 G6  CASE 2 断言 dedupe 门【未被调用】（证明 E.6 绕开而非放宽）
