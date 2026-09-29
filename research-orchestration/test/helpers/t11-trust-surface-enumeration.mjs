@@ -68,35 +68,73 @@ function classifyAt(lines, idx) {
   if (!call) return { kind: 'not-a-call' };
   const open = call.index + call[0].length - 1; // index of '('
 
-  // Walk forward across lines until the argument list balances.
+  // Walk forward across lines until the argument list balances, then take the
+  // text BETWEEN the outermost parens as a slice.
+  //
+  // The argument text is a SLICE, not an accumulation. Two earlier versions
+  // accumulated character by character, and each had an off-by-one that
+  // corrupted the result in a way the trust-set cases survived by luck:
+  //
+  //   · starting the scan AT `open` appended the slice AND then the paren, so
+  //     `args` came out doubled (`(pool, opts` + `pool, opts`);
+  //   · appending the current character before testing for the closing paren
+  //     appended the call's own `);`, so `args` ended in `{ trustedPlanStrings });`.
+  //
+  // The second form is the dangerous one: it made every SINGLE-LINE call look
+  // like it had trailing text, so argument-shape classification could never
+  // match, and a bare-identifier options argument fell through to
+  // `call-untrusted` — the P1-2 bypass. Slicing removes the class of bug.
   let depth = 0;
-  let text = '';
+  let argsStart = -1;
+  let argsEnd = -1;
   let end = idx;
   for (let i = idx; i < lines.length; i += 1) {
-    const from = i === idx ? open : 0;
-    for (let j = from; j < lines[i].length; j += 1) {
+    for (let j = i === idx ? open : 0; j < lines[i].length; j += 1) {
       const ch = lines[i][j];
-      if (ch === '(') depth += 1;
-      else if (ch === ')') {
+      if (ch === '(') {
+        depth += 1;
+        if (depth === 1) argsStart = j + 1;
+      } else if (ch === ')') {
+        // The closing paren of the CALL is at depth 1 and is not decremented:
+        // it is the boundary, not a nesting level. Breaking out of the inner
+        // loop on `depth === 0` instead would never fire here, and the scan
+        // would run on to the length cap and report `unparsed` for every call.
+        if (depth === 1) { argsEnd = j; end = i; break; }
         depth -= 1;
-        if (depth === 0) { text += lines[i].slice(open + 1, j); end = i; break; }
       }
-      if (i === idx && j < open) continue;
-      text += ch;
     }
-    if (depth === 0) break;
-    text += ' ';
+    if (argsEnd !== -1) break;
     end = i + 1;
     if (end - idx > 6) return { kind: 'unparsed' }; // implausibly long: surface it
   }
-  if (depth !== 0) return { kind: 'unparsed' };
+  if (argsStart === -1 || argsEnd === -1) return { kind: 'unparsed' };
 
-  const args = text.trim();
-  if (!args) return { kind: 'not-a-call' };
+  const parts = [lines[idx].slice(argsStart, argsEnd)];
+  for (let i = idx + 1; i <= end; i += 1) {
+    parts.push(i === end ? lines[i].slice(0, argsEnd) : lines[i]);
+  }
+  const args = parts.join(' ').trim();
+  if (!args) return { kind: 'not-a-call', spanEnd: end };
   if (/\btrustedPlanStrings\b\s*[:,}]/.test(args) || /\btrustedPlanStrings\b\s*$/.test(args)) {
     return { kind: 'call-trusted', spanEnd: end };
   }
   if (/[A-Za-z_$][\w$]*\s*:/.test(args)) return { kind: 'unparsed', spanEnd: end };
+  // A BARE IDENTIFIER as the whole options argument is the dangerous case the
+  // P1 review caught: `assertArtifactSafe(pool, opts)`. Whether `opts` carries a
+  // trust set is not decidable from this line, so classifying it as
+  // `call-untrusted` would drop it from `trusted` AND from `unparsed` — a silent
+  // degradation of exactly the kind this helper exists to prevent. Report it as
+  // `unparsed` so A1 fails loudly and a human (or a resolver below) decides.
+  //
+  //
+  // A ONE-argument call has no options at all and therefore no trust set; it is
+  // honestly `call-untrusted` and must not be reported as unparsed.
+  if (args.includes(',')) {
+    const secondArg = args.split(',').slice(1).join(',').trim();
+    if (secondArg && /^[A-Za-z_$][\w$]*$/.test(secondArg)) {
+      return { kind: 'unparsed', spanEnd: end };
+    }
+  }
   return { kind: 'call-untrusted', spanEnd: end };
 }
 
@@ -153,4 +191,270 @@ export function trustedCallSiteFiles(enumeration) {
 /** Convenience: the set of module basenames that call the walker with no trust set. */
 export function untrustedCallSiteFiles(enumeration) {
   return [...new Set(enumeration.untrusted.map((c) => c.file))].sort();
+}
+
+// ===========================================================================
+// Trust-set provenance resolution
+// ===========================================================================
+
+/**
+ * Resolve the SET OF SOURCE EXPRESSIONS that feed one `trustedPlanStrings`
+ * argument, following intermediate variables transitively and including
+ * post-construction mutation.
+ *
+ * WHY THIS EXISTS (P1 from the security review)
+ * ---------------------------------------------
+ * The first version of the C guard decided "is this trust set built from a
+ * targeted surface?" by regex-matching a CLOSED LIST OF IDENTIFIER NAMES inside
+ * the single `const trusted = …;` statement. The security review demonstrated
+ * three widenings that leave it green:
+ *
+ *   const qs = targetedPools.flatMap(…);            // intermediate
+ *   const trusted = new Set([...plan.queryVariants, …qs]);
+ *
+ *   const trusted = new Set(plan.queryVariants);
+ *   trusted.add(action.normalizedQuery);             // post-construction
+ *
+ *   assertArtifactSafe(pool, opts);                  // via an options object
+ *
+ * A name list cannot defend against a rename, and a single statement cannot see
+ * a two-statement story. So this walks the actual bindings: it collects every
+ * assignment to the trust-set variable, every intermediate it reads, and every
+ * `.add()` / `.delete()` mutation applied to it, transitively.
+ *
+ * It remains a lexical approximation — this is a test helper, not a full AST
+ * resolver — but it closes the three shapes above, and it is deliberately
+ * CONSERVATIVE in the direction that matters: when it cannot understand a
+ * binding, it reports that fact instead of reporting "clean".
+ *
+ * @param {string} source module source (comments already stripped)
+ * @param {string} rootVar the variable passed as `trustedPlanStrings`
+ * @returns {{expressions: string[], unresolvable: string[]}}
+ */
+export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8 } = {}) {
+  const statements = splitStatements(source);
+  const expressions = new Set();
+  const unresolvable = new Set();
+  const seen = new Set();
+
+  /** Every `X = <expr>;` binding of `name`, plus every `name.add(<expr>)`. */
+  function bindingsOf(name) {
+    const out = [];
+    // Declarations and reassignments: const/let/var NAME = ...  |  NAME = ...
+    const assign = new RegExp(`\\b(?:const|let|var)?\\s*\\b${escapeRe(name)}\\s*=\\s*([^;]+);`, 'g');
+    for (let m = assign.exec(source); m !== null; m = assign.exec(source)) {
+      out.push({ kind: 'assign', expr: m[1] });
+    }
+    // Function PARAMETER, including object destructuring:
+    //   function augmentAccumulatedPool({ plan, targetedPools }) { … }
+    // This is a real, complete binding with no in-file right-hand side to read,
+    // so it resolves to the parameter name itself. Without it, every trust set
+    // sourced from a destructured `plan` parameter is reported `unresolvable`
+    // and C3 fails on honest production code — the guard must be strict about
+    // real threats, not noisy about the shape the codebase actually uses.
+    out.push(...parameterBindingsOf(source, name));
+    // Post-construction mutation: NAME.add(<expr>) / NAME.delete(...)
+    const mutate = new RegExp(`\\b${escapeRe(name)}\\s*\\.\\s*(?:add|delete)\\s*\\(\\s*([^)]*)`, 'g');
+    for (let m = mutate.exec(source); m !== null; m = mutate.exec(source)) {
+      out.push({ kind: 'mutate', expr: m[1] });
+    }
+    return out;
+  }
+
+  function walk(rawName, depth) {
+    // `_SPREAD_x` is the `identifiersIn` marker for a spread read of `x`; the
+    // variable it names is `x`, so normalise before any binding lookup.
+    const name = rawName.startsWith(SPREAD_MARKER) ? rawName.slice(SPREAD_MARKER.length) : rawName;
+    if (depth > maxDepth) {
+      unresolvable.add(`${name} (max depth ${maxDepth} exceeded)`);
+      return;
+    }
+    if (seen.has(name)) return;
+    seen.add(name);
+    const found = bindingsOf(name);
+    if (found.length === 0) {
+      unresolvable.add(name);
+      return;
+    }
+    for (const { kind, expr } of found) {
+      expressions.add(expr);
+      // Every identifier read inside this expression is followed transitively.
+      if (kind === 'mutate') continue; // `.add(action.normalizedQuery)` — a leaf
+      for (const ident of identifiersIn(expr)) {
+        if (RESERVED.has(ident)) continue;
+        walk(ident, depth + 1);
+      }
+    }
+  }
+
+  walk(rootVar, 0);
+
+  // A name that is ONLY a locally-bound callback parameter (`(tp) => …`) is a
+  // local, not an unresolvable trust input. The walk above recurses into such
+  // names because it cannot see arrow-function scope; un-mark them here so a
+  // lambda does not read as a blind spot.
+  for (const name of [...unresolvable]) {
+    if (locallyBoundNames(source).has(name)) unresolvable.delete(name);
+  }
+  return { expressions: [...expressions], unresolvable: [...unresolvable] };
+}
+
+/** Identifiers bound as callback parameters or destructured bindings anywhere. */
+function locallyBoundNames(source) {
+  const names = new Set();
+  for (const list of functionParameterLists(source)) {
+    for (const p of list) {
+      const inner = /^\s*\{([\s\S]*)\}\s*$/.exec(p);
+      if (inner) {
+        for (const m of inner[1].split(',')) {
+          const key = m.split(':').pop().trim();
+          if (key) names.add(key);
+        }
+        continue;
+      }
+      if (p) names.add(p);
+    }
+  }
+  const arrow = /\(([^()]*)\)\s*=>/g;
+  for (let m = arrow.exec(source); m !== null; m = arrow.exec(source)) {
+    for (const p of m[1].split(',')) {
+      const t = p.trim();
+      if (/^[A-Za-z_$][\w$]*$/.test(t)) names.add(t);
+    }
+  }
+  const single = /\(([A-Za-z_$][\w$]*)\)\s*=>/g;
+  for (let m = single.exec(source); m !== null; m = single.exec(source)) names.add(m[1]);
+  return names;
+}
+
+/**
+ * Resolve `assertArtifactSafe(value, opts)` where the options object hides the
+ * trust set: find `opts`'s object-literal binding and return the expression
+ * assigned to its `trustedPlanStrings` member.
+ *
+ * The P1 review showed that passing the trust set behind an options variable
+ * made the old enumerator report the call as UNTRUSTED — dropping it from the
+ * trust surface entirely. The enumerator now reports such calls as `unparsed`
+ * (so A1 fails loudly); this function is how a caller may resolve them
+ * deliberately instead.
+ *
+ * @returns {string|null} the trust-set expression, or null if there is none
+ */
+export function resolveOptionsTrustSetExpression(source, optsVar) {
+  const objBinding = new RegExp(`\\b(?:const|let|var)\\s+${escapeRe(optsVar)}\\s*=\\s*\\{([\\s\\S]*?)\\}\\s*;`).exec(source);
+  if (objBinding === null) return null;
+  // Read the member value with BRACKET/BRACE PARITY, not `[^,}]+`. A trust set
+  // built as `new Set([...a, ...b])` contains a comma at depth 1, and the
+  // character-class version truncated the expression at that comma — returning
+  // `new Set([...trusted`, which reads as clean. Truncating the very value the
+  // guard exists to inspect is the failure mode, not a formatting detail.
+  const marker = 'trustedPlanStrings';
+  const keyAt = objBinding[1].indexOf(marker);
+  if (keyAt === -1) return null;
+  const after = objBinding[1].slice(keyAt + marker.length);
+  const colonAt = after.indexOf(':');
+  if (colonAt === -1) return null;
+  const valueStart = colonAt + 1;
+  const body = after.slice(valueStart);
+  let depth = 0;
+  let end = body.length;
+  for (let i = 0; i < body.length; i += 1) {
+    const ch = body[i];
+    if (ch === '(' || ch === '[' || ch === '{') depth += 1;
+    else if (ch === ')' || ch === ']' || ch === '}') {
+      if (depth === 0) { end = i; break; }
+      depth -= 1;
+    } else if (ch === ',' && depth === 0) { end = i; break; }
+  }
+  const value = body.slice(0, end).trim();
+  return value === '' ? null : value;
+}
+
+
+/**
+ * A destructured or plain FUNCTION PARAMETER binding, as a self-named
+ * expression: `plan` is a complete binding, so it contributes the expression
+ * `plan` and the surrounding expression's `plan.queryVariants` read is what the
+ * caller matches on.
+ *
+ * Signatures are read with parenthesis pairing from the `function` keyword
+ * rather than by matching any `{…})` in the file, so an ordinary object literal
+ * argument (`foo({ plan })`) is NOT mistaken for a parameter list.
+ *
+ * @returns {Array<{kind: string, expr: string}>}
+ */
+function parameterBindingsOf(source, name) {
+  const out = [];
+  for (const params of functionParameterLists(source)) {
+    if (params.includes(name)) out.push({ kind: 'param', expr: name });
+  }
+  return out;
+}
+
+/** Every function signature's parameter list, split into trimmed member names. */
+function functionParameterLists(source) {
+  const lists = [];
+  const fn = /\bfunction\b/g;
+  for (let m = fn.exec(source); m !== null; m = fn.exec(source)) {
+    const open = source.indexOf('(', m.index);
+    if (open === -1) continue;
+    let depth = 0;
+    for (let i = open; i < source.length && i - open < 2000; i += 1) {
+      const ch = source[i];
+      if (ch === '(') depth += 1;
+      else if (ch === ')') {
+        depth -= 1;
+        if (depth === 0) {
+          lists.push(source.slice(open + 1, i).split(',').map((s) => s.trim()));
+          break;
+        }
+      }
+    }
+  }
+  return lists;
+}
+
+/** Split a module into top-level `;`-terminated statements (lexical approximation). */
+function splitStatements(source) {
+  return source.split(';').map((s) => s.trim()).filter(Boolean);
+}
+
+/**
+ * Identifiers appearing in an expression: every VARIABLE it reads, with
+ * property names, string literals and arrow-callback bodies removed.
+ *
+ * The spread rule is the load-bearing one. A spread IS a read of a variable
+ * (`new Set([...plan.queryVariants, ...qs])` reads `qs`), but the property-name
+ * strip below would eat the `qs` along with the dot and lose that hop — and
+ * losing the hop is exactly how a two-statement widening stays invisible. So
+ * the spread member is detached behind an `_SPREAD_` prefix FIRST, which makes
+ * the member a plain identifier and leaves no dot for the strip to match.
+ */
+function identifiersIn(expr) {
+  const stripped = String(expr)
+    .replace(/\.\.\.([A-Za-z_$][\w$]*)/g, `${SPREAD_MARKER}$1`)
+    // Drop string literals so a targeted-looking word inside prose is not a hit.
+    .replace(/'(?:[^'\\]|\\.)*'/g, "''")
+    .replace(/"(?:[^"\\]|\\.)*"/g, '""')
+    .replace(/`(?:[^`\\]|\\.)*`/g, '``')
+    // Drop ARROW BODIES: what an expression reads is decided by the expression,
+    // not by what a callback it happens to contain reads.
+    .replace(/\(([^()]*)\)\s*=>/g, '()=>')
+    // Drop property names: `a.normalizedQuery` -> `a`.
+    .replace(/\.\s*[A-Za-z_$][\w$]*/g, '.');
+  return [...stripped.matchAll(/\b[A-Za-z_$][\w$]*\b/g)].map((m) => m[0]);
+}
+
+/** Marker prefix `identifiersIn` uses to keep a spread read walkable. */
+const SPREAD_MARKER = '__p2aT11Spread__';
+
+const RESERVED = new Set([
+  'new', 'Set', 'Array', 'Object', 'String', 'Number', 'Boolean', 'typeof',
+  'instanceof', 'true', 'false', 'null', 'undefined', 'if', 'else', 'return',
+  'const', 'let', 'var', 'function', 'length', 'flatMap', 'map', 'filter',
+  'isArray', 'join', 'concat', 'push', 'slice', 'from', 'of', 'keys', 'values',
+]);
+
+function escapeRe(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

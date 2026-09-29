@@ -69,6 +69,8 @@ import {
   enumerateAssertArtifactSafeCallSurface,
   trustedCallSiteFiles,
   untrustedCallSiteFiles,
+  resolveTrustSetProvenance,
+  resolveOptionsTrustSetExpression,
 } from './helpers/t11-trust-surface-enumeration.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -430,83 +432,220 @@ test('C3: NO trust set in lib/ derives its elements from a targeted surface', ()
   // 并需回到 T04/T05 裁决". It is an ENUMERATION, not a hand-written list, so a
   // new trust-set call site is covered the day it is written.
   //
-  // WHY AN ENUMERATION AND NOT A BEHAVIOURAL ASSERTION: two bounded mutations
-  // that widened the augmented-pool trust set to include real targeted query
-  // text both left every behavioural verdict unchanged, because those strings
-  // had already cleared both lenses at the T04 gate. A behavioural test cannot
-  // separate "trusted" from "not trusted" there. The decidable question is
-  // therefore structural: does any trust set in lib/ take its elements from a
-  // targeted surface? That is checkable, and it is what F.3 actually forbids.
+  // WHY DATA FLOW AND NOT A NAME LIST (P1 from the security review)
+  // --------------------------------------------------------------
+  // The first version decided "targeted?" by regex-matching a closed list of
+  // identifier names inside the single `const trusted = …;` statement. The
+  // security review showed three widenings that leave that version green:
   //
-  // SCOPE, precisely: the guard examines each trust-set call together with the
-  // STATEMENTS THAT PRODUCE ITS ARGUMENT — not its enclosing function. An
-  // earlier draft widened the window to the whole function and then had to be
-  // weakened, because `augmentAccumulatedPool` legitimately receives
-  // `targetedPools` as a parameter and merges them into the pool: that is the
-  // intended data flow, not a trust relaxation. Flagging it would have made the
-  // guard cry wolf on correct code, which is how guards get ignored.
+  //   const qs = targetedPools.flatMap(…);   const trusted = new Set([…, …qs]);
+  //   const trusted = new Set(…);            trusted.add(action.normalizedQuery);
+  //   assertArtifactSafe(pool, opts);        // trust set behind an options object
+  //
+  // A name list cannot survive a rename, and one statement cannot see a
+  // two-statement story. So this resolves each trust set's actual provenance
+  // with `resolveTrustSetProvenance`, which follows intermediate variables
+  // transitively and includes post-construction `.add()`.
+  //
+  // It remains a lexical approximation. Where it cannot understand a binding it
+  // reports that as `unresolved` rather than as clean, and this test FAILS on an
+  // unresolved trust set — silence in a security guard is the failure mode that
+  // matters.
   const e = enumerateAssertArtifactSafeCallSurface(LIB_DIR);
 
-  // Identifiers denoting a targeted (controller-authorized) surface. A trust set
-  // built from any of these would launder targeted text past the walk.
-  const TARGETED_SURFACE = /\b(targetedPools|targetedActions|targetedActionId|targetedQuer|authorizedAction|proposals|evaluatedGaps|diagnosedLedger)\b/;
-
-  for (const call of e.trusted) {
-    // The trust-set expression itself, captured from the call text.
-    assert.doesNotMatch(
-      call.text,
-      TARGETED_SURFACE,
-      `${call.file}:${call.line} — the trust-set argument must not name a targeted surface`,
-    );
-    // If the argument is an identifier, resolve its single binding statement and
-    // check THAT, so `new Set(targetedPools…)` bound to `trusted` is caught while
-    // an unrelated `targetedPools` parameter elsewhere in the function is not.
-    const ident = /trustedPlanStrings\s*:\s*([A-Za-z_$][\w$]*)\s*\}?/.exec(call.text);
-    if (ident === null) continue; // inline expression: already checked above
-    const src = readFileSync(path.join(LIB_DIR, call.file), 'utf8');
-    const binding = new RegExp(`const\\s+${ident[1]}\\s*=\\s*([^;]+);`).exec(src);
-    if (binding === null) continue; // not a simple local binding (e.g. a parameter)
-    assert.doesNotMatch(
-      binding[1],
-      TARGETED_SURFACE,
-      `${call.file} — trust set \`${ident[1]}\` is built from a targeted surface `
-      + `(F.3: targeted strings must appear in NO trustedPlanStrings)`,
-    );
+  const violations = [];
+  const unresolved = [];
+  // `unparsed` is included deliberately. A call the enumerator cannot classify
+  // — `assertArtifactSafe(pool, opts)` is the case the security review found —
+  // is exactly where a hidden trust set lives, so C3 must not skip it. If the
+  // options object resolves and is clean, the verdict is empty; if it carries a
+  // targeted surface, C3 fires. A1 independently fails on the unparsed call, so
+  // neither guard depends on the other being right.
+  for (const call of [...e.trusted, ...e.unparsed]) {
+    const src = stripComments(readFileSync(path.join(LIB_DIR, call.file), 'utf8'));
+    const verdict = c3TrustSurfaceVerdict(src, call);
+    violations.push(...verdict.violations);
+    unresolved.push(...verdict.unresolvable);
   }
+
+  assert.deepEqual(
+    violations,
+    [],
+    'no trust set may be fed by a targeted surface (F.3: targeted strings must appear in '
+    + 'NO trustedPlanStrings)',
+  );
+  assert.deepEqual(
+    unresolved,
+    [],
+    'every trust set must have fully resolvable provenance; an unresolvable binding is '
+    + 'a blind spot, not a pass',
+  );
 });
 
-test('C3b: MUTATION PROOF — C3\'s predicate rejects the shape it forbids', () => {
-  // Non-vacuity proof for C3, executed rather than asserted: run C3's own two
-  // predicates over the exact shape it forbids and over the real production
-  // shape. If the predicate could not tell them apart it would be decorative.
-  const TARGETED_SURFACE = /\b(targetedPools|targetedActions|targetedActionId|targetedQuer|authorizedAction|proposals|evaluatedGaps|diagnosedLedger)\b/;
+/**
+ * F.3 forbids the PROVENANCE of the strings, not any particular variable name.
+ * These are the surfaces a targeted query string can come from; the provenance
+ * walk is what makes a closed name list sufficient, because reaching any of them
+ * through an intermediate or a mutation still resolves to these names.
+ *
+ * Non-global so `.test` carries no `lastIndex` state between call sites.
+ */
+const TARGETED_SURFACE = /\b(targetedPools|targetedActions|targetedActionId|targetedQuer|targetedString|authorizedAction|evaluatedGaps|diagnosedLedger|normalizedQuery|targetedQuery)\b/;
 
-  // (1) The forbidden shape: a trust set bound from targetedPools. C3's binding
-  //     resolution must catch this.
-  const forbiddenSrc = [
-    'function f({ targetedPools }) {',
-    '  const trusted = new Set(targetedPools.flatMap((tp) => tp.channels.map((c) => c.query)));',
-    '  return assertArtifactSafe(pool, { trustedPlanStrings: trusted });',
-    '}',
-  ].join('\n');
-  const forbiddenBinding = /const\s+trusted\s*=\s*([^;]+);/.exec(forbiddenSrc);
-  assert.ok(forbiddenBinding !== null, 'precondition: the forbidden shape has a resolvable binding');
-  assert.match(
-    forbiddenBinding[1],
-    TARGETED_SURFACE,
-    'C3\'s predicate must reject a trust set built from targetedPools',
-  );
+/**
+ * C3's PREDICATE, factored out so C3b can EXECUTE it on synthetic sources
+ * instead of re-implementing it. A mutation proof that re-derives the rule is
+ * not a proof of the rule; this one calls the same code path C3 does.
+ *
+ * @param {string} src module source, comments already stripped
+ * @param {{file: string, line: number, text: string}} call one trusted call site
+ * @returns {{violations: string[], unresolvable: string[]}}
+ */
+function c3TrustSurfaceVerdict(src, call) {
+  const violations = [];
+  const unresolvable = [];
+  const at = `${call.file}:${call.line}`;
 
-  // (2) The real production shape must NOT match, or C3 would already be failing.
-  const realSrc = readFileSync(path.join(LIB_DIR, 'targeted-requery-subphase.mjs'), 'utf8');
-  const realBinding = /const\s+trusted\s*=\s*([^;]+);/.exec(realSrc);
-  assert.ok(realBinding !== null, 'precondition: the production module binds `trusted`');
-  assert.doesNotMatch(
-    realBinding[1],
-    TARGETED_SURFACE,
+  const checkExpressions = (varName, expressions) => {
+    for (const expr of expressions) {
+      if (TARGETED_SURFACE.test(expr)) {
+        violations.push(
+          `${at} — trust set \`${varName}\` is fed by a targeted surface: ${expr.slice(0, 120)}`,
+        );
+      }
+    }
+  };
+
+  for (const root of trustSetRootsOf(call.text)) {
+    // `__opts__NAME` is the marker for a trust set hidden behind an options
+    // object; resolve it to the member expression first.
+    const optsHidden = root.startsWith('__opts__');
+    const varName = optsHidden ? root.slice('__opts__'.length) : root;
+    if (optsHidden) {
+      const memberExpr = resolveOptionsTrustSetExpression(src, varName);
+      if (memberExpr === null) {
+        unresolvable.push(
+          `${at} — options object \`${varName}\` has no statically readable trustedPlanStrings member`,
+        );
+        continue;
+      }
+      checkExpressions(varName, [memberExpr]);
+      // The member may itself be a plain variable; follow it too.
+      if (/^[A-Za-z_$][\w$]*$/.test(memberExpr)) {
+        const nested = resolveTrustSetProvenance(src, memberExpr);
+        checkExpressions(varName, nested.expressions);
+        for (const name of nested.unresolvable) unresolvable.push(`${at} \`${varName}.${name}\``);
+      }
+      continue;
+    }
+    const { expressions, unresolvable: names } = resolveTrustSetProvenance(src, varName);
+    checkExpressions(varName, expressions);
+    for (const name of names) unresolvable.push(`${at} \`${varName}\` → ${name}`);
+  }
+
+  return { violations, unresolvable };
+}
+
+/**
+ * The variable(s) a `trustedPlanStrings` argument is bound to, if any.
+ * An INLINE expression yields no roots (nothing to walk) and is checked by C3's
+ * expression test directly.
+ */
+function trustSetRootsOf(callText) {
+  const shorthand = /trustedPlanStrings\s*:\s*([A-Za-z_$][\w$]*)\s*[,}]/.exec(callText);
+  if (shorthand !== null) return [shorthand[1]];
+  // `assertArtifactSafe(pool, opts)` — the options object hides the trust set;
+  // resolve the object and look for a `trustedPlanStrings:` member in it.
+  const bare = /assertArtifactSafe\s*\([^,]+,\s*([A-Za-z_$][\w$]*)\s*\)/.exec(callText);
+  return bare === null ? [] : [`__opts__${bare[1]}`];
+}
+
+/** Strip block and line comments so provenance walks see code, not prose. */
+function stripComments(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/(^|[^:])\/\/[^\n]*/g, (m, p1) => p1 + ' '.repeat(m.length - p1.length));
+}
+
+test('C3b: MUTATION PROOF — the three widenings the security review found are now fatal', () => {
+  // Non-vacuity proof for C3, EXECUTED rather than asserted, and executed
+  // through C3's OWN predicate (`c3TrustSurfaceVerdict`) — a mutation proof
+  // that re-derives the rule proves nothing about the rule.
+  //
+  // The security review showed three widenings that left the first version
+  // (identifier-name grep over one statement) green. Each is reproduced here
+  // verbatim, and each must now produce a C3 violation.
+  const CASES = [
+    {
+      name: 'P1-1a: an INTERMEDIATE variable hides the targeted surface',
+      src: [
+        'function f({ targetedPools, plan }) {',
+        '  const qs = targetedPools.flatMap((tp) => tp.channels.map((c) => c.query));',
+        '  const trusted = new Set([...plan.queryVariants, ...qs]);',
+        '  const opts = { trustedPlanStrings: trusted };',
+        '  return assertArtifactSafe(pool, opts);',
+        '}',
+      ].join('\n'),
+    },
+    {
+      name: 'P1-1b: a post-construction .add() widens an otherwise clean set',
+      src: [
+        'function f({ plan, action }) {',
+        '  const trusted = new Set(plan.queryVariants);',
+        '  const opts = { trustedPlanStrings: trusted };',
+        '  trusted.add(action.normalizedQuery);',
+        '  return assertArtifactSafe(pool, opts);',
+        '}',
+      ].join('\n'),
+    },
+    {
+      name: 'P1-2: the trust set hides behind an OPTIONS OBJECT',
+      src: [
+        'function f({ plan, targetedPools }) {',
+        '  const opts = { trustedPlanStrings: new Set(targetedPools.flatMap((tp) => tp.channels)) };',
+        '  return assertArtifactSafe(pool, opts);',
+        '}',
+      ].join('\n'),
+    },
+  ];
+
+  for (const { name, src } of CASES) {
+    const stripped = stripComments(src);
+    const callText = /return\s+assertArtifactSafe\s*\([^;]*\);/.exec(stripped);
+    assert.ok(callText !== null, `precondition: ${name} has a parseable call site`);
+    const verdict = c3TrustSurfaceVerdict(stripped, {
+      file: 'synthetic.mjs',
+      line: 1,
+      text: callText[0].trim(),
+    });
+    assert.ok(
+      verdict.violations.length > 0,
+      `C3 must reject this widening — ${name}. A guard that cannot see it is decorative.`,
+    );
+  }
+
+  // (4) Negative control: the REAL production binding must NOT trip C3, or the
+  //     three assertions above would be satisfied by an always-throw predicate.
+  const realSrc = stripComments(readFileSync(path.join(LIB_DIR, 'targeted-requery-subphase.mjs'), 'utf8'));
+  const realCalls = enumerateAssertArtifactSafeCallSurface(LIB_DIR)
+    .trusted.filter((c) => c.file === 'targeted-requery-subphase.mjs');
+  assert.ok(realCalls.length > 0, 'precondition: the production module has a trusted call site');
+  const realVerdicts = realCalls.map((c) => c3TrustSurfaceVerdict(realSrc, c));
+  assert.deepEqual(
+    realVerdicts.flatMap((v) => v.violations),
+    [],
     'precondition: the production trust set is built from plan bytes only',
   );
-  assert.match(realBinding[1], /plan\.queryVariants/, 'precondition: and from plan.queryVariants specifically');
+  assert.deepEqual(
+    realVerdicts.flatMap((v) => v.unresolvable),
+    [],
+    'precondition: and the production trust set provenance is fully resolvable',
+  );
+  assert.match(
+    resolveTrustSetProvenance(realSrc, 'trusted').expressions.join(' | '),
+    /plan\.queryVariants/,
+    'precondition: and from plan.queryVariants specifically',
+  );
 });
 
 test('C2: enumeratePlanOwnedStrings never yields a targeted/authorized string', () => {
