@@ -837,7 +837,25 @@ export function resolveCallReturnProvenance(source, callName, { budget, maxHops 
       unresolvable: [`${callName} (call-graph hop limit ${maxHops} reached — walk truncated, not clean)`],
     };
   }
-  graph.visited.add(callName);
+  // MARKED ONLY AFTER THE BODY IS LOCATED. The sixth review found why, and the
+  // difference is between a guard and a rubber stamp.
+  //
+  // `visited.add(callName)` used to run BEFORE the header lookup, so a name with
+  // no top-level function here was marked visited and then returned
+  // `found: false`. The caller tries its next route, which calls back into this
+  // function with the SAME shared budget, hits `visited.has(callName)`, and got
+  // `found: true, expressions: ['name(…) body (already walked)']` — describing a
+  // body that was never read. The caller reads that as "answered", so an
+  // identifier NO route can explain came out as a clean resolution:
+  //
+  //   resolveNameInModule(src, 'smuggledTargeted', { budget: { visited: new Set() } })
+  //   // → { expressions: ["smuggledTargeted(…) body (already walked)"], unresolvable: [] }
+  //
+  // The guard's own contract is that an unexplained name is a blind spot, not a
+  // pass, and this quietly inverted it. A memo may answer "what did this name
+  // resolve to", never "have I heard of it" — so the mark goes in after the body
+  // is found, and a name that was merely ASKED ABOUT is not marked at all.
+  // Re-asking is cheap; answering from a failed lookup is the whole bug.
   const header = new RegExp(`^(?:export\\s+)?(?:async\\s+)?function\\s+${escapeRe(callName)}\\s*\\(`);
   const lines = source.split('\n');
   const startAt = lines.findIndex((l) => header.test(l));
@@ -853,6 +871,7 @@ export function resolveCallReturnProvenance(source, callName, { budget, maxHops 
       unresolvable: [`${callName} is not a top-level function here`],
     };
   }
+  graph.visited.add(callName);
   // Collect the whole body by brace pairing from the header's opening brace.
   let depth = 0;
   let started = false;
@@ -1412,7 +1431,14 @@ function callbackReceiverBindingsOf(source, name) {
   const text = source.slice(lineStart, lineEnd);
   if (!/\(\s*[A-Za-z_$][\w$]*\s*\)\s*=>/.test(text) && !/\bfunction\s*\(/.test(text)) return out;
   for (const receiver of methodChainRootsOf(text)) {
-    if (receiver === name) continue;
+    // A receiver that IS the trust set is the mutation's own target, not a
+    // source of data for it — following it would be a self-loop.
+    //
+    // The comparison is textual because the receiver may now be an EXPRESSION
+    // (`[...targetedPools]`, `plan.queryVariants`), so an exact match is the
+    // only honest test. A receiver that merely CONTAINS the name is a different
+    // thing and must be reported.
+    if (receiver === name || receiver === `${name}.`) continue;
     out.push({ kind: 'callback-receiver', expr: receiver });
   }
   return out;
@@ -1442,23 +1468,66 @@ function methodChainRootsOf(text) {
   // re-matching the first link forever, pushing to `roots` without bound until
   // the heap died. With `g`, `lastIndex` is the scan position and the loop
   // advances monotonically.
-  const link = /([A-Za-z_$][\w$]*)\s*\.\s*[A-Za-z_$][\w$]*\s*\(/g;
+  //
+  // AND IT IS NOT SUFFICIENT, which the sixth review established by
+  // construction. A chain's root is not always a bare identifier:
+  //
+  //     [...targetedPools].forEach(f)        — root is an array literal
+  //     [].concat(targetedPools).forEach(f)  — root is a call, not a name
+  //     plan.queryVariants.concat(x).forEach — root is a MEMBER expression
+  //
+  // Requiring `IDENT.method(` skipped all three, so a targeted collection
+  // wrapped in any of the most ordinary adapters was invisible again. The rule
+  // now takes the receiver as TEXT — whatever precedes the first `.name(` of a
+  // chain, however it is spelled — and hands the walk a slice to work on. That
+  // also fixes the member-expression case the same review flagged as a false
+  // positive: `plan.queryVariants.concat(…)` now yields `plan.queryVariants`
+  // rather than the property name `queryVariants` on its own.
+  const link = /\.\s*[A-Za-z_$][\w$]*\s*\(/g;
   let depth = 0;
   let scannedTo = 0;
+  // ONE ROOT PER CHAIN, decided by whether this link OPENS a chain or continues
+  // one. Without that distinction every link in a chain re-reported the whole
+  // text before it, so `a.map(f).forEach(g)` produced the receiver for `.map`
+  // AND again for `.forEach` — this time containing the callback body, which is
+  // noise the walk then had to resolve. A chain's data comes from its first
+  // link's receiver; later links operate on that result, not on a new source.
+  let chainOpen = true;
   while (scannedTo <= text.length) {
     const ch = text[scannedTo];
     if (ch === '(' || ch === '[') { depth += 1; scannedTo += 1; continue; }
     if (ch === ')' || ch === ']') { depth -= 1; scannedTo += 1; continue; }
+    if (ch === ',' || ch === ';') { chainOpen = true; scannedTo += 1; continue; }
     if (depth !== 0) { scannedTo += 1; continue; }
     link.lastIndex = scannedTo;
     const m = link.exec(text);
     if (m === null) break;
-    // A link found at depth 0 is the ROOT of its chain. Links inside the
-    // arguments are skipped by the depth counter above, which is what keeps
-    // `f(a.b(x))` from reporting `a` as a chain root.
-    roots.push(m[1]);
-    // Continue scanning after this link's opening paren; the depth counter
-    // takes the scan back out to zero on the matching `)`.
+    const receiver = text.slice(scannedTo, m.index).trim();
+    if (chainOpen) {
+      // The receiver is everything from the start of this chain up to the dot,
+      // however it is spelled — a bare name, a member expression, an array
+      // literal or a call.
+      if (receiver !== '') roots.push(receiver);
+      chainOpen = false;
+    }
+    // A literal root carries no data, so the chain's actual source is in the
+    // FIRST LINK'S ARGUMENTS: `[].concat(targetedPools).forEach(f)` and
+    // `Object.assign([], targetedPools).forEach(f)` both put the targeted
+    // collection there, and reporting `[]` as the receiver finds nothing. This
+    // is not a trick: an empty literal as the head of a chain is the standard
+    // way to write "start a fresh collection", so the arguments are where the
+    // data has to be.
+    if (/^[[({]\s*[}\])]?$/.test(receiver)) {
+      const args = readCallArguments(text, m.index + m[0].length - 1);
+      if (args !== null) {
+        for (const arg of splitTopLevelMembers(args)) {
+          const t = arg.trim();
+          if (t !== '') roots.push(t);
+        }
+      }
+    }
+    // Continue after this link's arguments; the depth counter returns to zero
+    // on the matching `)`, and the next `.name(` at depth 0 continues the chain.
     scannedTo = m.index + m[0].length;
   }
   return roots;
@@ -1526,6 +1595,24 @@ export function provenanceIdentifiersIn(expr) {
     // Drop ARROW BODIES: what an expression reads is decided by the expression,
     // not by what a callback it happens to contain reads.
     .replace(/\(([^()]*)\)\s*=>/g, '()=>')
+    // Drop OBJECT-LITERAL KEYS, which are names the code DEFINES, not names it
+    // reads.
+    //
+    // The sixth review surfaced this, and it was invisible until then for a
+    // reason worth recording: the shared call-graph budget used to mark a name
+    // as visited even when the body lookup had FAILED, so a second route asking
+    // about the same name got back "already walked" and the name was never
+    // reported. `plan-contract.mjs`'s `validatePlanInput` builds
+    // `const normalized = { schemaVersion: PLAN_SCHEMA_VERSION }`, and
+    // `schemaVersion` — a KEY — came out as an unresolvable name on the F.3
+    // boundary's own line. Fixing the budget restored the honest report; this
+    // makes the report CORRECT, because a key is not an input.
+    //
+    // Member access is already handled below (`a.normalizedQuery` -> `a`); this
+    // is the sibling case, `key: value` inside a literal. Both quoted and bare
+    // keys are covered, and the trailing space keeps `key` out of the match so
+    // the VALUE is still walked.
+    .replace(/([{,]\s*)(?:'[^']*'|"[^"]*"|[A-Za-z_$][\w$]*)\s*:(?!:)/g, '$1:')
     // Drop property names: `a.normalizedQuery` -> `a`.
     .replace(/\.\s*[A-Za-z_$][\w$]*/g, '.');
   return [...stripped.matchAll(/\b[A-Za-z_$][\w$]*\b/g)].map((m) => m[0]);

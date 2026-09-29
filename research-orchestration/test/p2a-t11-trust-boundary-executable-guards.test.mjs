@@ -1055,6 +1055,37 @@ test('C3b: MUTATION PROOF — the three widenings the security review found are 
         '}',
       ].join('\n'),
     },
+    // THE SIXTH REVIEW'S TWO FINDINGS. Both were MISSED by the fifth revision,
+    // and the first is the third distinct way the same hole has appeared: a
+    // place where the targeted name is present in the source and the guard has
+    // no rule that reads it.
+    {
+      // The chain's root is an ARRAY LITERAL, not a bare name. Requiring
+      // `IDENT.method(` skipped it, and `[...x].forEach(…)` is how people write
+      // "iterate a copy".
+      name: 'P1-1 receiver: the chain root is a spread array literal',
+      src: [
+        'function f({ plan, targetedPools }) {',
+        '  const trusted = new Set(plan.queryVariants);',
+        '  [...targetedPools].forEach((p) => trusted.add(p.query));',
+        '  const opts = { trustedPlanStrings: trusted };',
+        '  return assertArtifactSafe(pool, opts);',
+        '}',
+      ].join('\n'),
+    },
+    {
+      // The chain's root is an EMPTY LITERAL, so the data is in the first
+      // link's ARGUMENTS rather than in a receiver at all.
+      name: 'P1-1 receiver: the chain root is an empty literal and the data is an argument',
+      src: [
+        'function f({ plan, targetedPools }) {',
+        '  const trusted = new Set(plan.queryVariants);',
+        '  [].concat(targetedPools).forEach((p) => trusted.add(p.query));',
+        '  const opts = { trustedPlanStrings: trusted };',
+        '  return assertArtifactSafe(pool, opts);',
+        '}',
+      ].join('\n'),
+    },
   ];
 
   for (const { name, src, libFiles } of CASES) {
@@ -1150,6 +1181,52 @@ test('C3b: MUTATION PROOF — the three widenings the security review found are 
     unrelatedVerdict.violations,
     [],
     'a loop over a targeted surface the trust set never reads is NOT a violation',
+  );
+
+  // (6) THE SIXTH REVIEW'S P1-2, WHICH IS NOT A VIOLATION CASE AT ALL.
+  //
+  // Every other case in this test asserts a VIOLATION, because a targeted
+  // surface reached the trust set. This one is the opposite failure: a name NO
+  // route can explain, which the guard must report as a blind spot. The shared
+  // call-graph budget used to mark a name as visited BEFORE checking whether
+  // the body was found, so a second route asking about it got back
+  // "already walked" — a body that was never read — and an identifier nothing
+  // explains came out as cleanly resolved:
+  //
+  //   resolveNameInModule(src, 'smuggledTargeted', { budget: { visited: new Set() } })
+  //   // → { expressions: ["smuggledTargeted(…) body (already walked)"], unresolvable: [] }
+  //
+  // That inverts the guard's own contract, stated in C3: an unresolvable
+  // binding is a blind spot, not a pass. A blind spot the guard INVENTS for
+  // itself is worse than a missing rule, because it turns "I cannot see this"
+  // into "I checked this and it is fine" — and a reviewer reading the output
+  // has no way to tell the two apart.
+  //
+  // So this asserts the fail-closed direction explicitly: no violation (there is
+  // no targeted surface), and a non-empty unresolvable (the name is
+  // unexplained). Asserting only "no violation" would pass on the broken code.
+  const unexplained = [
+    'function f({ plan }) {',
+    '  const trusted = new Set(plan.queryVariants);',
+    '  trusted.add(smuggledUndeclaredName);',
+    '  const opts = { trustedPlanStrings: trusted };',
+    '  return assertArtifactSafe(pool, opts);',
+    '}',
+  ].join('\n');
+  const unexplainedVerdict = c3TrustSurfaceVerdict(unexplained, {
+    file: 'synthetic.mjs',
+    line: 1,
+    text: 'return assertArtifactSafe(pool, opts);',
+  });
+  assert.deepEqual(
+    unexplainedVerdict.violations,
+    [],
+    'precondition: an unexplained name is not itself a targeted surface',
+  );
+  assert.ok(
+    unexplainedVerdict.unresolvable.length > 0,
+    'a name no route explains must be reported as a blind spot — the budget must not ' +
+      'memoise a FAILED body lookup as a resolved one',
   );
 });
 
