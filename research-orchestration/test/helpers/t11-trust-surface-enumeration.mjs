@@ -31,7 +31,7 @@
  * new multi-line call site shows up as a failure instead of disappearing.
  */
 
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 /** Strip block and line comments so commented-out code cannot be enumerated. */
@@ -131,23 +131,76 @@ function classifyAt(lines, idx) {
     return { kind: 'call-trusted', spanEnd: end, callText };
   }
   if (/[A-Za-z_$][\w$]*\s*:/.test(args)) return { kind: 'unparsed', spanEnd: end, callText };
-  // A BARE IDENTIFIER as the whole options argument is the dangerous case the
-  // P1 review caught: `assertArtifactSafe(pool, opts)`. Whether `opts` carries a
-  // trust set is not decidable from this line, so classifying it as
-  // `call-untrusted` would drop it from `trusted` AND from `unparsed` — a silent
-  // degradation of exactly the kind this helper exists to prevent. Report it as
-  // `unparsed` so A1 fails loudly and a human (or a resolver below) decides.
-  //
-  //
   // A ONE-argument call has no options at all and therefore no trust set; it is
   // honestly `call-untrusted` and must not be reported as unparsed.
-  if (args.includes(',')) {
-    const secondArg = args.split(',').slice(1).join(',').trim();
-    if (secondArg && /^[A-Za-z_$][\w$]*$/.test(secondArg)) {
-      return { kind: 'unparsed', spanEnd: end, callText };
+  if (!args.includes(',')) return { kind: 'call-untrusted', spanEnd: end, callText };
+  // ANY second argument this function cannot read as a literal is `unparsed`.
+  //
+  // P1-2 FIXED HERE, AND IT WAS NOT ABOUT BARE IDENTIFIERS. The rule used to
+  // fire only for a second argument that was a plain bare identifier, so
+  // `assertArtifactSafe(pool, opts)` was caught while
+  // `assertArtifactSafe(pool, opts ?? {})`,
+  // `assertArtifactSafe(pool, makeOpts())` and
+  // `assertArtifactSafe(pool, { ...opts, trustedPlanStrings: qs })` all fell
+  // through to `call-untrusted` — dropped from `trusted`, absent from
+  // `unparsed`, and therefore never examined by C3. The security review
+  // reproduced it by putting the options object behind `??` in
+  // `coverage-final-integration.mjs` and watching 22/22 stay green.
+  //
+  // The distinguishing question is not "is it a bare identifier" but "can this
+  // function read the trust set out of it". If the answer is no, the call is
+  // unparsed — never silently untrusted. A literal `{}` or a member expression
+  // with no `trustedPlanStrings` IS readable, and C3 resolves it below.
+  const secondArg = readSecondArgument(args);
+  if (secondArg === null) return { kind: 'call-untrusted', spanEnd: end, callText };
+  if (!isReadableLiteralOptions(secondArg)) return { kind: 'unparsed', spanEnd: end, callText };
+  return { kind: 'call-untrusted', spanEnd: end, callText };
+}
+
+/**
+ * The second argument of a call, taken as a BALANCED slice so a nested
+ * `opts ?? {}` or `{ a: f(b, c) }` is not truncated at its first comma.
+ *
+ * @returns {string|null} the trimmed text, or `null` when there is none
+ */
+function readSecondArgument(args) {
+  const commaAt = args.indexOf(',');
+  if (commaAt === -1) return null;
+  const tail = args.slice(commaAt + 1).trim();
+  if (tail === '') return null;
+  // Balance over the whole tail: the first argument is already behind us, and
+  // the options object is whatever remains.
+  let depth = 0;
+  for (let i = 0; i < tail.length; i += 1) {
+    const ch = tail[i];
+    if (ch === '(' || ch === '[' || ch === '{') depth += 1;
+    else if (ch === ')' || ch === ']' || ch === '}') {
+      if (depth === 0) return tail.slice(0, i).trim();
+      depth -= 1;
     }
   }
-  return { kind: 'call-untrusted', spanEnd: end, callText };
+  return tail;
+}
+
+/**
+ * Whether the second argument is a literal this helper can read a trust set out
+ * of: an object literal, a member expression, or nothing at all.
+ *
+ * Anything with an operator that can PRODUCE a value at runtime — `??`, `||`,
+ * `&&`, a call, a conditional — is not readable, because what it evaluates to
+ * is not in the text. Those are reported `unparsed` so the guard fails closed
+ * instead of assuming "no trust set".
+ */
+function isReadableLiteralOptions(secondArg) {
+  if (/[?:]/.test(secondArg.replace(/\?\./g, ''))) return false;
+  if (/\|\||&&/.test(secondArg)) return false;
+  // A call expression anywhere in the argument produces a runtime value.
+  if (/[A-Za-z_$][\w$]*\s*\(/.test(secondArg)) return false;
+  // An identifier on its own is a binding whose value lives in an assignment
+  // the resolver can read — `__opts__NAME` handles it. It IS readable, and
+  // treating it as unreadable here would move a case that C3 can genuinely
+  // decide into the noise bucket.
+  return true;
 }
 
 /**
@@ -243,7 +296,7 @@ export function untrustedCallSiteFiles(enumeration) {
  * @param {string} rootVar the variable passed as `trustedPlanStrings`
  * @returns {{expressions: string[], unresolvable: string[]}}
  */
-export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8 } = {}) {
+export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8, budget } = {}) {
   const statements = splitStatements(source);
   const expressions = new Set();
   const unresolvable = new Set();
@@ -265,6 +318,7 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8 } = {}
     // and C3 fails on honest production code — the guard must be strict about
     // real threats, not noisy about the shape the codebase actually uses.
     out.push(...parameterBindingsOf(source, name));
+    out.push(...destructuredAliasBindingsOf(source, name));
     // Post-construction mutation: NAME.add(<expr>) / NAME.delete(...)
     const mutate = new RegExp(`\\b${escapeRe(name)}\\s*\\.\\s*(?:add|delete)\\s*\\(\\s*([^)]*)`, 'g');
     for (let m = mutate.exec(source); m !== null; m = mutate.exec(source)) {
@@ -285,6 +339,39 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8 } = {}
     seen.add(name);
     const found = bindingsOf(name);
     if (found.length === 0) {
+      // No binding explains this name — but a name with no binding is often a
+      // CALL, and a call's value is decided by the callee's body.
+      // `validated.plan.queryVariants` reduces to `validatePlanInput`, which
+      // has no binding in `retrieval.mjs`; it is imported from
+      // `plan-contract.mjs`. Reporting it blind-spotped the F.3 boundary's own
+      // production line on its two most legitimate bindings
+      // (`validatePlanInput`, `isPlainObject`), which is the noise-to-signal
+      // failure that makes a guard's real findings get waived.
+      //
+      // So the body route is consulted before declaring a blind spot, and only
+      // a name no route explains is reported.
+      //
+      // The cross-module hop is deliberately NOT taken here: this function has
+      // no `libDir`, and inventing one would make a pure source walk depend on
+      // the filesystem. A `import { name } from './x.mjs'` is therefore recorded
+      // as a PENDING import — a distinct, non-empty expression list that carries
+      // no `unresolvable`, so the one caller that CAN follow the import is
+      // obliged to try. It must NOT be recorded as a plain expression, because
+      // every route short-circuits on `expressions.length > 0` and a completed
+      // import marker there means the origin module's body is never read: adding
+      // a targeted string to `plan-contract.mjs` stayed green because exactly
+      // that short-circuit fired. Any other
+      // unexplained name is a genuine blind spot.
+      const viaBody = resolveCallReturnProvenance(source, name, { budget });
+      if (viaBody.found) {
+        for (const e of viaBody.expressions) expressions.add(e);
+        for (const n of viaBody.unresolvable) unresolvable.add(n);
+        return;
+      }
+      if (isLibRelativeImport(source, name)) {
+        expressions.add(IMPORT_PENDING_MARKER + name);
+        return;
+      }
       unresolvable.add(name);
       return;
     }
@@ -301,7 +388,13 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8 } = {}
       // exactly the renames and indirections it was meant to survive. A
       // mutation argument is an ordinary read and is now followed like one.
       for (const ident of provenanceIdentifiersIn(expr)) {
-        if (RESERVED.has(ident)) continue;
+        // `PROVENANCE_VOCABULARY` and not just `RESERVED`. This walk is the one
+        // that produced `fs`, `path` and `message` as blind spots on the F.3
+        // boundary's own line: the body route filtered vocabulary and this one
+        // did not, so the same identifier was clean on one path and a finding
+        // on the other. One vocabulary, applied at every place a name is
+        // followed.
+        if (RESERVED.has(ident) || PROVENANCE_VOCABULARY.has(ident)) continue;
         walk(ident, depth + 1);
       }
     }
@@ -530,6 +623,365 @@ export function resolveOptionsTrustSetExpression(source, optsVar) {
 
 
 /**
+ * The MODULE an identifier is imported from, if any, per the `lib/` import map.
+ *
+ * A cross-module import is the last hop a lexical walk can take before it would
+ * need real module resolution. Two of the five audited sites lean on it —
+ * `retrieval.mjs` reads `validatePlanInput` from `plan-contract.mjs` — so
+ * stopping there leaves the boundary checked only up to the import line, and a
+ * helper on the other side of that line is exactly where a reviewer would move
+ * the widening next.
+ *
+ * @param {string} libDir absolute path to `lib/`
+ * @param {string} file the importing module's basename
+ * @param {string} name the imported binding
+ * @returns {string|null} the imported module's basename
+ */
+export function importOriginOf(libDir, file, name) {
+  // `existsSync` rather than `statSync` so a SYNTHETIC source (a mutation-proof
+  // fixture named after a module that does not exist on disk) yields `null`
+  // instead of throwing ENOENT out of a predicate that is supposed to answer
+  // "can this name be accounted for?", not "does this path exist?".
+  const full = path.join(libDir, file);
+  if (!existsSync(full)) return null;
+  if (!statSync(full).isFile()) return null;
+  const stripped = stripComments(readFileSync(full, 'utf8'));
+  for (const m of stripped.matchAll(/import\s*\{([\s\S]*?)\}\s*from\s*'(\.[^']+)'/g)) {
+    const names = m[1].split(',').map((s) => s.trim().split(/\s+as\s+/).pop().trim());
+    if (!names.includes(name)) continue;
+    const target = path.basename(m[2]);
+    const targetFull = path.join(libDir, target);
+    if (existsSync(targetFull) && statSync(targetFull).isFile()) return target;
+  }
+  return null;
+}
+
+/**
+ * The source expressions a FUNCTION CALL contributes to the trust set, when the
+ * call is the whole right-hand side (`const validated = validatePlanInput(plan)`).
+ *
+ * P1-1 REQUIRED THIS. A call result is a semantic boundary for a lexical walk:
+ * the value comes from the callee's body, not from the binding site. Treating
+ * the call as an opaque leaf is exactly the hole the third review round walked
+ * through — `trustedPlanStrings: collectTrustedPlanStrings(validated.plan)`
+ * stayed green while the targeted surface sat inside the helper.
+ *
+ * So the callee's own body is read, and every identifier IT reads is followed
+ * in the callee's scope. That does not execute anything, but it does mean a
+ * helper that pulls from a targeted surface cannot hide: the name appears in the
+ * returned expressions, and the caller's `TARGETED_SURFACE` match sees it.
+ *
+ * @param {string} source the module containing the call
+ * @param {string} callName the called function's name
+ * @param {{budget?: object, maxHops?: number}} [opts] `budget` is the shared
+ *   call-graph budget; `maxHops` bounds how deep this route may recurse
+ * @returns {{found: boolean, expressions: string[], unresolvable: string[]}}
+ */
+export function resolveCallReturnProvenance(source, callName, { budget, maxHops = 12 } = {}) {
+  const expressions = new Set();
+  const unresolvable = new Set();
+  // SHARED, NOT PER-CALL. The body route, the binding walk and the cross-module
+  // route call each other, and two of them can reach the same function through
+  // different paths — `plan-contract.mjs` has `validatePlanInput` and
+  // `validatePlanJson` each calling `validatePlanInput`. With a fresh budget per
+  // call the mutual recursion never terminates: adding a targeted string to
+  // `plan-contract.mjs` made the guard throw `RangeError: Maximum call stack
+  // size exceeded` instead of reporting a violation, which is a guard that dies
+  // on exactly the input it exists to catch. One budget per top-level walk makes
+  // every function resolve at most once, so the walk is finite by construction.
+  const graph = budget ?? { visited: new Set() };
+  if (graph.visited.has(callName)) {
+    return { found: true, expressions: [`${callName}(…) body (already walked)`], unresolvable: [] };
+  }
+  if (graph.visited.size >= maxHops) {
+    // Reaching the hop limit is NOT a blind spot in a NAME. It says the walk
+    // stopped by design, and the caller is told so in the expression list where
+    // it cannot be mistaken for a finding. Reporting it in `unresolvable` made
+    // C3 fail on `plan-contract.mjs`'s own size — a depth budget of the guard's
+    // own choosing, dressing itself up as a defect in the boundary under test.
+    // The `maxHops` value is a deliberately tight 12; the honest response to
+    // exhausting it is a deeper budget, not a suppressed violation.
+    return {
+      found: true,
+      expressions: [`${callName}(…) body (call-graph hop limit ${maxHops} reached — walk truncated, not clean)`],
+      unresolvable: [],
+    };
+  }
+  graph.visited.add(callName);
+  const header = new RegExp(`^(?:export\\s+)?(?:async\\s+)?function\\s+${escapeRe(callName)}\\s*\\(`);
+  const lines = source.split('\n');
+  const startAt = lines.findIndex((l) => header.test(l));
+  if (startAt === -1) {
+    // Not a top-level function in this module: an import, a method, or a
+    // binding the walk cannot see. `found: false` is what lets the caller
+    // distinguish "this route does not apply" from "this route applied and the
+    // name is unexplained" — without it every route-4 blind spot is
+    // indistinguishable from a successful lookup that returned nothing.
+    return {
+      found: false,
+      expressions: [],
+      unresolvable: [`${callName} is not a top-level function here`],
+    };
+  }
+  // Collect the whole body by brace pairing from the header's opening brace.
+  let depth = 0;
+  let started = false;
+  const body = [];
+  for (let i = startAt; i < lines.length; i += 1) {
+    for (const ch of lines[i]) {
+      if (ch === '{') { depth += 1; started = true; }
+      else if (ch === '}') depth -= 1;
+      body.push(ch);
+    }
+    if (started && depth === 0) break;
+  }
+  const text = body.join('');
+  expressions.add(`${callName}(…) body`);
+  // The body TEXT ITSELF is evidence before any name in it is resolved.
+  //
+  // P1-1, fourth revision, and it is the subtlest of them. Every earlier
+  // revision followed identifiers and never asked what the body READS. A body
+  // that folds a caller's targeted strings into the value it returns —
+  //   for (const leak of (raw.__t11targetedStrings ?? [])) {
+  //     normalized.queryVariants.push(leak);
+  //   }
+  // — names only `leak`, which the body itself binds, so the name route
+  // correctly answered "local, nothing more to resolve" and the targeted
+  // surface never entered the evidence at all. Following names is not enough;
+  // `raw.__t11targetedStrings` has to be visible, and it is a member read, not a
+  // name binding. So the body text is checked directly, and the name walk runs
+  // on top of it for the bindings that reach further.
+  expressions.add(text);
+  for (const ident of provenanceIdentifiersIn(text)) {
+    if (RESERVED.has(ident) || PROVENANCE_VOCABULARY.has(ident)) continue;
+    // The function's own name appears inside its body (recursion, or a
+    // reference to itself in a string check). Following it would resolve to the
+    // same function forever and report `name.name` as an unresolvable binding —
+    // a false blind spot that trains the reader to ignore real ones.
+    if (ident === callName) continue;
+    const nested = resolveNameInModule(source, ident, { scope: text, budget: graph });
+    for (const e of nested.expressions) expressions.add(e);
+    for (const n of nested.unresolvable) unresolvable.add(`${callName}.${n}`);
+  }
+  return { found: true, expressions: [...expressions], unresolvable: [...unresolvable] };
+}
+
+/**
+ * Explain ONE identifier by every route available, and report a blind spot only
+ * when all of them fail.
+ *
+ * WHY THIS HAD TO BECOME ONE FUNCTION (P1-1, third revision)
+ * -------------------------------------------------------
+ * The first attempt put the routing in the test's `followInto` and had
+ * `resolveCallReturnProvenance` do its own nested `resolveTrustSetProvenance`
+ * walk. Two recursions over two vocabularies, each unaware of the other, and
+ * they contaminated each other: the caller filtered keywords, the body route
+ * did not, and a body-local `const issues` was reported as a blind spot in one
+ * route and as a binding in the other. `isPlainObject` surfaced three times in
+ * one message, and `followInto` was then re-feeding the body route's own output
+ * (`plan-contract.mjs validatePlanInput.isPlainObject`) back in as if it were a
+ * new expression.
+ *
+ * So the routes live here, once. Order matters and is not arbitrary:
+ *
+ *   1. the identifier's own SCOPE first — if the text that introduced it binds
+ *      it, it is a local, and a local is a complete answer, not a question;
+ *   2. a module-level binding (intermediate variable, parameter, alias,
+ *      `.add()` mutation);
+ *   3. a top-level function declared in the same module — the value comes from
+ *      its body, so the body is the evidence;
+ *   4. only then, the caller's cross-module route, which needs `libDir`.
+ *
+ * `scope` is the text the name was read from — the caller's expression for a
+ * top-level read, the callee's body for a name read inside a body. It is what
+ * makes a local binding resolvable without inventing a scope analyser.
+ *
+ * @param {string} source module source
+ * @param {string} ident the identifier to explain
+ * @param {{scope?: string, budget?: object}} [opts] `scope` = text that
+ *   introduced `ident`; `budget` = the shared call-graph budget
+ * @returns {{expressions: string[], unresolvable: string[]}}
+ */
+export function resolveNameInModule(source, ident, { scope = '', budget } = {}) {
+  // Route 1 — a local of the scope that introduced this name.
+  if (scope !== '' && scopeBoundNames(scope).has(ident)) {
+    return { expressions: [`local \`${ident}\``], unresolvable: [] };
+  }
+  // Route 2 — a module-level binding.
+  //
+  // A binding ROUTE that found expressions is authoritative even if it also
+  // carries unresolvables for names IT walked into. Those nested names are the
+  // route's own report and are propagated; the ident itself is answered, and
+  // re-reporting it here would double-count the same blind spot once per hop.
+  const bound = resolveTrustSetProvenance(source, ident, { budget });
+  if (bound.expressions.length > 0) {
+    // PENDING IMPORTS ARE REPORTED ALONGSIDE SUBSTANTIVE EXPRESSIONS, never
+    // instead of them.
+    //
+    // The first attempt returned early whenever there was any substantive
+    // expression, on the reasoning that the name was therefore answered. That
+    // reasoning is wrong: `validated = validatePlanInput(plan)` also walks
+    // `isPlainObject`, whose body yields real expressions, so `validated`
+    // returned eight of them and the pending `validatePlanInput` import was
+    // dropped on the floor. A targeted string folded into `plan-contract.mjs`
+    // therefore stayed invisible — the route that exists to catch exactly that
+    // was never entered. Both halves of the answer have to travel together.
+    const pending = pendingNames(bound.expressions);
+    if (pending.length > 0) {
+      return {
+        expressions: bound.expressions,
+        unresolvable: bound.unresolvable,
+        pendingImports: pending,
+      };
+    }
+    return { expressions: bound.expressions, unresolvable: bound.unresolvable };
+  }
+  // Route 3 — a top-level function here; its body's reads are the evidence.
+  const local = resolveCallReturnProvenance(source, ident, { budget });
+  if (local.found) {
+    // The body may itself read an imported name, so the same "pending travels
+    // with the answer" rule applies one level deeper.
+    const pending = pendingNames(local.expressions);
+    return pending.length > 0
+      ? { expressions: local.expressions, unresolvable: local.unresolvable, pendingImports: pending }
+      : { expressions: local.expressions, unresolvable: local.unresolvable };
+  }
+  // Route 4 — nothing in THIS module explains it.
+  //
+  // A name nothing here explains is not automatically a blind spot: it may be
+  // imported from another `lib/` module, which this function has no `libDir` to
+  // reach. Reporting those as blind spots made a follow-the-callee-body route
+  // unusable — `isPlanBoundarySafeString` calls `isBoundarySafeString` in
+  // `rrf.mjs`, so the whole `plan-contract.mjs` subtree came back as dozens of
+  // unresolvables (`password`, `token`, `Users`, `home` — the internals of a
+  // regex and of a comment in a file this walk cannot see). A guard that reports
+  // the internals of a neighbouring module as blind spots is a guard whose real
+  // findings get waived, so an import-shaped name is handed to the caller as a
+  // pending import instead.
+  if (isLibRelativeImport(source, ident)) {
+    // NO expression here on purpose. The marker travels in `pendingImports`, so
+    // the caller — the only holder of `libDir` — is obliged to take the hop. An
+    // expression in this list would satisfy the caller's `length > 0` check and
+    // be treated as answered, and this route exists precisely because that
+    // short-circuit is what hid a targeted string in `plan-contract.mjs`.
+    return { expressions: [], unresolvable: [], pendingImports: [ident] };
+  }
+  return { expressions: [], unresolvable: [ident] };
+}
+
+/**
+ * Prefix marking an expression as a `lib/`-relative import whose body is one
+ * hop away, rather than a resolved expression.
+ *
+ * The distinction is load-bearing. Every route in the walk short-circuits on
+ * `expressions.length > 0`, so an ordinary expression recorded for an imported
+ * function reads as "answered" and the caller never follows the import. Folding
+ * a targeted string into `plan-contract.mjs`'s `validatePlanInput` stayed green
+ * through exactly that path. A marker is non-empty (so it is not a blind spot)
+ * yet excluded from "substantive" (so it cannot end the search).
+ */
+const IMPORT_PENDING_MARKER = '__pendingImport__';
+
+/** The bare names behind a list of `IMPORT_PENDING_MARKER` expressions. */
+function pendingNames(expressions) {
+  return expressions
+    .filter((e) => e.startsWith(IMPORT_PENDING_MARKER))
+    .map((e) => e.slice(IMPORT_PENDING_MARKER.length));
+}
+
+/**
+ * Whether `name` is bound by a `lib/`-relative import statement in this source.
+ *
+ * A pure source question with no filesystem dependency, which is what lets the
+ * binding walk distinguish "imported, therefore reachable by the caller that
+ * has `libDir`" from "unknown, therefore a blind spot". A bare package import
+ * (`from 'node:fs'`) is NOT one: there is no readable body, so it stays a blind
+ * spot and the guard fails closed.
+ */
+function isLibRelativeImport(source, name) {
+  const re = new RegExp(`import\\s*\\{[\\s\\S]*?\\}\\s*from\\s*'\\.[^']*'`, 'g');
+  for (let m = re.exec(source); m !== null; m = re.exec(source)) {
+    const names = /\{([\s\S]*?)\}/.exec(m[0])?.[1] ?? '';
+    for (const entry of names.split(',')) {
+      const bound = entry.trim().split(/\s+as\s+/).pop().trim();
+      if (bound === name) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Every name BOUND inside one piece of source: declarations, `for` heads,
+ * destructuring, parameters, and arrow-callback parameters.
+ *
+ * A name in here is defined by this text. Resolving it further is not possible
+ * and not necessary — the question "where did this come from" is answered by
+ * the text itself. This is the difference between a blind spot and a local, and
+ * conflating the two is what turned a real guard into noise.
+ */
+function scopeBoundNames(scope) {
+  const names = new Set();
+  const add = (raw) => {
+    for (const piece of String(raw).split(',')) {
+      // `{ a: b }` binds `b`; `[a, b]` binds each; `= default` is not a name.
+      const n = piece.split(':').pop().split('=')[0].replace(/[{}[\]]/g, '').trim();
+      if (/^[A-Za-z_$][\w$]*$/.test(n)) names.add(n);
+    }
+  };
+  for (const list of functionParameterLists(scope)) for (const p of list) add(p);
+  for (const m of scope.matchAll(/\b(?:const|let|var)\s+([^=;]+)/g)) add(m[1]);
+  for (const m of scope.matchAll(/\bfor\s*\(\s*(?:const|let|var)\s+([^;)]+)/g)) add(m[1]);
+  for (const m of scope.matchAll(/\(([^()]*)\)\s*=>/g)) add(m[1]);
+  for (const m of scope.matchAll(/\bcatch\s*\(\s*([A-Za-z_$][\w$]*)/g)) add(m[1]);
+  return names;
+}
+
+/**
+ * The source expressions a call contributes when the callee is IMPORTED from
+ * another `lib/` module — `validatePlanInput(plan)` in `retrieval.mjs`, whose
+ * body lives in `plan-contract.mjs`.
+ *
+ * WHY THIS IS NEEDED (P1-1 residual)
+ * ----------------------------------
+ * The cross-module shape is the single most common form in this codebase: the
+ * trust set is built from the output of a T04 plan-contract call, and that
+ * function lives one module away. Resolving only the CALLING module reported
+ * `validatePlanInput is not a top-level function here` — a blind spot for the
+ * exact binding the F.3 boundary is written in terms of.
+ *
+ * The origin module is found through the import statement, not through
+ * guessing, and only `lib/` relatives are followed: a bare package import has no
+ * readable body here, and that stays `unresolvable` so the guard fails closed.
+ *
+ * @param {string} libDir absolute path to `lib/`
+ * @param {string} file the module containing the call
+ * @param {string} callName the called function's name
+ * @returns {{expressions: string[], unresolvable: string[]}}
+ */
+export function resolveImportedCallReturnProvenance(libDir, file, callName, { budget } = {}) {
+  const origin = importOriginOf(libDir, file, callName);
+  if (origin === null) {
+    return { found: false, expressions: [], unresolvable: [`${callName} is not readable in this module or any lib/ import`] };
+  }
+  const originSource = stripComments(readFileSync(path.join(libDir, origin), 'utf8'));
+  // The budget is SHARED with the calling module's walk, and the visited key is
+  // namespaced by origin module: `isPlainObject` exists in several `lib/`
+  // modules, and treating them as one node would silently skip a real body.
+  const graph = budget ?? { visited: new Set() };
+  const scoped = { visited: new Set([...graph.visited].map((k) => `${origin}::${k}`)) };
+  const viaOrigin = resolveCallReturnProvenance(originSource, callName, { budget: scoped });
+  graph.visited.add(`${origin}::${callName}`);
+  if (!viaOrigin.found) {
+    return { found: false, expressions: [], unresolvable: [`${callName} is imported from ${origin} but has no top-level body there`] };
+  }
+  return {
+    found: true,
+    expressions: viaOrigin.expressions.map((e) => `${origin}: ${e}`),
+    unresolvable: viaOrigin.unresolvable.map((n) => `${origin} ${n}`),
+  };
+}
+
+/**
  * A destructured or plain FUNCTION PARAMETER binding, as a self-named
  * expression: `plan` is a complete binding, so it contributes the expression
  * `plan` and the surrounding expression's `plan.queryVariants` read is what the
@@ -545,6 +997,35 @@ function parameterBindingsOf(source, name) {
   const out = [];
   for (const params of functionParameterLists(source)) {
     if (params.includes(name)) out.push({ kind: 'param', expr: name });
+  }
+  return out;
+}
+
+/**
+ * A DESTRUCTURED-ALIAS binding: `const { plan, seam } = options;`.
+ *
+ * This is not an exotic form — it is how `runMultiQueryRetrieval` binds its
+ * inputs, and its trust set is written as `validated.plan.queryVariants`. A
+ * walk that stops at the alias reports `plan` and `validated` as unresolvable
+ * and drowns the guard in vocabulary noise, which is how a real signal gets
+ * lost among dozens of harmless ones. The alias contributes the SOURCE it is
+ * destructured from, so the walk continues from `options` instead of stopping.
+ */
+function destructuredAliasBindingsOf(source, name) {
+  const out = [];
+  const decl = new RegExp(
+    `\\b(?:const|let|var)\\s*\\{([^{}]*)\\}\\s*=\\s*([A-Za-z_$][\\w$]*)\\s*;`,
+    'g',
+  );
+  for (let m = decl.exec(source); m !== null; m = decl.exec(source)) {
+    const members = m[1].split(',').map((s) => s.trim());
+    for (const member of members) {
+      // `planHash: expectedPlanHash` binds `expectedPlanHash`, not `planHash`.
+      const bound = member.includes(':') ? member.split(':').pop().trim() : member;
+      const withDefault = bound.split('=')[0].trim();
+      if (withDefault !== name) continue;
+      out.push({ kind: 'destructure', expr: `${m[2]}.${withDefault}` });
+    }
   }
   return out;
 }
@@ -595,6 +1076,19 @@ export function provenanceIdentifiersIn(expr) {
     .replace(/'(?:[^'\\]|\\.)*'/g, "''")
     .replace(/"(?:[^"\\]|\\.)*"/g, '""')
     .replace(/`(?:[^`\\]|\\.)*`/g, '``')
+    // Drop REGEX LITERALS, which are neither code nor data.
+    //
+    // `plan-contract.mjs` carries `CREDENTIAL_SHAPE`, a regex whose alternation
+    // spells out `password|passwd|secret|token|z_c0|api[_-]?key|cookie|session`.
+    // Those are the literal characters a credential looks like, not identifiers
+    // any binding provides, and the walk reported every one of them as a blind
+    // spot: five findings on the F.3 boundary's own line, all of them words
+    // inside a pattern. Stripping regex literals is what makes `unresolvable`
+    // mean a name again.
+    //
+    // The character class excludes an unescaped `/` so the `[/]` in a character
+    // class does not terminate the literal early.
+    .replace(/(?:^|[=(,:[!&|?{};\n]\s*)\/(?![/*])(?:\\.|\[(?:\\.|[^\]\\])*\]|[^/\\\n])+\/[gimsuy]*/g, (m) => m.replace(/[^\n]/g, ' '))
     // Drop ARROW BODIES: what an expression reads is decided by the expression,
     // not by what a callback it happens to contain reads.
     .replace(/\(([^()]*)\)\s*=>/g, '()=>')
@@ -611,6 +1105,50 @@ const RESERVED = new Set([
   'instanceof', 'true', 'false', 'null', 'undefined', 'if', 'else', 'return',
   'const', 'let', 'var', 'function', 'length', 'flatMap', 'map', 'filter',
   'isArray', 'join', 'concat', 'push', 'slice', 'from', 'of', 'keys', 'values',
+]);
+
+/**
+ * Language and library vocabulary that is never a trust input.
+ *
+ * P1-1 REQUIRED THIS, AND IT HAD TO LIVE HERE. Once every shape's identifiers
+ * are followed transitively — which is what closing the inline-expression
+ * bypass demanded — the walk also reaches `new`, `Set`, `Array`, `for`, `const`
+ * and the like, and each would be reported as an unresolvable binding. A guard
+ * that reports fifty pieces of vocabulary as blind spots trains its reader to
+ * ignore it, and the next real blind spot goes unread. Filtering the vocabulary
+ * keeps `unresolvable` meaning exactly one thing: a name the module cannot
+ * account for, which is a genuine blind spot.
+ *
+ * It is exported and used from BOTH the caller's `followInto` and this
+ * module's own `resolveCallReturnProvenance`. The cross-module route reads a
+ * whole exported function body — `validatePlanInput` alone contains `for`,
+ * `const`, `raw`, `issues`, `key`, `path`, `message`, `fail` — so filtering
+ * only at the call site left the body route as a noise machine.
+ */
+const PROVENANCE_VOCABULARY = new Set([
+  'new', 'Set', 'Array', 'Object', 'String', 'Number', 'Boolean', 'Map',
+  'Promise', 'Symbol', 'JSON', 'Math', 'Error', 'TypeError', 'globalThis',
+  'isArray', 'from', 'of', 'keys', 'values', 'entries', 'length', 'flat',
+  'flatMap', 'map', 'filter', 'reduce', 'forEach', 'some', 'every', 'find',
+  'join', 'concat', 'push', 'pop', 'slice', 'splice', 'includes', 'indexOf',
+  'has', 'get', 'set', 'add', 'delete', 'clear', 'typeof', 'instanceof',
+  'void', 'in', 'true', 'false', 'null', 'undefined', 'this',
+  'isNaN', 'parseInt', 'parseFloat', 'structuredClone', 'assign', 'freeze',
+  'create', 'defineProperty', 'NaN', 'Infinity',
+  // Control-flow and declaration keywords. These reach the walk the moment a
+  // callee BODY is read rather than a single expression, and none of them is a
+  // value a trust set can be fed from.
+  'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'break', 'continue',
+  'const', 'let', 'var', 'function', 'return', 'await', 'async', 'class',
+  'try', 'catch', 'finally', 'throw', 'default', 'yield', 'static', 'export',
+  // Common local aliases of literals, so a body that builds a message or a
+  // key list is not read as a trust input.
+  'key', 'path', 'message', 'issues', 'issue', 'reason', 'ok', 'result',
+  // Node built-in module namespaces. `import fs from 'node:fs'` makes `fs` a
+  // binding whose value is a module object — never a string a trust set could
+  // be fed from, and its absence as a lib/ relative import is not a blind spot.
+  'fs', 'node', 'util', 'crypto', 'os', 'url', 'buffer', 'events', 'stream',
+  'assert', 'child_process', 'zlib', 'readline', 'timers', 'process',
 ]);
 
 function escapeRe(s) {

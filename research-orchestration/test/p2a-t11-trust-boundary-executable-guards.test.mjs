@@ -73,6 +73,9 @@ import {
   resolveOptionsTrustSetExpression,
   resolveShorthandTrustSetFromCallers,
   provenanceIdentifiersIn,
+  resolveCallReturnProvenance,
+  resolveImportedCallReturnProvenance,
+  resolveNameInModule,
 } from './helpers/t11-trust-surface-enumeration.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -495,6 +498,29 @@ test('C3: NO trust set in lib/ derives its elements from a targeted surface', ()
 const TARGETED_SURFACE = /\b(targetedPools|targetedActions|targetedActionId|targetedQuer|targetedString|authorizedAction|evaluatedGaps|diagnosedLedger|normalizedQuery|targetedQuery)\b/;
 
 /**
+ * Language and library vocabulary that is never a trust input.
+ *
+ * P1-1 REQUIRED THIS. Once every shape's identifiers are followed transitively
+ * — which is what closing the inline-expression bypass demanded — the walk also
+ * reaches `new`, `Set`, `Array` and the like, and each would be reported as an
+ * unresolvable binding. A guard that reports fifty pieces of vocabulary as
+ * blind spots trains its reader to ignore it, and the next real blind spot goes
+ * unread. Filtering the vocabulary keeps `unresolvable` meaning exactly one
+ * thing: a name the module cannot account for, which is a genuine blind spot.
+ */
+const PROVENANCE_VOCABULARY = new Set([
+  'new', 'Set', 'Array', 'Object', 'String', 'Number', 'Boolean', 'Map',
+  'Promise', 'Symbol', 'JSON', 'Math', 'Error', 'TypeError', 'globalThis',
+  'isArray', 'from', 'of', 'keys', 'values', 'entries', 'length', 'flat',
+  'flatMap', 'map', 'filter', 'reduce', 'forEach', 'some', 'every', 'find',
+  'join', 'concat', 'push', 'pop', 'slice', 'splice', 'includes', 'indexOf',
+  'has', 'get', 'set', 'add', 'delete', 'clear', 'typeof', 'instanceof',
+  'void', 'in', 'true', 'false', 'null', 'undefined', 'this',
+  'isNaN', 'parseInt', 'parseFloat', 'structuredClone', 'assign', 'freeze',
+  'create', 'defineProperty', 'NaN', 'Infinity',
+]);
+
+/**
  * C3's PREDICATE, factored out so C3b can EXECUTE it on synthetic sources
  * instead of re-implementing it. A mutation proof that re-derives the rule is
  * not a proof of the rule; this one calls the same code path C3 does.
@@ -518,14 +544,120 @@ function c3TrustSurfaceVerdict(src, call) {
     }
   };
 
+  // Every root is reduced to SOURCE EXPRESSIONS, and every identifier read
+  // inside such an expression is followed transitively.
+  //
+  // P1-1 FIXED HERE. Three review rounds converged on one underlying mistake
+  // from different directions: treating a NON-EMPTY text root as if it were a
+  // TRACKED one. The `__expr__` branch tested an inline expression as text and
+  // stopped, so `new Set([...trusted, ...qs])` passed whenever the widening sat
+  // one hop behind `qs`; the shorthand caller's member value was followed only
+  // when it happened to be a bare identifier. Three of the five audited sites
+  // are `__expr__`, so the guard was materially blind on most of the surface it
+  // claims to cover.
+  //
+  // So there is exactly ONE place where an expression becomes evidence, and
+  // every shape below is reduced to expressions before reaching it. A shape
+  // that cannot be reduced does not get a pass — it is reported unresolved.
+  //
+  // A name is only a BLIND SPOT if it cannot be accounted for by ANY route. A
+  // binding is not the only thing that explains an identifier: a call's value
+  // comes from the callee's body, in this module or one hop away in `lib/`.
+  // Reporting every unbound name as a blind spot — while the callee body sitting
+  // right there is readable — produced `validatePlanInput` and `isPlainObject`
+  // as unresolvables on the F.3 boundary's own production line. That is the
+  // noise-to-signal failure in its purest form: a guard that cries wolf on the
+  // two most legitimate bindings in the codebase is a guard whose real findings
+  // will be waived through. Hence the routing, which tries every route and
+  // reports a blind spot only when all of them fail.
+  //
+  // The three IN-MODULE routes live in the helper (`resolveNameInModule`), so
+  // the body route and this one cannot disagree about what a local is. Only the
+  // cross-module route is added here, because it is the one route that needs
+  // `libDir` and the call site's file — knowledge this function has and the
+  // helper's module-level entry point does not.
+  const resolveName = (ident, budget) => {
+    const localRoutes = resolveNameInModule(src, ident, { budget });
+
+    // A function IMPORTED from another `lib/` module — the shape the trust
+    // boundary actually uses, since the trusted strings are the output of a T04
+    // plan-contract call that lives one module away.
+    //
+    // Two things can arrive here and BOTH must be followed. `ident` itself may
+    // be the import (`validatePlanInput`); or the binding walk may have reduced
+    // `ident` to a name that IS an import and reported it as a pending import
+    // rather than an answer — precisely so that this hop, the only one holding
+    // `libDir`, is the one that takes it.
+    //
+    // The pending imports are followed EVEN WHEN the local routes already
+    // produced expressions. `validated = validatePlanInput(plan)` also reaches
+    // `isPlainObject`, whose body yields eight real expressions, so an
+    // early-return-on-non-empty dropped the pending import and a targeted
+    // string folded into `plan-contract.mjs` stayed green.
+    const candidates = new Set([...(localRoutes.pendingImports ?? [])]);
+    if (localRoutes.expressions.length === 0) candidates.add(ident);
+    const expressions = [...(localRoutes.expressions ?? [])];
+    const unresolvable = [...(localRoutes.unresolvable ?? [])];
+    let resolvedAny = localRoutes.expressions.length > 0;
+    for (const name of candidates) {
+      const imported = resolveImportedCallReturnProvenance(LIB_DIR, call.file, name, { budget });
+      if (!imported.found) continue;
+      resolvedAny = true;
+      expressions.push(...imported.expressions);
+      unresolvable.push(...imported.unresolvable);
+    }
+    if (resolvedAny) return { expressions, unresolvable };
+
+    // Nothing in this module or its `lib/` imports accounts for the name. A
+    // callback parameter reaches here only if the lexical walk missed its
+    // scope, so this is a real blind spot and C3 fails closed on it.
+    return { expressions: [], unresolvable: [ident] };
+  };
+
+  const followInto = (label, expression, seen = new Set()) => {
+    checkExpressions(label, [expression]);
+    // ONE budget for the whole call site, shared by every route beneath it.
+    // The routes call each other — the binding walk asks the body route, the
+    // body route asks the binding walk, and the cross-module route re-enters
+    // both in the origin module — so a per-identifier budget never terminates.
+    // Sharing it makes every function body resolve at most once per call site.
+    const budget = { visited: new Set() };
+    for (const ident of provenanceIdentifiersIn(expression)) {
+      // Globals and built-ins are not trust inputs. `new Set(…)`, `Array.isArray`
+      // and a module-level helper named like a builtin would otherwise each be
+      // reported as an unresolvable binding, and the guard would drown in noise
+      // that is really just vocabulary. Only names the module cannot account for
+      // are blind spots, and those are what must fail.
+      if (PROVENANCE_VOCABULARY.has(ident)) continue;
+      // Cycle guard: a trust set built from itself resolves to nothing new, and
+      // without this the walk would not terminate on `const a = [...a]`.
+      if (seen.has(ident)) continue;
+      seen.add(ident);
+
+      const nested = resolveName(ident, budget);
+      checkExpressions(label, nested.expressions);
+      for (const name of nested.unresolvable) unresolvable.push(`${at} \`${label}.${name}\``);
+      // NO recursive re-follow here, and the omission is load-bearing. Each
+      // route is already transitive: `resolveTrustSetProvenance` walks
+      // intermediates to its depth limit, and `resolveCallReturnProvenance`
+      // walks the identifiers IT reads. Feeding a route's OUTPUT back in as if
+      // it were a fresh expression double-counts that work and, worse, re-reads
+      // a whole imported function BODY as if it were one expression — which
+      // turned `checkStringList`'s internals (`z_c0`, `password`, `token`, `api`)
+      // into blind spots. Depth belongs to the route that owns the scope, not
+      // to the caller that started the walk.
+    }
+  };
+
   for (const root of trustSetRootsOf(call.callText ?? call.text)) {
     // `__expr__<text>` — an INLINE trust set, e.g.
     // `{ trustedPlanStrings: new Set(targetedPools…) }`. There is nothing to
-    // walk, but the expression itself is the evidence, so test it directly.
+    // walk, but the expression itself is the evidence, and the identifiers it
+    // reads are still followed.
     // P1-A: this branch did not exist, and the empty case silently skipped the
     // site entirely.
     if (root.startsWith('__expr__')) {
-      checkExpressions('<inline>', [root.slice('__expr__'.length)]);
+      followInto('<inline>', root.slice('__expr__'.length));
       continue;
     }
 
@@ -541,7 +673,7 @@ function c3TrustSurfaceVerdict(src, call) {
         continue;
       }
       const nested = resolveShorthandTrustSetFromCallers(LIB_DIR, call.file, callee, paramName);
-      checkExpressions(paramName, nested.expressions);
+      for (const expr of nested.expressions) followInto(paramName, expr);
       for (const name of nested.unresolvable) unresolvable.push(`${at} \`${paramName}\` → ${name}`);
       continue;
     }
@@ -556,26 +688,14 @@ function c3TrustSurfaceVerdict(src, call) {
         );
         continue;
       }
-      checkExpressions(varName, [memberExpr]);
-      // The member may itself be a plain variable or a whole expression whose
-      // intermediates must be followed.
-      if (/^[A-Za-z_$][\w$]*$/.test(memberExpr)) {
-        const nested = resolveTrustSetProvenance(src, memberExpr);
-        checkExpressions(varName, nested.expressions);
-        for (const name of nested.unresolvable) unresolvable.push(`${at} \`${varName}.${name}\``);
-      } else {
-        for (const ident of provenanceIdentifiersIn(memberExpr)) {
-          const nested = resolveTrustSetProvenance(src, ident);
-          checkExpressions(varName, nested.expressions);
-          for (const name of nested.unresolvable) unresolvable.push(`${at} \`${varName}.${name}\``);
-        }
-      }
+      followInto(varName, memberExpr);
       continue;
     }
 
-    const { expressions, unresolvable: names } = resolveTrustSetProvenance(src, root);
-    checkExpressions(root, expressions);
-    for (const name of names) unresolvable.push(`${at} \`${root}\` → ${name}`);
+    // A plain variable. `followInto` on the variable's own name adds the walk
+    // `resolveTrustSetProvenance` already performs; it is called for the uniform
+    // treatment rather than for extra coverage.
+    followInto(root, root);
   }
 
   return { violations, unresolvable };
@@ -789,14 +909,31 @@ test('C3c: EVERY trust-set call site yields something for C3 to examine', () => 
     + 'marker for C3 to examine; an empty result is an UNGUARDED site, not a clean one',
   );
 
-  // And the count must cover what the enumerator actually found, so a future
-  // site cannot slip in by being classified as something other than `trusted`.
+  // And every site must produce a verdict object C3 can assert on — not merely
+  // an entry in an array.
+  //
+  // P2-1 FIXED HERE. The previous line was
+  //   verdicts.filter((v) => v.violations.length > 0 || v.unresolvable.length > 0 || true)
+  // whose `|| true` made the predicate constant: every element passed no matter
+  // what it contained, so the assertion could not fail and proved nothing. A
+  // guard that cannot fail is worse than no guard, because it is indistinguishable
+  // from one that is working. The predicate now tests the two properties that
+  // actually matter, and the count is compared to the enumerated site count so a
+  // site cannot escape by being classified as something other than `trusted`.
   const verdicts = e.trusted.map((c) => c3TrustSurfaceVerdict(
     stripComments(readFileSync(path.join(LIB_DIR, c.file), 'utf8')),
     c,
   ));
-  const checked = verdicts.filter((v) => v.violations.length > 0 || v.unresolvable.length > 0 || true).length;
-  assert.equal(checked, e.trusted.length, 'each site must produce a verdict');
+  const malformed = verdicts
+    .map((v, i) => (v === null || !Array.isArray(v.violations) || !Array.isArray(v.unresolvable)
+      ? `${e.trusted[i].file}:${e.trusted[i].line}` : null))
+    .filter(Boolean);
+  assert.deepEqual(
+    malformed,
+    [],
+    'every site must produce a well-formed verdict; a missing one is an unexamined site, not a clean one',
+  );
+  assert.equal(verdicts.length, e.trusted.length, 'each site must produce a verdict');
 });
 
 test('C2: enumeratePlanOwnedStrings never yields a targeted/authorized string', () => {
