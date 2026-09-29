@@ -31,7 +31,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, mkdtempSync } from 'node:fs';
+import { readFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -527,9 +527,13 @@ const PROVENANCE_VOCABULARY = new Set([
  *
  * @param {string} src module source, comments already stripped
  * @param {{file: string, line: number, text: string}} call one trusted call site
+ * @param {{libDir?: string}} [opts] `libDir` is where the cross-module route
+ *   reads sibling modules from; it DEFAULTS to the real `lib/`, so a synthetic
+ *   multi-module fixture has to opt into a temporary directory explicitly rather
+ *   than accidentally resolving against production files.
  * @returns {{violations: string[], unresolvable: string[]}}
  */
-function c3TrustSurfaceVerdict(src, call) {
+function c3TrustSurfaceVerdict(src, call, { libDir = LIB_DIR } = {}) {
   const violations = [];
   const unresolvable = [];
   const at = `${call.file}:${call.line}`;
@@ -600,7 +604,7 @@ function c3TrustSurfaceVerdict(src, call) {
     const unresolvable = [...(localRoutes.unresolvable ?? [])];
     let resolvedAny = localRoutes.expressions.length > 0;
     for (const name of candidates) {
-      const imported = resolveImportedCallReturnProvenance(LIB_DIR, call.file, name, { budget });
+      const imported = resolveImportedCallReturnProvenance(libDir, call.file, name, { budget });
       if (!imported.found) continue;
       resolvedAny = true;
       expressions.push(...imported.expressions);
@@ -673,7 +677,13 @@ function c3TrustSurfaceVerdict(src, call) {
         continue;
       }
       const nested = resolveShorthandTrustSetFromCallers(LIB_DIR, call.file, callee, paramName);
-      for (const expr of nested.expressions) followInto(paramName, expr);
+      // The label is for the MESSAGE, not for resolution. Passing the parameter
+      // name into `followInto` as if it were the value made the walk try to
+      // resolve `trustedPlanStrings` as a variable, and since the shorthand
+      // member name appears in every options literal in the module, that
+      // reached `finalize` → `buildCandidateGroups` → its whole inner call
+      // graph. The name is known; the CALLERS' expressions are what is unknown.
+      for (const expr of nested.expressions) followInto('<shorthand>', expr);
       for (const name of nested.unresolvable) unresolvable.push(`${at} \`${paramName}\` → ${name}`);
       continue;
     }
@@ -840,21 +850,121 @@ test('C3b: MUTATION PROOF — the three widenings the security review found are 
         '}',
       ].join('\n'),
     },
+    // THE FOURTH REVIEW'S TWO FINDINGS, AS CASES. Both were MISSED by the
+    // third revision and both are here so the suite fails if either shape is
+    // ever reintroduced. A repair with no case behind it is a repair that
+    // decays quietly.
+    {
+      name: 'P1-1 chain: the widening is TWO lib/ modules away, behind a pending import',
+      src: [
+        'import { widenPlan } from "./zz-mid.mjs";',
+        'function f({ plan }) {',
+        '  const trusted = new Set(widenPlan(plan.queryVariants));',
+        '  const opts = { trustedPlanStrings: trusted };',
+        '  return assertArtifactSafe(pool, opts);',
+        '}',
+      ].join('\n'),
+      libFiles: {
+        'zz-mid.mjs': [
+          'import { harvestTargetedStrings } from "./zz-leaf.mjs";',
+          'export function widenPlan(v) {',
+          '  return [...v, ...harvestTargetedStrings(v)];',
+          '}',
+        ].join('\n'),
+        'zz-leaf.mjs': [
+          'export function harvestTargetedStrings(evaluatedGaps) {',
+          '  const targetedPools = evaluatedGaps.map((g) => g.rawQuery);',
+          '  return targetedPools;',
+          '}',
+        ].join('\n'),
+      },
+    },
+    {
+      name: 'P1-2 mutation: Object.assign writes targeted bytes into the set',
+      src: [
+        'function f({ plan, targetedPools }) {',
+        '  const trusted = new Set(plan.queryVariants);',
+        '  Object.assign(trusted, targetedPools.map((tp) => tp.rawQuery));',
+        '  const opts = { trustedPlanStrings: trusted };',
+        '  return assertArtifactSafe(pool, opts);',
+        '}',
+      ].join('\n'),
+    },
+    // THE ALIAS BYPASS, FOUND BY PROBING THE GUARD AFTER CLOSING THE FOURTH
+    // REVIEW'S TWO FINDINGS. Both of those were POSITION holes — a value at a
+    // call's return, a value at a callee's first argument. This one is not a
+    // position at all, which is why no position-based rule reaches it:
+    //
+    //     const candidates = mergeCandidates(accumulatedPool, targetedPools);
+    //     for (const c of candidates) trusted.add(c.rawQuery);
+    //
+    // `candidates` is not a targeted surface by name — it is the merged pool, a
+    // legitimate value that CONTAINS targeted bytes — so the closed vocabulary
+    // has nothing to match, and a rename defeats it. `c` is a loop binding, for
+    // which `bindingsOf` had no rule, so `candidates` was never visited and the
+    // suite sat at 22/22 green. The synthetic form below is the same shape with
+    // a helper in place; the production-equivalent form is asserted separately
+    // against the real module.
+    {
+      name: 'ALIAS: a merge helper output widens the set through a for…of head',
+      src: [
+        'function f({ plan, targetedPools }) {',
+        '  const candidates = mergeCandidates(targetedPools);',
+        '  const trusted = new Set(plan.queryVariants);',
+        '  for (const c of candidates) {',
+        '    if (c && typeof c.rawQuery === "string") trusted.add(c.rawQuery);',
+        '  }',
+        '  const opts = { trustedPlanStrings: trusted };',
+        '  return assertArtifactSafe(pool, opts);',
+        '}',
+        'function mergeCandidates(targetedPools) {',
+        '  return targetedPools.flatMap((p) => p.candidates);',
+        '}',
+      ].join('\n'),
+    },
   ];
 
-  for (const { name, src } of CASES) {
+  for (const { name, src, libFiles } of CASES) {
     const stripped = stripComments(src);
     const callText = /return\s+assertArtifactSafe\s*\([^;]*\);/.exec(stripped);
     assert.ok(callText !== null, `precondition: ${name} has a parseable call site`);
-    const verdict = c3TrustSurfaceVerdict(stripped, {
-      file: 'synthetic.mjs',
-      line: 1,
-      text: callText[0].trim(),
-    });
-    assert.ok(
-      verdict.violations.length > 0,
-      `C3 must reject this widening — ${name}. A guard that cannot see it is decorative.`,
-    );
+    // A case with `libFiles` is a MULTI-MODULE fixture, and BOTH halves have to
+    // exist on disk.
+    //
+    // The siblings obviously have to, or the pending import resolves to nothing
+    // and the case fails for a reason unrelated to the rule. The CALLER has to
+    // as well, and that one is easy to miss: `importOriginOf` reads
+    // `libDir/<call.file>` to find which module declares the imported name, so a
+    // `synthetic.mjs` that exists only as an in-memory string is invisible to
+    // it. The first version of this fixture did exactly that and the case
+    // failed — which is the failure mode worth having, since a case that cannot
+    // fail for its stated reason is worse than no case at all.
+    //
+    // The directory lives in `os.tmpdir()` and is removed in a `finally`, so
+    // nothing survives the assertion either way.
+    let libDir = LIB_DIR;
+    let tempDir = null;
+    if (libFiles) {
+      tempDir = mkdtempSync(path.join(tmpdir(), 't11-c3b-'));
+      for (const [file, body] of Object.entries(libFiles)) {
+        writeFileSync(path.join(tempDir, file), `${stripComments(body)}\n`);
+      }
+      writeFileSync(path.join(tempDir, 'synthetic.mjs'), `${stripped}\n`);
+      libDir = tempDir;
+    }
+    try {
+      const verdict = c3TrustSurfaceVerdict(stripped, {
+        file: 'synthetic.mjs',
+        line: 1,
+        text: callText[0].trim(),
+      }, { libDir });
+      assert.ok(
+        verdict.violations.length > 0,
+        `C3 must reject this widening — ${name}. A guard that cannot see it is decorative.`,
+      );
+    } finally {
+      if (tempDir !== null) rmSync(tempDir, { recursive: true, force: true });
+    }
   }
 
   // (4) Negative control: the REAL production binding must NOT trip C3, or the

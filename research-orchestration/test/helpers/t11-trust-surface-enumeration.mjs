@@ -319,10 +319,48 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8, budge
     // real threats, not noisy about the shape the codebase actually uses.
     out.push(...parameterBindingsOf(source, name));
     out.push(...destructuredAliasBindingsOf(source, name));
-    // Post-construction mutation: NAME.add(<expr>) / NAME.delete(...)
-    const mutate = new RegExp(`\\b${escapeRe(name)}\\s*\\.\\s*(?:add|delete)\\s*\\(\\s*([^)]*)`, 'g');
-    for (let m = mutate.exec(source); m !== null; m = mutate.exec(source)) {
+    // A `for…of` head is a binding too. Without this rule the loop variable
+    // resolves to nothing at all, the name that was being iterated is never
+    // visited, and a trust set widened through a loop reads as clean — see
+    // `loopHeadBindingsOf` for the shape that stayed green through four
+    // review rounds.
+    out.push(...loopHeadBindingsOf(source, name));
+
+    // RECEIVER mutation: `NAME.add(x)`, `NAME.delete(x)`, `NAME.clear()`.
+    // The name is the RECEIVER, which is unambiguous — nothing else can put
+    // the trust set there — and it holds for any method name. That generality
+    // is the point: the fourth review's P1-2 was a list containing only
+    // `add|delete`, and a list of verbs survives only until the next verb.
+    const receiver = new RegExp(`\\b${escapeRe(name)}\\s*\\.\\s*[A-Za-z_$][\\w$]*\\s*\\(\\s*([^)]*)`, 'g');
+    for (let m = receiver.exec(source); m !== null; m = receiver.exec(source)) {
       out.push({ kind: 'mutate', expr: m[1] });
+    }
+
+    // ARGUMENT mutation: `Object.assign(trusted, targetedPools)` — the trust
+    // set handed to a callee that writes into it. Same P1, different position.
+    //
+    // GATED ON THE NAME ACTUALLY BEING A SET, and the gate is not optional.
+    // Ungated, `fn(name, …)` matches every call that takes a first argument in
+    // a 4000-line module: the parameter `plan` alone produced 101 expressions
+    // and 31 phantom blind spots, because plenty of calls take a plan first and
+    // none of them writes into it. Position is necessary and not sufficient;
+    // being a set is the actual precondition for `Object.assign(trusted, …)`
+    // to mean anything.
+    if (isSetCarrierIn(source, name)) {
+      // The negative lookbehind sits IMMEDIATELY before the trust set's name,
+      // not before the callee. Placed before the callee — the obvious reading
+      // of "not a member access" — it forbids the dot in `Object.assign(…)`,
+      // which is precisely the call the fourth review built, and the rule
+      // matched nothing at all. What must be excluded is the trust set appearing
+      // as a PROPERTY (`opts.trusted`), because that is a read of someone
+      // else's field rather than this set being written into.
+      const asFirstArg = new RegExp(
+        `\\b[A-Za-z_$][\\w$]*\\s*\\(\\s*(?<![.\\w$])${escapeRe(name)}\\s*,([^)]*)`,
+        'g',
+      );
+      for (let m = asFirstArg.exec(source); m !== null; m = asFirstArg.exec(source)) {
+        out.push({ kind: 'mutate', expr: m[1] });
+      }
     }
     return out;
   }
@@ -646,10 +684,20 @@ export function importOriginOf(libDir, file, name) {
   if (!existsSync(full)) return null;
   if (!statSync(full).isFile()) return null;
   const stripped = stripComments(readFileSync(full, 'utf8'));
-  for (const m of stripped.matchAll(/import\s*\{([\s\S]*?)\}\s*from\s*'(\.[^']+)'/g)) {
+  // BOTH QUOTE STYLES — see `isLibRelativeImport`. A path spelled with double
+  // quotes is the same import, and matching only one of them makes the
+  // cross-module route silently inapplicable.
+  // GROUPS: 1 = the name list, 2 = the opening quote (a back-reference so the
+  // path cannot contain its own delimiter), 3 = the path. The quote group is
+  // there only to close the match, and the first version of this edit read
+  // `m[2]` as the path — which is the quote character. `path.basename('"')` is
+  // `'""'`, no such file exists, and the route returns `null` while looking
+  // like it ran: a cross-module hop that is silently inapplicable, which is
+  // the same blindness as not having the rule at all.
+  for (const m of stripped.matchAll(/import\s*\{([\s\S]*?)\}\s*from\s*(['"])(\.[^'"]+)\2/g)) {
     const names = m[1].split(',').map((s) => s.trim().split(/\s+as\s+/).pop().trim());
     if (!names.includes(name)) continue;
-    const target = path.basename(m[2]);
+    const target = path.basename(m[3]);
     const targetFull = path.join(libDir, target);
     if (existsSync(targetFull) && statSync(targetFull).isFile()) return target;
   }
@@ -694,17 +742,25 @@ export function resolveCallReturnProvenance(source, callName, { budget, maxHops 
     return { found: true, expressions: [`${callName}(…) body (already walked)`], unresolvable: [] };
   }
   if (graph.visited.size >= maxHops) {
-    // Reaching the hop limit is NOT a blind spot in a NAME. It says the walk
-    // stopped by design, and the caller is told so in the expression list where
-    // it cannot be mistaken for a finding. Reporting it in `unresolvable` made
-    // C3 fail on `plan-contract.mjs`'s own size — a depth budget of the guard's
-    // own choosing, dressing itself up as a defect in the boundary under test.
-    // The `maxHops` value is a deliberately tight 12; the honest response to
-    // exhausting it is a deeper budget, not a suppressed violation.
+    // FAIL CLOSED, AND THE ASYMMETRY WITH `maxDepth` IS THE POINT.
+    //
+    // The fourth review flagged this as fail-open: reaching the limit returned
+    // an expression saying "truncated, not clean" and an EMPTY `unresolvable`,
+    // so C3 read it as a clean site. A 14-link call chain with the targeted
+    // surface at the far end passed. The sibling budget — `maxDepth` in
+    // `resolveTrustSetProvenance` — has always reported
+    // `… max depth 8 exceeded` as an unresolvable, i.e. failed closed. Two
+    // budgets bounding the same walk must agree on which way to fail, or the
+    // tighter one is an opt-out from the guard.
+    //
+    // A truncation the guard cannot see past is a blind spot, so it is reported
+    // as one. The honest way to make this quieter is a larger `maxHops`, which
+    // is a decision about how much call graph to read — not something to
+    // achieve by making the guard look clean.
     return {
       found: true,
-      expressions: [`${callName}(…) body (call-graph hop limit ${maxHops} reached — walk truncated, not clean)`],
-      unresolvable: [],
+      expressions: [],
+      unresolvable: [`${callName} (call-graph hop limit ${maxHops} reached — walk truncated, not clean)`],
     };
   }
   graph.visited.add(callName);
@@ -752,6 +808,7 @@ export function resolveCallReturnProvenance(source, callName, { budget, maxHops 
   // name binding. So the body text is checked directly, and the name walk runs
   // on top of it for the bindings that reach further.
   expressions.add(text);
+  const pending = new Set();
   for (const ident of provenanceIdentifiersIn(text)) {
     if (RESERVED.has(ident) || PROVENANCE_VOCABULARY.has(ident)) continue;
     // The function's own name appears inside its body (recursion, or a
@@ -762,8 +819,23 @@ export function resolveCallReturnProvenance(source, callName, { budget, maxHops 
     const nested = resolveNameInModule(source, ident, { scope: text, budget: graph });
     for (const e of nested.expressions) expressions.add(e);
     for (const n of nested.unresolvable) unresolvable.add(`${callName}.${n}`);
+    // PENDING IMPORTS PROPAGATE OUT OF A BODY — the fourth review's P1-1.
+    //
+    // This loop used to read only `expressions` and `unresolvable`, so a name
+    // the origin module itself imports was dropped: it entered no expression
+    // list, no unresolvable list, and nothing obliged anyone to follow it. The
+    // fourth review built exactly that and stayed 22/22 green — a helper
+    // (`zz-t11-bypass-helper.mjs`) holding `targetedPools` is not a violation,
+    // not a blind spot, and not even a note. A pending import is a QUESTION, and
+    // a question has to travel up to the one caller that can answer it.
+    for (const name of nested.pendingImports ?? []) pending.add(name);
   }
-  return { found: true, expressions: [...expressions], unresolvable: [...unresolvable] };
+  return {
+    found: true,
+    expressions: [...expressions],
+    unresolvable: [...unresolvable],
+    pendingImports: [...pending],
+  };
 }
 
 /**
@@ -840,8 +912,11 @@ export function resolveNameInModule(source, ident, { scope = '', budget } = {}) 
   const local = resolveCallReturnProvenance(source, ident, { budget });
   if (local.found) {
     // The body may itself read an imported name, so the same "pending travels
-    // with the answer" rule applies one level deeper.
-    const pending = pendingNames(local.expressions);
+    // with the answer" rule applies one level deeper — and the names come from
+    // the body's own `pendingImports`, not from a re-scan of its expression
+    // list, because a body-level pending import was never written into any
+    // expression in the first place.
+    const pending = local.pendingImports ?? [];
     return pending.length > 0
       ? { expressions: local.expressions, unresolvable: local.unresolvable, pendingImports: pending }
       : { expressions: local.expressions, unresolvable: local.unresolvable };
@@ -890,6 +965,18 @@ function pendingNames(expressions) {
 }
 
 /**
+ * Whether `name` is bound to a `Set` anywhere in this source.
+ *
+ * The precondition for reading `fn(name, …)` as a write INTO `name`. A plan, a
+ * pool, a decision object — all of them take first arguments, and none of them
+ * is a set, so without this gate the argument-mutation rule invents blind spots
+ * at every call site in the file rather than at the ones that mutate.
+ */
+function isSetCarrierIn(source, name) {
+  return new RegExp(`\\b${escapeRe(name)}\\s*=\\s*new\\s+Set\\b`).test(source);
+}
+
+/**
  * Whether `name` is bound by a `lib/`-relative import statement in this source.
  *
  * A pure source question with no filesystem dependency, which is what lets the
@@ -897,9 +984,19 @@ function pendingNames(expressions) {
  * has `libDir`" from "unknown, therefore a blind spot". A bare package import
  * (`from 'node:fs'`) is NOT one: there is no readable body, so it stays a blind
  * spot and the guard fails closed.
+ *
+ * BOTH QUOTE STYLES, and that is not a stylistic detail. Every regex here used
+ * to spell the module path as `'…'`, which is invisible to
+ * `import { x } from "./y.mjs"`. Double quotes are legal, Prettier-normalised
+ * code routinely uses them, and the effect of not matching is the worst kind:
+ * a name the guard cannot see declared as an import is reported as an
+ * UNRESOLVABLE, and an unresolvable in this walk is a blind spot rather than a
+ * violation — so a two-hop widening written with double quotes read as
+ * "nothing found" and the site looked clean. Found while building the C3b
+ * multi-module fixture, which is the only reason it surfaced at all.
  */
 function isLibRelativeImport(source, name) {
-  const re = new RegExp(`import\\s*\\{[\\s\\S]*?\\}\\s*from\\s*'\\.[^']*'`, 'g');
+  const re = /import\s*\{[\s\S]*?\}\s*from\s*(['"])\.[^'"]*\1/g;
   for (let m = re.exec(source); m !== null; m = re.exec(source)) {
     const names = /\{([\s\S]*?)\}/.exec(m[0])?.[1] ?? '';
     for (const entry of names.split(',')) {
@@ -974,11 +1071,53 @@ export function resolveImportedCallReturnProvenance(libDir, file, callName, { bu
   if (!viaOrigin.found) {
     return { found: false, expressions: [], unresolvable: [`${callName} is imported from ${origin} but has no top-level body there`] };
   }
-  return {
-    found: true,
-    expressions: viaOrigin.expressions.map((e) => `${origin}: ${e}`),
-    unresolvable: viaOrigin.unresolvable.map((n) => `${origin} ${n}`),
+
+  // THE CHAIN IS FOLLOWED TO THE END, NOT ONE LINK.
+  //
+  // P1-1, fourth review. `plan-contract.mjs` importing a helper that itself
+  // imports the targeted surface is a TWO-link chain, and reading only the first
+  // link reported the helper's name as nothing at all — no expression, no
+  // unresolvable, no pending. The fourth review built exactly that and the
+  // suite stayed 22/22 green.
+  //
+  // So every pending import the origin body declared is followed too, from the
+  // ORIGIN module (that is where its import statements live — resolving it
+  // against the original caller is what made the first attempt find nothing).
+  // Depth is bounded by the shared call-graph budget, and a link that cannot be
+  // resolved becomes an unresolvable, so the chain fails closed.
+  const expressions = viaOrigin.expressions.map((e) => `${origin}: ${e}`);
+  const unresolvable = viaOrigin.unresolvable.map((n) => `${origin} ${n}`);
+  const seenChain = new Set([`${origin}::${callName}`]);
+
+  const followChain = (moduleName, name, depth) => {
+    if (depth > 6) {
+      unresolvable.push(`${moduleName} ${name} (import chain depth 6 exceeded — walk truncated)`);
+      return;
+    }
+    const key = `${moduleName}::${name}`;
+    if (seenChain.has(key)) return;
+    seenChain.add(key);
+    const nextSource = stripComments(readFileSync(path.join(libDir, moduleName), 'utf8'));
+    const viaNext = resolveCallReturnProvenance(nextSource, name, { budget: graph });
+    if (!viaNext.found) {
+      unresolvable.push(`${moduleName} ${name} is imported but has no top-level body there`);
+      return;
+    }
+    for (const e of viaNext.expressions) expressions.push(`${moduleName}: ${e}`);
+    for (const n of viaNext.unresolvable) unresolvable.push(`${moduleName} ${n}`);
+    for (const next of viaNext.pendingImports ?? []) followChain(moduleName, next, depth + 1);
   };
+
+  for (const next of viaOrigin.pendingImports ?? []) {
+    const nextOrigin = importOriginOf(libDir, origin, next);
+    if (nextOrigin === null) {
+      unresolvable.push(`${origin} ${next} is not readable in ${origin} or any lib/ import`);
+      continue;
+    }
+    followChain(nextOrigin, next, 1);
+  }
+
+  return { found: true, expressions, unresolvable };
 }
 
 /**
@@ -1026,6 +1165,63 @@ function destructuredAliasBindingsOf(source, name) {
       if (withDefault !== name) continue;
       out.push({ kind: 'destructure', expr: `${m[2]}.${withDefault}` });
     }
+  }
+  return out;
+}
+
+/**
+ * Bindings created by a `for…of` / `for…in` HEAD: `for (const c of candidates)`.
+ *
+ * WHY THIS HAD TO BE ADDED (found while closing the fourth review's P1s)
+ * ---------------------------------------------------------------------
+ * The fourth review's two findings were both about POSITION — a call return
+ * value, an `Object.assign` first argument. Both are now closed. Mechanically
+ * probing the guard afterwards for a THIRD shape turned up one that no
+ * position-based rule can reach, and it is the same class of hole the mutation
+ * rules were added for, wearing a different costume:
+ *
+ *     const trusted = new Set(plan.queryVariants);
+ *     for (const c of candidates) trusted.add(c.rawQuery);
+ *
+ * `candidates` is `mergeCandidates(accumulatedPool, targetedPools)` — a merge
+ * whose output is *mostly* legitimate, so it is not a targeted surface by name
+ * and the closed vocabulary has nothing to match. `c` is a loop binding, and
+ * `bindingsOf` had no rule for loop bindings at all, so `c` resolved to nothing,
+ * `candidates` was never visited, and the targeted bytes entered the trust set
+ * with the suite at 22/22 green. The alias is a rename — the weakest possible
+ * adversary — which is exactly why a name-matched guard must not be the only
+ * thing standing between a targeted string and the trust set.
+ *
+ * The loop head IS a binding, so it belongs here with the other binding rules:
+ * it contributes the ITERATED collection, and the existing recursive walk
+ * carries it from there. Note this is deliberately NOT gated on the name being
+ * a Set: the loop may be feeding any downstream use of the trust set, and a
+ * gate would reintroduce the position-blindness that made the fourth review's
+ * P1-2 possible.
+ */
+function loopHeadBindingsOf(source, name) {
+  const out = [];
+  // `for (const c of candidates)` / `for (let x in obj)` — the declared name
+  // may carry a keyword prefix and may be a destructuring pattern, in which case
+  // the member names are what get bound.
+  const decl = new RegExp(
+    `\\bfor\\s*\\(\\s*(?:const|let|var)\\s+([^;)]*?)\\s+(?:of|in)\\s+([^;)]+?)\\s*\\)`,
+    'g',
+  );
+  for (let m = decl.exec(source); m !== null; m = decl.exec(source)) {
+    const pattern = m[1].trim();
+    const iterated = m[2].trim();
+    const inner = /^\{([\s\S]*)\}$/.exec(pattern);
+    if (inner) {
+      // `for (const { rawQuery } of candidates)` binds the MEMBER names, and
+      // the iterated collection is what carries the data either way.
+      for (const member of inner[1].split(',')) {
+        const bound = (member.includes(':') ? member.split(':').pop() : member).split('=')[0].trim();
+        if (bound === name) out.push({ kind: 'loop-head', expr: iterated });
+      }
+      continue;
+    }
+    if (pattern === name) out.push({ kind: 'loop-head', expr: iterated });
   }
   return out;
 }
@@ -1149,6 +1345,12 @@ const PROVENANCE_VOCABULARY = new Set([
   // be fed from, and its absence as a lib/ relative import is not a blind spot.
   'fs', 'node', 'util', 'crypto', 'os', 'url', 'buffer', 'events', 'stream',
   'assert', 'child_process', 'zlib', 'readline', 'timers', 'process',
+  // The trust set's own MEMBER NAME. In
+  // `assertArtifactSafe(x, { trustedPlanStrings: trusted })` this is the name OF
+  // the slot, not a variable holding it, and treating it as a binding drags the
+  // enclosing function's entire call graph into the walk
+  // (`trustedPlanStrings.buildCandidateGroups…`).
+  'trustedPlanStrings',
 ]);
 
 function escapeRe(s) {
