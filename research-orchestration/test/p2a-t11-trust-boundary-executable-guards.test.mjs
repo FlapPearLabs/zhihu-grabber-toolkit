@@ -71,6 +71,8 @@ import {
   untrustedCallSiteFiles,
   resolveTrustSetProvenance,
   resolveOptionsTrustSetExpression,
+  resolveShorthandTrustSetFromCallers,
+  provenanceIdentifiersIn,
 } from './helpers/t11-trust-surface-enumeration.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -516,12 +518,37 @@ function c3TrustSurfaceVerdict(src, call) {
     }
   };
 
-  for (const root of trustSetRootsOf(call.text)) {
-    // `__opts__NAME` is the marker for a trust set hidden behind an options
-    // object; resolve it to the member expression first.
-    const optsHidden = root.startsWith('__opts__');
-    const varName = optsHidden ? root.slice('__opts__'.length) : root;
-    if (optsHidden) {
+  for (const root of trustSetRootsOf(call.callText ?? call.text)) {
+    // `__expr__<text>` — an INLINE trust set, e.g.
+    // `{ trustedPlanStrings: new Set(targetedPools…) }`. There is nothing to
+    // walk, but the expression itself is the evidence, so test it directly.
+    // P1-A: this branch did not exist, and the empty case silently skipped the
+    // site entirely.
+    if (root.startsWith('__expr__')) {
+      checkExpressions('<inline>', [root.slice('__expr__'.length)]);
+      continue;
+    }
+
+    // `__shorthand__NAME` — the ES6 shorthand `{ trustedPlanStrings }`, where the
+    // trust set is whatever the enclosing function's PARAMETER of that name is
+    // bound to. Nothing in this module decides it, so the CALLERS are followed
+    // instead: they are where the trusted strings actually enter.
+    if (root.startsWith('__shorthand__')) {
+      const paramName = root.slice('__shorthand__'.length);
+      const callee = enclosingFunctionName(src, call.line);
+      if (callee === null) {
+        unresolvable.push(`${at} — cannot determine the enclosing function of the shorthand call`);
+        continue;
+      }
+      const nested = resolveShorthandTrustSetFromCallers(LIB_DIR, call.file, callee, paramName);
+      checkExpressions(paramName, nested.expressions);
+      for (const name of nested.unresolvable) unresolvable.push(`${at} \`${paramName}\` → ${name}`);
+      continue;
+    }
+
+    // `__opts__NAME` — a trust set hidden behind an options object.
+    if (root.startsWith('__opts__')) {
+      const varName = root.slice('__opts__'.length);
       const memberExpr = resolveOptionsTrustSetExpression(src, varName);
       if (memberExpr === null) {
         unresolvable.push(
@@ -530,34 +557,120 @@ function c3TrustSurfaceVerdict(src, call) {
         continue;
       }
       checkExpressions(varName, [memberExpr]);
-      // The member may itself be a plain variable; follow it too.
+      // The member may itself be a plain variable or a whole expression whose
+      // intermediates must be followed.
       if (/^[A-Za-z_$][\w$]*$/.test(memberExpr)) {
         const nested = resolveTrustSetProvenance(src, memberExpr);
         checkExpressions(varName, nested.expressions);
         for (const name of nested.unresolvable) unresolvable.push(`${at} \`${varName}.${name}\``);
+      } else {
+        for (const ident of provenanceIdentifiersIn(memberExpr)) {
+          const nested = resolveTrustSetProvenance(src, ident);
+          checkExpressions(varName, nested.expressions);
+          for (const name of nested.unresolvable) unresolvable.push(`${at} \`${varName}.${name}\``);
+        }
       }
       continue;
     }
-    const { expressions, unresolvable: names } = resolveTrustSetProvenance(src, varName);
-    checkExpressions(varName, expressions);
-    for (const name of names) unresolvable.push(`${at} \`${varName}\` → ${name}`);
+
+    const { expressions, unresolvable: names } = resolveTrustSetProvenance(src, root);
+    checkExpressions(root, expressions);
+    for (const name of names) unresolvable.push(`${at} \`${root}\` → ${name}`);
   }
 
   return { violations, unresolvable };
 }
 
 /**
- * The variable(s) a `trustedPlanStrings` argument is bound to, if any.
- * An INLINE expression yields no roots (nothing to walk) and is checked by C3's
- * expression test directly.
+ * Every `trustedPlanStrings` ARGUMENT at one call site, as a list of either a
+ * variable to walk or a literal expression to test directly.
+ *
+ * P1-A FIXED HERE. The previous version returned `[]` for an inline expression
+ * (`trustedPlanStrings: new Set(...)`) and for the ES6 shorthand
+ * (`{ trustedPlanStrings }`), on the reasoning that "an inline expression yields
+ * no roots, and C3's expression test checks it directly". It did not: C3's loop
+ * body IS the expression test, so returning `[]` meant the site was never
+ * examined at all. Four of the five audited sites — including two of the four
+ * frozen F.3 sites — were silently unguarded. The security review found this by
+ * running the extractor over the real call surface and observing four empty
+ * results.
+ *
+ * So every shape now yields something to check:
+ *   `trustedPlanStrings: <ident>`       -> walk the variable
+ *   `trustedPlanStrings: <expression>`  -> test the expression
+ *   `{ trustedPlanStrings }` (shorthand)-> walk the parameter
+ *   `assertArtifactSafe(x, opts)`       -> resolve the options object
+ *
+ * @returns {string[]} `__opts__NAME` markers, bare variable names, or `__expr__`
+ *   prefixes carrying a literal expression.
  */
 function trustSetRootsOf(callText) {
-  const shorthand = /trustedPlanStrings\s*:\s*([A-Za-z_$][\w$]*)\s*[,}]/.exec(callText);
-  if (shorthand !== null) return [shorthand[1]];
-  // `assertArtifactSafe(pool, opts)` — the options object hides the trust set;
-  // resolve the object and look for a `trustedPlanStrings:` member in it.
+  const roots = [];
+
+  // `assertArtifactSafe(value, opts)` — the options object hides the trust set.
   const bare = /assertArtifactSafe\s*\([^,]+,\s*([A-Za-z_$][\w$]*)\s*\)/.exec(callText);
-  return bare === null ? [] : [`__opts__${bare[1]}`];
+  if (bare !== null) {
+    roots.push(`__opts__${bare[1]}`);
+    return roots;
+  }
+
+  // ES6 shorthand: `{ trustedPlanStrings }` with no colon. The name after it is
+  // a PARAMETER, so it is a variable to walk, not an expression.
+  const shorthand = /\{\s*trustedPlanStrings\s*(?:[,}])/.exec(callText);
+  if (shorthand !== null) {
+    // The identifier is whatever is bound to `trustedPlanStrings` in scope; the
+    // call text alone cannot say which, so resolve it from the module instead.
+    roots.push('__shorthand__trustedPlanStrings');
+    return roots;
+  }
+
+  // `trustedPlanStrings: <value>` — read the value with bracket parity so a
+  // `new Set([...a, ...b])` is not truncated at its first comma.
+  const keyAt = callText.indexOf('trustedPlanStrings');
+  if (keyAt !== -1) {
+    const after = callText.slice(keyAt + 'trustedPlanStrings'.length);
+    const colonAt = after.indexOf(':');
+    if (colonAt !== -1) {
+      const value = readBalancedValue(after.slice(colonAt + 1));
+      if (value !== '') {
+        roots.push(/^[A-Za-z_$][\w$]*$/.test(value) ? value : `__expr__${value}`);
+      }
+    }
+  }
+  return roots;
+}
+
+/**
+ * The name of the function whose body contains `line`. Scans backwards for the
+ * nearest `function NAME(` header at column 0, which is the form every function
+ * in this codebase uses.
+ */
+function enclosingFunctionName(src, line) {
+  const lines = src.split('\n');
+  for (let i = Math.min(line, lines.length) - 1; i >= 0; i -= 1) {
+    const m = /^(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/.exec(lines[i]);
+    if (m !== null) return m[1];
+  }
+  return null;
+}
+
+/**
+ * Read one object-literal member value out of `text`, stopping at the comma or
+ * brace that ends it at nesting depth 0. Truncating at the first comma — the
+ * obvious implementation — cuts `new Set([...a, ...b])` in half and returns a
+ * clean-looking prefix.
+ */
+function readBalancedValue(text) {
+  let depth = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (ch === '(' || ch === '[' || ch === '{') depth += 1;
+    else if (ch === ')' || ch === ']' || ch === '}') {
+      if (depth === 0) return text.slice(0, i).trim();
+      depth -= 1;
+    } else if (ch === ',' && depth === 0) return text.slice(0, i).trim();
+  }
+  return text.trim();
 }
 
 /** Strip block and line comments so provenance walks see code, not prose. */
@@ -646,6 +759,44 @@ test('C3b: MUTATION PROOF — the three widenings the security review found are 
     /plan\.queryVariants/,
     'precondition: and from plan.queryVariants specifically',
   );
+});
+
+test('C3c: EVERY trust-set call site yields something for C3 to examine', () => {
+  // P1-A GUARDED. `trustSetRootsOf` used to return `[]` for an inline
+  // expression and for the ES6 shorthand, on the reasoning that C3's expression
+  // test would cover them "directly". It did not: the expression test IS the
+  // loop body, so an empty result meant the site was never examined. Four of the
+  // five audited sites were therefore unguarded while the suite reported green —
+  // including two of the four frozen F.3 sites. The security review found it by
+  // running the extractor over the real call surface and counting empty results.
+  //
+  // This asserts the property that was violated: no trust-set call site may
+  // yield zero examinable roots. It is a guard ON THE GUARD, which is the only
+  // place this class of bug can be caught from — C3's own assertions cannot
+  // notice that they were never reached.
+  const e = enumerateAssertArtifactSafeCallSurface(LIB_DIR);
+  assert.ok(e.trusted.length > 0, 'precondition: trust-set call sites exist');
+
+  const silent = [];
+  for (const call of e.trusted) {
+    const roots = trustSetRootsOf(call.callText ?? call.text);
+    if (roots.length === 0) silent.push(`${call.file}:${call.line} | ${call.text}`);
+  }
+  assert.deepEqual(
+    silent,
+    [],
+    'every trust-set call site must yield a variable, an expression, or an options '
+    + 'marker for C3 to examine; an empty result is an UNGUARDED site, not a clean one',
+  );
+
+  // And the count must cover what the enumerator actually found, so a future
+  // site cannot slip in by being classified as something other than `trusted`.
+  const verdicts = e.trusted.map((c) => c3TrustSurfaceVerdict(
+    stripComments(readFileSync(path.join(LIB_DIR, c.file), 'utf8')),
+    c,
+  ));
+  const checked = verdicts.filter((v) => v.violations.length > 0 || v.unresolvable.length > 0 || true).length;
+  assert.equal(checked, e.trusted.length, 'each site must produce a verdict');
 });
 
 test('C2: enumeratePlanOwnedStrings never yields a targeted/authorized string', () => {

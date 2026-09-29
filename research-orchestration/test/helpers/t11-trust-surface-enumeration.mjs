@@ -114,11 +114,23 @@ function classifyAt(lines, idx) {
     parts.push(i === end ? lines[i].slice(0, argsEnd) : lines[i]);
   }
   const args = parts.join(' ').trim();
+  // The FULL call text, arguments included. `text` below keeps only the first
+  // line, which for a multi-line call such as
+  //   assertArtifactSafe(pool, {
+  //     trustedPlanStrings: new Set(validated.plan.queryVariants),
+  //   });
+  // is `assertArtifactSafe(pool, {` — the member is not in it at all. Any
+  // consumer that reads the trust set out of `text` is therefore blind to every
+  // multi-line call site, and `retrieval.mjs` is written exactly that way.
+  const callText = [
+    lines[idx].slice(call.index),
+    ...lines.slice(idx + 1, end + 1).map((l, k) => (idx + 1 + k === end ? l.slice(0, argsEnd + 1) : l)),
+  ].join(' ');
   if (!args) return { kind: 'not-a-call', spanEnd: end };
   if (/\btrustedPlanStrings\b\s*[:,}]/.test(args) || /\btrustedPlanStrings\b\s*$/.test(args)) {
-    return { kind: 'call-trusted', spanEnd: end };
+    return { kind: 'call-trusted', spanEnd: end, callText };
   }
-  if (/[A-Za-z_$][\w$]*\s*:/.test(args)) return { kind: 'unparsed', spanEnd: end };
+  if (/[A-Za-z_$][\w$]*\s*:/.test(args)) return { kind: 'unparsed', spanEnd: end, callText };
   // A BARE IDENTIFIER as the whole options argument is the dangerous case the
   // P1 review caught: `assertArtifactSafe(pool, opts)`. Whether `opts` carries a
   // trust set is not decidable from this line, so classifying it as
@@ -132,10 +144,10 @@ function classifyAt(lines, idx) {
   if (args.includes(',')) {
     const secondArg = args.split(',').slice(1).join(',').trim();
     if (secondArg && /^[A-Za-z_$][\w$]*$/.test(secondArg)) {
-      return { kind: 'unparsed', spanEnd: end };
+      return { kind: 'unparsed', spanEnd: end, callText };
     }
   }
-  return { kind: 'call-untrusted', spanEnd: end };
+  return { kind: 'call-untrusted', spanEnd: end, callText };
 }
 
 /**
@@ -167,9 +179,9 @@ export function enumerateAssertArtifactSafeCallSurface(libDir) {
     const lines = stripped.split('\n');
     const calls = [];
     for (let i = 0; i < lines.length; i += 1) {
-      const { kind, spanEnd } = classifyAt(lines, i);
+      const { kind, spanEnd, callText } = classifyAt(lines, i);
       if (kind === 'not-a-call') continue;
-      calls.push({ file: entry, line: i + 1, text: lines[i].trim(), kind });
+      calls.push({ file: entry, line: i + 1, text: lines[i].trim(), callText: callText ?? lines[i].trim(), kind });
       if (kind === 'call-trusted') trusted.push(calls[calls.length - 1]);
       else if (kind === 'call-untrusted') untrusted.push(calls[calls.length - 1]);
       else unparsed.push(calls[calls.length - 1]);
@@ -276,11 +288,19 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8 } = {}
       unresolvable.add(name);
       return;
     }
-    for (const { kind, expr } of found) {
+    for (const { expr } of found) {
       expressions.add(expr);
       // Every identifier read inside this expression is followed transitively.
-      if (kind === 'mutate') continue; // `.add(action.normalizedQuery)` — a leaf
-      for (const ident of identifiersIn(expr)) {
+      //
+      // P1-B FIXED HERE. A mutation argument used to be treated as a LEAF:
+      // `trusted.add(action.normalizedQuery)` was caught only because the
+      // literal word `normalizedQuery` matched the surface pattern, while
+      // `trusted.add(qs)` — the same widening behind one intermediate — was
+      // not, and neither was a `for…of` loop appending per item. Treating the
+      // leaf as a leaf made the mutation half of the guard a false green for
+      // exactly the renames and indirections it was meant to survive. A
+      // mutation argument is an ordinary read and is now followed like one.
+      for (const ident of provenanceIdentifiersIn(expr)) {
         if (RESERVED.has(ident)) continue;
         walk(ident, depth + 1);
       }
@@ -325,6 +345,144 @@ function locallyBoundNames(source) {
   const single = /\(([A-Za-z_$][\w$]*)\)\s*=>/g;
   for (let m = single.exec(source); m !== null; m = single.exec(source)) names.add(m[1]);
   return names;
+}
+
+/**
+ * Resolve the actual trust set behind an ES6-SHORTHAND call site
+ * (`assertArtifactSafe(x, { trustedPlanStrings })`) by finding the CALLERS of
+ * the enclosing function and reading what they pass for that member.
+ *
+ * WHY THIS IS NEEDED (P1-A, second half)
+ * ---------------------------------------
+ * With the shorthand, the trust set is a FUNCTION PARAMETER, so there is nothing
+ * in the enclosing module to read: a lexical walk of that module's source
+ * matched unrelated symbols that merely share the name (`ok`, `reason`,
+ * `currentPoolPlanHash`) and produced a nonsensical provenance list. Following
+ * the parameter is impossible without a call graph; following the CALLERS is
+ * both possible and the more honest check, because the callers are where the
+ * trusted strings actually enter.
+ *
+ * When no caller can be found — an exported function nothing in `lib/` calls —
+ * that is reported as `unresolvable` so the guard fails closed rather than
+ * waving the site through.
+ *
+ * @param {string} libDir absolute path to `lib/`
+ * @param {string} file the module containing the shorthand call
+ * @param {string} calleeName the enclosing exported function's name
+ * @param {string} memberName the shorthand member, e.g. `trustedPlanStrings`
+ * @returns {{expressions: string[], unresolvable: string[]}}
+ */
+export function resolveShorthandTrustSetFromCallers(libDir, file, calleeName, memberName) {
+  const expressions = new Set();
+  const unresolvable = new Set();
+  let callerCount = 0;
+
+  for (const entry of readdirSync(libDir).sort()) {
+    if (!entry.endsWith('.mjs')) continue;
+    const full = path.join(libDir, entry);
+    if (!statSync(full).isFile()) continue;
+    const stripped = stripComments(readFileSync(full, 'utf8'));
+    for (const m of stripped.matchAll(new RegExp(`\\b${escapeRe(calleeName)}\\s*\\(`, 'g'))) {
+      // Skip the declaration itself.
+      const before = stripped.slice(Math.max(0, m.index - 80), m.index);
+      if (/\bfunction\s*$/.test(before)) continue;
+      const args = readCallArguments(stripped, m.index + m[0].length - 1);
+      if (args === null) continue;
+      callerCount += 1;
+      // The member may sit in ANY argument — `persistSelectionDecision(workDir,
+      // decision, { trustedPlanStrings: … })` puts it third — so the whole
+      // argument list is searched rather than each argument in turn. Checking
+      // arguments one at a time and reporting the first miss is what made this
+      // site look unresolvable when its real trust set was perfectly readable.
+      let resolvedHere = false;
+      for (const arg of args) {
+        const member = readMemberValue(arg, memberName);
+        if (member === null) continue;
+        resolvedHere = true;
+        expressions.add(member);
+        // Follow one level of indirection: the argument is usually a variable.
+        if (/^[A-Za-z_$][\w$]*$/.test(member)) {
+          const nested = resolveTrustSetProvenance(stripped, member);
+          for (const e of nested.expressions) expressions.add(e);
+          for (const n of nested.unresolvable) unresolvable.add(`${entry}: ${n}`);
+        }
+      }
+      if (!resolvedHere) {
+        unresolvable.add(`${entry}: \`${calleeName}(…)\` passes no readable \`${memberName}\``);
+      }
+    }
+  }
+
+  if (callerCount === 0) {
+    unresolvable.add(`no in-module caller of \`${calleeName}\` found in lib/`);
+  }
+  return { expressions: [...expressions], unresolvable: [...unresolvable] };
+}
+
+/** The argument texts of one call, given the index of its opening paren. */
+function readCallArguments(source, open) {
+  let depth = 0;
+  let argsStart = open + 1;
+  let argsEnd = -1;
+  for (let j = open; j < source.length && j - open < 4000; j += 1) {
+    const ch = source[j];
+    if (ch === '(' || ch === '[' || ch === '{') depth += 1;
+    else if (ch === ')' || ch === ']' || ch === '}') {
+      depth -= 1;
+      if (depth === 0) { argsEnd = j; break; }
+    }
+  }
+  if (argsEnd === -1) return null;
+  return splitTopLevelCommas(source.slice(argsStart, argsEnd));
+}
+
+/** Split an argument list on commas that are not inside brackets. */
+function splitTopLevelCommas(text) {
+  const out = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (ch === '(' || ch === '[' || ch === '{') depth += 1;
+    else if (ch === ')' || ch === ']' || ch === '}') depth -= 1;
+    else if (ch === ',' && depth === 0) { out.push(text.slice(start, i).trim()); start = i + 1; }
+  }
+  const tail = text.slice(start).trim();
+  if (tail !== '') out.push(tail);
+  return out;
+}
+
+/**
+ * The value of `memberName` inside one object-literal argument, or the
+ * argument itself if it is shorthand (`{ trustedPlanStrings }`).
+ */
+function readMemberValue(argText, memberName) {
+  const body = argText.trim();
+  if (!/^[{[]/.test(body)) return null;
+  const keyAt = body.indexOf(memberName);
+  if (keyAt === -1) return null;
+  const after = body.slice(keyAt + memberName.length);
+  const colonAt = after.indexOf(':');
+  if (colonAt === -1) {
+    // Shorthand at the call site too: the value is the member name itself,
+    // bound by the caller's own scope. Report it so the caller resolves it.
+    return memberName;
+  }
+  const value = readBalancedMemberValue(after.slice(colonAt + 1));
+  return value === '' ? null : value;
+}
+
+function readBalancedMemberValue(text) {
+  let depth = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (ch === '(' || ch === '[' || ch === '{') depth += 1;
+    else if (ch === ')' || ch === ']' || ch === '}') {
+      if (depth === 0) return text.slice(0, i).trim();
+      depth -= 1;
+    } else if (ch === ',' && depth === 0) return text.slice(0, i).trim();
+  }
+  return text.trim();
 }
 
 /**
@@ -430,7 +588,7 @@ function splitStatements(source) {
  * the spread member is detached behind an `_SPREAD_` prefix FIRST, which makes
  * the member a plain identifier and leaves no dot for the strip to match.
  */
-function identifiersIn(expr) {
+export function provenanceIdentifiersIn(expr) {
   const stripped = String(expr)
     .replace(/\.\.\.([A-Za-z_$][\w$]*)/g, `${SPREAD_MARKER}$1`)
     // Drop string literals so a targeted-looking word inside prose is not a hit.
@@ -445,7 +603,7 @@ function identifiersIn(expr) {
   return [...stripped.matchAll(/\b[A-Za-z_$][\w$]*\b/g)].map((m) => m[0]);
 }
 
-/** Marker prefix `identifiersIn` uses to keep a spread read walkable. */
+/** Marker prefix `provenanceIdentifiersIn` uses to keep a spread read walkable. */
 const SPREAD_MARKER = '__p2aT11Spread__';
 
 const RESERVED = new Set([
