@@ -353,7 +353,6 @@ export function enumerateAssertArtifactSafeCallSurface(libDir) {
 
 /**
  * Every `.mjs` file under `dir`, recursively, as paths relative to `dir`.
- *
  * Sorted, so the enumeration order is deterministic and a failing assertion names
  * the same site on every run. `node_modules`, `fixtures` and dot-directories are
  * skipped: a vendored copy of the walker under `node_modules` is not a production
@@ -416,6 +415,41 @@ function localWalkerNames(stripped, walkerModule) {
       // name.
       if (parts[0] !== WALKER_EXPORT) continue;
       names.add(parts[parts.length - 1]);
+    }
+  }
+  // r10 P1-3: LOCAL RE-BINDINGS. An import alias is the obvious way to rename
+  // the walker; assigning it to another const is the one-liner way, and it
+  // defeated the enumerator completely:
+  //
+  //   import { assertArtifactSafe } from './rrf.mjs';
+  //   const walker = assertArtifactSafe;
+  //   walker(pool, { trustedPlanStrings: trusted });
+  //
+  // produced ZERO call objects. Not "unparsed" — absent from every list, so A1's
+  // file lists were unchanged, `unparsed` stayed empty, and C3/C3c never
+  // iterated the site. The enumerator is the only thing between a widening and
+  // no test at all, so that is a one-token refactor away from a green suite
+  // covering nothing.
+  //
+  // The transitivity matters: an alias of an alias is still the walker, so the
+  // new names are collected to a fixed point rather than in one pass.
+  //
+  // Destructure-from-namespace is included for the same reason:
+  //   const { assertArtifactSafe: go } = rrf;   /   const { assertArtifactSafe } = rrf;
+  for (const m of stripped.matchAll(
+    /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*([A-Za-z_$][\w$]*)\s*[;,]/g,
+  )) {
+    if (m[2] !== WALKER_EXPORT && !names.has(m[2])) continue;
+    names.add(m[1]);
+  }
+  for (const m of stripped.matchAll(
+    /(?:const|let|var)\s*\{([^}]*)\}\s*=\s*([A-Za-z_$][\w$]*)\s*[;,]/g,
+  )) {
+    for (const entry of m[1].split(',')) {
+      const parts = entry.trim().split(/\s*:\s*/).map((s) => s.trim());
+      if (parts.length !== 2) continue;
+      if (parts[0] !== WALKER_EXPORT) continue;
+      names.add(parts[1]);
     }
   }
   return [...names];
@@ -690,15 +724,25 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8, budge
     // The property name alone is not a variable — `trustedPlanStrings` is the
     // member of every options literal in the codebase — so step 1 filters the
     // vocabulary the same way every other name is filtered.
-    if (name.includes('.')) {
-      const segments = name.split('.');
-      const member = segments[segments.length - 1];
-      const receiver = segments.slice(0, -1).join('.');
+    // A MEMBER is a name, in any of the spellings JS offers. r10 P1-2: the test
+    // used to be `name.includes('.')`, which made the DOT load-bearing —
+    // `holder['trusted']` came out as one segment, the member name was the whole
+    // expression, and no property write could ever match it:
+    //
+    //   holder['trusted'] = new Set(tp.map(…));   // the actual write
+    //   … { trustedPlanStrings: holder['trusted'] } // what the walk saw
+    //
+    // `splitMemberAccess` reduces every spelling to `{receiver, member}` with
+    // the receiver left as a PATH, so `a.b.c` recurses on `a.b` exactly as it
+    // always did. Only the separator was ever the problem.
+    const memberSplit = splitMemberAccess(name);
+    if (memberSplit !== null) {
+      const { receiver, member } = memberSplit;
       if (depth > maxDepth) {
         unresolvable.add(`${name} (max depth ${maxDepth} exceeded)`);
         return;
       }
-      const key = `member:${name}`;
+      const key = `member:${receiver}.${member}`;
       if (seen.has(key)) return;
       seen.add(key);
       for (const { expr } of propertyWriteBindingsOf(source, member)) {
@@ -953,8 +997,25 @@ function enclosingTopLevelFunctionBody(source, name) {
  * @param {string} source module source
  * @param {string} ident the identifier about to be followed
  * @returns {boolean} true when the name is genuinely vocabulary here
+ *
+ * EXPORTED (r10 P1-1). The test layer used to answer this question a second
+ * time, by SPELLING alone:
+ *
+ *   if (PROVENANCE_VOCABULARY.has(ident)) continue;
+ *
+ * That is the original defect wearing a different hat. A widening written as
+ * `const filter = targetedPools.map(...); new Set(filter)` is CAUGHT, because
+ * the walk sees a real binding; the identical widening written INLINE as
+ * `new Set(filter)` is SKIPPED, because the only question asked is whether the
+ * name is spelled like a library method. Same bytes of attacker data, opposite
+ * verdict, decided by formatting.
+ *
+ * And it is not an academic difference: two of the five frozen sites spell
+ * their trust set inline (`coverage-state.mjs`, `coverage-final-integration.mjs`),
+ * so the blind spelling was covering real production ground. The rule is now
+ * asked ONCE, here, and both callers route through it.
  */
-function isVocabularyOnly(source, ident) {
+export function isVocabularyOnly(source, ident) {
   if (!RESERVED.has(ident) && !PROVENANCE_VOCABULARY.has(ident)) return false;
   // `trustedPlanStrings` is the trust set's MEMBER NAME, not a variable, and it
   // is in the vocabulary precisely so the enclosing call graph is not dragged in.
@@ -1423,14 +1484,199 @@ export function resolveOptionsTrustSetExpression(source, optsVar) {
  * @param {string} name the trust set's member name, e.g. `trusted`
  * @returns {Array<{kind: string, expr: string}>}
  */
+/**
+ * The SPELLINGS of a member access, shared so the three consumers below can
+ * never drift apart on what JS allows.
+ *
+ * r10 P1-2. `name.includes('.')` was the whole test everywhere, so
+ * `holder['trusted']` and `h?.trusted` — the same member, written the other two
+ * ways JS allows — were not recognised as names at all. A receiver, a
+ * separator, and a property; only the separator varies.
+ *
+ * `RECEIVER` is a PATH (`a`, `a.b`, `a.b.c`) because the walk recurses on the
+ * receiver and has always been able to. Anchoring it at one identifier is what
+ * made `validated.plan.queryVariants` stop being a member.
+ *
+ * `LITERAL_PROPERTY` accepts a BARE identifier only after a dot (`a.b`); after
+ * brackets it must be QUOTED (`a['b']`), because `a[b]` with a variable key is
+ * not a read of the member `b` — it is a read of whatever property `b` holds at
+ * run time, and the walk has nothing to follow. See `propertyWriteBindingsOf`
+ * for the same distinction on the write side, and for the regression that found
+ * it.
+ */
+const RECEIVER = String.raw`[A-Za-z_$][\w$]*(?:\s*(?:\?\.|\.)\s*[A-Za-z_$][\w$]*)*`;
+const LITERAL_PROPERTY = String.raw`(?:[A-Za-z_$][\w$]*|'[^']*'|"[^"]*"|\`[^\`]*\`)`;
+const QUOTED_PROPERTY = String.raw`(?:'[^']*'|"[^"]*"|\`[^\`]*\`)`;
+
+/** `recv.prop` — separator form, path receiver, bare or literal property. */
+const SEPARATOR_FORM = new RegExp(
+  String.raw`^\s*(${RECEIVER})\s*\.\s*(${LITERAL_PROPERTY})\s*$`,
+);
+/** `recv['prop']` — bracket form, path receiver, QUOTED property only. */
+const BRACKET_FORM = new RegExp(
+  String.raw`^\s*(${RECEIVER})\s*\[\s*(${QUOTED_PROPERTY})\s*\]\s*$`,
+);
+/**
+ * A receiver of EXACTLY ONE identifier, then one property — `a.b` or `a['b']`,
+ * and (after normalisation) `a?.b` and `a?.['b']`.
+ *
+ * This is `isWalkableTrustSetName`'s form, and the difference from the two above
+ * is the whole point: it refuses a receiver PATH. `a.b.c` is a member to
+ * `splitMemberAccess` and an EXPRESSION here, because the base is a read whose
+ * own value still has to be resolved.
+ */
+const SINGLE_SEGMENT_FORM = new RegExp(
+  String.raw`^\s*[A-Za-z_$][\w$]*\s*(?:\.\s*${LITERAL_PROPERTY}|\[\s*${QUOTED_PROPERTY}\s*\])\s*$`,
+);
+
+/**
+ * Strip the OPTIONAL-CHAIN operator, so the two member forms are all that is
+ * left to recognise.
+ *
+ * `?.` is a guard on the ACCESS, never part of the member's identity —
+ * `h?.trusted` and `h.trusted` are the same member, and `h?.['trusted']` is
+ * `h['trusted']`. Normalising it away first is why the two regexes above need
+ * no optional-chain branches of their own, and why there is no third capture
+ * offset to get wrong.
+ */
+function normaliseMemberSpelling(name) {
+  return name
+    .replace(/\?\s*\.\s*\[/g, '[')  // h?.['p'] -> h['p']
+    .replace(/\?\s*\./g, '.');       // h?.p     -> h.p
+}
+
+/**
+ * Split a NAME into its last property and the receiver path reaching it, in any
+ * member-access spelling.
+ *
+ * THIS IS THE PREDICATE FOR "is this NAME a member access?" — and `a.b.c` IS
+ * one: its last segment is a property and the rest is the receiver, which the
+ * walk then recurses into exactly as it always did.
+ *
+ * It is NOT the predicate for "is this trust-set VALUE a name or an inline
+ * expression?" (`isWalkableTrustSetName`, below), where `a.b.c` is an
+ * EXPRESSION because its base is a read whose own value still has to be
+ * resolved. r10's first attempt merged the two — anchoring both at exactly one
+ * property — and it cost a repair cycle: `validated.plan.queryVariants` stopped
+ * being a member, fell out of the member walk, and got resolved as a bare
+ * variable, so the walk pulled in `validatePlanInput`'s entire function body and
+ * reported its eighteen locals as blind spots on `retrieval.mjs:800`, the frozen
+ * F.3 line the guard exists to protect. A guard that cries wolf there is a guard
+ * whose real findings get waived. The two questions are separate, and each has
+ * its own answer.
+ *
+ * @param {string} name
+ * @returns {{receiver: string, member: string}|null} null when `name` is not a
+ *   member access in any spelling
+ */
+export function splitMemberAccess(name) {
+  const normalised = normaliseMemberSpelling(name);
+  for (const re of [SEPARATOR_FORM, BRACKET_FORM]) {
+    const m = re.exec(normalised);
+    if (m === null) continue;
+    // The property arrives QUOTED for the computed spellings, and the walk
+    // looks it up as a NAME — `propertyWriteBindingsOf` builds a regex from it,
+    // and `'trusted'` as a pattern matches a quote character, not the property.
+    // The quotes are JS syntax around the member, never part of its identity:
+    // `holder['trusted']` and `holder.trusted` are the same member, which is the
+    // whole reason the walk accepts all the spellings in the first place.
+    return {
+      receiver: m[1].replace(/\s+/g, ''),
+      member: m[2].replace(/^(['"`])([\s\S]*)\1$/, '$2'),
+    };
+  }
+  return null;
+}
+
+/**
+ * Is this trust-set VALUE a MEMBER to walk, or an INLINE EXPRESSION to test as
+ * text?
+ *
+ * A receiver with EXACTLY ONE property, in any spelling: `a.b`, `a['b']`, `a?.b`,
+ * `a?.['b']`. Anchored at both ends so an expression that merely CONTAINS a
+ * member (`new Set(a.b)`) or chains several (`a.b.c`) stays an expression — see
+ * `splitMemberAccess` for why that is a different question from the one it asks.
+ *
+ * A BARE IDENTIFIER is deliberately not in this set, and must not be added. It
+ * reaches the walk by a different route that is already correct: the `__expr__`
+ * branch checks the name's own text and then recurses on
+ * `provenanceIdentifiersIn(name)`, which for a bare name yields the name itself,
+ * so the binding walk is asked anyway. Routing a bare name here as well would
+ * be asking the same question twice by two paths, and the first answer would
+ * pre-empt the second.
+ *
+ * Exported from the helper so the SPELLINGS have one definition. The test
+ * layer's own copy had lost the pure-bracket form, which made `holder['trusted']`
+ * a NAME to the walk and an EXPRESSION to the classifier deciding what to do
+ * with the name: two halves of one decision, disagreeing silently, on a
+ * security guard.
+ *
+ * @param {string} value
+ * @returns {boolean}
+ */
+export function isWalkableTrustSetName(value) {
+  // The `?.` normalisation matters here too, so the optional-chained spellings
+  // do not each need a branch of their own. It is done by string rewrite rather
+  // than by a shared regex on purpose: the two consumers want DIFFERENT receivers
+  // (a path versus a single identifier) and the SAME property rules, and sharing
+  // the property rules is what matters — sharing a verdict is what r10's first
+  // attempt did wrong.
+  return SINGLE_SEGMENT_FORM.test(normaliseMemberSpelling(value));
+}
+
 function propertyWriteBindingsOf(source, name) {
   const out = [];
   const re = escapeRe(name);
   // `RECEIVER.NAME = RHS;` — the lookbehind keeps `x.other.NAME` from matching
   // a two-segment receiver, which is correct: the walk follows dotted names from
   // the right, so the LAST segment is the one that matters.
+  //
+  // r10 P1-2: the SEPARATOR between receiver and property is not the identity
+  // of a member — only JS syntax varies it. These four spellings are one member:
+  //
+  //   holder.trusted       = new Set(tp.map(…));
+  //   holder['trusted']    = new Set(tp.map(…));
+  //   holder["trusted"]    = new Set(tp.map(…));
+  //   h?.trusted           = new Set(tp.map(…));
+  //   holder?.['trusted']  = new Set(tp.map(…));
+  //
+  // The separator is matched as ONE alternation that CONSUMES the member name.
+  // An earlier version put the name in the separator and then repeated it after,
+  // which requires the name to appear twice and silently matches nothing — the
+  // kind of mistake that looks like "no widening found" rather than "my regex
+  // is wrong", and would have left this guard quietly blind while reporting
+  // clean.
+  //
+  // A BARE (UNQUOTED) COMPUTED KEY IS DELIBERATELY NOT ONE OF THEM, and its
+  // absence was found by a regression rather than by reading. `h[name] = …`
+  // with a VARIABLE key is not a write to the member `name` — it is a write to
+  // whatever property that variable holds at run time — so the walk has nothing
+  // to follow and must not claim it has:
+  //
+  //   for (const key of Object.keys(plan)) { out[key] = canonicalize(value[key]); }
+  //   err[key] = v.issues;      normalized[key] = list;
+  //
+  // Those are the loop bodies of `plan-contract.mjs`'s own validators. Accepting
+  // them made `propertyWriteBindingsOf` report three unrelated writes as
+  // evidence for every member name the walk ever asked about, and the resulting
+  // `canonicalize` / `list` / `v.issues` reads dragged the whole
+  // `validatePlanInput` body into the provenance of the F.3 boundary's own
+  // production line — eighteen false blind spots on `retrieval.mjs:800`, the
+  // frozen line the guard exists to protect. A guard that cries wolf there is a
+  // guard whose real findings get waived.
+  //
+  // Only the QUOTED forms are writes to a known member, and a quoted key is a
+  // literal, so this cannot go blind on a real widening: `holder['trusted']` is
+  // a static property name, exactly as `holder.trusted` is.
+  const Q = `(?:'${re}'|"${re}"|\`${re}\`)`;
+  const SEP = [
+    `\\.\\s*${re}`,                      // h.trusted
+    `\\?\\.\\s*${re}`,                   // h?.trusted
+    `\\[\\s*${Q}\\s*\\]`,                // h['trusted']
+    `\\?\\.\\s*\\[\\s*${Q}\\s*\\]`,       // h?.['trusted']
+  ].join('|');
   const assign = new RegExp(
-    `(?<![.\\w$])([A-Za-z_$][\\w$]*)\\s*\\.\\s*${re}\\s*=(?!=)([^;]+);`,
+    `(?<![.\\w$])([A-Za-z_$][\\w$]*)\\s*(?:${SEP})\\s*=(?!=)([^;]+);`,
     'g',
   );
   for (let m = assign.exec(source); m !== null; m = assign.exec(source)) {

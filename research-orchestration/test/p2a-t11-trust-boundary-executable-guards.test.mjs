@@ -76,6 +76,8 @@ import {
   resolveCallReturnProvenance,
   resolveImportedCallReturnProvenance,
   resolveNameInModule,
+  isVocabularyOnly,
+  isWalkableTrustSetName,
 } from './helpers/t11-trust-surface-enumeration.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -757,7 +759,15 @@ function c3TrustSurfaceVerdict(src, call, { libDir = LIB_DIR } = {}) {
       // reported as an unresolvable binding, and the guard would drown in noise
       // that is really just vocabulary. Only names the module cannot account for
       // are blind spots, and those are what must fail.
-      if (PROVENANCE_VOCABULARY.has(ident)) continue;
+      //
+      // r10 P1-1 FIXED HERE. This used to read `PROVENANCE_VOCABULARY.has(ident)`
+      // — a bare SPELLING test, which is the r9 P1-2 defect reproduced in the
+      // test layer after the helper had already fixed it. So the same widening
+      // was caught through a variable (`const filter = targetedPools.map(…)`)
+      // and waved through inline (`new Set(filter)`), decided purely by
+      // formatting. `isVocabularyOnly` is the binding-aware predicate: a
+      // vocabulary word WITH a binding is a variable and must be read.
+      if (isVocabularyOnly(src, ident)) continue;
       // Cycle guard: a trust set built from itself resolves to nothing new, and
       // without this the walk would not terminate on `const a = [...a]`.
       if (seen.has(ident)) continue;
@@ -871,7 +881,19 @@ function c3TrustSurfaceVerdict(src, call, { libDir = LIB_DIR } = {}) {
     //
     // So a dotted root is resolved as a BINDING of that member — which is the
     // question actually being asked — rather than as text.
-    if (root.includes('.')) {
+    // r10 P1-2 FIXED HERE. The test said "is this a member?" with
+    // `root.includes('.')`, so the SAME defect survived the helper fix:
+    // `classifyTrustSetValue` now routes `holder['trusted']` and `h?.trusted`
+    // here as names — and then this predicate sent them straight to
+    // `followInto(root, root)`, which checks the member's own TEXT and recurses
+    // on `['holder']`. The property write that fed the trust set is never
+    // consulted, and r10 P1-2a read clean.
+    //
+    // The separator is not what makes a member a member, so it must not be the
+    // thing that decides. The classifier already draws this line, and it is
+    // reused rather than re-derived — two answers to "is this a name?" is how
+    // r9's review found the first one.
+    if (!classifyTrustSetValue(root).startsWith('__expr__')) {
       const memberBound = resolveTrustSetProvenance(src, root);
       for (const expr of memberBound.expressions) followInto(root, expr);
       for (const name of memberBound.unresolvable) unresolvable.push(`${at} \`${root}\` → ${name}`);
@@ -962,9 +984,59 @@ function trustSetRootsOf(callText) {
  * The dotted form reaches the binding walk, which resolves the member's own
  * property writes and then the receiver. Anything with brackets, spaces or
  * operators in it is still an expression.
+ *
+ * r10 P1-2 FIXED HERE: EVERY MEMBER-ACCESS SPELLING IS A NAME.
+ * `classifyTrustSetValue` recognised exactly one spelling of "walkable name" —
+ * `ident(.ident)*`. The other two spellings of the same member therefore fell
+ * through to `__expr__`, whose branch tests text and stops:
+ *
+ *   holder['trusted'] = new Set(tp.map(…));   // computed write
+ *   assertArtifactSafe(pool, { trustedPlanStrings: holder['trusted'] });
+ *
+ *   h?.trusted = new Set(tp.map(…));          // optional-chained write
+ *   assertArtifactSafe(pool, { trustedPlanStrings: h?.trusted });
+ *
+ * Both are the r9 P1-3 defect again, reached through a different syntax. The
+ * distinguishing feature is not the DOT — it is that the value is a member
+ * access at all, i.e. a receiver followed by a property, in any of the ways JS
+ * spells that. Everything else (calls, spreads, ternaries, arithmetic) stays an
+ * expression, because those are genuinely not names.
+ *
+ * r10 P1-2 FOLLOW-UP: over-broad member recognition is its own failure. Widening
+ * this to "any dotted thing" re-broke the r9 P1-2 routing case:
+ *
+ *   new Set(plan.queryVariants)
+ *
+ * is an EXPRESSION built from a read, not a name, and routing it to the binding
+ * walk asks about a path that does not exist — it made the walk expand
+ * `validatePlanInput`'s entire function body and report its locals as blind
+ * spots on a frozen production line. So the classifier stays anchored at both
+ * ends, which already excludes everything with an operator in it, and
+ * `a.b.c` is deliberately NOT a name here: a two-segment path is a read whose
+ * base still has to be resolved as an expression.
  */
 function classifyTrustSetValue(value) {
-  return /^[A-Za-z_$][\w$]*(?:\s*\.\s*[A-Za-z_$][\w$]*)*$/.test(value) ? value : `__expr__${value}`;
+  // A bare identifier, or a receiver with EXACTLY ONE property in any spelling
+  // (`a.b`, `a['b']`, `a?.b`, `a?.['b']`). Anchored at both ends so an
+  // expression that merely CONTAINS a member (`new Set(a.b)`) or chains several
+  // (`a.b.c`) stays an expression.
+  //
+  // r10 P1-2b: this used to carry its OWN copy of that regex, and the copy had
+  // lost the pure-bracket form (`a['b']`, no dot at all) that the helper's
+  // version has. So the walk was told `holder['trusted']` is a name and the
+  // classifier that decides what to DO with a name said it was an expression —
+  // two halves of one decision, disagreeing silently, on a security guard.
+  // The spellings are now the helper's single definition.
+  //
+  // r10 P1-2c: this is NOT the helper's `splitMemberAccess`. That one asks "is
+  // this NAME a member?" and answers YES for `a.b.c`. This one asks "is this
+  // trust-set VALUE a name or an inline expression?", and for `a.b.c` the answer
+  // is EXPRESSION — the base is a read whose own value still has to be resolved,
+  // so routing it to the binding walk asks about a path that does not exist.
+  // Sharing a verdict between the two was r10's first attempt and it regressed
+  // C3 into eighteen false blind spots on the frozen line; they share the
+  // SPELLINGS, not the answer.
+  return isWalkableTrustSetName(value) ? value : `__expr__${value}`;
 }
 
 /**
@@ -1816,6 +1888,237 @@ test('r9 P2-2: the call-surface enumerator sees SUBDIRECTORIES and IMPORT ALIASE
       enumeratedFiles.includes('unrelated.mjs'),
       false,
       'a non-walker export from the same import block is not a walker call site',
+    );
+    assert.deepEqual(
+      surface.unparsed.map((c) => c.file),
+      [],
+      'no walker call site may be left unclassified',
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// r10 P1-1. A widening must not be able to hide behind the SPELLING of the name
+// it is read through.
+//
+// The r9 repair made the helper's own walk binding-aware: a vocabulary word with
+// a binding is a variable, not a library method. The TEST layer kept the old
+// spelling test, so the same defect survived one layer down:
+//
+//   const filter = targetedPools.map((p) => p.rawQuery);        // CAUGHT
+//   assertArtifactSafe(state, { trustedPlanStrings: new Set(filter) });   // clean
+//
+// Only the formatting differs. And it is not academic: two of the five frozen
+// sites spell their trust set inline, so the blind spelling was covering real
+// production ground. Each case below is the reviewer's verbatim input.
+test('r10 P1-1: an INLINE trust set read through a vocabulary-spelled binding is not skipped', () => {
+  const CASES = [
+    {
+      name: 'r10 P1-1a: inline `new Set(filter)` where `filter` is a real targeted binding',
+      src: [
+        'function f(pool, targetedPools) {',
+        '  const filter = targetedPools.map((p) => p.rawQuery);',
+        '  return assertArtifactSafe(pool, { trustedPlanStrings: new Set(filter) });',
+        '}',
+      ].join('\n'),
+    },
+    {
+      // The spread form is the CONTROL for the diagnosis. It differs from the
+      // case above by one token, and before the fix it was CAUGHT — which is
+      // what proves the miss was the spelling filter rather than a limit of the
+      // walk: same data, same route, opposite verdict, decided by formatting.
+      name: 'r10 P1-1b: CONTROL — the same widening via spread IS caught',
+      src: [
+        'function f(pool, targetedPools) {',
+        '  const filter = targetedPools.map((p) => p.rawQuery);',
+        '  return assertArtifactSafe(pool, { trustedPlanStrings: new Set([...filter]) });',
+        '}',
+      ].join('\n'),
+    },
+  ];
+
+  for (const { name, src } of CASES) {
+    const stripped = stripComments(src);
+    const callText = /return\s+assertArtifactSafe\s*\([^;]*\);/.exec(stripped);
+    assert.ok(callText !== null, `precondition: ${name} has a parseable call site`);
+    const verdict = c3TrustSurfaceVerdict(
+      stripped,
+      { file: 'synthetic.mjs', line: 1, text: callText[0].trim(), callText: callText[0] },
+      { libDir: LIB_DIR },
+    );
+    assert.ok(
+      verdict.violations.length > 0 || verdict.unresolvable.length > 0,
+      `C3 must not wave this through — ${name}. A vocabulary SPELLING is not a `
+        + `proof that a name is unbound; the binding-aware predicate decides that.`,
+    );
+  }
+});
+
+// r10 P1-2. A member access is a NAME in every spelling JS offers, not only the
+// dotted one.
+//
+// `classifyTrustSetValue` recognised `ident(.ident)*` and nothing else, so the
+// computed and optional-chained spellings of the SAME member were filed as
+// inline expressions — whose branch tests text and stops. That is the r9 P1-3
+// defect reached through different syntax, and both forms returned a completely
+// empty verdict.
+test('r10 P1-2: COMPUTED and OPTIONAL-CHAINED members are walked, not treated as expressions', () => {
+  const CASES = [
+    {
+      name: 'r10 P1-2a: computed member `holder[\'trusted\']`',
+      src: [
+        'function f(pool, tp) {',
+        '  const holder = {};',
+        '  holder[\'trusted\'] = new Set(tp.map((p) => p.query));',
+        '  return assertArtifactSafe(pool, { trustedPlanStrings: holder[\'trusted\'] });',
+        '}',
+      ].join('\n'),
+    },
+    {
+      name: 'r10 P1-2b: optional-chained member `h?.trusted`',
+      src: [
+        'function f(pool, tp, h) {',
+        '  h?.trusted = new Set(tp.map((p) => p.query));',
+        '  return assertArtifactSafe(pool, { trustedPlanStrings: h?.trusted });',
+        '}',
+      ].join('\n'),
+    },
+  ];
+
+  for (const { name, src } of CASES) {
+    const stripped = stripComments(src);
+    const callText = /return\s+assertArtifactSafe\s*\([^;]*\);/.exec(stripped);
+    assert.ok(callText !== null, `precondition: ${name} has a parseable call site`);
+    const verdict = c3TrustSurfaceVerdict(
+      stripped,
+      { file: 'synthetic.mjs', line: 1, text: callText[0].trim(), callText: callText[0] },
+      { libDir: LIB_DIR },
+    );
+    assert.ok(
+      verdict.violations.length > 0 || verdict.unresolvable.length > 0,
+      `C3 must not wave this through — ${name}. Every member-access spelling is a `
+        + `name to walk; only the separator between receiver and property varies.`,
+    );
+  }
+});
+
+// r10 P1-4. A DYNAMIC index write is not a write to a named member.
+//
+// This is the regression that the r10 repair itself introduced, and it is here
+// because the fix that removed it was found by running the suite, not by reading
+// it — so the reason has to outlive the debugging.
+//
+// The member walk grew a bare-bracket spelling, `h[name] = RHS`, to cover
+// `h['name'] = RHS`. Those are not the same statement. With a QUOTED key the
+// property is a literal, so the write really is to the member `name`. With a
+// VARIABLE key it is a write to whatever property that variable holds at run
+// time, and the walk has nothing to follow:
+//
+//   for (const key of Object.keys(plan)) { out[key] = canonicalize(value[key]); }
+//   err[key] = v.issues;      normalized[key] = list;
+//
+// Those are the loop bodies of `plan-contract.mjs`'s own validators. Treating
+// them as writes to a member made `propertyWriteBindingsOf` report three
+// unrelated assignments as evidence for EVERY member name the walk asked about,
+// and the reads they dragged in (`canonicalize`, `list`, `v.issues`) pulled the
+// whole `validatePlanInput` body into the provenance of `retrieval.mjs:800` —
+// eighteen false blind spots on the frozen F.3 line the guard exists to protect.
+//
+// The failure mode is worth naming precisely, because it is the worst kind: the
+// guard got LOUDER and no more correct. Every finding it made was noise, on the
+// one production line where a real finding must never be waived.
+test('r10 P1-4: a DYNAMIC index write is not a write to a named member', () => {
+  // The precise invariant, asked of the route the fix changed. `key` is a loop
+  // variable, and reading `out[key] = …` as a write to the member `key` is what
+  // produced the eighteen false blind spots: a name the module cannot otherwise
+  // explain came back "explained" by a write to a property chosen at run time.
+  //
+  // `resolveNameInModule` is asked directly rather than through C3, because C3's
+  // own answer for this fixture is already correct FOR A DIFFERENT REASON — the
+  // `out` binding's loop body genuinely reads `plan`, which is on the targeted
+  // surface — so asking C3 would test that and not this.
+  const withDynamicKey = [
+    'function f(plan) {',
+    '  const out = {};',
+    '  for (const key of Object.keys(plan)) { out[key] = plan[key]; }',
+    '  return out;',
+    '}',
+  ].join('\n');
+  const dynamic = resolveNameInModule(withDynamicKey, 'key', {});
+  const dynamicExprs = dynamic.expressions.join('\n');
+  assert.ok(
+    !/out\.key\s*=/.test(dynamicExprs),
+    'a dynamic index write must not be reported as a write to the member `key`; '
+      + `got: ${dynamicExprs.slice(0, 200)}`,
+  );
+
+
+  // The CONTROL, one token apart: the quoted form IS a member write and must
+  // still be found. Without this, the assertion above would also pass on a
+  // build that had simply stopped looking at property writes at all.
+  const withQuotedKey = [
+    'function f(plan) {',
+    '  const out = {};',
+    "  out['key'] = plan.key;",
+    '  return out;',
+    '}',
+  ].join('\n');
+  const quoted = resolveNameInModule(withQuotedKey, 'key', {});
+  assert.ok(
+    quoted.expressions.some((e) => /out\.key\s*=/.test(e)),
+    'a QUOTED index write is a write to that member and must still be found — '
+      + `got: ${quoted.expressions.join(' | ').slice(0, 200)}`,
+  );
+});
+
+// r10 P1-3. The enumerator must see the walker through a LOCAL re-binding.
+//
+// `localWalkerNames` handled import aliases and stopped there. Assigning the
+// walker to a local const produced ZERO call objects — not "unparsed", absent
+// from every list — so A1's file lists were unchanged, `unparsed` stayed empty,
+// and C3/C3c never iterated the site. The enumerator is the only thing standing
+// between a widening and no test at all, and a one-token refactor defeated it.
+test('r10 P1-3: a LOCALLY re-bound walker is still enumerated as a call site', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 't11-r10p13-'));
+  try {
+    writeFileSync(
+      path.join(dir, 'rrf.mjs'),
+      'export function assertArtifactSafe(a, b) { return { a, b }; }\n',
+    );
+    // (a) const re-binding of the imported walker.
+    writeFileSync(
+      path.join(dir, 'rebound.mjs'),
+      [
+        "import { assertArtifactSafe } from './rrf.mjs';",
+        'const walker = assertArtifactSafe;',
+        'export function seed(pool, targetedPools, plan) {',
+        '  const trusted = new Set([...plan.queryVariants, ...targetedPools.map((p) => p.rawQuery)]);',
+        '  return walker(pool, { trustedPlanStrings: trusted });',
+        '}',
+      ].join('\n'),
+    );
+    // (b) CONTROL: the identical widening called DIRECTLY, which r9 already
+    // caught. If this one were missed the fixture would be broken rather than
+    // the enumerator, so it is asserted alongside.
+    writeFileSync(
+      path.join(dir, 'direct.mjs'),
+      [
+        "import { assertArtifactSafe } from './rrf.mjs';",
+        'export function seed(pool, targetedPools, plan) {',
+        '  const trusted = new Set([...plan.queryVariants, ...targetedPools.map((p) => p.rawQuery)]);',
+        '  return assertArtifactSafe(pool, { trustedPlanStrings: trusted });',
+        '}',
+      ].join('\n'),
+    );
+
+    const surface = enumerateAssertArtifactSafeCallSurface(dir);
+    const files = surface.trusted.map((c) => c.file).sort();
+    assert.deepEqual(
+      files,
+      ['direct.mjs', 'rebound.mjs'],
+      'a walker reached through a local const is the same walker: it must appear in '
+        + 'the TRUST-RED surface exactly as a direct call does',
     );
     assert.deepEqual(
       surface.unparsed.map((c) => c.file),
