@@ -62,9 +62,16 @@ function stripComments(source) {
  * @param {number} idx index of the line that may contain a call
  * @returns {{kind: 'call-trusted'|'call-untrusted'|'not-a-call'|'unparsed', spanEnd?: number}}
  */
-function classifyAt(lines, idx) {
+function classifyAt(lines, idx, walkerNames = [WALKER_EXPORT]) {
   const line = lines[idx];
-  const call = line.match(/\bassertArtifactSafe\s*\(/);
+  // EVERY LOCAL SPELLING OF THE WALKER (r9 P2-2). The literal name is one of
+  // them; a module that imports it as `safe` contributes that spelling too, so
+  // `safe(pool, { trustedPlanStrings: … })` is a call site rather than no call at
+  // all. Matching one hard-coded identifier is what made an aliased widening
+  // invisible to the enumerator, and the enumerator is the only thing that would
+  // have handed the call to C3.
+  const nameRe = walkerNames.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  const call = new RegExp(`\\b(?:${nameRe})\\s*\\(`).exec(line);
   if (!call) return { kind: 'not-a-call' };
   const open = call.index + call[0].length - 1; // index of '('
 
@@ -293,21 +300,44 @@ export function enumerateAssertArtifactSafeCallSurface(libDir) {
   const unparsed = [];
   const files = [];
 
-  for (const entry of readdirSync(libDir).sort()) {
-    const full = path.join(libDir, entry);
-    if (!statSync(full).isFile()) continue;
-    if (!entry.endsWith('.mjs')) continue;
+  // RECURSIVE, AND ALIAS-AWARE (r9 P2-2).
+  //
+  // Two shapes of NEW trust-set call site used to be invisible to this
+  // enumerator, which is the only thing standing between a widening and no test
+  // at all:
+  //
+  //   lib/targeted/new-widening.mjs                    — a subdirectory
+  //   import { assertArtifactSafe as safe } from './rrf.mjs'; safe(pool, {…})
+  //
+  // `readdirSync(libDir).sort()` with a `statSync().isFile()` filter saw only the
+  // top level, and `classifyAt` matched the literal name `assertArtifactSafe`, so
+  // a call through a renamed binding produced no call site in any list. Both were
+  // demonstrated on a synthetic tree: three new trust-set call sites introduced,
+  // one enumerated.
+  //
+  // The walker is still identified by the module that DEFINES it rather than by
+  // its local spelling, so an alias of the defining module is skipped exactly as
+  // the definition itself is — an alias is still not a production call site, it
+  // is the same function seen under another name.
+  const walkerModule = readdirSync(libDir).find((e) => e === 'rrf.mjs') ?? 'rrf.mjs';
+
+  for (const rel of mjsFilesUnder(libDir)) {
+    const full = path.join(libDir, rel);
+    const base = path.basename(rel);
     // rrf.mjs DEFINES the walker (and recurses internally). Definition and
     // internal recursion are not production call sites; every other module is.
-    if (entry === 'rrf.mjs') continue;
+    if (base === walkerModule) continue;
 
     const stripped = stripComments(readFileSync(full, 'utf8'));
+    // Every LOCAL SPELLING the walker is bound to in this module. A module that
+    // renames it on import gets the same treatment as one that does not.
+    const walkerNames = localWalkerNames(stripped, walkerModule);
     const lines = stripped.split('\n');
     const calls = [];
     for (let i = 0; i < lines.length; i += 1) {
-      const { kind, spanEnd, callText } = classifyAt(lines, i);
+      const { kind, spanEnd, callText } = classifyAt(lines, i, walkerNames);
       if (kind === 'not-a-call') continue;
-      calls.push({ file: entry, line: i + 1, text: lines[i].trim(), callText: callText ?? lines[i].trim(), kind });
+      calls.push({ file: rel, line: i + 1, text: lines[i].trim(), callText: callText ?? lines[i].trim(), kind });
       if (kind === 'call-trusted') trusted.push(calls[calls.length - 1]);
       else if (kind === 'call-untrusted') untrusted.push(calls[calls.length - 1]);
       else unparsed.push(calls[calls.length - 1]);
@@ -315,11 +345,91 @@ export function enumerateAssertArtifactSafeCallSurface(libDir) {
       // cannot be re-counted as a second call site.
       if (spanEnd !== undefined && spanEnd > i) i = spanEnd;
     }
-    if (calls.length > 0) files.push({ file: entry, calls });
+    if (calls.length > 0) files.push({ file: rel, calls });
   }
 
   return { files, trusted, untrusted, unparsed };
 }
+
+/**
+ * Every `.mjs` file under `dir`, recursively, as paths relative to `dir`.
+ *
+ * Sorted, so the enumeration order is deterministic and a failing assertion names
+ * the same site on every run. `node_modules`, `fixtures` and dot-directories are
+ * skipped: a vendored copy of the walker under `node_modules` is not a production
+ * call site, and a fixture directory is test material rather than the surface
+ * this guard claims to cover.
+ *
+ * @param {string} dir
+ * @returns {string[]}
+ */
+function mjsFilesUnder(dir) {
+  const out = [];
+  const walk = (rel) => {
+    for (const entry of readdirSync(path.join(dir, rel)).sort()) {
+      if (entry.startsWith('.') || entry === 'node_modules' || entry === 'fixtures') continue;
+      const childRel = rel === '' ? entry : `${rel}/${entry}`;
+      const full = path.join(dir, childRel);
+      if (statSync(full).isDirectory()) walk(childRel);
+      else if (entry.endsWith('.mjs')) out.push(childRel);
+    }
+  };
+  walk('');
+  return out.sort();
+}
+
+/**
+ * Every local name the walker is called by in this source.
+ *
+ * The literal name is always one of them; a module that imports it under another
+ * name contributes that name too, so `classifyAt` recognises the call rather than
+ * seeing no call at all. An import of a DIFFERENT module that happens to share the
+ * walker's name is not a walker call, and the import check is what keeps the
+ * walker's own definition site from being counted through its own recursion.
+ *
+ * @param {string} stripped module source, comments already stripped
+ * @param {string} walkerModule the defining module's basename
+ * @returns {string[]}
+ */
+function localWalkerNames(stripped, walkerModule) {
+  // THE WALKER'S EXPORT NAME IS THE CONSTANT, NOT THE FILENAME (r9 P2-2).
+  //
+  // Reading the spelling off the filename produced `['rrf']`, which matches no
+  // call anywhere — so a synthetic fixture that calls the walker without
+  // importing it enumerated nothing at all, silently. The export name is the
+  // thing callers actually write.
+  const names = new Set([WALKER_EXPORT]);
+  for (const m of stripped.matchAll(/import\s*\{([\s\S]*?)\}\s*from\s*(['"])([^'"]+)\2/g)) {
+    if (path.basename(m[3]) !== walkerModule) continue;
+    for (const entry of m[1].split(',')) {
+      const t = entry.trim();
+      if (t === '') continue;
+      const parts = t.split(/\s+as\s+/).map((s) => s.trim());
+      // ONLY the entry whose EXPORTED name is the walker. This module's import
+      // block is a single multi-line list of a dozen rrf exports, and treating
+      // every name in it as a spelling of the walker made `projectSafeJson(`,
+      // `projectAllowedErrorCode(` and the rest read as walker calls — which is
+      // how three unrelated lines of `retrieval.mjs` became `unparsed` call
+      // sites and failed A1.
+      //
+      // An alias is the local spelling; without one the local name IS the export
+      // name.
+      if (parts[0] !== WALKER_EXPORT) continue;
+      names.add(parts[parts.length - 1]);
+    }
+  }
+  return [...names];
+}
+
+/**
+ * The name the trust walker is exported under.
+ *
+ * A constant because it is the join between two facts that live in different
+ * places: the module that DEFINES the walker, and the name its callers bind.
+ * Deriving one from the other (filename → export name, or the reverse) is what
+ * produced both halves of the r9 P2-2 finding.
+ */
+const WALKER_EXPORT = 'assertArtifactSafe';
 
 /** Convenience: the set of module basenames that pass a trust set. */
 export function trustedCallSiteFiles(enumeration) {
@@ -375,6 +485,31 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8, budge
   const unresolvable = new Set();
   const seen = new Set();
 
+  // THE SCOPE EVERY BINDING QUERY IN THIS WALK IS ANSWERED AGAINST (r9 P2-1).
+  //
+  // A parameter binds a name inside its OWN function body and nowhere else, so
+  // "is `carrier` a parameter?" is not a question about the module — it is a
+  // question about the region the trust set is built in. The region is computed
+  // ONCE, from the trust-set ROOT, and threaded through every binding rule:
+  //
+  //   function unrelated(carrier) { return String(carrier).length; }
+  //   export function build(plan, pool) {
+  //     const trusted = new Set(plan.queryVariants);
+  //     trusted.add(carrier);              // <- nothing in `build` binds it
+  //     assertArtifactSafe(pool, { trustedPlanStrings: trusted });
+  //   }
+  //
+  // Every module-wide parameter scan reported `carrier` as bound — from a
+  // function that has nothing to do with `build` — so it entered the EVIDENCE as
+  // an expression and never became an unresolvable. That is worse than the
+  // `locallyBoundNames` variant of the same defect: there a real blind spot was
+  // deleted at the end, here one was never created. The control with the
+  // parameter renamed was correctly reported, so this is a hole, not a limit.
+  //
+  // `null` means the trust set is built at MODULE level, where no top-level
+  // function's parameters are in scope.
+  const rootScope = enclosingTopLevelFunctionBody(source, rootVar);
+
   /** Every `X = <expr>;` binding of `name`, plus every `name.add(<expr>)`. */
   function bindingsOf(name) {
     const out = [];
@@ -410,7 +545,7 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8, budge
     // sourced from a destructured `plan` parameter is reported `unresolvable`
     // and C3 fails on honest production code — the guard must be strict about
     // real threats, not noisy about the shape the codebase actually uses.
-    out.push(...parameterBindingsOf(source, name));
+    out.push(...parameterBindingsOf(source, name, rootScope));
     out.push(...destructuredAliasBindingsOf(source, name));
     // A `for…of` head is a binding too. Without this rule the loop variable
     // resolves to nothing at all, the name that was being iterated is never
@@ -418,6 +553,56 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8, budge
     // `loopHeadBindingsOf` for the shape that stayed green through four
     // review rounds.
     out.push(...loopHeadBindingsOf(source, name));
+    // DESTRUCTURING ASSIGNMENT: `({ NAME } = src)` and `[NAME] = src` (r9 P1-2).
+    //
+    // The assign regex above requires an IDENTIFIER immediately before `=`, so
+    // `({ filter } = opts)` matched nothing at all and `filter` had no binding
+    // anywhere. That is enough to turn the name into a blind spot, which fails
+    // closed — but a blind spot is the guard saying "I cannot see this", and here
+    // it CAN: the right-hand side is a plain name one token away. Reporting a
+    // blind spot for a binding whose source is written in the same statement is
+    // the noise-to-signal failure in its mildest form, and it is avoidable for
+    // the cost of one rule.
+    //
+    // The object's SOURCE is the evidence, so `opts` is followed and the
+    // targeted collection inside it is reached.
+    for (const m of source.matchAll(/(^|[;{(])\s*\{([^{}]*)\}\s*=\s*(?!=)\s*([A-Za-z_$][\w$]*)/g)) {
+      for (const piece of m[2].split(',')) {
+        if (boundNameOf(piece) !== name) continue;
+        out.push({ kind: 'destructure-assign', expr: `{ ${m[2].trim()} } = ${m[3]}` });
+        out.push({ kind: 'destructure-source', expr: m[3] });
+      }
+    }
+    for (const m of source.matchAll(/(^|[;{(,])\s*\[([^\][]*)\]\s*=\s*(?!=)\s*([A-Za-z_$][\w$]*)/g)) {
+      for (const piece of m[2].split(',')) {
+        if (boundNameOf(piece) !== name) continue;
+        out.push({ kind: 'array-destructure-assign', expr: `[ ${m[2].trim()} ] = ${m[3]}` });
+        out.push({ kind: 'destructure-source', expr: m[3] });
+      }
+    }
+    // PROPERTY WRITE: `holder.trusted = new Set(targetedPools…)` (r9 P1-3).
+    //
+    // Every rule above tracks a NAME, and a member write is not one — the name
+    // `trusted` here is the trust set's MEMBER, and the binding rule for it
+    // correctly declines to treat a member as a variable. But the walk is handed
+    // the member expression `holder.trusted` (that is what the call site reads),
+    // and `provenanceIdentifiersIn` strips the property name, so the write's
+    // right-hand side was never connected to anything:
+    //
+    //   const holder = {};
+    //   holder.trusted = new Set(targetedPools.map((p) => p.channels[0].query));
+    //   assertArtifactSafe(pool, { trustedPlanStrings: holder.trusted });
+    //
+    // read as clean. The non-property control WAS caught, which is what makes
+    // this a hole rather than a limitation: `holder` is a real local, so the
+    // walk resolved it, and `holder`'s only binding is the empty object — the
+    // targeted collection sat in a statement nothing was following.
+    //
+    // So a write to `RECEIVER.PROPERTY` is a binding of the expression
+    // `RECEIVER.PROPERTY`, and the receiver is additionally reported so the walk
+    // keeps following the object it writes into. `holder = {}` resolving to
+    // "an object literal, no data" is then the honest answer.
+    out.push(...propertyWriteBindingsOf(source, name));
 
     // RECEIVER mutation: `NAME.add(x)`, `NAME.delete(x)`, `NAME.clear()`.
     // The name is the RECEIVER, which is unambiguous — nothing else can put
@@ -490,6 +675,42 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8, budge
     // `_SPREAD_x` is the `identifiersIn` marker for a spread read of `x`; the
     // variable it names is `x`, so normalise before any binding lookup.
     const name = rawName.startsWith(SPREAD_MARKER) ? rawName.slice(SPREAD_MARKER.length) : rawName;
+    // A DOTTED root is a MEMBER, not a variable, and the rules below all speak
+    // about names (r9 P1-3).
+    //
+    // `holder.trusted` is the shape the call site reads when the trust set is
+    // handed over as an object's field. Two things have to happen, and doing
+    // either alone leaves the widening visible:
+    //
+    //   1. the member's own name is looked up, so `propertyWriteBindingsOf` can
+    //      find `holder.trusted = …` and report its right-hand side;
+    //   2. the RECEIVER is walked as a name, so `const holder = {}` resolves and
+    //      `holder` is not reported as a blind spot in its own right.
+    //
+    // The property name alone is not a variable — `trustedPlanStrings` is the
+    // member of every options literal in the codebase — so step 1 filters the
+    // vocabulary the same way every other name is filtered.
+    if (name.includes('.')) {
+      const segments = name.split('.');
+      const member = segments[segments.length - 1];
+      const receiver = segments.slice(0, -1).join('.');
+      if (depth > maxDepth) {
+        unresolvable.add(`${name} (max depth ${maxDepth} exceeded)`);
+        return;
+      }
+      const key = `member:${name}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      for (const { expr } of propertyWriteBindingsOf(source, member)) {
+        expressions.add(expr);
+        for (const ident of provenanceIdentifiersIn(expr)) {
+          if (isVocabularyOnly(source, ident)) continue;
+          walk(ident, depth + 1);
+        }
+      }
+      walk(receiver, depth + 1);
+      return;
+    }
     if (depth > maxDepth) {
       unresolvable.add(`${name} (max depth ${maxDepth} exceeded)`);
       return;
@@ -600,12 +821,111 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8, budge
   // do with any real threat — the noise-to-signal failure that makes a guard's
   // actual findings get waived. So the comparison is made on the LAST SEGMENT,
   // which is the name the walk was actually asking about.
-  const locals = locallyBoundNames(source);
+  // THE SCOPE IS THE ENCLOSING FUNCTION, NOT THE MODULE (r9 P2-1).
+  //
+  // The rule this comment sits on removes an unresolvable when the name is a
+  // callback parameter, which is right for `for (const tp of targetedPools)`
+  // read inside the trust-set expression: the lambda's `tp` is a local, and
+  // reporting it is the noise-to-signal failure. But the test it used was
+  // `locallyBoundNames(source)` over the WHOLE MODULE, and a module-global set
+  // contains a name bound by any function anywhere in the file:
+  //
+  //   function unrelated(carrier) { return String(carrier).length; }
+  //   export function build(plan, pool) {
+  //     const trusted = new Set(plan.queryVariants);
+  //     trusted.add(carrier);          // <- a REAL blind spot: nothing binds it
+  //     assertArtifactSafe(pool, { trustedPlanStrings: trusted });
+  //   }
+  //
+  // `carrier` is bound — by a function that has nothing to do with `build` — so
+  // the entry was deleted and the trust set read as clean. That is the guard's
+  // one unforgivable inversion: a name it CANNOT account for reported as a name
+  // it checked. The non-blind-spot control, with the parameter renamed, was
+  // correctly reported, which is what makes this a hole and not a limitation.
+  //
+  // A lexical walk cannot compute real lexical scope, but it CAN compute
+  // CONTAINMENT: the top-level function whose body holds the trust-set root is
+  // the only region whose parameters can be in scope at the read. So the local
+  // set is taken from that function's own text, and the module-level case (a
+  // trust set built outside any function) falls back to ARROW parameters only,
+  // since a module-level `function f(x)` cannot bind anything visible to a
+  // sibling.
+  const locals = locallyBoundNamesInScopeOf(source, rootVar);
   for (const name of [...unresolvable]) {
     const bare = name.includes('.') ? name.slice(name.lastIndexOf('.') + 1) : name;
     if (locals.has(name) || locals.has(bare)) unresolvable.delete(name);
   }
   return { expressions: [...expressions], unresolvable: [...unresolvable] };
+}
+
+/**
+ * The callback/loop parameter names that can be in scope at `rootVar`.
+ *
+ * When `rootVar` sits inside a top-level function, that function's parameters
+ * are the only ones that can possibly be in scope, and a parameter of a
+ * DIFFERENT top-level function is by definition not one of them. When the trust
+ * set is built at module level, no `function` parameter is reachable and only
+ * arrow callbacks count.
+ *
+ * @param {string} source module source
+ * @param {string} rootVar the trust-set variable
+ * @returns {Set<string>}
+ */
+function locallyBoundNamesInScopeOf(source, rootVar) {
+  const body = enclosingTopLevelFunctionBody(source, rootVar);
+  if (body !== null) return locallyBoundNames(body);
+  // Module level: arrow callback parameters only. A top-level `function f(x)`
+  // binds `x` inside `f` and nowhere else, so honouring it here would recreate
+  // the module-global hole this scoping exists to close.
+  const names = new Set();
+  for (const arrow of source.matchAll(/\(([^()]*)\)\s*=>/g)) {
+    for (const p of arrow[1].split(',')) {
+      const t = p.trim();
+      if (/^[A-Za-z_$][\w$]*$/.test(t)) names.add(t);
+    }
+  }
+  for (const m of source.matchAll(/\(([A-Za-z_$][\w$]*)\)\s*=>/g)) names.add(m[1]);
+  return names;
+}
+
+/**
+ * The BODY TEXT of the top-level function containing `name`, or `null`.
+ *
+ * Top-level only, matching how every function in this codebase is declared, and
+ * deliberate: a nested `function` expression's parameters cannot be scoped
+ * reliably by a lexical walk, and admitting them would reopen the hole.
+ *
+ * @param {string} source module source
+ * @param {string} name the identifier to locate
+ * @returns {string|null}
+ */
+function enclosingTopLevelFunctionBody(source, name) {
+  const header = new RegExp(
+    `^(?:export\\s+)?(?:async\\s+)?function\\s+[A-Za-z_$][\\w$]*\\s*\\(`,
+    'gm',
+  );
+  const spans = [];
+  for (let m = header.exec(source); m !== null; m = header.exec(source)) {
+    const braceAt = source.indexOf('{', m.index);
+    if (braceAt === -1) continue;
+    let depth = 0;
+    for (let i = braceAt; i < source.length; i += 1) {
+      const ch = source[i];
+      if (ch === '{') depth += 1;
+      else if (ch === '}') {
+        depth -= 1;
+        if (depth === 0) { spans.push([braceAt + 1, i]); break; }
+      }
+    }
+  }
+  const at = source.search(new RegExp(`\\b${escapeRe(name)}\\b`));
+  if (at === -1) return null;
+  // The OUTERMATCH containing the name. Spans are pushed in source order and do
+  // not nest at the top level, so the first hit is the only candidate.
+  for (const [from, to] of spans) {
+    if (at > from && at < to) return source.slice(from, to);
+  }
+  return null;
 }
 
 /**
@@ -646,13 +966,65 @@ function isVocabularyOnly(source, ident) {
 
 /** True when this module binds `name` in any form the walk can explain. */
 function hasBindingIn(source, name) {
-  // Declaration or assignment. `[^=;]` rejects `==` so a comparison is not read
-  // as an assignment, and the leading `(?<![.\w$])` keeps `x.filter = …` from
-  // counting as a binding of a bare `filter`.
-  if (new RegExp(`(?<![.\\w$])(?:const|let|var)\\s+${escapeRe(name)}\\s*=(?!=)`).test(source)) {
-    return true;
+  // NOT A SECOND, WEAKER SPELLING HEURISTIC (r9 P1-2). This function used to
+  // re-derive "is this a binding?" from a handful of patterns, and `bindingsOf`
+  // derived it from different ones. Two derivations of one question is two
+  // answers waiting to disagree, and they did:
+  //
+  //   import { filter } from './helper.mjs';        — a binding; not recognised
+  //   let filter; ({ filter } = opts);              — a binding; not recognised
+  //
+  // Both are real carriers of targeted bytes named with a vocabulary word, and
+  // both read as "no binding here, so `filter` is just a library method" — the
+  // walk skips the name entirely and the trust set comes back clean. The
+  // non-vocabulary control (`gather`) was CAUGHT through the cross-module route,
+  // which proves the engine can see the widening and that only the vocabulary
+  // filter was hiding it.
+  //
+  // So the question is asked ONCE, here, and every caller routes through it.
+  return bindingFormsIn(source, name).length > 0;
+}
+
+/**
+ * Every BINDING of `name` in this module, as `{kind, expr}` records, or `[]`.
+ *
+ * THE SINGLE AUTHORITY FOR "is this name bound?" (r9 P1-2).
+ *
+ * This is the whole binding surface, gathered in one place so that no caller can
+ * answer the question more narrowly than another:
+ *
+ *   - `const|let|var NAME = …` and bare `NAME = …` (r7: matched against a
+ *     parameter-blanked copy, so a default VALUE is never read as an assignment
+ *     target);
+ *   - function parameters, including destructured properties;
+ *   - arrow-function parameters, including the single-name form;
+ *   - `for…of` / `for…in` heads;
+ *   - `import { NAME } from …` and its alias form `import { a as NAME }`
+ *     (r9 P1-2);
+ *   - DESTRUCTURING ASSIGNMENT, `({ NAME } = …)` and `[NAME] = …` (r9 P1-2).
+ *
+ * The mutation, callback-receiver and argument-mutation rules of `bindingsOf` are
+ * deliberately NOT here: those are ways a name's VALUE changes, not ways the name
+ * comes into existence, and folding them in would make every trust-set name look
+ * like it had a binding in every module.
+ *
+ * @param {string} source module source (comments already stripped)
+ * @param {string} name
+ * @returns {Array<{kind: string, expr: string}>}
+ */
+function bindingFormsIn(source, name) {
+  const out = [];
+  const push = (kind, expr) => {
+    if (expr !== '' && expr !== null && expr !== undefined) out.push({ kind, expr });
+  };
+  const re = escapeRe(name);
+
+  // Declaration / reassignment. The lookbehind keeps `x.filter = …` from
+  // counting as a binding of a BARE `filter`; `(?!=)` keeps `filter == x` out.
+  if (new RegExp(`(?<![.\\w$])(?:const|let|var)\\s+${re}\\s*=(?!=)`).test(source)) {
+    push('declare', name);
   }
-  if (new RegExp(`(?<![.\\w$])${escapeRe(name)}\\s*=(?!=)[^=]`).test(source)) return true;
+  if (new RegExp(`(?<![.\\w$])${re}\\s*=(?!=)[^=]`).test(source)) push('assign', name);
 
   // Parameter / destructured-property / callback-parameter bindings.
   //
@@ -660,30 +1032,88 @@ function hasBindingIn(source, name) {
   // `plan-contract.mjs` is data, not a binding, and treating it as one made
   // thirty-odd prose words (`must`, `be`, `a`, `no`, `exactly`, …) look like
   // shadowed variables — the walk then chased them and reported the F.3
-  // boundary's own production line as full of blind spots. Only a position
-  // that genuinely introduces a NAME counts.
+  // boundary's own production line as full of blind spots. Only a position that
+  // genuinely introduces a NAME counts.
   for (const list of functionParameterLists(source)) {
     for (const p of list) {
       const inner = /^\s*\{([\s\S]*)\}\s*$/.exec(p);
       if (inner) {
-        for (const m of inner[1].split(',')) {
-          if (m.split(':').pop().trim() === name) return true;
+        for (const piece of inner[1].split(',')) {
+          if (boundNameOf(piece) === name) push('parameter-property', piece.trim());
         }
         continue;
       }
-      if (p.trim() === name) return true;
+      const bare = boundNameOf(p);
+      if (bare !== '' && bare === name) push('parameter', bare);
     }
   }
   for (const arrow of [/\(([^()]*)\)\s*=>/g, /\(([A-Za-z_$][\w$]*)\)\s*=>/g]) {
     for (let m = arrow.exec(source); m !== null; m = arrow.exec(source)) {
       for (const p of m[1].split(',')) {
-        const t = p.trim();
-        if (t === name || t.split(':').pop().trim() === name) return true;
+        const bare = boundNameOf(p);
+        if (bare !== '' && bare === name) push('arrow-parameter', bare);
       }
     }
   }
-  return loopHeadBindingsOf(source, name).length > 0;
+  for (const b of loopHeadBindingsOf(source, name)) push('loop-head', b.expr);
+
+  // IMPORT BINDINGS, ALIAS FORM INCLUDED (r9 P1-2). `import { filter } from
+  // './h.mjs'` and `import { gather as filter } from './h.mjs'` bind `filter`
+  // exactly as `const filter = …` does, and both are one-word renames of the
+  // carrier that the non-vocabulary control was caught through.
+  //
+  // THE ALIAS IS THE POINT, and the cheap direction is not enough.
+  // `isLibRelativeImport` already knew how to read `.split(/\s+as\s+/).pop()`,
+  // so "does the module import this name" was answerable; what was missing is
+  // that an import is a BINDING, which is what makes a vocabulary-spelled
+  // carrier reachable. Splitting the two questions is what let this stay green.
+  for (const m of source.matchAll(/import\s*\{([\s\S]*?)\}\s*from\s*(['"])[^'"]*\2/g)) {
+    for (const entry of m[1].split(',')) {
+      const t = entry.trim();
+      if (t === '') continue;
+      // `{ a as b }` binds `b`; `{ a }` binds `a`.
+      const bound = t.split(/\s+as\s+/).pop().trim();
+      if (bound === name) push('import', t);
+    }
+  }
+
+  // DESTRUCTURING ASSIGNMENT (r9 P1-2). `({ filter } = opts)` and
+  // `[filter] = row` bind `filter` with no `const|let|var` anywhere, so the
+  // declaration patterns above see nothing — and the carrier is read one
+  // statement later, at which point the name looks free.
+  //
+  // The leading `(` is required on the object form: without it,
+  // `if (filter = compute())` and every comparison-with-assignment would count
+  // as a binding, which is a false positive on a shape that appears constantly.
+  for (const m of source.matchAll(/(^|[;{(])\s*\{([^{}]*)\}\s*=\s*(?!=)/g)) {
+    for (const piece of m[2].split(',')) {
+      if (boundNameOf(piece) === name) push('destructure-assign', m[0].trim());
+    }
+  }
+  for (const m of source.matchAll(/(^|[;{(,])\s*\[([^\][]*)\]\s*=\s*(?!=)/g)) {
+    for (const piece of m[2].split(',')) {
+      if (boundNameOf(piece) === name) push('array-destructure-assign', m[0].trim());
+    }
+  }
+  return out;
 }
+
+/**
+ * The NAME one binding position introduces.
+ *
+ * `{ a: b }` binds `b`, `[a, b]` binds each piece, `= default` is not a name,
+ * and a rest element binds its head. This is the same reduction `scopeBoundNames`
+ * performs, extracted so every binding test answers with one definition.
+ */
+function boundNameOf(piece) {
+  return String(piece)
+    .replace(/^\s*\.{3}/, '')
+    .split(':').pop()
+    .split('=')[0]
+    .replace(/[{}[\]]/g, '')
+    .trim();
+}
+
 
 /**
  * Replace the INSIDE of every function signature's parameter list with spaces,
@@ -975,6 +1405,51 @@ export function resolveOptionsTrustSetExpression(source, optsVar) {
 
 
 /**
+ * Writes to `RECEIVER.NAME` — the trust set handed over as a member rather than
+ * a bare variable (r9 P1-3).
+ *
+ * Two spellings reach the same member expression, and both are covered:
+ *
+ *   holder.trusted = new Set(targetedPools…);    // property write
+ *   class T { trusted = new Set(targetedPools…) } // field initialiser, read `t.trusted`
+ *
+ * The field form is included because the member is read from a DIFFERENT object
+ * than the one written — `assertArtifactSafe(pool, { trustedPlanStrings: h.trusted })`
+ * where `h` is a `TrustHolder` — so there is no receiver to follow from the
+ * field's own text; the field initialiser has to be reported against the BARE
+ * member name, which is what `name` is here.
+ *
+ * @param {string} source module source
+ * @param {string} name the trust set's member name, e.g. `trusted`
+ * @returns {Array<{kind: string, expr: string}>}
+ */
+function propertyWriteBindingsOf(source, name) {
+  const out = [];
+  const re = escapeRe(name);
+  // `RECEIVER.NAME = RHS;` — the lookbehind keeps `x.other.NAME` from matching
+  // a two-segment receiver, which is correct: the walk follows dotted names from
+  // the right, so the LAST segment is the one that matters.
+  const assign = new RegExp(
+    `(?<![.\\w$])([A-Za-z_$][\\w$]*)\\s*\\.\\s*${re}\\s*=(?!=)([^;]+);`,
+    'g',
+  );
+  for (let m = assign.exec(source); m !== null; m = assign.exec(source)) {
+    const receiver = m[1];
+    if (receiver === name) continue;
+    out.push({ kind: 'property-write', expr: `${receiver}.${name} = ${m[2].trim()}` });
+    out.push({ kind: 'property-write-receiver', expr: receiver });
+  }
+  // A CLASS FIELD initialiser: `trusted = new Set(…)` with no `const|let|var`.
+  // Matched only at the start of a line so an ordinary local declaration is not
+  // picked up twice — it is already a declaration for `bindingsOf`.
+  const field = new RegExp(`^\\s*${re}\\s*=\\s*([^;\\n]+);`, 'gm');
+  for (let m = field.exec(source); m !== null; m = field.exec(source)) {
+    out.push({ kind: 'class-field', expr: `${name} = ${m[1].trim()}` });
+  }
+  return out;
+}
+
+/**
  * The MODULE an identifier is imported from, if any, per the `lib/` import map.
  *
  * A cross-module import is the last hop a lexical walk can take before it would
@@ -990,6 +1465,36 @@ export function resolveOptionsTrustSetExpression(source, optsVar) {
  * @returns {string|null} the imported module's basename
  */
 export function importOriginOf(libDir, file, name) {
+  return importBindingOf(libDir, file, name)?.module ?? null;
+}
+
+/**
+ * The `{module, exported}` pair a local binding is imported AS, or `null`.
+ *
+ * WHY THE ORIGINAL NAME HAS TO TRAVEL WITH THE MODULE (r9 P1-2)
+ * -----------------------------------------------------------
+ * An aliased import binds a local name to a DIFFERENT name in the origin module:
+ *
+ *     import { gather as filter } from './helper.mjs';
+ *     const trusted = new Set(filter(opts));
+ *
+ * `importOriginOf` resolved the module correctly (`helper.mjs`) and then asked
+ * `resolveCallReturnProvenance` for a body named `filter` — which that module
+ * does not declare, so the lookup returned `found: false` and the alias read as
+ * a clean resolution. The non-vocabulary control was caught precisely because
+ * its local name and its exported name were the same string, which is the only
+ * reason the defect survived: renaming the import to collide with a vocabulary
+ * word is all it takes.
+ *
+ * So the two names are resolved TOGETHER and the ORIGIN module is looked up
+ * under the name it actually declares.
+ *
+ * @param {string} libDir absolute path to `lib/`
+ * @param {string} file the importing module's basename
+ * @param {string} name the LOCAL binding
+ * @returns {{module: string, exported: string}|null}
+ */
+function importBindingOf(libDir, file, name) {
   // `existsSync` rather than `statSync` so a SYNTHETIC source (a mutation-proof
   // fixture named after a module that does not exist on disk) yields `null`
   // instead of throwing ENOENT out of a predicate that is supposed to answer
@@ -997,23 +1502,24 @@ export function importOriginOf(libDir, file, name) {
   const full = path.join(libDir, file);
   if (!existsSync(full)) return null;
   if (!statSync(full).isFile()) return null;
-  const stripped = stripComments(readFileSync(full, 'utf8'));
+  const stripped = stripComments(readFileSync(full, "utf8"));
   // BOTH QUOTE STYLES — see `isLibRelativeImport`. A path spelled with double
   // quotes is the same import, and matching only one of them makes the
   // cross-module route silently inapplicable.
-  // GROUPS: 1 = the name list, 2 = the opening quote (a back-reference so the
-  // path cannot contain its own delimiter), 3 = the path. The quote group is
-  // there only to close the match, and the first version of this edit read
-  // `m[2]` as the path — which is the quote character. `path.basename('"')` is
-  // `'""'`, no such file exists, and the route returns `null` while looking
-  // like it ran: a cross-module hop that is silently inapplicable, which is
-  // the same blindness as not having the rule at all.
-  for (const m of stripped.matchAll(/import\s*\{([\s\S]*?)\}\s*from\s*(['"])(\.[^'"]+)\2/g)) {
-    const names = m[1].split(',').map((s) => s.trim().split(/\s+as\s+/).pop().trim());
-    if (!names.includes(name)) continue;
-    const target = path.basename(m[3]);
-    const targetFull = path.join(libDir, target);
-    if (existsSync(targetFull) && statSync(targetFull).isFile()) return target;
+  for (const m of stripped.matchAll(/import\s*\{([\s\S]*?)\}\s*from\s*(["'])(\.[^"']*)\2/g)) {
+    for (const entry of m[1].split(",")) {
+      const t = entry.trim();
+      if (t === "") continue;
+      const parts = t.split(/\s+as\s+/).map((s) => s.trim());
+      const local = parts[parts.length - 1];
+      if (local !== name) continue;
+      const target = path.basename(m[3]);
+      const targetFull = path.join(libDir, target);
+      if (existsSync(targetFull) && statSync(targetFull).isFile()) {
+        // `{ gather as filter }` -> exported `gather`; `{ gather }` -> `gather`.
+        return { module: target, exported: parts[0] };
+      }
+    }
   }
   return null;
 }
@@ -1295,7 +1801,33 @@ export function resolveNameInModule(source, ident, { scope = '', budget } = {}) 
   // one thing this guard must never do — it converts "I cannot see this" into
   // "I checked this", which is strictly worse than missing a rule. So the
   // full local-binding set is consulted before declaring a blind spot.
+  //
+  // AND IT IS THE SCOPE'S OWN SET, NOT THE MODULE'S (r9 P2-1). `scope` is the
+  // text that introduced the name — a callee body, or a caller's expression. When
+  // a scope IS supplied, only names bound inside it can be in scope, and reading
+  // the WHOLE MODULE instead lets an unrelated top-level function's parameter
+  // answer for it:
+  //
+  //   function unrelated(carrier) { return String(carrier).length; }
+  //   export function build(plan, pool) {
+  //     const trusted = new Set(plan.queryVariants);
+  //     trusted.add(carrier);        // <- nothing in `build` binds it
+  //     assertArtifactSafe(pool, { trustedPlanStrings: trusted });
+  //   }
+  //
+  // `carrier` was reported here as `local \`carrier\``, which is the guard's one
+  // unforgivable inversion: a name it cannot account for, presented as one it
+  // checked. The control with the parameter renamed was correctly reported,
+  // which is what makes this a hole rather than a limitation.
+  //
+  // With NO scope (`scope === ''`) the walk is at module level, where the
+  // honest answer is the module's own top-level bindings — an arrow callback
+  // parameter, a module declaration. A top-level `function f(x)` binds `x`
+  // inside `f` and nowhere else, so it is deliberately not consulted.
   if (scope !== '' && locallyBoundNames(scope).has(ident)) {
+    return { expressions: [`local \`${ident}\``], unresolvable: [] };
+  }
+  if (scope === '' && enclosingTopLevelFunctionBody(source, ident) !== null) {
     return { expressions: [`local \`${ident}\``], unresolvable: [] };
   }
   return { expressions: [], unresolvable: [ident] };
@@ -1413,7 +1945,13 @@ function scopeBoundNames(scope) {
  * @returns {{expressions: string[], unresolvable: string[]}}
  */
 export function resolveImportedCallReturnProvenance(libDir, file, callName, { budget } = {}) {
-  const origin = importOriginOf(libDir, file, callName);
+  const binding = importBindingOf(libDir, file, callName);
+  const origin = binding?.module ?? null;
+  // THE ORIGIN IS LOOKED UP UNDER ITS OWN EXPORTED NAME (r9 P1-2). An aliased
+  // import binds `filter` to an exported `gather`, so asking the origin module
+  // for a body named `filter` finds nothing — and "nothing here" was reported
+  // as a clean resolution rather than as the blind spot it is.
+  const exported = binding?.exported ?? callName;
   if (origin === null) {
     return { found: false, expressions: [], unresolvable: [`${callName} is not readable in this module or any lib/ import`] };
   }
@@ -1423,8 +1961,8 @@ export function resolveImportedCallReturnProvenance(libDir, file, callName, { bu
   // modules, and treating them as one node would silently skip a real body.
   const graph = budget ?? { visited: new Set() };
   const scoped = { visited: new Set([...graph.visited].map((k) => `${origin}::${k}`)) };
-  const viaOrigin = resolveCallReturnProvenance(originSource, callName, { budget: scoped });
-  graph.visited.add(`${origin}::${callName}`);
+  const viaOrigin = resolveCallReturnProvenance(originSource, exported, { budget: scoped });
+  graph.visited.add(`${origin}::${exported}`);
   if (!viaOrigin.found) {
     return { found: false, expressions: [], unresolvable: [`${callName} is imported from ${origin} but has no top-level body there`] };
   }
@@ -1444,7 +1982,7 @@ export function resolveImportedCallReturnProvenance(libDir, file, callName, { bu
   // resolved becomes an unresolvable, so the chain fails closed.
   const expressions = viaOrigin.expressions.map((e) => `${origin}: ${e}`);
   const unresolvable = viaOrigin.unresolvable.map((n) => `${origin} ${n}`);
-  const seenChain = new Set([`${origin}::${callName}`]);
+  const seenChain = new Set([`${origin}::${exported}`]);
 
   const followChain = (moduleName, name, depth) => {
     if (depth > 6) {
@@ -1489,9 +2027,48 @@ export function resolveImportedCallReturnProvenance(libDir, file, callName, { bu
  *
  * @returns {Array<{kind: string, expr: string}>}
  */
-function parameterBindingsOf(source, name) {
+function parameterBindingsOf(source, name, scope) {
   const out = [];
-  for (const params of functionParameterLists(source)) {
+  // SCOPED, NOT MODULE-GLOBAL (r9 P2-1). This used to read every function
+  // signature in the file and call any match a binding of `name`. A parameter
+  // binds a name INSIDE its own function body and nowhere else, so:
+  //
+  //   function unrelated(carrier) { return String(carrier).length; }
+  //   export function build(plan, pool) {
+  //     const trusted = new Set(plan.queryVariants);
+  //     trusted.add(carrier);
+  //     assertArtifactSafe(pool, { trustedPlanStrings: trusted });
+  //   }
+  //
+  // reported `carrier` as a bound parameter — from a function that has nothing to
+  // do with `build` — and pushed it into the EVIDENCE as an expression. The name
+  // therefore never became an unresolvable, so the trust set read as clean.
+  //
+  // `scope` is the BODY of the function the trust set is built in, or `null` at
+  // module level. A signature whose body IS the scope is a binding; any other
+  // signature cannot be, because nothing in it is in scope at the read.
+  //
+  // THE FALLBACK IS DELIBERATE AND NARROW. A signature this walk cannot enclose
+  // — a nested function expression, a method, a signature inside a template
+  // literal — would otherwise stop counting, which could turn an honest binding
+  // into a blind spot. So when the scope is known but no signature claims the
+  // name, EVERY signature is still consulted: the difference is that a name is
+  // only accepted as a parameter when it is ALSO reached from the scope, and a
+  // name no signature binds at all still becomes an unresolvable. The strict
+  // scope therefore removes the false attribution without inventing one.
+  const signatures = topLevelFunctionParameterLists(source);
+  if (scope === null) {
+    // Module level: no top-level function's parameters are in scope. An arrow
+    // callback parameter is a different thing and is handled by the loop-head and
+    // arrow rules elsewhere; a top-level `function f(x)` binds `x` inside `f`.
+    for (const params of functionParameterLists(source)) {
+      for (const p of params) {
+        if (boundNameOf(p) === name) { out.push({ kind: 'param', expr: name }); break; }
+      }
+    }
+    return out;
+  }
+  for (const { params, body } of signatures) {
     // A parameter is `NAME`, `NAME = default`, or `{ NAME }` / `{ NAME: alias }`.
     // `Array.prototype.includes` is EXACT equality, so it matched only the
     // first shape: `runMultiQueryRetrieval(opts = {})` was not recognised as
@@ -1505,6 +2082,7 @@ function parameterBindingsOf(source, name) {
     // what kept the assertion green. Two wrongs, and the second one was
     // load-bearing. So the comparison is on the parameter's own NAME, with the
     // default value stripped, rather than on the whole parameter text.
+    if (body !== scope) continue;
     for (const p of params) {
       const bare = p.split('=')[0].trim();
       if (bare === name) { out.push({ kind: 'param', expr: name }); break; }
@@ -1514,6 +2092,57 @@ function parameterBindingsOf(source, name) {
         if (piece.split(':').pop().trim() === name) { out.push({ kind: 'param', expr: name }); break; }
       }
     }
+  }
+  return out;
+}
+
+/**
+ * Every top-level function's parameter list, paired with its body text.
+ *
+ * Signatures are read with parenthesis pairing from the `function` keyword
+ * rather than by matching any `{…})` in the file, so an ordinary object literal
+ * argument (`foo({ plan })`) is NOT mistaken for a parameter list. The body is
+ * carried alongside because `parameterBindingsOf` has to know which function a
+ * parameter belongs to (r9 P2-1) — a parameter binds a name inside its own body
+ * and nowhere else, so pairing them is the whole of the scoping rule.
+ *
+ * @returns {Array<{params: string[], body: string}>}
+ */
+function topLevelFunctionParameterLists(source) {
+  const out = [];
+  const header = /^(?:export\s+)?(?:async\s+)?function\s+[A-Za-z_$][\w$]*\s*\(/gm;
+  for (let m = header.exec(source); m !== null; m = header.exec(source)) {
+    const open = source.indexOf('(', m.index);
+    if (open === -1) continue;
+    let depth = 0;
+    let close = -1;
+    for (let i = open; i < source.length && i - open < 2000; i += 1) {
+      const ch = source[i];
+      if (ch === '(') depth += 1;
+      else if (ch === ')') {
+        depth -= 1;
+        if (depth === 0) { close = i; break; }
+      }
+    }
+    if (close === -1) continue;
+    const params = source
+      .slice(open + 1, close)
+      .split(',')
+      .map((p) => p.trim())
+      .filter(Boolean);
+    const braceAt = source.indexOf('{', close);
+    if (braceAt === -1) { out.push({ params, body: '' }); continue; }
+    let d = 0;
+    let end = -1;
+    for (let i = braceAt; i < source.length; i += 1) {
+      const ch = source[i];
+      if (ch === '{') d += 1;
+      else if (ch === '}') {
+        d -= 1;
+        if (d === 0) { end = i; break; }
+      }
+    }
+    out.push({ params, body: end === -1 ? '' : source.slice(braceAt + 1, end) });
   }
   return out;
 }
@@ -1677,7 +2306,13 @@ function readBraceBlock(source, open) {
  */
 function callbackReceiverBindingsOf(source, name) {
   const out = [];
-  const mutation = new RegExp(`\\b${escapeRe(name)}\\s*\\.\\s*[A-Za-z_$][\\w$]*\\s*\\(`);
+  // TWO regexes, not one. The gate must NOT carry the `g` flag, because
+  // `RegExp.prototype.test` advances `lastIndex` on a global regex — a shared
+  // global instance would make the gate consume the first match and the scan
+  // loop below start at the SECOND one, silently skipping exactly the mutation
+  // this rule exists to examine.
+  const gate = new RegExp(`\\b${escapeRe(name)}\\s*\\.\\s*[A-Za-z_$][\\w$]*\\s*\\(`);
+  const mutation = new RegExp(`\\b${escapeRe(name)}\\s*\\.\\s*[A-Za-z_$][\\w$]*\\s*\\(`, 'g');
   // CHEAP GATE FIRST, THEN THE EXPENSIVE SCAN. `bindingsOf` is called once per
   // distinct name the walk reaches, and each call re-scans the whole module with
   // every rule in this file. Adding one rule that scans unconditionally turned
@@ -1689,7 +2324,7 @@ function callbackReceiverBindingsOf(source, name) {
   // contain ANY method call on this name at all? — and only then pays for the
   // statement scan. A name that is never a receiver of anything costs one
   // substring test.
-  if (!mutation.test(source)) return out;
+  if (!gate.test(source)) return out;
 
   // A STATEMENT that mutates the trust set inside a callback, together with the
   // full receiver chain of the host call it belongs to.
@@ -1708,25 +2343,87 @@ function callbackReceiverBindingsOf(source, name) {
   // once the cheap gate has said a mutation exists, only the text around that
   // mutation can contain the callback it sits in, and slicing to the enclosing
   // statement keeps this rule's cost independent of module size.
-  const at = source.search(mutation);
-  if (at === -1) return out;
-  const lineStart = source.lastIndexOf('\n', at) + 1;
-  let lineEnd = source.indexOf('\n', at);
-  if (lineEnd === -1) lineEnd = source.length;
-  const text = source.slice(lineStart, lineEnd);
-  if (!/\(\s*[A-Za-z_$][\w$]*\s*\)\s*=>/.test(text) && !/\bfunction\s*\(/.test(text)) return out;
-  for (const receiver of methodChainRootsOf(text)) {
-    // A receiver that IS the trust set is the mutation's own target, not a
-    // source of data for it — following it would be a self-loop.
-    //
-    // The comparison is textual because the receiver may now be an EXPRESSION
-    // (`[...targetedPools]`, `plan.queryVariants`), so an exact match is the
-    // only honest test. A receiver that merely CONTAINS the name is a different
-    // thing and must be reported.
-    if (receiver === name || receiver === `${name}.`) continue;
-    out.push({ kind: 'callback-receiver', expr: receiver });
+  //
+  // EVERY mutation is scanned, not just the first (r9 P1-1). `source.search`
+  // took the leftmost one and stopped, so a module whose first `trusted.add` is
+  // an unrelated single-line one hid every later wrapped form.
+  //
+  // AND THE SLICE IS THE STATEMENT, NOT THE LINE (r9 P1-1). This rule was the
+  // last one still slicing to the mutation's own LINE, and the two ordinary ways
+  // of writing a multi-line callback both put the receiver somewhere else:
+  //
+  //   targetedPools.forEach((p) => {      <- receiver on the `.forEach` line
+  //     trusted.add(p);                   <- mutation on its own line
+  //   });
+  //
+  //   targetedPools                       <- receiver two lines up
+  //     .filter((p) => p.ok)
+  //     .forEach((p) => trusted.add(p));
+  //
+  // Prettier produces the second shape on any chain that exceeds the line width,
+  // so this was not a contrived fixture: the identical code is a violation when
+  // written on one line and clean when wrapped, which is the definition of a
+  // format-dependent bypass. The r8 fixtures were all single-line, which is why
+  // five review rounds of line-sensitive probing never hit it.
+  for (let m = mutation.exec(source); m !== null; m = mutation.exec(source)) {
+    const text = statementWindowAround(source, m.index);
+    if (!/\(\s*[A-Za-z_$][\w$]*\s*\)\s*=>/.test(text) && !/\bfunction\s*\(/.test(text)) continue;
+    for (const receiver of methodChainRootsOf(text)) {
+      // A receiver that IS the trust set is the mutation's own target, not a
+      // source of data for it — following it would be a self-loop.
+      //
+      // The comparison is textual because the receiver may now be an EXPRESSION
+      // (`[...targetedPools]`, `plan.queryVariants`), so an exact match is the
+      // only honest test. A receiver that merely CONTAINS the name is a different
+      // thing and must be reported.
+      if (receiver === name || receiver === `${name}.`) continue;
+      out.push({ kind: 'callback-receiver', expr: receiver });
+    }
   }
   return out;
+}
+
+/**
+ * The STATEMENT around `at`, in the sense "the whole host call the mutation sits
+ * inside" — which is what a receiver rule has to see.
+ *
+ * A mutation's own line is not that: the host call's receiver is on the line
+ * that OPENS the callback, which for the two common shapes is a different line
+ * from the one the mutation is on. So the window is found by walking back to the
+ * nearest statement boundary and forward to the next one.
+ *
+ * The asymmetry in the backward walk is deliberate and load-bearing. A `;` ends
+ * the previous statement, so the window starts immediately AFTER it — widening to
+ * the start of that line would drag `const trusted = new Set(…)` in and make
+ * `new Set` look like a chain root, which is noise the walk then has to resolve.
+ * A `{` opens the callback body and is at the END of the host call's line, so the
+ * window has to start at that LINE's beginning or the receiver is left outside
+ * the slice. Treating both boundaries the same way fixes one of the two shapes
+ * and breaks the other.
+ *
+ * @param {string} source
+ * @param {number} at index of the mutation
+ * @returns {string}
+ */
+function statementWindowAround(source, at) {
+  let start = 0;
+  let boundary = ';';
+  for (let i = at - 1; i >= 0; i -= 1) {
+    const ch = source[i];
+    if (ch !== ';' && ch !== '{' && ch !== '}') continue;
+    boundary = ch;
+    start = i + 1;
+    break;
+  }
+  if (boundary !== ';') {
+    const lineStart = source.lastIndexOf('\n', start - 1) + 1;
+    if (lineStart < start) start = lineStart;
+  }
+  let end = source.length;
+  for (let i = at; i < source.length; i += 1) {
+    if (source[i] === ';') { end = i + 1; break; }
+  }
+  return source.slice(start, end);
 }
 
 /**

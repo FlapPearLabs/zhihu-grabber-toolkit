@@ -31,7 +31,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -706,9 +706,17 @@ function c3TrustSurfaceVerdict(src, call, { libDir = LIB_DIR } = {}) {
     const expressions = [...(localRoutes.expressions ?? [])];
     const unresolvable = [...(localRoutes.unresolvable ?? [])];
     let resolvedAny = localRoutes.expressions.length > 0;
+    // Failures are COLLECTED, not re-queried: every call into the cross-module
+    // route advances the one shared call-graph budget, so asking a second time
+    // would either report a budget-exhausted lookup as a genuine miss or
+    // double-count the same blind spot once per candidate.
+    const hopFailures = [];
     for (const name of candidates) {
       const imported = resolveImportedCallReturnProvenance(libDir, call.file, name, { budget });
-      if (!imported.found) continue;
+      if (!imported.found) {
+        hopFailures.push(...(imported.unresolvable ?? []));
+        continue;
+      }
       resolvedAny = true;
       expressions.push(...imported.expressions);
       unresolvable.push(...imported.unresolvable);
@@ -718,6 +726,20 @@ function c3TrustSurfaceVerdict(src, call, { libDir = LIB_DIR } = {}) {
     // Nothing in this module or its `lib/` imports accounts for the name. A
     // callback parameter reaches here only if the lexical walk missed its
     // scope, so this is a real blind spot and C3 fails closed on it.
+    //
+    // A CROSS-MODULE HOP THAT WAS TAKEN AND FAILED IS ALSO A BLIND SPOT, and it
+    // used to be dropped on the floor (r9 P1-2). `import { gather as filter }`
+    // resolves to an origin module, that module declares no `filter`, and the
+    // route returned `{found: false, unresolvable: [...]}`. The old
+    // `if (!imported.found) continue;` discarded that unresolvable, so an
+    // import the walk could not follow read as a CLEAN resolution — the exact
+    // inversion this guard's contract forbids, and one more reason a vocabulary
+    // collision was enough to hide a widening. The failure REPLACES the generic
+    // blind spot rather than joining it, because it is the same blind spot with
+    // the reason attached.
+    if (hopFailures.length > 0) {
+      return { expressions: [], unresolvable: [...hopFailures, ...unresolvable] };
+    }
     return { expressions: [], unresolvable: [ident] };
   };
 
@@ -801,6 +823,32 @@ function c3TrustSurfaceVerdict(src, call, { libDir = LIB_DIR } = {}) {
         );
         continue;
       }
+      // A MEMBER behind the options object is the same case as one written
+      // inline, and it has to be classified the same way (r9 P1-3).
+      // `resolveOptionsTrustSetExpression` correctly returns `holder.trusted`
+      // here, and `followInto` would then check that text and recurse on
+      // `provenanceIdentifiersIn` — which yields `holder`, because the property
+      // name is stripped by design. So the property write that fed the trust set
+      // is never consulted, and the site reads clean. The inline route was
+      // already taught this; the options route was not.
+      //
+      // "IS A MEMBER" IS ASKED OF THE WHOLE VALUE, NOT WITH `includes('.')`.
+      // The obvious test also matches
+      //
+      //   new Set([...plan.queryVariants, ...targetedPools.map(…)])
+      //
+      // which is an INLINE EXPRESSION that happens to contain a dot, and routing
+      // that to the binding walk asks a question about a path that does not
+      // exist — the existing P1-2-routing case then read clean. The classifier
+      // that already draws this line for the inline route is reused rather than
+      // re-derived, because two answers to "is this a name?" is what the r9
+      // review found in the first place.
+      if (!classifyTrustSetValue(memberExpr).startsWith('__expr__')) {
+        const memberBound = resolveTrustSetProvenance(src, memberExpr);
+        for (const expr of memberBound.expressions) followInto(varName, expr);
+        for (const name of memberBound.unresolvable) unresolvable.push(`${at} \`${varName}\` → ${name}`);
+        continue;
+      }
       followInto(varName, memberExpr);
       continue;
     }
@@ -808,6 +856,27 @@ function c3TrustSurfaceVerdict(src, call, { libDir = LIB_DIR } = {}) {
     // A plain variable. `followInto` on the variable's own name adds the walk
     // `resolveTrustSetProvenance` already performs; it is called for the uniform
     // treatment rather than for extra coverage.
+    //
+    // A DOTTED root is NOT covered by that uniformity, and the reason is worth
+    // recording because it is the whole of r9 P1-3 (r9 P1-3 follow-up).
+    // `followInto(root, root)` checks the root's own TEXT and then recurses on
+    // the identifiers `provenanceIdentifiersIn(root)` returns. For a bare name
+    // the identifier list is `[root]` itself, so the recursion re-asks about the
+    // trust set and the binding route answers — the bare case works BECAUSE the
+    // text and the binding happen to be the same string. For `holder.trusted`
+    // the identifier list is `['holder']` (the property name is stripped, by
+    // design), so the recursion asks about the RECEIVER, the receiver's only
+    // binding is `const holder = {}`, and the property write that actually fed
+    // the trust set is never consulted by anyone.
+    //
+    // So a dotted root is resolved as a BINDING of that member — which is the
+    // question actually being asked — rather than as text.
+    if (root.includes('.')) {
+      const memberBound = resolveTrustSetProvenance(src, root);
+      for (const expr of memberBound.expressions) followInto(root, expr);
+      for (const name of memberBound.unresolvable) unresolvable.push(`${at} \`${root}\` → ${name}`);
+      continue;
+    }
     followInto(root, root);
   }
 
@@ -866,11 +935,36 @@ function trustSetRootsOf(callText) {
     if (colonAt !== -1) {
       const value = readBalancedValue(after.slice(colonAt + 1));
       if (value !== '') {
-        roots.push(/^[A-Za-z_$][\w$]*$/.test(value) ? value : `__expr__${value}`);
+        roots.push(classifyTrustSetValue(value));
       }
     }
   }
   return roots;
+}
+
+/**
+ * Is this trust-set value a THING TO WALK, or an EXPRESSION to test as text?
+ *
+ * A DOTTED NAME IS A THING TO WALK (r9 P1-3). The bare-identifier test used here
+ * is `/^[A-Za-z_$][\w$]*$/`, so `holder.trusted` failed it and was filed as
+ * `__expr__holder.trusted` — and the `__expr__` branch tests an expression as
+ * TEXT and stops, never asking any route where a value bound to that member
+ * came from. So:
+ *
+ *   const holder = {};
+ *   holder.trusted = new Set(targetedPools.map((p) => p.channels[0].query));
+ *   assertArtifactSafe(pool, { trustedPlanStrings: holder.trusted });
+ *
+ * came back clean. The `__expr__` branch is not wrong about expressions — it is
+ * wrong about a name, and the two were indistinguishable because the classifier
+ * only recognised ONE spelling of "name".
+ *
+ * The dotted form reaches the binding walk, which resolves the member's own
+ * property writes and then the receiver. Anything with brackets, spaces or
+ * operators in it is still an expression.
+ */
+function classifyTrustSetValue(value) {
+  return /^[A-Za-z_$][\w$]*(?:\s*\.\s*[A-Za-z_$][\w$]*)*$/.test(value) ? value : `__expr__${value}`;
 }
 
 /**
@@ -913,7 +1007,7 @@ function stripComments(source) {
     .replace(/(^|[^:])\/\/[^\n]*/g, (m, p1) => p1 + ' '.repeat(m.length - p1.length));
 }
 
-test('C3b: MUTATION PROOF — the three widenings the security review found are now fatal', () => {
+test('C3b: MUTATION PROOF — every widening the security reviews found is now fatal', () => {
   // Non-vacuity proof for C3, EXECUTED rather than asserted, and executed
   // through C3's OWN predicate (`c3TrustSurfaceVerdict`) — a mutation proof
   // that re-derives the rule proves nothing about the rule.
@@ -1162,7 +1256,200 @@ test('C3b: MUTATION PROOF — the three widenings the security review found are 
         '}',
       ].join('\n'),
     },
+    {
+      // r9 P1-1 (a). The receiver rule sliced the MUTATION'S OWN LINE, so the
+      // two ordinary ways of writing a multi-line callback both put the
+      // targeted receiver somewhere else:
+      //
+      //   targetedPools.forEach((p) => {   <- receiver here
+      //     trusted.add(p);                <- mutation here
+      //   });
+      //
+      // Prettier produces this shape for any callback over the line width, so
+      // the IDENTICAL widening was a violation on one line and clean when
+      // wrapped — a format-dependent bypass. Every receiver fixture through r8
+      // was single-line, which is why five review rounds of line-sensitive
+      // probing never hit it.
+      name: 'r9 P1-1a: a MULTI-LINE callback hides the receiver from the mutation line',
+      src: [
+        'function f(plan, targetedPools) {',
+        '  const trusted = new Set(plan.queryVariants);',
+        '  targetedPools.forEach((p) => {',
+        '    trusted.add(p);',
+        '  });',
+        '  const opts = { trustedPlanStrings: trusted };',
+        '  return assertArtifactSafe(pool, opts);',
+        '}',
+      ].join('\n'),
+    },
+    {
+      // r9 P1-1 (b). The same defect on a chain Prettier wrapped across lines.
+      // The chain root is TWO LINES ABOVE the mutation, so even a
+      // statement-level slice has to reach back past the `.filter` link.
+      name: 'r9 P1-1b: a PRETTIER-WRAPPED chain hides the root from the mutation line',
+      src: [
+        'function f(plan, targetedPools) {',
+        '  const trusted = new Set(plan.queryVariants);',
+        '  targetedPools',
+        '    .filter((p) => p.ok)',
+        '    .forEach((p) => trusted.add(p));',
+        '  const opts = { trustedPlanStrings: trusted };',
+        '  return assertArtifactSafe(pool, opts);',
+        '}',
+      ].join('\n'),
+    },
+    {
+      // r9 P1-2 (a). An IMPORT is a binding, and the vocabulary filter asked a
+      // different question from the binding walk — so an honest binding named
+      // with a library method's spelling was skipped outright:
+      //
+      //   import { filter } from './zz-helper.mjs';   // helper reads targetedPools
+      //   const trusted = new Set(filter(opts));
+      //
+      // The non-vocabulary control (`gather`) was CAUGHT through the cross-module
+      // route, which proves the engine can see the widening and that only the
+      // vocabulary filter was hiding it.
+      name: 'r9 P1-2a: an IMPORT named with a vocabulary word still binds a carrier',
+      libFiles: {
+        'zz-helper.mjs': [
+          'export function filter(opts) {',
+          '  return (opts.targetedPools ?? []).map((p) => p.channels[0].query);',
+          '}',
+        ].join('\n'),
+      },
+      src: [
+        "import { filter } from './zz-helper.mjs';",
+        'function f(plan, opts) {',
+        '  const trusted = new Set(filter(opts));',
+        '  const o = { trustedPlanStrings: trusted };',
+        '  return assertArtifactSafe(pool, o);',
+        '}',
+      ].join('\n'),
+    },
+    {
+      // r9 P1-2 (b). The ALIAS form, which needed two independent fixes: the
+      // import had to be recognised as a binding, AND the origin module had to
+      // be looked up under the name it exports (`gather`) rather than the name it
+      // is bound to locally (`filter`). `importOriginOf` resolved the module
+      // correctly and then asked for a body named `filter`, found none, and the
+      // route reported a clean resolution instead of a blind spot.
+      name: 'r9 P1-2b: an import ALIASED onto a vocabulary word is followed to the origin body',
+      libFiles: {
+        'zz-helper2.mjs': [
+          'export function gather(opts) {',
+          '  return (opts.targetedPools ?? []).map((p) => p.channels[0].query);',
+          '}',
+        ].join('\n'),
+      },
+      src: [
+        "import { gather as filter } from './zz-helper2.mjs';",
+        'function f(plan, opts) {',
+        '  const trusted = new Set(filter(opts));',
+        '  const o = { trustedPlanStrings: trusted };',
+        '  return assertArtifactSafe(pool, o);',
+        '}',
+      ].join('\n'),
+    },
+    {
+      // r9 P1-2 (c). A DESTRUCTURING ASSIGNMENT binds with no `const|let|var`
+      // anywhere, so the declaration patterns see nothing and the carrier reads
+      // free one statement later. The leading paren on the object form is what
+      // keeps `if (filter = compute())` out.
+      name: 'r9 P1-2c: a destructuring ASSIGNMENT named with a vocabulary word binds a carrier',
+      src: [
+        'function f(plan) {',
+        '  const opts = { filter: targetedPools.map((p) => p.channels[0].query) };',
+        '  let filter;',
+        '  ({ filter } = opts);',
+        '  const trusted = new Set(filter);',
+        '  const o = { trustedPlanStrings: trusted };',
+        '  return assertArtifactSafe(pool, o);',
+        '}',
+      ].join('\n'),
+    },
+    {
+      // r9 P1-3. The trust set handed over as an OBJECT FIELD rather than a bare
+      // variable. Two independent gaps had to close together:
+      //
+      //   · `trustSetRootsOf` filed `holder.trusted` as an INLINE EXPRESSION
+      //     (its bare-identifier test did not match a dotted name), and the
+      //     `__expr__` branch tests text and stops — no route was ever asked;
+      //   · `bindingsOf` had no rule for a PROPERTY WRITE, so even once it was
+      //     walked as a binding, `holder.trusted = new Set(targetedPools…)` was
+      //     not connected to anything.
+      //
+      // The control with a plain variable WAS caught, which is what makes this a
+      // hole rather than a limitation of a lexical walk.
+      name: 'r9 P1-3: the trust set handed over as an OBJECT FIELD is resolved through the write',
+      src: [
+        'const holder = {};',
+        'function f(pool) {',
+        '  holder.trusted = new Set(targetedPools.map((p) => p.channels[0].query));',
+        '  const o = { trustedPlanStrings: holder.trusted };',
+        '  return assertArtifactSafe(pool, o);',
+        '}',
+      ].join('\n'),
+    },
+    {
+      // r9 P1-3, second spelling. A CLASS FIELD initialiser, read from a
+      // DIFFERENT object than the one written — so there is no receiver to
+      // follow and the field initialiser has to be reported against the bare
+      // member name.
+      name: 'r9 P1-3b: a CLASS FIELD initialiser read through another object is resolved',
+      src: [
+        'export class TrustHolder {',
+        '  trusted = new Set(targetedPools.map((p) => p.channels[0].query));',
+        '}',
+        'function f(pool, h) {',
+        '  const o = { trustedPlanStrings: h.trusted };',
+        '  return assertArtifactSafe(pool, o);',
+        '}',
+      ].join('\n'),
+    },
   ];
+
+  // r9 P2-1. An UNRELATED function's parameter must not be able to explain a
+  // blind spot in the function that actually holds the trust set.
+  //
+  // Before the fix, `parameterBindingsOf` / `locallyBoundNames` / Route 4a each
+  // scanned the WHOLE MODULE for a matching parameter name. A sibling
+  // `function unrelated(filter)` was therefore enough to resolve a trust-set
+  // reference to `filter` that has NO binding at all in its own function — the
+  // provenance engine reported "explained by parameter `filter`", reported no
+  // blind spot, and the widening went through. That is precisely the fail-open
+  // this guard exists to prevent, and it is SILENT: an unexplained name and an
+  // explained one both yield `violations: []`.
+  //
+  // Note the predicate. This case is asserted on `unresolvable`, NOT on
+  // `violations`, because `filter` here is not itself a targeted surface — the
+  // defect is that a blind spot DISAPPEARED, not that a violation appeared.
+  // Putting it in `CASES` would have asserted `violations.length > 0`, which is
+  // the wrong predicate and which it cannot satisfy at any fix.
+  const P2_1_BLIND_SPOT = [
+    'function unrelated(filter) {',
+    '  return filter;',
+    '}',
+    'function f(pool) {',
+    '  const trusted = new Set(pool.queryVariants);',
+    '  trusted.add(filter);',
+    '  const opts = { trustedPlanStrings: trusted };',
+    '  return assertArtifactSafe(pool, opts);',
+    '}',
+  ].join('\n');
+
+  // The CONTROL: byte-identical except that `filter` is now declared as a
+  // parameter OF `f`, so it IS lexically in scope at the call site and the
+  // parameter route must still resolve it.
+  //
+  // This is the only shape that separates the two states. A control that merely
+  // renamed the SIBLING's parameter would pass both before and after the fix
+  // (after the fix the sibling is invisible either way) and would prove nothing.
+  // Declaring `filter` on `f` is what makes the scoped lookup observable: the
+  // counterexample must report a blind spot while the control reports none.
+  const P2_1_IN_SCOPE_CONTROL = P2_1_BLIND_SPOT.replace(
+    'function f(pool) {',
+    'function f(pool, filter) {',
+  );
 
   for (const { name, src, libFiles } of CASES) {
     const stripped = stripComments(src);
@@ -1197,6 +1484,14 @@ test('C3b: MUTATION PROOF — the three widenings the security review found are 
         file: 'synthetic.mjs',
         line: 1,
         text: callText[0].trim(),
+        // `callText` CARRIES THE WHOLE ARGUMENT LIST, and `trustSetRootsOf`
+        // reads the trust set out of it. Passing only `text` worked for every
+        // case above because each of them spells the member on the call's own
+        // line — and would have silently mis-parsed the r9 P1-3 cases, whose
+        // trust set is a MEMBER (`holder.trusted`) and whose verdict depends on
+        // the root classifier running at all. A mutation proof that omits the
+        // field under test proves nothing about the field under test.
+        callText: callText[0],
       }, { libDir });
       assert.ok(
         verdict.violations.length > 0,
@@ -1204,6 +1499,51 @@ test('C3b: MUTATION PROOF — the three widenings the security review found are 
       );
     } finally {
       if (tempDir !== null) rmSync(tempDir, { recursive: true, force: true });
+    }
+  }
+
+// (3b) r9 P2-1. The counterexample and its control, asserted together.
+  //
+  // They are byte-identical except for one token, so any difference in outcome
+  // is attributable to that token alone — which is the only form in which a
+  // lexical-scope claim is mechanical rather than rhetorical.
+  for (const { label, src, expectBlindSpot } of [
+    { label: 'sibling-scope counterexample', src: P2_1_BLIND_SPOT, expectBlindSpot: true },
+    { label: 'in-scope control', src: P2_1_IN_SCOPE_CONTROL, expectBlindSpot: false },
+  ]) {
+    const stripped = stripComments(src);
+    const callText = /return\s+assertArtifactSafe\s*\([^;]*\);/.exec(stripped);
+    assert.ok(callText !== null, `precondition: the P2-1 ${label} has a parseable call site`);
+    const verdict = c3TrustSurfaceVerdict(
+      stripped,
+      {
+        file: 'synthetic.mjs',
+        line: 1,
+        text: callText[0].trim(),
+        callText: callText[0],
+      },
+      { libDir: LIB_DIR },
+    );
+    assert.deepEqual(
+      verdict.violations,
+      [],
+      `the P2-1 ${label} must report no violation: \`filter\` is not itself a `
+        + `targeted surface, and the defect under test is a MISSING blind spot`,
+    );
+    if (expectBlindSpot) {
+      assert.ok(
+        verdict.unresolvable.length > 0,
+        'a name that is bound ONLY in an unrelated function must be reported as a '
+          + 'blind spot — a sibling parameter must not be able to explain it',
+      );
+    } else {
+      assert.deepEqual(
+        verdict.unresolvable,
+        [],
+        `the P2-1 ${label} binds \`filter\` on f itself, so the parameter route — now `
+          + `scoped to the trust-set root's own function body — must still resolve it. `
+          + `Got: ${JSON.stringify(verdict.unresolvable)}`,
+      );
     }
   }
 
@@ -1359,6 +1699,132 @@ test('C3c: EVERY trust-set call site yields something for C3 to examine', () => 
     'every site must produce a well-formed verdict; a missing one is an unexamined site, not a clean one',
   );
   assert.equal(verdicts.length, e.trusted.length, 'each site must produce a verdict');
+});
+
+// r9 P2-2. The ENUMERATOR is the other half of this guard, and it had the same
+// shape of defect C3c exists to catch: a site the enumerator never returned was
+// a site no verdict could ever be computed for.
+//
+// Two independent blindnesses, both silent:
+//
+//   (a) DEPTH. The scan read one directory level. Any call site in a
+//       subdirectory of `lib/` was simply not in the surface, so the suite
+//       reported green over a smaller surface than it believed.
+//
+//   (b) SPELLING. The scan matched the literal string `assertArtifactSafe`. A
+//       module that imported the walker under an alias —
+//       `import { assertArtifactSafe as safe }` — and then called `safe(...)`
+//       produced no call object at all.
+//
+// A first attempt at this fixture made the walker name a DERIVED value (from the
+// file name, yielding `['rrf']`) and then returned an empty set, which "passed"
+// for the wrong reason. The fix pins the walker's EXPORTED name as a constant and
+// accepts the exported name plus any local alias bound to it — and, critically,
+// only for import entries whose EXPORTED name is the walker. Accepting every
+// entry in the same `rrf.mjs` import block made `projectSafeJson(` and
+// `projectAllowedErrorCode(` match, which broke the production A1 count; that
+// regression is what the `unrelated` control below now pins shut.
+test('r9 P2-2: the call-surface enumerator sees SUBDIRECTORIES and IMPORT ALIASES', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 't11-p22-'));
+  try {
+    writeFileSync(
+      path.join(dir, 'rrf.mjs'),
+      [
+        'export function assertArtifactSafe(a, b) {',
+        '  return { a, b };',
+        '}',
+        'export function projectSafeJson(x) {',
+        '  return x;',
+        '}',
+        'export function projectAllowedErrorCode(x) {',
+        '  return x;',
+        '}',
+      ].join('\n'),
+    );
+    // (a) plain spelling, top level.
+    writeFileSync(
+      path.join(dir, 'plain.mjs'),
+      [
+        "import { assertArtifactSafe } from './rrf.mjs';",
+        'export function f(plan) {',
+        '  const trusted = new Set(plan.queryVariants);',
+        '  return assertArtifactSafe(plan, { trustedPlanStrings: trusted });',
+        '}',
+      ].join('\n'),
+    );
+    // (b) the same walker under an ALIAS.
+    writeFileSync(
+      path.join(dir, 'aliased.mjs'),
+      [
+        "import { assertArtifactSafe as safe } from './rrf.mjs';",
+        'export function g(plan) {',
+        '  const trusted = new Set(plan.queryVariants);',
+        '  return safe(plan, { trustedPlanStrings: trusted });',
+        '}',
+      ].join('\n'),
+    );
+    // (a) a SUBDIRECTORY call site, one level down.
+    mkdirSync(path.join(dir, 'targeted'), { recursive: true });
+    writeFileSync(
+      path.join(dir, 'targeted', 'new-widening.mjs'),
+      [
+        "import { assertArtifactSafe } from '../rrf.mjs';",
+        'export function h(plan) {',
+        '  const trusted = new Set(plan.queryVariants);',
+        '  return assertArtifactSafe(plan, { trustedPlanStrings: trusted });',
+        '}',
+      ].join('\n'),
+    );
+    // The CONTROL for the over-broad import fix: a module that imports OTHER
+    // exports from the same block and calls them. None of these is a walker call,
+    // so none may appear in the surface. Without this, "alias-aware" could be
+    // satisfied by matching every imported name in the block.
+    writeFileSync(
+      path.join(dir, 'unrelated.mjs'),
+      [
+        "import { projectSafeJson, projectAllowedErrorCode } from './rrf.mjs';",
+        'export function i(p) {',
+        '  return projectSafeJson(p) || projectAllowedErrorCode(p);',
+        '}',
+      ].join('\n'),
+    );
+
+    const surface = enumerateAssertArtifactSafeCallSurface(dir);
+    const trustedFiles = surface.trusted.map((c) => c.file).sort();
+    const enumeratedFiles = surface.files.map((f) => f.file).sort();
+
+    // Each fixture call carries a trust set, so all three are TRUST-RED call
+    // sites — the class a widening would arrive as. Asserting on `trusted`
+    // rather than on "some list contains it" is deliberate: a call site with no
+    // trust set lands in `untrusted`, and asserting membership of any list would
+    // let the test pass on a site C3 never even examines.
+    assert.deepEqual(
+      trustedFiles,
+      ['aliased.mjs', 'plain.mjs', 'targeted/new-widening.mjs'],
+      'the TRUST-RED surface must include the aliased call, the plain call, and the '
+        + 'SUBDIRECTORY call — and must not include callers of non-walker exports',
+    );
+    assert.ok(
+      surface.trusted.some((c) => c.file === 'aliased.mjs'),
+      'precondition: an import alias must not hide a call site',
+    );
+    assert.ok(
+      surface.trusted.some((c) => c.file === 'targeted/new-widening.mjs'),
+      'precondition: a subdirectory must not hide a call site',
+    );
+    assert.equal(
+      enumeratedFiles.includes('unrelated.mjs'),
+      false,
+      'a non-walker export from the same import block is not a walker call site',
+    );
+    assert.deepEqual(
+      surface.unparsed.map((c) => c.file),
+      [],
+      'no walker call site may be left unclassified',
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('C2: enumeratePlanOwnedStrings never yields a targeted/authorized string', () => {
