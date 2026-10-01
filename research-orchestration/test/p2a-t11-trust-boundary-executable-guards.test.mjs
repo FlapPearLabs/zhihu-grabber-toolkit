@@ -78,6 +78,8 @@ import {
   resolveNameInModule,
   isVocabularyOnly,
   isWalkableTrustSetName,
+  splitMemberAccess,
+  memberWritePathsIn,
 } from './helpers/t11-trust-surface-enumeration.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -747,12 +749,75 @@ function c3TrustSurfaceVerdict(src, call, { libDir = LIB_DIR } = {}) {
 
   const followInto = (label, expression, seen = new Set()) => {
     checkExpressions(label, [expression]);
+    // r11 P1-1 FIXED HERE. A member access inside this expression can be the
+    // BINDING that fed the trust set, and the identifier loop below cannot see
+    // that: `provenanceIdentifiersIn` strips property names by design, so
+    // `new Set(holder.trusted)` reduces to `['new','Set','holder']` and the
+    // walk asks about an empty object literal while the targeted string sits in
+    // `holder.trusted = new Set(…targetedPools…)`, which nothing ever consults.
+    // The verdict came back `{violations: [], unresolvable: []}` — CLEAN, on a
+    // one-dot widening of the F.3 boundary. I reproduced exactly that.
+    //
+    // The member route is consulted ONLY for members this module actually
+    // WRITES (see `memberWritePathsIn` for the measurement that rules out the
+    // broader "every member" rule: it costs 8 false blind spots on
+    // `coverage-final-integration.mjs:461` for `Array.isArray`, which is a
+    // builtin read with no write anywhere). A property write is the only thing
+    // that makes `receiver.member` a binding of a trust set rather than a read
+    // of someone else's data, and on all three production sites with an inline
+    // trust set this yields nothing at all — so the fix is quiet in production
+    // and loud on the bypass.
+    //
+    // The write is reported through the SAME `checkExpressions`/`resolveName`
+    // pair as every other route, so a member write cannot produce a verdict the
+    // bare-variable route could not.
     // ONE budget for the whole call site, shared by every route beneath it.
     // The routes call each other — the binding walk asks the body route, the
     // body route asks the binding walk, and the cross-module route re-enters
     // both in the origin module — so a per-identifier budget never terminates.
     // Sharing it makes every function body resolve at most once per call site.
+    //
+    // DECLARED ABOVE THE MEMBER LOOP, and that position is load-bearing. It was
+    // originally written just above the identifier loop below, which left the
+    // member route — added in this same review — starting a FRESH top-level walk
+    // per member path. The helper's own finiteness argument is "one budget per
+    // top-level walk"; a route that invents its own walk is not covered by it.
+    // The mutation matrix caught the consequence rather than a reviewer: M7
+    // (`pool.__trusted = new Set([...trusted, ...pool.map(…)])`, the r9 P1-3
+    // shape) took 27.4s for a single root and returned 294 expressions with
+    // 5702 unresolvables, and the suite did not finish. A guard that does not
+    // terminate is a fail-open of its own kind — CI never completes, so the
+    // ticket never lands and the widening ships unchallenged. Sharing the one
+    // budget is what puts the member route back under the invariant.
+    //
+    // IT DOES NOT FULLY FIX M7, and the comment must not imply that it does.
+    // The real-`lib/` mutation matrix reaches M7 (`pool.__trusted = new
+    // Set([...trusted, ...pool.map((p) => p.channels[0].query)])`) and the suite
+    // still does not finish. Measured on the mutated file: ONE root,
+    // `pool.__trusted`, takes 27.4s and returns 294 expressions with 5702
+    // unresolvables, where the unmutated `trusted` takes 5ms and 2/0. The
+    // existing budget bounds FUNCTION BODIES (`resolveCallReturnProvenance`'s
+    // `visited` set); nothing bounds the fan-out over NAMES, so a member whose
+    // right-hand side re-reads the receiver explodes combinatorially.
+    //
+    // Attribution, because it decides whose defect this is: the same
+    // non-termination reproduces on a DETACHED WORKTREE AT HEAD `9bcf63f`,
+    // whose unmutated suite is 28/28 green. So M7 is PRE-EXISTING at HEAD and
+    // is NOT introduced by the r11 P1-1/P1-2 work. It is left unfixed here
+    // deliberately — repairing it is a separate ticket with its own
+    // authorization, and silently widening this repair is exactly what the
+    // bounded-repair rule forbids. Tracked as a new finding, not absorbed.
     const budget = { visited: new Set() };
+    for (const memberPath of memberWritePathsIn(src, expression)) {
+      const split = splitMemberAccess(memberPath);
+      if (split === null || seen.has(memberPath)) continue;
+      seen.add(memberPath);
+      const memberBound = resolveTrustSetProvenance(src, memberPath, { budget });
+      checkExpressions(label, memberBound.expressions);
+      for (const name of memberBound.unresolvable) {
+        unresolvable.push(`${at} \`${label}.${name}\``);
+      }
+    }
     for (const ident of provenanceIdentifiersIn(expression)) {
       // Globals and built-ins are not trust inputs. `new Set(…)`, `Array.isArray`
       // and a module-level helper named like a builtin would otherwise each be
@@ -2124,6 +2189,254 @@ test('r10 P1-3: a LOCALLY re-bound walker is still enumerated as a call site', (
       surface.unparsed.map((c) => c.file),
       [],
       'no walker call site may be left unclassified',
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('r11 P1-1: a MEMBER nested inside an inline trust set is a binding, not a read', () => {
+  // The hole the tenth security review's repair opened, and the second one this
+  // guard has produced that needs no rename, no computed key and no alias — one
+  // dot on a read:
+  //
+  //   const holder = {};
+  //   holder.trusted = new Set([...plan.queryVariants, ...targetedPools.map((p) => p.rawQuery)]);
+  //   assertArtifactSafe(pool, { trustedPlanStrings: new Set(holder.trusted) });
+  //
+  // `followInto` reduces every expression through `provenanceIdentifiersIn`,
+  // which strips property names BY DESIGN. So `new Set(holder.trusted)` yields
+  // `['new','Set','holder']`, the walk asks about `holder`, and `holder`'s only
+  // binding is the empty object. The statement carrying the targeted string is
+  // consulted by nobody. I reproduced the verdict: `{violations: [],
+  // unresolvable: []}` — CLEAN.
+  //
+  // It is the same class of defect as r9 P1-3, which is why the fix is in the
+  // same place: the trust set is a BINDING of `holder.trusted`, and a property
+  // write is what makes it one.
+  const CASES = [
+    {
+      name: 'inline Set over a member: new Set(holder.trusted)',
+      value: 'new Set(holder.trusted)',
+    },
+    {
+      name: 'inline spread over a COMPUTED member: [...holder[\'trusted\']]',
+      value: 'new Set([...plan.queryVariants, ...holder[\'trusted\']])',
+    },
+    {
+      name: 'inline Set over an OPTIONAL-CHAINED member: holder?.trusted',
+      value: 'new Set(holder?.trusted)',
+    },
+  ];
+
+  for (const c of CASES) {
+    const src = [
+      'function f(pool, plan, targetedPools) {',
+      '  const holder = {};',
+      '  holder.trusted = new Set([...plan.queryVariants, ...targetedPools.map((p) => p.rawQuery)]);',
+      `  return assertArtifactSafe(pool, { trustedPlanStrings: ${c.value} });`,
+      '}',
+    ].join('\n');
+    const verdict = c3TrustSurfaceVerdict(src, { file: 'r11-p1-1.mjs', line: 4, text: '', callText: `assertArtifactSafe(pool, { trustedPlanStrings: ${c.value} })` });
+    assert.ok(
+      verdict.violations.length > 0,
+      `${c.name}: a member whose PROPERTY WRITE carries a targeted string must be a `
+        + 'violation — the write is the binding, and a clean verdict here is the '
+        + 'fail-open this test exists to make impossible to reintroduce',
+    );
+  }
+
+  // AND THE POSITIVE CONTROL, because a rule that fires on every member is just
+  // as wrong as one that fires on none. `worker` is a receiver with a property
+  // write in the module, and its write is CLEAN — the site must stay clean. This
+  // is the noise half of the contract: the member route is consulted for members
+  // the module WRITES, and consulting it must not manufacture findings.
+  const cleanSrc = [
+    'function f(pool, plan) {',
+    '  const holder = {};',
+    '  holder.trusted = new Set(plan.queryVariants);',
+    '  return assertArtifactSafe(pool, { trustedPlanStrings: new Set(holder.trusted) });',
+    '}',
+  ].join('\n');
+  const cleanVerdict = c3TrustSurfaceVerdict(cleanSrc, {
+    file: 'r11-p1-1-clean.mjs',
+    line: 4,
+    text: '',
+    callText: 'assertArtifactSafe(pool, { trustedPlanStrings: new Set(holder.trusted) })',
+  });
+  assert.deepEqual(
+    cleanVerdict.violations,
+    [],
+    'a member whose property write is plan-shaped is clean — the member route must not '
+      + 'manufacture violations, or its findings get waived as noise',
+  );
+});
+
+test('r11 P1-1b: a PURE member read is not dragged into the member route', () => {
+  // The reason the fix above is scoped to members the module WRITES, stated as
+  // an executable test because the scoping is a judgement call and judgement
+  // calls decay.
+  //
+  // `Array.isArray(plan.queryVariants) ? plan.queryVariants : []` is the REAL
+  // trust set on `coverage-final-integration.mjs:461`. Routing every member
+  // through the member route there yields 45 expressions and 8 blind spots —
+  // `failClosed`, `CoverageIntegrationError`, `seam` and friends reported as
+  // unresolvable on the frozen line the guard exists to protect. Eight false
+  // blind spots is worse than the hole: a reader trained to waive unresolvable
+  // waives the real one.
+  const src = [
+    'function f(pool, plan) {',
+    '  return assertArtifactSafe(pool, {',
+    '    trustedPlanStrings: new Set(Array.isArray(plan.queryVariants) ? plan.queryVariants : []),',
+    '  });',
+    '}',
+  ].join('\n');
+  assert.deepEqual(
+    memberWritePathsIn(src, 'new Set(Array.isArray(plan.queryVariants) ? plan.queryVariants : [])'),
+    [],
+    'no member in this expression is written in this module, so none may be routed to the '
+      + 'member route — the receiver walk already covers a pure read',
+  );
+  // While a member that IS written is routed. Same predicate, opposite answer.
+  const written = [
+    'function f(pool, plan, targetedPools) {',
+    '  const holder = {};',
+    '  holder.trusted = new Set(targetedPools.map((p) => p.rawQuery));',
+    '  return assertArtifactSafe(pool, { trustedPlanStrings: new Set(holder.trusted) });',
+    '}',
+  ].join('\n');
+  assert.deepEqual(
+    memberWritePathsIn(written, 'new Set(holder.trusted)'),
+    ['holder.trusted'],
+    'a member WITH a property write is a binding and must be routed',
+  );
+});
+
+test('r11 P1-2: walker aliases bound LATE, from a NAMESPACE, or via .bind() are enumerated', () => {
+  // r10 taught the enumerator `const w = assertArtifactSafe;`. Three spellings of
+  // the same statement with the declaration or the qualifier moved defeated it,
+  // and I verified all three vanish from EVERY list — not `unparsed`, ABSENT —
+  // so A1's completeness check passed and C3 never iterated the site:
+  //
+  //   let w;  w = assertArtifactSafe;              // late-bound
+  //   const w = rrf.assertArtifactSafe;            // namespace member
+  //   const w = assertArtifactSafe.bind(null);     // partially applied
+  //
+  // Each is one token from a form that IS handled, which is what makes this class
+  // of hole expensive: the cost of the miss is a clean C3 verdict, not a
+  // reported blind spot.
+  const dir = mkdtempSync(path.join(tmpdir(), 't11-r11p12-'));
+  try {
+    writeFileSync(
+      path.join(dir, 'rrf.mjs'),
+      [
+        'export function assertArtifactSafe(a, b) { return { a, b }; }',
+        'export const rrf = { assertArtifactSafe };',
+        '',
+      ].join('\n'),
+    );
+    const WIDENING = [
+      '  const trusted = new Set([...plan.queryVariants, ...targetedPools.map((p) => p.rawQuery)]);',
+      '  return %s(pool, { trustedPlanStrings: trusted });',
+    ];
+    const shapes = {
+      // (a) late-bound: declared first, assigned on a later line.
+      'a-late-assign.mjs': { pre: ['let w;', 'w = assertArtifactSafe;'], call: 'w' },
+      // (b) namespace member.
+      'b-namespace.mjs': { pre: ['const w = rrf.assertArtifactSafe;'], call: 'w' },
+      // (c) partially applied — a bound function is still the walker.
+      'c-bind.mjs': { pre: ['const w = assertArtifactSafe.bind(null);'], call: 'w' },
+      // (d) alias of an alias: the fixpoint has to carry the fact forward.
+      'd-alias-chain.mjs': { pre: ['const a = assertArtifactSafe;', 'const w = a;'], call: 'w' },
+      // (e) FORMER-REFERENCE chain, three deep. The aliases are declared in
+      //     REVERSE order, so each pass can only advance one link: the set has
+      //     `assertArtifactSafe` initially, pass 1 finds `b`, pass 2 finds `a`,
+      //     pass 3 finds `w`. A single pass leaves `w` invisible — this is the
+      //     case that makes the fixpoint load-bearing rather than tidy, and I
+      //     verified it needs all three passes.
+      'e-forward-chain.mjs': {
+        pre: ['const w = a;', 'const a = b;', 'const b = assertArtifactSafe;'],
+        call: 'w',
+      },
+      // (f) COMMA-SEPARATED declaration. `const w = assertArtifactSafe, other = 1;`
+      //     is why there are TWO assignment loops: the declaration form stops at
+      //     the comma, and the bare-assignment form stops at the semicolon and
+      //     captures `assertArtifactSafe, other = 1` as the right-hand side — a
+      //     value that is not the walker. Only the declaration form sees this
+      //     one, and without it the site is absent from every list.
+      'f-comma-decl.mjs': { pre: ['const w = assertArtifactSafe, other = 1;'], call: 'w' },
+      // (g) CONTROL: the direct call r9 already caught. If this one were missed
+      // the fixture would be broken rather than the enumerator.
+      'g-control-direct.mjs': { pre: [], call: 'assertArtifactSafe' },
+    };
+    for (const [file, shape] of Object.entries(shapes)) {
+      writeFileSync(path.join(dir, file), [
+        "import { assertArtifactSafe, rrf } from './rrf.mjs';",
+        ...shape.pre,
+        'export function seed(pool, targetedPools, plan) {',
+        ...WIDENING.map((l) => l.replace('%s', shape.call)),
+        '}',
+      ].join('\n'));
+    }
+
+    const surface = enumerateAssertArtifactSafeCallSurface(dir);
+    const listed = new Set([
+      ...surface.trusted.map((c) => c.file),
+      ...surface.unparsed.map((c) => c.file),
+    ]);
+    for (const file of Object.keys(shapes)) {
+      assert.ok(
+        listed.has(file),
+        `${file}: a walker reached through ${file} must appear in the enumerated surface. `
+          + 'ABSENT (not "unparsed") is the failure that matters — it means A1 passes and C3 '
+          + 'never looks at the site.',
+      );
+    }
+    // Every one of them is a TRUST-RED call (the options literal names a trust
+    // set), so they belong in `trusted` specifically, not merely somewhere.
+    assert.deepEqual(
+      surface.trusted.map((c) => c.file).sort(),
+      Object.keys(shapes).sort(),
+      'each alias form must be classified into the same TRUST-RED bucket a direct call is',
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('r11 P1-2b: an ordinary local assignment is NOT read as a walker alias', () => {
+  // The negative half of r11 P1-2, and the reason the bare-assignment rule keys
+  // on the RIGHT-HAND SIDE. Keying it on the left (as the first attempt did)
+  // deadlocks `let w; w = assertArtifactSafe;`, because `w` is never a known
+  // walker name; keying it on the right without this test would put every
+  // reassigned local in the walker spellings, and then every `workDir(` in a
+  // 4000-line module reads as a walker call site.
+  const dir = mkdtempSync(path.join(tmpdir(), 't11-r11p12b-'));
+  try {
+    writeFileSync(
+      path.join(dir, 'rrf.mjs'),
+      'export function assertArtifactSafe(a, b) { return { a, b }; }\n',
+    );
+    writeFileSync(
+      path.join(dir, 'innocent.mjs'),
+      [
+        "import { assertArtifactSafe } from './rrf.mjs';",
+        'let workDir;',
+        'workDir = somethingElse;',
+        'let other = compute();',
+        'other = workDir;',
+        'export function seed(pool, plan) {',
+        '  const trusted = new Set(plan.queryVariants);',
+        '  return assertArtifactSafe(pool, { trustedPlanStrings: trusted });',
+        '}',
+      ].join('\n'),
+    );
+    const surface = enumerateAssertArtifactSafeCallSurface(dir);
+    assert.deepEqual(
+      surface.unparsed.map((c) => c.file),
+      [],
+      'a local that merely gets reassigned must not become a walker spelling — otherwise '
+        + 'every call of it becomes a call site and A1 fails on unrelated code',
     );
   } finally {
     rmSync(dir, { recursive: true, force: true });

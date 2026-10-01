@@ -452,6 +452,92 @@ function localWalkerNames(stripped, walkerModule) {
       names.add(parts[1]);
     }
   }
+  // r11 P1-2: THE ASSIGNMENT FORMS r10's ONE-SHAPE RULE DID NOT COVER.
+  //
+  // r10 added `const NAME = IDENT;`, which is the shape an author writes when
+  // they are being explicit. Three shapes that are the SAME statement with the
+  // declaration or the qualifier moved defeated it completely, and I verified
+  // all three vanish from EVERY list — not "unparsed", ABSENT, so A1's
+  // completeness check passed and C3 never iterated the site:
+  //
+  //   let w;  w = assertArtifactSafe;              // late-bound, declared first
+  //   const w = rrf.assertArtifactSafe;            // read off a namespace
+  //   const w = assertArtifactSafe.bind(null);     // partially applied
+  //
+  // Each one is a single-token edit away from the form that IS handled, which is
+  // what makes this class of hole expensive: a guard that a reviewer can walk
+  // around with punctuation has no floor, and the cost of the miss is a clean
+  // C3 verdict rather than a reported blind spot.
+  //
+  // THE RIGHT-HAND SIDE IS ASKED OF `splitMemberAccess`, NOT OF A NEW REGEX.
+  // That is deliberate and it is the reason this is not a fifth copy of the
+  // member rules. The first attempt here spelled the walker path out as
+  // `(?:IDENT\.)*assertArtifactSafe`, and that accepts `anything.at.all.
+  // assertArtifactSafe` from any object in the module — including a property
+  // with that name on an unrelated local, in a 4000-line file. The question
+  // being asked is "is the last segment the walker's export name, however the
+  // path spells it", and `splitMemberAccess` is already the single answer to
+  // that, in every spelling, with the receiver recursion that a namespace read
+  // genuinely has.
+  //
+  // `.bind(…)` is stripped BEFORE the question is asked, because a bound
+  // function is still the walker: `assertArtifactSafe.bind(null)` reduces to
+  // `assertArtifactSafe`, and asking the member rule about a call would report
+  // nothing.
+  //
+  // THE BARE FORM IS A DIRECT COMPARISON, NOT A MEMBER SPLIT. I got this wrong
+  // first and the probe caught it: `splitMemberAccess('assertArtifactSafe')`
+  // returns NULL, because a bare name is not a member access — it is the shape
+  // that answers "is this a name?" with "no", which is correct for its question.
+  // So the member split alone silently dropped `const w = assertArtifactSafe`,
+  // the very form r10 handled. Both halves are needed: a bare name is the
+  // walker by direct comparison, and anything with a receiver is the walker when
+  // its last segment is the export name.
+  const walk = (rhs) => {
+    const value = String(rhs).trim().replace(/\s*\.\s*bind\s*\([^()]*\)\s*$/, '');
+    if (value === WALKER_EXPORT) return true;
+    const split = splitMemberAccess(value);
+    return split !== null && split.member === WALKER_EXPORT;
+  };
+  // ONE ASSIGNMENT LOOP, IN A FIXPOINT.
+  //
+  // WHY ONE, NOT TWO. The first version of this repair had a declaration-shaped
+  // loop (`const w = …` with the keyword) and a bare-assignment loop (`w = …`),
+  // and a mutation pass proved the declaration loop DEAD: disabling it left
+  // every fixture green. The bare-assignment pattern
+  //
+  //   /(?<![.\w$])([A-Za-z_$][\w$]*)\s*=\s*([^;]+);/g
+  //
+  // already matches `const w = assertArtifactSafe;` (the keyword is simply not
+  // part of the name capture). So the declaration loop was a second answer to
+  // "is this local bound to the walker", and the mutation pass is what caught the
+  // redundancy rather than a reading of the code. It stays removed.
+  //
+  // THE RIGHT-HAND SIDE IS THE AUTHORITY, NOT THE LOCAL (`names.has(m[1])`). The
+  // first attempt gated on the LEFT, and it is unsatisfiable for the exact case
+  // the finding is about: `let w;` contributes nothing to `names`, so `w` is never
+  // a known walker name, and `w = assertArtifactSafe;` is never accepted. The
+  // probe reported the site still ABSENT while the gate looked reasonable. A bare
+  // assignment only ever CHANGES a binding, so the right-hand side is the whole
+  // claim and the only thing that has to be checked.
+  //
+  // `names.has(rhs)` IS WHAT MAKES THE FIXPOINT LOAD-BEARING. A FORWARD reference
+  // chain — `const w = a; const a = b; const b = assertArtifactSafe;` — resolves
+  // one link per pass: pass 1 finds `b`, pass 2 finds `a`, pass 3 finds `w`. A
+  // single pass (or no fixpoint) leaves `w` invisible, which is the precise
+  // partial fix the probe reported. I verified that: with the fixpoint collapsed
+  // to one pass the forward-chain fixture stays ABSENT from every list. The set
+  // can only grow, so it terminates.
+  for (;;) {
+    const before = names.size;
+    for (const m of stripped.matchAll(
+      /(?<![.\w$])([A-Za-z_$][\w$]*)\s*=\s*([^;]+);/g,
+    )) {
+      const rhs = m[2].trim();
+      if (walk(rhs) || names.has(rhs)) names.add(m[1]);
+    }
+    if (names.size === before) break;
+  }
   return [...names];
 }
 
@@ -1624,6 +1710,117 @@ export function isWalkableTrustSetName(value) {
   return SINGLE_SEGMENT_FORM.test(normaliseMemberSpelling(value));
 }
 
+/**
+ * ONE definition of "a write to the named member", as a global regex.
+ *
+ * r11 P1-1 required this to exist. The walk already had exactly this rule — in
+ * `propertyWriteBindingsOf` — and the new caller (`memberWritePathsIn`, below)
+ * needs to ask the same question, because a member that has no write is a pure
+ * READ and must be left alone. Two copies of the four-spelling alternation would
+ * be two answers to "is `h?.['trusted']` a write", which is precisely the class
+ * of defect r9's review found in this file: the test layer and the helper each
+ * carrying their own member regex and disagreeing silently, on a security guard.
+ *
+ * The alternative — call `propertyWriteBindingsOf` and look at the result — was
+ * rejected because it also returns `class-field` entries, so "has a write" would
+ * answer a different question for a receiver-less field. The write rule is what
+ * is being shared, so the write rule is what gets shared.
+ *
+ * The four spellings and the refusal of a BARE computed key are documented where
+ * they are explained: `propertyWriteBindingsOf`, above.
+ *
+ * @param {string} name the member (property) name
+ * @returns {RegExp} global; `exec` yields `[full, receiver, rhs]`
+ */
+function propertyWritePattern(name) {
+  const re = escapeRe(name);
+  const Q = `(?:'${re}'|"${re}"|\`${re}\`)`;
+  const SEP = [
+    `\\.\\s*${re}`,                      // h.trusted
+    `\\?\\.\\s*${re}`,                   // h?.trusted
+    `\\[\\s*${Q}\\s*\\]`,                // h['trusted']
+    `\\?\\.\\s*\\[\\s*${Q}\\s*\\]`,       // h?.['trusted']
+  ].join('|');
+  return new RegExp(
+    `(?<![.\\w$])([A-Za-z_$][\\w$]*)\\s*(?:${SEP})\\s*=(?!=)([^;]+);`,
+    'g',
+  );
+}
+
+/**
+ * Member paths inside `expr` that this module actually WRITES TO.
+ *
+ * r11 P1-1. `followInto` used to reduce an expression to
+ * `provenanceIdentifiersIn`, which strips property names BY DESIGN — so a
+ * member read inside an inline trust set lost its property half before anything
+ * could ask about the write that fed it:
+ *
+ *   const holder = {};
+ *   holder.trusted = new Set([...plan.queryVariants, ...targetedPools.map((p) => p.rawQuery)]);
+ *   assertArtifactSafe(pool, { trustedPlanStrings: new Set(holder.trusted) });
+ *
+ * `provenanceIdentifiersIn('new Set(holder.trusted)')` is `['new','Set','holder']`,
+ * so the walk asked about `holder`, whose only binding is the empty object. The
+ * verdict was `{violations: [], unresolvable: []}` — CLEAN. That is a fail-open on
+ * the F.3 boundary's own semantics, and it needed no rename, no computed key and
+ * no alias: one `.` on a read.
+ *
+ * WHY NOT EVERY MEMBER, AND THIS IS THE WHOLE DESIGN. The obvious fix — consult
+ * the member route for every member path in the expression — reproduces the r10
+ * P1-2 regression exactly, and I measured it rather than reasoning about it. On
+ * the real frozen call sites:
+ *
+ *   coverage-final-integration.mjs:461  Array.isArray(plan.queryVariants) ? … : []
+ *     → member route on `Array.isArray` yields 45 expressions and 8 blind spots
+ *
+ * Eight false blind spots on the production line the guard exists to protect, for
+ * a member that is a BUILTIN READ and has no write anywhere. The noise-to-signal
+ * failure is worse than the hole: a reader who sees `failClosed`,
+ * `CoverageIntegrationError` and `seam` reported as unresolvable on the F.3
+ * boundary learns to waive unresolvable, and then the real one goes unread.
+ *
+ * So the predicate is not "is this a member" but "IS THIS MEMBER EVER WRITTEN IN
+ * THIS MODULE". That is the same question `propertyWriteBindingsOf` already
+ * answers, and it is the question that actually matters: a property write is the
+ * only thing that makes `receiver.member` a BINDING of a trust set rather than a
+ * read of someone else's data. Pure reads are already covered — the receiver is
+ * still walked as a name, which is what caught `const validated =
+ * validatePlanInput(plan)` on `retrieval.mjs:800`.
+ *
+ * Measured on the three production sites with an inline trust set, this returns
+ * EMPTY (`Array.isArray`, `plan.queryVariants`, `ret.plannedQueryVariants` and
+ * `validated.plan.queryVariants` have no writes), so the fix adds no noise to
+ * production while catching both `new Set(holder.trusted)` and
+ * `new Set([...holder['trusted']])`.
+ *
+ * @param {string} source module source
+ * @param {string} expr the expression to scan
+ * @returns {string[]} member paths, in order of appearance, deduplicated
+ */
+export function memberWritePathsIn(source, expr) {
+  const paths = String(expr).match(MEMBER_PATH_IN_EXPR) ?? [];
+  const out = [];
+  const seen = new Set();
+  for (const path of paths) {
+    const split = splitMemberAccess(path);
+    // A member with no split is not a member access at all; and a member whose
+    // name is never written in this module is a pure read, left to the receiver
+    // walk. Deduplicated because `plan.queryVariants` can appear twice in one
+    // expression (`new Set(Array.isArray(plan.queryVariants) ? … : [])`) and
+    // asking the same question twice is how a shared budget gets misread as a
+    // genuine miss.
+    if (split === null) continue;
+    if (!propertyWritePattern(split.member).test(source)) continue;
+    const key = `${split.receiver}.${split.member}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(key);
+  }
+  return out;
+}
+/** Member-path shape used by `memberWritePathsIn`. */
+const MEMBER_PATH_IN_EXPR = /[A-Za-z_$][\w$]*(?:\s*(?:\?\.|\.)\s*[A-Za-z_$][\w$]*|\s*\[\s*(?:'[^']*'|"[^"]*"|`[^`]*`)\s*\])+/g;
+
 function propertyWriteBindingsOf(source, name) {
   const out = [];
   const re = escapeRe(name);
@@ -1668,17 +1865,7 @@ function propertyWriteBindingsOf(source, name) {
   // Only the QUOTED forms are writes to a known member, and a quoted key is a
   // literal, so this cannot go blind on a real widening: `holder['trusted']` is
   // a static property name, exactly as `holder.trusted` is.
-  const Q = `(?:'${re}'|"${re}"|\`${re}\`)`;
-  const SEP = [
-    `\\.\\s*${re}`,                      // h.trusted
-    `\\?\\.\\s*${re}`,                   // h?.trusted
-    `\\[\\s*${Q}\\s*\\]`,                // h['trusted']
-    `\\?\\.\\s*\\[\\s*${Q}\\s*\\]`,       // h?.['trusted']
-  ].join('|');
-  const assign = new RegExp(
-    `(?<![.\\w$])([A-Za-z_$][\\w$]*)\\s*(?:${SEP})\\s*=(?!=)([^;]+);`,
-    'g',
-  );
+  const assign = propertyWritePattern(name);
   for (let m = assign.exec(source); m !== null; m = assign.exec(source)) {
     const receiver = m[1];
     if (receiver === name) continue;
