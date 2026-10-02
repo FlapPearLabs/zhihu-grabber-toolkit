@@ -299,3 +299,115 @@ BASE_FOR_IMPLEMENTATION               = r11 2934956（在其之上追加 commit�
 | 1 | `acorn` 作为 devDependency 是否可接受？ | 若否 → 退化为**纯预算方案**（只做 PART 4-C），**仍能修 P0**，但 AC-1（dotted receiver）无法修 |
 | 2 | AC-2（P1-B）**本轮未复现** —— 是接受「实现期先复现、否则记 NOT_REPRODUCIBLE」，还是要调整该 AC？ | 决定 AC-2 的处置方式 |
 | 3 | 三个 AC 合并的**范围风险**已如实标注 —— 是否维持不拆票的裁决？ | 影响 `START_GATE` 判定 |
+
+---
+
+## APPENDIX B — ERRATA（append-only；不修改上方任何已评审内容）
+
+```text
+ERRATA_APPENDED_AT_DOC_COMMIT = 6abce3dc83cf8a2fbdf5cc9fb9c2649c0650d9fc（被评审的那一版，保持不变）
+ERRATA_AUTHOR                 = fresh independent reviewer (deepseek-v4.1-flash) + orchestrator 逐条复核
+ERRATA_VERDICT_BEFORE         = CHANGES_REQUESTED（OPEN_P0 = 1 / OPEN_P1 = 1 / OPEN_P2 = 2）
+```
+
+本附录**不修改**上方正文。被评审的 exact SHA 是 `6abce3dc`；上方任何数字与措辞**保持原样**。
+以下勘误**全部经本轮机械复核**，含对评审意见的**部分反驳**（见 B.3）。
+
+### B.1 — P0-1（AC-2 证据错误）：我的「未复现」结论是错的，但**分类标签也需修正**
+
+**评审意见成立：AC-2 不能被记为「未复现」。** 但复核发现真实机制比评审描述的更精确，
+两者都需记录：
+
+**我的错误**：PART 5 AC-2 写「四种变体均被检出 → 未复现为漏检」。该结论来自**直接调用
+`resolveTrustSetProvenance`**，**绕过了 C3 的真实路径**（`stripComments` + `trustSetRootsOf`
++ `classifyTrustSetValue` + `resolveNameInModule` 的跨模块路由）。因此它**不构成**「C3 会漏检」的证据。
+
+**复核方法**：从 r11 套件中**逐行提取**真实函数（`c3TrustSurfaceVerdict` L643–971、
+`trustSetRootsOf` L996–1030、`classifyTrustSetValue` L1083–1105）到 `/tmp` 模块，
+在 comment-stripped 的合成 `lib/` 上跑**完整枚举 → C3** 路径。
+
+**实测结果（r11 `2934956`）**：
+
+| 形状 | 枚举结果 | violations | unresolvable | 判定 |
+|---|---|---|---|---|
+| V1 `holder.trusted` + `.add(rawQuery)` | `call-trusted` | **12** | 0 | **DETECTED** |
+| V2 `state.inner.trusted` + `.add(rawQuery)`（**两级 receiver**） | `call-trusted` | **0** | 0 | **MISSED — silent fail-open** |
+| V3 `holder[k]` + `.add(rawQuery)`（**计算键**） | `call-trusted` | **0** | 0 | **MISSED — silent fail-open** |
+| V4 `holder.trusted = new Set([...trusted, ...targetedPools.map(...)])` | `call-trusted` | **43** | 0 | DETECTED |
+| C1 裸变量 `t.add(rawQuery)`（对照） | `call-trusted` | 2 | 0 | DETECTED |
+
+**机制**：`classifyTrustSetValue`（L1084）**只承认「裸标识符 + 至多一级属性」**
+（`a.b` / `a['b']` / `a?.b` / `a?.['b']`）。两级 `a.b.c` 与计算键 `a[k]` **不满足**该形状，
+被归为 `__expr__<value>` → 走表达式文本判定 → 该文本内**不含** targeted 词 → **判为 CLEAN**。
+即：**fail-open 发生在两级 receiver 与计算键上，不在一级 receiver 的 `.add()` 上。**
+
+**对 AC-2 的处置（覆盖 PART 5 AC-2 的原表述）**
+
+| 项 | 内容 |
+|---|---|
+| AC-2 状态 | **OPEN — 部分可复现的 fail-open（silent）** |
+| 真实漏检形状 | **V2（两级 receiver `state.inner.trusted`）+ V3（计算键 `holder[k]`）** —— `violations=0` **且** `unresolvable=0` |
+| 已被覆盖的形状 | V1（一级 receiver `.add`）、V4（一级 receiver 内联）—— **DETECTED** |
+| **必须删除的原处置** | PART 5 AC-2 中「若仍不复现 → 记录为 `NOT_REPRODUCIBLE` 并关闭该 AC」**作废**。该处置会关闭一个**真实且可复现的 silent fail-open** |
+| 实现期第一步 | 以 **V2 / V3 两个精确 fixture** 为 AC-2 的取证基准（**不是** V1 —— V1 已通过，测不出东西） |
+| 与 AC-1 的关系 | AC-1 记录的是 `memberWritePathsIn` **路由层**对两级 receiver 返回 `[]`；AC-2 记录的是 **C3 判定层**对同一形状静默判 CLEAN。**两者是同一形状在两层上的表现，必须分别断言，不可互相替代** |
+
+### B.2 — P1-1（AC-3 形状集不一致）：修正为**钉死 fixture + 钉死计数**
+
+原 PART 5 AC-3 与 PART 4-E A7 形状集不一致，且「2 项 ABSENT」计数有误（`.apply` 被列入 A7 却未计入）。
+复核（枚举器 + 独立合成 `lib/`）结果：
+
+| # | 形状 | 枚举结果 |
+|---|---|---|
+| 1 | `const w = assertArtifactSafe, other = 1;`（walker 是逗号首声明符，r11 自身形状） | `call-trusted` |
+| 2 | `const a = rrf.assertArtifactSafe, b = a;` 后调用 `b(...)` | **ABSENT** |
+| 3 | walker 作为逗号**第二**声明符 | **ABSENT** |
+| 4 | `assertArtifactSafe.call(null, pool, opts)` | **ABSENT** |
+| 5 | `assertArtifactSafe.apply(null, [pool, opts])` | **ABSENT** |
+| 6 | 解构 import `{ assertArtifactSafe as w }` 后调用 | `call-trusted` |
+| 7 | `.bind(null)` 后调用 | `call-trusted` |
+| 8 | 解构赋值到成员 `({t: h.trusted} = …)` | `call-trusted` |
+| 9 | 计算键 `pool[k] = …` | `call-trusted` |
+| 10 | 裸变量对照（`assertArtifactSafe(pool, {…})`） | `call-trusted` |
+
+**修正**：AC-3 的期望 = **形状 2/3/4/5 四个必须不再是 ABSENT**（原写「2 of 6」**作废**）。
+fixtures 必须在票内**逐字钉死**（含完整源码），否则实现者会构造错误 fixture 并误判 AC 已达成。
+
+### B.3 — P2-1：M7 数字依赖「是否 comment-stripped」，必须钉死输入
+
+评审意见成立。同一 M7 变异在两种输入下结果**显著不同**：
+
+| 输入 | 耗时 | expressions | unresolvable |
+|---|---|---|---|
+| **RAW**（保留注释，本文件 PART 2 原文口径） | **29 913 ms** | **294** | **5 702** |
+| **STRIPPED**（套件 C3 实际使用的路径） | **13 142 ms** | **267** | **1 258** |
+
+**修正**：PART 2 的 294 / 5 702 / ~31 s 数字**只在 RAW 输入下成立**，必须标注输入。
+PART 4-C 的机械验收上界（`< 5 s`）**两种输入都必须满足**，且终止性测试**必须钉死使用哪一种**。
+建议：**以 STRIPPED（套件真实路径）为准**做验收，RAW 数字仅作 #131 issue 的历史对照。
+
+### B.4 — P2-2：次要形状数字未复现，标为 UNVERIFIED
+
+原 PART 2 括注「`pool.__t` + `.add` 形状亦复现：31 153 ms / 292 / 5 014」——**本轮未能复现**
+（复核得与 M7 同值 294 / 5 702）。该数字**标记为 `UNVERIFIED`**，不得作为验收基线。
+
+### B.5 — 约束遵守（未变）
+
+| 约束 | 状态 |
+|---|---|
+| 不实现代码 | ✅ 仅勘误；`NEW_CODE_CHANGED = NONE` |
+| 不修改 T11 r11 | ✅ `2934956` 未改，32/32 pass；`lib/` blob `8ac163e7…` 与 HEAD 一致，r10→r11 diff EMPTY |
+| 不引入 AST parser | ✅ 未改 `package.json`；`acorn` 仅存在于 `/tmp/parserprobe` |
+| 不拆 P1-A/B/C 为独立票 | ✅ 仍为 AC-1/2/3 |
+| 不自审 | ✅ 评审由 fresh 独立 reviewer 完成；本附录的每条数字均**独立复跑**，含对评审的**部分反驳**（B.3 / B.4） |
+
+### B.6 — 方法论警告（本轮新得，durable）
+
+1. **不得用直接 helper 调用替代 C3 路径取证**。`resolveTrustSetProvenance` 单独调用**绕过**
+   `stripComments` / `trustSetRootsOf` / `classifyTrustSetValue` / 跨模块路由 ——
+   它的结论**不能**推断「C3 是否漏检」。本轮 AC-2 的错误结论正由此产生。
+2. **变异 `lib/` 后跑真实套件会挂起**（P0 本身），因此**拿不到 verdict**；
+   「套件没报错」与「套件没跑完」必须区分。**任何变异判定必须在有界 timeout 内记录明确 exit code**。
+3. **`git archive` 抽树做归因在本仓不可用**：缺兄弟包（`zhihu-answer-grabber` /
+   `corpus-anthology`）→ `ERR_MODULE_NOT_FOUND` 假红。这与 #131 正文记录的方法论警告**一致**，
+   本轮再次实测确认。
