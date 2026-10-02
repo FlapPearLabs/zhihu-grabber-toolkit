@@ -456,3 +456,77 @@ IMPLEMENTATION_AUTHORIZATION = NONE
 - 备份 patch + 前序 spike 报告：`~/WorkBuddy-Quarantine/zhihu-grabber-t11-20261002/`
 - **待裁决**：`acorn` 作为 devDependency 是否可接受（若否 → 退化为 OPTION A，仍能修 P0）；
   P1-A/B/C 是否并入 #131 remediation 或各自独立成票。
+
+---
+
+## APPENDIX A — ERRATA（append-only；不修改上方任何已评审内容）
+
+```text
+ERRATA_APPENDED_AT_DOC_COMMIT = 0ba5f9253ddaf37b9a950aade00aab52c1b4589e（被评审的那一版，保持不变）
+ERRATA_AUTHOR                 = fresh independent reviewer (deepseek-v4.1-flash) + orchestrator 复核
+ERRATA_VERDICT_BEFORE         = MODIFY（OPEN_P0 = 0 / OPEN_P1 = 1 / OPEN_P2 = 7）
+```
+
+本附录**不修改**上方正文。评审针对的 exact SHA 是 `0ba5f925`；上方任何数字与措辞**保持原样**，
+以便日后按 SHA 取证的读者看到当时被评审的原文。以下为**已机械复核确认**的勘误。
+
+### A.1 — P1-1（唯一 OPEN_P1）：「决定性 A/B」表被读成 verdict 等价（PART 3）
+
+评审指出的问题**成立**。原表把「AST member-write 检测 5 ms」与「resolver 32 628 ms」并列，
+并写「不产生那 5 702 条 unresolvable」。该表述可被读成「AST 在 5 ms 内给出了与 resolver 等价的结论」。
+**这是不成立的**：spike 函数**只做 member-write 检测，完全不计算 provenance**，
+因此它**结构上不可能**产出 `expressions` / `unresolvable`。已复核：
+
+```text
+AST member-write detection: mw=3 -> emits NO expressions/unresolvable (computes no provenance)
+```
+
+**正确的读法**（应以此为准）：
+
+| 指标 | 现有 resolver | AST spike（仅检测） |
+|---|---|---|
+| 性质 | 语义 provenance 解析 | **仅语法事实检测** |
+| 耗时 | 32 628 ms | 5 ms |
+| 产出 | 294 expressions / 5 702 unresolvable | **无**（不产出 verdict） |
+| 证明了什么 | P0 非终止**为真** | **member write 可被线性定位** |
+
+→ 二者**不可比**。本文件其余部分（PART 3「AST DOES NOT」段、PART 5）对这一点的表述是正确的；
+需修正的只是这张表的标题与「不产生 5 702 条」这句比较。**结论不变**：AST 值得作为 fallback 引入，
+但它**替代**的是「歧义形状的语法事实提取」，**不是** provenance 判定本身。
+
+### A.2 — P2 勘误（数值/事实）
+
+| # | 位置 | 原写 | 复核结果 | 处理 |
+|---|---|---|---|---|
+| P2-1 | PART 3 | `46 042 B` | `46 042` 是 **JS 字符数**（`.length`）；UTF-8 字节为 **46 277 B** | 标注为 `46 042 chars / 46 277 B UTF-8` |
+| P2-2 | PART 2 | `2c750ad..2934956` = 11 commits | `git rev-list --count 2c750ad..2934956` = **10**（11 只在含 base 时成立） | 改为 10 |
+| P2-3 | PART 0 | `remote branch count = 64` | 评审时为 **65**（本分支 push 后 +1）。PART 0 测量**早于**本分支 push | 标注测量时点，明确 64 为 push 前值 |
+| P2-4 | PART 2 / PART 8 | 「备份 patch + **spike 报告**」在同一目录 | **确认不实**：备份 patch 在 `~/WorkBuddy-Quarantine/zhihu-grabber-t11-20261002/`，而 spike 报告被写到了**另一个**路径 `/Users/songshiyao/WorkBuddy/WorkBuddy-Quarantine/zhihu-grabber-t11-20261002/`（两处目录名相近，笔误）。本 turn 已把 spike 报告**复制**到备份目录，两者现已同址 | 已修正声明；**笔误已记录**，不掩盖 |
+| P2-5 | PART 3 | 「AST SOLVES」含「静态可判定的**别名**」，「DOES NOT」含「alias tracking」 | 「别名」同时出现在两栏，虽有「静态可判定」限定，仍易被误读 | 已在 A.3 给出明确划界 |
+| P2-6 | PART 5 | 「P1-A 用 AST 修只需改**一处正则**」 | 措辞把 AST 路径与「改正则」混同；本设计是**从 AST 取成员链**，不改 `propertyWritePattern` | 已在 A.3 更正 |
+| P2-7 | PART 1 / PART 3 | 「M1–M7 全部 catch」「合成 fixture 15 ms / 14 表达式」 | 数字本身未被推翻（评审**独立确认**了「合成快、真实文件慢」这一定性结论），但这些数字**未随票发布**，故**不可独立复现** | 已在 A.4 标注可复现性边界 |
+
+### A.3 — 措辞更正（AST 能力边界，消除误读空间）
+
+- **别名 / alias**：AST **能**静态判定的是**语法层的成员链形状**（如 `a.b.c` 的深度、
+  `const w = a.b.c` 的绑定形态），**不是**别名等价类。**别名传播（alias tracking）仍属
+  "DOES NOT"**：本文件上文两处「别名」用词应按此划界读。
+- **P1-A 的修法**：本设计**不是**「改一处正则」，而是**从 AST 取任意深度的 receiver 成员链**，
+  绕开 `propertyWritePattern` 的「单裸标识符接收者」口径缺陷。r11 的正则**保持原样**。
+- **r11 frozen 的确切含义**（评审 NOTES 7 指出）：**frozen 指的是 commit `2934956` 不可变**，
+  **不是**指 `t11-trust-surface-enumeration.mjs` 这个文件此后不能被改。6.2 的主要编辑目标正是该
+  helper 文件 —— 这是「在 r11 之上继续修」而非「篡改 r11」。为避免日后被过度解读，
+  此处显式声明该区分。
+
+### A.4 — 可复现性边界（诚实标注）
+
+- 评审**独立复现**并逐位吻合的：294 / 5 702、2735 / 2761 nodes、memberWrites 3 → 4、
+  `detects __trusted = true`、control 2 / 0、enum 层 92–129 ms 不卡、r11 32/32、
+  `lib/` byte-identical、backup sha256。
+- 仅墙钟时间不同（resolver 30 316 / 32 628 ms；AST ×10 = 19 / 34 ms）—— 属机器差异，
+  原文已注明。
+- **不可独立复现**（未随票发布）：`M1–M7` 的具体 mutation 矩阵、5 行合成 fixture 的
+  **精确 14 表达式**。这两项应作为 #131 remediation ticket 的**入库产物**补齐
+  （见 6.3「终止性测试」—— 须用真实生产文件驱动，合成 fixture 仅作辅助）。
+- 评审**额外独立复现**了本文件未主张的主张：P1-A 的**机制**（点号 receiver → CLEAN fail-open）
+  及其**套件级表现**（变异后 r11 仍 32/32 全绿）→ 本文件对 P1-A 的诚实标注**成立**。
