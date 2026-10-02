@@ -582,3 +582,318 @@ DESIGN_AUTHORITY 报告路径（隔离区，非仓库）:
 SHA-256（交付时）: 见提交说明
 本文件自身的 SHA: 由 git commit 产出；评审须针对该 exact commit SHA
 ```
+
+---
+
+## APPENDIX D — 独立评审 REJECT 的处置（append-only；不修改上方任何已提交内容）
+
+```text
+APPENDIX_D_APPENDED_AT = 07b11db755e1adab3c333b5b70350dfa950a9219（被评审的那一版，保持不变）
+REVIEWED_EXACT_SHA     = 07b11db755e1adab3c333b5b70350dfa950a9219
+REVIEWER               = fresh independent reviewer（deepseek-v4.1-flash）
+MODEL_REQUESTED        = deepseek-v4.1-flash
+MODEL_ACTUAL           = deepseek-v4.1-flash
+FALLBACK_USED          = NO
+VERDICT_BEFORE         = REJECT（OPEN_P0 = 2 / OPEN_P1 = 3 / OPEN_P2 = 7）
+```
+
+本附录**不修改**上方正文。被评审的 exact SHA 是 `07b11db7`；上方任何数字与措辞**保持原样**。
+以下每条都经**本方独立复跑**确认，其中 **D.1 是本方探针的缺陷，已实测推翻自评 V2 结论**。
+
+### D.0 —— 处置结论
+
+```text
+VERDICT_AFTER = MODIFY（仍不通过 implementation gate）
+IMPLEMENTATION_AUTHORIZATION = NONE
+
+已确认成立并保留：V2 的方向（证伪成立 / path identity / bounded traversal / acorn 拒绝）
+已推翻并须重写：V2 PART 3 的全部基线数字、AC-2 的覆盖表、E4/E5 算术、D2 论证
+```
+
+### D.1 —— P0-1【已实测推翻自评 V2】：基线数字错，根因是本方探针的两个缺陷
+
+评审报告 V2 的基线「不可复现」。**该批评成立**，且根因比评审所述更严重 ——
+**是本方探针有 bug，不是数字精度问题**。两个缺陷：
+
+**缺陷 1：`stripComments` 复刻错误（有损 vs 长度保持）**
+
+```text
+V2 探针用的是手写字符扫描器 ⇒ 46 042 → 32 728 chars（有损，丢 28.9%）
+真实实现（test L1141-1145）= 两条 regex replace，注释→空格 ⇒ **长度保持**
+  raw.length      = 46 042
+  stripped.length = 46 042   ← 不变！
+  非空白字符        : 37 097 → 18 045（移除 19 052 字符的注释文本）
+⇒ V2 一切「stripped 更短」的推论前提不成立；RAW 与 STRIPPED 的差别是
+   **注释文本的存在**，不是长度。
+```
+
+**缺陷 2：`budget` 参数是决定性的，而本方从未测它**
+
+```text
+同一 M7 变异，唯一变量 = 是否传共享 budget：
+
+  RAW   + appended, budget=YES → 12 053–12 739 ms / 293 expr / 1895 unres  (5/5 稳定)
+  RAW   + appended, budget=NO  → 35 492–36 781 ms / 298 expr / 6410 unres  (2/2 稳定)
+  STRIP + appended, budget=YES →  4 647–5 110 ms / 266 expr /  374 unres  (5/5 稳定)
+  STRIP + inserted, budget=YES →  4 583–4 817 ms / 266 expr /  374 unres  (5/5 稳定)
+  control root=trusted         →        5 ms / 2 expr / 0 unres
+```
+
+**更关键：本方测的根本不是生产路径。**
+真实 C3 在 test L811 上方声明 `const budget = { visited: new Set() }`
+并**共享**给每个 member/identifier 路由。本方探针每次传**新** budget，
+因此**不能**用来推断 C3 的行为 —— 这正是 V1 §B.6 已经写下的
+「不得用直接 helper 调用替代 C3 路径取证」这条纪律的**第三次复发**。
+
+**决定性实验：真实 r11 套件 + M7 变异（在完整 worktree 上，非 /tmp 抽树）**
+
+```text
+M7 施加于 lib/targeted-requery-subphase.mjs（临时，事后已还原）
+→ node --test test/p2a-t11-trust-boundary-executable-guards.test.mjs
+→ timeout 600 ⇒ EXIT=137 (SIGTERM)
+→ 无任何 TAP summary ⇒ 套件未跑完
+⇒ #131 P0「不终止」在生产路径上确实成立（这是 P0 的直接证据）
+
+恢复验证：lib/ diff = 0 行；blob 8ac163e72134dad11bb83b2781b2952538c6dd9f == HEAD
+          r11 复跑 32 tests / 32 pass / 0 fail
+```
+
+**对照实验（假红，必须记录以免复发）**
+
+```text
+cp -R research-orchestration /tmp/… ⇒ 套件 209 ms 即失败
+  ERR_MODULE_NOT_FOUND: /tmp/…/zhihu-answer-grabber/src/markdown-security.js
+  被 lib/rrf.mjs 跨包 import 触发
+⇒ 这不是 #131 的证据，只是缺兄弟包。归因必须用完整 worktree。
+```
+
+**D.1 处置**：**PART 3 的全部数字作废**（包括 V2 §3.2 的 3 517–3 652 ms 与
+§3.4 的「1.37× 余量」）。**新基线只有一个已证事实**：
+
+```text
+PRODUCTION PATH (真实 C3, 真实 r11 套件, M7 变异) = 不终止，600 s 内未完成
+helper 直调数字（293/1895、266/374 等）= 仅作**实现期回归参照**，
+  **不得**作为验收门限的依据，也不得推断 C3 行为。
+```
+
+**因此 AC-4.1 的门限必须整体重写**（见 D.2）。
+V2 §3.4「V1 的 <5s 等于允许 8 倍回归」这一对 V1 的批评**撤回**：
+在生产路径不终止的前提下，V1 与 V2 的时间数字**都**不构成有效验收口径。
+
+### D.2 —— P0-1 续：AC-4 门限必须由「终止性」改为「终止性 + 上界」双条件
+
+```text
+原 V2 AC-4.1：M7 on STRIPPED → < 5 000 ms
+  作废理由：不存在「修复前 4.6 s」这个参照系（生产路径根本不终止）
+
+新 AC-4 形态（须实现期与评审共同确认）：
+  AC-4.1 终止性（首要）：真实 r11 套件 + M7 变异必须在 < 5 000 ms 内
+         产出完整 TAP summary（# tests / # pass / # fail），EXIT=0。
+         判据是「跑完」，不是「跑得快」。
+  AC-4.2 截断可审计：任何预算/深度截断必须产生显式 unresolvable + 原因，
+         禁止空 expressions（fail-open）。
+  AC-4.3 全量有界：42 个 lib/*.mjs 的 full-offline 枚举 + C3 全部有界终止。
+  AC-4.4 性能上界（次要，仅作回归护栏，非门限）：
+         修复后 M7 helper 直调 ≤ 5 000 ms（当前参照 4 647–5 110 ms）。
+         ⇒ 该护栏**只有 ~0% 余量**，故必须先测实现后的稳定带再定，
+         不得直接沿用 5 000。
+```
+
+**诚实声明**：AC-4.1 的 5 000 ms 同样是**先验设定**，本轮无法给出
+「修复后应该多快」的经验值（本轮无实现）。它的作用是
+**给实现一个可证伪的靶子**，而非承诺该数字可达。
+若实现后仍 > 5 000 ms，正确处置是**报告实测值 + 归因**，不得放宽门限。
+
+### D.3 —— P0-2：AC-2 的覆盖表错误，一级成员 `.add()` 也是 silent fail-open
+
+V2 §4 AC-2 写「V1 `holder.trusted + .add(rawQuery)` → DETECTED（12 violations）」。
+**该表项经评审实测为错误，已作废**：
+
+```text
+真实 C3 路径实测（r11 HEAD 2934956）:
+  holder.trusted = new Set(plan.queryVariants)
+    + holder.trusted.add(targetedPools[0].rawQuery)     → violations=0, unresolvable=0  ← 漏检
+  换 .delete                                              → 0/0
+  换参数拼写（rawQuery / proposals[0].queryText）           → 0/0
+  mutation 放在 write 之前                                → 0/0
+  仅当写入的 RHS 本身含 targeted 词                        → 18 violations / 7 unres
+    且**加不加 .add() 结果完全相同**（18/7）
+⇒ V2 的「12 violations」来自 RHS，不来自 .add()。
+⇒ r11 套件中**没有任何**断言成员 `.add()` 被检出的测试
+   （现有 .add() 用例全是裸变量，见 test :1173 / :1249 / :1271）。
+```
+
+**机制**：`bindingsOf` 的 receiver-mutation 规则是 `\bNAME\s*\.\s*ident\s*\(`（helper L745），
+对 `holder.trusted.add(` **不匹配**（`trusted` 后面跟的是 `.add(` 而非 `(`）；
+而 `propertyWriteBindingsOf`（helper L1824+）只处理 `R.x = RHS`，**不含 `.add()`**。
+故成员级 mutation **结构性未覆盖**。
+
+**D.3 处置**：
+
+```text
+1. 作废 V2 §4 AC-2 的「已被覆盖的形状」表项。
+2. AC-2 的必测 fixture 扩展为【全部四个，无一例外】：
+     F1  holder.trusted        = RHS  + holder.trusted.add(x)      期望 DETECTED
+     F2  state.inner.trusted   = RHS  + state.inner.trusted.add(x) 期望 DETECTED（非 0/0）
+     F3  holder[k]             = RHS  + holder[k].add(x)           期望 unresolvable（fail closed）
+     F4  holder.trusted        = RHS（内联，无 .add）              期望 DETECTED（已成立，作对照）
+   全部必须**逐字钉死源码**，禁止语义描述（V2 §4 已对 AC-1 提出此要求，
+   但 AC-2 自身未做到 —— 这是 V2 的内部不一致）。
+3. AC-2 的失败方向显式化：F1/F2/F4 漏检 = P0；F3 判 CLEAN = P0。
+```
+
+### D.4 —— P1-1：AC-1 必须**点名**授权修改两处既有谓词
+
+评审指出 V2 §6-B「fast path 语义不变」会被实现者读作**禁止**放宽，
+而那恰是 AC-1 必须做的。**该冲突成立**。两处真正的门：
+
+```text
+GATE-1  isWalkableTrustSetName → SINGLE_SEGMENT_FORM (helper L1614)
+       只接受「裸标识符 + 至多一级属性」；a.b.c 不满足 → 归为 __expr__
+GATE-2  propertyWritePattern 的单接收者锚 (helper L1745)
+       (?<![.\w$])([A-Za-z_$][\w$]*)  ⇒ 任何 .X.__trusted = 恒不匹配
+```
+
+**D.4 处置**：
+
+```text
+1. AC-1 显式授权修改 GATE-1 与 GATE-2（**仅此两处**，其余谓词不得动）。
+2. 消除与 §6-B 的字面冲突：§6-B「fast path 语义不变」精确定义为
+   「单段 receiver（a.b）的判定结果不变」；多段 receiver 属**新增**覆盖，
+   不在「不变」范围内。
+3. 新增**噪声对照断言**（r10 P1-2 回归面）：放宽后
+   coverage-final-integration.mjs:461 的 `Array.isArray(plan.queryVariants)`
+   不得新增 unresolvable —— 即放宽只对**确有属性写**的多段路径生效。
+```
+
+### D.5 —— P1-2：E4 / E5 算术不自洽，已重算
+
+```text
+V2 E4（:120/:549）错误：42 279 ÷ 1 894 = 22.3，V2 写「~110.7 次」
+  ⇒ 110.7 需要分母 ≈ 382。V2 未给出该分母来源。
+V2 E5（:550）错误：147 × 3 054 × 0.0325 ms = 14 590 ms ≈ 14.6 s，
+  V2 写「10.8 s，误差 1.1×」；实际相对 11.5 s 误差 1.27×。
+V2 §3.3（:176）31 × 1 064 × 0.0325 ≈ 1.1 s 内部自洽，
+  但其分母（3.6 s）已被 D.1 推翻 ⇒ 「DEFECT-C 是生产路径主因」失去依据。
+```
+
+**D.5 处置**：上述三处数字**全部作废**，不得在实现期引用。
+保留**定性**结论（已由 D.1 的生产路径实验独立支持）：
+
+```text
+保留：DEFECT-A（放大）存在 —— 生产路径不终止是它的后果；
+保留：DEFECT-B（路径坍缩）存在 —— splitMemberAccess 已任意深度，
+      而 isWalkableTrustSetName 拒绝之（P1-1 已复现）；
+保留：DEFECT-C（昂贵 fail-closed）存在 —— 机制上成立，
+      但**占比未知**，不得再写「~31%」。
+删除：一切百分比归因。
+```
+
+### D.6 —— P1-3：D2 的论证与其机制自相矛盾
+
+```text
+V2 §5.2（:326/:332/:554）称「path 键 230 < 名键 253 ⇒ 不增加工作量」。
+问题：
+  (a) D2 把键改为 canonicalKey = ${root}@${file}:${line}（:198/:329），
+      这是**严格更细**的键，按定义只会减少去重、增加条目；
+  (b) 「230 < 253」这一比较的**输入与作用域未标注** ——
+      正是 V2 自己 R5 警告的「RAW/STRIPPED 混用」陷阱；
+  (c) canonicalKey 含 file:line，但 resolveTrustSetProvenance(source, rootVar, {...})
+      (helper L602) 内部**拿不到 file**，加 @file:line 须改签名或穿参，
+      V2 未提及；
+  (d) 「seen 按裸名去重」只对**裸名分支**成立；成员分支已用
+      member:${receiver}.${member}（helper L831）⇒ D2 的「新工作」描述不准确。
+```
+
+**D.6 处置**：
+
+```text
+1. 撤回「path 键 < name 键 ⇒ 不增加工作量」这一论证（比较口径不可追溯）。
+2. 如仍要用该论证，必须**同输入、同作用域、显式标注**后重测，并接受
+   「更细的键可能增加工作量」这一结论 —— 此时 D3/D4 才是补偿手段。
+3. canonicalKey 的定义**降级**为 `${root}@${depth}`（不需要 file:line，
+   避免改签名）；若实现期认为 file:line 必需，则须在 Phase 1 明确
+   签名变更，并把它列入 scope（当前 scope 未授权改 resolveTrustSetProvenance 签名）。
+4. 精确定义 D2 的「新工作」= **裸名分支**的键从 name 改为 canonical path；
+   成员分支已具备路径粒度，不在 D2 范围内。
+```
+
+### D.7 —— P2：7 项逐条处置
+
+| # | 评审指出 | 处置 |
+|---|---|---|
+| P2-1 | N3 映射错：N3 是边界项 C（廉价 blind-spot），表里却映射给 AC-3；AC↔边界表把 C 归 AC-4 | **已修**：AC↔边界映射表见 D.8 |
+| P2-2 | fixture 命名不一致：`state.inner.__trusted` vs `state.inner.trusted` | **已修**：统一为 `state.inner.trusted`（F2），`__trusted` 仅用于 M7 变异形状 |
+| P2-3 | 标签冲突：AC-2 用 V1/V2/V3/V4，与文档版本 V1/V2 同名 | **已修**：AC-2 形状重命名为 F1–F4（见 D.3） |
+| P2-4 | Phase 3 列出 `classifyTrustSetValue`，但它在**测试文件**（test :1083），而 Phase 1/3 文件清单只列 helper | **已修**：见 D.8 的文件清单 |
+| P2-5 | `8ac163e7` 只是 `lib/targeted-requery-subphase.mjs` **单文件**的 blob，不是 `lib/` 目录 | **已修**：措辞已在本附录 D.1 精确化；Phase 3 回滚条件保留单文件表述 |
+| P2-6 | AC-3 的 10 形状 / 4 个 ABSENT 未被独立复验 | **接受为残余风险**：本方已用真实枚举器复测（trusted=6 / ABSENT=4 = s2,s3,s4,s5），但**未**用评审的独立 fixture；实现期须重测（AC-3 已是 AC 之一） |
+| P2-7 | D3/D4 未写耦合约束 | **已修**：见 D.9 |
+
+### D.8 —— P2-1 / P2-4 修正后的 AC ↔ 边界映射与文件清单
+
+```text
+AC ↔ 边界映射（修正 N3 归属）:
+  AC-1 path identity      → A（IR/canonicalPathOf）, B（resolver 兼容）, GATE-1/GATE-2 放宽
+                            tests B, N2, N6
+  AC-2 mutation complete  → A（writeKind 分类）
+                            tests F1, F2, F3, F4
+  AC-3 absent spelling    → E（枚举器拼写）
+                            tests D, E, N3
+  AC-4 bounded traversal  → C（廉价 fail-closed）, D（预算 D1–D4）
+                            tests F, G, H, N1, N4, N5
+
+  N3（廉价 blind-spot 误吞 import 名）归属澄清：
+    N3 针对边界项 **C**（廉价 fail-closed 路径），
+    但它保护的是 **AC-3 的 import 形状**不被 C 误吞 ⇒ 主归属 AC-4，
+    交叉引用 AC-3。两侧均须断言，不得只测其一。
+
+Phase 文件清单（修正 P2-4）:
+  Phase 1/3 helper      : research-orchestration/test/helpers/t11-trust-surface-enumeration.mjs
+                          （含 GATE-1 isWalkableTrustSetName / GATE-2 propertyWritePattern）
+  Phase 1/3 测试层       : research-orchestration/test/p2a-t11-trust-boundary-executable-guards.test.mjs
+                          （含 classifyTrustSetValue / c3TrustSurfaceVerdict / trustSetRootsOf）
+  Phase 2 新套件         : research-orchestration/test/p2a-t11-131-remediation.test.mjs
+  lib/                  : **零改动**（blob 8ac163e7… 为单文件锚点，非目录）
+  ⚠️ 本清单**未授权**改 resolveTrustSetProvenance 的导出签名（见 D.6.3）
+```
+
+### D.9 —— P2-7：D3 / D4 的耦合约束（新增，V2 缺失）
+
+```text
+预算 N 必须同时满足两个不等式：
+
+  (1) N  ≥  合法 walk 的最大函数体读取数
+        否则截断**合法**的深路径 → 假阴性 → fail-open（P1 级）
+  (2) N × 单次体读取成本  ≤  AC-4.1 门限
+        否则门限不可达
+
+本轮已测的单次体读取成本（生产路径口径，STRIPPED + budget=YES）:
+  M7 helper 直调 = 4 647 – 5 110 ms
+  control        =        5 ms
+  ⇒ 二者相差约 1 000×，而「合法 walk 的最大体读取数」**未知**
+     （因生产路径不终止，无法在修复前测出该值）
+
+⇒ 结论：**可行窗口可能很窄，甚至为空**。这不是可以推迟的细节，
+   而是 AC-4 的**核心可行性风险**。处置：
+  1. Phase 1 必须**先测** (1) 的值（在 42 模块真实语料上跑未变异的 C3，
+     记录最大体读取数），再定 N；
+  2. 若 (1) 与 (2) 无交集 ⇒ 不得靠放宽门限解决，须回到 PART 2 重新设计
+     （候选：把 DEFECT-C 的廉价 blind-spot 路径作为**先决条件**，
+     先把体读取数降下来，再谈预算 N）；
+  3. 该可行性检查须作为 Phase 1 的**出口条件**，写进 Phase 2 的前置。
+```
+
+### D.10 —— 修正后仍须由 fresh reviewer 复审
+
+```text
+本附录处置了 5 个 P0/P1 中的全部条目，但：
+  - D.1 推翻了 V2 PART 3 的全部数字 ⇒ 上方正文 §3 已是历史文本，
+    **必须**按 D.1 / D.2 重写后再评审，不可只审附录；
+  - D.2 的 AC-4.1 门限是先验值，无经验支撑（D.2 已如实声明）；
+  - P2-6（AC-3 独立复验）作为残余风险带入实现期。
+
+⇒ NEXT_ACTION = 产出 V3（重写 §3 与 §4-AC-4，纳入 D.1–D.10），
+   再提交 fresh independent review。
+   在 V3 通过独立评审前，IMPLEMENTATION_AUTHORIZATION 恒为 NONE。
+```
