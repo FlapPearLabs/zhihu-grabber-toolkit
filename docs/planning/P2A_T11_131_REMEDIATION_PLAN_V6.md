@@ -51,7 +51,7 @@ AUTHORIZATION_SURFACE      = A1 + A2' + A3（与 V5 相同；V6 **不新增授�
 > V6 已证明那是 **helper 直调**（把 `holder[k]` 直接当 root 传入）的产物，
 > **不是生产 C3 路径的行为**。真实 C3 路径上 F3 当前是
 > **`violations = []` 且 `unresolvable = []`（silent CLEAN / fail-open）** ——
-> 这比 V5 声称的更严重，V6 已按真实值重钉（见 PART 3.4 与 AC-2 F3）。
+> 这比 V5 声称的更严重，V6 已按真实值重钉（见 §3.5 与 AC-2 F3）。
 >
 > **owner 对 P0-1 的裁决（2026-10-02）**：选择**扩授权面**，且授权扩展必须
 > **最小、显式、可枚举** —— 仅覆盖 AC-2/F1/F2 已机械证明必须触及的位置；
@@ -349,18 +349,34 @@ fixture（函数作用域，callText = assertArtifactSafe(pool, { trustedPlanStr
         实测 = **false**（计算键不是「名字」）
     ⇒ classifyTrustSetValue 返回 **"__expr__holder[k]"**
     → trustSetRootsOf 产出 root = "__expr__holder[k]"   （实测）
-    → c3TrustSurfaceVerdict 走 __expr__ 分支（test L961-966）:
-        if (!classifyTrustSetValue(root).startsWith('__expr__')) { …walk… continue; }
-        followInto(root, root);            ← 只把 root 本身当**文本**测试
-    ⇒ **从不调用 bindingsOf**，从不解析 holder[k] 的写侧，`.add(` 的参数永不可见
+    → 成员路由闸门（test L961）**拒绝**该 root:
+        if (!classifyTrustSetValue(root).startsWith('__expr__')) {
+          resolveTrustSetProvenance(src, root); …   ← holder[k] 走不到这里
+          continue;
+        }
+      ※ 正因为 root 带 `__expr__` 前缀，这整段**成员路由被跳过**
+        —— 这是「holder[k] 的成员路由从不进入」的**直接原因**。
+    ⇒ 落到 inline 分支（test L863-864）:
+        if (root.startsWith('__expr__')) {
+          followInto('<inline>', root.slice('__expr__'.length));  // = followInto('<inline>', "holder[k]")
+          continue;
+        }
+      ※ followInto（test L750）会沿 expression 调 provenanceIdentifiersIn("holder[k]")
+        → ["holder","k"]，再对 holder / k 各自 resolveName → resolveNameInModule
+        → resolveTrustSetProvenance → bindingsOf
+        （V6 实测：bindingsOfCalls=2，names=[holder,k]）
+      ⇒ **bindingsOf 确实被调用**，但并非解析 holder[k] 本身，
+        而是解析其**扁平子标识符** holder 与 k；
+    ⇒ holder[k] 作为「计算成员访问」的**成员路由从未进入** ⇒ `.add(` 的参数
+      （tp[0].rawQuery）**永不可见**
     ⇒ violations=[] 且 unresolvable=[] ⇒ **silent CLEAN（fail-open，P0 级）**
 
   旁证（真实 C3 路径的对照实验，均 V6 实测）:
     · holder 未定义（更盲的局部变量）同样 V=[] U=[] ⇒ 该分支**不会**因缺绑定而报错。
     · inline 表达式 root（含 targeted 文本）**会**被检出：
         root = new Set(targetedPools[0].rawQuery) ⇒ V=2（含 targetedPools）
-      ⇒ 证明 C3 的文本分支本身有效；F3 漏检的**根因是分类把它判成表达式**，
-        不是文本分支不工作。
+      ⇒ 证明 C3 的 inline 分支本身有效；F3 漏检的**根因是分类把它判成表达式**，
+        不是 inline 分支不工作。
 ```
 
 **post-fix 可达性证明（在 A1 + A2' + A3 内，无新增授权点）**
@@ -466,7 +482,9 @@ V4 曾为 **A1–A5 五处**。V4 评审的两条 P1 证明其中两处不成立
   ⚠️ **V6 修正**：上面这条依据中的「F3 已由裸名路由的 receiver-mutation 规则覆盖」
   是 **helper 直调假象**（把 `holder[k]` 直接当 root 传入）。真实 C3 路径上
   F3 当前是 **silent CLEAN**（V=[] U=[]），因为它被分类为 `__expr__holder[k]`
-  而**从不进 bindingsOf**（完整机制与实测见 §3.5）。
+  而命中 **inline 分支**（test L863-864）—— 该分支只解析其**扁平子标识符**
+  `holder` / `k`，`holder[k]` 作为计算成员访问的**成员路由从未进入**
+  （完整机制与实测见 §3.5）。
   ⇒ **A4 删除的结论仍然成立，但依据已换**（见下方「A4 删除的 V6 依据」）。
 - **P1-2（A2 与 A5 不能同时成立）**：`propertyWritePattern` 是**单一共享工厂**
   （helper L1735-1748），被 `memberWritePathsIn`（L1813）与 `propertyWriteBindingsOf`
@@ -495,7 +513,7 @@ V4 曾为 **A1–A5 五处**。V4 评审的两条 P1 证明其中两处不成立
       ⇒ F2 在分类阶段即被降为 __expr__，后续一切 provenance 逻辑都不执行。
       这是 F2 漏检的**第一道**闸门；不放开则 F2 永远不可达。
   (b) F3: 实测 isWalkableTrustSetName('holder[k]') = false
-      ⇒ classifyTrustSetValue → "__expr__holder[k]" → C3 走 text-only 分支
+      ⇒ classifyTrustSetValue → "__expr__holder[k]" → C3 命中 inline 分支（test L863-864）
       ⇒ **F3 当前 silent CLEAN**（V=[] U=[]，P0 级 fail-open，见 §3.5）。
       不放开则计算键永远不被解析，AC-2 的 F3 契约**无法达成**。
 为什么是这一处而不是别处:
@@ -600,7 +618,8 @@ V4 曾为 **A1–A5 五处**。V4 评审的两条 P1 证明其中两处不成立
 ```text
 A1（GATE-1 分类放行：多段链 + 计算键 receiver）:
   · 必要：F2（多段 state.inner.trusted）与 F3（计算键 holder[k]）都被 GATE-1
-          判为 __expr__ ⇒ 后续 provenance 全不执行、C3 走 text-only 分支。
+          判为 __expr__ ⇒ 计算成员访问的成员路由**从不进入**，C3 只把它们当
+          inline 表达式处理（test L863-864）。
           GATE-1 不放开则 F2 不可达、F3 永远 silent CLEAN（§3.5 实测）。
   · 非冗余：A2'（写模式匹配）与 A3（mutation 接入）都运行在「已分类为 walkable」之后；
             GATE-1 拒绝的名字，A2'/A3 无从重新接纳。
@@ -811,8 +830,10 @@ F2  root = state.inner.trusted   （dotted，多段 receiver + .add）
 F3  root = holder[k]             ★ V6 重做（本条是 V6 的核心修正）
     期望 = **DETECTED 或 FAIL_CLOSED；不得 silent CLEAN**
     —— V6 真实 C3 路径实测当前 = **V=[] U=[]（silent CLEAN / fail-open，P0 级）**
-       classify = "__expr__holder[k]" → __expr__ 分支只作文本测试
-       → **从不进 bindingsOf**，`.add(` 的参数永不可见（完整机制见 §3.5）
+       classify = "__expr__holder[k]" → 命中 **inline 分支**（test L863-864）
+       → 该分支只解析扁平子标识符 `holder` / `k`（实测 bindingsOfCalls=2），
+         **`holder[k]` 作为计算成员访问的成员路由从不进入**
+       → `.add(` 的参数永不可见（完整机制见 §3.5）
     ⇒ ⚠️ V5 写的「当前 unresolvable=[k,plan,targetedPools]、expressions 含 rawQuery」
       是 **helper 直调假象**；据此写的「部分成立、分类待定」**已撤回**。
     ⇒ V6 的真实结论更强也更简单：**F3 当前完全未被检出**。
@@ -2071,8 +2092,18 @@ V6 对 P1 的完整回答（owner 要求的三点，逐条落位）:
   ① 禁止再引用 helper-direct 作为 production evidence
      ⇒ AC-2 fixture 块首条「V6 取证纪律」明确禁令；§3.5 给出合规取证方法。
   ② 明确 F3 当前真实行为（holder[k] → classifyTrustSetValue → __expr__holder[k]
-     → text-only branch → does not enter bindingsOf）
+     → 命中 inline 分支 test L863-864 → 只解析扁平子标识符 holder / k
+       → holder[k] 的计算成员访问成员路由从不进入 ⇒ .add( 参数永不可见）
      ⇒ §3.5「silent CLEAN 机制」逐步钉死；AC-2 F3 块顶部逐字复述该链。
+     ⚠️ V6 独立复审（DeepSeek V4.1 Flash @ 28e905f，OPEN_P2）修正了本条链的
+        **描述**：V6 初稿曾写「text-only 分支 / 从不调用 bindingsOf / test L961-966」，
+        评审机械证伪 —— 实际是 inline 分支 test L863-864，且 `bindingsOf` **被调用 2 次**
+        （对子标识符 holder / k）。
+        真实代码事实：test **L961** 是**成员路由闸门**
+        `if (!classifyTrustSetValue(root).startsWith('__expr__')) { resolveTrustSetProvenance(...) … }`
+        —— 正因为 root 带 `__expr__` 前缀，该**成员路由整段被跳过**，
+        这才是「holder[k] 的成员路由从不进入」的直接原因（它随后落到 L863 的 inline 分支）。
+        结论（silent CLEAN）不受影响，仅机制描述已按真实代码更正。
   ③ 钉死 F3 post-fix contract（优先在 #131 scope 内；不得 silent CLEAN；
      必须 DETECTED 或 FAIL_CLOSED；仅当机械证明会显著扩大架构面才允许单独 ticket）
      ⇒ AC-2 F3 块给出 (A)/(B) 二选一硬契约 + 「不得静默降级」；
