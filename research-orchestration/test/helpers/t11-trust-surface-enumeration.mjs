@@ -1776,24 +1776,60 @@ function memberRouteMutationArguments(source, receiver, member) {
     'g',
   );
   // A read name counts as a read ONLY while it is still a method OF THE RECEIVER
-  // OBJECT. Method names are ordinary properties: \`x.trusted.slice = x.trusted.add\`
-  // makes \`.slice\` a mutating call on that receiver while its spelling stays in this
-  // vocabulary. So a read name that is ASSIGNED onto this receiver path anywhere in the
-  // source stops being evidence of a read and falls back to "mutating" = reported.
+  // OBJECT. Method names are ordinary properties, so the spelling
+  // \`x.trusted.slice = x.trusted.add\` makes \`.slice\` a mutating call on that
+  // receiver while its spelling stays in this vocabulary.
+  //
+  // No spelling is enumerated here. This file already holds ONE convention for
+  // "receiver, separator, property" — \`MEMBER_PATH_IN_EXPR\` and
+  // \`propertyWriteBindingsOf\` — in which dot, bracket and optional-chain are ONE
+  // member. Deciding the shadowed name with a second, narrower regex is precisely what
+  // let the bracket and optional-chain spellings report clean, so the shared writer is
+  // asked for the plain assignments and every remaining segment is matched with a
+  // spelling alternation built the same way. A scan narrower than the writer it sits
+  // beside is the defect, not the fix.
+  //
+  // The shadowed name is not known in advance, so the bracket arm matches any quoted
+  // identifier and CAPTURES it; the quote characters are then stripped, because
+  // \`['slice']\` and \`.slice\` are one name written two ways.
+  //
+  // What the shared writer does not model, measured rather than assumed: a logical or
+  // compound assignment (\`??=\`, \`||=\`, \`+=\`, \`&&=\`) rebinds a name
+  // exactly as \`=\` does, and \`Object.assign\` / \`Object.defineProperty\`
+  // rebind one with no assignment operator at all.
   //
   // Polarity is deliberately unchanged: an unrecognised name is still treated as
-  // mutating. This can only move names OUT of the read set, never in, so it cannot
-  // open a silent-clean path for an unknown verb.
+  // mutating, and everything above can only move a name OUT of the read set, never
+  // in. So no silent-clean path opens for an unknown verb.
   const reads = new Set(['has', 'forEach', 'map', 'includes', 'indexOf', 'lastIndexOf', 'join',
     'values', 'entries', 'keys', 'toString', 'slice', 'concat', 'some', 'every', 'filter',
     'reduce', 'find', 'findIndex', 'at', 'flat', 'trim', 'padStart', 'replace', 'match']);
   const shadowed = new Set();
   {
-    const onto = new RegExp(
-      '(?<![.\\w$])' + receiverPath + '\\s*' + SPELLING + '\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*=(?!=)',
+    // AS-IS: the shared writer folds dot / bracket / optional-chain into one member,
+    // and answers for every read name in a single call.
+    const stem = receiver + '.' + member + '.';
+    const asked = [...reads].map((name) => stem + name).join(',');
+    for (const path of memberWritePathsIn(source, asked)) {
+      if (path.length > stem.length) shadowed.add(path.slice(stem.length));
+    }
+    // The shared writer stops at a bare \`=\`; these rebindings sit outside it. The
+    // operator prefix belongs INSIDE the group so the \`(?!=)\` guard can still see
+    // the character after the assignment and reject \`==\` / \`===\`.
+    const QUOTED = "\\s*(?:'([^']+)'|\"([^\"]+)\"|\\x60([^\\x60]+)\\x60)\\s*";
+    const SPELLED_NAME = '(?:\\.\\s*([A-Za-z_$][\\w$]*)|\\?\\.\\s*([A-Za-z_$][\\w$]*)|\\[\\s*' + QUOTED + '\\])';
+    const rebinding = new RegExp(
+      '(?<![.\\w$])' + receiverPath + '\\s*' + SPELLING + '\\s*' + SPELLED_NAME
+        + '\\s*(?:\\?\\?|\\|\\||&&|[-+*%&|^])?=(?!=)',
       'g',
     );
-    for (let a = onto.exec(source); a !== null; a = onto.exec(source)) shadowed.add(a[1]);
+    for (let a = rebinding.exec(source); a !== null; a = rebinding.exec(source)) {
+      shadowed.add(a[1] ?? a[2] ?? a[3] ?? a[4] ?? a[5]);
+    }
+    const viaCall = new RegExp(
+      'Object\\s*\\.\\s*(?:assign|defineProperty)\\s*\\(\\s*' + receiverPath + '\\s*' + SPELLING, 'g',
+    );
+    if (viaCall.test(source)) for (const name of reads) shadowed.add(name);
   }
   const isMutation = (name) => !reads.has(name) || shadowed.has(name);
   const nextCall = /\s*\.\s*([A-Za-z_$][\w$]*)\s*\(/y;
