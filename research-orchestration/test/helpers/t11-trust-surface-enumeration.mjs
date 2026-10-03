@@ -1775,16 +1775,27 @@ function memberRouteMutationArguments(source, receiver, member) {
     '(?<![.\\w$])' + receiverPath + '\\s*' + SPELLING + '\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(',
     'g',
   );
-  // INJECTION: can this call feed a value INTO the trust set? Only a mutating
-  // method can, so a name on this READ vocabulary contributes nothing. The list
-  // is closed on purpose: an UNKNOWN name is treated as mutating, so an
-  // unrecognised method fails CLOSED (reported) instead of silently clean.
+  // A read name counts as a read ONLY while it is still a method OF THE RECEIVER
+  // OBJECT. Method names are ordinary properties: \`x.trusted.slice = x.trusted.add\`
+  // makes \`.slice\` a mutating call on that receiver while its spelling stays in this
+  // vocabulary. So a read name that is ASSIGNED onto this receiver path anywhere in the
+  // source stops being evidence of a read and falls back to "mutating" = reported.
   //
-  // CONTINUATION: a read's RESULT is a different value, so a read also ends
-  // the chain. That is what keeps `.has(a).add(leak)` contributing no phantom
-  // mutation expression (contract ATTACK 4).
-  const reads = new Set(['has', 'forEach', 'map', 'includes', 'indexOf', 'lastIndexOf', 'join', 'values', 'entries', 'keys', 'toString', 'slice', 'concat', 'some', 'every', 'filter', 'reduce', 'find', 'findIndex', 'at', 'flat', 'trim', 'padStart', 'replace', 'match']);
-  const isMutation = (name) => !reads.has(name);
+  // Polarity is deliberately unchanged: an unrecognised name is still treated as
+  // mutating. This can only move names OUT of the read set, never in, so it cannot
+  // open a silent-clean path for an unknown verb.
+  const reads = new Set(['has', 'forEach', 'map', 'includes', 'indexOf', 'lastIndexOf', 'join',
+    'values', 'entries', 'keys', 'toString', 'slice', 'concat', 'some', 'every', 'filter',
+    'reduce', 'find', 'findIndex', 'at', 'flat', 'trim', 'padStart', 'replace', 'match']);
+  const shadowed = new Set();
+  {
+    const onto = new RegExp(
+      '(?<![.\\w$])' + receiverPath + '\\s*' + SPELLING + '\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*=(?!=)',
+      'g',
+    );
+    for (let a = onto.exec(source); a !== null; a = onto.exec(source)) shadowed.add(a[1]);
+  }
+  const isMutation = (name) => !reads.has(name) || shadowed.has(name);
   const nextCall = /\s*\.\s*([A-Za-z_$][\w$]*)\s*\(/y;
   const out = [];
   for (let m = call.exec(source); m !== null; m = call.exec(source)) {
