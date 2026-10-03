@@ -831,7 +831,29 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8, budge
       const key = `member:${receiver}.${member}`;
       if (seen.has(key)) return;
       seen.add(key);
-      for (const { expr } of propertyWriteBindingsOf(source, member)) {
+      // A3. MUTATION INTO THE MEMBER: `holder.trusted.add(x)`, `state.inner.trusted
+      // .add(x)`, `holder["k"].trusted.add(x)`. The two routes above answer "what is
+      // written to this member" and "who is the receiver"; neither answers "what is
+      // MUTATED INTO it", and the assignment pattern structurally cannot — `…=(?!=)`
+      // never matches `.add(`. So a set handed over as a member and then fed through
+      // its own `.add()` was walked, resolved, and reported clean with the argument
+      // that would have leaked never having entered the walk at all.
+      //
+      // The ASKED SPELLING is rebuilt here rather than reusing `name`, because
+      // `name` may be `holder?.['trusted']` while the write is `holder.trusted.add(`.
+      // Every spelling of one member is the same member, so the receiver path is
+      // re-spelled in the CANONICAL dotted form and the property is matched as a
+      // literal OR a quoted bracket — the four spellings `splitMemberAccess` accepts,
+      // and no others.
+      for (const arg of memberRouteMutationArguments(source, receiver, member)) {
+        expressions.add(arg);
+        for (const ident of provenanceIdentifiersIn(arg)) {
+          if (isVocabularyOnly(source, ident)) continue;
+          walk(ident, depth + 1);
+        }
+      }
+      for (const { expr, receiver: writeReceiver } of propertyWriteBindingsOf(source, member)) {
+        if (writeReceiver !== undefined && writeReceiver.replace(/\s+/g, '') !== receiver) continue;
         expressions.add(expr);
         for (const ident of provenanceIdentifiersIn(expr)) {
           if (isVocabularyOnly(source, ident)) continue;
@@ -936,6 +958,12 @@ export function resolveTrustSetProvenance(source, rootVar, { maxDepth = 8, budge
     }
   }
 
+  // A1's newly walkable values retain the expression evidence r11 tested.
+  // Keep the asked spelling: normalising a receiver is not resolving its value.
+  if (isWalkableTrustSetName(rootVar)
+      && !SINGLE_SEGMENT_FORM.test(normaliseMemberSpelling(rootVar))) {
+    expressions.add(rootVar);
+  }
   walk(rootVar, 0);
 
   // A name that is ONLY a locally-bound callback parameter (`(tp) => …`) is a
@@ -1615,6 +1643,35 @@ const SINGLE_SEGMENT_FORM = new RegExp(
   String.raw`^\s*[A-Za-z_$][\w$]*\s*(?:\.\s*${LITERAL_PROPERTY}|\[\s*${QUOTED_PROPERTY}\s*\])\s*$`,
 );
 
+// A1 (candidate). A trust-set VALUE that is a MEMBER is a thing to walk; a value
+// that is an EXPRESSION is text to test. r11's `SINGLE_SEGMENT_FORM` draws that
+// line at exactly ONE property, so `state.inner.trusted` and `holder[k].trusted`
+// were filed as expressions -- tested as text, then walked no further. Both are
+// members, and both are how a trust set is handed over on the F.3 boundary.
+//
+// These two forms widen the line WITHOUT loosening it: each still requires the
+// value to be a pure member-access chain, so `new Set(a.b)`, `a.b + c`, and any
+// expression that merely CONTAINS a member stay expressions.
+const MULTI_SEGMENT_FORM = new RegExp(
+  String.raw`^\s*[A-Za-z_$][\w$]*\s*(?:\.\s*${LITERAL_PROPERTY}\s*)+(?:\.\s*[A-Za-z_$][\w$]*|\[\s*${QUOTED_PROPERTY}\s*\])\s*$`,
+);
+
+// A COMPUTED member: `holder[k]`, `holder[k].trusted` (the F.3 shape),
+// `state.inner[k]`, `state.inner[k].trusted`. A computed key may sit at ANY position
+// in the chain; each step is `.literal`, or `.identifier[ key ]`.
+//
+// WHY AN IDENTIFIER KEY IS ADMITTED HERE, when `propertyWriteBindingsOf` refuses a
+// bare `out[key] = …`: that refusal is about a write with NO RECEIVER, where the
+// property is whatever the variable holds and the walk has nothing to follow. A
+// computed key on a NAMED receiver is different -- `holder[k].trusted` still has the
+// receiver `holder`, and F.3 is exactly that shape. What the walk still cannot follow
+// is the VARIABLE's value, which is why a computed member is a name to walk and not a
+// resolved binding: the walk asks about `holder`, and `holder`'s own writes are
+// followed by the existing receiver route rather than by guessing `k`.
+const COMPUTED_KEY_FORM = new RegExp(
+  String.raw`^\s*[A-Za-z_$][\w$]*\s*(?:\[\s*(?:${QUOTED_PROPERTY}|[A-Za-z_$][\w$]*)\s*\]|\.\s*(?:${LITERAL_PROPERTY}|[A-Za-z_$][\w$]*\s*\[\s*(?:${QUOTED_PROPERTY}|[A-Za-z_$][\w$]*)\s*\]))+\s*$`,
+);
+
 /**
  * Strip the OPTIONAL-CHAIN operator, so the two member forms are all that is
  * left to recognise.
@@ -1675,6 +1732,85 @@ export function splitMemberAccess(name) {
 }
 
 /**
+ * ARGUMENTS of every call that MUTATES INTO `receiver.member` —
+ * `holder.trusted.add(x)`, `state.inner.trusted.add(x)`, `holder['trusted'].add(x)`.
+ *
+ * A3. The member route answers two questions about a member — what is ASSIGNED to
+ * it, and who is the RECEIVER holding it — and a third question goes unanswered:
+ * what is MUTATED INTO it. The assignment pattern cannot answer that one by
+ * construction: its tail is `=(?!=)([^;]+);`, and `.add(` is not `=`. So a trust set
+ * handed over as a member and then fed through its own `.add()` resolved to a
+ * binding, reported CLEAN, and the argument that would have leaked had never been
+ * in the walk at all. Silence, produced by a rule that was never wrong about
+ * assignments — only silent about mutations.
+ *
+ * The receiver is matched as a PATH and the property in the four spellings
+ * `splitMemberAccess` accepts, so `holder?.['trusted']` (how the ASK arrived) is the
+ * same member as `holder.trusted.add(` (how the WRITE is spelled). The receiver is
+ * compared after whitespace normalisation, for the same reason
+ * `propertyWriteHasReceiver` compares that way: `nextState . retrieval` and
+ * `nextState.retrieval` are one receiver, and two different receivers are two
+ * different bindings however similarly they are spelled.
+ *
+ * ARGUMENTS ARE READ BY BRACKET PAIRING, never by `[^)]*` — the same r7 P1-1
+ * constraint the receiver-mutation route already carries: an argument containing a
+ * call or an object literal truncates at its first `)`, and the identifier walk then
+ * reads the truncated fragment's prose as free variables.
+ *
+ * This asks only about the ASKED member. It is not a second property-write rule —
+ * it never reads `propertyWritePattern` — and it cannot re-admit a name the
+ * classifier refused: the member route is DOWNSTREAM of that decision.
+ *
+ * @param {string} source module source
+ * @param {string} receiver the receiver path, whitespace already normalised
+ * @param {string} member the property name
+ * @returns {string[]} the arguments, in source order; empty when there is no such call
+ */
+function memberRouteMutationArguments(source, receiver, member) {
+  const re = escapeRe(member);
+  const Q = "(?:'" + re + "'|\"" + re + "\"|" + '\x60' + re + '\x60' + ')';
+  const SPELLING = '(?:\\.\\s*' + re + '|\\?\\.\\s*' + re + '|\\[\\s*' + Q + '\\s*\\]|\\?\\.\\s*\\[\\s*' + Q + '\\s*\\])';
+  const receiverPath = receiver.split('.').map(escapeRe).join('\\s*\\.\\s*');
+  const call = new RegExp(
+    '(?<![.\\w$])' + receiverPath + '\\s*' + SPELLING + '\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(',
+    'g',
+  );
+  // These reads do not feed values into the trust set. Unknown methods remain
+  // conservative; this is not a closed list of mutation verbs.
+  const reads = new Set(['has', 'forEach', 'map']);
+  const nextCall = /\s*\.\s*([A-Za-z_$][\w$]*)\s*\(/y;
+  const out = [];
+  for (let m = call.exec(source); m !== null; m = call.exec(source)) {
+    let method = m[1];
+    let open = m.index + m[0].length - 1;
+    for (;;) {
+      // Local pairing is needed for the continuation's position. Scanning to
+      // source.length also avoids the shared reader's silent 4000-char cutoff.
+      // This retains that reader's lexical bracket semantics (not a parser).
+      let depth = 1;
+      let close = open + 1;
+      for (; close < source.length; close += 1) {
+        const ch = source[close];
+        if (ch === '(' || ch === '[' || ch === '{') depth += 1;
+        else if (ch === ')' || ch === ']' || ch === '}') depth -= 1;
+        if (depth === 0) break;
+      }
+      if (depth !== 0) break;
+      if (!reads.has(method)) {
+        out.push(...splitTopLevelCommas(source.slice(open + 1, close)));
+      }
+      if (method !== 'add') break;
+      nextCall.lastIndex = close + 1;
+      const next = nextCall.exec(source);
+      if (next === null) break;
+      method = next[1];
+      open = nextCall.lastIndex - 1;
+    }
+  }
+  return out;
+}
+
+/**
  * Is this trust-set VALUE a MEMBER to walk, or an INLINE EXPRESSION to test as
  * text?
  *
@@ -1707,7 +1843,10 @@ export function isWalkableTrustSetName(value) {
   // (a path versus a single identifier) and the SAME property rules, and sharing
   // the property rules is what matters — sharing a verdict is what r10's first
   // attempt did wrong.
-  return SINGLE_SEGMENT_FORM.test(normaliseMemberSpelling(value));
+  const normalised = normaliseMemberSpelling(value);
+  return SINGLE_SEGMENT_FORM.test(normalised)
+    || MULTI_SEGMENT_FORM.test(normalised)
+    || COMPUTED_KEY_FORM.test(normalised);
 }
 
 /**
@@ -1742,9 +1881,39 @@ function propertyWritePattern(name) {
     `\\?\\.\\s*\\[\\s*${Q}\\s*\\]`,       // h?.['trusted']
   ].join('|');
   return new RegExp(
-    `(?<![.\\w$])([A-Za-z_$][\\w$]*)\\s*(?:${SEP})\\s*=(?!=)([^;]+);`,
+    `(?<![.\\w$])([A-Za-z_$][\\w$]*(?:\\s*\\.\\s*[A-Za-z_$][\\w$]*)*)\\s*(?:${SEP})\\s*=(?!=)([^;]+);`,
     'g',
   );
+}
+
+/**
+ * Does this module WRITE `receiver.name`, with THAT receiver?
+ *
+ * The write RULE is `propertyWritePattern`'s and is not duplicated here; this asks
+ * only the extra question a widened receiver makes necessary. With the receiver
+ * group widened to a dotted chain, one property name can be written through
+ * several unrelated receivers, and those are different bindings:
+ *
+ *   nextState.retrieval.plannedQueryVariants = update.plannedQueryVariants;
+ *   assertArtifactSafe(state, { trustedPlanStrings: new Set(ret.plannedQueryVariants) });
+ *
+ * The walk asks about `ret.plannedQueryVariants`; the write above is to
+ * `nextState.retrieval.plannedQueryVariants`. Answering the first question with
+ * the second is what made the widened receiver report the production boundary as
+ * fed by a targeted surface.
+ *
+ * @param {string} source module source
+ * @param {string} name the property (member) name
+ * @param {string} receiver the receiver the walk ASKED about
+ * @returns {boolean}
+ */
+function propertyWriteHasReceiver(source, name, receiver) {
+  const assign = propertyWritePattern(name);
+  for (let m = assign.exec(source); m !== null; m = assign.exec(source)) {
+    if (m[1].replace(/\s+/g, '') === receiver) return true;
+  }
+  assign.lastIndex = 0;
+  return false;
 }
 
 /**
@@ -1810,7 +1979,10 @@ export function memberWritePathsIn(source, expr) {
     // asking the same question twice is how a shared budget gets misread as a
     // genuine miss.
     if (split === null) continue;
-    if (!propertyWritePattern(split.member).test(source)) continue;
+    // RECEIVER IDENTITY: a write to `R.member` is evidence for the ASKED path
+    // `R.member` only when the write's own receiver IS R. Same property name
+    // through a different receiver is a different binding.
+    if (!propertyWriteHasReceiver(source, split.member, split.receiver)) continue;
     const key = `${split.receiver}.${split.member}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -1869,8 +2041,8 @@ function propertyWriteBindingsOf(source, name) {
   for (let m = assign.exec(source); m !== null; m = assign.exec(source)) {
     const receiver = m[1];
     if (receiver === name) continue;
-    out.push({ kind: 'property-write', expr: `${receiver}.${name} = ${m[2].trim()}` });
-    out.push({ kind: 'property-write-receiver', expr: receiver });
+    out.push({ kind: 'property-write', expr: `${receiver}.${name} = ${m[2].trim()}`, receiver });
+    out.push({ kind: 'property-write-receiver', expr: receiver, receiver });
   }
   // A CLASS FIELD initialiser: `trusted = new Set(…)` with no `const|let|var`.
   // Matched only at the start of a line so an ordinary local declaration is not
