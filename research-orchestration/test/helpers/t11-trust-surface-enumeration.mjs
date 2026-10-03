@@ -1775,9 +1775,16 @@ function memberRouteMutationArguments(source, receiver, member) {
     '(?<![.\\w$])' + receiverPath + '\\s*' + SPELLING + '\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(',
     'g',
   );
-  // These reads do not feed values into the trust set. Unknown methods remain
-  // conservative; this is not a closed list of mutation verbs.
-  const reads = new Set(['has', 'forEach', 'map']);
+  // INJECTION: can this call feed a value INTO the trust set? Only a mutating
+  // method can, so a name on this READ vocabulary contributes nothing. The list
+  // is closed on purpose: an UNKNOWN name is treated as mutating, so an
+  // unrecognised method fails CLOSED (reported) instead of silently clean.
+  //
+  // CONTINUATION: a read's RESULT is a different value, so a read also ends
+  // the chain. That is what keeps `.has(a).add(leak)` contributing no phantom
+  // mutation expression (contract ATTACK 4).
+  const reads = new Set(['has', 'forEach', 'map', 'includes', 'indexOf', 'lastIndexOf', 'join', 'values', 'entries', 'keys', 'toString', 'slice', 'concat', 'some', 'every', 'filter', 'reduce', 'find', 'findIndex', 'at', 'flat', 'trim', 'padStart', 'replace', 'match']);
+  const isMutation = (name) => !reads.has(name);
   const nextCall = /\s*\.\s*([A-Za-z_$][\w$]*)\s*\(/y;
   const out = [];
   for (let m = call.exec(source); m !== null; m = call.exec(source)) {
@@ -1796,7 +1803,7 @@ function memberRouteMutationArguments(source, receiver, member) {
         if (depth === 0) break;
       }
       if (depth !== 0) break;
-      if (!reads.has(method)) {
+      if (isMutation(method)) {
         out.push(...splitTopLevelCommas(source.slice(open + 1, close)));
       }
       if (method !== 'add') break;
