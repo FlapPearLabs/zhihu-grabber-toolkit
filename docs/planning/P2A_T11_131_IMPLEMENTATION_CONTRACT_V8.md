@@ -260,3 +260,127 @@ READY       = 仅当同 SHA 双通道 OPEN_P0=0 / OPEN_P1=0 → IMPLEMENTATION_G
 AUTHORIZATION_CONFLICT = NO（已在 A1+A2'+A3 内机械证明存在可行方案；未触发 USER_DECISION_REQUIRED）。
 PRODUCTION_IMPLEMENTED_NOW = NO（PHASE A 只读验证 + patch planning；不正式授权生产实现）。
 ```
+
+---
+
+## APPENDIX K — REPAIR ROUND 1（对 SHA 4ddf2cb1… 的双通道评审处置，append-only）
+
+> §1–§9 以上内容**逐字保留**（append-only 纪律）。本附录记录评审结果与修复，
+> 并**明确撤销 §5 与 §7 中若干已被证伪的断言**（见 K.3）。
+> 上文 CANDIDATE_BLOB `5c1bc42…`（candG）已被 REJECT，不再是实施候选。
+
+### K.1 REVIEW RESULT（同 SHA `4ddf2cb1f9c1c9ff6a7e1937e3e05ccf5cc013ac`）
+
+```text
+VERDICT            = REJECT
+CHANNEL CODE        = deepseek-v4.1-flash  → OPEN_P0=1 / OPEN_P1=2 / OPEN_P2=4
+CHANNEL SECURITY   = deepseek-v4.1-flash  → OPEN_P0=1 / OPEN_P1=2 / OPEN_P2=3
+                     （请求 codex-gpt-6.1-sol，实际 fallback 到 deepseek）
+SAME_MODEL_QUORUM  = YES（两通道实际同模型，如实标注，不得计为异模型 quorum）
+IMPLEMENTATION_GATE = CLOSED
+AUTHORIZATION_SURFACE = UNCHANGED（A1 + A2' + A3；修复未新增授权点）
+```
+
+### K.2 独立复现的 findings（CONTROL PLANE 自行跑出，未采信 reviewer 口头）
+
+```text
+P0-1  A1 把「被 text-test 的 EXPRESSION」变成「不被 text-test 的 walkable NAME」。
+      ctx?.plan.normalizedQuery = tp[0].query  →  r11 viol=1 / candG viol=0,U=0（SILENT CLEAN）
+      a?.b.channels / a['b'].rawQuery / state?.inner.rawQuery 同型。
+      机制：splitMemberAccess 归一化掉 ?.（asked receiver = ctx.plan），而 A2' 写侧只接受
+            plain dotted chain ⇒ 该写真实存在但规则看不见 ⇒ 无证据、无 blind spot。
+      reviewer 因果隔离：仅 revert A1 即恢复检测（A2'/A3 非根因）。
+
+P1-1  receiver-identity gate 加在错误的消费者上：只在 memberWritePathsIn，
+      而 walk 实际走 propertyWriteBindingsOf（无 gate）→ B-01 类误归在 walk 侧重现。
+      真实 coverage-state.mjs 的 dotted root：candG c3=[58,425]（r11=[0,0]）。
+
+P1-2  A3 只匹配 member 后第一个 method( ⇒ 链式 .add(a).add(leak) 第二参数丢失。
+
+P2    A3 把 read（.has/.forEach/.map）当 mutation（false positive，c3=[2,4] vs r11=[0,0]）；
+      A3 的「whitespace 规范化比较」是死代码；readCallArguments 4000 字符上限导致
+      长调用静默读 0 参数（1000 args → 0/0）。
+```
+
+### K.3 撤销的断言（诚实性修正 —— 上述断言已被证伪，不得再引用）
+
+```text
+§5.1「19 项攻击 ATTACK_FAILURES=0 / 无 fail-open」      → 证伪（P0-1 实测）
+§5.1 ATTACK 3「spaced-dot 全 PASS」                    → 证伪（多段 receiver 5/6 拼写 MISS）
+§5.1 ATTACK 4「READ 无 phantom」                       → 证伪（.has/.forEach/.map 产生 violation）
+§4 AC-5                                                 → 证伪
+§4 AC-1「写不被归给 ret」                              → 仅对 inline 路径成立；walk 路径证伪
+§2 的 gate 位置描述                                     → 位置错误（在下游消费者），已在 K.4 修正
+§3 A3「receiver 经空白规范化后比较」                    → 该比较是死代码
+§8 G-K3「r11 与 candG 逐字相同」                       → 不成立（candG memberWritePathsIn 非空）
+AC-1 引用 helper 名 `providerWriteHasReceiver`         → 拼写错误，实为 propertyWriteHasReceiver
+§4 AC-4「六项」括号内枚举 7 项                          → 计数不可复现
+```
+
+### K.4 结构性发现（决定修复方向，非风格问题）
+
+```text
+★ `__expr__`（唯一会 text-test 一个 value 的分支）在**冻结套件** L863，不在 helper 里。
+  helper 只做 isWalkableTrustSetName 分类。冻结套件不可改
+  （blob 765170c133410ced7ab46b2e3ad5ece9e78b999c）
+  ⇒ 一旦一个 value 被路由到 walk，就**再也无法被 text-test**。
+  ⇒ P0-1 不能靠「顺便测文本」解决；修复必须在 helper 内让 walk **fail CLOSED**。
+
+★ 两个写消费者对该拼写都返回 []（memberWritePathsIn 与 propertyWriteBindingsOf），
+  所以修复必须落在**写规则本身**（A2' 的 receiver anchor），不是加第二个消费者。
+```
+
+### K.5 REPAIR（candI）：授权面内修复，blob `7c96da377936c7b4000648a59e7d214fb1cc8327`
+
+```text
+BASE        = r11 0d43324d8a8ad4385f5598c9c9cd9567d52f2e4e
+DIFF        = +178 / -6（单文件，8 hunks，whitespace clean）
+DIFF ARTIFACT = docs/planning/P2A_T11_131_REPAIR_DIFF_V8.patch
+AUTHORIZATION = UNCHANGED（A1 + A2' + A3；无第四点、无 A4/A5、无 AST、无第二份写规则）
+
+P0-1 修复：写规则的 receiver anchor 接受 receiver 路径上的每一步的四种拼写
+      （plain / `?.` / bracket / `?.['…']`）。`?.` 与 bracket 是 receiver 周围的 JS 语法，
+      不是它身份的一部分：`ctx?.plan` / `ctx['plan']` / `ctx.plan` 是同一个 receiver 的三种写法。
+      splitMemberAccess 归一化 ASKED 侧，propertyWriteHasReceiver 归一化 WRITE 侧 ——
+      两侧同形后，identity 比较才真正在比较「身份」而不是「拼写」。
+      P0-1 的 silent clean 由此变为 detected。
+P1-1 修复：identity gate 移到 walk 真正消费写证据的位置（member route 的消费点），
+      两侧同样归一化。真实 coverage-state.mjs dotted root 由 c3=[58,425] 回到 [0,2]
+      （2 = 诚实的 UNKNOWN，不计 CLEAN）。
+P1-2 修复：A3 沿链继续匹配后续 `.method(`，链式 .add().add() 的每个参数都入 walk。
+P2 修复：A3 只承认 MUTATING 方法名（add/delete/clear/set 语义），read（.has/.forEach/.map）
+      不再产生 violation；readCallArguments 的长度上限不再静默返回 0 参数。
+
+修复后机械证据（全部正控先行；判决函数用冻结套件真实的 c3TrustSurfaceVerdict）：
+  P0-1  state?.inner.rawQuery      r11 c3=[1,0]  candG c3=[0,0]  → repair c3=[1,0]
+  P0-1  a?.b.channels              r11 c3=[1,0]  candG c3=[0,0]  → repair c3=[1,0]
+  P0-1  a['b'].rawQuery            r11 c3=[1,0]  candG c3=[1,3]  → repair c3=[2,3]
+  P1-1  real ret.plannedQueryVariants  r11=[0,0] candG=[58,425]  → repair=[0,2]
+  P1-1  synthetic dotted          r11=[0,0]  candG=[2,4]        → repair=[0,0]
+  P1-2  chained .add().add(leak)  r11=[0,0]  candG=[0,0]        → repair=[4,6]
+  P2    .has/.forEach/.map         r11=[0,0]  candG=[2,4]        → repair=[0,0]
+  P2    1000 args                  r11=[0,0]  candG=[0,0]        → repair=[4,6]
+  P2    spaced nested receiver     r11=[0,0]  candG=[0,0]        → repair=[3,5]
+  F1/F2/F3/F3-member               全部 repair=[3,5] / [1,1]（DETECT）
+  benign computed / builtin inline / multi read   repair=[0,0]（真阴性保持）
+  r10 形状区分保持：new Set(a.b) / a.b + c / 三元表达式 仍非 walkable
+  FROZEN SUITE = 32/32（blob 765170c1… 未变）
+  lib/ diff = 0；导出面逐字一致（15）；无既有函数签名变更
+  （仅新增两个私有 helper：memberRouteMutationArguments / propertyWriteHasReceiver）
+  propertyWritePattern 定义仍仅 1 处；AST/parser token = 0
+  终止性：receiver 链长 2→1000（0.5ms→24ms，E 恒为 3）；单 member 变更 1→1000
+          （0.8ms→879ms，线性）；链式 .add()×500（0.8ms，leak 始终可见）；
+          多 receiver 8→64（2→19ms，线性）；循环/自引用全部终止。
+          ⇒ 全部对抗输入终止，增长线性，无挂起。
+```
+
+### K.6 NEXT LEGAL ACTION
+
+```text
+STAGE   = REPAIR ROUND 1 完成（candI = 7c96da37…，待 commit/push 取新 exact SHA）
+NEXT    = 对新 exact SHA 重跑双通道 fresh review（同 SHA 才计 PASS）
+          CODE 优先 deepseek-v4.1-flash；SECURITY 优先 codex gpt-6.1-sol
+          （配额 2026-10-03 13:52 恢复后可用；当前 codex 已耗尽，fallback 须如实标注）
+READY   = 仅当同 SHA 双通道 OPEN_P0=0 / OPEN_P1=0 → IMPLEMENTATION_GATE=READY
+IMPLEMENTATION_GATE = CLOSED（新 SHA 尚未评审；生产实现仍未授权）
+```
