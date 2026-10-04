@@ -1797,13 +1797,15 @@ function memberRouteMutationArguments(source, receiver, member) {
   const SPELLED_NAME =
     '(?:\\.\\s*(?<cCall>[A-Za-z_$][\\w$]*)\\?\\.\\s*'
     + '|\\?\\.\\s*(?<cOptCall>[A-Za-z_$][\\w$]*)\\?\\.\\s*'
+    + '|\\[\\s*(?<cBrkCall>' + QUOTE_ANY + ')\\s*\\]\\?\\.\\s*'
+    + '|\\?\\.\\s*\\[\\s*(?<cOBrkCall>' + QUOTE_ANY + ')\\s*\\]\\?\\.\\s*'
     + '|\\.\\s*(?<cDot>[A-Za-z_$][\\w$]*)'
     + '|\\?\\.\\s*(?<cOpt>[A-Za-z_$][\\w$]*)'
     + '|\\[\\s*(?<cBrk>' + QUOTE_ANY + ')\\s*\\]'
     + '|\\?\\.\\s*\\[\\s*(?<cOBrk>' + QUOTE_ANY + ')\\s*\\])';
   const calleeOf = (groups) => {
     const raw = groups.cDot ?? groups.cOpt ?? groups.cBrk ?? groups.cOBrk
-      ?? groups.cCall ?? groups.cOptCall;
+      ?? groups.cCall ?? groups.cOptCall ?? groups.cBrkCall ?? groups.cOBrkCall;
     return raw === undefined ? undefined : raw.replace(/^['"`]|['"`]$/g, '');
   };
   const receiverPath = receiver
