@@ -1767,12 +1767,51 @@ export function splitMemberAccess(name) {
  * @returns {string[]} the arguments, in source order; empty when there is no such call
  */
 function memberRouteMutationArguments(source, receiver, member) {
-  const re = escapeRe(member);
-  const Q = "(?:'" + re + "'|\"" + re + "\"|" + '\x60' + re + '\x60' + ')';
-  const SPELLING = '(?:\\.\\s*' + re + '|\\?\\.\\s*' + re + '|\\[\\s*' + Q + '\\s*\\]|\\?\\.\\s*\\[\\s*' + Q + '\\s*\\])';
-  const receiverPath = receiver.split('.').map(escapeRe).join('\\s*\\.\\s*');
+  // A quoted identifier in ANY of the three quoting styles. The name is not known
+  // in advance -- it is the thing being classified -- so this matches any of them
+  // and the quotes are stripped afterwards.
+  const QUOTE_ANY = "'[^']+'|\"[^\"]+\"|" + '\x60[^\x60]+\x60';
+  // ONE spelling convention, shared by every segment this function must recognise:
+  // the receiver's own segments, the member, the callee, and the chain continuation.
+  // dot, bracket and optional-chain are three spellings of ONE member, so each
+  // segment carries its own separator alternation instead of a hard-coded dot.
+  // Hard-coding the separator is what let the bracket and optional-chain spellings
+  // of a real mutation report clean while the dotted spelling was caught.
+  //
+  // The FIRST receiver segment is matched WITHOUT a leading separator: it is the
+  // start of the path, and the receiver begins the expression, not a separator.
+  const spellingOf = (name, withSeparator) => {
+    const e = escapeRe(name);
+    const q = "(?:'" + e + "'|\"" + e + "\"|" + '\x60' + e + '\x60' + ')';
+    const arms = '\\[\\s*' + q + '\\s*\\]|\\?\\.\\s*\\[\\s*' + q + '\\s*\\]';
+    return withSeparator
+      ? '(?:\\.\\s*' + e + '|\\?\\.\\s*' + e + '|' + arms + ')'
+      : '(?:' + e + '|\\?\\.\\s*' + e + '|' + arms + ')';
+  };
+  // The callee's name is not known in advance -- it is the thing being classified --
+  // so this arm captures whatever identifier appears, and the quotes are stripped
+  // afterwards: ['add'] and .add are one name written two ways.
+  // The optional-call form (`.add?.(`) is the same member called defensively; the
+  // "?" sits OUTSIDE every capture group, so the extracted name is identical and the
+  // arm order cannot change which name is classified.
+  const SPELLED_NAME =
+    '(?:\\.\\s*(?<cCall>[A-Za-z_$][\\w$]*)\\?\\.\\s*'
+    + '|\\?\\.\\s*(?<cOptCall>[A-Za-z_$][\\w$]*)\\?\\.\\s*'
+    + '|\\.\\s*(?<cDot>[A-Za-z_$][\\w$]*)'
+    + '|\\?\\.\\s*(?<cOpt>[A-Za-z_$][\\w$]*)'
+    + '|\\[\\s*(?<cBrk>' + QUOTE_ANY + ')\\s*\\]'
+    + '|\\?\\.\\s*\\[\\s*(?<cOBrk>' + QUOTE_ANY + ')\\s*\\])';
+  const calleeOf = (groups) => {
+    const raw = groups.cDot ?? groups.cOpt ?? groups.cBrk ?? groups.cOBrk
+      ?? groups.cCall ?? groups.cOptCall;
+    return raw === undefined ? undefined : raw.replace(/^['"`]|['"`]$/g, '');
+  };
+  const receiverPath = receiver
+    .split('.')
+    .map((segment, index) => spellingOf(segment, index > 0))
+    .join('');
   const call = new RegExp(
-    '(?<![.\\w$])' + receiverPath + '\\s*' + SPELLING + '\\s*\\.\\s*([A-Za-z_$][\\w$]*)\\s*\\(',
+    '(?<![.\\w$])' + receiverPath + '\\s*' + spellingOf(member, true) + '\\s*' + SPELLED_NAME + '\\s*\\(',
     'g',
   );
   // A read name counts as a read ONLY while it is still a method OF THE RECEIVER
@@ -1816,26 +1855,25 @@ function memberRouteMutationArguments(source, receiver, member) {
     // The shared writer stops at a bare \`=\`; these rebindings sit outside it. The
     // operator prefix belongs INSIDE the group so the \`(?!=)\` guard can still see
     // the character after the assignment and reject \`==\` / \`===\`.
-    const QUOTED = "\\s*(?:'([^']+)'|\"([^\"]+)\"|\\x60([^\\x60]+)\\x60)\\s*";
-    const SPELLED_NAME = '(?:\\.\\s*([A-Za-z_$][\\w$]*)|\\?\\.\\s*([A-Za-z_$][\\w$]*)|\\[\\s*' + QUOTED + '\\])';
     const rebinding = new RegExp(
-      '(?<![.\\w$])' + receiverPath + '\\s*' + SPELLING + '\\s*' + SPELLED_NAME
+      '(?<![.\\w$])' + receiverPath + '\\s*' + spellingOf(member, true) + '\\s*' + SPELLED_NAME
         + '\\s*(?:\\?\\?|\\|\\||&&|[-+*%&|^])?=(?!=)',
       'g',
     );
     for (let a = rebinding.exec(source); a !== null; a = rebinding.exec(source)) {
-      shadowed.add(a[1] ?? a[2] ?? a[3] ?? a[4] ?? a[5]);
+      shadowed.add(calleeOf(a.groups));
     }
     const viaCall = new RegExp(
-      'Object\\s*\\.\\s*(?:assign|defineProperty)\\s*\\(\\s*' + receiverPath + '\\s*' + SPELLING, 'g',
+      'Object\\s*\\.\\s*(?:assign|defineProperty)\\s*\\(\\s*' + receiverPath
+        + '\\s*' + spellingOf(member, true), 'g',
     );
     if (viaCall.test(source)) for (const name of reads) shadowed.add(name);
   }
   const isMutation = (name) => !reads.has(name) || shadowed.has(name);
-  const nextCall = /\s*\.\s*([A-Za-z_$][\w$]*)\s*\(/y;
+  const nextCall = new RegExp('\\s*' + SPELLED_NAME + '\\s*\\(', 'y');
   const out = [];
   for (let m = call.exec(source); m !== null; m = call.exec(source)) {
-    let method = m[1];
+    let method = calleeOf(m.groups);
     let open = m.index + m[0].length - 1;
     for (;;) {
       // Local pairing is needed for the continuation's position. Scanning to
@@ -1857,7 +1895,7 @@ function memberRouteMutationArguments(source, receiver, member) {
       nextCall.lastIndex = close + 1;
       const next = nextCall.exec(source);
       if (next === null) break;
-      method = next[1];
+      method = calleeOf(next.groups);
       open = nextCall.lastIndex - 1;
     }
   }
