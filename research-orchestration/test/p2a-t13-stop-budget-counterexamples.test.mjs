@@ -390,8 +390,9 @@ function freshWorkDir(tag) {
   // SECURITY review P3: these fixtures used to be created and never removed, leaking
   // four directories into os.tmpdir() on every CI run. The contents are synthetic
   // ('b'.repeat(64), 'deadbeef', …) — no credential ever lands here — but a suite
-  // should not accumulate state across runs. Registered for removal in a `finally`
-  // below rather than here, so a test that throws still cleans up.
+  // should not accumulate state across runs. Collected here and removed by a cleanup
+  // `after` hook at the foot of this file, registered BEFORE the anti-hollow tripwire
+  // so that a failing run still cleans up.
   WORK_DIRS.push(dir);
   return dir;
 }
@@ -710,28 +711,40 @@ test('C1-C12 matrix gate — each counterexample runs a real production path, fa
   );
 });
 
-// Anti-hollow tripwire — registered OUTSIDE the gate callback. Replacing the whole
-// gate body with `return;` leaves GATE_VERDICTS empty here, so the file fails RED
-// instead of letting the gate silently turn green.
+// Resource hygiene (SECURITY review P3): remove every fixture work dir.
+//
+// ORDER IS LOAD-BEARING. node:test runs top-level `after` hooks in registration
+// order and SKIPS the remaining hooks once one fails. A cleanup hook registered
+// after the tripwire would therefore never run on exactly the runs that matter:
+// a gate that throws leaves GATE_VERDICTS incomplete, the tripwire fails, and the
+// cleanup below would be skipped — leaking every fixture dir the run created. So
+// the cleanup is registered FIRST, while the tripwire stays last.
+after(() => {
+  for (const dir of WORK_DIRS) {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+  // Also fails when WORK_DIRS is empty. The tripwire alone would already catch a
+  // gate that never ran, but an always-true cleanup assertion is not a cleanup
+  // assertion, and this suite's whole point is that no assertion is decorative.
+  assert.ok(
+    WORK_DIRS.length > 0,
+    'fixtures must actually have created work dirs for cleanup to be meaningful',
+  );
+  assert.equal(
+    WORK_DIRS.filter((d) => fs.existsSync(d)).length,
+    0,
+    'no fixture work dir may survive the suite',
+  );
+});
+
+// Anti-hollow tripwire — registered OUTSIDE the gate callback, and LAST so that the
+// cleanup hook above has already run. Replacing the whole gate body with `return;`
+// leaves GATE_VERDICTS empty here, so the file fails RED instead of letting the gate
+// silently turn green.
 after(() => {
   assert.deepEqual(
     GATE_VERDICTS,
     GATE_EXPECTED_VERDICTS,
     'C1–C12 gate liveness: the gate callback body did not execute its counterexamples',
-  );
-});
-
-// Resource hygiene (SECURITY review P3): remove every fixture work dir. Runs in the
-// same hook as the tripwire, and each removal is independent so one failure cannot
-// strand the rest. `force` keeps a partially-written fixture from blocking cleanup —
-// these are throwaway synthetic dirs, never anything a real run depends on.
-after(() => {
-  for (const dir of WORK_DIRS) {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
-  assert.equal(
-    WORK_DIRS.filter((d) => fs.existsSync(d)).length,
-    0,
-    'no fixture work dir may survive the suite',
   );
 });
