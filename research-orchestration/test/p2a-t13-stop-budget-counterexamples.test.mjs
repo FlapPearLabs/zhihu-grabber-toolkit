@@ -381,8 +381,19 @@ function lifeFreshState() {
   };
 }
 
+// Every work dir handed to a fixture, removed in the `after` hook at the foot of
+// this file. Populated by freshWorkDir(); declared before it so the push is hoisted.
+const WORK_DIRS = [];
+
 function freshWorkDir(tag) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), `p2a-t13-${tag}-`));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `p2a-t13-${tag}-`));
+  // SECURITY review P3: these fixtures used to be created and never removed, leaking
+  // four directories into os.tmpdir() on every CI run. The contents are synthetic
+  // ('b'.repeat(64), 'deadbeef', …) — no credential ever lands here — but a suite
+  // should not accumulate state across runs. Registered for removal in a `finally`
+  // below rather than here, so a test that throws still cleans up.
+  WORK_DIRS.push(dir);
+  return dir;
 }
 
 // ---- liveness tripwire state ----------------------------------------------
@@ -707,5 +718,20 @@ after(() => {
     GATE_VERDICTS,
     GATE_EXPECTED_VERDICTS,
     'C1–C12 gate liveness: the gate callback body did not execute its counterexamples',
+  );
+});
+
+// Resource hygiene (SECURITY review P3): remove every fixture work dir. Runs in the
+// same hook as the tripwire, and each removal is independent so one failure cannot
+// strand the rest. `force` keeps a partially-written fixture from blocking cleanup —
+// these are throwaway synthetic dirs, never anything a real run depends on.
+after(() => {
+  for (const dir of WORK_DIRS) {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+  assert.equal(
+    WORK_DIRS.filter((d) => fs.existsSync(d)).length,
+    0,
+    'no fixture work dir may survive the suite',
   );
 });
