@@ -18,9 +18,10 @@
  *   3. A single runnable C1–C12 matrix gate. Each of the twelve counterexamples
  *      drives a REAL production guard and asserts, inline, the verdict that guard
  *      must return. Most are fail-closed (a violating input must be REFUSED), but
- *      not all: C4 and C5 are replay/TEAL and assert that a crash on the correct
- *      side of the commit point yields REUSE, and a safe single re-run
- *      respectively. The direction each case demands is stated in its own comment;
+ *      not all: C4 replays a durably COMMITTED action and must be REUSED (no paid
+ *      retrieval again; its fixture is a clean commit, not a crash), and C5 covers
+ *      the crash windows either side of the commit point, which must yield exactly
+ *      one safe re-run. The direction each case demands is stated in its own comment;
  *      do not read "matrix gate" as "twelve refusals". There is no try/catch and no
  *      "count the cases" substitute. A separate `after` hook — registered OUTSIDE
  *      the gate callback — re-asserts the ordered list of verdicts the gate
