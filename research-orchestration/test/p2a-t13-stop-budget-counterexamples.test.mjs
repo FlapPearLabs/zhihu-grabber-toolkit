@@ -2,7 +2,7 @@
 /**
  * research-orchestration/test/p2a-t13-stop-budget-counterexamples.test.mjs
  *
- * P2A-T13 (#131) — the ONLY_MISSING_COUNTEREXAMPLES closure for the frozen
+ * P2A-T13 (#125) — the ONLY_MISSING_COUNTEREXAMPLES closure for the frozen
  * authorization surface. TEST / EVIDENCE only: this file adds three assertions and
  * touches no production code.
  *
@@ -16,8 +16,12 @@
  *      sentence; retrieval-round-controller.test.mjs:94 compares the export with
  *      itself, i.e. a same-source self-comparison that survives a text edit).
  *   3. A single runnable C1–C12 matrix gate. Each of the twelve counterexamples
- *      drives a REAL production guard with a violating input and asserts, inline
- *      and fail-closed, that the guard refuses it. There is no try/catch and no
+ *      drives a REAL production guard and asserts, inline, the verdict that guard
+ *      must return. Most are fail-closed (a violating input must be REFUSED), but
+ *      not all: C4 and C5 are replay/TEAL and assert that a crash on the correct
+ *      side of the commit point yields REUSE, and a safe single re-run
+ *      respectively. The direction each case demands is stated in its own comment;
+ *      do not read "matrix gate" as "twelve refusals". There is no try/catch and no
  *      "count the cases" substitute. A separate `after` hook — registered OUTSIDE
  *      the gate callback — re-asserts the ordered list of verdicts the gate
  *      OBSERVED from those real calls; this is the anti-hollow liveness tripwire
@@ -583,6 +587,11 @@ test('C1-C12 matrix gate — each counterexample runs a real production path, fa
     });
     assert.equal(result.decision, DECISION_BUDGET_STOP);
     assert.equal(result.stopReason, 'query_budget_exhausted');
+    // The load-bearing C9 judgement is the decision/stopReason pair asserted above.
+    // This third check is a loose lower bound, NOT a pin: a drift that still lands
+    // >= 10 (e.g. 10 -> 11) would pass. It is here only to show the denominator
+    // actually grew past the planned-only count, so do not read it as an exact
+    // accounting freeze.
     assert.equal(result.attemptsBudgetCount >= 10, true);
     recordGateVerdict('C9', `${result.decision}|${result.stopReason}`);
   }
