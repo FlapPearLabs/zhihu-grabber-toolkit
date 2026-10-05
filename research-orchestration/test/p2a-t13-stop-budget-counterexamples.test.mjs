@@ -34,6 +34,12 @@
  *      created" guard, since a neutered gate creates none. Either way the file
  *      turns RED instead of silently green.
  *
+ *      The gate now carries FOURTEEN ordered verdicts: C11b/C11c/C11d were added
+ *      after review proved the first attempt at this gate covered the H-5
+ *      manufacture direction only halfway. Read the "C11*" cluster as one
+ *      counterexample seen from four sides — block, manufacture-by-executed,
+ *      manufacture-by-failed, and the denominator that must NOT be substituted.
+ *
  * ---------------------------------------------------------------------------
  * PROBED API SHAPE (established by reading the real modules — not assumed):
  *
@@ -63,7 +69,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { createInitialCoverageState } from '../lib/coverage-state.mjs';
+import { createInitialCoverageState, updateRetrievalCoverage, OWNER_T06_RETRIEVAL } from '../lib/coverage-state.mjs';
 import {
   DECISION_BUDGET_STOP,
   DECISION_CONTINUE,
@@ -248,9 +254,9 @@ test('SATURATION_SEMANTICS_DISCLAIMER — frozen literal pinned key-by-key, in o
 // single wrong verdict throws straight out of the gate test.
 //
 // The required direction is per-case, not uniformly "refuse": C4 must REUSE a
-// committed action, C5 must permit exactly one re-run, C11b must yield CONTINUE,
-// and C11 must still reach SATURATED. Read "matrix gate" as "twelve ordered
-// verdicts", not "twelve refusals".
+// committed action, C5 must permit exactly one re-run, C11 must still reach
+// SATURATED, C11d must reach SATURATED, and C11b/C11c must yield CONTINUE. Read
+// "matrix gate" as "fourteen ordered verdicts", not "twelve refusals".
 //
 // ANTI-HOLLOW TRIPWIRE. Every counterexample records the verdict it OBSERVED from
 // the real production call into the module-level GATE_VERDICTS array. The `after`
@@ -424,6 +430,8 @@ const GATE_EXPECTED_VERDICTS = [
   'C9:BUDGET_STOP|query_budget_exhausted',
   'C10:UNRESOLVED|PROVIDER_FAILURE',
   'C11:SATURATED',
+  'C11c:CONTINUE',
+  'C11d:SATURATED',
   'C12:RERUN|IDENTITY_REPLAY_CONFLICT',
 ];
 
@@ -729,6 +737,157 @@ test('C1-C12 matrix gate — each counterexample runs a real production path, fa
     assert.equal(result.decision, DECISION_CONTINUE);
   }
 
+  // ---- C11c — `targeted.failed` must not manufacture saturation either -----
+  // ref: docs/planning/P2_ARI_108_TICKET_DECOMPOSITION_V1.md:673 ("targeted 既不能
+  //      制造也不能阻止 SATURATED"), :690-691 (FAIL_CLOSED merge gate), :851 (H-5).
+  //
+  // THE GAP C11b LEAVES OPEN. C11b fixes `targetedAttempts: { executed: 3, failed: 0 }`,
+  // so it only ever proves the `executed` half of the targeted channel cannot inflate
+  // the saturation denominator. The `failed` half is a SEPARATE input to the same
+  // budget denominator (`attemptsBudgetCount = cumulativeAttemptsCount + executed + failed`,
+  // lib/retrieval-round-controller.mjs:277) and was never exercised. Proven escapable by
+  // mutation: swapping the precondition's denominator to
+  // `plannedCoverageCount + resolvedTargetedAttempts.failed` leaves this suite green.
+  //
+  // The fixture is the NARROWEST possible version of C11b — identical geometry, only
+  // the targeted split moved to the failed side:
+  //   plannedRoutes.length    = 4  -> the saturation precondition
+  //   executedRoutesThisRound = 1  -> plannedCoverageCount = 1  (1 < 4)
+  //   targetedAttempts        = { executed: 0, failed: 3 } -> attemptsBudgetCount = 4 (>= 4)
+  //   attemptsBudgetCount (4) < maxQueryBudget (10)     -> budget guard silent
+  //   roundIndex 1 >= minRoundsBeforeSaturation 1, and 1 < maxRetrievalRounds 3
+  //   newCandidatesCount 0    -> the SATURATED branch is the branch under test
+  // A failed targeted attempt is not a planned route and earns no coverage, so the
+  // correct answer is CONTINUE — the same verdict C11b demands, reached through the
+  // other half of the same counterexample.
+  {
+    const state = createInitialCoverageState({ planHash: H4_PLAN_HASH });
+    state.retrieval.plannedRoutes = Array.from({ length: 4 }, () => ({
+      providerId: 'official',
+      capability: 'search',
+    }));
+    const result = evaluateRetrievalRound({
+      coverageState: state,
+      roundIndex: 1,
+      newCandidatesCount: 0,
+      totalCandidatesCount: 2,
+      executedRoutesThisRound: [H4_ROUTE_A],
+      providerFailuresThisRound: [],
+      targetedAttempts: { executed: 0, failed: 3 },
+    });
+    // Premise first: if either denominator drifts, the case silently stops testing
+    // anything, so both are pinned before the verdict is claimed.
+    assert.equal(result.plannedCoverageCount, 1, 'fixture premise: only the planned route ran, so no coverage was earned');
+    assert.equal(result.attemptsBudgetCount, 4, 'fixture premise: the FAILED targeted attempts alone push the budget denominator to the precondition');
+    assert.equal(result.targetedAttempts.failed, 3, 'fixture premise: the failed half of the targeted channel is what is under test');
+    assert.equal(
+      result.attemptsBudgetCount >= state.retrieval.plannedRoutes.length,
+      true,
+      'fixture premise: the targeted denominator is what WOULD satisfy the precondition'
+    );
+    // The load-bearing judgement: a FAILED targeted attempt must not be laundered into
+    // planned coverage and used to claim saturation.
+    assert.notEqual(result.decision, DECISION_SATURATED, 'failed targeted attempts must not manufacture a saturation the plan routes did not earn');
+    assert.notEqual(result.stopReason, 'zero_new_candidates');
+    assert.equal(result.decision, DECISION_CONTINUE);
+    recordGateVerdict('C11c', result.decision);
+  }
+
+  // ---- C11d — historical provider failures count as coverage; the executed-
+  //      routes-only count must not stand in for plannedCoverageCount ----------
+  // ref: lib/retrieval-round-controller.mjs:270-277 (the two counters),
+  //      :350 (the precondition), :288-306 + :348 (a THIS-round failure bars
+  //      saturation, a HISTORICAL one does not).
+  //
+  // THE SECOND GAP. The precondition at :350 compares `plannedCoverageCount`, which at
+  // :271 is VERBATIM `cumulativeAttemptsCount` — existing executed routes PLUS existing
+  // PROVIDER FAILURES plus this round's. A historical provider failure is an attempt the
+  // plan made and paid for, so it counts toward coverage; this round's failure is the
+  // one that bars saturation (`providerFailuresThisRound.length === 0`). The response
+  // object also carries `cumulativeExecutedRoutesCount` (:270), which counts executed
+  // routes ONLY. Substituting it for `plannedCoverageCount` in the precondition is
+  // therefore a plausible-looking edit that silently drops historical provider failures
+  // out of the saturation denominator — proven escapable: it leaves T13, T05, T06, T07,
+  // T08, T09 and retrieval-round-controller.test.mjs all green, because no existing
+  // fixture ever puts a provider failure in the coverage state's HISTORY.
+  //
+  // Fixture: 3 planned routes; 2 historical provider failures + 1 route executed THIS
+  // round, none failed this round:
+  //   plannedCoverageCount          = 2 (history failures) + 1 (this route) = 3 >= 3 ✓
+  //   cumulativeExecutedRoutesCount = 0 (history routes) + 1 (this route)     = 1 <  3 ✗
+  //   attemptsBudgetCount           = 3 < maxQueryBudget 10                   -> budget silent
+  //   roundIndex 1 >= minRoundsBeforeSaturation 1, and 1 < maxRetrievalRounds 3
+  //   newCandidatesCount 0 -> the SATURATED branch is the branch under test
+  // The plan HAS earned saturation. If the executed-routes-only count were substituted
+  // the round would fall through to CONTINUE — a false negative that keeps burning
+  // rounds and budget on a query that has, by the frozen semantics, diminished.
+  {
+    const baseState = createInitialCoverageState({ planHash: H4_PLAN_HASH });
+    baseState.retrieval.plannedRoutes = Array.from({ length: 3 }, () => ({
+      providerId: 'official',
+      capability: 'search',
+    }));
+    // Put the failures in the coverage state's HISTORY through the real, authorized
+    // write hook — not by poking the object literal. Owner T06 is the ledger's own
+    // caller token, so this is an ordinary in-contract state transition, and the
+    // returned state is re-validated by the hook.
+    const state = updateRetrievalCoverage(
+      baseState,
+      {
+        executedRoutes: [],
+        providerFailures: [
+          { code: 'provider_timeout', class: 'transient' },
+          { code: 'rate_limited', class: 'transient' },
+        ],
+        fusedCandidateCount: 0,
+      },
+      { caller: OWNER_T06_RETRIEVAL }
+    );
+
+    const result = evaluateRetrievalRound({
+      coverageState: state,
+      roundIndex: 1,
+      newCandidatesCount: 0,
+      totalCandidatesCount: 2,
+      executedRoutesThisRound: [H4_ROUTE_A],
+      providerFailuresThisRound: [],
+      targetedAttempts: { executed: 0, failed: 0 },
+    });
+    // Premise pins. `>=` deliberately, not `===`: what matters is that the two
+    // counters DISAGREE about this fixture, so neither can be silently swapped for the
+    // other without one of these failing.
+    assert.equal(
+      state.retrieval.providerFailures.length,
+      2,
+      'fixture premise: the coverage state really carries historical provider failures'
+    );
+    assert.equal(
+      result.plannedCoverageCount,
+      3,
+      'fixture premise: historical provider failures count toward planned coverage'
+    );
+    assert.equal(
+      result.cumulativeExecutedRoutesCount,
+      1,
+      'fixture premise: the executed-routes-only count is strictly smaller, so substituting it would change the verdict'
+    );
+    assert.equal(
+      result.plannedCoverageCount >= state.retrieval.plannedRoutes.length,
+      true,
+      'fixture premise: the plan HAS earned the saturation precondition'
+    );
+    assert.equal(
+      result.attemptsBudgetCount < 10,
+      true,
+      'fixture premise: the budget guard stays silent, so saturation is the branch reached'
+    );
+    // The load-bearing judgement: coverage earned by a paid, failed plan attempt still
+    // counts, so the plan-earned saturation must NOT be blocked by the narrower counter.
+    assert.equal(result.decision, DECISION_SATURATED, 'historical provider failures must not shrink the saturation denominator');
+    assert.equal(result.stopReason, 'zero_new_candidates');
+    recordGateVerdict('C11d', result.decision);
+  }
+
   // ---- C12 — identity replay conflict re-runs, never falsely reuses ------
   // ref: test/p2a-t06-action-lifecycle-durable-commit.test.mjs:688 (root guard),
   //      test/p2a-t05-bounded-authorization-action-identity.test.mjs:557
@@ -772,7 +931,7 @@ test('C1-C12 matrix gate — each counterexample runs a real production path, fa
     recordGateVerdict('C12', `${decision.decision}|${decision.reason}`);
   }
 
-  // Inline completeness: the gate must have observed all twelve verdicts.
+  // Inline completeness: the gate must have observed every verdict, in order.
   assert.deepEqual(
     GATE_VERDICTS,
     GATE_EXPECTED_VERDICTS,
