@@ -262,7 +262,7 @@ test('SATURATION_SEMANTICS_DISCLAIMER — frozen literal pinned key-by-key, in o
 // The required direction is per-case, not uniformly "refuse": C4 must REUSE a
 // committed action, C5 must permit exactly one re-run, C11 must still reach
 // SATURATED, C11d must reach SATURATED, and C11b/C11c must yield CONTINUE. Read
-// "matrix gate" as "fifteen ordered verdicts", not "twelve refusals".
+// "matrix gate" as "fifteen ordered verdicts", not "fifteen refusals".
 //
 // ANTI-HOLLOW TRIPWIRE. Every counterexample records the verdict it OBSERVED from
 // the real production call into the module-level GATE_VERDICTS array. The `after`
@@ -692,13 +692,21 @@ test('C1-C12 matrix gate — each counterexample runs a real production path, fa
   // ref: docs/planning/P2_ARI_108_TICKET_DECOMPOSITION_V1.md:673 ("targeted 既不能
   //      制造也不能阻止 SATURATED"), :690-691 (FAIL_CLOSED merge gate), :851 (H-5).
   //
-  // C11 above pins only the BLOCKING direction. This is the converse, and it is
-  // the direction that was actually unguarded: the ticket lists "targeted 制造
-  // saturation" as a merge-gate failure condition, but no suite in the repo
-  // detects it. Verified by mutation — swapping the saturation precondition's
-  // denominator at lib/retrieval-round-controller.mjs:350 from
-  // `plannedCoverageCount` to `attemptsBudgetCount` leaves all 18 relevant suites
-  // green while flipping this decision.
+  // C11 above pins only the BLOCKING direction. This is the converse.
+  //
+  // HISTORICAL, NOT CURRENT: when this case was first added, the manufacture
+  // direction was genuinely unguarded — swapping the saturation precondition's
+  // denominator at lib/retrieval-round-controller.mjs:350 from `plannedCoverageCount`
+  // to `attemptsBudgetCount` left every suite in the repo green. That is the gap this
+  // case closed, and it is why the ticket's merge-gate condition
+  // (P2_ARI_108_TICKET_DECOMPOSITION_V1.md:690-691) is now satisfied.
+  //
+  // It is NO LONGER true that "no suite detects it": C11c below now catches the same
+  // denominator substitution through the failed half of the targeted channel, so this
+  // direction is doubly pinned. Removing this block alone still turns the file RED
+  // (the tripwire sees the missing 'C11b:CONTINUE' record), but the substantive
+  // regression C11b was written for would also be caught by C11c. Read the two as a
+  // pair, not as one load-bearing case with an inert duplicate.
   //
   // The fixture is chosen so the two denominators DISAGREE and the earlier guards
   // stay out of the way (defaults: maxQueryBudget 10, maxRetrievalRounds 3,
