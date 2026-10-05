@@ -15,14 +15,14 @@
  *      SATURATION_SEMANTICS_DISCLAIMER (p2a-t07:274 only greps the symbol + half a
  *      sentence; retrieval-round-controller.test.mjs:94 compares the export with
  *      itself, i.e. a same-source self-comparison that survives a text edit).
- *   3. A single runnable C1–C12 matrix gate. Each of the twelve counterexamples
+ *   3. A single runnable C1–C12 matrix gate. Each of the fifteen counterexamples
  *      drives a REAL production guard and asserts, inline, the verdict that guard
  *      must return. Most are fail-closed (a violating input must be REFUSED), but
  *      not all: C4 replays a durably COMMITTED action and must be REUSED (no paid
  *      retrieval again; its fixture is a clean commit, not a crash), and C5 covers
  *      the crash windows either side of the commit point, which must yield exactly
  *      one safe re-run. The direction each case demands is stated in its own comment;
- *      do not read "matrix gate" as "twelve refusals". There is no try/catch and no
+ *      do not read "matrix gate" as "fifteen refusals". There is no try/catch and no
  *      "count the cases" substitute. A separate `after` hook — registered OUTSIDE
  *      the gate callback and LAST — re-asserts the ordered list of verdicts the
  *      gate OBSERVED from those real calls. Two hooks guard liveness, and because
@@ -37,8 +37,12 @@
  *      The gate now carries FIFTEEN ordered verdicts: C11b/C11c/C11d were added
  *      after review proved the first attempt at this gate covered the H-5
  *      manufacture direction only halfway. Every case block in the gate — C11b
- *      included — records its observed verdict, so none of them can be excised
- *      without the tripwire noticing. Read the "C11*" cluster as one counterexample
+ *      included — records its observed verdict, so removing a record, reordering
+ *      the expected list, or excising a block alone each turns the file RED.
+ *      HONEST LIMIT: the expected list lives in this same file, so deleting a case
+ *      block AND its expected entry together is an internally consistent edit the
+ *      tripwire cannot see — that residual gap is exactly what review of this
+ *      file's diff is for. Read the "C11*" cluster as one counterexample
  *      seen from four sides — block, manufacture-by-executed, manufacture-by-failed,
  *      and the denominator that must NOT be substituted.
  *
@@ -806,10 +810,15 @@ test('C1-C12 matrix gate — each counterexample runs a real production path, fa
   // provider failure already recorded in the coverage state counts toward
   // plannedCoverageCount. It does NOT pin the sibling clause in the same precondition,
   // `providerFailuresThisRound.length === 0` (a failure THIS round bars saturation) —
-  // this fixture passes an empty array, so that branch is never entered here. Deleting
-  // that clause escapes T13, retrieval-round-controller, p2a-t07 and p2a-t09 alike and is
-  // caught only by coverage-final-integration.test.mjs. That clause is owned there; do not
-  // read this case as covering it.
+  // this fixture passes an empty array, so that branch is never entered here.
+  //
+  // OWNERSHIP OF THAT SIBLING CLAUSE: NOT ESTABLISHED. Do not assume it is covered
+  // elsewhere. An earlier revision of this comment named a suite that owns it; that
+  // claim was refuted by a round-3 reviewer's mutation sweep (deleting the clause left
+  // every suite they ran green) and could not be independently re-verified in the
+  // parent session before this file was finalized. Until a suite is mechanically shown
+  // to catch that deletion, treat the clause as UNOWNED — the honest status, and the
+  // reason this paragraph exists instead of a citation.
   //
   // THE GAP. The precondition at :350 compares `plannedCoverageCount`, which at :271 is
   // VERBATIM `cumulativeAttemptsCount` — existing executed routes PLUS existing
