@@ -24,10 +24,15 @@
  *      one safe re-run. The direction each case demands is stated in its own comment;
  *      do not read "matrix gate" as "twelve refusals". There is no try/catch and no
  *      "count the cases" substitute. A separate `after` hook — registered OUTSIDE
- *      the gate callback — re-asserts the ordered list of verdicts the gate
- *      OBSERVED from those real calls; this is the anti-hollow liveness tripwire
- *      that makes a body-neutered gate (e.g. replacing the whole gate callback
- *      with `return;`) turn the file RED instead of silently green.
+ *      the gate callback and LAST — re-asserts the ordered list of verdicts the
+ *      gate OBSERVED from those real calls. Two hooks guard liveness, and because
+ *      node:test skips later `after` hooks once one fails, they are registered in
+ *      this order on purpose: the fixture-cleanup hook FIRST, the verdict tripwire
+ *      LAST. A gate that throws partway is caught by the tripwire (verdicts
+ *      incomplete) with cleanup already done; a gate body replaced wholesale by
+ *      `return;` is caught by the cleanup hook's "fixtures must actually have been
+ *      created" guard, since a neutered gate creates none. Either way the file
+ *      turns RED instead of silently green.
  *
  * ---------------------------------------------------------------------------
  * PROBED API SHAPE (established by reading the real modules — not assumed):
@@ -61,6 +66,7 @@ import path from 'node:path';
 import { createInitialCoverageState } from '../lib/coverage-state.mjs';
 import {
   DECISION_BUDGET_STOP,
+  DECISION_CONTINUE,
   DECISION_SATURATED,
   SATURATION_SEMANTICS_DISCLAIMER,
   evaluateRetrievalRound,
@@ -238,8 +244,13 @@ test('SATURATION_SEMANTICS_DISCLAIMER — frozen literal pinned key-by-key, in o
 //
 // Each entry cites the existing suite + line that owns the counterexample and
 // drives ONE real production guard with a violating input, then asserts the
-// guard's ACTUAL refusal (fail-closed). Failures are NOT captured: a single wrong
-// verdict throws straight out of the gate test.
+// verdict that guard MUST return for that input. Failures are NOT captured: a
+// single wrong verdict throws straight out of the gate test.
+//
+// The required direction is per-case, not uniformly "refuse": C4 must REUSE a
+// committed action, C5 must permit exactly one re-run, C11b must yield CONTINUE,
+// and C11 must still reach SATURATED. Read "matrix gate" as "twelve ordered
+// verdicts", not "twelve refusals".
 //
 // ANTI-HOLLOW TRIPWIRE. Every counterexample records the verdict it OBSERVED from
 // the real production call into the module-level GATE_VERDICTS array. The `after`
@@ -662,17 +673,75 @@ test('C1-C12 matrix gate — each counterexample runs a real production path, fa
     recordGateVerdict('C11', withTargeted.decision);
   }
 
+  // ---- C11b — targeted attempts cannot MANUFACTURE a saturation ------------
+  // ref: docs/planning/P2_ARI_108_TICKET_DECOMPOSITION_V1.md:673 ("targeted 既不能
+  //      制造也不能阻止 SATURATED"), :690-691 (FAIL_CLOSED merge gate), :851 (H-5).
+  //
+  // C11 above pins only the BLOCKING direction. This is the converse, and it is
+  // the direction that was actually unguarded: the ticket lists "targeted 制造
+  // saturation" as a merge-gate failure condition, but no suite in the repo
+  // detects it. Verified by mutation — swapping the saturation precondition's
+  // denominator at lib/retrieval-round-controller.mjs:350 from
+  // `plannedCoverageCount` to `attemptsBudgetCount` leaves all 18 relevant suites
+  // green while flipping this decision.
+  //
+  // The fixture is chosen so the two denominators DISAGREE and the earlier guards
+  // stay out of the way (defaults: maxQueryBudget 10, maxRetrievalRounds 3,
+  // minRoundsBeforeSaturation 1):
+  //   plannedRoutes.length          = 4   -> the saturation precondition
+  //   executedRoutesThisRound       = 1   -> plannedCoverageCount  = 1  (1 < 4)
+  //   targetedAttempts              = 3   -> attemptsBudgetCount  = 4  (4 >= 4)
+  //   attemptsBudgetCount (4) < maxQueryBudget (10)  -> budget guard does not fire
+  //   roundIndex 1 >= minRoundsBeforeSaturation 1, and 1 < maxRetrievalRounds 3
+  //   newCandidatesCount 0 -> the SATURATED branch is the branch under test
+  // So with the correct denominator the run must NOT saturate; with the targeted
+  // denominator leaking in it would. Asserting the decision is therefore
+  // load-bearing against exactly that substitution.
+  {
+    const state = createInitialCoverageState({ planHash: H4_PLAN_HASH });
+    state.retrieval.plannedRoutes = Array.from({ length: 4 }, () => ({
+      providerId: 'official',
+      capability: 'search',
+    }));
+    const result = evaluateRetrievalRound({
+      coverageState: state,
+      roundIndex: 1,
+      newCandidatesCount: 0,
+      totalCandidatesCount: 2,
+      executedRoutesThisRound: [H4_ROUTE_A],
+      providerFailuresThisRound: [],
+      targetedAttempts: { executed: 3, failed: 0 },
+    });
+    // Document the fixture's premise before asserting on it: if either count
+    // drifts, the case silently stops testing anything, so pin both.
+    assert.equal(result.plannedCoverageCount, 1, 'fixture premise: only the planned route ran');
+    assert.equal(result.attemptsBudgetCount, 4, 'fixture premise: the targeted channel pushed the other denominator up');
+    assert.equal(
+      result.attemptsBudgetCount >= state.retrieval.plannedRoutes.length,
+      true,
+      'fixture premise: the targeted denominator is what WOULD satisfy the precondition'
+    );
+    assert.notEqual(result.decision, DECISION_SATURATED, 'targeted attempts must not manufacture a saturation the plan routes did not earn');
+    assert.notEqual(result.stopReason, 'zero_new_candidates');
+    // The honest outcome is that the round keeps going, not that it stops for a
+    // different reason. CONTINUE is the only decision that neither claims
+    // saturation nor silently consumes the remaining budget here.
+    assert.equal(result.decision, DECISION_CONTINUE);
+  }
+
   // ---- C12 — identity replay conflict re-runs, never falsely reuses ------
   // ref: test/p2a-t06-action-lifecycle-durable-commit.test.mjs:688 (root guard),
-  //      test/p2a-t05-bounded-authorization-action-identity.test.mjs:557,
-  //      test/p2a-t09-targeted-subphase-orchestration.test.mjs:1379
+  //      test/p2a-t05-bounded-authorization-action-identity.test.mjs:557
   //
   // HONEST SCOPE NOTE: this exercises the ROOT guard of decideTargetedReplay
   // (p2a-t06:688) — the persisted identity content is tampered WITHOUT recomputing
-  // the id, so the id→content binding mismatches and the guard forces RERUN. This
-  // is NOT the same code path as the p2a-t09:1379 subphase integration route, which
-  // reaches a replay conflict THROUGH the targeted-subphase orchestration; C12 does
-  // not claim to cover that integration path, only the root guard it depends on.
+  // the id, so the id→content binding mismatches and the guard forces RERUN. It
+  // does NOT cover the p2a-t09 targeted-subphase ORCHESTRATION route. An earlier
+  // draft of this comment cited p2a-t09:1379 as that route; that citation was
+  // removed because it was factually wrong — p2a-t09:1379 is "G6 — CASE 2 BYPASSES
+  // the E.6 dedupe gate" and the string REPLAY_CONFLICT does not appear anywhere in
+  // p2a-t09-targeted-subphase-orchestration.test.mjs. C12 claims the root guard it
+  // depends on, not that integration path.
   {
     const workDir = freshWorkDir('c12');
     commitTargetedAction({
@@ -723,9 +792,12 @@ after(() => {
   for (const dir of WORK_DIRS) {
     fs.rmSync(dir, { recursive: true, force: true });
   }
-  // Also fails when WORK_DIRS is empty. The tripwire alone would already catch a
-  // gate that never ran, but an always-true cleanup assertion is not a cleanup
-  // assertion, and this suite's whole point is that no assertion is decorative.
+  // Fails when WORK_DIRS is empty, which is what a gate body replaced by
+  // `return;` produces — so this hook, not the tripwire below, is what catches
+  // that particular neutering now that it runs FIRST. Without it the survivor
+  // check below would be vacuously true on an empty array and a neutered gate
+  // would look like a clean sweep. An always-true cleanup assertion is not a
+  // cleanup assertion, and this suite's whole point is that none is decorative.
   assert.ok(
     WORK_DIRS.length > 0,
     'fixtures must actually have created work dirs for cleanup to be meaningful',
@@ -738,9 +810,10 @@ after(() => {
 });
 
 // Anti-hollow tripwire — registered OUTSIDE the gate callback, and LAST so that the
-// cleanup hook above has already run. Replacing the whole gate body with `return;`
-// leaves GATE_VERDICTS empty here, so the file fails RED instead of letting the gate
-// silently turn green.
+// cleanup hook above has already run. It catches a gate that started but did not
+// finish: a throw partway through leaves GATE_VERDICTS incomplete here. The
+// wholesale `return;` neutering is caught by the cleanup hook's WORK_DIRS guard
+// instead, since that mutation also removes every fixture creation.
 after(() => {
   assert.deepEqual(
     GATE_VERDICTS,
