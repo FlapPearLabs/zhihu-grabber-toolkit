@@ -34,11 +34,13 @@
  *      created" guard, since a neutered gate creates none. Either way the file
  *      turns RED instead of silently green.
  *
- *      The gate now carries FOURTEEN ordered verdicts: C11b/C11c/C11d were added
+ *      The gate now carries FIFTEEN ordered verdicts: C11b/C11c/C11d were added
  *      after review proved the first attempt at this gate covered the H-5
- *      manufacture direction only halfway. Read the "C11*" cluster as one
- *      counterexample seen from four sides — block, manufacture-by-executed,
- *      manufacture-by-failed, and the denominator that must NOT be substituted.
+ *      manufacture direction only halfway. Every case block in the gate — C11b
+ *      included — records its observed verdict, so none of them can be excised
+ *      without the tripwire noticing. Read the "C11*" cluster as one counterexample
+ *      seen from four sides — block, manufacture-by-executed, manufacture-by-failed,
+ *      and the denominator that must NOT be substituted.
  *
  * ---------------------------------------------------------------------------
  * PROBED API SHAPE (established by reading the real modules — not assumed):
@@ -256,7 +258,7 @@ test('SATURATION_SEMANTICS_DISCLAIMER — frozen literal pinned key-by-key, in o
 // The required direction is per-case, not uniformly "refuse": C4 must REUSE a
 // committed action, C5 must permit exactly one re-run, C11 must still reach
 // SATURATED, C11d must reach SATURATED, and C11b/C11c must yield CONTINUE. Read
-// "matrix gate" as "fourteen ordered verdicts", not "twelve refusals".
+// "matrix gate" as "fifteen ordered verdicts", not "twelve refusals".
 //
 // ANTI-HOLLOW TRIPWIRE. Every counterexample records the verdict it OBSERVED from
 // the real production call into the module-level GATE_VERDICTS array. The `after`
@@ -430,6 +432,7 @@ const GATE_EXPECTED_VERDICTS = [
   'C9:BUDGET_STOP|query_budget_exhausted',
   'C10:UNRESOLVED|PROVIDER_FAILURE',
   'C11:SATURATED',
+  'C11b:CONTINUE',
   'C11c:CONTINUE',
   'C11d:SATURATED',
   'C12:RERUN|IDENTITY_REPLAY_CONFLICT',
@@ -735,6 +738,7 @@ test('C1-C12 matrix gate — each counterexample runs a real production path, fa
     // different reason. CONTINUE is the only decision that neither claims
     // saturation nor silently consumes the remaining budget here.
     assert.equal(result.decision, DECISION_CONTINUE);
+    recordGateVerdict('C11b', result.decision);
   }
 
   // ---- C11c — `targeted.failed` must not manufacture saturation either -----
@@ -796,20 +800,35 @@ test('C1-C12 matrix gate — each counterexample runs a real production path, fa
   // ---- C11d — historical provider failures count as coverage; the executed-
   //      routes-only count must not stand in for plannedCoverageCount ----------
   // ref: lib/retrieval-round-controller.mjs:270-277 (the two counters),
-  //      :350 (the precondition), :288-306 + :348 (a THIS-round failure bars
-  //      saturation, a HISTORICAL one does not).
+  //      :350 (the precondition), :288-306 + :348 (the THIS-round failure guard).
   //
-  // THE SECOND GAP. The precondition at :350 compares `plannedCoverageCount`, which at
-  // :271 is VERBATIM `cumulativeAttemptsCount` — existing executed routes PLUS existing
+  // SCOPE — WHAT THIS CASE DOES AND DOES NOT CLAIM. It pins exactly ONE thing: that a
+  // provider failure already recorded in the coverage state counts toward
+  // plannedCoverageCount. It does NOT pin the sibling clause in the same precondition,
+  // `providerFailuresThisRound.length === 0` (a failure THIS round bars saturation) —
+  // this fixture passes an empty array, so that branch is never entered here. Deleting
+  // that clause escapes T13, retrieval-round-controller, p2a-t07 and p2a-t09 alike and is
+  // caught only by coverage-final-integration.test.mjs. That clause is owned there; do not
+  // read this case as covering it.
+  //
+  // THE GAP. The precondition at :350 compares `plannedCoverageCount`, which at :271 is
+  // VERBATIM `cumulativeAttemptsCount` — existing executed routes PLUS existing
   // PROVIDER FAILURES plus this round's. A historical provider failure is an attempt the
-  // plan made and paid for, so it counts toward coverage; this round's failure is the
-  // one that bars saturation (`providerFailuresThisRound.length === 0`). The response
-  // object also carries `cumulativeExecutedRoutesCount` (:270), which counts executed
-  // routes ONLY. Substituting it for `plannedCoverageCount` in the precondition is
-  // therefore a plausible-looking edit that silently drops historical provider failures
-  // out of the saturation denominator — proven escapable: it leaves T13, T05, T06, T07,
-  // T08, T09 and retrieval-round-controller.test.mjs all green, because no existing
-  // fixture ever puts a provider failure in the coverage state's HISTORY.
+  // plan made and paid for, so it counts toward coverage. The response object also carries
+  // `cumulativeExecutedRoutesCount` (:270), which counts executed routes ONLY.
+  // Substituting it for `plannedCoverageCount` in the precondition is therefore a
+  // plausible-looking edit that silently drops historical provider failures out of the
+  // saturation denominator. Proven escapable: with this case absent, the mutation
+  // `cumulativeExecutedRoutesCount >= totalPlannedRoutes` leaves T13, T05, T06, T07, T08,
+  // T09 and retrieval-round-controller.test.mjs all green, because no other fixture ever
+  // puts a provider failure in the coverage state's HISTORY.
+  //
+  // The property is reachable on the LIVE path, not only synthetically: a mixed round
+  // (some routes succeed, some fail) records executed routes alongside failures, so the two
+  // counters diverge in real runs. This fixture narrows it further — 0 historical executed
+  // routes — purely to maximise the disagreement between the two counters, which is what
+  // makes the substitution observable. The narrowing is why the premise assertions below
+  // are pinned rather than assumed.
   //
   // Fixture: 3 planned routes; 2 historical provider failures + 1 route executed THIS
   // round, none failed this round:
@@ -828,9 +847,12 @@ test('C1-C12 matrix gate — each counterexample runs a real production path, fa
       capability: 'search',
     }));
     // Put the failures in the coverage state's HISTORY through the real, authorized
-    // write hook — not by poking the object literal. Owner T06 is the ledger's own
-    // caller token, so this is an ordinary in-contract state transition, and the
-    // returned state is re-validated by the hook.
+    // write hook — not by poking the object literal. OWNER_T06_RETRIEVAL is an
+    // authorized caller for this hook (lib/coverage-state.mjs:613), and the hook
+    // re-validates the returned state, so this is an in-contract transition.
+    // Note the production writer actually uses OWNER_RETRIEVAL_CONTROLLER, not this
+    // token, and it writes executedRoutes and providerFailures together — this fixture
+    // deliberately narrows to failures-only, which is why the premise pins below matter.
     const state = updateRetrievalCoverage(
       baseState,
       {
