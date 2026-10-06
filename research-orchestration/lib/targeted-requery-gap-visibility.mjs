@@ -77,14 +77,18 @@
  * silent disappearance this ticket forbids; inventing a link would be a lie.
  *
  * PATH SAFETY: every emitted string is checked against the shared boundary-safety
- * helper before it leaves this module, so a credential shape or a multi-component
- * machine path cannot reach the final artifact even if a caller supplies one.
- * `resultArtifact` gets a stricter, locally-owned check (work-relative, no drive
- * letter, no `..`). HONEST SCOPE OF THAT GUARANTEE: the shared helper's private-path
- * rule needs two or more path components, so a single-component root such as `/tmp`
- * or `/etc` is NOT rejected by it. Claiming otherwise would be an overclaim — the
- * guarantee is "no credential and no multi-component private path", not "no absolute
- * string of any shape".
+ * helper before it leaves this module, so a multi-component machine path cannot reach
+ * the final artifact even if a caller supplies one. `resultArtifact` gets a stricter,
+ * locally-owned check (work-relative, no drive letter, no `..`). HONEST SCOPE OF THAT
+ * GUARANTEE — the shared helper is narrower than "nothing bad gets through", and this
+ * module does not widen it:
+ *   · its private-path rule needs two or more path components, so a single-component
+ *     root such as `/tmp` or `/etc` is NOT rejected by it;
+ *   · its credential rule is ASSIGNMENT-shaped (`api_key: …`, `token= …`), so a bare
+ *     provider key PREFIX (`sk-ant-…`, `ghp_…`, `AKIA…`) is NOT rejected.
+ * Both are pre-existing properties of the shared policy for the `query` field, consumed
+ * here unchanged. The suite pins both limits so they are visible assumptions rather than
+ * implied guarantees.
  */
 
 import { isBoundarySafeString } from './rrf.mjs';
@@ -152,6 +156,9 @@ export const TARGETED_GAP_ENTRY_KEYS = Object.freeze([
   'resolutionPredicateRef',
   'status',
 ]);
+
+/** The exact key set of one provider-scope entry inside a lineage link. */
+export const TARGETED_GAP_SCOPE_ENTRY_KEYS = Object.freeze(['capability', 'providerId']);
 
 /** The exact key set of one lineage entry. */
 export const TARGETED_GAP_LINEAGE_KEYS = Object.freeze([
@@ -440,9 +447,9 @@ export function buildTargetedResearchGapBlock({ resolutionArtifact, actionsArtif
   }
 
   // `lineageComplete` means "every recorded action id resolved AND at least one link
-  // exists when the gap was ever authorized". A gap that was NEVER authorized has no
-  // action to link, and calling that complete would overstate what is known — the
-  // honest value is false, with the reason carried by an empty `lineage`.
+  // exists". A gap that was never authorized records no action id, so it has no chain
+  // to be complete about; the empty `lineage` is what distinguishes that case, and the
+  // honest value there is false rather than a vacuous true.
   const block = {
     schema: TARGETED_GAP_VISIBILITY_SCHEMA,
     gapCount: emitted.length,
@@ -513,6 +520,51 @@ function assertWellFormedBlock(block) {
     if (!Array.isArray(gap.lineage) || !Array.isArray(gap.missingActionIds)) {
       throw visibilityError(`block gap ${String(gap.gapId)} must carry lineage and missingActionIds arrays`);
     }
+
+    // ---- descend into the gap's CONTENTS, not just its skeleton --------------
+    // Round-2 review proved the skeleton-only version let nine hand-built blocks
+    // through, including an absolute `resultArtifact`, a credential-shaped `query`
+    // and an extra smuggled key inside a lineage entry. The builder refuses all of
+    // those, so the only way they reach the product is a caller-supplied block —
+    // which is exactly what this seam is the last chance to refuse. Each field is
+    // therefore re-validated here with the SAME helpers the builder used, so the
+    // header's "every emitted string is checked before it leaves this module" claim
+    // holds on both paths rather than only the builder's.
+    if (!/^[0-9a-f]{64}$/.test(String(gap.gapIdentityCore ?? ''))) {
+      throw visibilityError(`block gap ${String(gap.gapId)} has a malformed gapIdentityCore`);
+    }
+    if (typeof gap.gapId !== 'string' || !GAP_ID_SHAPE.test(gap.gapId)) {
+      throw visibilityError('block gap has a malformed gapId');
+    }
+    if (!gap.gapId.startsWith(`${gap.gapIdentityCore}:`)) {
+      throw visibilityError(`block gap ${gap.gapId} does not derive from its gapIdentityCore`);
+    }
+    requireSafeString(gap.occurrenceId, `block gap[${gap.gapId}].occurrenceId`);
+    requireSafeString(gap.planHash, `block gap[${gap.gapId}].planHash`);
+    if (gap.resolutionBasis !== null) {
+      if (!RESOLUTION_BASES.includes(gap.resolutionBasis)) {
+        throw visibilityError(`block gap ${gap.gapId} carries a resolutionBasis outside T08's closed set`);
+      }
+    }
+    if (gap.resolutionPredicateRef !== null
+      && !RESOLUTION_PREDICATES.includes(gap.resolutionPredicateRef)) {
+      throw visibilityError(`block gap ${gap.gapId} carries a resolutionPredicateRef outside T08's closed set`);
+    }
+    if (!isAllowedTerminalTriple(gap.status, gap.resolutionPredicateRef, gap.resolutionBasis)) {
+      throw visibilityError(`block gap ${gap.gapId} carries a terminal triple T08 cannot produce`);
+    }
+    if (!Array.isArray(gap.resolutionEvidence)) {
+      throw visibilityError(`block gap ${gap.gapId} must carry a resolutionEvidence array`);
+    }
+    for (const id of gap.missingActionIds) {
+      if (typeof id !== 'string' || !HEX64.test(id)) {
+        throw visibilityError(`block gap ${gap.gapId} has a malformed missingActionId`);
+      }
+    }
+    for (const link of gap.lineage) {
+      assertWellFormedLineageEntry(link, gap.gapId);
+    }
+
     // Per-gap completeness is a DERIVED claim, so the seam checks the derivation
     // rather than the type. A hand-edited `lineageComplete: true` over a gap with no
     // link is exactly the overstatement this ticket exists to prevent, and it would
@@ -537,7 +589,47 @@ function assertWellFormedBlock(block) {
   if (block.exhaustedWithinBudgetCount !== countBy(block.gaps, ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET)) {
     throw visibilityError('block.exhaustedWithinBudgetCount disagrees with the gaps it summarises');
   }
+  // The block-level completeness flag is derived too. Type-checking it as a boolean
+  // left a hand-set `true` able to contradict a gap that reports itself incomplete.
+  if (block.lineageComplete !== block.gaps.every((g) => g.lineageComplete === true)) {
+    throw visibilityError('block.lineageComplete disagrees with the per-gap completeness it summarises');
+  }
   return block;
+}
+
+/**
+ * One lineage entry, re-validated at the seam with the same helpers the builder used.
+ * `TARGETED_GAP_LINEAGE_KEYS` is enforced HERE, which is the only place a lineage entry
+ * could otherwise carry an extra key (a smuggled path) or a malformed link.
+ */
+function assertWellFormedLineageEntry(link, gapId) {
+  if (!isPlainObject(link) || !hasExactKeys(link, TARGETED_GAP_LINEAGE_KEYS)) {
+    throw visibilityError(`block gap ${gapId} has a lineage entry that does not match the frozen key set`);
+  }
+  if (typeof link.targetedActionId !== 'string' || !HEX64.test(link.targetedActionId)) {
+    throw visibilityError(`block gap ${gapId} has a lineage entry with a malformed targetedActionId`);
+  }
+  requireSafeString(link.actionStatus, `lineage[${link.targetedActionId}].actionStatus`);
+  requireSafeString(link.query, `lineage[${link.targetedActionId}].query`);
+  if (link.resultArtifact !== null) {
+    requireWorkRelativeRef(link.resultArtifact, `lineage[${link.targetedActionId}].resultArtifact`);
+  }
+  if (link.attempt !== null && !(Number.isSafeInteger(link.attempt) && link.attempt > 0)) {
+    throw visibilityError(`lineage[${link.targetedActionId}].attempt must be a positive integer or null`);
+  }
+  // providerId + capability is a link in the F.4 chain, so an absent or empty scope
+  // is a MISSING link rather than an empty list.
+  if (!Array.isArray(link.providerScope) || link.providerScope.length === 0) {
+    throw visibilityError(`lineage[${link.targetedActionId}].providerScope must be a non-empty array`);
+  }
+  for (const entry of link.providerScope) {
+    if (!isPlainObject(entry) || !hasExactKeys(entry, TARGETED_GAP_SCOPE_ENTRY_KEYS)) {
+      throw visibilityError(`lineage[${link.targetedActionId}].providerScope entry is malformed`);
+    }
+    requireSafeString(entry.providerId, `lineage[${link.targetedActionId}].providerScope.providerId`);
+    requireSafeString(entry.capability, `lineage[${link.targetedActionId}].providerScope.capability`);
+  }
+  return link;
 }
 
 function countBy(gaps, status) {

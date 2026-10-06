@@ -666,6 +666,117 @@ test('H — attachTargetedGapVisibility re-validates the block instead of trusti
   );
 });
 
+test('H2 — the seam re-validates block CONTENTS, not just the skeleton', () => {
+  // Round-2 review attached nine hand-built blocks and all nine were accepted,
+  // because the seam checked the entry KEY SET and the terminal, then never descended
+  // into the gap's contents. These are those nine, one by one.
+  const { artifact: actions, targetedActionId } = makeActionsArtifact();
+  let resolution = makeResolutionArtifact();
+  resolution = recordResolution(resolution, {
+    gapId: GAP_0, gapIdentityCore: GAP_CORE, targetedActionId,
+    status: ACTION_STATUS_UNRESOLVED, resolutionPredicateRef: RESOLUTION_PREDICATE_ASPECT,
+    resolutionBasis: RESOLUTION_BASIS_DUPLICATE_ONLY, planHash: PLAN_HASH, occurrenceId: OCCURRENCE,
+  });
+  const real = buildTargetedResearchGapBlock({ resolutionArtifact: resolution, actionsArtifact: actions });
+  const realGap = real.gaps[0];
+  const finalLike = { schemaVersion: 2, gap: { missingAnalyzed: [], missingMapped: [] } };
+
+  /** Rebuild a well-formed single-gap block, then let the caller tamper one thing. */
+  const withGap = (tamper) => {
+    const draft = { ...realGap, lineage: realGap.lineage.map((l) => ({ ...l })) };
+    const gap = tamper(draft);
+    const gaps = [gap];
+    // Counters are recomputed from the (possibly tampered) gap so the ONLY thing under
+    // test is the field the case tampers with — otherwise every case would be
+    // "refused for a counter mismatch" and would prove nothing.
+    return {
+      schema: real.schema,
+      gapCount: gaps.length,
+      resolvedCount: gaps.filter((x) => x.status === ACTION_STATUS_RESOLVED).length,
+      unresolvedCount: gaps.filter((x) => x.status === ACTION_STATUS_UNRESOLVED).length,
+      exhaustedWithinBudgetCount: gaps.filter((x) => x.status === ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET).length,
+      lineageComplete: gaps.every((x) => x.lineageComplete === true),
+      gaps,
+    };
+  };
+
+  // Sanity: the untampered reconstruction IS accepted, so each refusal below is
+  // attributable to the tampering and not to the reconstruction itself.
+  assert.doesNotThrow(() => attachTargetedGapVisibility(finalLike, withGap((g) => g)));
+
+  const cases = [
+    ['an absolute resultArtifact smuggled through a lineage link',
+      (g) => { g.lineage[0].resultArtifact = '/Users/alice/.ssh/id_rsa'; return g; }],
+    ['a path-shaped query smuggled through a lineage link',
+      (g) => { g.lineage[0].query = '/Users/alice/secret'; return g; }],
+    ['an EXTRA key hidden inside a lineage entry',
+      (g) => { g.lineage[0].smuggled = '/etc/passwd'; return g; }],
+    ['an empty lineage entry',
+      (g) => { g.lineage = [{}]; return g; }],
+    ['an invented resolutionBasis',
+      (g) => { g.resolutionBasis = 'TOTALLY_MADE_UP'; return g; }],
+    ['a gapId that does not derive from its gapIdentityCore',
+      (g) => { g.gapIdentityCore = 'f'.repeat(64); return g; }],
+    ['an emptied providerScope inside a lineage link',
+      (g) => { g.lineage[0].providerScope = []; return g; }],
+    ['a non-string query smuggled through a lineage link',
+      (g) => { g.lineage[0].query = 42; return g; }],
+  ];
+  for (const [label, tamper] of cases) {
+    expectRefusal(() => attachTargetedGapVisibility(finalLike, withGap(tamper)), label);
+  }
+
+  // Block-level completeness must be RE-DERIVED from the gaps, not merely type-checked.
+  // A hand-set `true` that contradicts a gap reporting itself incomplete is refused —
+  // so the contradicting case needs a gap that IS incomplete. A gap whose recorded
+  // action is absent from the supplied ledger is exactly that (see G2).
+  const incompleteGap = {
+    ...realGap,
+    lineage: [],
+    missingActionIds: [targetedActionId],
+    lineageComplete: false,
+  };
+  const contradicting = {
+    schema: real.schema,
+    gapCount: 1,
+    resolvedCount: 0,
+    unresolvedCount: 1,
+    exhaustedWithinBudgetCount: 0,
+    lineageComplete: true,          // the lie: the only gap says it is NOT complete
+    gaps: [incompleteGap],
+  };
+  expectRefusal(
+    () => attachTargetedGapVisibility(finalLike, contradicting),
+    'block-level lineageComplete contradicting a per-gap flag',
+  );
+  // And the honest version of the same block is accepted, so the refusal above is
+  // attributable to the contradiction and not to this block's shape.
+  assert.doesNotThrow(() => attachTargetedGapVisibility(finalLike, { ...contradicting, lineageComplete: false }));
+
+  // HONEST BOUNDARY, asserted so it is a documented limit rather than an assumed one.
+  // The shared `isBoundarySafeString` refuses ASSIGNMENT-shaped credential content
+  // (`api_key: …`, `token=…`) and multi-component private paths, but it does NOT
+  // refuse a bare provider key prefix (`sk-ant-…`, `ghp_…`, `AKIA…`). That is
+  // inherited, pre-existing production policy for the `query` field — T10 consumes the
+  // helper and does not widen or narrow it. Pinned here so a future change to the
+  // shared policy is a visible diff rather than a silent assumption, and so nobody
+  // reads "boundary-safe" as "credential-free".
+  assert.doesNotThrow(
+    () => attachTargetedGapVisibility(finalLike, withGap((g) => {
+      g.lineage[0].query = 'sk-ant-api03-AAAABBBBCCCCDDDD';
+      return g;
+    })),
+    'documented limit: a bare provider-key PREFIX is not refused by the shared boundary policy',
+  );
+  expectRefusal(
+    () => attachTargetedGapVisibility(finalLike, withGap((g) => {
+      g.lineage[0].query = 'api_key: sk-ant-AAAABBBB';
+      return g;
+    })),
+    'an assignment-shaped credential in a lineage link',
+  );
+});
+
 function emptyGapEntry() {
   return {
     gapId: `${'c'.repeat(64)}:0`,
