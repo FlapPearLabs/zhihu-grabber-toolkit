@@ -77,9 +77,14 @@
  * silent disappearance this ticket forbids; inventing a link would be a lie.
  *
  * PATH SAFETY: every emitted string is checked against the shared boundary-safety
- * helper before it leaves this module, so an absolute machine path, a temp path
- * or a home directory cannot reach the final artifact even if a caller supplies
- * one. `artifactRel` values are additionally required to be work-relative.
+ * helper before it leaves this module, so a credential shape or a multi-component
+ * machine path cannot reach the final artifact even if a caller supplies one.
+ * `resultArtifact` gets a stricter, locally-owned check (work-relative, no drive
+ * letter, no `..`). HONEST SCOPE OF THAT GUARANTEE: the shared helper's private-path
+ * rule needs two or more path components, so a single-component root such as `/tmp`
+ * or `/etc` is NOT rejected by it. Claiming otherwise would be an overclaim — the
+ * guarantee is "no credential and no multi-component private path", not "no absolute
+ * string of any shape".
  */
 
 import { isBoundarySafeString } from './rrf.mjs';
@@ -120,6 +125,17 @@ export const GAP_TERMINALS = Object.freeze([
   ACTION_STATUS_RESOLVED,
   ACTION_STATUS_UNRESOLVED,
   ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET,
+]);
+
+/** The exact key set of the emitted block itself. Order is the frozen emit order. */
+export const TARGETED_GAP_BLOCK_KEYS = Object.freeze([
+  'exhaustedWithinBudgetCount',
+  'gapCount',
+  'gaps',
+  'lineageComplete',
+  'resolvedCount',
+  'schema',
+  'unresolvedCount',
 ]);
 
 /** The exact key set of one emitted gap entry. Order is the frozen emit order. */
@@ -172,8 +188,17 @@ function visibilityError(message) {
  * Every string that leaves this module passes through here. Absolute paths,
  * temp dirs and home directories are all machine-private, and the final artifact
  * is a product surface — so this is enforced structurally, not by convention.
+ *
+ * NO `String()` COERCION. Coercing first would launder a missing or non-string
+ * value into a truthy literal — `String(undefined)` is `"undefined"`, which is
+ * non-empty AND boundary-safe, so a field that was never set would sail through a
+ * check this module documents as fail-closed. A value that is not already a string
+ * is refused, because "absent" and "present but malformed" must both fail.
  */
 function requireSafeString(value, label) {
+  if (typeof value !== 'string') {
+    throw visibilityError(`${label} must be a string, got ${value === null ? 'null' : typeof value}`);
+  }
   if (!isNonEmptyString(value)) throw visibilityError(`${label} must be a non-empty string`);
   if (!isBoundarySafeString(value)) {
     throw visibilityError(`${label} must be boundary-safe (no machine-private path, no credential shape)`);
@@ -326,6 +351,21 @@ export function buildTargetedResearchGapBlock({ resolutionArtifact, actionsArtif
       );
     }
 
+    // Identity is CONSUMED, never redefined — but "consumed faithfully" is not the
+    // same as "consistent". E.2 defines `gapId = gapIdentityCore + ':' + diagnosisRound`,
+    // so a pair where the id does not start with the core is self-contradictory and
+    // would put two disagreeing identity claims on the product surface. Verified here
+    // rather than assumed, because T08's own validator is not on this path.
+    const gapIdentityCore = requireSafeString(record.gapIdentityCore, `gap[${gapId}].gapIdentityCore`);
+    if (!/^[0-9a-f]{64}$/.test(gapIdentityCore)) {
+      throw visibilityError(`gap[${gapId}].gapIdentityCore must be 64 lowercase hex characters`);
+    }
+    if (!gapId.startsWith(`${gapIdentityCore}:`)) {
+      throw visibilityError(
+        `gap[${gapId}] does not derive from its gapIdentityCore (${gapIdentityCore})`,
+      );
+    }
+
     if (record.planHash !== planHash) {
       throw visibilityError(`gap ${gapId} is anchored to a different planHash than the artifact`);
     }
@@ -365,7 +405,7 @@ export function buildTargetedResearchGapBlock({ resolutionArtifact, actionsArtif
         .pop() ?? null;
 
       lineage.push({
-        actionStatus: requireSafeString(String(action.status), `lineage[${id}].actionStatus`),
+        actionStatus: requireSafeString(action.status, `lineage[${id}].actionStatus`),
         attempt: Number.isSafeInteger(action.attempt) && action.attempt > 0 ? action.attempt : null,
         providerScope: normalizeScope(action.providerScope, `lineage[${id}].providerScope`),
         query: requireSafeString(action.normalizedQuery, `lineage[${id}].query`),
@@ -378,9 +418,12 @@ export function buildTargetedResearchGapBlock({ resolutionArtifact, actionsArtif
 
     const entry = {
       gapId,
-      gapIdentityCore: requireSafeString(record.gapIdentityCore, `gap[${gapId}].gapIdentityCore`),
+      gapIdentityCore,
       lineage,
-      lineageComplete: missingActionIds.length === 0,
+      // Per-gap completeness carries the same honesty as the block-level flag: a gap
+      // with no recorded action has no chain to be complete about, so it reports false
+      // rather than a vacuous true.
+      lineageComplete: missingActionIds.length === 0 && lineage.length > 0,
       missingActionIds,
       occurrenceId: artifactOccurrence,
       planHash,
@@ -396,15 +439,22 @@ export function buildTargetedResearchGapBlock({ resolutionArtifact, actionsArtif
     emitted.push(entry);
   }
 
-  return {
+  // `lineageComplete` means "every recorded action id resolved AND at least one link
+  // exists when the gap was ever authorized". A gap that was NEVER authorized has no
+  // action to link, and calling that complete would overstate what is known — the
+  // honest value is false, with the reason carried by an empty `lineage`.
+  const block = {
     schema: TARGETED_GAP_VISIBILITY_SCHEMA,
     gapCount: emitted.length,
     resolvedCount: countBy(emitted, ACTION_STATUS_RESOLVED),
     unresolvedCount: countBy(emitted, ACTION_STATUS_UNRESOLVED),
     exhaustedWithinBudgetCount: countBy(emitted, ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET),
-    lineageComplete: emitted.every((g) => g.lineageComplete),
+    lineageComplete: emitted.every((g) => g.lineageComplete && g.lineage.length > 0),
     gaps: emitted,
   };
+  // The builder holds itself to the same contract the seam enforces, so a drift in
+  // either direction fails here first.
+  return assertWellFormedBlock(block);
 }
 
 /**
@@ -412,16 +462,82 @@ export function buildTargetedResearchGapBlock({ resolutionArtifact, actionsArtif
  * any existing key. Returns a new object; the input is not mutated. This is the
  * additive seam T10 owns — `gap` (source-analysis coverage) is left exactly as
  * the caller supplied it.
+ *
+ * This is the LAST function before the product surface, so it re-validates rather
+ * than trusting: an earlier draft accepted any object with a `gaps` array, which
+ * meant a caller that mis-built a block could attach `status: 'SATURATED'` or a
+ * counter that disagreed with the array, and the error text promised a check that
+ * did not exist. The schema id, the terminal set and the counters are therefore
+ * all verified HERE, so the "mechanically enforced, not asserted in prose" claim
+ * holds at the seam and not merely inside the builder.
  */
 export function attachTargetedGapVisibility(finalArtifactLike, block) {
   if (!isPlainObject(finalArtifactLike)) throw visibilityError('final artifact must be a plain object');
-  if (!isPlainObject(block) || !Array.isArray(block.gaps)) {
-    throw visibilityError('block must be a buildTargetedResearchGapBlock() result');
-  }
+  assertWellFormedBlock(block);
   if (finalArtifactLike[TARGETED_GAP_BLOCK_KEY] !== undefined) {
     throw visibilityError(`final artifact already carries a ${TARGETED_GAP_BLOCK_KEY} block; refusing to overwrite`);
   }
   return { ...finalArtifactLike, [TARGETED_GAP_BLOCK_KEY]: block };
+}
+
+/**
+ * The block's own shape contract, enforced at the seam. Every claim a consumer
+ * would read off the block (`schema`, the four counters, the per-gap terminals) is
+ * checked against what the block actually carries, so a hand-built or drifted block
+ * cannot reach the artifact.
+ */
+function assertWellFormedBlock(block) {
+  if (!isPlainObject(block)) throw visibilityError('block must be a buildTargetedResearchGapBlock() result');
+  if (block.schema !== TARGETED_GAP_VISIBILITY_SCHEMA) {
+    throw visibilityError(`block schema must be ${TARGETED_GAP_VISIBILITY_SCHEMA}, got ${String(block.schema)}`);
+  }
+  if (!Array.isArray(block.gaps)) throw visibilityError('block.gaps must be an array');
+  if (typeof block.lineageComplete !== 'boolean') {
+    throw visibilityError('block.lineageComplete must be a boolean');
+  }
+  for (const counter of ['gapCount', 'resolvedCount', 'unresolvedCount', 'exhaustedWithinBudgetCount']) {
+    if (!Number.isSafeInteger(block[counter]) || block[counter] < 0) {
+      throw visibilityError(`block.${counter} must be a non-negative integer`);
+    }
+  }
+  if (!hasExactKeys(block, TARGETED_GAP_BLOCK_KEYS)) {
+    throw visibilityError('block does not match the frozen top-level key set');
+  }
+  for (const gap of block.gaps) {
+    if (!isPlainObject(gap) || !hasExactKeys(gap, TARGETED_GAP_ENTRY_KEYS)) {
+      throw visibilityError('every block gap must match the frozen entry key set');
+    }
+    if (!GAP_TERMINALS.includes(gap.status)) {
+      throw visibilityError(`block gap ${String(gap.gapId)} carries a non-terminal status: ${String(gap.status)}`);
+    }
+    if (!Array.isArray(gap.lineage) || !Array.isArray(gap.missingActionIds)) {
+      throw visibilityError(`block gap ${String(gap.gapId)} must carry lineage and missingActionIds arrays`);
+    }
+    // Per-gap completeness is a DERIVED claim, so the seam checks the derivation
+    // rather than the type. A hand-edited `lineageComplete: true` over a gap with no
+    // link is exactly the overstatement this ticket exists to prevent, and it would
+    // otherwise reach the product unchecked.
+    const derived = gap.missingActionIds.length === 0 && gap.lineage.length > 0;
+    if (gap.lineageComplete !== derived) {
+      throw visibilityError(
+        `block gap ${String(gap.gapId)} reports lineageComplete=${String(gap.lineageComplete)} `
+        + `but its lineage/missingActionIds derive ${String(derived)}`,
+      );
+    }
+  }
+  // Counters are part of the contract a consumer reads; they must not disagree with
+  // the array they summarise.
+  if (block.gapCount !== block.gaps.length) throw visibilityError('block.gapCount disagrees with block.gaps.length');
+  if (block.resolvedCount !== countBy(block.gaps, ACTION_STATUS_RESOLVED)) {
+    throw visibilityError('block.resolvedCount disagrees with the gaps it summarises');
+  }
+  if (block.unresolvedCount !== countBy(block.gaps, ACTION_STATUS_UNRESOLVED)) {
+    throw visibilityError('block.unresolvedCount disagrees with the gaps it summarises');
+  }
+  if (block.exhaustedWithinBudgetCount !== countBy(block.gaps, ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET)) {
+    throw visibilityError('block.exhaustedWithinBudgetCount disagrees with the gaps it summarises');
+  }
+  return block;
 }
 
 function countBy(gaps, status) {
@@ -434,13 +550,22 @@ function hasExactKeys(obj, keys) {
   return actual.length === expected.length && actual.every((k, i) => k === expected[i]);
 }
 
+/**
+ * A provider scope is part of the F.4 chain (providerId + capability), so an empty
+ * or absent one is a MISSING LINK, not an empty list. T06 requires the scope to be a
+ * non-empty array on every committed record; this therefore refuses rather than
+ * emitting `[]`, which would let the block report `lineageComplete: true` while the
+ * provider link had silently vanished. Refusing keeps the completeness claim honest.
+ */
 function normalizeScope(scope, label) {
-  if (!Array.isArray(scope) || scope.length === 0) return [];
+  if (!Array.isArray(scope) || scope.length === 0) {
+    throw visibilityError(`${label} must be a non-empty array of channel descriptors`);
+  }
   return scope.map((entry) => {
     if (!isPlainObject(entry)) throw visibilityError(`${label} entries must be plain objects`);
     return {
-      capability: requireSafeString(String(entry.capability), `${label}.capability`),
-      providerId: requireSafeString(String(entry.providerId), `${label}.providerId`),
+      capability: requireSafeString(entry.capability, `${label}.capability`),
+      providerId: requireSafeString(entry.providerId, `${label}.providerId`),
     };
   }).sort((a, b) => (a.providerId < b.providerId ? -1 : a.providerId > b.providerId ? 1 : 0));
 }
@@ -448,6 +573,6 @@ function normalizeScope(scope, label) {
 function normalizeEvidence(evidence, gapId) {
   if (evidence === null || evidence === undefined) return [];
   if (!Array.isArray(evidence)) throw visibilityError(`gap[${gapId}].resolutionEvidence must be an array`);
-  return [...new Set(evidence.map((v) => requireSafeString(String(v), `gap[${gapId}].resolutionEvidence[]`)))]
+  return [...new Set(evidence.map((v) => requireSafeString(v, `gap[${gapId}].resolutionEvidence[]`)))]
     .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 }

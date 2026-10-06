@@ -266,6 +266,20 @@ test('A — every terminal T08 can produce is rendered per-gap in the final arti
 
   // Every gap is individually visible with its terminal + basis.
   const byId = new Map(block.gaps.map((g) => [g.gapId, g]));
+
+  // COMPLETENESS MUST NOT BE OVERSTATED. Four of these gaps carry NO action id at
+  // all (T08 records them with `targetedActionId: null` — a never-authorized or
+  // run-stop-finalised gap legitimately has no query to trace). They are still
+  // emitted, because dropping them is the silent disappearance this ticket forbids,
+  // but with an empty lineage they must NOT be reported as a complete chain: there
+  // is nothing to be complete ABOUT. This is the assertion that separates
+  // "every recorded id resolved" from "there was a chain at all".
+  const neverAuthorized = byId.get(GAP_1);
+  assert.equal(neverAuthorized.lineage.length, 0, 'fixture premise: this gap has no action to link');
+  assert.equal(neverAuthorized.lineageComplete, false, 'a gap with no action must not claim complete lineage');
+  assert.equal(block.lineageComplete, false, 'a block containing such a gap is not lineage-complete');
+  assert.equal(neverAuthorized.status, ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET, 'and its terminal is still fully visible');
+  assert.equal(neverAuthorized.resolutionBasis, RESOLUTION_BASIS_PER_GAP_BOUND_EXHAUSTED);
   assert.equal(byId.get(GAP_0).status, ACTION_STATUS_RESOLVED);
   assert.equal(byId.get(GAP_0).resolutionPredicateRef, RESOLUTION_PREDICATE_ASPECT);
   assert.equal(byId.get(GAP_1).status, ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET);
@@ -566,7 +580,193 @@ test('G — additive: attaching the block does not touch the existing gap field'
   });
   assert.equal(emptyBlock.gapCount, 0);
   assert.deepEqual(emptyBlock.gaps, []);
-  assert.equal(emptyBlock.lineageComplete, true);
+  assert.equal(emptyBlock.lineageComplete, true, 'an empty targeted path is vacuously complete');
+});
+
+test('G2 — a gap whose recorded action is ABSENT from the ledger stays visible and honest', () => {
+  // The distinct third state: the gap DID have an action recorded, but the action
+  // ledger supplied to this call does not contain it. This is not the same as a gap
+  // that never had an action, and it is not the same as a fully linked gap. The gap
+  // must remain visible (dropping it is the silent disappearance this ticket forbids),
+  // the missing id must be named (faking a link would be a lie), and completeness
+  // must be false.
+  const { artifact: actions, targetedActionId } = makeActionsArtifact();
+  let resolution = makeResolutionArtifact();
+  resolution = recordResolution(resolution, {
+    gapId: GAP_0, gapIdentityCore: GAP_CORE, targetedActionId,
+    status: ACTION_STATUS_UNRESOLVED, resolutionPredicateRef: RESOLUTION_PREDICATE_ASPECT,
+    resolutionBasis: RESOLUTION_BASIS_DUPLICATE_ONLY, planHash: PLAN_HASH, occurrenceId: OCCURRENCE,
+  });
+
+  // An empty action ledger: the resolution says an action ran, the ledger says nothing.
+  const emptyLedger = { ...actions, targetedActions: [] };
+  const block = buildTargetedResearchGapBlock({
+    resolutionArtifact: resolution,
+    actionsArtifact: emptyLedger,
+  });
+
+  assert.equal(block.gapCount, 1, 'the gap is still visible');
+  const gap = block.gaps[0];
+  assert.equal(gap.status, ACTION_STATUS_UNRESOLVED, 'with its terminal intact');
+  assert.equal(gap.resolutionBasis, RESOLUTION_BASIS_DUPLICATE_ONLY, 'and its basis');
+  assert.equal(gap.lineage.length, 0, 'no link is invented');
+  assert.deepEqual(gap.missingActionIds, [targetedActionId], 'the unresolvable id is named');
+  assert.equal(gap.lineageComplete, false, 'completeness is false, not vacuously true');
+  assert.equal(block.lineageComplete, false, 'and so is the block-level flag');
+});
+
+// ===========================================================================
+// H — the seam refuses a mis-built block (P2-1: the last gate before the product)
+// ===========================================================================
+
+test('H — attachTargetedGapVisibility re-validates the block instead of trusting it', () => {
+  const { artifact: actions } = makeActionsArtifact();
+  const block = buildTargetedResearchGapBlock({
+    resolutionArtifact: makeResolutionArtifact(),
+    actionsArtifact: actions,
+  });
+  const finalLike = { schemaVersion: 2, gap: { missingAnalyzed: [], missingMapped: [] } };
+
+  // The happy path still works and stays additive.
+  assert.doesNotThrow(() => attachTargetedGapVisibility(finalLike, block));
+
+  // Each of these is what a caller that mis-built a block would hand the seam. The
+  // seam is the LAST function before the product surface, so it must not take a
+  // block on trust — the error text promises a builder result, so it had better
+  // check that the result really is one.
+  expectRefusal(
+    () => attachTargetedGapVisibility(finalLike, { ...block, schema: 'TOTALLY-WRONG' }),
+    'a block with the wrong schema id',
+  );
+  expectRefusal(
+    () => attachTargetedGapVisibility(finalLike, { ...block, gapCount: 99 }),
+    'a block whose gapCount lies about its own array',
+  );
+  expectRefusal(
+    () => attachTargetedGapVisibility(finalLike, { ...block, resolvedCount: 42 }),
+    'a block whose resolvedCount lies about its gaps',
+  );
+  const saturatedGap = {
+    ...block,
+    gaps: [{ ...block.gaps[0] ?? emptyGapEntry(), status: 'SATURATED' }],
+    gapCount: 1,
+  };
+  expectRefusal(
+    () => attachTargetedGapVisibility(finalLike, saturatedGap),
+    'a block carrying a gap rendered as SATURATED',
+  );
+  expectRefusal(
+    () => attachTargetedGapVisibility(finalLike, { ...block, lineageComplete: 'yes-please' }),
+    'a block with a non-boolean lineageComplete',
+  );
+  // And an existing key is still never overwritten.
+  expectRefusal(
+    () => attachTargetedGapVisibility({ ...finalLike, [TARGETED_GAP_BLOCK_KEY]: block }, block),
+    'attaching over an existing targeted block',
+  );
+});
+
+function emptyGapEntry() {
+  return {
+    gapId: `${'c'.repeat(64)}:0`,
+    gapIdentityCore: 'c'.repeat(64),
+    lineage: [],
+    lineageComplete: true,
+    missingActionIds: [],
+    occurrenceId: OCCURRENCE,
+    planHash: PLAN_HASH,
+    resolutionBasis: null,
+    resolutionEvidence: [],
+    resolutionPredicateRef: null,
+    status: ACTION_STATUS_UNRESOLVED,
+  };
+}
+
+// ===========================================================================
+// I — identity coherence + non-coercion (P2-3 / P2-5)
+// ===========================================================================
+
+test('I — a gap whose identity fields contradict each other is refused', () => {
+  const { artifact: actions, targetedActionId } = makeActionsArtifact();
+  const base = makeResolutionArtifact();
+
+  // T08's E.2 derivation: gapId = gapIdentityCore + ':' + diagnosisRound. A record
+  // whose core does not match its id is self-contradictory; consuming it faithfully
+  // would put two disagreeing identity claims on the product surface.
+  const inconsistent = {
+    ...base,
+    resolutions: [{
+      audit: [],
+      evaluatedActionIds: [targetedActionId],
+      gapId: GAP_0,
+      gapIdentityCore: 'f'.repeat(64),
+      occurrenceId: OCCURRENCE,
+      planHash: PLAN_HASH,
+      resolutionBasis: RESOLUTION_BASIS_DUPLICATE_ONLY,
+      resolutionPredicateRef: RESOLUTION_PREDICATE_ASPECT,
+      status: ACTION_STATUS_UNRESOLVED,
+      resolutionEvidence: [],
+    }],
+  };
+  expectRefusal(
+    () => buildTargetedResearchGapBlock({ resolutionArtifact: inconsistent, actionsArtifact: actions }),
+    'a gapId that does not derive from its gapIdentityCore',
+  );
+});
+
+test('I2 — a non-string field is refused rather than coerced into a passing literal', () => {
+  const { artifact: actions, targetedActionId } = makeActionsArtifact();
+  let resolution = makeResolutionArtifact();
+  resolution = recordResolution(resolution, {
+    gapId: GAP_0, gapIdentityCore: GAP_CORE, targetedActionId,
+    status: ACTION_STATUS_UNRESOLVED, resolutionPredicateRef: RESOLUTION_PREDICATE_ASPECT,
+    resolutionBasis: RESOLUTION_BASIS_DUPLICATE_ONLY, planHash: PLAN_HASH, occurrenceId: OCCURRENCE,
+  });
+
+  // Coercing first would turn a missing status into the string "undefined", which is
+  // non-empty AND boundary-safe — it would sail through a check documented as
+  // fail-closed. The refusal is what proves the check is real.
+  const missingStatus = {
+    ...actions,
+    targetedActions: actions.targetedActions.map((r) => {
+      const { status, ...rest } = r;
+      return { ...rest, status: undefined };
+    }),
+  };
+  expectRefusal(
+    () => buildTargetedResearchGapBlock({ resolutionArtifact: resolution, actionsArtifact: missingStatus }),
+    'an action record whose status is not a string',
+  );
+
+  const numericQuery = {
+    ...actions,
+    targetedActions: actions.targetedActions.map((r) => ({ ...r, normalizedQuery: 42 })),
+  };
+  expectRefusal(
+    () => buildTargetedResearchGapBlock({ resolutionArtifact: resolution, actionsArtifact: numericQuery }),
+    'an action record whose query is not a string',
+  );
+});
+
+test('I3 — an emptied providerScope is a missing link, refused rather than reported complete', () => {
+  const { artifact: actions, targetedActionId } = makeActionsArtifact();
+  let resolution = makeResolutionArtifact();
+  resolution = recordResolution(resolution, {
+    gapId: GAP_0, gapIdentityCore: GAP_CORE, targetedActionId,
+    status: ACTION_STATUS_UNRESOLVED, resolutionPredicateRef: RESOLUTION_PREDICATE_ASPECT,
+    resolutionBasis: RESOLUTION_BASIS_DUPLICATE_ONLY, planHash: PLAN_HASH, occurrenceId: OCCURRENCE,
+  });
+
+  // providerId + capability is the third link of the F.4 chain. Emitting it as []
+  // would let the block claim lineageComplete:true while the link had vanished.
+  const emptied = {
+    ...actions,
+    targetedActions: actions.targetedActions.map((r) => ({ ...r, providerScope: [] })),
+  };
+  expectRefusal(
+    () => buildTargetedResearchGapBlock({ resolutionArtifact: resolution, actionsArtifact: emptied }),
+    'an action whose providerScope was emptied',
+  );
 });
 
 // ===========================================================================
