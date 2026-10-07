@@ -3,7 +3,7 @@
 STATUS = USER_DECISION_REQUIRED（候选；正式独立验收审查仍须核对）
 CURRENT_TASK = P2A-T14 / #126
 BASE_MASTER = 854dd3cb2f9d5fa06df1dd79e7aad4ab42aea2b3
-EXECUTABLE_CANDIDATE = 16f6b8f161b4b44d66b814ffbfd1d0bddab8e68e
+EXECUTABLE_CANDIDATE = 19c281d30bc076f2ddd8a5c0c2b474f138ae3d8e
 MASTER_INTEGRATION = NOT_AUTHORIZED_BY_ACCEPTANCE_GATE
 ISSUE_CLOSE = NOT_ALLOWED
 
@@ -39,3 +39,5 @@ ISSUE_CLOSE = NOT_ALLOWED
 保留当前九项候选PASS、三项NOT_PROVEN；#126保持OPEN，#108 ENGINEERING_ACCEPTANCE不能标COMPLETE。#107/#127仍不开始。若负责人选择暂不授权扩展，候选修复和证据保存在分支与draft PR，继续保持T14未完成，不宣称价值改善。
 
 触发来源是本轮用户请求的Product Code Change Policy与Operating Mode：“architecture change”“product semantics change”“identity/authority boundary change”需USER_DECISION_REQUIRED。这里请求的是新增组合接缝/调度的架构授权，不是重复询问已授权的测试、P2修复、模型替代或提交工作。
+
+普通修复状态：4cb4de6 独立审查指出的 matrix false-PASS 与 stale-action 空场景已在 19c281d 修复并执行统一整链，新的 fresh quorum 尚待核对。只有这两组普通修复闭合后，才把本文的三项有限架构缺口作为最终 USER_DECISION_REQUIRED；本文件不降低任何验收条件。

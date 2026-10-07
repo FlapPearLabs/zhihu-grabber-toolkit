@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+  "occurrenceId": "520acff3-0623-42a5-a92e-f8c6ef9ceefd",
+  "topic": "定向检索工程验收",
+  "mode": "p1-cross-question-deep-research",
+  "percent": null,
+  "runtime": "deepseek-api-tool-less",
+  "configFingerprint": null,
+  "forceQuestionId": null,
+  "stage": "COMPLETE",
+  "completedStages": [
+    "SEARCH",
+    "SELECT",
+    "CAPTURE",
+    "ANALYZE",
+    "RENDER"
+  ],
+  "selectedQuestionId": null,
+  "selection": null,
+  "artifacts": {
+    "researchPlan": "research-plan.json",
+    "selectionDecision": "source-group-selection-decision.json",
+    "coverageState": "coverage-state.json",
+    "coverageFinal": "coverage-final.json",
+    "perGroupClaims": "per-group-claims.json",
+    "synthesis": "cross-source-synthesis.json",
+    "researchResult": "research-result.json"
+  },
+  "hashes": {
+    "targeted-action:6656078e6c8cb6bc6300d5fa5159c1a8bfa5e933fa7e624e75be4ed2472ab9be": "b7c152ab47005748694e24951a92e2b40b29a69136a2c11be3e56f5a42932741",
+    "targeted-action-ledger": "e30b53b124db184f73a0fa9ccc01303d7742226efb4bc19536fee2a6c47c571e",
+    "researchPlan": "e917e9d9e3bd84c76b1dfc96d47f57c22fec67ab51a80488946bc01778bc96f4",
+    "coverageState": "6ac1916ecca7abe238e5e9c8722052537941ce31e4420bf085a0064e2842e0c5",
+    "coverageFinal": "9ec87b956e6df05b4e24099b19dd2b9e2b45dabcd6bea330c18b91d042f6f9b3",
+    "perGroupClaims": "92a51ca62f193e0409e73d9fef9e7b611692d18b44d38671011fc4a9e77c6434",
+    "synthesis": "fcdb5b4f36a9e4d243024dec6fbbfd4c7a5b8c454497b4801f631b54382904cf",
+    "researchResult": "82e4379bc4d2bea5df7dc93f933acbbd38134f43105a11e8afcfda600bbbaf87",
+    "accumulatedPool": "4b4b41709bad1ec8a4fe355d431c3742d4a216910d342565757cb103c53610fc",
+    "selectionDecision": "348ed71c198b9a3a8c7298f251c509332a65bb6362b6c65e7120a55245b0914f"
+  },
+  "verification": null,
+  "coverage": {
+    "is100PercentAnalysis": true,
+    "selectedCount": 4,
+    "analyzedCount": 4
+  },
+  "p1FinalCoveragePlanHash": "34fef90151a9a3d563264e53fa253d2963bf847acf064623fefc5e0a2c093884",
+  "updatedAt": "2026-10-07T09:36:38.372Z"
+}

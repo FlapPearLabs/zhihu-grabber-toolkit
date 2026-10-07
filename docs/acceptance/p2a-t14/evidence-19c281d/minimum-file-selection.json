@@ -1,0 +1,577 @@
+{
+  "schema": "p2a-t14-minimum-review-files/v1",
+  "scenarios": [
+    {
+      "scenarioId": "canonical",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "duplicate-only",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "contradiction-one-side",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "authority-unavailable",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "free-form",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "unsafe-plan-owned",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "unknown-gap",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "stale-action",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "all-provider-failed",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "provider-scope",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "global-budget",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "per-gap-bound",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "crash-before",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "crash-after",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "tampered-pool",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "stale-binding",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "equivalent-query",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "missing-resolution",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "tampered-resolution",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "foreign-resolution",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "missing-unauthed-resolution",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    },
+    {
+      "scenarioId": "canonical-ledger-drift",
+      "minimumForReview": [
+        "evidence.json",
+        "work/orchestration-state.json",
+        "work/research-plan.json",
+        "work/targeted-requery-ledger.json",
+        "work/targeted-requery-actions.json",
+        "work/targeted-requery-resolution.json",
+        "work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json",
+        "work/acceptance-events.jsonl",
+        "work/acceptance-provider-calls.jsonl",
+        "work/acceptance-controller-controls.json when present",
+        "work/acceptance-stale-action-control.json and original checkpoint backup for stale-action",
+        "work/research-result.json",
+        "work/coverage-final.json",
+        "work/<action.artifactRel>",
+        "initial/final observation summary snapshots"
+      ],
+      "faultHandling": "Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.",
+      "excludedByDefault": [
+        "zhihu/** capture/corpus payloads",
+        "large logs",
+        "full initial/final observation snapshots"
+      ]
+    }
+  ]
+}

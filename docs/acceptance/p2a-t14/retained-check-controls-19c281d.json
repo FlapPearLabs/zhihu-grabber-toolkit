@@ -1,0 +1,121 @@
+{
+  "schema": "p2a-t14-retained-check-controls/v1",
+  "exactRepoSha": "19c281d30bc076f2ddd8a5c0c2b474f138ae3d8e",
+  "baseline": {
+    "pass": 9,
+    "fail": 0,
+    "notProven": 3
+  },
+  "tests": [
+    {
+      "label": "canonical lineage missing with checks retained",
+      "item": "§20-2",
+      "verdict": "NOT_PROVEN"
+    },
+    {
+      "label": "canonical lineage invalid with checks retained",
+      "item": "§20-2",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "canonical valid lineage has empty joins despite two targeted calls",
+      "item": "§20-2",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "ledger-drift control lineage missing with check retained",
+      "item": "§20-12",
+      "verdict": "NOT_PROVEN"
+    },
+    {
+      "label": "ledger-drift control invalid lineage",
+      "item": "§20-12",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "ledger-drift control empty joins with targeted calls",
+      "item": "§20-12",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "provider count drift",
+      "item": "§20-2",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "ordinary refusal wrapper must exit zero",
+      "item": "§20-2",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "ordinary failed child status",
+      "item": "§20-3",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "wrong crash-before window",
+      "item": "§20-10",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "later SIGKILL rejected",
+      "item": "§20-10",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "crash-before missing SIGKILL rejected",
+      "item": "§20-10",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "normal child exit remains accepted",
+      "item": "§20-2",
+      "verdict": "PASS"
+    },
+    {
+      "label": "real full campaign canonical lineage positive control",
+      "item": "§20-2",
+      "verdict": "PASS"
+    },
+    {
+      "label": "stale checker assertion failure propagates to §20-12",
+      "item": "§20-12",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "stale rejection field removed while checks remain true",
+      "item": "§20-12",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "stale restoration result removed while checks remain true",
+      "item": "§20-12",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "stale audit removed while checks remain true",
+      "item": "§20-12",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "restored occurrence mismatch",
+      "item": "§20-12",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "presented stale occurrence missing",
+      "item": "§20-12",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "unchanged checkpoint cannot prove fault injection",
+      "item": "§20-12",
+      "verdict": "FAIL"
+    },
+    {
+      "label": "original fault context must remain the real initial occurrence",
+      "item": "§20-12",
+      "verdict": "FAIL"
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 # P2A-T14 工程验收候选
 
+最新执行来源为 `19c281d30bc076f2ddd8a5c0c2b474f138ae3d8e`，当前入口为 [LATEST-VALIDATION.json](LATEST-VALIDATION.json) 与 [evidence-19c281d](evidence-19c281d/scenario-manifest.json)。22 场景通过，严格矩阵仍为 9 PASS / 3 NOT_PROVEN，退出码 2；fresh 验收审查待运行。旧 `evidence-16f6b8f`、`candidate-validation.json` 和原 Standards/Spec 收据是历史支持记录，不是当前门禁。
+
 本目录记录本次 #126 验收。§20-13 属于 T15/#127；此处不作研究质量或价值声明。
 
 统一 driver 运行真实 `composeP1Research`。只替换外部 search/capture/semantic/embedding IO，内部 verifier、handoff producer、corpus verifier、诊断、授权、检索、RRF、canonical identity、commit/checkpoint、resolution 和最终工件均执行产品实现。`fetchImpl` 拒绝意外网络请求。
@@ -31,3 +33,9 @@ NODE_OPTIONS='--test-reporter=tap' node research-orchestration/scripts/run-class
 证据包中的 `scenario-manifest.json`、`lineage-index.json`、相对引用及SHA256、provider/controller traces、初/终快照和锚定ledger可机械复核。注入故障后的缺失/篡改有独立标签和故障前hash；大capture/corpus临时工件不进入仓库。
 
 #126 在十二项全部PASS、同SHA独立review PASS、推送、fresh clone复验和远端SHA核对之前保持OPEN。master及#108 ENGINEERING_ACCEPTANCE均不得据场景绿色而推进。
+
+修复后的 stale-action 从真实已提交 action 开始，仅以 TEST_FAULT 修改 checkpoint 的 occurrence context；生产 COMPLETE checker 明确拒绝且新增 IO=0。恢复原 checkpoint 字节后的普通 resume 为 REUSE、新增 IO=0，COMMIT 保持1。故障、恢复与原始 checkpoint 备份分别归档，故障值不冒充新真实 occurrence。矩阵同时核对实际 lineage/count/exit 字段与 stale 拒绝/恢复事实，保留旧 checks 的字段变异不能继续 PASS。
+
+历史独立验收收据 reviews/acceptance-4cb4de6.md 为 RAW_REVIEW_ARCHIVAL_MIRROR；owner 只归档，不代签 reviewer。其原始临时引用保持原文，当前候选另有上方便携工件包；该旧否定收据不转授任何新 SHA。B2 matrix 与 B3 stale-action 修复已执行，是否闭合由新的 fresh reviewer 决定。
+
+已知基线限制见 known-baseline-restart.json：显式 restart:true 创建新 occurrence 后会因旧 canonical action ledger 残留触发 CASE1b，冻结 master 与候选均复现。本票不宣称显式新 occurrence restart 已通过；§20-10 的同 occurrence 进程重启/ordinary resume 证据单独核验。

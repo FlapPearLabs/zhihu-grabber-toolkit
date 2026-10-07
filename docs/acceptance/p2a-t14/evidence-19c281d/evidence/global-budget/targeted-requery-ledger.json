@@ -1,0 +1,27 @@
+{
+  "diagnosedGaps": [
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 0,
+      "gapId": "2cc5553007c6c5afd333fff72c5ae862bf939328b52b92327569845d78bd0982:0",
+      "gapIdentityCore": "2cc5553007c6c5afd333fff72c5ae862bf939328b52b92327569845d78bd0982",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "8bd81a98-d847-47e6-9030-876b24ca74c8",
+      "planHash": "9891c4b7b02c29e22ba8b97238b8fa50fe2572102bc5b9f0cedd4c0cf2895a05",
+      "subjectKey": "aspect:第二补充资料"
+    },
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 0,
+      "gapId": "b8cbd9662d36a87110a0e4940d82b14c2651f2bcd4e899e696c655d12e17535a:0",
+      "gapIdentityCore": "b8cbd9662d36a87110a0e4940d82b14c2651f2bcd4e899e696c655d12e17535a",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "8bd81a98-d847-47e6-9030-876b24ca74c8",
+      "planHash": "9891c4b7b02c29e22ba8b97238b8fa50fe2572102bc5b9f0cedd4c0cf2895a05",
+      "subjectKey": "aspect:第一补充资料"
+    }
+  ],
+  "occurrenceId": "8bd81a98-d847-47e6-9030-876b24ca74c8",
+  "planHash": "9891c4b7b02c29e22ba8b97238b8fa50fe2572102bc5b9f0cedd4c0cf2895a05",
+  "schema": "p2-ari-targeted-requery-ledger/v1"
+}

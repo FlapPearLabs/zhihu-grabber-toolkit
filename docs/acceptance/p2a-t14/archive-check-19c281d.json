@@ -1,0 +1,2268 @@
+{
+  "sourceExactRepoSha": "19c281d30bc076f2ddd8a5c0c2b474f138ae3d8e",
+  "sourceCampaignVerdict": "NOT_PROVEN",
+  "referenceCount": 376,
+  "files": 380,
+  "bytes": 3341054,
+  "failedReferences": [],
+  "rejectedPaths": [],
+  "checks": [
+    {
+      "path": "source-campaign.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/.p1-commit-staging/targeted-action-ledger/dd51cecaea51e9f2edcc04f8399e076a4f1c05833b720fbce3748c74a0c31e2a.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/targeted-requery-subphase/action-d038509c0154fd616f4a5c456e7eba951644fa9f43c4e57cb959a4bb38200453/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/.p1-commit-staging/targeted-action-ledger/26c9e2ef834f095446eee5bdc024e4135ba8e5bad77424b83f5c561c7ce0ddb9.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/targeted-requery-subphase/action-d3d7310a87c7bd307c37447a9b7f3c9bba8437986cebe5b23b28e318ac0e505d/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/duplicate-only/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/.p1-commit-staging/targeted-action-ledger/e30b53b124db184f73a0fa9ccc01303d7742226efb4bc19536fee2a6c47c571e.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/targeted-requery-subphase/action-6656078e6c8cb6bc6300d5fa5159c1a8bfa5e933fa7e624e75be4ed2472ab9be/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/contradiction-one-side/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/.p1-commit-staging/targeted-action-ledger/6aa9b27e2e99ba88ec45abdf5be95073bccbb0e8d91696cddc08e38d931bdd47.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/targeted-requery-subphase/action-d4013a2bd89a1e7d0aa1f6b94fb1f5160fba36c7bcad669280d697c0dac210ca/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/authority-unavailable/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/free-form/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/free-form/.p1-commit-staging/targeted-action-ledger/e8844cf673528fa6d91be47bc500302eeba4b2d26d9e2833230eafc81e74a120.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/free-form/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/free-form/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/free-form/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/free-form/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/free-form/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/free-form/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/free-form/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/free-form/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/free-form/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/free-form/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/free-form/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/free-form/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/free-form/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/free-form/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unsafe-plan-owned/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unsafe-plan-owned/.p1-commit-staging/targeted-action-ledger/c863d441c8548db9fe9e0216e9557f9d03b97a812b74ce385c9442921c1d68ac.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unsafe-plan-owned/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unsafe-plan-owned/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unsafe-plan-owned/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unsafe-plan-owned/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unsafe-plan-owned/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unsafe-plan-owned/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unsafe-plan-owned/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unsafe-plan-owned/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unsafe-plan-owned/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unsafe-plan-owned/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unsafe-plan-owned/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unsafe-plan-owned/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unsafe-plan-owned/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unsafe-plan-owned/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/.p1-commit-staging/targeted-action-ledger/d66336d97836370180d77df7fa181bdff9fe3bfc0373f5cbc2ca539a3bfe159f.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/acceptance-controller-controls.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/targeted-requery-subphase/action-311cb071c9a856ea12395edaff35c7d7bd1bc0c48a933098e28cbdafab3c1120/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/unknown-gap/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/.p1-commit-staging/targeted-action-ledger/8038e2b6f6e0540e5066a79dc5e647cc8354d145a7f1800832097fe28814a26d.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/acceptance-stale-action-checkpoint-original.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/acceptance-stale-action-control.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/targeted-requery-subphase/action-cf6621fa6767848d0a47a25ef049657b1726ec6b61dc5d43fef9e013da9d42e9/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-action/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/all-provider-failed/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/all-provider-failed/.p1-commit-staging/targeted-action-ledger/19dd1889fc52f66820aa78ea8831031639d2a9deb292c7cada785f5dac733664.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/all-provider-failed/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/all-provider-failed/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/all-provider-failed/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/all-provider-failed/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/all-provider-failed/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/all-provider-failed/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/all-provider-failed/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/all-provider-failed/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/all-provider-failed/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/all-provider-failed/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/all-provider-failed/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/all-provider-failed/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/all-provider-failed/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/all-provider-failed/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/.p1-commit-staging/targeted-action-ledger/1636d25e919dbb169e71cd79fc658b99e2db45cb58a6056d1ee0dd474146eb91.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/targeted-requery-subphase/action-4004d09aa4aac9e51d69207a1406ba4f6e7615b49435c79f149118f3f9007ae1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/provider-scope/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/.p1-commit-staging/targeted-action-ledger/aea620a9ed1c3067d30b48e2f1805862ea7ba2a7f78f620ef8fb0d44593baced.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/targeted-requery-subphase/action-d332c7ebba62768c0ad843f4f7a742302d8add845f5f47fd9e4cea1fa4a22bf4/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/global-budget/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/.p1-commit-staging/targeted-action-ledger/edabd8c4a09381fece1a191e6e5261282c77fe0185f018c417eefa546e858563.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/acceptance-controller-controls.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/targeted-requery-subphase/action-6cafaeef3e0ee89ac5805bd299053d31f3be645a974421fd3f4bffaf6d53d490/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/per-gap-bound/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/.p1-commit-staging/targeted-action-ledger/509bd59abca6ad083c185bc1be06750464866646c4dfe9aeec7e7a6dacd4cc1f.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/.p1-commit-staging/targeted-action-ledger/70ec37ba209e3efa641f3600aca86481ab24720e84436351492899947c40f521.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/targeted-requery-subphase/action-e9f348a7034d022dd1cfa5ad7e3ba371de8543cba254bcabb001201f7186ce24/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-before/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/.p1-commit-staging/targeted-action-ledger/86ffb02c496336134edb88a6ebcaeb4d00e08e83b2e945faa658dba55141959a.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/.p1-commit-staging/targeted-action-ledger/a41c05d6011abd1840c1fba8cdde0b5b752bbf94fdc2030a9d6cb2272965d21c.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/targeted-requery-subphase/action-854d783a3e2118bb705bc0acc5bdca99763556588125dc8a273c35f5c79cb6ee/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/crash-after/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/.p1-commit-staging/targeted-action-ledger/7c893b6c21869324c626158ab0e4c65296e19488b093a47f9515eb9b985f8820.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/targeted-requery-subphase/action-fbd4da28f6fe1bfedbd76a05bd2d41c6c421223a83eb9ff51fce990e2391ce22/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-pool/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/.p1-commit-staging/targeted-action-ledger/66795f8cb9b7aaa7d86b400d0414dd7cf6ff93ef067f813af7b747bbecc9aa55.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/targeted-requery-subphase/action-92b91d15bfad0aa446cacc7d10aa334de3ef98113ecd44cab4205f6d1ac38fc9/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/stale-binding/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/.p1-commit-staging/targeted-action-ledger/5c0b0510283f39c9c74603d480587c2629169777566366623f2075ab90591d86.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/acceptance-controller-controls.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/targeted-requery-subphase/action-e76ad120824cd550760f35e4d4bee29253bc4f10b7f69ebcc06cefa662213bac/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/equivalent-query/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-resolution/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-resolution/.p1-commit-staging/targeted-action-ledger/ffe76d29f73ccd24fc183f6da19d7c72a9dc5d2e7444cf5c7a22c30f38c5e1c4.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-resolution/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-resolution/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-resolution/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-resolution/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-resolution/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-resolution/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-resolution/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-resolution/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-resolution/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-resolution/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-resolution/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-resolution/targeted-requery-subphase/action-dc40d0cd6425d867f33d2c19a197ccce87c3ef91801825b71158630fad91d655/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-resolution/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-resolution/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/.p1-commit-staging/targeted-action-ledger/4563dd9facddf4c2b676f1574c017687bf77654ce0ed201015c72ec4db734b76.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/targeted-requery-subphase/action-128f80c1c30aafdbe125867c5180d0c74d0e4af961923b6b474f108b1a04b7f1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/tampered-resolution/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/.p1-commit-staging/targeted-action-ledger/56c11d619c081c43ad70a260dde4cbd07e8bdc06de884d190a632021bc3bb69f.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/targeted-requery-subphase/action-360a48d248df13503ae4e0f64880200b2e2210b8a13da5f36448c70a6d3f904b/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/foreign-resolution/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-unauthed-resolution/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-unauthed-resolution/.p1-commit-staging/targeted-action-ledger/be1f6c66d0d0c9c52ac8172d0fd6de5085ea3f9c5898c41cc23e84f20f2d4f5c.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-unauthed-resolution/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-unauthed-resolution/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-unauthed-resolution/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-unauthed-resolution/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-unauthed-resolution/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-unauthed-resolution/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-unauthed-resolution/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-unauthed-resolution/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-unauthed-resolution/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-unauthed-resolution/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-unauthed-resolution/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-unauthed-resolution/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/missing-unauthed-resolution/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/evidence-record.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/.p1-commit-staging/targeted-action-ledger/995ac65930260b023666301f3356dc948121ba933a97b0dc8055743ee42d4d4c.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/acceptance-events.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/acceptance-provider-calls.jsonl",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/coverage-final.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/orchestration-state.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/research-plan.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/research-result.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/retrieval-rounds/accumulated-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/retrieval-rounds/round-1/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/retrieval-rounds/round-2/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/targeted-requery-actions.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/targeted-requery-ledger.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/targeted-requery-resolution.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/targeted-requery-subphase/action-5b55ced3df8d7609d82ab4edec027089ab84b231834e0fe0bafa0b9c1b16cf87/retrieval-pool.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/initial-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    },
+    {
+      "path": "evidence/canonical-ledger-drift/final-observation-summary.json",
+      "safe": true,
+      "exists": true,
+      "hashMatches": true
+    }
+  ],
+  "verdict": "PASS"
+}

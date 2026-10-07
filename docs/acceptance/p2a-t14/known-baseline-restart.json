@@ -1,0 +1,29 @@
+{
+  "schema": "p2a-t14-known-baseline-limit/v1",
+  "baseSha": "854dd3cb2f9d5fa06df1dd79e7aad4ab42aea2b3",
+  "baselineObservation": {
+    "first": {
+      "ok": true,
+      "providerCalls": 6,
+      "occurrence": "e27da5b5-34be-4eb4-afdf-d401af87cf3c"
+    },
+    "restart": {
+      "ok": false,
+      "code": "p1_compose_aborted",
+      "details": "the checkpoint anchors no action-ledger version but an unanchored ledger exists on disk (F.5.1 CASE 1b: an authorization persisted without its anchor is an authorization the checkpoint cannot prove — refusing to discard it and start clean)",
+      "providerDelta": 4,
+      "occurrence": "42e6555b-f939-4260-848c-5dc722add47b",
+      "newOccurrence": true
+    }
+  },
+  "candidateObservation": {
+    "sourceSha": "4cb4de6100e6038f6975112158c8fffb2c923194",
+    "explicitRestartCreatesNewOccurrence": true,
+    "providerDelta": 4,
+    "code": "p1_compose_aborted",
+    "reason": "F.5.1 CASE1b: unanchored old canonical action ledger remains"
+  },
+  "classification": "PRE_EXISTING_EXPLICIT_NEW_OCCURRENCE_RESTART_DEFECT",
+  "frozenInterpretation": "Approved P1 section 4.3: explicit restart:true starts a new occurrence; T14 ordinary restart/resume remains the same occurrence.",
+  "claimLimit": "Do not claim explicit restart:true is generally usable. No fix or identity/authority amendment is included here."
+}

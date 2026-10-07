@@ -1,0 +1,23 @@
+{
+  "occurrenceId": "98c68279-5e80-496a-9514-e6368d2790b1",
+  "planHash": "27f78acc28d446f7c1ccedaa987b2088d062596f5f8aa9ae4dc2607f3d494bcf",
+  "rejected": [
+    {
+      "gapId": "93761c0917a5047d76fe62eaad786c56a4d94b33d0e7202f44f90a383af9db91:0",
+      "occurrenceId": "98c68279-5e80-496a-9514-e6368d2790b1",
+      "planHash": "27f78acc28d446f7c1ccedaa987b2088d062596f5f8aa9ae4dc2607f3d494bcf",
+      "proposalVerbatim": {
+        "gapId": "93761c0917a5047d76fe62eaad786c56a4d94b33d0e7202f44f90a383af9db91:0",
+        "planOwnedStringRef": {
+          "field": "entities",
+          "index": 0
+        }
+      },
+      "rejectionCode": "PROPOSAL_NOT_ADMITTED",
+      "rejectionDetail": "PLAN_OWNED_STRING_UNSAFE",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699"
+    }
+  ],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": []
+}
