@@ -1,0 +1,509 @@
+TAP version 13
+# Subtest: A1 — targeted IO runs only in a real CONTINUE window, before source-group selection
+ok 1 - A1 — targeted IO runs only in a real CONTINUE window, before source-group selection
+  ---
+  duration_ms: 1166.423
+  type: 'test'
+  ...
+# Subtest: A1b — composer rejects non-integer targeted budgets before targeted provider IO
+    # Subtest: numeric string
+    ok 1 - numeric string
+      ---
+      duration_ms: 16.963208
+      type: 'test'
+      ...
+    # Subtest: infinity
+    ok 2 - infinity
+      ---
+      duration_ms: 16.832417
+      type: 'test'
+      ...
+    # Subtest: fraction
+    ok 3 - fraction
+      ---
+      duration_ms: 14.008875
+      type: 'test'
+      ...
+    # Subtest: zero
+    ok 4 - zero
+      ---
+      duration_ms: 15.766625
+      type: 'test'
+      ...
+    # Subtest: coercible object
+    ok 5 - coercible object
+      ---
+      duration_ms: 17.066333
+      type: 'test'
+      ...
+    1..5
+ok 2 - A1b — composer rejects non-integer targeted budgets before targeted provider IO
+  ---
+  duration_ms: 81.192542
+  type: 'test'
+  ...
+# Subtest: A1c — integer targeted budget remains valid under the P1 global cap
+ok 3 - A1c — integer targeted budget remains valid under the P1 global cap
+  ---
+  duration_ms: 679.023375
+  type: 'test'
+  ...
+# Subtest: A2 — no second retrieval pipeline: the sub-phase uses only runMultiQueryRetrieval
+ok 4 - A2 — no second retrieval pipeline: the sub-phase uses only runMultiQueryRetrieval
+  ---
+  duration_ms: 0.517083
+  type: 'test'
+  ...
+# Subtest: A3 — the two frozen P1 contact surfaces are exactly retrieval.mjs and retrieval-round-controller.mjs
+ok 5 - A3 — the two frozen P1 contact surfaces are exactly retrieval.mjs and retrieval-round-controller.mjs
+  ---
+  duration_ms: 0.676583
+  type: 'test'
+  ...
+# Subtest: A5 — the augmented walk NEVER extends trustedPlanStrings with targeted strings (F.3 / D12-3)
+ok 6 - A5 — the augmented walk NEVER extends trustedPlanStrings with targeted strings (F.3 / D12-3)
+  ---
+  duration_ms: 0.331542
+  type: 'test'
+  ...
+# Subtest: A4 — the frozen accumulated-pool artifact-walk call site is byte-unchanged
+ok 7 - A4 — the frozen accumulated-pool artifact-walk call site is byte-unchanged
+  ---
+  duration_ms: 0.215083
+  type: 'test'
+  ...
+# Subtest: B1 — malformed anchors fail closed with a typed error and write no artifact
+ok 8 - B1 — malformed anchors fail closed with a typed error and write no artifact
+  ---
+  duration_ms: 1.160333
+  type: 'test'
+  ...
+# Subtest: C1 — a gap with no admissible proposal is never actioned (E.7)
+ok 9 - C1 — a gap with no admissible proposal is never actioned (E.7)
+  ---
+  duration_ms: 59.344875
+  type: 'test'
+  ...
+# Subtest: C2 — gaps are processed in gapId ascending order (E.8 canonical order)
+ok 10 - C2 — gaps are processed in gapId ascending order (E.8 canonical order)
+  ---
+  duration_ms: 99.279958
+  type: 'test'
+  ...
+# Subtest: C3 — an empty actionable set is a legal NO_ACTION (never a fabricated gap)
+ok 11 - C3 — an empty actionable set is a legal NO_ACTION (never a fabricated gap)
+  ---
+  duration_ms: 24.425875
+  type: 'test'
+  ...
+# Subtest: D1 — the full sequence produces a COMMITTED action, a bound checkpoint and a RESOLVED gap
+ok 12 - D1 — the full sequence produces a COMMITTED action, a bound checkpoint and a RESOLVED gap
+  ---
+  duration_ms: 68.052417
+  type: 'test'
+  ...
+# Subtest: E1 — targeted candidates enter the SAME pool with best-rrfScore dedup and canonical order
+ok 13 - E1 — targeted candidates enter the SAME pool with best-rrfScore dedup and canonical order
+  ---
+  duration_ms: 87.6095
+  type: 'test'
+  ...
+# Subtest: E2 — a targeted result that adds no new canonical questionId is not evidence (G.1)
+ok 14 - E2 — a targeted result that adds no new canonical questionId is not evidence (G.1)
+  ---
+  duration_ms: 88.471834
+  type: 'test'
+  ...
+# Subtest: F1 — a crash before the checkpoint commit yields no completion evidence (one safe re-run)
+ok 15 - F1 — a crash before the checkpoint commit yields no completion evidence (one safe re-run)
+  ---
+  duration_ms: 52.288708
+  type: 'test'
+  ...
+# Subtest: F2 — after a completed run the committed action is REUSEd (never re-executed)
+ok 16 - F2 — after a completed run the committed action is REUSEd (never re-executed)
+  ---
+  duration_ms: 89.171166
+  type: 'test'
+  ...
+# Subtest: F3 — a pre-checkpoint crash does NOT let the record fabricate its own completion credential
+ok 17 - F3 — a pre-checkpoint crash does NOT let the record fabricate its own completion credential
+  ---
+  duration_ms: 115.238125
+  type: 'test'
+  ...
+# Subtest: F3b — a crash between the commit point and the T08 conclusion still reaches a terminal on re-run
+ok 18 - F3b — a crash between the commit point and the T08 conclusion still reaches a terminal on re-run
+  ---
+  duration_ms: 93.62875
+  type: 'test'
+  ...
+# Subtest: F3c — a committed action whose bytes are gone FAILS CLOSED instead of reporting ok with dropped evidence
+ok 19 - F3c — a committed action whose bytes are gone FAILS CLOSED instead of reporting ok with dropped evidence
+  ---
+  duration_ms: 113.573042
+  type: 'test'
+  ...
+# Subtest: H1 — a NEW occurrence in a reused work dir does NOT load the prior occurrence artifacts
+ok 20 - H1 — a NEW occurrence in a reused work dir does NOT load the prior occurrence artifacts
+  ---
+  duration_ms: 129.673125
+  type: 'test'
+  ...
+# Subtest: H3 — a checkpoint-anchored ledger whose bytes are gone FAILS CLOSED (F.5.1 CASE 3b)
+ok 21 - H3 — a checkpoint-anchored ledger whose bytes are gone FAILS CLOSED (F.5.1 CASE 3b)
+  ---
+  duration_ms: 99.742375
+  type: 'test'
+  ...
+# Subtest: H2 — a real composer RESUME carries a real targeted binding across, making F.5 REUSE reachable
+ok 22 - H2 — a real composer RESUME carries a real targeted binding across, making F.5 REUSE reachable
+  ---
+  duration_ms: 300.733708
+  type: 'test'
+  ...
+# Subtest: H4 — a committed artifact whose bytes were tampered with is refused, not merged
+ok 23 - H4 — a committed artifact whose bytes were tampered with is refused, not merged
+  ---
+  duration_ms: 90.84125
+  type: 'test'
+  ...
+# Subtest: I1 — a full-chain composeP1Research run with the sub-phase ENABLED executes and augments the pool
+ok 24 - I1 — a full-chain composeP1Research run with the sub-phase ENABLED executes and augments the pool
+  ---
+  duration_ms: 241.0855
+  type: 'test'
+  ...
+# Subtest: F4 — a second complete run over the same work dir REUSEs (zero new retrieval, same pool)
+ok 25 - F4 — a second complete run over the same work dir REUSEs (zero new retrieval, same pool)
+  ---
+  duration_ms: 118.472834
+  type: 'test'
+  ...
+# Subtest: OPTIN-1 — the composer exposes a default-off targeted continuation seam
+ok 26 - OPTIN-1 — the composer exposes a default-off targeted continuation seam
+  ---
+  duration_ms: 0.651834
+  type: 'test'
+  ...
+# Subtest: OPTIN-2 — a real full-chain run is byte-equivalent with the parameter absent vs explicitly null, and creates no targeted artifact
+ok 27 - OPTIN-2 — a real full-chain run is byte-equivalent with the parameter absent vs explicitly null, and creates no targeted artifact
+  ---
+  duration_ms: 217.836916
+  type: 'test'
+  ...
+# Subtest: G1 — the E.6 dedupeKey field set is VERBATIM unchanged, and `attempt` is excluded from it
+ok 28 - G1 — the E.6 dedupeKey field set is VERBATIM unchanged, and `attempt` is excluded from it
+  ---
+  duration_ms: 0.7545
+  type: 'test'
+  ...
+# Subtest: G2 — the T06 LEGAL_TRANSITIONS table is VERBATIM unchanged (no committed→authorized edge)
+ok 29 - G2 — the T06 LEGAL_TRANSITIONS table is VERBATIM unchanged (no committed→authorized edge)
+  ---
+  duration_ms: 0.334
+  type: 'test'
+  ...
+# Subtest: G3 — resume staging cleanup must NOT delete a still-anchored ledger version
+ok 30 - G3 — resume staging cleanup must NOT delete a still-anchored ledger version
+  ---
+  duration_ms: 0.208083
+  type: 'test'
+  ...
+# Subtest: G4 — every F.5.1 crash window has a REAL run, and each anchors what it claims to
+ok 31 - G4 — every F.5.1 crash window has a REAL run, and each anchors what it claims to
+  ---
+  duration_ms: 486.822792
+  type: 'test'
+  ...
+# Subtest: G5 — after a resume, every targetedActionId commits EXACTLY once
+ok 32 - G5 — after a resume, every targetedActionId commits EXACTLY once
+  ---
+  duration_ms: 137.648833
+  type: 'test'
+  ...
+# Subtest: G6 — CASE 2 BYPASSES the E.6 dedupe gate: the gate is never CALLED, not merely relaxed
+ok 33 - G6 — CASE 2 BYPASSES the E.6 dedupe gate: the gate is never CALLED, not merely relaxed
+  ---
+  duration_ms: 106.042334
+  type: 'test'
+  ...
+# Subtest: BUDGET-1 — the authorization preflight DENOMINATOR is planned + targeted, not targeted alone
+ok 34 - BUDGET-1 — the authorization preflight DENOMINATOR is planned + targeted, not targeted alone
+  ---
+  duration_ms: 128.026791
+  type: 'test'
+  ...
+# Subtest: BUDGET-2 — the preflight refuses to run without the planned half (fail closed, never under-count)
+ok 35 - BUDGET-2 — the preflight refuses to run without the planned half (fail closed, never under-count)
+  ---
+  duration_ms: 1.697167
+  type: 'test'
+  ...
+# Subtest: BUDGET-3 — every round evaluation sees the targeted half, including the CONTINUE re-evaluation
+ok 36 - BUDGET-3 — every round evaluation sees the targeted half, including the CONTINUE re-evaluation
+  ---
+  duration_ms: 0.709
+  type: 'test'
+  ...
+# Subtest: BUDGET-4 — the composer derives the loop targeted half from the ANCHORED ledger
+ok 37 - BUDGET-4 — the composer derives the loop targeted half from the ANCHORED ledger
+  ---
+  duration_ms: 1.557375
+  type: 'test'
+  ...
+# Subtest: T14 G.1 recovery retains original inputs at after_targeted_execution
+ok 38 - T14 G.1 recovery retains original inputs at after_targeted_execution
+  ---
+  duration_ms: 101.140333
+  type: 'test'
+  ...
+# Subtest: T14 G.1 recovery retains original inputs at after_targeted_commit_finalize
+ok 39 - T14 G.1 recovery retains original inputs at after_targeted_commit_finalize
+  ---
+  duration_ms: 99.6595
+  type: 'test'
+  ...
+# Subtest: T14 resolution input fails closed before IO for missing-binding
+ok 40 - T14 resolution input fails closed before IO for missing-binding
+  ---
+  duration_ms: 73.445833
+  type: 'test'
+  ...
+# Subtest: T14 resolution input fails closed before IO for corrupt-bytes
+ok 41 - T14 resolution input fails closed before IO for corrupt-bytes
+  ---
+  duration_ms: 78.926166
+  type: 'test'
+  ...
+# Subtest: T14 resolution input fails closed before IO for foreign-action
+ok 42 - T14 resolution input fails closed before IO for foreign-action
+  ---
+  duration_ms: 74.283209
+  type: 'test'
+  ...
+# Subtest: T14 resolution input fails closed before IO for foreign-occurrence
+ok 43 - T14 resolution input fails closed before IO for foreign-occurrence
+  ---
+  duration_ms: 51.927709
+  type: 'test'
+  ...
+# Subtest: T14 resolution input fails closed before IO for extra-field
+ok 44 - T14 resolution input fails closed before IO for extra-field
+  ---
+  duration_ms: 50.849833
+  type: 'test'
+  ...
+# Subtest: T14 resolution input fails closed before IO for noncanonical-id
+ok 45 - T14 resolution input fails closed before IO for noncanonical-id
+  ---
+  duration_ms: 55.841
+  type: 'test'
+  ...
+# Subtest: T14 resolution input fails closed before IO for unsafe-framing
+ok 46 - T14 resolution input fails closed before IO for unsafe-framing
+  ---
+  duration_ms: 52.480667
+  type: 'test'
+  ...
+# Subtest: A1: the trust-set call surface is ENUMERATED, with nothing left unparsed
+ok 47 - A1: the trust-set call surface is ENUMERATED, with nothing left unparsed
+  ---
+  duration_ms: 29.524292
+  type: 'test'
+  ...
+# Subtest: A1b: EVERY shape the enumerator files as `unparsed` is one C3 will actually examine
+ok 48 - A1b: EVERY shape the enumerator files as `unparsed` is one C3 will actually examine
+  ---
+  duration_ms: 2.091208
+  type: 'test'
+  ...
+# Subtest: A2: a trust set only ever RELAXES the provider-content lens, never the plan lens
+ok 49 - A2: a trust set only ever RELAXES the provider-content lens, never the plan lens
+  ---
+  duration_ms: 0.569541
+  type: 'test'
+  ...
+# Subtest: A3: a trust set CANNOT admit a plan-UNSAFE string (trust is not a bypass)
+ok 50 - A3: a trust set CANNOT admit a plan-UNSAFE string (trust is not a bypass)
+  ---
+  duration_ms: 0.063917
+  type: 'test'
+  ...
+# Subtest: A4: F (no caller-defined trust bypass) — trust is exact-match, never substring/prefix
+ok 51 - A4: F (no caller-defined trust bypass) — trust is exact-match, never substring/prefix
+  ---
+  duration_ms: 0.079875
+  type: 'test'
+  ...
+# Subtest: B1: the single-lens plan gate on plannedQueryVariants REJECTS a plan-unsafe string
+ok 52 - B1: the single-lens plan gate on plannedQueryVariants REJECTS a plan-unsafe string
+  ---
+  duration_ms: 0.622
+  type: 'test'
+  ...
+# Subtest: B2: the T09 targeted pool never contributes to plannedQueryVariants
+ok 53 - B2: the T09 targeted pool never contributes to plannedQueryVariants
+  ---
+  duration_ms: 0.350833
+  type: 'test'
+  ...
+# Subtest: B3: MUTATION — a targeted string reaches the walker untrusted and is judged on its merits
+ok 54 - B3: MUTATION — a targeted string reaches the walker untrusted and is judged on its merits
+  ---
+  duration_ms: 0.542833
+  type: 'test'
+  ...
+# Subtest: C1: BEHAVIOUR — a targeted string that is provider-unsafe never reaches the pool
+ok 55 - C1: BEHAVIOUR — a targeted string that is provider-unsafe never reaches the pool
+  ---
+  duration_ms: 66.354083
+  type: 'test'
+  ...
+# Subtest: C1b: the same walk ACCEPTS a provider-safe targeted string (proves C1 is not blanket failure)
+ok 56 - C1b: the same walk ACCEPTS a provider-safe targeted string (proves C1 is not blanket failure)
+  ---
+  duration_ms: 62.836541
+  type: 'test'
+  ...
+# Subtest: C3: NO trust set in lib/ derives its elements from a targeted surface
+ok 57 - C3: NO trust set in lib/ derives its elements from a targeted surface
+  ---
+  duration_ms: 223.968667
+  type: 'test'
+  ...
+# Subtest: C3b: MUTATION PROOF — every widening the security reviews found is now fatal
+ok 58 - C3b: MUTATION PROOF — every widening the security reviews found is now fatal
+  ---
+  duration_ms: 60.607541
+  type: 'test'
+  ...
+# Subtest: C3c: EVERY trust-set call site yields something for C3 to examine
+ok 59 - C3c: EVERY trust-set call site yields something for C3 to examine
+  ---
+  duration_ms: 179.79025
+  type: 'test'
+  ...
+# Subtest: r9 P2-2: the call-surface enumerator sees SUBDIRECTORIES and IMPORT ALIASES
+ok 60 - r9 P2-2: the call-surface enumerator sees SUBDIRECTORIES and IMPORT ALIASES
+  ---
+  duration_ms: 1.452709
+  type: 'test'
+  ...
+# Subtest: r10 P1-1: an INLINE trust set read through a vocabulary-spelled binding is not skipped
+ok 61 - r10 P1-1: an INLINE trust set read through a vocabulary-spelled binding is not skipped
+  ---
+  duration_ms: 0.628125
+  type: 'test'
+  ...
+# Subtest: r10 P1-2: COMPUTED and OPTIONAL-CHAINED members are walked, not treated as expressions
+ok 62 - r10 P1-2: COMPUTED and OPTIONAL-CHAINED members are walked, not treated as expressions
+  ---
+  duration_ms: 2.854375
+  type: 'test'
+  ...
+# Subtest: r10 P1-4: a DYNAMIC index write is not a write to a named member
+ok 63 - r10 P1-4: a DYNAMIC index write is not a write to a named member
+  ---
+  duration_ms: 0.687583
+  type: 'test'
+  ...
+# Subtest: r10 P1-3: a LOCALLY re-bound walker is still enumerated as a call site
+ok 64 - r10 P1-3: a LOCALLY re-bound walker is still enumerated as a call site
+  ---
+  duration_ms: 0.751917
+  type: 'test'
+  ...
+# Subtest: r11 P1-1: a MEMBER nested inside an inline trust set is a binding, not a read
+ok 65 - r11 P1-1: a MEMBER nested inside an inline trust set is a binding, not a read
+  ---
+  duration_ms: 0.894958
+  type: 'test'
+  ...
+# Subtest: r11 P1-1b: a PURE member read is not dragged into the member route
+ok 66 - r11 P1-1b: a PURE member read is not dragged into the member route
+  ---
+  duration_ms: 0.1985
+  type: 'test'
+  ...
+# Subtest: r11 P1-2: walker aliases bound LATE, from a NAMESPACE, or via .bind() are enumerated
+ok 67 - r11 P1-2: walker aliases bound LATE, from a NAMESPACE, or via .bind() are enumerated
+  ---
+  duration_ms: 1.189708
+  type: 'test'
+  ...
+# Subtest: r11 P1-2b: an ordinary local assignment is NOT read as a walker alias
+ok 68 - r11 P1-2b: an ordinary local assignment is NOT read as a walker alias
+  ---
+  duration_ms: 0.914917
+  type: 'test'
+  ...
+# Subtest: C2: enumeratePlanOwnedStrings never yields a targeted/authorized string
+ok 69 - C2: enumeratePlanOwnedStrings never yields a targeted/authorized string
+  ---
+  duration_ms: 0.119125
+  type: 'test'
+  ...
+# Subtest: D1: dual-lens gate is the intersection — each lens alone admits a string the other rejects
+ok 70 - D1: dual-lens gate is the intersection — each lens alone admits a string the other rejects
+  ---
+  duration_ms: 0.059916
+  type: 'test'
+  ...
+# Subtest: D2: MUTATION — the gate is a literal AND; a single-lens OR would admit the plan-only probe
+ok 71 - D2: MUTATION — the gate is a literal AND; a single-lens OR would admit the plan-only probe
+  ---
+  duration_ms: 0.025
+  type: 'test'
+  ...
+# Subtest: D3: the gate is total — hostile inputs return false, never throw
+ok 72 - D3: the gate is total — hostile inputs return false, never throw
+  ---
+  duration_ms: 0.045042
+  type: 'test'
+  ...
+# Subtest: E1: a free-form queryText proposal is REJECTED (MVP does not authorize new strings)
+ok 73 - E1: a free-form queryText proposal is REJECTED (MVP does not authorize new strings)
+  ---
+  duration_ms: 0.114042
+  type: 'test'
+  ...
+# Subtest: E1b: a plan-owned stringRef proposal IS admitted (MVP positive control)
+ok 74 - E1b: a plan-owned stringRef proposal IS admitted (MVP positive control)
+  ---
+  duration_ms: 0.06775
+  type: 'test'
+  ...
+# Subtest: E2: UNCLASSIFIED fails closed through the admission predicate directly
+ok 75 - E2: UNCLASSIFIED fails closed through the admission predicate directly
+  ---
+  duration_ms: 0.030166
+  type: 'test'
+  ...
+# Subtest: E3: a plan-owned but UNSAFE string is rejected by the admission gate (PLAN_OWNED != auto-admit)
+ok 76 - E3: a plan-owned but UNSAFE string is rejected by the admission gate (PLAN_OWNED != auto-admit)
+  ---
+  duration_ms: 0.026875
+  type: 'test'
+  ...
+# Subtest: G1: the subphase reads the ledger ONLY through the checkpoint-anchored resolver
+ok 77 - G1: the subphase reads the ledger ONLY through the checkpoint-anchored resolver
+  ---
+  duration_ms: 0.232958
+  type: 'test'
+  ...
+# Subtest: G2: no sidecar/receipt second credential exists in the targeted modules
+ok 78 - G2: no sidecar/receipt second credential exists in the targeted modules
+  ---
+  duration_ms: 0.586667
+  type: 'test'
+  ...
+1..78
+# tests 83
+# suites 0
+# pass 83
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5604.464666
