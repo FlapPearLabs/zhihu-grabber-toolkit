@@ -330,7 +330,7 @@ if (arg('child')) {
     const finalCalls = observed.calls.filter(c => c.kind === 'targeted').length;
     const noTargeted = ['free-form', 'unsafe-plan-owned', 'missing-unauthed-resolution', 'unknown-gap'].includes(scenario);
     const expectedTargetedCalls = noTargeted ? 0 : scenario === 'provider-scope' ? 1 : crash && scenario === 'crash-before' ? 4 : 2;
-    const expectedProviderCalls = scenario === 'all-provider-failed' ? 6 : scenario === 'global-budget' ? 4 : crash && scenario === 'crash-framing-drift' ? 14 : crash && ['crash-resolution-input', 'crash-resolution-reverse'].includes(scenario) ? 8 : crash && ['crash-after', 'crash-before'].includes(scenario) ? 8 : scenario === 'provider-scope' ? 5 : scenario === 'unknown-gap' || ['free-form', 'unsafe-plan-owned', 'missing-unauthed-resolution'].includes(scenario) ? 4 : expectedTargetedCalls + 4;
+    const expectedProviderCalls = scenario === 'all-provider-failed' ? 6 : scenario === 'global-budget' ? 4 : crash && scenario === 'crash-framing-drift' ? 14 : crash && ['crash-resolution-input', 'crash-resolution-reverse'].includes(scenario) ? 8 : crash && scenario === 'crash-before' ? 10 : crash && scenario === 'crash-after' ? 8 : scenario === 'provider-scope' ? 5 : scenario === 'unknown-gap' || ['free-form', 'unsafe-plan-owned', 'missing-unauthed-resolution'].includes(scenario) ? 4 : expectedTargetedCalls + 4;
     check('targeted provider calls', finalCalls === expectedTargetedCalls, finalCalls, expectedTargetedCalls);
     check('all provider calls', observed.calls.length === expectedProviderCalls, observed.calls.length, expectedProviderCalls);
     if (scenario === 'equivalent-query' || scenario === 'per-gap-bound') {
