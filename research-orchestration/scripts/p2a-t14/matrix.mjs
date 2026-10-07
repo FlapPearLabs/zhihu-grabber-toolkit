@@ -22,6 +22,16 @@ const SPECS = [
 const findCheck = (scenario, name) => scenario?.checks?.find(c => c.name === name);
 const passed = (scenario, names) => names.every(name => findCheck(scenario, name)?.pass === true);
 const portableRefs = refs => (refs ?? []).map(a => ({ path: a.path ?? 'UNKNOWN', sha256: a.sha256 ?? 'UNKNOWN', bytes: a.bytes ?? 'UNKNOWN' }));
+const fieldsComplete = (scenario, campaign) => !!scenario
+  && scenario.exactRepoSha === campaign.exactRepoSha && /^[0-9a-f]{40}$/.test(scenario.exactRepoSha)
+  && Array.isArray(scenario.sourceDirty) && scenario.sourceDirty.length === 0
+  && ['runId', 'occurrenceId', 'planId', 'generation'].every(key => typeof scenario[key] === 'string' && scenario[key] !== 'UNKNOWN' && scenario[key].length > 0)
+  && Array.isArray(scenario.commands) && scenario.commands.length > 0 && scenario.commands.every(c => c.command && Number.isInteger(c.exitCode))
+  && ['inputArtifacts', 'outputArtifacts'].every(key => Array.isArray(scenario[key]) && scenario[key].length > 0
+    && scenario[key].every(ref => typeof ref.path === 'string' && !path.isAbsolute(ref.path)
+      && !ref.path.split(/[\\/]/).includes('..') && /^[0-9a-f]{64}$/.test(ref.sha256)))
+  && ['observedProviderCallCount', 'expectedProviderCallCount', 'observedTargetedProviderCallCount', 'expectedTargetedProviderCallCount']
+    .every(key => Number.isInteger(scenario[key]) && scenario[key] >= 0);
 
 export function buildMatrix(campaign) {
   const scenarios = new Map((campaign?.scenarios ?? []).map(s => [s.scenarioId, s]));
@@ -32,7 +42,8 @@ export function buildMatrix(campaign) {
     const controlsOk = controls.length === (spec.controls ?? []).length && controls.every(c => c.scenario && passed(c.scenario, c.checks));
     const zeroCallOk = !spec.requireZeroTargeted || (principal?.observedTargetedProviderCallCount === 0 && principal?.expectedTargetedProviderCallCount === 0);
     const scenarioVerdictsOk = !!principal && principal.verdict === 'PASS' && controls.every(c => c.scenario.verdict === 'PASS');
-    const verdict = spec.fixed ?? (principalChecksOk && controlsOk && zeroCallOk && scenarioVerdictsOk ? 'PASS' : 'FAIL');
+    const fieldsOk = fieldsComplete(principal, campaign) && controls.every(c => fieldsComplete(c.scenario, campaign));
+    const verdict = spec.fixed ?? (!fieldsOk ? 'NOT_PROVEN' : principalChecksOk && controlsOk && zeroCallOk && scenarioVerdictsOk ? 'PASS' : 'FAIL');
     const inputRefs = portableRefs(principal?.inputArtifacts);
     const outputRefs = portableRefs(principal?.outputArtifacts);
     return {
@@ -77,7 +88,7 @@ export function buildMatrix(campaign) {
   return {
     schema: 'p2a-t14-frozen-section-20-matrix-draft/v1',
     exactRepoSha: campaign?.exactRepoSha ?? 'UNKNOWN',
-    sourceCampaignVerdict: campaign?.verdict ?? 'UNKNOWN',
+    sourceScenarioChecksVerdict: campaign?.scenarioChecksVerdict ?? campaign?.verdict ?? 'UNKNOWN',
     engineeringGate: failCount || notProvenCount ? 'BLOCKED' : 'PENDING_INDEPENDENT_REVIEW',
     status: 'DRAFT_NOT_REVIEWED',
     reviewReceipt: 'NOT_CREATED',

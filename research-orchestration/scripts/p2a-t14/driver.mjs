@@ -136,7 +136,8 @@ if (arg('child')) {
       const child = spawnSync(process.execPath, childArgs, { encoding: 'utf8', timeout: 120000, maxBuffer: 4 * 1024 * 1024 });
       fs.writeFileSync(path.join(scenarioDir, `${phase}.stdout.log`), child.stdout ?? '');
       fs.writeFileSync(path.join(scenarioDir, `${phase}.stderr.log`), child.stderr ?? '');
-      return { command: `node research-orchestration/scripts/p2a-t14/driver.mjs --child ${scenario} --out <scenario-work> --phase ${phase}${crash ? ` --crash ${crash}` : ''}`,
+      return { command: `node research-orchestration/scripts/p2a-t14/driver.mjs --child ${scenario} --out "$T14_OUT/${scenario}/work" --phase ${phase}${crash ? ` --crash ${crash}` : ''}`,
+        outputDirectoryRef: `${scenario}/work`, workingDirectory: 'repository-root',
         exitCode: child.status ?? (child.signal === 'SIGKILL' ? 137 : null), signal: child.signal, error: child.error ? String(child.error.code) : null };
     };
     const commands = [];

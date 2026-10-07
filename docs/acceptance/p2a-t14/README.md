@@ -7,13 +7,16 @@
 从仓库根目录运行：
 
 ```sh
-node research-orchestration/scripts/p2a-t14/driver.mjs --out "$TMPDIR/p2a-t14-fresh"
-node research-orchestration/scripts/p2a-t14/package-evidence.mjs "$TMPDIR/p2a-t14-fresh" "$TMPDIR/p2a-t14-package"
+export T14_OUT="$TMPDIR/p2a-t14-fresh"
+node research-orchestration/scripts/p2a-t14/driver.mjs --out "$T14_OUT"
+node research-orchestration/scripts/p2a-t14/package-evidence.mjs "$T14_OUT" "$TMPDIR/p2a-t14-package"
 node research-orchestration/scripts/run-classified-research-suites.mjs guard
 NODE_OPTIONS='--test-reporter=tap' node research-orchestration/scripts/run-classified-research-suites.mjs full-offline
 ```
 
 输出目录必须尚未使用。首次 fresh clone 按既有 lockfile 在 `zhihu-answer-grabber` 执行 `npm ci`，与仓库 CI 的依赖准备一致；不加载真实模型或私有凭据。当前本地运行 Node26；Node22 的最终证据由可用环境再验证。TAP 显式设置只用于兼容分类 runner 的计数格式。
+
+每个command中的 `$T14_OUT` 是本次fresh campaign根目录；`outputDirectoryRef` 指向该根目录下的具体scenario，`workingDirectory` 是仓库根。命令保留真实child参数结构而不提交本机绝对路径。
 
 退出码：0 表示运行断言和十二项工程矩阵全部通过，仍须独立 reviewer；1 表示失败；2 表示 `NOT_PROVEN`。`scenarioChecksVerdict` 只表示场景断言结果，不能替代 `campaign.verdict` 或矩阵门禁。
 
