@@ -460,7 +460,7 @@
   "qualityClaim": "OUT_OF_SCOPE",
   "producingShaPolicy": "This producing SHA remains explicit. Evidence/docs commits do not transfer a review or grant T14 PASS.",
   "latestReviewedHead": "96a4cc3b5b851e29589ecd80cc308baeae3356ca",
-  "reviewerVerdictRef": "reviews/acceptance-96a4cc3/reviewer-receipt-96a4cc3.md",
+  "reviewerVerdictRef": "r96a/reviewer-receipt-96a4cc3.md",
   "independentReview": {
     "role": "ACCEPTANCE_EVIDENCE_REVIEWER",
     "reviewedHead": "96a4cc3b5b851e29589ecd80cc308baeae3356ca",
@@ -472,8 +472,8 @@
       "notProven": 3,
       "outOfScope": 1
     },
-    "summaryRef": "reviews/acceptance-96a4cc3/reviewer-validation-summary-96a4cc3.json",
-    "archiveRef": "reviews/acceptance-96a4cc3/ARCHIVAL.json",
+    "summaryRef": "r96a/reviewer-validation-summary-96a4cc3.json",
+    "archiveRef": "r96a/ARCHIVAL.json",
     "ordinaryRepairGroups": {
       "B2": "CLOSED_ON_REVIEWED_HEAD",
       "B3": "CLOSED_ON_REVIEWED_HEAD"

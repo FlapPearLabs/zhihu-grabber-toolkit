@@ -1,0 +1,17 @@
+{
+  "schema": "p2a-t14-review-archive-path-control/v1",
+  "rejectedHead": "75cb0ff05327e0f44eb1ea5a1abaac070e48af25",
+  "failedRunUrl": "https://github.com/FlapPearLabs/zhihu-grabber-toolkit/actions/runs/37604923050",
+  "failedJobId": 112737965379,
+  "observedFailure": "Windows checkout exit128, Filename too long; tests were skipped.",
+  "oldArchiveRef": "reviews/acceptance-96a4cc3",
+  "newArchiveRef": "r96a",
+  "windowsWorkspacePrefixLength": 49,
+  "oldMaxWindowsLength": 274,
+  "newMaxWindowsLength": 252,
+  "over259AfterMapping": 0,
+  "retainedByteHashesVerified": 410,
+  "originalReviewReceiptChanged": false,
+  "productOrCiConfigurationChanged": false,
+  "validationLimit": "Path calculation and post-move byte verification only. The new HEAD still needs its own Windows CI checkout and fresh exact-SHA review."
+}

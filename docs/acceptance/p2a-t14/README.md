@@ -1,6 +1,6 @@
 # P2A-T14 工程验收候选
 
-最新执行来源为 `19c281d30bc076f2ddd8a5c0c2b474f138ae3d8e`，当前入口为 [LATEST-VALIDATION.json](LATEST-VALIDATION.json) 与 [evidence-19c281d](evidence-19c281d/scenario-manifest.json)。22 场景通过，严格矩阵仍为 9 PASS / 3 NOT_PROVEN，退出码 2。fresh 独立 reviewer 已在 `96a4cc3b5b851e29589ecd80cc308baeae3356ca` 重新从远端 clone 执行，正式结论为 9 PASS / 3 NOT_PROVEN、P0=0、P1 acceptance blocker 根因组 B1=1；B2 matrix 与 B3 stale-action 普通修复已闭合。收据原文见 [独立验收收据](reviews/acceptance-96a4cc3/reviewer-receipt-96a4cc3.md)，架构授权范围见 [USER-DECISION.md](USER-DECISION.md)。归档后的新 SHA 不继承该收据。旧 `evidence-16f6b8f`、`candidate-validation.json` 和原 Standards/Spec 收据是历史支持记录，不是当前门禁。
+最新执行来源为 `19c281d30bc076f2ddd8a5c0c2b474f138ae3d8e`，当前入口为 [LATEST-VALIDATION.json](LATEST-VALIDATION.json) 与 [evidence-19c281d](evidence-19c281d/scenario-manifest.json)。22 场景通过，严格矩阵仍为 9 PASS / 3 NOT_PROVEN，退出码 2。fresh 独立 reviewer 已在 `96a4cc3b5b851e29589ecd80cc308baeae3356ca` 重新从远端 clone 执行，正式结论为 9 PASS / 3 NOT_PROVEN、P0=0、P1 acceptance blocker 根因组 B1=1；B2 matrix 与 B3 stale-action 普通修复已闭合。收据原文见 [独立验收收据](r96a/reviewer-receipt-96a4cc3.md)，架构授权范围见 [USER-DECISION.md](USER-DECISION.md)。归档后的新 SHA 不继承该收据。旧 `evidence-16f6b8f`、`candidate-validation.json` 和原 Standards/Spec 收据是历史支持记录，不是当前门禁。
 
 本目录记录本次 #126 验收。§20-13 属于 T15/#127；此处不作研究质量或价值声明。
 
@@ -39,3 +39,5 @@ NODE_OPTIONS='--test-reporter=tap' node research-orchestration/scripts/run-class
 历史独立验收收据 reviews/acceptance-4cb4de6.md 为 RAW_REVIEW_ARCHIVAL_MIRROR；owner 只归档，不代签 reviewer。其原始临时引用保持原文，当前候选另有上方便携工件包；该旧否定收据不转授任何新 SHA。B2 matrix 与 B3 stale-action 已由 96a4cc3 的 fresh reviewer 确认闭合。最新 review archive 保持原文相对引用，包含完整便携包及每场景原始 evidence 记录；完整临时 work 快照未进入 Git，其引用范围在 ARCHIVAL.json 中明确披露。
 
 已知基线限制见 known-baseline-restart.json：显式 restart:true 创建新 occurrence 后会因旧 canonical action ledger 残留触发 CASE1b，冻结 master 与候选均复现。本票不宣称显式新 occurrence restart 已通过；§20-10 的同 occurrence 进程重启/ordinary resume 证据单独核验。
+
+审查归档存放在短目录 `r96a/`，以支持现有 Windows checkout 路径限制。原收据、便携包内部相对路径与所有工件字节保持不变；路径故障与修复计算记录见 [path-length-control.json](path-length-control.json)。

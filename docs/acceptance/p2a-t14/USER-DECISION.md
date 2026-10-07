@@ -43,4 +43,4 @@ ISSUE_CLOSE = NOT_ALLOWED
 
 触发来源是本轮用户请求的Product Code Change Policy与Operating Mode：“architecture change”“product semantics change”“identity/authority boundary change”需USER_DECISION_REQUIRED。这里请求的是新增组合接缝/调度的架构授权，不是重复询问已授权的测试、P2修复、模型替代或提交工作。
 
-普通修复状态：4cb4de6 指出的 matrix false-PASS 与 stale-action 空场景已在19c281d修复，fresh reviewer在96a4cc3确认B2/B3闭合，未发现其他未闭合普通harness/P2项。仅B1三项完整链缺口需要本文所列有限架构授权；收据见 [独立验收收据](reviews/acceptance-96a4cc3/reviewer-receipt-96a4cc3.md)。具体API尚未被批准，不降低任何验收条件。
+普通修复状态：4cb4de6 指出的 matrix false-PASS 与 stale-action 空场景已在19c281d修复，fresh reviewer在96a4cc3确认B2/B3闭合，未发现其他未闭合普通harness/P2项。仅B1三项完整链缺口需要本文所列有限架构授权；收据见 [独立验收收据](r96a/reviewer-receipt-96a4cc3.md)。具体API尚未被批准，不降低任何验收条件。
