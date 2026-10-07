@@ -1261,6 +1261,7 @@ export async function composeP1Research({
 
       let targeted = null;
       const invokeTargeted = (liveCoverage, livePool, executionAllowed, runTerminationReason = TERMINATION_NONE) => {
+        const targetedBudget = targetedSubphase.maxQueryBudget;
         targeted = runTargetedSubphase({
           ...targetedSubphase,
           workDir,
@@ -1288,7 +1289,9 @@ export async function composeP1Research({
           // Without it the authorization preflight would see only the targeted half
           // and could authorize work the global budget cannot pay for.
           plannedAttemptsBudgetCount: computePlannedAttemptCount(liveCoverage),
-          maxQueryBudget: Math.min(targetedSubphase.maxQueryBudget, resolveRoundControllerConfig(config).maxQueryBudget),
+          // Invalid policy reaches the original strict gate without numeric coercion.
+          maxQueryBudget: Number.isInteger(targetedBudget) && targetedBudget > 0
+            ? Math.min(targetedBudget, resolveRoundControllerConfig(config).maxQueryBudget) : targetedBudget,
           executionAllowed,
           runTerminationReason,
         });

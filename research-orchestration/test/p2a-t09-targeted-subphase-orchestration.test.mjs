@@ -219,6 +219,65 @@ test('A1 — targeted IO runs only in a real CONTINUE window, before source-grou
   }
 });
 
+test('A1b — composer rejects non-integer targeted budgets before targeted provider IO', async (t) => {
+  const { createFixture } = await import('../scripts/p2a-t14/fixtures.mjs');
+  const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+  const repo = path.resolve(LIB, '../..');
+  const coercion = { count: 0 };
+  const invalidBudgets = [
+    ['numeric string', '20'],
+    ['infinity', Infinity],
+    ['fraction', 1.5],
+    ['zero', 0],
+    ['coercible object', { valueOf() { coercion.count += 1; return 20; } }],
+  ];
+
+  for (const [label, maxQueryBudget] of invalidBudgets) {
+    await t.test(label, async () => {
+      const workDir = tmpWorkDir('t14-invalid-targeted-budget');
+      try {
+        const fixture = await createFixture({ repo, workDir, scenario: 'canonical' });
+        fixture.options.targetedSubphase.maxQueryBudget = maxQueryBudget;
+
+        const result = await composeP1Research(fixture.options);
+
+        assert.equal(result.ok, false);
+        assert.equal(result.code, 'p1_compose_aborted');
+        assert.match(String(result.details ?? ''), /maxQueryBudget must be a positive integer/);
+        assert.equal(fixture.providerCalls().filter(call => call.kind === 'targeted').length, 0,
+          'invalid targeted budget must fail before targeted provider IO');
+      } finally {
+        fs.rmSync(workDir, { recursive: true, force: true });
+      }
+    });
+  }
+  assert.equal(coercion.count, 0, 'validation must reject the object without coercing it');
+});
+
+test('A1c — integer targeted budget remains valid under the P1 global cap', async () => {
+  const { createFixture } = await import('../scripts/p2a-t14/fixtures.mjs');
+  const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+  const repo = path.resolve(LIB, '../..');
+  const workDir = tmpWorkDir('t14-valid-targeted-budget');
+  try {
+    const fixture = await createFixture({ repo, workDir, scenario: 'canonical' });
+    fixture.options.targetedSubphase.maxQueryBudget = 20;
+    fixture.options.config = { maxQueryBudget: 4 };
+
+    const result = await composeP1Research(fixture.options);
+    const calls = fixture.providerCalls();
+    const plannedCalls = calls.filter(call => call.kind === 'planned').length;
+    const targetedCalls = calls.filter(call => call.kind === 'targeted').length;
+
+    assert.equal(result.ok, true);
+    assert.equal(plannedCalls, 2, 'canonical fixture spends two planned provider attempts');
+    assert.equal(targetedCalls, 2, 'integer 20 remains accepted and the canonical fixture executes two targeted calls');
+    assert.equal(plannedCalls + targetedCalls, 4, 'P1 global cap of four includes planned and targeted attempts');
+  } finally {
+    fs.rmSync(workDir, { recursive: true, force: true });
+  }
+});
+
 test('A2 — no second retrieval pipeline: the sub-phase uses only runMultiQueryRetrieval', () => {
   const source = stripComments(fs.readFileSync(path.join(LIB, 'targeted-requery-subphase.mjs'), 'utf8'));
   assert.equal(source.match(/const res = runMultiQueryRetrieval\(/g).length, 1);
