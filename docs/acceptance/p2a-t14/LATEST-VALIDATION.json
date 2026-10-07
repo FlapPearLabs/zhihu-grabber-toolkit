@@ -2,7 +2,7 @@
   "schema": "p2a-t14-latest-validation/v1",
   "executableCandidateSha": "19c281d30bc076f2ddd8a5c0c2b474f138ae3d8e",
   "exactCampaignRef": "evidence-19c281d/source-campaign.json",
-  "matrixRef": "evidence-19c281d/matrix.json",
+  "matrixRef": "matrix-19c281d.json",
   "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --out \"$T14_OUT\"",
   "exitCode": 2,
   "scenarioChecks": {
@@ -16,7 +16,7 @@
     "outOfScope": 1
   },
   "acceptanceVerdict": "NOT_PROVEN",
-  "reviewQuorum": "PENDING_FRESH_REVIEW",
+  "reviewQuorum": "NOT_PROVEN",
   "priorRejectedReviewRef": "reviews/acceptance-4cb4de6.md",
   "archiveCheckRef": "archive-check-19c281d.json",
   "retainedCheckControlsRef": "retained-check-controls-19c281d.json",
@@ -458,5 +458,32 @@
   "closure": "BLOCKED",
   "masterIntegration": "NOT_ALLOWED",
   "qualityClaim": "OUT_OF_SCOPE",
-  "producingShaPolicy": "This producing SHA remains explicit. Evidence/docs commits do not transfer a review or grant T14 PASS."
+  "producingShaPolicy": "This producing SHA remains explicit. Evidence/docs commits do not transfer a review or grant T14 PASS.",
+  "latestReviewedHead": "96a4cc3b5b851e29589ecd80cc308baeae3356ca",
+  "reviewerVerdictRef": "reviews/acceptance-96a4cc3/reviewer-receipt-96a4cc3.md",
+  "independentReview": {
+    "role": "ACCEPTANCE_EVIDENCE_REVIEWER",
+    "reviewedHead": "96a4cc3b5b851e29589ecd80cc308baeae3356ca",
+    "reviewVerdict": "CHANGES_REQUESTED",
+    "acceptanceVerdict": "NOT_PROVEN",
+    "counts": {
+      "pass": 9,
+      "fail": 0,
+      "notProven": 3,
+      "outOfScope": 1
+    },
+    "summaryRef": "reviews/acceptance-96a4cc3/reviewer-validation-summary-96a4cc3.json",
+    "archiveRef": "reviews/acceptance-96a4cc3/ARCHIVAL.json",
+    "ordinaryRepairGroups": {
+      "B2": "CLOSED_ON_REVIEWED_HEAD",
+      "B3": "CLOSED_ON_REVIEWED_HEAD"
+    },
+    "remainingAcceptanceBlockerGroups": [
+      "B1"
+    ],
+    "sourceInputsFingerprintCount": 108,
+    "sourceInputsFingerprintMismatches": 0,
+    "newShaDoesNotInheritVerdict": true
+  },
+  "userDecisionRequired": "Controller-owned diagnostic production seam and same-occurrence bounded subsequent diagnosis/proposal scheduling only; ordinary harness repairs are closed on the reviewed head."
 }

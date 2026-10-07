@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "type": "retrieval-pool",
+  "planHash": "32c3444719b23579dc42d445860f3ac8b73736331be1caa01b71b0a41185fc43",
+  "channels": [
+    {
+      "channel": {
+        "query": "基础资料",
+        "providerId": "zhihu_search",
+        "capability": "search"
+      },
+      "ok": true,
+      "auth_class": "official-secret",
+      "itemCount": 2,
+      "retrievedAt": "2026-10-07T00:00:00.000Z",
+      "completeness": {
+        "status": "unknown",
+        "evidence": {
+          "signal": "absent",
+          "reason": "offline_fixture"
+        }
+      }
+    },
+    {
+      "channel": {
+        "query": "基础资料",
+        "providerId": "zhihu-open-platform",
+        "capability": "search"
+      },
+      "ok": true,
+      "auth_class": "official-secret",
+      "itemCount": 2,
+      "retrievedAt": "2026-10-07T00:00:00.000Z",
+      "completeness": {
+        "status": "unknown",
+        "evidence": {
+          "signal": "absent",
+          "reason": "offline_fixture"
+        }
+      }
+    }
+  ],
+  "candidates": [
+    {
+      "identity": {
+        "kind": "candidate",
+        "questionId": "100"
+      },
+      "rrfScore": 0.03278688524590164,
+      "ranks": [
+        {
+          "channel": {
+            "query": "基础资料",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "offline-acceptance"
+        },
+        {
+          "channel": {
+            "query": "基础资料",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "offline-acceptance"
+        }
+      ],
+      "source_url": null,
+      "facts": {}
+    },
+    {
+      "identity": {
+        "kind": "candidate",
+        "questionId": "200"
+      },
+      "rrfScore": 0.03225806451612903,
+      "ranks": [
+        {
+          "channel": {
+            "query": "基础资料",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "offline-acceptance"
+        },
+        {
+          "channel": {
+            "query": "基础资料",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "offline-acceptance"
+        }
+      ],
+      "source_url": null,
+      "facts": {}
+    }
+  ],
+  "rejected": [],
+  "criteria": {
+    "fusion": "rrf",
+    "rrfK": 60,
+    "rankSource": "provenance.rank",
+    "tieBreak": "score-desc-questionId-asc",
+    "scope": "single-pass"
+  }
+}

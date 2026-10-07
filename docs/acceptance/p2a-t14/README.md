@@ -1,6 +1,6 @@
 # P2A-T14 工程验收候选
 
-最新执行来源为 `19c281d30bc076f2ddd8a5c0c2b474f138ae3d8e`，当前入口为 [LATEST-VALIDATION.json](LATEST-VALIDATION.json) 与 [evidence-19c281d](evidence-19c281d/scenario-manifest.json)。22 场景通过，严格矩阵仍为 9 PASS / 3 NOT_PROVEN，退出码 2；fresh 验收审查待运行。旧 `evidence-16f6b8f`、`candidate-validation.json` 和原 Standards/Spec 收据是历史支持记录，不是当前门禁。
+最新执行来源为 `19c281d30bc076f2ddd8a5c0c2b474f138ae3d8e`，当前入口为 [LATEST-VALIDATION.json](LATEST-VALIDATION.json) 与 [evidence-19c281d](evidence-19c281d/scenario-manifest.json)。22 场景通过，严格矩阵仍为 9 PASS / 3 NOT_PROVEN，退出码 2。fresh 独立 reviewer 已在 `96a4cc3b5b851e29589ecd80cc308baeae3356ca` 重新从远端 clone 执行，正式结论为 9 PASS / 3 NOT_PROVEN、P0=0、P1 acceptance blocker 根因组 B1=1；B2 matrix 与 B3 stale-action 普通修复已闭合。收据原文见 [独立验收收据](reviews/acceptance-96a4cc3/reviewer-receipt-96a4cc3.md)，架构授权范围见 [USER-DECISION.md](USER-DECISION.md)。归档后的新 SHA 不继承该收据。旧 `evidence-16f6b8f`、`candidate-validation.json` 和原 Standards/Spec 收据是历史支持记录，不是当前门禁。
 
 本目录记录本次 #126 验收。§20-13 属于 T15/#127；此处不作研究质量或价值声明。
 
@@ -16,7 +16,7 @@ node research-orchestration/scripts/run-classified-research-suites.mjs guard
 NODE_OPTIONS='--test-reporter=tap' node research-orchestration/scripts/run-classified-research-suites.mjs full-offline
 ```
 
-输出目录必须尚未使用。driver在任何provider IO前拒绝已暂存、未暂存及未跟踪的候选改动，避免磁盘源码冒充HEAD。首次 fresh clone 按既有 lockfile 在 `zhihu-answer-grabber` 执行 `npm ci`，与仓库 CI 的依赖准备一致；不加载真实模型或私有凭据。当前本地运行 Node26；Node22 的最终证据由可用环境再验证。TAP 显式设置只用于兼容分类 runner 的计数格式。
+输出目录必须尚未使用。driver在任何provider IO前拒绝已暂存、未暂存及未跟踪的候选改动，避免磁盘源码冒充HEAD。首次 fresh clone 按既有 lockfile 在 `zhihu-answer-grabber` 执行 `npm ci`，与仓库 CI 的依赖准备一致；不加载真实模型或私有凭据。当前整链 driver 在本地 Node26 执行；96a4cc3 的现有 CI 四个 job 通过，其中包含 Windows/macOS/Ubuntu Node22 回归。该 CI 尚未执行本 T14 driver，不能代替三项 NOT_PROVEN 的证明。TAP 显式设置只用于兼容分类 runner 的计数格式。
 
 每个command中的 `$T14_OUT` 是本次fresh campaign根目录；`outputDirectoryRef` 指向该根目录下的具体scenario，`workingDirectory` 是仓库根。命令保留真实child参数结构而不提交本机绝对路径。
 
@@ -36,6 +36,6 @@ NODE_OPTIONS='--test-reporter=tap' node research-orchestration/scripts/run-class
 
 修复后的 stale-action 从真实已提交 action 开始，仅以 TEST_FAULT 修改 checkpoint 的 occurrence context；生产 COMPLETE checker 明确拒绝且新增 IO=0。恢复原 checkpoint 字节后的普通 resume 为 REUSE、新增 IO=0，COMMIT 保持1。故障、恢复与原始 checkpoint 备份分别归档，故障值不冒充新真实 occurrence。矩阵同时核对实际 lineage/count/exit 字段与 stale 拒绝/恢复事实，保留旧 checks 的字段变异不能继续 PASS。
 
-历史独立验收收据 reviews/acceptance-4cb4de6.md 为 RAW_REVIEW_ARCHIVAL_MIRROR；owner 只归档，不代签 reviewer。其原始临时引用保持原文，当前候选另有上方便携工件包；该旧否定收据不转授任何新 SHA。B2 matrix 与 B3 stale-action 修复已执行，是否闭合由新的 fresh reviewer 决定。
+历史独立验收收据 reviews/acceptance-4cb4de6.md 为 RAW_REVIEW_ARCHIVAL_MIRROR；owner 只归档，不代签 reviewer。其原始临时引用保持原文，当前候选另有上方便携工件包；该旧否定收据不转授任何新 SHA。B2 matrix 与 B3 stale-action 已由 96a4cc3 的 fresh reviewer 确认闭合。最新 review archive 保持原文相对引用，包含完整便携包及每场景原始 evidence 记录；完整临时 work 快照未进入 Git，其引用范围在 ARCHIVAL.json 中明确披露。
 
 已知基线限制见 known-baseline-restart.json：显式 restart:true 创建新 occurrence 后会因旧 canonical action ledger 残留触发 CASE1b，冻结 master 与候选均复现。本票不宣称显式新 occurrence restart 已通过；§20-10 的同 occurrence 进程重启/ordinary resume 证据单独核验。

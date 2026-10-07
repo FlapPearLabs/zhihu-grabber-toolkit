@@ -1,0 +1,994 @@
+{
+  "exactHead": "96a4cc3b5b851e29589ecd80cc308baeae3356ca",
+  "scenarioCount": 22,
+  "allArtifactHashReferencesVerified": true,
+  "portableMachinePathLeaks": [],
+  "scenarios": [
+    {
+      "scenario": "canonical",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "1047508c-0bd2-47b7-899d-8cf30d4efe25",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child canonical --out \"$T14_OUT/canonical/work\" --phase initial",
+          "outputDirectoryRef": "canonical/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 44,
+      "artifactHashMismatches": [],
+      "calls": 6,
+      "targetedCalls": 2,
+      "status": "OK",
+      "reused": null,
+      "resolutions": [
+        [
+          "RESOLVED",
+          "NEW_EVIDENCE_ATTRIBUTED"
+        ]
+      ],
+      "independentForwardReverseJoin": [
+        {
+          "gapId": "b6959dc1c68203f752f15123222e11cc53d4264777c302aafc39c08aa7117431:0",
+          "actionId": "5225666cbe0bf8b946524922539d5e25e664662d9be6229a5df505982a51bd79",
+          "poolHash": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+          "resultIds": [
+            "300",
+            "301"
+          ],
+          "reverseGapId": "b6959dc1c68203f752f15123222e11cc53d4264777c302aafc39c08aa7117431:0"
+        }
+      ],
+      "checkpointAnchoredLedgerHash": "a5489d533ceaa480e5150155320327cb372221287209de0e72beb0c2a4126545",
+      "anchorBytesFound": true,
+      "orphans": 0,
+      "crossGap": 0
+    },
+    {
+      "scenario": "duplicate-only",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "e28d0f44-18cf-40a5-9021-f54e896547e1",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child duplicate-only --out \"$T14_OUT/duplicate-only/work\" --phase initial",
+          "outputDirectoryRef": "duplicate-only/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 36,
+      "artifactHashMismatches": [],
+      "calls": 6,
+      "targetedCalls": 2,
+      "status": "OK",
+      "reused": null,
+      "resolutions": [
+        [
+          "UNRESOLVED",
+          "DUPLICATE_ONLY"
+        ]
+      ]
+    },
+    {
+      "scenario": "contradiction-one-side",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "b95afc95-7b30-4849-80ce-9f3e2974280b",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child contradiction-one-side --out \"$T14_OUT/contradiction-one-side/work\" --phase initial",
+          "outputDirectoryRef": "contradiction-one-side/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 44,
+      "artifactHashMismatches": [],
+      "calls": 6,
+      "targetedCalls": 2,
+      "status": "OK",
+      "reused": null,
+      "resolutions": [
+        [
+          "UNRESOLVED",
+          "UNKNOWN_SIDE_NOT_DECLARED"
+        ]
+      ]
+    },
+    {
+      "scenario": "authority-unavailable",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "53a2cfae-c3f5-4096-ab3e-e0e036c5be48",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child authority-unavailable --out \"$T14_OUT/authority-unavailable/work\" --phase initial",
+          "outputDirectoryRef": "authority-unavailable/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 32,
+      "artifactHashMismatches": [],
+      "calls": 6,
+      "targetedCalls": 2,
+      "status": "OK",
+      "reused": null,
+      "resolutions": [
+        [
+          "UNRESOLVED",
+          "UNKNOWN_NO_AUTHORITY_PREDICATE"
+        ]
+      ]
+    },
+    {
+      "scenario": "free-form",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "746716b5-9fdf-4d34-9b9d-290d087d24da",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child free-form --out \"$T14_OUT/free-form/work\" --phase initial",
+          "outputDirectoryRef": "free-form/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 33,
+      "artifactHashMismatches": [],
+      "calls": 4,
+      "targetedCalls": 0,
+      "status": "OK",
+      "reused": null,
+      "resolutions": [
+        [
+          "UNRESOLVED",
+          "NEVER_AUTHORIZED"
+        ]
+      ]
+    },
+    {
+      "scenario": "unsafe-plan-owned",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "a56fc2b8-2365-45e2-ab39-4a31e73e90ce",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child unsafe-plan-owned --out \"$T14_OUT/unsafe-plan-owned/work\" --phase initial",
+          "outputDirectoryRef": "unsafe-plan-owned/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 33,
+      "artifactHashMismatches": [],
+      "calls": 4,
+      "targetedCalls": 0,
+      "status": "OK",
+      "reused": null,
+      "resolutions": [
+        [
+          "UNRESOLVED",
+          "NEVER_AUTHORIZED"
+        ]
+      ]
+    },
+    {
+      "scenario": "unknown-gap",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "34184c5b-0cf7-4cd4-b6a7-da91aaa2bc2a",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child unknown-gap --out \"$T14_OUT/unknown-gap/work\" --phase initial",
+          "outputDirectoryRef": "unknown-gap/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child unknown-gap --out \"$T14_OUT/unknown-gap/work\" --phase resume",
+          "outputDirectoryRef": "unknown-gap/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 44,
+      "artifactHashMismatches": [],
+      "calls": 6,
+      "targetedCalls": 2,
+      "status": "OK",
+      "reused": true,
+      "resolutions": [
+        [
+          "RESOLVED",
+          "NEW_EVIDENCE_ATTRIBUTED"
+        ]
+      ]
+    },
+    {
+      "scenario": "stale-action",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "8ef97b54-7d7e-4e57-97b7-889cc756657d",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child stale-action --out \"$T14_OUT/stale-action/work\" --phase initial",
+          "outputDirectoryRef": "stale-action/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child stale-action --out \"$T14_OUT/stale-action/work\" --phase stale-negative",
+          "outputDirectoryRef": "stale-action/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child stale-action --out \"$T14_OUT/stale-action/work\" --phase stale-repaired",
+          "outputDirectoryRef": "stale-action/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 44,
+      "artifactHashMismatches": [],
+      "calls": 6,
+      "targetedCalls": 2,
+      "status": "OK",
+      "reused": true,
+      "resolutions": [
+        [
+          "RESOLVED",
+          "NEW_EVIDENCE_ATTRIBUTED"
+        ]
+      ],
+      "staleAction": {
+        "schema": "p2a-t14-stale-action-checker-control/v1",
+        "label": "TEST_FAULT; audit only, never a product checkpoint or authority artifact",
+        "fault": {
+          "kind": "TEST_FAULT_STALE_COMPLETE_OCCURRENCE_CONTEXT",
+          "expectedOccurrenceId": "8ef97b54-7d7e-4e57-97b7-889cc756657d",
+          "presentedOccurrenceId": "stale-8ef97b54-7d7e-4e57-97b7-889cc756657d",
+          "checkpointRef": "work/orchestration-state.json",
+          "originalCheckpointBackupRef": "work/acceptance-stale-action-checkpoint-original.json",
+          "checkpointBeforeHash": "c736b8144498471e74de46c56265cdb1493e48b47f88581eb712e3b88efba3c8",
+          "checkpointFaultHash": "cd63c456b73a389c7c92fbd82512f4d0a72bb6fbd9ea5cb487d41600b42f03b1",
+          "checkpointRestoredHash": "c736b8144498471e74de46c56265cdb1493e48b47f88581eb712e3b88efba3c8",
+          "checkpointOriginalBytesRestored": true,
+          "originalRunId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "originalPlanId": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b"
+        },
+        "productionCheckerResult": {
+          "ok": false,
+          "code": "state_invalid",
+          "details": "completed targeted action ledger is not checkpoint-bound to this occurrence"
+        },
+        "productionCheckerRejectedExpectedIdentityMismatch": true,
+        "callsBeforeFault": 6,
+        "callsAfterFault": 6,
+        "faultProviderCallDelta": 0,
+        "restorationControl": {
+          "result": {
+            "ok": true,
+            "reused": true,
+            "result": {
+              "schemaVersion": 1,
+              "type": "p1-research-result",
+              "ok": true,
+              "topic": "定向检索工程验收",
+              "mode": "p1-cross-question-deep-research",
+              "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+              "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+              "runtime": {
+                "runtimeId": "deepseek-api-tool-less",
+                "model": "deepseek-v4-pro"
+              },
+              "disclosure": {
+                "pipeline": "p1-cross-question-deep-research",
+                "stage": "FINAL_COVERAGE_RECONCILIATION",
+                "isFullCoverage": true,
+                "complete": true,
+                "analysisCoverage": {
+                  "selectedCount": 4,
+                  "mappedCount": 4,
+                  "analyzedCount": 4
+                },
+                "retrieval": {
+                  "retrievalRounds": 2,
+                  "stopReason": "zero_new_candidates",
+                  "fusedCandidateCount": 4,
+                  "fusedGroupCount": 4,
+                  "providerFailureCount": 0
+                },
+                "gap": null
+              },
+              "targetedResearchGaps": {
+                "schema": "p2a-targeted-research-gaps/v1",
+                "gapCount": 1,
+                "resolvedCount": 1,
+                "unresolvedCount": 0,
+                "exhaustedWithinBudgetCount": 0,
+                "lineageComplete": true,
+                "gaps": [
+                  {
+                    "gapId": "174d5c599a85cb47b71245a2beff18a67672ab084b0c8d6109c6b44af96613ff:0",
+                    "gapIdentityCore": "174d5c599a85cb47b71245a2beff18a67672ab084b0c8d6109c6b44af96613ff",
+                    "lineage": [
+                      {
+                        "actionStatus": "RESOLVED",
+                        "attempt": 1,
+                        "providerScope": [
+                          {
+                            "capability": "search",
+                            "providerId": "zhihu-open-platform"
+                          },
+                          {
+                            "capability": "search",
+                            "providerId": "zhihu_search"
+                          }
+                        ],
+                        "query": "补充资料",
+                        "resultArtifact": "targeted-requery-subphase/action-ce9dc8a42ce398f7c6f65eef24d36cad7894af53e02e129629b17b79892a36cb/retrieval-pool.json",
+                        "targetedActionId": "ce9dc8a42ce398f7c6f65eef24d36cad7894af53e02e129629b17b79892a36cb"
+                      }
+                    ],
+                    "lineageComplete": true,
+                    "missingActionIds": [],
+                    "occurrenceId": "8ef97b54-7d7e-4e57-97b7-889cc756657d",
+                    "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+                    "resolutionBasis": "NEW_EVIDENCE_ATTRIBUTED",
+                    "resolutionEvidence": [
+                      "300",
+                      "301"
+                    ],
+                    "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+                    "status": "RESOLVED"
+                  }
+                ]
+              },
+              "verification": {
+                "valid": true,
+                "basis": {
+                  "t14PreSynthesisGuard": "PASS",
+                  "t15FinalReconciliation": "PASS",
+                  "groupsVerified": "4/4",
+                  "analysisCoverage": {
+                    "selectedCount": 4,
+                    "mappedCount": 4,
+                    "analyzedCount": 4
+                  }
+                }
+              },
+              "artifacts": {
+                "researchPlan": "research-plan.json",
+                "selectionDecision": "source-group-selection-decision.json",
+                "coverageState": "coverage-state.json",
+                "coverageFinal": "coverage-final.json",
+                "perGroupClaims": "per-group-claims.json",
+                "synthesis": "cross-source-synthesis.json",
+                "researchResult": "research-result.json"
+              }
+            },
+            "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+            "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b"
+          },
+          "callsBefore": 6,
+          "callsAfter": 6,
+          "providerCallDelta": 0,
+          "restoredOccurrenceId": "8ef97b54-7d7e-4e57-97b7-889cc756657d",
+          "restoredCheckpointHash": "c736b8144498471e74de46c56265cdb1493e48b47f88581eb712e3b88efba3c8",
+          "originalCommitCount": 1,
+          "restoredCommitCount": 1
+        },
+        "faultObservation": {
+          "occurrenceId": "stale-8ef97b54-7d7e-4e57-97b7-889cc756657d",
+          "originalOccurrenceId": "8ef97b54-7d7e-4e57-97b7-889cc756657d",
+          "providerCallCount": 6
+        }
+      }
+    },
+    {
+      "scenario": "all-provider-failed",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "4d687dc3-6e2f-4bd3-bcac-052eea24113b",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child all-provider-failed --out \"$T14_OUT/all-provider-failed/work\" --phase initial",
+          "outputDirectoryRef": "all-provider-failed/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 34,
+      "artifactHashMismatches": [],
+      "calls": 6,
+      "targetedCalls": 2,
+      "status": "OK",
+      "reused": null,
+      "resolutions": [
+        [
+          "UNRESOLVED",
+          "OPERATIONAL_FAILURE"
+        ]
+      ]
+    },
+    {
+      "scenario": "provider-scope",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "9469d705-0649-4399-8aa4-6fee81468c25",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child provider-scope --out \"$T14_OUT/provider-scope/work\" --phase initial",
+          "outputDirectoryRef": "provider-scope/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 44,
+      "artifactHashMismatches": [],
+      "calls": 5,
+      "targetedCalls": 1,
+      "status": "OK",
+      "reused": null,
+      "resolutions": [
+        [
+          "RESOLVED",
+          "NEW_EVIDENCE_ATTRIBUTED"
+        ]
+      ]
+    },
+    {
+      "scenario": "global-budget",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "84970a69-a0ec-4e1e-bb0b-443226bad707",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child global-budget --out \"$T14_OUT/global-budget/work\" --phase initial",
+          "outputDirectoryRef": "global-budget/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 36,
+      "artifactHashMismatches": [],
+      "calls": 6,
+      "targetedCalls": 2,
+      "status": "OK",
+      "reused": null,
+      "resolutions": [
+        [
+          "EXHAUSTED_WITHIN_BUDGET",
+          "RUN_BUDGET_STOP"
+        ],
+        [
+          "UNRESOLVED",
+          "NEVER_AUTHORIZED"
+        ]
+      ]
+    },
+    {
+      "scenario": "per-gap-bound",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "dea43a22-54bd-4cd7-84bc-1f0b3a211739",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child per-gap-bound --out \"$T14_OUT/per-gap-bound/work\" --phase initial",
+          "outputDirectoryRef": "per-gap-bound/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child per-gap-bound --out \"$T14_OUT/per-gap-bound/work\" --phase resume",
+          "outputDirectoryRef": "per-gap-bound/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 36,
+      "artifactHashMismatches": [],
+      "calls": 6,
+      "targetedCalls": 2,
+      "status": "OK",
+      "reused": true,
+      "resolutions": [
+        [
+          "EXHAUSTED_WITHIN_BUDGET",
+          "PER_GAP_BOUND_EXHAUSTED"
+        ]
+      ]
+    },
+    {
+      "scenario": "crash-before",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "161bb025-a067-46e4-ac71-d060f690540d",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child crash-before --out \"$T14_OUT/crash-before/work\" --phase initial --crash after_targeted_execution",
+          "outputDirectoryRef": "crash-before/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 137,
+          "signal": "SIGKILL",
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child crash-before --out \"$T14_OUT/crash-before/work\" --phase resume",
+          "outputDirectoryRef": "crash-before/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child crash-before --out \"$T14_OUT/crash-before/work\" --phase resume-again",
+          "outputDirectoryRef": "crash-before/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 45,
+      "artifactHashMismatches": [],
+      "calls": 12,
+      "targetedCalls": 4,
+      "status": "OK",
+      "reused": true,
+      "resolutions": [
+        [
+          "RESOLVED",
+          "NEW_EVIDENCE_ATTRIBUTED"
+        ]
+      ],
+      "initialStatus": "AUTHORIZED",
+      "finalStatus": "RESOLVED",
+      "targetedDelta": 2,
+      "commits": [
+        1
+      ],
+      "sameOccurrence": true,
+      "replay": {
+        "decision": "RERUN",
+        "reason": "AUTHORIZED_ONLY",
+        "targetedActionId": "700272745f6dfe2ac4cb7ff40cb65bc465ce5e023dcaab3e711c677e7c42e387",
+        "action": {
+          "artifactHash": null,
+          "artifactRel": null,
+          "attempt": 1,
+          "audit": [
+            {
+              "artifactRel": null,
+              "bindingHash": null,
+              "bindingKey": null,
+              "event": "REGISTER_AUTHORIZED",
+              "from": null,
+              "reason": null,
+              "seq": 1,
+              "to": "AUTHORIZED"
+            }
+          ],
+          "bindingHash": null,
+          "bindingKey": null,
+          "dedupeKey": "2e57c08250b723d45be1b7c0f5edb8c9cd2c2a519239bb448405825339807606",
+          "gapId": "81dbf8b627d120716db10af77e073d17c772ba7c5f4c7db2fea1fd9928ca1b5c:0",
+          "gapIdentityCore": "81dbf8b627d120716db10af77e073d17c772ba7c5f4c7db2fea1fd9928ca1b5c",
+          "normalizedQuery": "补充资料",
+          "occurrenceId": "161bb025-a067-46e4-ac71-d060f690540d",
+          "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+          "providerScope": [
+            {
+              "capability": "search",
+              "providerId": "zhihu-open-platform"
+            },
+            {
+              "capability": "search",
+              "providerId": "zhihu_search"
+            }
+          ],
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "status": "AUTHORIZED",
+          "targetedActionId": "700272745f6dfe2ac4cb7ff40cb65bc465ce5e023dcaab3e711c677e7c42e387"
+        }
+      }
+    },
+    {
+      "scenario": "crash-after",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "b0e71305-5c19-4c32-93ba-86de373aaf46",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child crash-after --out \"$T14_OUT/crash-after/work\" --phase initial --crash after_targeted_commit_finalize",
+          "outputDirectoryRef": "crash-after/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 137,
+          "signal": "SIGKILL",
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child crash-after --out \"$T14_OUT/crash-after/work\" --phase resume",
+          "outputDirectoryRef": "crash-after/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child crash-after --out \"$T14_OUT/crash-after/work\" --phase resume-again",
+          "outputDirectoryRef": "crash-after/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 45,
+      "artifactHashMismatches": [],
+      "calls": 10,
+      "targetedCalls": 2,
+      "status": "OK",
+      "reused": true,
+      "resolutions": [
+        [
+          "RESOLVED",
+          "NEW_EVIDENCE_ATTRIBUTED"
+        ]
+      ],
+      "initialStatus": "COMMITTED",
+      "finalStatus": "RESOLVED",
+      "targetedDelta": 0,
+      "commits": [
+        1
+      ],
+      "sameOccurrence": true,
+      "replay": {
+        "decision": "REUSE",
+        "reason": "COMMITTED_WITH_VALID_BINDING",
+        "targetedActionId": "6130c29bc2cf7510621abd21b981c8cda4fc399845b69ae255c31fb352b8eda6",
+        "action": {
+          "artifactHash": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+          "artifactRel": "targeted-requery-subphase/action-6130c29bc2cf7510621abd21b981c8cda4fc399845b69ae255c31fb352b8eda6/retrieval-pool.json",
+          "attempt": 1,
+          "audit": [
+            {
+              "artifactRel": null,
+              "bindingHash": null,
+              "bindingKey": null,
+              "event": "REGISTER_AUTHORIZED",
+              "from": null,
+              "reason": null,
+              "seq": 1,
+              "to": "AUTHORIZED"
+            },
+            {
+              "artifactRel": "targeted-requery-subphase/action-6130c29bc2cf7510621abd21b981c8cda4fc399845b69ae255c31fb352b8eda6/retrieval-pool.json",
+              "bindingHash": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+              "bindingKey": "targeted-action:6130c29bc2cf7510621abd21b981c8cda4fc399845b69ae255c31fb352b8eda6",
+              "event": "COMMIT",
+              "from": "AUTHORIZED",
+              "reason": null,
+              "seq": 2,
+              "to": "COMMITTED"
+            }
+          ],
+          "bindingHash": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+          "bindingKey": "targeted-action:6130c29bc2cf7510621abd21b981c8cda4fc399845b69ae255c31fb352b8eda6",
+          "dedupeKey": "ea87f8b7a6de6b86d4291b6f6b93828f5da08123d8a6a987124dcdcb2c351037",
+          "gapId": "dc5ae9007a18b5770c782916d8e67d365c69b1caf11e069f3eac15757506e5ef:0",
+          "gapIdentityCore": "dc5ae9007a18b5770c782916d8e67d365c69b1caf11e069f3eac15757506e5ef",
+          "normalizedQuery": "补充资料",
+          "occurrenceId": "b0e71305-5c19-4c32-93ba-86de373aaf46",
+          "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+          "providerScope": [
+            {
+              "capability": "search",
+              "providerId": "zhihu-open-platform"
+            },
+            {
+              "capability": "search",
+              "providerId": "zhihu_search"
+            }
+          ],
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "status": "COMMITTED",
+          "targetedActionId": "6130c29bc2cf7510621abd21b981c8cda4fc399845b69ae255c31fb352b8eda6"
+        }
+      }
+    },
+    {
+      "scenario": "tampered-pool",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "818850f3-c463-4254-8385-bfac00bebb9d",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child tampered-pool --out \"$T14_OUT/tampered-pool/work\" --phase initial",
+          "outputDirectoryRef": "tampered-pool/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child tampered-pool --out \"$T14_OUT/tampered-pool/work\" --phase fault-resume",
+          "outputDirectoryRef": "tampered-pool/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 44,
+      "artifactHashMismatches": [],
+      "calls": 6,
+      "targetedCalls": 2,
+      "status": "state_invalid",
+      "reused": null,
+      "resolutions": [
+        [
+          "RESOLVED",
+          "NEW_EVIDENCE_ATTRIBUTED"
+        ]
+      ]
+    },
+    {
+      "scenario": "stale-binding",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "893323e1-e454-4ffd-9056-04f4ec2f74e3",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child stale-binding --out \"$T14_OUT/stale-binding/work\" --phase initial",
+          "outputDirectoryRef": "stale-binding/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child stale-binding --out \"$T14_OUT/stale-binding/work\" --phase fault-resume",
+          "outputDirectoryRef": "stale-binding/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 44,
+      "artifactHashMismatches": [],
+      "calls": 6,
+      "targetedCalls": 2,
+      "status": "state_invalid",
+      "reused": null,
+      "resolutions": [
+        [
+          "RESOLVED",
+          "NEW_EVIDENCE_ATTRIBUTED"
+        ]
+      ]
+    },
+    {
+      "scenario": "equivalent-query",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "08e680a5-5c15-4956-a7de-43d10ebb79c0",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child equivalent-query --out \"$T14_OUT/equivalent-query/work\" --phase initial",
+          "outputDirectoryRef": "equivalent-query/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child equivalent-query --out \"$T14_OUT/equivalent-query/work\" --phase resume",
+          "outputDirectoryRef": "equivalent-query/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 44,
+      "artifactHashMismatches": [],
+      "calls": 6,
+      "targetedCalls": 2,
+      "status": "OK",
+      "reused": true,
+      "resolutions": [
+        [
+          "RESOLVED",
+          "NEW_EVIDENCE_ATTRIBUTED"
+        ]
+      ]
+    },
+    {
+      "scenario": "missing-resolution",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "9f9d3b51-1faa-441e-b410-3737bb13f159",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child missing-resolution --out \"$T14_OUT/missing-resolution/work\" --phase initial",
+          "outputDirectoryRef": "missing-resolution/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child missing-resolution --out \"$T14_OUT/missing-resolution/work\" --phase fault-resume",
+          "outputDirectoryRef": "missing-resolution/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 43,
+      "artifactHashMismatches": [],
+      "calls": 6,
+      "targetedCalls": 2,
+      "status": "state_invalid",
+      "reused": null,
+      "resolutions": []
+    },
+    {
+      "scenario": "tampered-resolution",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "a908cc87-d869-444a-8e84-6a4f07e3e29f",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child tampered-resolution --out \"$T14_OUT/tampered-resolution/work\" --phase initial",
+          "outputDirectoryRef": "tampered-resolution/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child tampered-resolution --out \"$T14_OUT/tampered-resolution/work\" --phase fault-resume",
+          "outputDirectoryRef": "tampered-resolution/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 44,
+      "artifactHashMismatches": [],
+      "calls": 6,
+      "targetedCalls": 2,
+      "status": "state_invalid",
+      "reused": null,
+      "resolutions": [
+        [
+          "UNRESOLVED",
+          "DUPLICATE_ONLY"
+        ]
+      ]
+    },
+    {
+      "scenario": "foreign-resolution",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "51a8ae82-fbc1-4425-899d-8464191a96ef",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child foreign-resolution --out \"$T14_OUT/foreign-resolution/work\" --phase initial",
+          "outputDirectoryRef": "foreign-resolution/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child foreign-resolution --out \"$T14_OUT/foreign-resolution/work\" --phase fault-resume",
+          "outputDirectoryRef": "foreign-resolution/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 44,
+      "artifactHashMismatches": [],
+      "calls": 6,
+      "targetedCalls": 2,
+      "status": "state_invalid",
+      "reused": null,
+      "resolutions": [
+        [
+          "RESOLVED",
+          "NEW_EVIDENCE_ATTRIBUTED"
+        ]
+      ]
+    },
+    {
+      "scenario": "missing-unauthed-resolution",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "892d24e4-e150-4f09-b2f5-a1419514fdce",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child missing-unauthed-resolution --out \"$T14_OUT/missing-unauthed-resolution/work\" --phase initial",
+          "outputDirectoryRef": "missing-unauthed-resolution/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child missing-unauthed-resolution --out \"$T14_OUT/missing-unauthed-resolution/work\" --phase fault-resume",
+          "outputDirectoryRef": "missing-unauthed-resolution/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 32,
+      "artifactHashMismatches": [],
+      "calls": 4,
+      "targetedCalls": 0,
+      "status": "state_invalid",
+      "reused": null,
+      "resolutions": []
+    },
+    {
+      "scenario": "canonical-ledger-drift",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrence": "ddb21960-82d1-4a2b-bbe1-e162a804697d",
+      "commands": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child canonical-ledger-drift --out \"$T14_OUT/canonical-ledger-drift/work\" --phase initial",
+          "outputDirectoryRef": "canonical-ledger-drift/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child canonical-ledger-drift --out \"$T14_OUT/canonical-ledger-drift/work\" --phase fault-resume",
+          "outputDirectoryRef": "canonical-ledger-drift/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "artifactCount": 44,
+      "artifactHashMismatches": [],
+      "calls": 6,
+      "targetedCalls": 2,
+      "status": "OK",
+      "reused": true,
+      "resolutions": [
+        [
+          "RESOLVED",
+          "NEW_EVIDENCE_ATTRIBUTED"
+        ]
+      ]
+    }
+  ]
+}

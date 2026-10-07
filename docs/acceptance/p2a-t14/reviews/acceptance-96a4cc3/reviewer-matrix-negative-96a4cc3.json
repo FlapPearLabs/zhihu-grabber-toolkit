@@ -1,0 +1,389 @@
+{
+  "exactHead": "96a4cc3b5b851e29589ecd80cc308baeae3356ca",
+  "results": [
+    {
+      "name": "delete-lineage",
+      "retainedChecks": true,
+      "rows": [
+        {
+          "item": "§20-2",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-4",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-5",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-8",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-9",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-11",
+          "verdict": "NOT_PROVEN"
+        }
+      ],
+      "loadBearing": true
+    },
+    {
+      "name": "invalid-lineage",
+      "retainedChecks": true,
+      "rows": [
+        {
+          "item": "§20-2",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-4",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-5",
+          "verdict": "PASS"
+        },
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-9",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-11",
+          "verdict": "FAIL"
+        }
+      ],
+      "loadBearing": false,
+      "expectedDependentRows": [
+        "§20-2",
+        "§20-4",
+        "§20-8",
+        "§20-9",
+        "§20-11"
+      ],
+      "dependentRowsLoadBearing": true,
+      "scopeNote": "§20-5 route/runtime checks do not depend on canonical lineage validity; PASS here is outside the negative control claim."
+    },
+    {
+      "name": "empty-joins",
+      "retainedChecks": true,
+      "rows": [
+        {
+          "item": "§20-2",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-4",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-5",
+          "verdict": "PASS"
+        },
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-9",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-11",
+          "verdict": "FAIL"
+        }
+      ],
+      "loadBearing": false,
+      "expectedDependentRows": [
+        "§20-2",
+        "§20-4",
+        "§20-8",
+        "§20-9",
+        "§20-11"
+      ],
+      "dependentRowsLoadBearing": true,
+      "scopeNote": "§20-5 route/runtime checks do not depend on canonical lineage validity; PASS here is outside the negative control claim."
+    },
+    {
+      "name": "999-calls",
+      "retainedChecks": true,
+      "rows": [
+        {
+          "item": "§20-2",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-4",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-5",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-9",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-11",
+          "verdict": "FAIL"
+        }
+      ],
+      "loadBearing": true
+    },
+    {
+      "name": "999-targeted-calls",
+      "retainedChecks": true,
+      "rows": [
+        {
+          "item": "§20-2",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-4",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-5",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-9",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-11",
+          "verdict": "FAIL"
+        }
+      ],
+      "loadBearing": true
+    },
+    {
+      "name": "child-exit1",
+      "retainedChecks": true,
+      "rows": [
+        {
+          "item": "§20-2",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-4",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-5",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-9",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-11",
+          "verdict": "FAIL"
+        }
+      ],
+      "loadBearing": true
+    },
+    {
+      "name": "missing-run",
+      "retainedChecks": true,
+      "rows": [
+        {
+          "item": "§20-2",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-4",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-5",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-8",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-9",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-11",
+          "verdict": "NOT_PROVEN"
+        }
+      ],
+      "loadBearing": true
+    },
+    {
+      "name": "missing-input",
+      "retainedChecks": true,
+      "rows": [
+        {
+          "item": "§20-2",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-4",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-5",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-8",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-9",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-11",
+          "verdict": "NOT_PROVEN"
+        }
+      ],
+      "loadBearing": true
+    },
+    {
+      "name": "missing-output",
+      "retainedChecks": true,
+      "rows": [
+        {
+          "item": "§20-2",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-4",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-5",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-8",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-9",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-11",
+          "verdict": "NOT_PROVEN"
+        }
+      ],
+      "loadBearing": true
+    },
+    {
+      "name": "dirty-source",
+      "retainedChecks": true,
+      "rows": [
+        {
+          "item": "§20-2",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-4",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-5",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-8",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-9",
+          "verdict": "NOT_PROVEN"
+        },
+        {
+          "item": "§20-11",
+          "verdict": "NOT_PROVEN"
+        }
+      ],
+      "loadBearing": true
+    },
+    {
+      "name": "stale-fault-ok",
+      "retainedChecks": true,
+      "rows": [
+        {
+          "item": "§20-12",
+          "verdict": "FAIL"
+        }
+      ],
+      "loadBearing": true
+    },
+    {
+      "name": "stale-fault-delta",
+      "retainedChecks": true,
+      "rows": [
+        {
+          "item": "§20-12",
+          "verdict": "FAIL"
+        }
+      ],
+      "loadBearing": true
+    },
+    {
+      "name": "stale-control-not-reused",
+      "retainedChecks": true,
+      "rows": [
+        {
+          "item": "§20-12",
+          "verdict": "FAIL"
+        }
+      ],
+      "loadBearing": true
+    },
+    {
+      "name": "stale-original-hash",
+      "retainedChecks": true,
+      "rows": [
+        {
+          "item": "§20-12",
+          "verdict": "FAIL"
+        }
+      ],
+      "loadBearing": true
+    },
+    {
+      "name": "stale-commit2",
+      "retainedChecks": true,
+      "rows": [
+        {
+          "item": "§20-12",
+          "verdict": "FAIL"
+        }
+      ],
+      "loadBearing": true
+    }
+  ],
+  "requiredRegressionControlsPassed": true
+}

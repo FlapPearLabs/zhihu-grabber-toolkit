@@ -1,0 +1,383 @@
+{
+  "schema": "p2a-t14-occurrence-evidence/v1",
+  "scenarioId": "foreign-resolution",
+  "exactRepoSha": "96a4cc3b5b851e29589ecd80cc308baeae3356ca",
+  "sourceDirty": [],
+  "nodeVersion": "v26.10.0",
+  "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+  "occurrenceId": "51a8ae82-fbc1-4425-899d-8464191a96ef",
+  "planId": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+  "generation": "51a8ae82-fbc1-4425-899d-8464191a96ef",
+  "commands": [
+    {
+      "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child foreign-resolution --out \"$T14_OUT/foreign-resolution/work\" --phase initial",
+      "outputDirectoryRef": "foreign-resolution/work",
+      "workingDirectory": "repository-root",
+      "exitCode": 0,
+      "signal": null,
+      "error": null
+    },
+    {
+      "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child foreign-resolution --out \"$T14_OUT/foreign-resolution/work\" --phase fault-resume",
+      "outputDirectoryRef": "foreign-resolution/work",
+      "workingDirectory": "repository-root",
+      "exitCode": 0,
+      "signal": null,
+      "error": null
+    }
+  ],
+  "inputArtifacts": [
+    {
+      "path": "acceptance-input-initial.json",
+      "bytes": 691,
+      "sha256": "8c4b3430d2b6236a2e40076220a6e7711e8ff0ecfce7b00cd3445a67d88c3e2c"
+    },
+    {
+      "path": "research-plan.json",
+      "bytes": 232,
+      "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365"
+    }
+  ],
+  "outputArtifacts": [
+    {
+      "path": ".p1-commit-staging/coverageState/0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8.json",
+      "bytes": 4352,
+      "sha256": "0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8"
+    },
+    {
+      "path": ".p1-commit-staging/coverageState/24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d.json",
+      "bytes": 3512,
+      "sha256": "24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d"
+    },
+    {
+      "path": ".p1-commit-staging/coverageState/2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202.json",
+      "bytes": 1514,
+      "sha256": "2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202"
+    },
+    {
+      "path": ".p1-commit-staging/coverageState/3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae.json",
+      "bytes": 3213,
+      "sha256": "3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae"
+    },
+    {
+      "path": ".p1-commit-staging/coverageState/49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f.json",
+      "bytes": 2125,
+      "sha256": "49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f"
+    },
+    {
+      "path": ".p1-commit-staging/coverageState/6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548.json",
+      "bytes": 4352,
+      "sha256": "6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548"
+    },
+    {
+      "path": ".p1-commit-staging/targeted-action-ledger/7b1bb3a83a2b0ff3a0f3c7da09604299ed9d8a13120f1ae91902a8bf476c0b4a.json",
+      "bytes": 1546,
+      "sha256": "7b1bb3a83a2b0ff3a0f3c7da09604299ed9d8a13120f1ae91902a8bf476c0b4a"
+    },
+    {
+      "path": ".p1-commit-staging/targeted-action-ledger/88a40fa50ad9bdc74e1b80f4c22e06ccd48ce72dc395c59128148ab77e871c4e.json",
+      "bytes": 2365,
+      "sha256": "88a40fa50ad9bdc74e1b80f4c22e06ccd48ce72dc395c59128148ab77e871c4e"
+    },
+    {
+      "path": ".p1-commit-staging/targeted-action-ledger/eea053d956851f43fbecad9a1d7e7dafca8e6b32f77b9072eac07b73504aab53.json",
+      "bytes": 2861,
+      "sha256": "eea053d956851f43fbecad9a1d7e7dafca8e6b32f77b9072eac07b73504aab53"
+    },
+    {
+      "path": "coverage-final.json",
+      "bytes": 4858,
+      "sha256": "18093671fd1354a46511f66bda3588db0c6b72314d340cece9a2f2dbead80d42"
+    },
+    {
+      "path": "coverage-state.json",
+      "bytes": 4351,
+      "sha256": "9a23f236c282dec275d9b52272e061e46813cbecae57877a7b310cacff2dac5e"
+    },
+    {
+      "path": "cross-source-synthesis.json",
+      "bytes": 5025,
+      "sha256": "e463c669750150a3847dd2a9a7b8a1ff29b87a5bcca6d58be1a4e4555d5df6b9"
+    },
+    {
+      "path": "events.jsonl",
+      "bytes": 3311,
+      "sha256": "fec8914af534138fe7f63d652970c472b5160373df627bffc9e8f313acab003f"
+    },
+    {
+      "path": "multi-group-state.json",
+      "bytes": 7745,
+      "sha256": "843c0309abdf5b6441aeacb2bf9e11866d9b43a37c80389c474f2e2e06077e8d"
+    },
+    {
+      "path": "orchestration-state.json",
+      "bytes": 2143,
+      "sha256": "49fc9d79f0ba3787f214a89f4c5e08016b2e134593093854f089b40bc6e3975b"
+    },
+    {
+      "path": "per-group-claims.json",
+      "bytes": 4142,
+      "sha256": "e89b87710a7d25b8a43b4209b7b49434ffc653ead02ef5015248d4e47370979e"
+    },
+    {
+      "path": "research-plan.json",
+      "bytes": 232,
+      "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365"
+    },
+    {
+      "path": "research-result.json",
+      "bytes": 3110,
+      "sha256": "ae0f9a2ad4755459025ba2cac6711da2f9b09cca9b1db9de67ed2a7e04cce323"
+    },
+    {
+      "path": "retrieval-rounds/accumulated-pool.json",
+      "bytes": 5093,
+      "sha256": "ac1df649684a9ecefa2862690f8173815e0840aad524f81f0b7d5a340c835adb"
+    },
+    {
+      "path": "retrieval-rounds/round-1/retrieval-pool.json",
+      "bytes": 2753,
+      "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584"
+    },
+    {
+      "path": "retrieval-rounds/round-2/retrieval-pool.json",
+      "bytes": 2753,
+      "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584"
+    },
+    {
+      "path": "source-group-selection-decision.json",
+      "bytes": 4599,
+      "sha256": "011049e6ce84b66935df37ec69de11a0fcab8764697a4441b324989bc36238e3"
+    },
+    {
+      "path": "targeted-requery-actions.json",
+      "bytes": 2861,
+      "sha256": "eea053d956851f43fbecad9a1d7e7dafca8e6b32f77b9072eac07b73504aab53"
+    },
+    {
+      "path": "targeted-requery-ledger.json",
+      "bytes": 695,
+      "sha256": "82313f83edae1386248dd99b67c944b17e54f37303aef64ae9b5d7176b79dcde"
+    },
+    {
+      "path": "targeted-requery-resolution.json",
+      "bytes": 1171,
+      "sha256": "73a2df861c88ad641b156dcbe5ebe82c0caf51924f4acbafe352d4dc3783e3e4"
+    },
+    {
+      "path": "targeted-requery-subphase/action-1506a30a9ca849d18a0ae4736ad8d596d9203d0d32ef8fbae4fc4475b8bf30ff/retrieval-pool.json",
+      "bytes": 2753,
+      "sha256": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781"
+    },
+    {
+      "path": "zhihu/100/.progress.json",
+      "bytes": 35,
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "zhihu/100/answers.json",
+      "bytes": 330,
+      "sha256": "4800f91b66e868cc9777d25a8d48635c2a525fc59de9d19bcfb0a71adb9eb1f8"
+    },
+    {
+      "path": "zhihu/100/answers.md",
+      "bytes": 100,
+      "sha256": "6bc12bd6b9108da6987180b61e77ed62b36a1257fcc2150a85a26860f5e2597b"
+    },
+    {
+      "path": "zhihu/100/handoff.json",
+      "bytes": 201,
+      "sha256": "66a0b7837b6fc5c89308e5dabb88fca8cd5ec7c7f12ebdd39062fd31a1778db2"
+    },
+    {
+      "path": "zhihu/200/.progress.json",
+      "bytes": 35,
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "zhihu/200/answers.json",
+      "bytes": 330,
+      "sha256": "0dcb12e4c69ce9aba5a22e024486f8fa8bc8485abd96e1cb1d82b0787db75f59"
+    },
+    {
+      "path": "zhihu/200/answers.md",
+      "bytes": 100,
+      "sha256": "15ad5b2025bc4044e2c2f8303d0526e373dce22e6be8c35adb4279e640898a1b"
+    },
+    {
+      "path": "zhihu/200/handoff.json",
+      "bytes": 201,
+      "sha256": "ac3ed33e4371117e8c1bba0bd0a5c5879f9aae826521bcd940ca367b4fe034a9"
+    },
+    {
+      "path": "zhihu/300/.progress.json",
+      "bytes": 35,
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "zhihu/300/answers.json",
+      "bytes": 330,
+      "sha256": "fb184ad1bbda91b2d1c47fbbb8dfa239779efd0bc94cb9aa15f4187ce393feab"
+    },
+    {
+      "path": "zhihu/300/answers.md",
+      "bytes": 100,
+      "sha256": "0edffd40aa0a5d3767089b3813d9a4c849a54a78c7cbdbcc02ed5ab78f7f4b27"
+    },
+    {
+      "path": "zhihu/300/handoff.json",
+      "bytes": 201,
+      "sha256": "c42cda41c695cb33e415924126109cb2e01c31517cb1a3ec30d30ee763855b4c"
+    },
+    {
+      "path": "zhihu/301/.progress.json",
+      "bytes": 35,
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "zhihu/301/answers.json",
+      "bytes": 330,
+      "sha256": "65bbce4bc4d4a9710c84088efc558fc356e953c2d761b9f6ed83fe02fbde63ee"
+    },
+    {
+      "path": "zhihu/301/answers.md",
+      "bytes": 100,
+      "sha256": "86413a1c8c393a6cc0dd83f7096f1842b9fa1886aad582523afc2739d055a1cd"
+    },
+    {
+      "path": "zhihu/301/handoff.json",
+      "bytes": 201,
+      "sha256": "2b1c735e6d237a2586f51d049db54c86668dc8c548d594cc95846fb3e77ca5f8"
+    }
+  ],
+  "observedProviderCallCount": 6,
+  "expectedTargetedProviderCallCount": 2,
+  "observedTargetedProviderCallCount": 2,
+  "expectedProviderCallCount": 6,
+  "initialTargetedProviderCallCount": 2,
+  "replay": null,
+  "fault": {
+    "kind": "foreign-occurrence-resolution",
+    "beforeHash": "6bf186b7e36d3a5186952d7d72719cfb7c1c2e9a7c20c764df743a1a160bcb0e",
+    "afterHash": "73a2df861c88ad641b156dcbe5ebe82c0caf51924f4acbafe352d4dc3783e3e4"
+  },
+  "controllerControls": null,
+  "checks": [
+    {
+      "name": "child execution",
+      "pass": true,
+      "actual": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child foreign-resolution --out \"$T14_OUT/foreign-resolution/work\" --phase initial",
+          "outputDirectoryRef": "foreign-resolution/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child foreign-resolution --out \"$T14_OUT/foreign-resolution/work\" --phase fault-resume",
+          "outputDirectoryRef": "foreign-resolution/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "expected": null
+    },
+    {
+      "name": "targeted provider calls",
+      "pass": true,
+      "actual": 2,
+      "expected": 2
+    },
+    {
+      "name": "all provider calls",
+      "pass": true,
+      "actual": 6,
+      "expected": 6
+    },
+    {
+      "name": "no runtime or provider fallback",
+      "pass": true,
+      "actual": null,
+      "expected": null
+    },
+    {
+      "name": "all durable gaps visible",
+      "pass": true,
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "name": "controller before targeted IO",
+      "pass": true,
+      "actual": null,
+      "expected": null
+    },
+    {
+      "name": "tampered committed product refused",
+      "pass": true,
+      "actual": {
+        "ok": false,
+        "code": "state_invalid",
+        "details": "completed targeted resolution is unavailable for this occurrence"
+      },
+      "expected": null
+    },
+    {
+      "name": "fault does not pay again",
+      "pass": true,
+      "actual": null,
+      "expected": null
+    }
+  ],
+  "lineage": {
+    "valid": true,
+    "failures": [],
+    "joins": [
+      {
+        "gapId": "8e0277b99467dee3aa1bd9bce06b1e9de28be78a3a074650e7f1aed69dabe8a1:0",
+        "targetedActionId": "1506a30a9ca849d18a0ae4736ad8d596d9203d0d32ef8fbae4fc4475b8bf30ff",
+        "normalizedQuery": "补充资料",
+        "providerScope": [
+          {
+            "capability": "search",
+            "providerId": "zhihu-open-platform"
+          },
+          {
+            "capability": "search",
+            "providerId": "zhihu_search"
+          }
+        ],
+        "resultArtifact": "targeted-requery-subphase/action-1506a30a9ca849d18a0ae4736ad8d596d9203d0d32ef8fbae4fc4475b8bf30ff/retrieval-pool.json",
+        "artifactHash": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+        "resultQuestionIds": [
+          "300",
+          "301"
+        ],
+        "reverse": [
+          {
+            "resultQuestionId": "300",
+            "targetedActionId": "1506a30a9ca849d18a0ae4736ad8d596d9203d0d32ef8fbae4fc4475b8bf30ff",
+            "gapId": "8e0277b99467dee3aa1bd9bce06b1e9de28be78a3a074650e7f1aed69dabe8a1:0",
+            "finalArtifact": "coverage-final.json"
+          },
+          {
+            "resultQuestionId": "301",
+            "targetedActionId": "1506a30a9ca849d18a0ae4736ad8d596d9203d0d32ef8fbae4fc4475b8bf30ff",
+            "gapId": "8e0277b99467dee3aa1bd9bce06b1e9de28be78a3a074650e7f1aed69dabe8a1:0",
+            "finalArtifact": "coverage-final.json"
+          }
+        ]
+      }
+    ]
+  },
+  "result": {
+    "ok": false,
+    "code": "state_invalid",
+    "details": "completed targeted resolution is unavailable for this occurrence"
+  },
+  "verdict": "PASS"
+}

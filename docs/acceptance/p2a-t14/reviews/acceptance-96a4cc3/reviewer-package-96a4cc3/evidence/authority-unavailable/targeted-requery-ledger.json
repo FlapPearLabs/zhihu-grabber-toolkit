@@ -1,0 +1,17 @@
+{
+  "diagnosedGaps": [
+    {
+      "declaredGapType": "AUTHORITY_GAP",
+      "diagnosisRound": 0,
+      "gapId": "fd907506c1eb3685aa9bd1b66b7d082cfda1e8e0b06c7b58aec765f786a43987:0",
+      "gapIdentityCore": "fd907506c1eb3685aa9bd1b66b7d082cfda1e8e0b06c7b58aec765f786a43987",
+      "gapType": "AUTHORITY_GAP",
+      "occurrenceId": "53a2cfae-c3f5-4096-ab3e-e0e036c5be48",
+      "planHash": "32c3444719b23579dc42d445860f3ac8b73736331be1caa01b71b0a41185fc43",
+      "subjectKey": "intent:原始权威资料"
+    }
+  ],
+  "occurrenceId": "53a2cfae-c3f5-4096-ab3e-e0e036c5be48",
+  "planHash": "32c3444719b23579dc42d445860f3ac8b73736331be1caa01b71b0a41185fc43",
+  "schema": "p2-ari-targeted-requery-ledger/v1"
+}

@@ -1,0 +1,30 @@
+{
+  "occurrenceId": "dea43a22-54bd-4cd7-84bc-1f0b3a211739",
+  "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+  "resolutions": [
+    {
+      "audit": [
+        {
+          "basis": "PER_GAP_BOUND_EXHAUSTED",
+          "event": "EVALUATE",
+          "predicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+          "seq": 1,
+          "status": "EXHAUSTED_WITHIN_BUDGET",
+          "targetedActionId": "ddace773491657d0161a84e02791456d7764d4217de691ee7f88ec83b36171cc"
+        }
+      ],
+      "evaluatedActionIds": [
+        "ddace773491657d0161a84e02791456d7764d4217de691ee7f88ec83b36171cc"
+      ],
+      "gapId": "420c9978b23111c2313c400d8e8abc933074fd7a6358bc8a8d0938a583b8897f:0",
+      "gapIdentityCore": "420c9978b23111c2313c400d8e8abc933074fd7a6358bc8a8d0938a583b8897f",
+      "resolutionEvidence": [],
+      "occurrenceId": "dea43a22-54bd-4cd7-84bc-1f0b3a211739",
+      "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+      "resolutionBasis": "PER_GAP_BOUND_EXHAUSTED",
+      "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+      "status": "EXHAUSTED_WITHIN_BUDGET"
+    }
+  ],
+  "schema": "p2-ari-targeted-requery-resolution/v1"
+}

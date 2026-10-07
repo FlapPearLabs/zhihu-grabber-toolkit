@@ -1,0 +1,48 @@
+{
+  "exactHead": "96a4cc3b5b851e29589ecd80cc308baeae3356ca",
+  "results": [
+    {
+      "mode": "unstaged",
+      "exitCode": 1,
+      "marker": true,
+      "outCreated": false
+    },
+    {
+      "mode": "staged",
+      "exitCode": 1,
+      "marker": true,
+      "outCreated": false
+    },
+    {
+      "mode": "untracked",
+      "exitCode": 1,
+      "marker": true,
+      "outCreated": false
+    },
+    {
+      "mode": "external-driver.mjs",
+      "exitCode": 1,
+      "marker": true,
+      "outCreated": false
+    },
+    {
+      "mode": "external-fixtures.mjs",
+      "exitCode": 1,
+      "marker": true,
+      "outCreated": false
+    },
+    {
+      "mode": "external-matrix.mjs",
+      "exitCode": 1,
+      "marker": true,
+      "outCreated": false
+    },
+    {
+      "mode": "external-package-evidence.mjs",
+      "exitCode": 1,
+      "marker": true,
+      "outCreated": false
+    }
+  ],
+  "sourceCleanAfter": true
+}

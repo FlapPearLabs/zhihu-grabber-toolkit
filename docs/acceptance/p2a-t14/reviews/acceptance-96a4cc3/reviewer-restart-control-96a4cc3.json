@@ -1,0 +1,38 @@
+{
+  "records": [
+    {
+      "name": "base",
+      "first": {
+        "ok": true,
+        "occurrence": "bc1e33c6-40a5-4bdf-80f8-1502ffd2eb6c",
+        "calls": 6
+      },
+      "restart": {
+        "ok": false,
+        "code": "p1_compose_aborted",
+        "details": "the checkpoint anchors no action-ledger version but an unanchored ledger exists on disk (F.5.1 CASE 1b: an authorization persisted without its anchor is an authorization the checkpoint cannot prove — refusing to discard it and start clean)",
+        "occurrence": "b73a8932-2ced-4092-a8f9-ad514d491a40",
+        "providerDelta": 4,
+        "targetedProviderDelta": 0
+      },
+      "newOccurrence": true
+    },
+    {
+      "name": "candidate",
+      "first": {
+        "ok": true,
+        "occurrence": "e7a11c6f-543a-43eb-bb89-217bc8faba6a",
+        "calls": 6
+      },
+      "restart": {
+        "ok": false,
+        "code": "p1_compose_aborted",
+        "details": "the checkpoint anchors no action-ledger version but an unanchored ledger exists on disk (F.5.1 CASE 1b: an authorization persisted without its anchor is an authorization the checkpoint cannot prove — refusing to discard it and start clean)",
+        "occurrence": "88cae396-d872-4c28-8e8b-141cdaa984f6",
+        "providerDelta": 4,
+        "targetedProviderDelta": 0
+      },
+      "newOccurrence": true
+    }
+  ]
+}

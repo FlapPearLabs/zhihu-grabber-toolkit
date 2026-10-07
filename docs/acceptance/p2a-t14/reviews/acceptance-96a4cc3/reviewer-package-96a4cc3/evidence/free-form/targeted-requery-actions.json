@@ -1,0 +1,20 @@
+{
+  "occurrenceId": "746716b5-9fdf-4d34-9b9d-290d087d24da",
+  "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+  "rejected": [
+    {
+      "gapId": "676e1d79882f469ec35e7b5ff471138a994ac7d1af3ba6f37d17c1b5987635f7:0",
+      "occurrenceId": "746716b5-9fdf-4d34-9b9d-290d087d24da",
+      "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+      "proposalVerbatim": {
+        "gapId": "676e1d79882f469ec35e7b5ff471138a994ac7d1af3ba6f37d17c1b5987635f7:0",
+        "queryText": "安全但未经授权的自由查询"
+      },
+      "rejectionCode": "PROPOSAL_NOT_ADMITTED",
+      "rejectionDetail": "FREE_FORM_QUERY_NOT_AUTHORIZED_IN_MVP",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699"
+    }
+  ],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": []
+}

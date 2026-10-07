@@ -1,0 +1,142 @@
+{
+  "schema": "p2a-t14-independent-reviewer-validation/v1",
+  "reviewedHead": "96a4cc3b5b851e29589ecd80cc308baeae3356ca",
+  "baseMaster": "854dd3cb2f9d5fa06df1dd79e7aad4ab42aea2b3",
+  "role": "ACCEPTANCE_EVIDENCE_REVIEWER",
+  "reviewVerdict": "CHANGES_REQUESTED",
+  "acceptanceVerdict": "NOT_PROVEN",
+  "rows": [
+    {
+      "specItem": "§20-1",
+      "verdict": "NOT_PROVEN"
+    },
+    {
+      "specItem": "§20-2",
+      "verdict": "PASS"
+    },
+    {
+      "specItem": "§20-3",
+      "verdict": "PASS"
+    },
+    {
+      "specItem": "§20-4",
+      "verdict": "PASS"
+    },
+    {
+      "specItem": "§20-5",
+      "verdict": "PASS"
+    },
+    {
+      "specItem": "§20-6",
+      "verdict": "NOT_PROVEN"
+    },
+    {
+      "specItem": "§20-7",
+      "verdict": "NOT_PROVEN"
+    },
+    {
+      "specItem": "§20-8",
+      "verdict": "PASS"
+    },
+    {
+      "specItem": "§20-9",
+      "verdict": "PASS"
+    },
+    {
+      "specItem": "§20-10",
+      "verdict": "PASS"
+    },
+    {
+      "specItem": "§20-11",
+      "verdict": "PASS"
+    },
+    {
+      "specItem": "§20-12",
+      "verdict": "PASS"
+    },
+    {
+      "specItem": "§20-13",
+      "verdict": "OUT_OF_SCOPE"
+    }
+  ],
+  "counts": {
+    "pass": 9,
+    "fail": 0,
+    "notProven": 3,
+    "outOfScope": 1
+  },
+  "scenarioChecks": {
+    "pass": 22,
+    "fail": 0
+  },
+  "commands": [
+    {
+      "command": "npm ci --offline --ignore-scripts --no-audit --no-fund",
+      "cwd": "zhihu-answer-grabber",
+      "exit": 0
+    },
+    {
+      "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --out \"$T14_OUT\"",
+      "exit": 2
+    },
+    {
+      "command": "node research-orchestration/scripts/p2a-t14/package-evidence.mjs \"$T14_OUT\" \"$T14_PACKAGE\"",
+      "exit": 0
+    },
+    {
+      "command": "node research-orchestration/scripts/run-classified-research-suites.mjs guard",
+      "exit": 0
+    },
+    {
+      "command": "node reviewer-negatives-96a4cc3.mjs",
+      "exit": 0
+    },
+    {
+      "command": "python3 reviewer-independent-audit-96a4cc3.py",
+      "exit": 0
+    },
+    {
+      "command": "node reviewer-restart-96a4cc3.mjs",
+      "exit": 0
+    }
+  ],
+  "blockers": [
+    {
+      "id": "B1",
+      "severity": "P1_ACCEPTANCE",
+      "items": [
+        "§20-1",
+        "§20-6",
+        "§20-7"
+      ],
+      "reason": "Missing real composer unknown durable diagnosis / subsequent diagnosis-proposal scheduling chain",
+      "classification": "FINITE_ARCHITECTURE_SCHEDULING_DECISION"
+    }
+  ],
+  "B2": "CLOSED",
+  "B3": "CLOSED",
+  "retainedCheckNegativesPassed": true,
+  "sourceIdentityNegativesPassed": true,
+  "sourceCleanAfter": true,
+  "artifactReferenceHashes": {
+    "verified": 889,
+    "mismatches": 0
+  },
+  "sourceInputsFingerprintCount": 108,
+  "sourceInputsFingerprintMismatches": 0,
+  "portableMachinePathLeaks": [],
+  "rawCampaignRef": "reviewer-run-96a4cc3/campaign.json",
+  "portablePackageRef": "reviewer-package-96a4cc3/scenario-manifest.json",
+  "negativeRefs": [
+    "reviewer-matrix-negative-96a4cc3.json",
+    "reviewer-source-negative-96a4cc3.json"
+  ],
+  "auditRef": "reviewer-independent-audit-96a4cc3.json",
+  "restartControlRef": "reviewer-restart-control-96a4cc3.json",
+  "receiptRef": "reviewer-receipt-96a4cc3.md",
+  "qualityClaim": "OUT_OF_SCOPE",
+  "closureGate": "BLOCKED",
+  "masterIntegration": "NOT_ALLOWED",
+  "userDecisionRequired": "Only controller-owned diagnostic seam and same-occurrence bounded subsequent diagnosis/proposal scheduling; no ordinary harness repair remains in this review",
+  "newShaDoesNotInheritVerdict": true
+}

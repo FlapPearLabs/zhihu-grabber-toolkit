@@ -1,0 +1,30 @@
+{
+  "occurrenceId": "4d687dc3-6e2f-4bd3-bcac-052eea24113b",
+  "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+  "resolutions": [
+    {
+      "audit": [
+        {
+          "basis": "OPERATIONAL_FAILURE",
+          "event": "EVALUATE",
+          "predicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+          "seq": 1,
+          "status": "UNRESOLVED",
+          "targetedActionId": "70d27305a6917b220c3e5a2f73a529f13ee0ab3dd64605af3cb4e94e647f4b2c"
+        }
+      ],
+      "evaluatedActionIds": [
+        "70d27305a6917b220c3e5a2f73a529f13ee0ab3dd64605af3cb4e94e647f4b2c"
+      ],
+      "gapId": "fa85bc053d87b561b05fc879ed07a0d2270813a3c18e2841af7dcc1821ecf585:0",
+      "gapIdentityCore": "fa85bc053d87b561b05fc879ed07a0d2270813a3c18e2841af7dcc1821ecf585",
+      "resolutionEvidence": [],
+      "occurrenceId": "4d687dc3-6e2f-4bd3-bcac-052eea24113b",
+      "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+      "resolutionBasis": "OPERATIONAL_FAILURE",
+      "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+      "status": "UNRESOLVED"
+    }
+  ],
+  "schema": "p2-ari-targeted-requery-resolution/v1"
+}
