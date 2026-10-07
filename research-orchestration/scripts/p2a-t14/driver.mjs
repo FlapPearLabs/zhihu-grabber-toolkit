@@ -19,6 +19,14 @@ const sourceDirty = [
   ...execFileSync('git', ['ls-files', '--others', '--exclude-standard'], { cwd: repo, encoding: 'utf8' }).trim().split('\n').filter(Boolean),
 ];
 if (sourceDirty.length > 0) throw new Error('T14_EXACT_SOURCE_DIRTY: commit or isolate the candidate before provider IO');
+const executingScripts = path.dirname(fileURLToPath(import.meta.url));
+for (const name of ['driver.mjs', 'fixtures.mjs', 'matrix.mjs', 'package-evidence.mjs']) {
+  const rel = 'research-orchestration/scripts/p2a-t14/' + name;
+  const committed = execFileSync('git', ['show', exactSha + ':' + rel], { cwd: repo });
+  if (hash(fs.readFileSync(path.join(executingScripts, name))) !== hash(committed)) {
+    throw new Error('T14_EXACT_SOURCE_DIRTY: executing harness differs from HEAD: ' + rel);
+  }
+}
 const load = rel => import(pathToFileURL(path.join(repo, 'research-orchestration', rel)).href);
 const [{ readAnchoredLedger }, { resolveAnchoredLedgerBytes }] = await Promise.all([
   load('lib/targeted-requery-lifecycle.mjs'), load('lib/p1-runtime-composer.mjs'),
@@ -153,6 +161,9 @@ if (arg('child')) {
     let replay = null;
     let fault = null;
     let controllerControls = null;
+    let faultResultForRecord = null;
+    let controlResultForRecord = null;
+    let staleActionControlForRecord = null;
     if (crash) {
       const { decideTargetedReplay, readAnchoredLedger } = await load('lib/targeted-requery-lifecycle.mjs');
       const { resolveAnchoredLedgerBytes } = await load('lib/p1-runtime-composer.mjs');
@@ -164,6 +175,72 @@ if (arg('child')) {
       }
       commands.push(run('resume'));
       commands.push(run('resume-again'));
+    } else if (scenario === 'stale-action') {
+      const checkpointFile = path.join(workDir, 'orchestration-state.json');
+      const checkpointBefore = fs.readFileSync(checkpointFile);
+      const originalCheckpointBackupRef = 'acceptance-stale-action-checkpoint-original.json';
+      fs.writeFileSync(path.join(workDir, originalCheckpointBackupRef), checkpointBefore, { flag: 'wx' });
+      const checkpointState = JSON.parse(checkpointBefore);
+      const expectedOccurrenceId = initial.occurrenceId;
+      const presentedOccurrenceId = `stale-${expectedOccurrenceId}`;
+      const checkpointFaultState = { ...checkpointState, occurrenceId: presentedOccurrenceId };
+      writeJson(checkpointFile, checkpointFaultState);
+      const checkpointFaultBytes = fs.readFileSync(checkpointFile);
+      const callsBeforeFault = readLines(path.join(workDir, 'acceptance-provider-calls.jsonl')).length;
+      commands.push(run('stale-negative'));
+      const faultResult = json(path.join(workDir, 'acceptance-compose-stale-negative.json'));
+      const callsAfterFault = readLines(path.join(workDir, 'acceptance-provider-calls.jsonl')).length;
+      const faultCheckpointObservation = observe(workDir);
+      const negativeResult = {
+        ok: faultResult?.ok ?? null,
+        code: faultResult?.code ?? null,
+        details: faultResult?.details ?? null,
+      };
+      fs.writeFileSync(checkpointFile, checkpointBefore);
+      const checkpointRestored = fs.readFileSync(checkpointFile);
+      const callsBeforeControl = readLines(path.join(workDir, 'acceptance-provider-calls.jsonl')).length;
+      commands.push(run('stale-repaired'));
+      const controlResult = json(path.join(workDir, 'acceptance-compose-stale-repaired.json'));
+      const callsAfterControl = readLines(path.join(workDir, 'acceptance-provider-calls.jsonl')).length;
+      const restoredState = json(checkpointFile);
+      const restoredActions = json(path.join(workDir, 'targeted-requery-actions.json'));
+      const originalCommitCount = (initial.actions?.targetedActions ?? []).reduce((n, action) => n + action.audit.filter(e => e.event === 'COMMIT').length, 0);
+      const restoredCommitCount = (restoredActions?.targetedActions ?? []).reduce((n, action) => n + action.audit.filter(e => e.event === 'COMMIT').length, 0);
+      fault = {
+        kind: 'TEST_FAULT_STALE_COMPLETE_OCCURRENCE_CONTEXT',
+        expectedOccurrenceId,
+        presentedOccurrenceId,
+        checkpointRef: 'work/orchestration-state.json',
+        originalCheckpointBackupRef: `work/${originalCheckpointBackupRef}`,
+        checkpointBeforeHash: hash(checkpointBefore),
+        checkpointFaultHash: hash(checkpointFaultBytes),
+        checkpointRestoredHash: hash(checkpointRestored),
+        checkpointOriginalBytesRestored: hash(checkpointRestored) === hash(checkpointBefore),
+        originalRunId: initial.runId,
+        originalPlanId: initial.gaps?.planHash ?? initial.state?.hashes?.researchPlan ?? null,
+      };
+      const staleControlAudit = {
+        schema: 'p2a-t14-stale-action-checker-control/v1',
+        label: 'TEST_FAULT; audit only, never a product checkpoint or authority artifact',
+        fault,
+        productionCheckerResult: negativeResult,
+        productionCheckerRejectedExpectedIdentityMismatch: negativeResult.ok === false && negativeResult.code === 'state_invalid'
+          && String(negativeResult.details ?? '').includes('completed targeted action ledger is not checkpoint-bound to this occurrence'),
+        callsBeforeFault,
+        callsAfterFault,
+        faultProviderCallDelta: callsAfterFault - callsBeforeFault,
+        restorationControl: { result: controlResult, callsBefore: callsBeforeControl, callsAfter: callsAfterControl,
+          providerCallDelta: callsAfterControl - callsBeforeControl,
+          restoredOccurrenceId: restoredState?.occurrenceId ?? null,
+          restoredCheckpointHash: hash(checkpointRestored), originalCommitCount, restoredCommitCount },
+        faultObservation: { occurrenceId: faultCheckpointObservation.state?.occurrenceId ?? null,
+          originalOccurrenceId: initial.occurrenceId,
+          providerCallCount: faultCheckpointObservation.calls.length },
+      };
+      writeJson(path.join(workDir, 'acceptance-stale-action-control.json'), staleControlAudit);
+      faultResultForRecord = faultResult;
+      controlResultForRecord = controlResult;
+      staleActionControlForRecord = staleControlAudit;
     } else if (['tampered-pool', 'stale-binding', 'missing-resolution', 'tampered-resolution', 'foreign-resolution', 'missing-unauthed-resolution', 'canonical-ledger-drift'].includes(scenario)) {
       const action = initial.actions?.targetedActions?.[0];
       if (action?.artifactRel && ['tampered-pool', 'stale-binding'].includes(scenario)) {
@@ -218,13 +295,15 @@ if (arg('child')) {
       commands.push(run('resume'));
     }
     const observed = observe(workDir);
-    const result = json(path.join(workDir, `acceptance-compose-${commands.length > 1 ? (crash ? 'resume-again' : controllerControls ? 'resume' : 'fault-resume') : 'initial'}.json`));
+    const result = scenario === 'stale-action'
+      ? controlResultForRecord
+      : json(path.join(workDir, `acceptance-compose-${commands.length > 1 ? (crash ? 'resume-again' : controllerControls ? 'resume' : 'fault-resume') : 'initial'}.json`));
     const checks = [];
     const check = (name, ok, actual = null, expected = null) => checks.push({ name, pass: !!ok, actual, expected });
     check('child execution', commands.every(c => c.error === null && (c.exitCode === 0 || (crash && c.signal === 'SIGKILL'))), commands);
     const initialCalls = initial.calls.filter(c => c.kind === 'targeted').length;
     const finalCalls = observed.calls.filter(c => c.kind === 'targeted').length;
-    const noTargeted = ['free-form', 'unsafe-plan-owned', 'stale-action', 'missing-unauthed-resolution'].includes(scenario);
+    const noTargeted = ['free-form', 'unsafe-plan-owned', 'missing-unauthed-resolution'].includes(scenario);
     const expectedTargetedCalls = noTargeted ? 0 : scenario === 'provider-scope' ? 1 : crash && scenario === 'crash-before' ? 4 : 2;
     const expectedProviderCalls = expectedTargetedCalls + (crash ? 8 : 4);
     check('targeted provider calls', finalCalls === expectedTargetedCalls, finalCalls, expectedTargetedCalls);
@@ -257,7 +336,7 @@ if (arg('child')) {
     if (scenario === 'per-gap-bound') check('per-gap terminal honest', resolutions.some(r => r.status === 'EXHAUSTED_WITHIN_BUDGET'));
     if (scenario === 'all-provider-failed') check('operational failure stays unresolved', observed.actions?.targetedActions?.[0]?.status === 'FAILED_OPERATIONAL'
       && resolutions.length === 1 && resolutions[0].status === 'UNRESOLVED');
-    if (noTargeted && scenario !== 'stale-action') check('rejected proposal recorded', (observed.actions?.rejected ?? []).length > 0);
+    if (noTargeted) check('rejected proposal recorded', (observed.actions?.rejected ?? []).length > 0);
     if (crash) {
       check('same occurrence resumes', initial.occurrenceId === observed.occurrenceId);
       check('real kill at window', commands[0].signal === 'SIGKILL');
@@ -274,6 +353,28 @@ if (arg('child')) {
     if (refusal) {
       check('tampered committed product refused', result?.ok === false && result?.reused !== true, result);
       check('fault does not pay again', observed.calls.length === initial.calls.length);
+    }
+    if (scenario === 'stale-action') {
+      check('stale action occurrence checker refuses', staleActionControlForRecord?.productionCheckerRejectedExpectedIdentityMismatch === true,
+        staleActionControlForRecord?.productionCheckerResult ?? null,
+        { code: 'state_invalid', detailsIncludes: 'completed targeted action ledger is not checkpoint-bound to this occurrence' });
+      check('stale action negative has zero provider delta', staleActionControlForRecord?.faultProviderCallDelta === 0,
+        staleActionControlForRecord?.faultProviderCallDelta ?? null, 0);
+      check('stale action restored checkpoint control reuses at zero IO', staleActionControlForRecord?.restorationControl?.result?.ok === true
+        && staleActionControlForRecord?.restorationControl?.result?.reused === true
+        && staleActionControlForRecord?.restorationControl?.providerCallDelta === 0,
+      staleActionControlForRecord?.restorationControl ?? null, { ok: true, reused: true, providerCallDelta: 0 });
+      check('stale action checkpoint bytes restored', staleActionControlForRecord?.fault?.checkpointOriginalBytesRestored === true
+        && staleActionControlForRecord?.fault?.expectedOccurrenceId === observed.occurrenceId
+        && staleActionControlForRecord?.fault?.presentedOccurrenceId !== observed.occurrenceId,
+      staleActionControlForRecord?.fault ?? null, 'original occurrence restored; only checkpoint occurrence context faulted');
+      check('stale action does not pay again or duplicate COMMIT', finalCalls === initialCalls
+        && staleActionControlForRecord?.restorationControl?.originalCommitCount === 1
+        && staleActionControlForRecord?.restorationControl?.restoredCommitCount === 1,
+      { targetedCallsInitial: initialCalls, targetedCallsFinal: finalCalls,
+        originalCommits: staleActionControlForRecord?.restorationControl?.originalCommitCount,
+        restoredCommits: staleActionControlForRecord?.restorationControl?.restoredCommitCount },
+      { targetedCallsDelta: 0, commits: 1 });
     }
     if (controllerControls) {
       check('control changes audit-only inputs', controllerControls.productionSecondDiagnosisRound === false && controllerControls.authorityLedgerWritten === false);
@@ -303,6 +404,8 @@ if (arg('child')) {
       expectedTargetedProviderCallCount: expectedTargetedCalls, observedTargetedProviderCallCount: finalCalls,
       expectedProviderCallCount: expectedProviderCalls,
       initialTargetedProviderCallCount: initialCalls, replay, fault, controllerControls, checks, lineage,
+      ...(scenario === 'stale-action' ? { faultResult: faultResultForRecord, controlResult: controlResultForRecord,
+        staleActionControl: staleActionControlForRecord } : {}),
       result, verdict: checks.every(c => c.pass) ? 'PASS' : 'FAIL',
     };
     writeJson(path.join(scenarioDir, 'final-observation.json'), observed);

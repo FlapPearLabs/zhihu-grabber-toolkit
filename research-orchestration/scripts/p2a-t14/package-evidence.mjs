@@ -107,6 +107,10 @@ for (const scenarioEntry of campaign.scenarios) {
   }
   const controllerControlsPath = path.join(workDir, 'acceptance-controller-controls.json');
   if (fs.existsSync(controllerControlsPath)) requiredRefs.add('acceptance-controller-controls.json');
+  const staleActionControlPath = path.join(workDir, 'acceptance-stale-action-control.json');
+  if (scenarioId === 'stale-action' && fs.existsSync(staleActionControlPath)) requiredRefs.add('acceptance-stale-action-control.json');
+  const staleCheckpointBackupPath = path.join(workDir, 'acceptance-stale-action-checkpoint-original.json');
+  if (scenarioId === 'stale-action' && fs.existsSync(staleCheckpointBackupPath)) requiredRefs.add('acceptance-stale-action-checkpoint-original.json');
   const packagedRefs = evidenceBytes.length > 0 && fs.existsSync(path.join(outputRoot, evidenceRef))
     ? [{ path: evidenceRef, sha256: sha(evidenceBytes), bytes: evidenceBytes.length }]
     : [];
@@ -236,7 +240,7 @@ for (const scenarioEntry of campaign.scenarios) {
   };
   index.scenarios.push(scenarioIndex);
   manifest.scenarios.push({ scenarioId, sourceVerdict: scenarioIndex.sourceVerdict, verdict: scenarioIndex.sourceVerdict, refs: packagedRefs.map(r => ({ path: r.path, sha256: r.sha256, bytes: r.bytes })) });
-  minimumSuggestions.push({ scenarioId, minimumForReview: ['evidence.json', 'work/orchestration-state.json', 'work/research-plan.json', 'work/targeted-requery-ledger.json', 'work/targeted-requery-actions.json', 'work/targeted-requery-resolution.json', 'work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json', 'work/acceptance-events.jsonl', 'work/acceptance-provider-calls.jsonl', 'work/acceptance-controller-controls.json when present', 'work/research-result.json', 'work/coverage-final.json', 'work/<action.artifactRel>', 'initial/final observation summary snapshots'], faultHandling: 'Preserve pre-fault observation snapshot and recorded hash; label current mutated bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.', excludedByDefault: ['zhihu/** capture/corpus payloads', 'large logs', 'full initial/final observation snapshots'] });
+  minimumSuggestions.push({ scenarioId, minimumForReview: ['evidence.json', 'work/orchestration-state.json', 'work/research-plan.json', 'work/targeted-requery-ledger.json', 'work/targeted-requery-actions.json', 'work/targeted-requery-resolution.json', 'work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json', 'work/acceptance-events.jsonl', 'work/acceptance-provider-calls.jsonl', 'work/acceptance-controller-controls.json when present', 'work/acceptance-stale-action-control.json and original checkpoint backup for stale-action', 'work/research-result.json', 'work/coverage-final.json', 'work/<action.artifactRel>', 'initial/final observation summary snapshots'], faultHandling: 'Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.', excludedByDefault: ['zhihu/** capture/corpus payloads', 'large logs', 'full initial/final observation snapshots'] });
 }
 
 function recursivelyCheckRefs(value, owner, checks = []) {

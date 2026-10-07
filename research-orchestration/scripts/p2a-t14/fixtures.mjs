@@ -149,7 +149,6 @@ export async function createFixture({ repo, workDir, scenario, phase = 'initial'
         if (ref.index < 0) ref.index = 0;
         let proposal = { gapId: gap.gapId, planOwnedStringRef: ref };
         if (['free-form', 'missing-unauthed-resolution'].includes(scenario)) proposal = { gapId: gap.gapId, queryText: '安全但未经授权的自由查询' };
-        if (scenario === 'stale-action') proposal.gapId = `${'0'.repeat(64)}:0`;
         if (scenario === 'provider-scope') proposal.requestedProviderScope = [providers[0]];
         return proposal;
       });
