@@ -14,7 +14,11 @@ const arg = (key, fallback = null) => {
 const repo = path.resolve(arg('repo', fileURLToPath(new URL('../../../', import.meta.url))));
 const out = path.resolve(arg('out', '/tmp/p2a-t14-acceptance'));
 const exactSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim();
-const sourceDirty = execFileSync('git', ['diff', '--name-only'], { cwd: repo, encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+const sourceDirty = [
+  ...execFileSync('git', ['diff', 'HEAD', '--name-only'], { cwd: repo, encoding: 'utf8' }).trim().split('\n').filter(Boolean),
+  ...execFileSync('git', ['ls-files', '--others', '--exclude-standard'], { cwd: repo, encoding: 'utf8' }).trim().split('\n').filter(Boolean),
+];
+if (sourceDirty.length > 0) throw new Error('T14_EXACT_SOURCE_DIRTY: commit or isolate the candidate before provider IO');
 const load = rel => import(pathToFileURL(path.join(repo, 'research-orchestration', rel)).href);
 const [{ readAnchoredLedger }, { resolveAnchoredLedgerBytes }] = await Promise.all([
   load('lib/targeted-requery-lifecycle.mjs'), load('lib/p1-runtime-composer.mjs'),

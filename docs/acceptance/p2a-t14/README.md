@@ -14,7 +14,7 @@ node research-orchestration/scripts/run-classified-research-suites.mjs guard
 NODE_OPTIONS='--test-reporter=tap' node research-orchestration/scripts/run-classified-research-suites.mjs full-offline
 ```
 
-输出目录必须尚未使用。首次 fresh clone 按既有 lockfile 在 `zhihu-answer-grabber` 执行 `npm ci`，与仓库 CI 的依赖准备一致；不加载真实模型或私有凭据。当前本地运行 Node26；Node22 的最终证据由可用环境再验证。TAP 显式设置只用于兼容分类 runner 的计数格式。
+输出目录必须尚未使用。driver在任何provider IO前拒绝已暂存、未暂存及未跟踪的候选改动，避免磁盘源码冒充HEAD。首次 fresh clone 按既有 lockfile 在 `zhihu-answer-grabber` 执行 `npm ci`，与仓库 CI 的依赖准备一致；不加载真实模型或私有凭据。当前本地运行 Node26；Node22 的最终证据由可用环境再验证。TAP 显式设置只用于兼容分类 runner 的计数格式。
 
 每个command中的 `$T14_OUT` 是本次fresh campaign根目录；`outputDirectoryRef` 指向该根目录下的具体scenario，`workingDirectory` 是仓库根。命令保留真实child参数结构而不提交本机绝对路径。
 
@@ -22,7 +22,7 @@ NODE_OPTIONS='--test-reporter=tap' node research-orchestration/scripts/run-class
 
 本次有 22 个互斥状态的独立 occurrence。crash-before/crash-after 子进程在真实提交窗口收到 SIGKILL；父进程直接 ordinary resume，不修改 checkpoint 伪造完成。提交前允许一次安全重跑（targeted IO 增量2），提交后 targeted IO 增量0。计划检索在提交后 resume 仍会运行4次，因为该窗口尚未锚定计划 pool；这不是“所有 provider IO 为零”。每条 target action 的 COMMIT 计数和 pool/hash/checkpoint 均机械检查。
 
-§20-1 与 §20-6 当前为 `NOT_PROVEN`。公开生产 guard 的未知类型、跨 diagnosisRound dedupe 和 per-gap bound 对照已执行，以当前真实 occurrence 的 checkpoint 锚定 ledger、计划与预算为输入；这些挑战只写 acceptance 工件，不写产品 authority ledger。`CONTROLLER_BOUNDARY_NEGATIVE_CONTROL` 不代表 composer 实际持久过未知 gap 或执行第二诊断轮。现有 composer 是单轮 MVP，新增该注入面或轮次需单独架构授权。
+§20-1、§20-6 与 §20-7 当前为 `NOT_PROVEN`。全局预算已在真实composer中拒绝后续gap，但per-gap实际上界挑战仍仅发生在controller边界。公开生产 guard 的未知类型、跨 diagnosisRound dedupe 和 per-gap bound 对照已执行，以当前真实 occurrence 的 checkpoint 锚定 ledger、计划与预算为输入；这些挑战只写 acceptance 工件，不写产品 authority ledger。`CONTROLLER_BOUNDARY_NEGATIVE_CONTROL` 不代表 composer 实际持久过未知 gap 或执行第二诊断轮。现有 composer 是单轮 MVP，新增该注入面或轮次需单独架构授权。
 
 已复现并最小修复的既有P1：授权providerScope未控制真实调用；拒绝/无proposal/operational failure的gap终态未落盘；预算耗尽未按冻结T08终态披露；T10 block未接入最终工件；COMPLETE reuse未检查定向 pool、锚定ledger和resolution披露依赖。未新增terminal、identity、runtime/provider fallback或检索管线。
 
