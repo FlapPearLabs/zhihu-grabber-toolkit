@@ -1,0 +1,37 @@
+{
+  "diagnosedGaps": [
+    {
+      "declaredGapType": "CONTRADICTION_GAP",
+      "diagnosisRound": 0,
+      "gapId": "4ca1c7420a6f4c0afc0635b2f6ae17e0f99971f13cbc55cd7389a9fd784aca9c:0",
+      "gapIdentityCore": "4ca1c7420a6f4c0afc0635b2f6ae17e0f99971f13cbc55cd7389a9fd784aca9c",
+      "gapType": "CONTRADICTION_GAP",
+      "occurrenceId": "9848df66-b5d0-4890-a8a8-65039f861259",
+      "planHash": "65277490e7791c1b413814aac83b96d2b3263e2be4cc3e1c15f7a30b27943c75",
+      "subjectKey": "opposing:framing-b"
+    },
+    {
+      "declaredGapType": "CONTRADICTION_GAP",
+      "diagnosisRound": 0,
+      "gapId": "8153cad0d061cbc300a96c29e42ca843c7569e9ac4e3b7cba72cd1ffe9edb481:0",
+      "gapIdentityCore": "8153cad0d061cbc300a96c29e42ca843c7569e9ac4e3b7cba72cd1ffe9edb481",
+      "gapType": "CONTRADICTION_GAP",
+      "occurrenceId": "9848df66-b5d0-4890-a8a8-65039f861259",
+      "planHash": "65277490e7791c1b413814aac83b96d2b3263e2be4cc3e1c15f7a30b27943c75",
+      "subjectKey": "opposing:framing-a"
+    },
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 0,
+      "gapId": "a235e7c0f11a62dde77e6659e07d0447e4805f747315464f4fbdd7c4d6881a4b:0",
+      "gapIdentityCore": "a235e7c0f11a62dde77e6659e07d0447e4805f747315464f4fbdd7c4d6881a4b",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "9848df66-b5d0-4890-a8a8-65039f861259",
+      "planHash": "65277490e7791c1b413814aac83b96d2b3263e2be4cc3e1c15f7a30b27943c75",
+      "subjectKey": "aspect:framing-b"
+    }
+  ],
+  "occurrenceId": "9848df66-b5d0-4890-a8a8-65039f861259",
+  "planHash": "65277490e7791c1b413814aac83b96d2b3263e2be4cc3e1c15f7a30b27943c75",
+  "schema": "p2-ari-targeted-requery-ledger/v1"
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "type": "TargetedResolutionInput",
+  "targetedActionId": "deea48d4debbdd33e73d3ed265cbb18b1cb4338d71901f0083e5e811bb2d2751",
+  "planHash": "34fef90151a9a3d563264e53fa253d2963bf847acf064623fefc5e0a2c093884",
+  "occurrenceId": "12873742-9817-4cf9-a921-3b4f2db33a45",
+  "priorQuestionIds": [
+    "100",
+    "200"
+  ],
+  "declaredFraming": "相反观点",
+  "coveredFramings": []
+}

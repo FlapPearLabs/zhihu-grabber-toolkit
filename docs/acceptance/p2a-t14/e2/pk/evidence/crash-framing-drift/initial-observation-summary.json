@@ -1,0 +1,306 @@
+{
+  "schema": "p2a-t14-observation-summary/v1",
+  "phase": "initial",
+  "exactRepoSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+  "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+  "occurrenceId": "9848df66-b5d0-4890-a8a8-65039f861259",
+  "planHash": "65277490e7791c1b413814aac83b96d2b3263e2be4cc3e1c15f7a30b27943c75",
+  "stateHashes": {
+    "coverageState": "6cd997c81abe8ac4e688c84ef82510e5d1150b642471d4b0f75b2bf491fe3f8e",
+    "targeted-resolution-input:137c83cc0064ce03978a5e3c71167d0ee86e7f589ea5ffd8421dd81d29728f2c": "4c54ff3fbd5a71d58ea19d24b0cd2478bddedbe9530f876f1b53692fb61fddae",
+    "targeted-action-ledger": "507896bee4d11c12f067477543b998d7d5547d70b67d4a187f89b0a80d85e0a3",
+    "targeted-action:137c83cc0064ce03978a5e3c71167d0ee86e7f589ea5ffd8421dd81d29728f2c": "450bcf64e7950151542d186a722902b149d4c451d8264d826f5fd292891927e0"
+  },
+  "diagnosedGaps": [
+    {
+      "declaredGapType": "CONTRADICTION_GAP",
+      "diagnosisRound": 0,
+      "gapId": "8153cad0d061cbc300a96c29e42ca843c7569e9ac4e3b7cba72cd1ffe9edb481:0",
+      "gapIdentityCore": "8153cad0d061cbc300a96c29e42ca843c7569e9ac4e3b7cba72cd1ffe9edb481",
+      "gapType": "CONTRADICTION_GAP",
+      "occurrenceId": "9848df66-b5d0-4890-a8a8-65039f861259",
+      "planHash": "65277490e7791c1b413814aac83b96d2b3263e2be4cc3e1c15f7a30b27943c75",
+      "subjectKey": "opposing:framing-a"
+    }
+  ],
+  "actions": [
+    {
+      "artifactHash": "450bcf64e7950151542d186a722902b149d4c451d8264d826f5fd292891927e0",
+      "artifactRel": "targeted-requery-subphase/action-137c83cc0064ce03978a5e3c71167d0ee86e7f589ea5ffd8421dd81d29728f2c/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-137c83cc0064ce03978a5e3c71167d0ee86e7f589ea5ffd8421dd81d29728f2c/retrieval-pool.json",
+          "bindingHash": "450bcf64e7950151542d186a722902b149d4c451d8264d826f5fd292891927e0",
+          "bindingKey": "targeted-action:137c83cc0064ce03978a5e3c71167d0ee86e7f589ea5ffd8421dd81d29728f2c",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        }
+      ],
+      "bindingHash": "450bcf64e7950151542d186a722902b149d4c451d8264d826f5fd292891927e0",
+      "bindingKey": "targeted-action:137c83cc0064ce03978a5e3c71167d0ee86e7f589ea5ffd8421dd81d29728f2c",
+      "dedupeKey": "2a09080e980d333a977ac7071995a1675007eb0e97277f2c32867aea5b892d83",
+      "gapId": "8153cad0d061cbc300a96c29e42ca843c7569e9ac4e3b7cba72cd1ffe9edb481:0",
+      "gapIdentityCore": "8153cad0d061cbc300a96c29e42ca843c7569e9ac4e3b7cba72cd1ffe9edb481",
+      "normalizedQuery": "framing-a",
+      "occurrenceId": "9848df66-b5d0-4890-a8a8-65039f861259",
+      "planHash": "65277490e7791c1b413814aac83b96d2b3263e2be4cc3e1c15f7a30b27943c75",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "status": "COMMITTED",
+      "targetedActionId": "137c83cc0064ce03978a5e3c71167d0ee86e7f589ea5ffd8421dd81d29728f2c"
+    }
+  ],
+  "anchoredActions": [
+    {
+      "artifactHash": "450bcf64e7950151542d186a722902b149d4c451d8264d826f5fd292891927e0",
+      "artifactRel": "targeted-requery-subphase/action-137c83cc0064ce03978a5e3c71167d0ee86e7f589ea5ffd8421dd81d29728f2c/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-137c83cc0064ce03978a5e3c71167d0ee86e7f589ea5ffd8421dd81d29728f2c/retrieval-pool.json",
+          "bindingHash": "450bcf64e7950151542d186a722902b149d4c451d8264d826f5fd292891927e0",
+          "bindingKey": "targeted-action:137c83cc0064ce03978a5e3c71167d0ee86e7f589ea5ffd8421dd81d29728f2c",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        }
+      ],
+      "bindingHash": "450bcf64e7950151542d186a722902b149d4c451d8264d826f5fd292891927e0",
+      "bindingKey": "targeted-action:137c83cc0064ce03978a5e3c71167d0ee86e7f589ea5ffd8421dd81d29728f2c",
+      "dedupeKey": "2a09080e980d333a977ac7071995a1675007eb0e97277f2c32867aea5b892d83",
+      "gapId": "8153cad0d061cbc300a96c29e42ca843c7569e9ac4e3b7cba72cd1ffe9edb481:0",
+      "gapIdentityCore": "8153cad0d061cbc300a96c29e42ca843c7569e9ac4e3b7cba72cd1ffe9edb481",
+      "normalizedQuery": "framing-a",
+      "occurrenceId": "9848df66-b5d0-4890-a8a8-65039f861259",
+      "planHash": "65277490e7791c1b413814aac83b96d2b3263e2be4cc3e1c15f7a30b27943c75",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "status": "COMMITTED",
+      "targetedActionId": "137c83cc0064ce03978a5e3c71167d0ee86e7f589ea5ffd8421dd81d29728f2c"
+    }
+  ],
+  "resolutions": "NOT_PROVEN",
+  "providerCalls": [
+    {
+      "sequence": 1,
+      "phase": "initial",
+      "kind": "planned",
+      "query": "framing-a",
+      "providerId": "zhihu_search",
+      "capability": "search",
+      "questionIds": []
+    },
+    {
+      "sequence": 2,
+      "phase": "initial",
+      "kind": "planned",
+      "query": "framing-a",
+      "providerId": "zhihu-open-platform",
+      "capability": "search",
+      "questionIds": []
+    },
+    {
+      "sequence": 3,
+      "phase": "initial",
+      "kind": "planned",
+      "query": "framing-b",
+      "providerId": "zhihu_search",
+      "capability": "search",
+      "questionIds": [
+        "100",
+        "200"
+      ]
+    },
+    {
+      "sequence": 4,
+      "phase": "initial",
+      "kind": "planned",
+      "query": "framing-b",
+      "providerId": "zhihu-open-platform",
+      "capability": "search",
+      "questionIds": [
+        "100",
+        "200"
+      ]
+    },
+    {
+      "sequence": 5,
+      "phase": "initial",
+      "kind": "targeted",
+      "query": "framing-a",
+      "providerId": "zhihu_search",
+      "capability": "search",
+      "questionIds": [
+        "300"
+      ]
+    },
+    {
+      "sequence": 6,
+      "phase": "initial",
+      "kind": "targeted",
+      "query": "framing-a",
+      "providerId": "zhihu-open-platform",
+      "capability": "search",
+      "questionIds": [
+        "300"
+      ]
+    }
+  ],
+  "acceptanceEvents": [
+    {
+      "phase": "initial",
+      "event": "provider_io",
+      "sequence": 1,
+      "kind": "planned",
+      "query": "framing-a",
+      "providerId": "zhihu_search"
+    },
+    {
+      "phase": "initial",
+      "event": "provider_io",
+      "sequence": 2,
+      "kind": "planned",
+      "query": "framing-a",
+      "providerId": "zhihu-open-platform"
+    },
+    {
+      "phase": "initial",
+      "event": "provider_io",
+      "sequence": 3,
+      "kind": "planned",
+      "query": "framing-b",
+      "providerId": "zhihu_search"
+    },
+    {
+      "phase": "initial",
+      "event": "provider_io",
+      "sequence": 4,
+      "kind": "planned",
+      "query": "framing-b",
+      "providerId": "zhihu-open-platform"
+    },
+    {
+      "phase": "initial",
+      "event": "proposal",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrenceId": "9848df66-b5d0-4890-a8a8-65039f861259",
+      "planHash": "65277490e7791c1b413814aac83b96d2b3263e2be4cc3e1c15f7a30b27943c75",
+      "diagnosedGapIds": [
+        "8153cad0d061cbc300a96c29e42ca843c7569e9ac4e3b7cba72cd1ffe9edb481:0"
+      ],
+      "proposals": [
+        {
+          "gapId": "8153cad0d061cbc300a96c29e42ca843c7569e9ac4e3b7cba72cd1ffe9edb481:0",
+          "planOwnedStringRef": {
+            "field": "opposingFramings",
+            "index": 0
+          }
+        }
+      ]
+    },
+    {
+      "phase": "initial",
+      "event": "framing_proposal_callback",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "occurrenceId": "9848df66-b5d0-4890-a8a8-65039f861259",
+      "planHash": "65277490e7791c1b413814aac83b96d2b3263e2be4cc3e1c15f7a30b27943c75",
+      "diagnosisRound": 0,
+      "diagnosedGapIds": [
+        "8153cad0d061cbc300a96c29e42ca843c7569e9ac4e3b7cba72cd1ffe9edb481:0"
+      ],
+      "anchoredPriorGapId": null,
+      "proposals": [
+        {
+          "gapId": "8153cad0d061cbc300a96c29e42ca843c7569e9ac4e3b7cba72cd1ffe9edb481:0",
+          "planOwnedStringRef": {
+            "field": "opposingFramings",
+            "index": 0
+          }
+        }
+      ]
+    },
+    {
+      "phase": "initial",
+      "event": "provider_io",
+      "sequence": 5,
+      "kind": "targeted",
+      "query": "framing-a",
+      "providerId": "zhihu_search"
+    },
+    {
+      "phase": "initial",
+      "event": "provider_io",
+      "sequence": 6,
+      "kind": "targeted",
+      "query": "framing-a",
+      "providerId": "zhihu-open-platform"
+    },
+    {
+      "phase": "initial",
+      "event": "crash",
+      "label": "after_targeted_commit_finalize"
+    }
+  ],
+  "finalArtifactHashes": {},
+  "targetedPoolHashes": {
+    "targeted-requery-subphase/action-137c83cc0064ce03978a5e3c71167d0ee86e7f589ea5ffd8421dd81d29728f2c/retrieval-pool.json": "450bcf64e7950151542d186a722902b149d4c451d8264d826f5fd292891927e0"
+  },
+  "anchoredLedgerSnapshots": [
+    {
+      "path": ".p1-commit-staging/targeted-action-ledger/0f43655bd4ca86720ad51adb3bebc108da447ba4d225b12b38002ecb9ac32e0e.json",
+      "bytes": 1543,
+      "sha256": "0f43655bd4ca86720ad51adb3bebc108da447ba4d225b12b38002ecb9ac32e0e"
+    },
+    {
+      "path": ".p1-commit-staging/targeted-action-ledger/507896bee4d11c12f067477543b998d7d5547d70b67d4a187f89b0a80d85e0a3.json",
+      "bytes": 2362,
+      "sha256": "507896bee4d11c12f067477543b998d7d5547d70b67d4a187f89b0a80d85e0a3"
+    }
+  ],
+  "faultSnapshot": null,
+  "faultArtifactHashes": null
+}

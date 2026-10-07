@@ -1,0 +1,4475 @@
+{
+  "schema": "p2a-t14-frozen-section-20-matrix-draft/v1",
+  "exactRepoSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+  "sourceScenarioChecksVerdict": "PASS",
+  "engineeringGate": "PENDING_INDEPENDENT_REVIEW",
+  "status": "DRAFT_NOT_REVIEWED",
+  "reviewReceipt": "NOT_CREATED",
+  "counts": {
+    "pass": 12,
+    "fail": 0,
+    "notProven": 0,
+    "outOfScope": 1
+  },
+  "qualityClaim": "OUT_OF_SCOPE",
+  "rows": [
+    {
+      "specItem": "§20-1",
+      "scenarioId": "unknown-gap",
+      "verdict": "PASS",
+      "reason": "Required principal and negative-control checks passed on their individual recorded occurrences.",
+      "principalRun": {
+        "exactRepoSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+        "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+        "occurrenceId": "2765cf05-c271-41f8-ba6e-a663643d5001",
+        "planId": "43ff5751eee28aa59967dee564d8c3949178268bdfc49e3d69f30669671a12a7",
+        "generation": "2765cf05-c271-41f8-ba6e-a663643d5001",
+        "commands": [
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child unknown-gap --out \"$T14_OUT/unknown-gap/work\" --phase initial --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "unknown-gap/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "exitCodes": [
+          0
+        ],
+        "inputArtifacts": [
+          {
+            "path": "acceptance-input-initial.json",
+            "sha256": "aa0927e9d4f175cf0b4b9e812f91970f44656e6b8cbfb95d1fa070d50e002dd8",
+            "bytes": 505
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "dd5d30b3aefb9b5a30af467ce842f104017f87a6f35e66c60d7e25ea6cfb056c",
+            "bytes": 232
+          }
+        ],
+        "outputArtifacts": [
+          {
+            "path": ".p1-commit-staging/coverageState/2eb6705f329a18574227895e9c3fc0511b24b0e33a43bb06f4a48ee64661a250.json",
+            "sha256": "2eb6705f329a18574227895e9c3fc0511b24b0e33a43bb06f4a48ee64661a250",
+            "bytes": 1514
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/54481fb31b551f96bf1c5b3853e5d164bb4c79c0faf9838b162fc69850ebdb16.json",
+            "sha256": "54481fb31b551f96bf1c5b3853e5d164bb4c79c0faf9838b162fc69850ebdb16",
+            "bytes": 2827
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/6298d77b5d062c1f1905ec89cd6eadb66037fdff7431026110a9d1d2e67a28f4.json",
+            "sha256": "6298d77b5d062c1f1905ec89cd6eadb66037fdff7431026110a9d1d2e67a28f4",
+            "bytes": 2125
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/6ae41b9dc777a57fc31618e0994b1757936bcfe08fa50fcb15e5da510b9d46fb.json",
+            "sha256": "6ae41b9dc777a57fc31618e0994b1757936bcfe08fa50fcb15e5da510b9d46fb",
+            "bytes": 3255
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/bac3b60b8c4635121db9a24944283cdedba05071eba5af51f7f241892c621315.json",
+            "sha256": "bac3b60b8c4635121db9a24944283cdedba05071eba5af51f7f241892c621315",
+            "bytes": 3255
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/ce71421584174318077ad4d4e1fae0b17eca6a9b47a6f3e863d173ed2ee8c666.json",
+            "sha256": "ce71421584174318077ad4d4e1fae0b17eca6a9b47a6f3e863d173ed2ee8c666",
+            "bytes": 2671
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/ad5f6a4ec0f1036ff9ac9797bf12e5cd7754dc2c0418a2a17e5c84e354bab27d.json",
+            "sha256": "ad5f6a4ec0f1036ff9ac9797bf12e5cd7754dc2c0418a2a17e5c84e354bab27d",
+            "bytes": 236
+          },
+          {
+            "path": "coverage-final.json",
+            "sha256": "d66aed434632d80b4eaa8fdaacee0ceed33d7c7208dc9ae7dcedd3f7dc0235c2",
+            "bytes": 3208
+          },
+          {
+            "path": "coverage-state.json",
+            "sha256": "5ec2cfdfa01f47eb89ea1d791b52349aa369af82c0b75a1f6ff2db58efd08b65",
+            "bytes": 3254
+          },
+          {
+            "path": "cross-source-synthesis.json",
+            "sha256": "c908fcbcc93ecbd5d3e0dbe24f76342d51f3b36491a3e912fa753d763cd8513c",
+            "bytes": 3497
+          },
+          {
+            "path": "events.jsonl",
+            "sha256": "813aa7db93549a40a7609a86442e42eabd3736e206897ac4b45701eea9ed60f8",
+            "bytes": 3745
+          },
+          {
+            "path": "multi-group-state.json",
+            "sha256": "b0e1ed3ad2c8b2d3cba960671a735d421a43650b6881bc65f32e65200aa0ae7a",
+            "bytes": 4391
+          },
+          {
+            "path": "orchestration-state.json",
+            "sha256": "697433a8aa8ecc221fe709d65604823469686041c8d61f4582e2b8096f962500",
+            "bytes": 1987
+          },
+          {
+            "path": "per-group-claims.json",
+            "sha256": "eeb903efd273c90c4a9b27b27cbecfd452e619d758640ca12865e17ce59ca559",
+            "bytes": 2292
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "dd5d30b3aefb9b5a30af467ce842f104017f87a6f35e66c60d7e25ea6cfb056c",
+            "bytes": 232
+          },
+          {
+            "path": "research-result.json",
+            "sha256": "d122db28a46bbb9a932f32baaaa29c3e177ac9203d8af594f9185b746f4a4877",
+            "bytes": 1771
+          },
+          {
+            "path": "retrieval-rounds/accumulated-pool.json",
+            "sha256": "53db8e951e75c6fc0f812f834182798912a493333a6c2849e817e1290eab3794",
+            "bytes": 2702
+          },
+          {
+            "path": "retrieval-rounds/round-1/retrieval-pool.json",
+            "sha256": "78cc5520ee3e31cbd055a4ec0f5830c846c6271ff01cf5b0fc0e6846e5e3c771",
+            "bytes": 2753
+          },
+          {
+            "path": "retrieval-rounds/round-2/retrieval-pool.json",
+            "sha256": "78cc5520ee3e31cbd055a4ec0f5830c846c6271ff01cf5b0fc0e6846e5e3c771",
+            "bytes": 2753
+          },
+          {
+            "path": "source-group-selection-decision.json",
+            "sha256": "ea01584d75c9bf8e64870f7e4d982932dc072a9187b1bc4cc2b3abe0ce9dda9d",
+            "bytes": 2649
+          },
+          {
+            "path": "targeted-requery-actions.json",
+            "sha256": "ad5f6a4ec0f1036ff9ac9797bf12e5cd7754dc2c0418a2a17e5c84e354bab27d",
+            "bytes": 236
+          },
+          {
+            "path": "targeted-requery-ledger.json",
+            "sha256": "cf49b22c2d2be7c2eb9704aa938c39b3ba2667e743fd64254755d93fff0ce27a",
+            "bytes": 215
+          },
+          {
+            "path": "targeted-requery-resolution.json",
+            "sha256": "742c117af9bfbfb31632bb44cf232eef4b4a49bcd0e342e2bda3e325ef42179f",
+            "bytes": 217
+          },
+          {
+            "path": "zhihu/100/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/100/answers.json",
+            "sha256": "4800f91b66e868cc9777d25a8d48635c2a525fc59de9d19bcfb0a71adb9eb1f8",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/100/answers.md",
+            "sha256": "6bc12bd6b9108da6987180b61e77ed62b36a1257fcc2150a85a26860f5e2597b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/100/handoff.json",
+            "sha256": "66a0b7837b6fc5c89308e5dabb88fca8cd5ec7c7f12ebdd39062fd31a1778db2",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/200/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/200/answers.json",
+            "sha256": "0dcb12e4c69ce9aba5a22e024486f8fa8bc8485abd96e1cb1d82b0787db75f59",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/200/answers.md",
+            "sha256": "15ad5b2025bc4044e2c2f8303d0526e373dce22e6be8c35adb4279e640898a1b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/200/handoff.json",
+            "sha256": "ac3ed33e4371117e8c1bba0bd0a5c5879f9aae826521bcd940ca367b4fe034a9",
+            "bytes": 201
+          }
+        ],
+        "providerCounts": {
+          "observed": 4,
+          "expected": 4,
+          "observedTargeted": 0,
+          "expectedTargeted": 0
+        },
+        "lineage": {
+          "valid": true,
+          "failures": [],
+          "joins": [],
+          "integrityVerdict": "PASS"
+        },
+        "requiredAssertions": [
+          {
+            "name": "unknown rejected by composition",
+            "result": "PASS"
+          },
+          {
+            "name": "zero legal unknown gaps",
+            "result": "PASS"
+          },
+          {
+            "name": "zero targeted action delta",
+            "result": "PASS"
+          },
+          {
+            "name": "zero targeted provider delta",
+            "result": "PASS"
+          }
+        ]
+      },
+      "positiveAssertion": {
+        "scenarioId": "unknown-gap",
+        "checks": [
+          "unknown rejected by composition",
+          "zero legal unknown gaps",
+          "zero targeted action delta",
+          "zero targeted provider delta"
+        ]
+      },
+      "negativeControlRefs": [
+        {
+          "scenarioId": "canonical",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "dc8d0c7b-f872-45d1-b271-131003277240",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "evidence resolution",
+              "result": "PASS"
+            },
+            {
+              "name": "controller before targeted IO",
+              "result": "PASS"
+            }
+          ]
+        }
+      ],
+      "boundaryLimit": null
+    },
+    {
+      "specItem": "§20-2",
+      "scenarioId": "canonical",
+      "verdict": "PASS",
+      "reason": "Required principal and negative-control checks passed on their individual recorded occurrences.",
+      "principalRun": {
+        "exactRepoSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+        "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+        "occurrenceId": "dc8d0c7b-f872-45d1-b271-131003277240",
+        "planId": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+        "generation": "dc8d0c7b-f872-45d1-b271-131003277240",
+        "commands": [
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child canonical --out \"$T14_OUT/canonical/work\" --phase initial --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "canonical/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "exitCodes": [
+          0
+        ],
+        "inputArtifacts": [
+          {
+            "path": "acceptance-input-initial.json",
+            "sha256": "3543c26dbf86f15c5b8977e6fbdcfa010c59fe4d5b13b3a2ac019951178deca2",
+            "bytes": 691
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          }
+        ],
+        "outputArtifacts": [
+          {
+            "path": ".p1-commit-staging/coverageState/0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8.json",
+            "sha256": "0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8",
+            "bytes": 4352
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d.json",
+            "sha256": "24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d",
+            "bytes": 3512
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202.json",
+            "sha256": "2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202",
+            "bytes": 1514
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae.json",
+            "sha256": "3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae",
+            "bytes": 3213
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f.json",
+            "sha256": "49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f",
+            "bytes": 2125
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548.json",
+            "sha256": "6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548",
+            "bytes": 4352
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/631bbec619c6797fbda5a298ac3ba29e32ded72265895cf2f0c9759631c5ecd7.json",
+            "sha256": "631bbec619c6797fbda5a298ac3ba29e32ded72265895cf2f0c9759631c5ecd7",
+            "bytes": 2861
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/7905609cc2e5dac7a84139689f1fc918782633826b05b0e4032c141047d2de80.json",
+            "sha256": "7905609cc2e5dac7a84139689f1fc918782633826b05b0e4032c141047d2de80",
+            "bytes": 1546
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/d1638e2f8872eaf332e1cd8fafe1d0f41fee94a57c5c3cf6dc2b7c8054f4f529.json",
+            "sha256": "d1638e2f8872eaf332e1cd8fafe1d0f41fee94a57c5c3cf6dc2b7c8054f4f529",
+            "bytes": 2365
+          },
+          {
+            "path": ".p1-commit-staging/targeted-resolution-input/f09e3be2b14b4108863d177ba57d2fd55730d6345720bcf708a31052390b2043.json",
+            "sha256": "f09e3be2b14b4108863d177ba57d2fd55730d6345720bcf708a31052390b2043",
+            "bytes": 396
+          },
+          {
+            "path": "coverage-final.json",
+            "sha256": "1e5c1d98af9e49d54e75913403ff4c6963ff734f6b1e80dc36d8e697513eb8ea",
+            "bytes": 4858
+          },
+          {
+            "path": "coverage-state.json",
+            "sha256": "9a23f236c282dec275d9b52272e061e46813cbecae57877a7b310cacff2dac5e",
+            "bytes": 4351
+          },
+          {
+            "path": "cross-source-synthesis.json",
+            "sha256": "e463c669750150a3847dd2a9a7b8a1ff29b87a5bcca6d58be1a4e4555d5df6b9",
+            "bytes": 5025
+          },
+          {
+            "path": "events.jsonl",
+            "sha256": "f125d8929fbb7356c8f8a19f1ffaf7fec21521ee658372ff9cb01ef3881338b8",
+            "bytes": 5059
+          },
+          {
+            "path": "multi-group-state.json",
+            "sha256": "843c0309abdf5b6441aeacb2bf9e11866d9b43a37c80389c474f2e2e06077e8d",
+            "bytes": 7745
+          },
+          {
+            "path": "orchestration-state.json",
+            "sha256": "194e870a424cb0f8c40583f39635cd84238499eff8d8856a098ebe625b87b2f8",
+            "bytes": 2309
+          },
+          {
+            "path": "per-group-claims.json",
+            "sha256": "e89b87710a7d25b8a43b4209b7b49434ffc653ead02ef5015248d4e47370979e",
+            "bytes": 4142
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          },
+          {
+            "path": "research-result.json",
+            "sha256": "618bff19af28a280449a1fd35f8cbd743b04ba0763b7e698ca5b25884fe7faf5",
+            "bytes": 3110
+          },
+          {
+            "path": "retrieval-rounds/accumulated-pool.json",
+            "sha256": "ac1df649684a9ecefa2862690f8173815e0840aad524f81f0b7d5a340c835adb",
+            "bytes": 5093
+          },
+          {
+            "path": "retrieval-rounds/round-1/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "retrieval-rounds/round-2/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "source-group-selection-decision.json",
+            "sha256": "011049e6ce84b66935df37ec69de11a0fcab8764697a4441b324989bc36238e3",
+            "bytes": 4599
+          },
+          {
+            "path": "targeted-requery-actions.json",
+            "sha256": "631bbec619c6797fbda5a298ac3ba29e32ded72265895cf2f0c9759631c5ecd7",
+            "bytes": 2861
+          },
+          {
+            "path": "targeted-requery-ledger.json",
+            "sha256": "6b7aa0d614c4d4ee8ffb5028c29f827ebeb5568c1dca6b17b59e5501ccc3f8d2",
+            "bytes": 695
+          },
+          {
+            "path": "targeted-requery-resolution.json",
+            "sha256": "326ea5fef3d0dfbd1af701c1fa0781f7812ddc60fcb7d5f7c643b3d0352c7d6b",
+            "bytes": 1207
+          },
+          {
+            "path": "targeted-requery-subphase/action-17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61/retrieval-pool.json",
+            "sha256": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+            "bytes": 2753
+          },
+          {
+            "path": "zhihu/100/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/100/answers.json",
+            "sha256": "4800f91b66e868cc9777d25a8d48635c2a525fc59de9d19bcfb0a71adb9eb1f8",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/100/answers.md",
+            "sha256": "6bc12bd6b9108da6987180b61e77ed62b36a1257fcc2150a85a26860f5e2597b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/100/handoff.json",
+            "sha256": "66a0b7837b6fc5c89308e5dabb88fca8cd5ec7c7f12ebdd39062fd31a1778db2",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/200/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/200/answers.json",
+            "sha256": "0dcb12e4c69ce9aba5a22e024486f8fa8bc8485abd96e1cb1d82b0787db75f59",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/200/answers.md",
+            "sha256": "15ad5b2025bc4044e2c2f8303d0526e373dce22e6be8c35adb4279e640898a1b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/200/handoff.json",
+            "sha256": "ac3ed33e4371117e8c1bba0bd0a5c5879f9aae826521bcd940ca367b4fe034a9",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/300/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/300/answers.json",
+            "sha256": "fb184ad1bbda91b2d1c47fbbb8dfa239779efd0bc94cb9aa15f4187ce393feab",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/300/answers.md",
+            "sha256": "0edffd40aa0a5d3767089b3813d9a4c849a54a78c7cbdbcc02ed5ab78f7f4b27",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/300/handoff.json",
+            "sha256": "c42cda41c695cb33e415924126109cb2e01c31517cb1a3ec30d30ee763855b4c",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/301/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/301/answers.json",
+            "sha256": "65bbce4bc4d4a9710c84088efc558fc356e953c2d761b9f6ed83fe02fbde63ee",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/301/answers.md",
+            "sha256": "86413a1c8c393a6cc0dd83f7096f1842b9fa1886aad582523afc2739d055a1cd",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/301/handoff.json",
+            "sha256": "2b1c735e6d237a2586f51d049db54c86668dc8c548d594cc95846fb3e77ca5f8",
+            "bytes": 201
+          }
+        ],
+        "providerCounts": {
+          "observed": 6,
+          "expected": 6,
+          "observedTargeted": 2,
+          "expectedTargeted": 2
+        },
+        "lineage": {
+          "valid": true,
+          "failures": [],
+          "joins": [
+            {
+              "gapId": "04c24d8f4071f95082aa69fd69c940c0566c0a20e90105ff0229c0f1f52edf00:0",
+              "targetedActionId": "17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61",
+              "normalizedQuery": "补充资料",
+              "providerScope": [
+                {
+                  "capability": "search",
+                  "providerId": "zhihu-open-platform"
+                },
+                {
+                  "capability": "search",
+                  "providerId": "zhihu_search"
+                }
+              ],
+              "resultArtifact": "targeted-requery-subphase/action-17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61/retrieval-pool.json",
+              "artifactHash": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+              "resultQuestionIds": [
+                "300",
+                "301"
+              ],
+              "reverse": [
+                {
+                  "resultQuestionId": "300",
+                  "targetedActionId": "17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61",
+                  "gapId": "04c24d8f4071f95082aa69fd69c940c0566c0a20e90105ff0229c0f1f52edf00:0",
+                  "finalArtifact": "coverage-final.json"
+                },
+                {
+                  "resultQuestionId": "301",
+                  "targetedActionId": "17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61",
+                  "gapId": "04c24d8f4071f95082aa69fd69c940c0566c0a20e90105ff0229c0f1f52edf00:0",
+                  "finalArtifact": "coverage-final.json"
+                }
+              ]
+            }
+          ],
+          "integrityVerdict": "PASS"
+        },
+        "requiredAssertions": [
+          {
+            "name": "bidirectional lineage",
+            "result": "PASS"
+          }
+        ]
+      },
+      "positiveAssertion": {
+        "scenarioId": "canonical",
+        "checks": [
+          "bidirectional lineage"
+        ]
+      },
+      "negativeControlRefs": [
+        {
+          "scenarioId": "unknown-gap",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "2765cf05-c271-41f8-ba6e-a663643d5001",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "controller before targeted IO",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "free-form",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "14d8323a-568a-4157-984c-bcf65396716d",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "controller before targeted IO",
+              "result": "PASS"
+            }
+          ]
+        }
+      ],
+      "boundaryLimit": null
+    },
+    {
+      "specItem": "§20-3",
+      "scenarioId": "free-form",
+      "verdict": "PASS",
+      "reason": "Required principal and negative-control checks passed on their individual recorded occurrences.",
+      "principalRun": {
+        "exactRepoSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+        "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+        "occurrenceId": "14d8323a-568a-4157-984c-bcf65396716d",
+        "planId": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+        "generation": "14d8323a-568a-4157-984c-bcf65396716d",
+        "commands": [
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child free-form --out \"$T14_OUT/free-form/work\" --phase initial --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "free-form/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "exitCodes": [
+          0
+        ],
+        "inputArtifacts": [
+          {
+            "path": "acceptance-input-initial.json",
+            "sha256": "13fc3469fd1ae00eea2657bed955e9fa67430c9b1d93c5a9c26f01826d00848e",
+            "bytes": 663
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          }
+        ],
+        "outputArtifacts": [
+          {
+            "path": ".p1-commit-staging/coverageState/2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202.json",
+            "sha256": "2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202",
+            "bytes": 1514
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/3b756e5743f79aaf1b93f5a13adf51903f37c9ba3200db43a0ee2a8e2c232b91.json",
+            "sha256": "3b756e5743f79aaf1b93f5a13adf51903f37c9ba3200db43a0ee2a8e2c232b91",
+            "bytes": 2827
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/44376614ec9bcb19fffc372e504a9e68fb11240483df487fe80da186b25c756c.json",
+            "sha256": "44376614ec9bcb19fffc372e504a9e68fb11240483df487fe80da186b25c756c",
+            "bytes": 2671
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f.json",
+            "sha256": "49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f",
+            "bytes": 2125
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/75ba9541d9ec4e5f620b3f4b0e5ce708ab19262f25895e0c619e36f9cf5f763c.json",
+            "sha256": "75ba9541d9ec4e5f620b3f4b0e5ce708ab19262f25895e0c619e36f9cf5f763c",
+            "bytes": 3255
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/c23c6a4c499e74da727c8d085c6056ff23c8b96e0f20783fc06240b6db5c38d7.json",
+            "sha256": "c23c6a4c499e74da727c8d085c6056ff23c8b96e0f20783fc06240b6db5c38d7",
+            "bytes": 3255
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/2ba42912b2c229d702efbb418a9a96ec03f3b78931a25aa23d2d78b6df5c785c.json",
+            "sha256": "2ba42912b2c229d702efbb418a9a96ec03f3b78931a25aa23d2d78b6df5c785c",
+            "bytes": 864
+          },
+          {
+            "path": "coverage-final.json",
+            "sha256": "2b84040b44ec5c5c045a5f460e355be554294de465b804dd92ddf36d8265ed7a",
+            "bytes": 3828
+          },
+          {
+            "path": "coverage-state.json",
+            "sha256": "bb0e47dcdc0c6edb15b38a451974775f75ab74078767e2f5b664293852d6e487",
+            "bytes": 3254
+          },
+          {
+            "path": "cross-source-synthesis.json",
+            "sha256": "afec8f083af340091b0d75f23b94c73f6e72e75fbe01952c81dae3424abc4d1a",
+            "bytes": 3497
+          },
+          {
+            "path": "events.jsonl",
+            "sha256": "845a644be7f2ddb6f71278c2aeb3a6b8a3e18a3b1f18f1ee2174484a1d8371b8",
+            "bytes": 4622
+          },
+          {
+            "path": "multi-group-state.json",
+            "sha256": "f99b4975f144a7bb7b7729af099b03a01eb38acb2e809857d36afc767718a238",
+            "bytes": 4391
+          },
+          {
+            "path": "orchestration-state.json",
+            "sha256": "8a378ed683b282b940d6eb17ac46ddb30ec98c4c43b58ee8b182568ca9215e21",
+            "bytes": 1987
+          },
+          {
+            "path": "per-group-claims.json",
+            "sha256": "ba10234bcb8d798a5e372dbe9f12ca7d5983eb9652eaead3f3044cc13187b536",
+            "bytes": 2292
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          },
+          {
+            "path": "research-result.json",
+            "sha256": "a63e2ee8fd4f57339426c2e6229d547b9c1d8e64b4fe508c944c19fb512205d1",
+            "bytes": 2391
+          },
+          {
+            "path": "retrieval-rounds/accumulated-pool.json",
+            "sha256": "a5e6da69e1d32ef3763f45f770ea937629ec05b19604eba4bcf0d562c80ea4b5",
+            "bytes": 2702
+          },
+          {
+            "path": "retrieval-rounds/round-1/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "retrieval-rounds/round-2/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "source-group-selection-decision.json",
+            "sha256": "268f101644a7bb61773a36544fe9d9a913830c8418bebe7c3df54fbd2c14ff9e",
+            "bytes": 2649
+          },
+          {
+            "path": "targeted-requery-actions.json",
+            "sha256": "2ba42912b2c229d702efbb418a9a96ec03f3b78931a25aa23d2d78b6df5c785c",
+            "bytes": 864
+          },
+          {
+            "path": "targeted-requery-ledger.json",
+            "sha256": "815111205ae52577d05430ccfc68aba07d5425dfa2e72e4d01c56657f9718bc3",
+            "bytes": 695
+          },
+          {
+            "path": "targeted-requery-resolution.json",
+            "sha256": "0deb6ca05b16a0f1395f4fb2d8d52b803031d0fb6cdb0dd0d8bfbef3e51effb2",
+            "bytes": 1017
+          },
+          {
+            "path": "zhihu/100/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/100/answers.json",
+            "sha256": "4800f91b66e868cc9777d25a8d48635c2a525fc59de9d19bcfb0a71adb9eb1f8",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/100/answers.md",
+            "sha256": "6bc12bd6b9108da6987180b61e77ed62b36a1257fcc2150a85a26860f5e2597b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/100/handoff.json",
+            "sha256": "66a0b7837b6fc5c89308e5dabb88fca8cd5ec7c7f12ebdd39062fd31a1778db2",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/200/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/200/answers.json",
+            "sha256": "0dcb12e4c69ce9aba5a22e024486f8fa8bc8485abd96e1cb1d82b0787db75f59",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/200/answers.md",
+            "sha256": "15ad5b2025bc4044e2c2f8303d0526e373dce22e6be8c35adb4279e640898a1b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/200/handoff.json",
+            "sha256": "ac3ed33e4371117e8c1bba0bd0a5c5879f9aae826521bcd940ca367b4fe034a9",
+            "bytes": 201
+          }
+        ],
+        "providerCounts": {
+          "observed": 4,
+          "expected": 4,
+          "observedTargeted": 0,
+          "expectedTargeted": 0
+        },
+        "lineage": {
+          "valid": true,
+          "failures": [],
+          "joins": [],
+          "integrityVerdict": "PASS"
+        },
+        "requiredAssertions": [
+          {
+            "name": "controller before targeted IO",
+            "result": "PASS"
+          },
+          {
+            "name": "rejected proposal recorded",
+            "result": "PASS"
+          }
+        ]
+      },
+      "positiveAssertion": {
+        "scenarioId": "free-form",
+        "checks": [
+          "controller before targeted IO",
+          "rejected proposal recorded"
+        ]
+      },
+      "negativeControlRefs": [
+        {
+          "scenarioId": "unsafe-plan-owned",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "a7548a4b-c986-4e70-99d6-6c61b5f77d30",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "controller before targeted IO",
+              "result": "PASS"
+            },
+            {
+              "name": "rejected proposal recorded",
+              "result": "PASS"
+            }
+          ]
+        }
+      ],
+      "boundaryLimit": null
+    },
+    {
+      "specItem": "§20-4",
+      "scenarioId": "canonical",
+      "verdict": "PASS",
+      "reason": "Required principal and negative-control checks passed on their individual recorded occurrences.",
+      "principalRun": {
+        "exactRepoSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+        "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+        "occurrenceId": "dc8d0c7b-f872-45d1-b271-131003277240",
+        "planId": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+        "generation": "dc8d0c7b-f872-45d1-b271-131003277240",
+        "commands": [
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child canonical --out \"$T14_OUT/canonical/work\" --phase initial --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "canonical/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "exitCodes": [
+          0
+        ],
+        "inputArtifacts": [
+          {
+            "path": "acceptance-input-initial.json",
+            "sha256": "3543c26dbf86f15c5b8977e6fbdcfa010c59fe4d5b13b3a2ac019951178deca2",
+            "bytes": 691
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          }
+        ],
+        "outputArtifacts": [
+          {
+            "path": ".p1-commit-staging/coverageState/0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8.json",
+            "sha256": "0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8",
+            "bytes": 4352
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d.json",
+            "sha256": "24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d",
+            "bytes": 3512
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202.json",
+            "sha256": "2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202",
+            "bytes": 1514
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae.json",
+            "sha256": "3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae",
+            "bytes": 3213
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f.json",
+            "sha256": "49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f",
+            "bytes": 2125
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548.json",
+            "sha256": "6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548",
+            "bytes": 4352
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/631bbec619c6797fbda5a298ac3ba29e32ded72265895cf2f0c9759631c5ecd7.json",
+            "sha256": "631bbec619c6797fbda5a298ac3ba29e32ded72265895cf2f0c9759631c5ecd7",
+            "bytes": 2861
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/7905609cc2e5dac7a84139689f1fc918782633826b05b0e4032c141047d2de80.json",
+            "sha256": "7905609cc2e5dac7a84139689f1fc918782633826b05b0e4032c141047d2de80",
+            "bytes": 1546
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/d1638e2f8872eaf332e1cd8fafe1d0f41fee94a57c5c3cf6dc2b7c8054f4f529.json",
+            "sha256": "d1638e2f8872eaf332e1cd8fafe1d0f41fee94a57c5c3cf6dc2b7c8054f4f529",
+            "bytes": 2365
+          },
+          {
+            "path": ".p1-commit-staging/targeted-resolution-input/f09e3be2b14b4108863d177ba57d2fd55730d6345720bcf708a31052390b2043.json",
+            "sha256": "f09e3be2b14b4108863d177ba57d2fd55730d6345720bcf708a31052390b2043",
+            "bytes": 396
+          },
+          {
+            "path": "coverage-final.json",
+            "sha256": "1e5c1d98af9e49d54e75913403ff4c6963ff734f6b1e80dc36d8e697513eb8ea",
+            "bytes": 4858
+          },
+          {
+            "path": "coverage-state.json",
+            "sha256": "9a23f236c282dec275d9b52272e061e46813cbecae57877a7b310cacff2dac5e",
+            "bytes": 4351
+          },
+          {
+            "path": "cross-source-synthesis.json",
+            "sha256": "e463c669750150a3847dd2a9a7b8a1ff29b87a5bcca6d58be1a4e4555d5df6b9",
+            "bytes": 5025
+          },
+          {
+            "path": "events.jsonl",
+            "sha256": "f125d8929fbb7356c8f8a19f1ffaf7fec21521ee658372ff9cb01ef3881338b8",
+            "bytes": 5059
+          },
+          {
+            "path": "multi-group-state.json",
+            "sha256": "843c0309abdf5b6441aeacb2bf9e11866d9b43a37c80389c474f2e2e06077e8d",
+            "bytes": 7745
+          },
+          {
+            "path": "orchestration-state.json",
+            "sha256": "194e870a424cb0f8c40583f39635cd84238499eff8d8856a098ebe625b87b2f8",
+            "bytes": 2309
+          },
+          {
+            "path": "per-group-claims.json",
+            "sha256": "e89b87710a7d25b8a43b4209b7b49434ffc653ead02ef5015248d4e47370979e",
+            "bytes": 4142
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          },
+          {
+            "path": "research-result.json",
+            "sha256": "618bff19af28a280449a1fd35f8cbd743b04ba0763b7e698ca5b25884fe7faf5",
+            "bytes": 3110
+          },
+          {
+            "path": "retrieval-rounds/accumulated-pool.json",
+            "sha256": "ac1df649684a9ecefa2862690f8173815e0840aad524f81f0b7d5a340c835adb",
+            "bytes": 5093
+          },
+          {
+            "path": "retrieval-rounds/round-1/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "retrieval-rounds/round-2/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "source-group-selection-decision.json",
+            "sha256": "011049e6ce84b66935df37ec69de11a0fcab8764697a4441b324989bc36238e3",
+            "bytes": 4599
+          },
+          {
+            "path": "targeted-requery-actions.json",
+            "sha256": "631bbec619c6797fbda5a298ac3ba29e32ded72265895cf2f0c9759631c5ecd7",
+            "bytes": 2861
+          },
+          {
+            "path": "targeted-requery-ledger.json",
+            "sha256": "6b7aa0d614c4d4ee8ffb5028c29f827ebeb5568c1dca6b17b59e5501ccc3f8d2",
+            "bytes": 695
+          },
+          {
+            "path": "targeted-requery-resolution.json",
+            "sha256": "326ea5fef3d0dfbd1af701c1fa0781f7812ddc60fcb7d5f7c643b3d0352c7d6b",
+            "bytes": 1207
+          },
+          {
+            "path": "targeted-requery-subphase/action-17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61/retrieval-pool.json",
+            "sha256": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+            "bytes": 2753
+          },
+          {
+            "path": "zhihu/100/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/100/answers.json",
+            "sha256": "4800f91b66e868cc9777d25a8d48635c2a525fc59de9d19bcfb0a71adb9eb1f8",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/100/answers.md",
+            "sha256": "6bc12bd6b9108da6987180b61e77ed62b36a1257fcc2150a85a26860f5e2597b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/100/handoff.json",
+            "sha256": "66a0b7837b6fc5c89308e5dabb88fca8cd5ec7c7f12ebdd39062fd31a1778db2",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/200/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/200/answers.json",
+            "sha256": "0dcb12e4c69ce9aba5a22e024486f8fa8bc8485abd96e1cb1d82b0787db75f59",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/200/answers.md",
+            "sha256": "15ad5b2025bc4044e2c2f8303d0526e373dce22e6be8c35adb4279e640898a1b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/200/handoff.json",
+            "sha256": "ac3ed33e4371117e8c1bba0bd0a5c5879f9aae826521bcd940ca367b4fe034a9",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/300/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/300/answers.json",
+            "sha256": "fb184ad1bbda91b2d1c47fbbb8dfa239779efd0bc94cb9aa15f4187ce393feab",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/300/answers.md",
+            "sha256": "0edffd40aa0a5d3767089b3813d9a4c849a54a78c7cbdbcc02ed5ab78f7f4b27",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/300/handoff.json",
+            "sha256": "c42cda41c695cb33e415924126109cb2e01c31517cb1a3ec30d30ee763855b4c",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/301/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/301/answers.json",
+            "sha256": "65bbce4bc4d4a9710c84088efc558fc356e953c2d761b9f6ed83fe02fbde63ee",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/301/answers.md",
+            "sha256": "86413a1c8c393a6cc0dd83f7096f1842b9fa1886aad582523afc2739d055a1cd",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/301/handoff.json",
+            "sha256": "2b1c735e6d237a2586f51d049db54c86668dc8c548d594cc95846fb3e77ca5f8",
+            "bytes": 201
+          }
+        ],
+        "providerCounts": {
+          "observed": 6,
+          "expected": 6,
+          "observedTargeted": 2,
+          "expectedTargeted": 2
+        },
+        "lineage": {
+          "valid": true,
+          "failures": [],
+          "joins": [
+            {
+              "gapId": "04c24d8f4071f95082aa69fd69c940c0566c0a20e90105ff0229c0f1f52edf00:0",
+              "targetedActionId": "17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61",
+              "normalizedQuery": "补充资料",
+              "providerScope": [
+                {
+                  "capability": "search",
+                  "providerId": "zhihu-open-platform"
+                },
+                {
+                  "capability": "search",
+                  "providerId": "zhihu_search"
+                }
+              ],
+              "resultArtifact": "targeted-requery-subphase/action-17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61/retrieval-pool.json",
+              "artifactHash": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+              "resultQuestionIds": [
+                "300",
+                "301"
+              ],
+              "reverse": [
+                {
+                  "resultQuestionId": "300",
+                  "targetedActionId": "17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61",
+                  "gapId": "04c24d8f4071f95082aa69fd69c940c0566c0a20e90105ff0229c0f1f52edf00:0",
+                  "finalArtifact": "coverage-final.json"
+                },
+                {
+                  "resultQuestionId": "301",
+                  "targetedActionId": "17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61",
+                  "gapId": "04c24d8f4071f95082aa69fd69c940c0566c0a20e90105ff0229c0f1f52edf00:0",
+                  "finalArtifact": "coverage-final.json"
+                }
+              ]
+            }
+          ],
+          "integrityVerdict": "PASS"
+        },
+        "requiredAssertions": [
+          {
+            "name": "all provider calls",
+            "result": "PASS"
+          },
+          {
+            "name": "bidirectional lineage",
+            "result": "PASS"
+          }
+        ]
+      },
+      "positiveAssertion": {
+        "scenarioId": "canonical",
+        "checks": [
+          "all provider calls",
+          "bidirectional lineage"
+        ]
+      },
+      "negativeControlRefs": [
+        {
+          "scenarioId": "provider-scope",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "8dfb0756-093e-4d58-a8b6-6baf00bfb09a",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "no runtime or provider fallback",
+              "result": "PASS"
+            }
+          ]
+        }
+      ],
+      "boundaryLimit": null
+    },
+    {
+      "specItem": "§20-5",
+      "scenarioId": "provider-scope",
+      "verdict": "PASS",
+      "reason": "Required principal and negative-control checks passed on their individual recorded occurrences.",
+      "principalRun": {
+        "exactRepoSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+        "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+        "occurrenceId": "8dfb0756-093e-4d58-a8b6-6baf00bfb09a",
+        "planId": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+        "generation": "8dfb0756-093e-4d58-a8b6-6baf00bfb09a",
+        "commands": [
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child provider-scope --out \"$T14_OUT/provider-scope/work\" --phase initial --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "provider-scope/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "exitCodes": [
+          0
+        ],
+        "inputArtifacts": [
+          {
+            "path": "acceptance-input-initial.json",
+            "sha256": "ad921a9a0713d9d68efc42045fb49abe0f3060f4a8b81c96559909185f002499",
+            "bytes": 757
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          }
+        ],
+        "outputArtifacts": [
+          {
+            "path": ".p1-commit-staging/coverageState/0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8.json",
+            "sha256": "0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8",
+            "bytes": 4352
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d.json",
+            "sha256": "24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d",
+            "bytes": 3512
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202.json",
+            "sha256": "2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202",
+            "bytes": 1514
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae.json",
+            "sha256": "3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae",
+            "bytes": 3213
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f.json",
+            "sha256": "49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f",
+            "bytes": 2125
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548.json",
+            "sha256": "6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548",
+            "bytes": 4352
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/19a81a559cd58b280a42347be3d543568ae38b7c243dffe843dc2e031b2b8645.json",
+            "sha256": "19a81a559cd58b280a42347be3d543568ae38b7c243dffe843dc2e031b2b8645",
+            "bytes": 2760
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/1da71a3d7f4c807ac638265a06b9b8dc0fe8b8a1368fa0040a89c9de486562b5.json",
+            "sha256": "1da71a3d7f4c807ac638265a06b9b8dc0fe8b8a1368fa0040a89c9de486562b5",
+            "bytes": 1445
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/44b7adae7e16b1831f0f9fa3ecf4c083afa483214a0e0c169360bce4f1b0a0e7.json",
+            "sha256": "44b7adae7e16b1831f0f9fa3ecf4c083afa483214a0e0c169360bce4f1b0a0e7",
+            "bytes": 2264
+          },
+          {
+            "path": ".p1-commit-staging/targeted-resolution-input/483700142cb534e101fcca3c513dd53044cd59d0bd6eab3bc49b0152d1c8e927.json",
+            "sha256": "483700142cb534e101fcca3c513dd53044cd59d0bd6eab3bc49b0152d1c8e927",
+            "bytes": 396
+          },
+          {
+            "path": "coverage-final.json",
+            "sha256": "6f7ca1d1f0449cc22a8c553b6c6af354a1c8d5a83d224b6db3e3b56575b48eeb",
+            "bytes": 4733
+          },
+          {
+            "path": "coverage-state.json",
+            "sha256": "9a23f236c282dec275d9b52272e061e46813cbecae57877a7b310cacff2dac5e",
+            "bytes": 4351
+          },
+          {
+            "path": "cross-source-synthesis.json",
+            "sha256": "e463c669750150a3847dd2a9a7b8a1ff29b87a5bcca6d58be1a4e4555d5df6b9",
+            "bytes": 5025
+          },
+          {
+            "path": "events.jsonl",
+            "sha256": "2849b7dcbf7c23cb4dbc29eccc7b4007149aff6d6b59fb60cf863b931f5e6c0e",
+            "bytes": 5059
+          },
+          {
+            "path": "multi-group-state.json",
+            "sha256": "04ffac23ddcbec367990393582fe41b85aea7add4352434c8f8312b1349f58fd",
+            "bytes": 7745
+          },
+          {
+            "path": "orchestration-state.json",
+            "sha256": "705a3cd97877c3ebfbc8428589ea5066ba79a955ed39c201129242a5e3c827cb",
+            "bytes": 2309
+          },
+          {
+            "path": "per-group-claims.json",
+            "sha256": "e89b87710a7d25b8a43b4209b7b49434ffc653ead02ef5015248d4e47370979e",
+            "bytes": 4142
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          },
+          {
+            "path": "research-result.json",
+            "sha256": "ca9e66a76dc6e2fe38e9e4a9eaaee515da20b12279e643d072badc06b353c351",
+            "bytes": 2985
+          },
+          {
+            "path": "retrieval-rounds/accumulated-pool.json",
+            "sha256": "e164045abe2be64f731db413433cb73f1c97d1e46e90cdaf2870cc19dda34a70",
+            "bytes": 4095
+          },
+          {
+            "path": "retrieval-rounds/round-1/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "retrieval-rounds/round-2/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "source-group-selection-decision.json",
+            "sha256": "e3eca9cff07a1914ddd7cec9b830fc711541a79049f697067109402be473b03e",
+            "bytes": 4043
+          },
+          {
+            "path": "targeted-requery-actions.json",
+            "sha256": "19a81a559cd58b280a42347be3d543568ae38b7c243dffe843dc2e031b2b8645",
+            "bytes": 2760
+          },
+          {
+            "path": "targeted-requery-ledger.json",
+            "sha256": "3ddb04f59fd50ba6d6402e78c368bfec8caa8d25e11953e6d76d4b6d7178e00d",
+            "bytes": 695
+          },
+          {
+            "path": "targeted-requery-resolution.json",
+            "sha256": "8e068a54391efccd0845f6173064cda0a16a5f48d265f9c9112756291db17865",
+            "bytes": 1207
+          },
+          {
+            "path": "targeted-requery-subphase/action-28d256c38a81921c3aa8783db5d7400dc013e77115cf03ea480878fdc7787966/retrieval-pool.json",
+            "sha256": "8e1db066b0abc62f37cd46a7775d6dc08e589d56f7a35b7d2f91f9cd1e94e784",
+            "bytes": 1755
+          },
+          {
+            "path": "zhihu/100/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/100/answers.json",
+            "sha256": "4800f91b66e868cc9777d25a8d48635c2a525fc59de9d19bcfb0a71adb9eb1f8",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/100/answers.md",
+            "sha256": "6bc12bd6b9108da6987180b61e77ed62b36a1257fcc2150a85a26860f5e2597b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/100/handoff.json",
+            "sha256": "66a0b7837b6fc5c89308e5dabb88fca8cd5ec7c7f12ebdd39062fd31a1778db2",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/200/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/200/answers.json",
+            "sha256": "0dcb12e4c69ce9aba5a22e024486f8fa8bc8485abd96e1cb1d82b0787db75f59",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/200/answers.md",
+            "sha256": "15ad5b2025bc4044e2c2f8303d0526e373dce22e6be8c35adb4279e640898a1b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/200/handoff.json",
+            "sha256": "ac3ed33e4371117e8c1bba0bd0a5c5879f9aae826521bcd940ca367b4fe034a9",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/300/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/300/answers.json",
+            "sha256": "fb184ad1bbda91b2d1c47fbbb8dfa239779efd0bc94cb9aa15f4187ce393feab",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/300/answers.md",
+            "sha256": "0edffd40aa0a5d3767089b3813d9a4c849a54a78c7cbdbcc02ed5ab78f7f4b27",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/300/handoff.json",
+            "sha256": "c42cda41c695cb33e415924126109cb2e01c31517cb1a3ec30d30ee763855b4c",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/301/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/301/answers.json",
+            "sha256": "65bbce4bc4d4a9710c84088efc558fc356e953c2d761b9f6ed83fe02fbde63ee",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/301/answers.md",
+            "sha256": "86413a1c8c393a6cc0dd83f7096f1842b9fa1886aad582523afc2739d055a1cd",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/301/handoff.json",
+            "sha256": "2b1c735e6d237a2586f51d049db54c86668dc8c548d594cc95846fb3e77ca5f8",
+            "bytes": 201
+          }
+        ],
+        "providerCounts": {
+          "observed": 5,
+          "expected": 5,
+          "observedTargeted": 1,
+          "expectedTargeted": 1
+        },
+        "lineage": {
+          "valid": true,
+          "failures": [],
+          "joins": [
+            {
+              "gapId": "6e7459bb55176070cd05184eba6dca0dc82c03465b73252e504ee1e5b752d14a:0",
+              "targetedActionId": "28d256c38a81921c3aa8783db5d7400dc013e77115cf03ea480878fdc7787966",
+              "normalizedQuery": "补充资料",
+              "providerScope": [
+                {
+                  "capability": "search",
+                  "providerId": "zhihu_search"
+                }
+              ],
+              "resultArtifact": "targeted-requery-subphase/action-28d256c38a81921c3aa8783db5d7400dc013e77115cf03ea480878fdc7787966/retrieval-pool.json",
+              "artifactHash": "8e1db066b0abc62f37cd46a7775d6dc08e589d56f7a35b7d2f91f9cd1e94e784",
+              "resultQuestionIds": [
+                "300",
+                "301"
+              ],
+              "reverse": [
+                {
+                  "resultQuestionId": "300",
+                  "targetedActionId": "28d256c38a81921c3aa8783db5d7400dc013e77115cf03ea480878fdc7787966",
+                  "gapId": "6e7459bb55176070cd05184eba6dca0dc82c03465b73252e504ee1e5b752d14a:0",
+                  "finalArtifact": "coverage-final.json"
+                },
+                {
+                  "resultQuestionId": "301",
+                  "targetedActionId": "28d256c38a81921c3aa8783db5d7400dc013e77115cf03ea480878fdc7787966",
+                  "gapId": "6e7459bb55176070cd05184eba6dca0dc82c03465b73252e504ee1e5b752d14a:0",
+                  "finalArtifact": "coverage-final.json"
+                }
+              ]
+            }
+          ],
+          "integrityVerdict": "PASS"
+        },
+        "requiredAssertions": [
+          {
+            "name": "no runtime or provider fallback",
+            "result": "PASS"
+          },
+          {
+            "name": "all provider calls",
+            "result": "PASS"
+          }
+        ]
+      },
+      "positiveAssertion": {
+        "scenarioId": "provider-scope",
+        "checks": [
+          "no runtime or provider fallback",
+          "all provider calls"
+        ]
+      },
+      "negativeControlRefs": [
+        {
+          "scenarioId": "canonical",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "dc8d0c7b-f872-45d1-b271-131003277240",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "no runtime or provider fallback",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "all-provider-failed",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "5a0e3547-4e19-42d3-9a04-4d79b98f36af",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "no runtime or provider fallback",
+              "result": "PASS"
+            }
+          ]
+        }
+      ],
+      "boundaryLimit": null
+    },
+    {
+      "specItem": "§20-6",
+      "scenarioId": "equivalent-query",
+      "verdict": "PASS",
+      "reason": "Required principal and negative-control checks passed on their individual recorded occurrences.",
+      "principalRun": {
+        "exactRepoSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+        "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+        "occurrenceId": "b7a9f2d4-bfb4-4817-8272-07e6ab20c4a8",
+        "planId": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+        "generation": "b7a9f2d4-bfb4-4817-8272-07e6ab20c4a8",
+        "commands": [
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child equivalent-query --out \"$T14_OUT/equivalent-query/work\" --phase initial --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "equivalent-query/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          },
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child equivalent-query --out \"$T14_OUT/equivalent-query/work\" --phase resume --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "equivalent-query/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "exitCodes": [
+          0,
+          0
+        ],
+        "inputArtifacts": [
+          {
+            "path": "acceptance-input-initial.json",
+            "sha256": "1f2c2bbd32c0e5254dbe134e6415f727431450521b468b443aacc9fff3d65c68",
+            "bytes": 691
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          }
+        ],
+        "outputArtifacts": [
+          {
+            "path": ".p1-commit-staging/coverageState/2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202.json",
+            "sha256": "2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202",
+            "bytes": 1514
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/3b756e5743f79aaf1b93f5a13adf51903f37c9ba3200db43a0ee2a8e2c232b91.json",
+            "sha256": "3b756e5743f79aaf1b93f5a13adf51903f37c9ba3200db43a0ee2a8e2c232b91",
+            "bytes": 2827
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/44376614ec9bcb19fffc372e504a9e68fb11240483df487fe80da186b25c756c.json",
+            "sha256": "44376614ec9bcb19fffc372e504a9e68fb11240483df487fe80da186b25c756c",
+            "bytes": 2671
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f.json",
+            "sha256": "49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f",
+            "bytes": 2125
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/75ba9541d9ec4e5f620b3f4b0e5ce708ab19262f25895e0c619e36f9cf5f763c.json",
+            "sha256": "75ba9541d9ec4e5f620b3f4b0e5ce708ab19262f25895e0c619e36f9cf5f763c",
+            "bytes": 3255
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/c23c6a4c499e74da727c8d085c6056ff23c8b96e0f20783fc06240b6db5c38d7.json",
+            "sha256": "c23c6a4c499e74da727c8d085c6056ff23c8b96e0f20783fc06240b6db5c38d7",
+            "bytes": 3255
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/1078bdc9a71adc47073aa192a561a3c990982e17078dfdc5f579f1f67f16e1e5.json",
+            "sha256": "1078bdc9a71adc47073aa192a561a3c990982e17078dfdc5f579f1f67f16e1e5",
+            "bytes": 2365
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/5ea7dee58047680ad4b1762f111e78b5b542b6ae7ad66d44c3e1329a0ce6f0e7.json",
+            "sha256": "5ea7dee58047680ad4b1762f111e78b5b542b6ae7ad66d44c3e1329a0ce6f0e7",
+            "bytes": 2865
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/a0c81097e50d850f7bea56ff1fc3810e452e5c1a7680c1346f138e3828dd3e17.json",
+            "sha256": "a0c81097e50d850f7bea56ff1fc3810e452e5c1a7680c1346f138e3828dd3e17",
+            "bytes": 1546
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/b5d9a3fec7a406c3a41da9d3e558aaec807f59af292f2254fbb30a61062f9705.json",
+            "sha256": "b5d9a3fec7a406c3a41da9d3e558aaec807f59af292f2254fbb30a61062f9705",
+            "bytes": 3506
+          },
+          {
+            "path": ".p1-commit-staging/targeted-resolution-input/d6f9dd011f9de62c826a92fbf702115013fedb0c1f6e413e15e47ec595428a5c.json",
+            "sha256": "d6f9dd011f9de62c826a92fbf702115013fedb0c1f6e413e15e47ec595428a5c",
+            "bytes": 396
+          },
+          {
+            "path": "coverage-final.json",
+            "sha256": "811478ee1bd841b23d41b0a9f1a5bc870b67926a21c0c6c04762a1bedd0c88d2",
+            "bytes": 5116
+          },
+          {
+            "path": "coverage-state.json",
+            "sha256": "bb0e47dcdc0c6edb15b38a451974775f75ab74078767e2f5b664293852d6e487",
+            "bytes": 3254
+          },
+          {
+            "path": "cross-source-synthesis.json",
+            "sha256": "afec8f083af340091b0d75f23b94c73f6e72e75fbe01952c81dae3424abc4d1a",
+            "bytes": 3497
+          },
+          {
+            "path": "events.jsonl",
+            "sha256": "fb30c5c6ede615b3000e9aa912450738cb5e8b564b0c98f9ffb3f81f1b4126cd",
+            "bytes": 6314
+          },
+          {
+            "path": "multi-group-state.json",
+            "sha256": "f99b4975f144a7bb7b7729af099b03a01eb38acb2e809857d36afc767718a238",
+            "bytes": 4391
+          },
+          {
+            "path": "orchestration-state.json",
+            "sha256": "737ff6f1f9c6b1aee385b853a4b3e3a2143e8bb11fc87cbfc708d593a49eef2c",
+            "bytes": 2309
+          },
+          {
+            "path": "per-group-claims.json",
+            "sha256": "ba10234bcb8d798a5e372dbe9f12ca7d5983eb9652eaead3f3044cc13187b536",
+            "bytes": 2292
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          },
+          {
+            "path": "research-result.json",
+            "sha256": "0c2dd99ef5168a1d68010784b14b9d15596f97319dc9e07fc48f96dd98919e36",
+            "bytes": 3679
+          },
+          {
+            "path": "retrieval-rounds/accumulated-pool.json",
+            "sha256": "d680b254978c22b0c316620376ab14aa3bb4bb3ed6cd886a3b9ea0f0deff274d",
+            "bytes": 3573
+          },
+          {
+            "path": "retrieval-rounds/round-1/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "retrieval-rounds/round-2/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "source-group-selection-decision.json",
+            "sha256": "268f101644a7bb61773a36544fe9d9a913830c8418bebe7c3df54fbd2c14ff9e",
+            "bytes": 2649
+          },
+          {
+            "path": "targeted-requery-actions.json",
+            "sha256": "b5d9a3fec7a406c3a41da9d3e558aaec807f59af292f2254fbb30a61062f9705",
+            "bytes": 3506
+          },
+          {
+            "path": "targeted-requery-ledger.json",
+            "sha256": "ee323304f75226be2cdc3f45c172072b7da1ecfca120ec72a75da4cab004617d",
+            "bytes": 1173
+          },
+          {
+            "path": "targeted-requery-resolution.json",
+            "sha256": "6cb48e1cffab418b9d529af352b154869856f688eb2059888bc26e8e585b80d3",
+            "bytes": 1955
+          },
+          {
+            "path": "targeted-requery-subphase/action-086b3f6aa675b2a415f56183c20bef6c9efd635b47a7397b00484ccb7a2a018a/retrieval-pool.json",
+            "sha256": "1ae2c3ec7ac78967c3ba9307f54d072582b938646ca54b2141c363e8b372f2b7",
+            "bytes": 2753
+          },
+          {
+            "path": "zhihu/100/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/100/answers.json",
+            "sha256": "4800f91b66e868cc9777d25a8d48635c2a525fc59de9d19bcfb0a71adb9eb1f8",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/100/answers.md",
+            "sha256": "6bc12bd6b9108da6987180b61e77ed62b36a1257fcc2150a85a26860f5e2597b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/100/handoff.json",
+            "sha256": "66a0b7837b6fc5c89308e5dabb88fca8cd5ec7c7f12ebdd39062fd31a1778db2",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/200/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/200/answers.json",
+            "sha256": "0dcb12e4c69ce9aba5a22e024486f8fa8bc8485abd96e1cb1d82b0787db75f59",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/200/answers.md",
+            "sha256": "15ad5b2025bc4044e2c2f8303d0526e373dce22e6be8c35adb4279e640898a1b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/200/handoff.json",
+            "sha256": "ac3ed33e4371117e8c1bba0bd0a5c5879f9aae826521bcd940ca367b4fe034a9",
+            "bytes": 201
+          }
+        ],
+        "providerCounts": {
+          "observed": 6,
+          "expected": 6,
+          "observedTargeted": 2,
+          "expectedTargeted": 2
+        },
+        "lineage": {
+          "valid": true,
+          "failures": [],
+          "joins": [
+            {
+              "gapId": "02081eb1db76ac4384450cb38d0c12bb9d54c82f5f0d4e14fe724da54751012a:0",
+              "targetedActionId": "086b3f6aa675b2a415f56183c20bef6c9efd635b47a7397b00484ccb7a2a018a",
+              "normalizedQuery": "补充资料",
+              "providerScope": [
+                {
+                  "capability": "search",
+                  "providerId": "zhihu-open-platform"
+                },
+                {
+                  "capability": "search",
+                  "providerId": "zhihu_search"
+                }
+              ],
+              "resultArtifact": "targeted-requery-subphase/action-086b3f6aa675b2a415f56183c20bef6c9efd635b47a7397b00484ccb7a2a018a/retrieval-pool.json",
+              "artifactHash": "1ae2c3ec7ac78967c3ba9307f54d072582b938646ca54b2141c363e8b372f2b7",
+              "resultQuestionIds": [
+                "100",
+                "200"
+              ],
+              "reverse": [
+                {
+                  "resultQuestionId": "100",
+                  "targetedActionId": "086b3f6aa675b2a415f56183c20bef6c9efd635b47a7397b00484ccb7a2a018a",
+                  "gapId": "02081eb1db76ac4384450cb38d0c12bb9d54c82f5f0d4e14fe724da54751012a:0",
+                  "finalArtifact": "coverage-final.json"
+                },
+                {
+                  "resultQuestionId": "200",
+                  "targetedActionId": "086b3f6aa675b2a415f56183c20bef6c9efd635b47a7397b00484ccb7a2a018a",
+                  "gapId": "02081eb1db76ac4384450cb38d0c12bb9d54c82f5f0d4e14fe724da54751012a:0",
+                  "finalArtifact": "coverage-final.json"
+                }
+              ]
+            }
+          ],
+          "integrityVerdict": "PASS"
+        },
+        "requiredAssertions": [
+          {
+            "name": "real composition round-1 proposal observed",
+            "result": "PASS"
+          },
+          {
+            "name": "same core across diagnosis rounds",
+            "result": "PASS"
+          },
+          {
+            "name": "different audit gap ids across rounds",
+            "result": "PASS"
+          },
+          {
+            "name": "real controller rejection persisted",
+            "result": "PASS"
+          },
+          {
+            "name": "rejected follow-up has zero provider delta",
+            "result": "PASS"
+          }
+        ]
+      },
+      "positiveAssertion": {
+        "scenarioId": "equivalent-query",
+        "checks": [
+          "real composition round-1 proposal observed",
+          "same core across diagnosis rounds",
+          "different audit gap ids across rounds",
+          "real controller rejection persisted",
+          "rejected follow-up has zero provider delta"
+        ]
+      },
+      "negativeControlRefs": [
+        {
+          "scenarioId": "equivalent-query",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "b7a9f2d4-bfb4-4817-8272-07e6ab20c4a8",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "equivalent completed replay zero IO",
+              "result": "PASS"
+            }
+          ]
+        }
+      ],
+      "boundaryLimit": null
+    },
+    {
+      "specItem": "§20-7",
+      "scenarioId": "per-gap-bound",
+      "verdict": "PASS",
+      "reason": "Required principal and negative-control checks passed on their individual recorded occurrences.",
+      "principalRun": {
+        "exactRepoSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+        "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+        "occurrenceId": "9dffb126-ab6a-47b9-9f0a-96bd4c7f095f",
+        "planId": "c448da7322c29a5eb10ba7510d70c882c5c7f3248fd2b28e8c8afe3610073990",
+        "generation": "9dffb126-ab6a-47b9-9f0a-96bd4c7f095f",
+        "commands": [
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child per-gap-bound --out \"$T14_OUT/per-gap-bound/work\" --phase initial --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "per-gap-bound/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          },
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child per-gap-bound --out \"$T14_OUT/per-gap-bound/work\" --phase resume --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "per-gap-bound/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "exitCodes": [
+          0,
+          0
+        ],
+        "inputArtifacts": [
+          {
+            "path": "acceptance-input-initial.json",
+            "sha256": "3107def6d70d76e78acad531bd7cab245baaa5ca9b7e69602615158feae04b59",
+            "bytes": 816
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "00045f30a319f216d7b66454f5e8a6926af95a6b3a25f6ed9f76f2d79007cd4d",
+            "bytes": 343
+          }
+        ],
+        "outputArtifacts": [
+          {
+            "path": ".p1-commit-staging/coverageState/17d4cb91e91fa0403ea3cf6bf54fc427c2d96738b3f5a6d83b4037e619ab19ee.json",
+            "sha256": "17d4cb91e91fa0403ea3cf6bf54fc427c2d96738b3f5a6d83b4037e619ab19ee",
+            "bytes": 2671
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/17f830ac39827e7499499d61de8fd654d4033fc3fd2f45945f8c182806b9d254.json",
+            "sha256": "17f830ac39827e7499499d61de8fd654d4033fc3fd2f45945f8c182806b9d254",
+            "bytes": 1514
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/295198772109c622d86ae75587bd888c04b44bb2c84b6ef61e8ed55168dfaafc.json",
+            "sha256": "295198772109c622d86ae75587bd888c04b44bb2c84b6ef61e8ed55168dfaafc",
+            "bytes": 2827
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/c83d423e79becdec9cb5f2950216148e3308fbbcd6d21208f3150c8077ba23a6.json",
+            "sha256": "c83d423e79becdec9cb5f2950216148e3308fbbcd6d21208f3150c8077ba23a6",
+            "bytes": 2125
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/da02eb9a6af4d6063b535225c5f19a14192409c2aa459a30668c87decbddd4f0.json",
+            "sha256": "da02eb9a6af4d6063b535225c5f19a14192409c2aa459a30668c87decbddd4f0",
+            "bytes": 3255
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/eee6722ea2ddd29ddca34b26fc8daa2828ea22a39af51f663c6da8cd1641b387.json",
+            "sha256": "eee6722ea2ddd29ddca34b26fc8daa2828ea22a39af51f663c6da8cd1641b387",
+            "bytes": 3255
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/34f35faf86eff480261b39a20667c35380355472403fc14f95db8f810d2f97f9.json",
+            "sha256": "34f35faf86eff480261b39a20667c35380355472403fc14f95db8f810d2f97f9",
+            "bytes": 1546
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/580b4bfb908199cd4c599815c566def209cc6bab53b9a0d9fe69d853bf424127.json",
+            "sha256": "580b4bfb908199cd4c599815c566def209cc6bab53b9a0d9fe69d853bf424127",
+            "bytes": 2891
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/75b794098099bb12b136b4ca05aa50b54bd5dcfa96ada283d1728aa85fd7e304.json",
+            "sha256": "75b794098099bb12b136b4ca05aa50b54bd5dcfa96ada283d1728aa85fd7e304",
+            "bytes": 2365
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/a06ebfb6a26df166cc027b7f3467dced744f398ffa84cf37da4bc889abea344a.json",
+            "sha256": "a06ebfb6a26df166cc027b7f3467dced744f398ffa84cf37da4bc889abea344a",
+            "bytes": 3572
+          },
+          {
+            "path": ".p1-commit-staging/targeted-resolution-input/4d99bf291236883b8c449d4203c3088b9e3da55fd7acae37789ce6f0cfc7a331.json",
+            "sha256": "4d99bf291236883b8c449d4203c3088b9e3da55fd7acae37789ce6f0cfc7a331",
+            "bytes": 396
+          },
+          {
+            "path": "coverage-final.json",
+            "sha256": "cd13a04670f2a71494ae36637de8159c168b1226a429c44ba8b7bbacb36fef5d",
+            "bytes": 5171
+          },
+          {
+            "path": "coverage-state.json",
+            "sha256": "d38b6dd09ae63a8d623014f6cfba96fb5f73c9d220d7fb5891c601d1e8c751d5",
+            "bytes": 3254
+          },
+          {
+            "path": "cross-source-synthesis.json",
+            "sha256": "8bc20fa8cdef08128819b623dcfa03d2b1464c926304d69a1de7f053bfd02464",
+            "bytes": 3497
+          },
+          {
+            "path": "events.jsonl",
+            "sha256": "c7c643625edb6f793f07c3bcea9cc22656d07c6bd4da17aa6ca856dbab9def49",
+            "bytes": 6357
+          },
+          {
+            "path": "multi-group-state.json",
+            "sha256": "96abbc48dc4810cdd8a2ee6d4f71f0b10d989fb31ba4ef42ead122d436565ac5",
+            "bytes": 4391
+          },
+          {
+            "path": "orchestration-state.json",
+            "sha256": "2e839f3e65f96567afabc4b1cdf64fa4e5ade1710dc7958a43b03a60311eab5e",
+            "bytes": 2309
+          },
+          {
+            "path": "per-group-claims.json",
+            "sha256": "8599856ad16e1f5389f611497c901162f39115f471b63adb95a3ddaea4bed29d",
+            "bytes": 2292
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "00045f30a319f216d7b66454f5e8a6926af95a6b3a25f6ed9f76f2d79007cd4d",
+            "bytes": 343
+          },
+          {
+            "path": "research-result.json",
+            "sha256": "e76c51a08e6ee0b9ba778354e7c0aaac8ccc92b7905c62623bfaa7f6f232798e",
+            "bytes": 3734
+          },
+          {
+            "path": "retrieval-rounds/accumulated-pool.json",
+            "sha256": "1984b8584a497389dd821f875bf51e815d7974da548102257afababbd046817d",
+            "bytes": 3573
+          },
+          {
+            "path": "retrieval-rounds/round-1/retrieval-pool.json",
+            "sha256": "979a4a62b53d4da1751a607986b6a2ff1ce1180e6a56668621e0f8a807b69ae7",
+            "bytes": 2753
+          },
+          {
+            "path": "retrieval-rounds/round-2/retrieval-pool.json",
+            "sha256": "979a4a62b53d4da1751a607986b6a2ff1ce1180e6a56668621e0f8a807b69ae7",
+            "bytes": 2753
+          },
+          {
+            "path": "source-group-selection-decision.json",
+            "sha256": "9fb9cd04db2fc1e5eb461cf82dcbf9f87409ff73f25dd4393b71e3e468b781ee",
+            "bytes": 2649
+          },
+          {
+            "path": "targeted-requery-actions.json",
+            "sha256": "a06ebfb6a26df166cc027b7f3467dced744f398ffa84cf37da4bc889abea344a",
+            "bytes": 3572
+          },
+          {
+            "path": "targeted-requery-ledger.json",
+            "sha256": "d01b2618270fc8592235a3bce6352d69552c585b1ada691ed88cb74cd54a0ef0",
+            "bytes": 1173
+          },
+          {
+            "path": "targeted-requery-resolution.json",
+            "sha256": "5c876ea42f7b5d40a4750a0386093c2b8d36a6e36208814eaf7a343d792baf90",
+            "bytes": 2039
+          },
+          {
+            "path": "targeted-requery-subphase/action-dcccde2ac758559e7fe856d6737ab45efc2943bbe0fe707a6f098254f330a3a7/retrieval-pool.json",
+            "sha256": "d04d9c12562cdec9b068a1d4254e2de5675ac2f7413d62871c87dac04c0bb6d7",
+            "bytes": 2753
+          },
+          {
+            "path": "zhihu/100/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/100/answers.json",
+            "sha256": "4800f91b66e868cc9777d25a8d48635c2a525fc59de9d19bcfb0a71adb9eb1f8",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/100/answers.md",
+            "sha256": "6bc12bd6b9108da6987180b61e77ed62b36a1257fcc2150a85a26860f5e2597b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/100/handoff.json",
+            "sha256": "66a0b7837b6fc5c89308e5dabb88fca8cd5ec7c7f12ebdd39062fd31a1778db2",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/200/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/200/answers.json",
+            "sha256": "0dcb12e4c69ce9aba5a22e024486f8fa8bc8485abd96e1cb1d82b0787db75f59",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/200/answers.md",
+            "sha256": "15ad5b2025bc4044e2c2f8303d0526e373dce22e6be8c35adb4279e640898a1b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/200/handoff.json",
+            "sha256": "ac3ed33e4371117e8c1bba0bd0a5c5879f9aae826521bcd940ca367b4fe034a9",
+            "bytes": 201
+          }
+        ],
+        "providerCounts": {
+          "observed": 6,
+          "expected": 6,
+          "observedTargeted": 2,
+          "expectedTargeted": 2
+        },
+        "lineage": {
+          "valid": true,
+          "failures": [],
+          "joins": [
+            {
+              "gapId": "63bcb1167f912499bae337b0a6f20f8edd6946deb9b4057d1aec658658a66bf5:0",
+              "targetedActionId": "dcccde2ac758559e7fe856d6737ab45efc2943bbe0fe707a6f098254f330a3a7",
+              "normalizedQuery": "补充资料",
+              "providerScope": [
+                {
+                  "capability": "search",
+                  "providerId": "zhihu-open-platform"
+                },
+                {
+                  "capability": "search",
+                  "providerId": "zhihu_search"
+                }
+              ],
+              "resultArtifact": "targeted-requery-subphase/action-dcccde2ac758559e7fe856d6737ab45efc2943bbe0fe707a6f098254f330a3a7/retrieval-pool.json",
+              "artifactHash": "d04d9c12562cdec9b068a1d4254e2de5675ac2f7413d62871c87dac04c0bb6d7",
+              "resultQuestionIds": [
+                "100",
+                "200"
+              ],
+              "reverse": [
+                {
+                  "resultQuestionId": "100",
+                  "targetedActionId": "dcccde2ac758559e7fe856d6737ab45efc2943bbe0fe707a6f098254f330a3a7",
+                  "gapId": "63bcb1167f912499bae337b0a6f20f8edd6946deb9b4057d1aec658658a66bf5:0",
+                  "finalArtifact": "coverage-final.json"
+                },
+                {
+                  "resultQuestionId": "200",
+                  "targetedActionId": "dcccde2ac758559e7fe856d6737ab45efc2943bbe0fe707a6f098254f330a3a7",
+                  "gapId": "63bcb1167f912499bae337b0a6f20f8edd6946deb9b4057d1aec658658a66bf5:0",
+                  "finalArtifact": "coverage-final.json"
+                }
+              ]
+            }
+          ],
+          "integrityVerdict": "PASS"
+        },
+        "requiredAssertions": [
+          {
+            "name": "real composition round-1 proposal observed",
+            "result": "PASS"
+          },
+          {
+            "name": "real controller rejection persisted",
+            "result": "PASS"
+          },
+          {
+            "name": "rejected follow-up has zero provider delta",
+            "result": "PASS"
+          }
+        ]
+      },
+      "positiveAssertion": {
+        "scenarioId": "per-gap-bound",
+        "checks": [
+          "real composition round-1 proposal observed",
+          "real controller rejection persisted",
+          "rejected follow-up has zero provider delta"
+        ]
+      },
+      "negativeControlRefs": [
+        {
+          "scenarioId": "global-budget",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "a933012b-6780-4d8d-b749-fbe0ce52deaa",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "budget bounds real IO",
+              "result": "PASS"
+            },
+            {
+              "name": "budget target literal",
+              "result": "PASS"
+            },
+            {
+              "name": "budget terminal honest",
+              "result": "PASS"
+            },
+            {
+              "name": "budget refuses next gap",
+              "result": "PASS"
+            }
+          ]
+        }
+      ],
+      "boundaryLimit": null
+    },
+    {
+      "specItem": "§20-8",
+      "scenarioId": "canonical",
+      "verdict": "PASS",
+      "reason": "Required principal and negative-control checks passed on their individual recorded occurrences.",
+      "principalRun": {
+        "exactRepoSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+        "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+        "occurrenceId": "dc8d0c7b-f872-45d1-b271-131003277240",
+        "planId": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+        "generation": "dc8d0c7b-f872-45d1-b271-131003277240",
+        "commands": [
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child canonical --out \"$T14_OUT/canonical/work\" --phase initial --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "canonical/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "exitCodes": [
+          0
+        ],
+        "inputArtifacts": [
+          {
+            "path": "acceptance-input-initial.json",
+            "sha256": "3543c26dbf86f15c5b8977e6fbdcfa010c59fe4d5b13b3a2ac019951178deca2",
+            "bytes": 691
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          }
+        ],
+        "outputArtifacts": [
+          {
+            "path": ".p1-commit-staging/coverageState/0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8.json",
+            "sha256": "0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8",
+            "bytes": 4352
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d.json",
+            "sha256": "24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d",
+            "bytes": 3512
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202.json",
+            "sha256": "2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202",
+            "bytes": 1514
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae.json",
+            "sha256": "3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae",
+            "bytes": 3213
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f.json",
+            "sha256": "49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f",
+            "bytes": 2125
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548.json",
+            "sha256": "6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548",
+            "bytes": 4352
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/631bbec619c6797fbda5a298ac3ba29e32ded72265895cf2f0c9759631c5ecd7.json",
+            "sha256": "631bbec619c6797fbda5a298ac3ba29e32ded72265895cf2f0c9759631c5ecd7",
+            "bytes": 2861
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/7905609cc2e5dac7a84139689f1fc918782633826b05b0e4032c141047d2de80.json",
+            "sha256": "7905609cc2e5dac7a84139689f1fc918782633826b05b0e4032c141047d2de80",
+            "bytes": 1546
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/d1638e2f8872eaf332e1cd8fafe1d0f41fee94a57c5c3cf6dc2b7c8054f4f529.json",
+            "sha256": "d1638e2f8872eaf332e1cd8fafe1d0f41fee94a57c5c3cf6dc2b7c8054f4f529",
+            "bytes": 2365
+          },
+          {
+            "path": ".p1-commit-staging/targeted-resolution-input/f09e3be2b14b4108863d177ba57d2fd55730d6345720bcf708a31052390b2043.json",
+            "sha256": "f09e3be2b14b4108863d177ba57d2fd55730d6345720bcf708a31052390b2043",
+            "bytes": 396
+          },
+          {
+            "path": "coverage-final.json",
+            "sha256": "1e5c1d98af9e49d54e75913403ff4c6963ff734f6b1e80dc36d8e697513eb8ea",
+            "bytes": 4858
+          },
+          {
+            "path": "coverage-state.json",
+            "sha256": "9a23f236c282dec275d9b52272e061e46813cbecae57877a7b310cacff2dac5e",
+            "bytes": 4351
+          },
+          {
+            "path": "cross-source-synthesis.json",
+            "sha256": "e463c669750150a3847dd2a9a7b8a1ff29b87a5bcca6d58be1a4e4555d5df6b9",
+            "bytes": 5025
+          },
+          {
+            "path": "events.jsonl",
+            "sha256": "f125d8929fbb7356c8f8a19f1ffaf7fec21521ee658372ff9cb01ef3881338b8",
+            "bytes": 5059
+          },
+          {
+            "path": "multi-group-state.json",
+            "sha256": "843c0309abdf5b6441aeacb2bf9e11866d9b43a37c80389c474f2e2e06077e8d",
+            "bytes": 7745
+          },
+          {
+            "path": "orchestration-state.json",
+            "sha256": "194e870a424cb0f8c40583f39635cd84238499eff8d8856a098ebe625b87b2f8",
+            "bytes": 2309
+          },
+          {
+            "path": "per-group-claims.json",
+            "sha256": "e89b87710a7d25b8a43b4209b7b49434ffc653ead02ef5015248d4e47370979e",
+            "bytes": 4142
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          },
+          {
+            "path": "research-result.json",
+            "sha256": "618bff19af28a280449a1fd35f8cbd743b04ba0763b7e698ca5b25884fe7faf5",
+            "bytes": 3110
+          },
+          {
+            "path": "retrieval-rounds/accumulated-pool.json",
+            "sha256": "ac1df649684a9ecefa2862690f8173815e0840aad524f81f0b7d5a340c835adb",
+            "bytes": 5093
+          },
+          {
+            "path": "retrieval-rounds/round-1/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "retrieval-rounds/round-2/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "source-group-selection-decision.json",
+            "sha256": "011049e6ce84b66935df37ec69de11a0fcab8764697a4441b324989bc36238e3",
+            "bytes": 4599
+          },
+          {
+            "path": "targeted-requery-actions.json",
+            "sha256": "631bbec619c6797fbda5a298ac3ba29e32ded72265895cf2f0c9759631c5ecd7",
+            "bytes": 2861
+          },
+          {
+            "path": "targeted-requery-ledger.json",
+            "sha256": "6b7aa0d614c4d4ee8ffb5028c29f827ebeb5568c1dca6b17b59e5501ccc3f8d2",
+            "bytes": 695
+          },
+          {
+            "path": "targeted-requery-resolution.json",
+            "sha256": "326ea5fef3d0dfbd1af701c1fa0781f7812ddc60fcb7d5f7c643b3d0352c7d6b",
+            "bytes": 1207
+          },
+          {
+            "path": "targeted-requery-subphase/action-17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61/retrieval-pool.json",
+            "sha256": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+            "bytes": 2753
+          },
+          {
+            "path": "zhihu/100/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/100/answers.json",
+            "sha256": "4800f91b66e868cc9777d25a8d48635c2a525fc59de9d19bcfb0a71adb9eb1f8",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/100/answers.md",
+            "sha256": "6bc12bd6b9108da6987180b61e77ed62b36a1257fcc2150a85a26860f5e2597b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/100/handoff.json",
+            "sha256": "66a0b7837b6fc5c89308e5dabb88fca8cd5ec7c7f12ebdd39062fd31a1778db2",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/200/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/200/answers.json",
+            "sha256": "0dcb12e4c69ce9aba5a22e024486f8fa8bc8485abd96e1cb1d82b0787db75f59",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/200/answers.md",
+            "sha256": "15ad5b2025bc4044e2c2f8303d0526e373dce22e6be8c35adb4279e640898a1b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/200/handoff.json",
+            "sha256": "ac3ed33e4371117e8c1bba0bd0a5c5879f9aae826521bcd940ca367b4fe034a9",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/300/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/300/answers.json",
+            "sha256": "fb184ad1bbda91b2d1c47fbbb8dfa239779efd0bc94cb9aa15f4187ce393feab",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/300/answers.md",
+            "sha256": "0edffd40aa0a5d3767089b3813d9a4c849a54a78c7cbdbcc02ed5ab78f7f4b27",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/300/handoff.json",
+            "sha256": "c42cda41c695cb33e415924126109cb2e01c31517cb1a3ec30d30ee763855b4c",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/301/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/301/answers.json",
+            "sha256": "65bbce4bc4d4a9710c84088efc558fc356e953c2d761b9f6ed83fe02fbde63ee",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/301/answers.md",
+            "sha256": "86413a1c8c393a6cc0dd83f7096f1842b9fa1886aad582523afc2739d055a1cd",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/301/handoff.json",
+            "sha256": "2b1c735e6d237a2586f51d049db54c86668dc8c548d594cc95846fb3e77ca5f8",
+            "bytes": 201
+          }
+        ],
+        "providerCounts": {
+          "observed": 6,
+          "expected": 6,
+          "observedTargeted": 2,
+          "expectedTargeted": 2
+        },
+        "lineage": {
+          "valid": true,
+          "failures": [],
+          "joins": [
+            {
+              "gapId": "04c24d8f4071f95082aa69fd69c940c0566c0a20e90105ff0229c0f1f52edf00:0",
+              "targetedActionId": "17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61",
+              "normalizedQuery": "补充资料",
+              "providerScope": [
+                {
+                  "capability": "search",
+                  "providerId": "zhihu-open-platform"
+                },
+                {
+                  "capability": "search",
+                  "providerId": "zhihu_search"
+                }
+              ],
+              "resultArtifact": "targeted-requery-subphase/action-17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61/retrieval-pool.json",
+              "artifactHash": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+              "resultQuestionIds": [
+                "300",
+                "301"
+              ],
+              "reverse": [
+                {
+                  "resultQuestionId": "300",
+                  "targetedActionId": "17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61",
+                  "gapId": "04c24d8f4071f95082aa69fd69c940c0566c0a20e90105ff0229c0f1f52edf00:0",
+                  "finalArtifact": "coverage-final.json"
+                },
+                {
+                  "resultQuestionId": "301",
+                  "targetedActionId": "17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61",
+                  "gapId": "04c24d8f4071f95082aa69fd69c940c0566c0a20e90105ff0229c0f1f52edf00:0",
+                  "finalArtifact": "coverage-final.json"
+                }
+              ]
+            }
+          ],
+          "integrityVerdict": "PASS"
+        },
+        "requiredAssertions": [
+          {
+            "name": "evidence resolution",
+            "result": "PASS"
+          }
+        ]
+      },
+      "positiveAssertion": {
+        "scenarioId": "canonical",
+        "checks": [
+          "evidence resolution"
+        ]
+      },
+      "negativeControlRefs": [
+        {
+          "scenarioId": "duplicate-only",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "b3777f2c-fef7-4437-a7f4-e0c49b8d528d",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "duplicate-only unresolved",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "crash-resolution-input",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "44a2952b-d2e4-423b-a6bb-4c709b24484b",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "original and resume planned ids drift bidirectionally",
+              "result": "PASS"
+            },
+            {
+              "name": "targeted provider delta is zero",
+              "result": "PASS"
+            },
+            {
+              "name": "T08 preserves crash-time classification",
+              "result": "PASS"
+            },
+            {
+              "name": "one checkpoint-anchored COMMIT with valid result hash",
+              "result": "PASS"
+            },
+            {
+              "name": "original T08 snapshot bound before provider IO",
+              "result": "PASS"
+            },
+            {
+              "name": "snapshot prior IDs match initial provider facts",
+              "result": "PASS"
+            },
+            {
+              "name": "snapshot bytes and hash survive COMPLETE ordinary resume",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "crash-resolution-reverse",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "1e7c626f-ff99-41c8-b3b2-269fc7a4f5f3",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "original and resume planned ids drift bidirectionally",
+              "result": "PASS"
+            },
+            {
+              "name": "targeted provider delta is zero",
+              "result": "PASS"
+            },
+            {
+              "name": "T08 preserves crash-time classification",
+              "result": "PASS"
+            },
+            {
+              "name": "one checkpoint-anchored COMMIT with valid result hash",
+              "result": "PASS"
+            },
+            {
+              "name": "original T08 snapshot bound before provider IO",
+              "result": "PASS"
+            },
+            {
+              "name": "snapshot prior IDs match initial provider facts",
+              "result": "PASS"
+            },
+            {
+              "name": "snapshot bytes and hash survive COMPLETE ordinary resume",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "crash-framing-drift",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "9848df66-b5d0-4890-a8a8-65039f861259",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "framing provider coverage drifts across crash and resume",
+              "result": "PASS"
+            },
+            {
+              "name": "framing targeted result is new evidence",
+              "result": "PASS"
+            },
+            {
+              "name": "framing action anchors the intended contradiction gap",
+              "result": "PASS"
+            },
+            {
+              "name": "framing T08 uses original snapshot classification",
+              "result": "PASS"
+            },
+            {
+              "name": "framing targeted resume delta is zero",
+              "result": "PASS"
+            },
+            {
+              "name": "framing resume proposal only references prior anchored gap",
+              "result": "PASS"
+            },
+            {
+              "name": "framing snapshot bound before provider IO",
+              "result": "PASS"
+            },
+            {
+              "name": "framing snapshot prior IDs match initial provider facts",
+              "result": "PASS"
+            },
+            {
+              "name": "framing snapshot survives COMPLETE ordinary resume",
+              "result": "PASS"
+            },
+            {
+              "name": "framing feedback loop has actual budget STOP",
+              "result": "PASS"
+            },
+            {
+              "name": "framing has one anchored COMMIT",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "contradiction-one-side",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "12873742-9817-4cf9-a921-3b4f2db33a45",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "one-sided does not resolve",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "authority-unavailable",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "9650b44d-869d-40d2-9b49-e5cc5e5172c8",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "no authority predicate",
+              "result": "PASS"
+            }
+          ]
+        }
+      ],
+      "boundaryLimit": null
+    },
+    {
+      "specItem": "§20-9",
+      "scenarioId": "canonical",
+      "verdict": "PASS",
+      "reason": "Required principal and negative-control checks passed on their individual recorded occurrences.",
+      "principalRun": {
+        "exactRepoSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+        "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+        "occurrenceId": "dc8d0c7b-f872-45d1-b271-131003277240",
+        "planId": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+        "generation": "dc8d0c7b-f872-45d1-b271-131003277240",
+        "commands": [
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child canonical --out \"$T14_OUT/canonical/work\" --phase initial --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "canonical/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "exitCodes": [
+          0
+        ],
+        "inputArtifacts": [
+          {
+            "path": "acceptance-input-initial.json",
+            "sha256": "3543c26dbf86f15c5b8977e6fbdcfa010c59fe4d5b13b3a2ac019951178deca2",
+            "bytes": 691
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          }
+        ],
+        "outputArtifacts": [
+          {
+            "path": ".p1-commit-staging/coverageState/0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8.json",
+            "sha256": "0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8",
+            "bytes": 4352
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d.json",
+            "sha256": "24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d",
+            "bytes": 3512
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202.json",
+            "sha256": "2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202",
+            "bytes": 1514
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae.json",
+            "sha256": "3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae",
+            "bytes": 3213
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f.json",
+            "sha256": "49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f",
+            "bytes": 2125
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548.json",
+            "sha256": "6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548",
+            "bytes": 4352
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/631bbec619c6797fbda5a298ac3ba29e32ded72265895cf2f0c9759631c5ecd7.json",
+            "sha256": "631bbec619c6797fbda5a298ac3ba29e32ded72265895cf2f0c9759631c5ecd7",
+            "bytes": 2861
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/7905609cc2e5dac7a84139689f1fc918782633826b05b0e4032c141047d2de80.json",
+            "sha256": "7905609cc2e5dac7a84139689f1fc918782633826b05b0e4032c141047d2de80",
+            "bytes": 1546
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/d1638e2f8872eaf332e1cd8fafe1d0f41fee94a57c5c3cf6dc2b7c8054f4f529.json",
+            "sha256": "d1638e2f8872eaf332e1cd8fafe1d0f41fee94a57c5c3cf6dc2b7c8054f4f529",
+            "bytes": 2365
+          },
+          {
+            "path": ".p1-commit-staging/targeted-resolution-input/f09e3be2b14b4108863d177ba57d2fd55730d6345720bcf708a31052390b2043.json",
+            "sha256": "f09e3be2b14b4108863d177ba57d2fd55730d6345720bcf708a31052390b2043",
+            "bytes": 396
+          },
+          {
+            "path": "coverage-final.json",
+            "sha256": "1e5c1d98af9e49d54e75913403ff4c6963ff734f6b1e80dc36d8e697513eb8ea",
+            "bytes": 4858
+          },
+          {
+            "path": "coverage-state.json",
+            "sha256": "9a23f236c282dec275d9b52272e061e46813cbecae57877a7b310cacff2dac5e",
+            "bytes": 4351
+          },
+          {
+            "path": "cross-source-synthesis.json",
+            "sha256": "e463c669750150a3847dd2a9a7b8a1ff29b87a5bcca6d58be1a4e4555d5df6b9",
+            "bytes": 5025
+          },
+          {
+            "path": "events.jsonl",
+            "sha256": "f125d8929fbb7356c8f8a19f1ffaf7fec21521ee658372ff9cb01ef3881338b8",
+            "bytes": 5059
+          },
+          {
+            "path": "multi-group-state.json",
+            "sha256": "843c0309abdf5b6441aeacb2bf9e11866d9b43a37c80389c474f2e2e06077e8d",
+            "bytes": 7745
+          },
+          {
+            "path": "orchestration-state.json",
+            "sha256": "194e870a424cb0f8c40583f39635cd84238499eff8d8856a098ebe625b87b2f8",
+            "bytes": 2309
+          },
+          {
+            "path": "per-group-claims.json",
+            "sha256": "e89b87710a7d25b8a43b4209b7b49434ffc653ead02ef5015248d4e47370979e",
+            "bytes": 4142
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          },
+          {
+            "path": "research-result.json",
+            "sha256": "618bff19af28a280449a1fd35f8cbd743b04ba0763b7e698ca5b25884fe7faf5",
+            "bytes": 3110
+          },
+          {
+            "path": "retrieval-rounds/accumulated-pool.json",
+            "sha256": "ac1df649684a9ecefa2862690f8173815e0840aad524f81f0b7d5a340c835adb",
+            "bytes": 5093
+          },
+          {
+            "path": "retrieval-rounds/round-1/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "retrieval-rounds/round-2/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "source-group-selection-decision.json",
+            "sha256": "011049e6ce84b66935df37ec69de11a0fcab8764697a4441b324989bc36238e3",
+            "bytes": 4599
+          },
+          {
+            "path": "targeted-requery-actions.json",
+            "sha256": "631bbec619c6797fbda5a298ac3ba29e32ded72265895cf2f0c9759631c5ecd7",
+            "bytes": 2861
+          },
+          {
+            "path": "targeted-requery-ledger.json",
+            "sha256": "6b7aa0d614c4d4ee8ffb5028c29f827ebeb5568c1dca6b17b59e5501ccc3f8d2",
+            "bytes": 695
+          },
+          {
+            "path": "targeted-requery-resolution.json",
+            "sha256": "326ea5fef3d0dfbd1af701c1fa0781f7812ddc60fcb7d5f7c643b3d0352c7d6b",
+            "bytes": 1207
+          },
+          {
+            "path": "targeted-requery-subphase/action-17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61/retrieval-pool.json",
+            "sha256": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+            "bytes": 2753
+          },
+          {
+            "path": "zhihu/100/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/100/answers.json",
+            "sha256": "4800f91b66e868cc9777d25a8d48635c2a525fc59de9d19bcfb0a71adb9eb1f8",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/100/answers.md",
+            "sha256": "6bc12bd6b9108da6987180b61e77ed62b36a1257fcc2150a85a26860f5e2597b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/100/handoff.json",
+            "sha256": "66a0b7837b6fc5c89308e5dabb88fca8cd5ec7c7f12ebdd39062fd31a1778db2",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/200/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/200/answers.json",
+            "sha256": "0dcb12e4c69ce9aba5a22e024486f8fa8bc8485abd96e1cb1d82b0787db75f59",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/200/answers.md",
+            "sha256": "15ad5b2025bc4044e2c2f8303d0526e373dce22e6be8c35adb4279e640898a1b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/200/handoff.json",
+            "sha256": "ac3ed33e4371117e8c1bba0bd0a5c5879f9aae826521bcd940ca367b4fe034a9",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/300/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/300/answers.json",
+            "sha256": "fb184ad1bbda91b2d1c47fbbb8dfa239779efd0bc94cb9aa15f4187ce393feab",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/300/answers.md",
+            "sha256": "0edffd40aa0a5d3767089b3813d9a4c849a54a78c7cbdbcc02ed5ab78f7f4b27",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/300/handoff.json",
+            "sha256": "c42cda41c695cb33e415924126109cb2e01c31517cb1a3ec30d30ee763855b4c",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/301/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/301/answers.json",
+            "sha256": "65bbce4bc4d4a9710c84088efc558fc356e953c2d761b9f6ed83fe02fbde63ee",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/301/answers.md",
+            "sha256": "86413a1c8c393a6cc0dd83f7096f1842b9fa1886aad582523afc2739d055a1cd",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/301/handoff.json",
+            "sha256": "2b1c735e6d237a2586f51d049db54c86668dc8c548d594cc95846fb3e77ca5f8",
+            "bytes": 201
+          }
+        ],
+        "providerCounts": {
+          "observed": 6,
+          "expected": 6,
+          "observedTargeted": 2,
+          "expectedTargeted": 2
+        },
+        "lineage": {
+          "valid": true,
+          "failures": [],
+          "joins": [
+            {
+              "gapId": "04c24d8f4071f95082aa69fd69c940c0566c0a20e90105ff0229c0f1f52edf00:0",
+              "targetedActionId": "17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61",
+              "normalizedQuery": "补充资料",
+              "providerScope": [
+                {
+                  "capability": "search",
+                  "providerId": "zhihu-open-platform"
+                },
+                {
+                  "capability": "search",
+                  "providerId": "zhihu_search"
+                }
+              ],
+              "resultArtifact": "targeted-requery-subphase/action-17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61/retrieval-pool.json",
+              "artifactHash": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+              "resultQuestionIds": [
+                "300",
+                "301"
+              ],
+              "reverse": [
+                {
+                  "resultQuestionId": "300",
+                  "targetedActionId": "17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61",
+                  "gapId": "04c24d8f4071f95082aa69fd69c940c0566c0a20e90105ff0229c0f1f52edf00:0",
+                  "finalArtifact": "coverage-final.json"
+                },
+                {
+                  "resultQuestionId": "301",
+                  "targetedActionId": "17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61",
+                  "gapId": "04c24d8f4071f95082aa69fd69c940c0566c0a20e90105ff0229c0f1f52edf00:0",
+                  "finalArtifact": "coverage-final.json"
+                }
+              ]
+            }
+          ],
+          "integrityVerdict": "PASS"
+        },
+        "requiredAssertions": [
+          {
+            "name": "all durable gaps visible",
+            "result": "PASS"
+          },
+          {
+            "name": "bidirectional lineage",
+            "result": "PASS"
+          }
+        ]
+      },
+      "positiveAssertion": {
+        "scenarioId": "canonical",
+        "checks": [
+          "all durable gaps visible",
+          "bidirectional lineage"
+        ]
+      },
+      "negativeControlRefs": [
+        {
+          "scenarioId": "duplicate-only",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "b3777f2c-fef7-4437-a7f4-e0c49b8d528d",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "all durable gaps visible",
+              "result": "PASS"
+            },
+            {
+              "name": "duplicate-only unresolved",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "authority-unavailable",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "9650b44d-869d-40d2-9b49-e5cc5e5172c8",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "all durable gaps visible",
+              "result": "PASS"
+            },
+            {
+              "name": "no authority predicate",
+              "result": "PASS"
+            }
+          ]
+        }
+      ],
+      "boundaryLimit": null
+    },
+    {
+      "specItem": "§20-10",
+      "scenarioId": "crash-after",
+      "verdict": "PASS",
+      "reason": "Required principal and negative-control checks passed on their individual recorded occurrences.",
+      "principalRun": {
+        "exactRepoSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+        "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+        "occurrenceId": "67975b2c-4628-491b-bd6b-fac6096abcb6",
+        "planId": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+        "generation": "67975b2c-4628-491b-bd6b-fac6096abcb6",
+        "commands": [
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child crash-after --out \"$T14_OUT/crash-after/work\" --phase initial --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b --crash after_targeted_commit_finalize",
+            "outputDirectoryRef": "crash-after/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 137,
+            "signal": "SIGKILL",
+            "error": null
+          },
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child crash-after --out \"$T14_OUT/crash-after/work\" --phase resume --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "crash-after/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          },
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child crash-after --out \"$T14_OUT/crash-after/work\" --phase resume-again --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "crash-after/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "exitCodes": [
+          137,
+          0,
+          0
+        ],
+        "inputArtifacts": [
+          {
+            "path": "acceptance-input-initial.json",
+            "sha256": "f4a1aad921405972e1b226b0aeab5593c2d2241714a8c3170d8fe1d5b0d8b4e7",
+            "bytes": 691
+          },
+          {
+            "path": "acceptance-input-resume.json",
+            "sha256": "f4a1aad921405972e1b226b0aeab5593c2d2241714a8c3170d8fe1d5b0d8b4e7",
+            "bytes": 691
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          }
+        ],
+        "outputArtifacts": [
+          {
+            "path": ".p1-commit-staging/coverageState/0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8.json",
+            "sha256": "0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8",
+            "bytes": 4352
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d.json",
+            "sha256": "24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d",
+            "bytes": 3512
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202.json",
+            "sha256": "2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202",
+            "bytes": 1514
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae.json",
+            "sha256": "3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae",
+            "bytes": 3213
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f.json",
+            "sha256": "49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f",
+            "bytes": 2125
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548.json",
+            "sha256": "6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548",
+            "bytes": 4352
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/1ad7fc2cb94185cf878b18ce723fc2868b244411f168aa5725be3d4ffcfd9c19.json",
+            "sha256": "1ad7fc2cb94185cf878b18ce723fc2868b244411f168aa5725be3d4ffcfd9c19",
+            "bytes": 1546
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/4e28e5b36a0d29ced7e9395b06af0c35c91d74205920825844a1692fe0eb6c07.json",
+            "sha256": "4e28e5b36a0d29ced7e9395b06af0c35c91d74205920825844a1692fe0eb6c07",
+            "bytes": 2861
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/855fe64bf7de2d9289e9b17cb284f1feb7f35b46b0a5c4a93688054a06c35d4f.json",
+            "sha256": "855fe64bf7de2d9289e9b17cb284f1feb7f35b46b0a5c4a93688054a06c35d4f",
+            "bytes": 2365
+          },
+          {
+            "path": ".p1-commit-staging/targeted-resolution-input/6018c75b795824e0b5712650e4bd4d710c730487708e2e185f96da7df236cb08.json",
+            "sha256": "6018c75b795824e0b5712650e4bd4d710c730487708e2e185f96da7df236cb08",
+            "bytes": 396
+          },
+          {
+            "path": "coverage-final.json",
+            "sha256": "9f45107b31994ddc5d022251c2edfe9e3213daf960183517700d8e133a672c3e",
+            "bytes": 4858
+          },
+          {
+            "path": "coverage-state.json",
+            "sha256": "9a23f236c282dec275d9b52272e061e46813cbecae57877a7b310cacff2dac5e",
+            "bytes": 4351
+          },
+          {
+            "path": "cross-source-synthesis.json",
+            "sha256": "e463c669750150a3847dd2a9a7b8a1ff29b87a5bcca6d58be1a4e4555d5df6b9",
+            "bytes": 5025
+          },
+          {
+            "path": "events.jsonl",
+            "sha256": "0067d99c519bc3dd85348a2d7d449c559c4f17190ba795176151e6053219a417",
+            "bytes": 6781
+          },
+          {
+            "path": "multi-group-state.json",
+            "sha256": "843c0309abdf5b6441aeacb2bf9e11866d9b43a37c80389c474f2e2e06077e8d",
+            "bytes": 7745
+          },
+          {
+            "path": "orchestration-state.json",
+            "sha256": "cc34a4926d48f5671c3ed632d847e93b938f9b686bc7caae85efa2065724ee44",
+            "bytes": 2309
+          },
+          {
+            "path": "per-group-claims.json",
+            "sha256": "e89b87710a7d25b8a43b4209b7b49434ffc653ead02ef5015248d4e47370979e",
+            "bytes": 4142
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          },
+          {
+            "path": "research-result.json",
+            "sha256": "c18df320ec3f8e56722e43caad6d267be99200580075831662ea33ac6694f456",
+            "bytes": 3110
+          },
+          {
+            "path": "retrieval-rounds/accumulated-pool.json",
+            "sha256": "ac1df649684a9ecefa2862690f8173815e0840aad524f81f0b7d5a340c835adb",
+            "bytes": 5093
+          },
+          {
+            "path": "retrieval-rounds/round-1/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "retrieval-rounds/round-2/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "source-group-selection-decision.json",
+            "sha256": "011049e6ce84b66935df37ec69de11a0fcab8764697a4441b324989bc36238e3",
+            "bytes": 4599
+          },
+          {
+            "path": "targeted-requery-actions.json",
+            "sha256": "4e28e5b36a0d29ced7e9395b06af0c35c91d74205920825844a1692fe0eb6c07",
+            "bytes": 2861
+          },
+          {
+            "path": "targeted-requery-ledger.json",
+            "sha256": "7175db732248befb220fbf514142efde63351bd35f475c5b41c7ca66c3a31f4f",
+            "bytes": 695
+          },
+          {
+            "path": "targeted-requery-resolution.json",
+            "sha256": "559782aca284ebbd6fde58165270088e7feb5e8c3cb8a7b46d4ef328d97552ef",
+            "bytes": 1207
+          },
+          {
+            "path": "targeted-requery-subphase/action-b97fa0038ae2589fcb8fd17e17e6fbc53448d80fdf982f865c0350d947c75297/retrieval-pool.json",
+            "sha256": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+            "bytes": 2753
+          },
+          {
+            "path": "zhihu/100/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/100/answers.json",
+            "sha256": "4800f91b66e868cc9777d25a8d48635c2a525fc59de9d19bcfb0a71adb9eb1f8",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/100/answers.md",
+            "sha256": "6bc12bd6b9108da6987180b61e77ed62b36a1257fcc2150a85a26860f5e2597b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/100/handoff.json",
+            "sha256": "66a0b7837b6fc5c89308e5dabb88fca8cd5ec7c7f12ebdd39062fd31a1778db2",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/200/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/200/answers.json",
+            "sha256": "0dcb12e4c69ce9aba5a22e024486f8fa8bc8485abd96e1cb1d82b0787db75f59",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/200/answers.md",
+            "sha256": "15ad5b2025bc4044e2c2f8303d0526e373dce22e6be8c35adb4279e640898a1b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/200/handoff.json",
+            "sha256": "ac3ed33e4371117e8c1bba0bd0a5c5879f9aae826521bcd940ca367b4fe034a9",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/300/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/300/answers.json",
+            "sha256": "fb184ad1bbda91b2d1c47fbbb8dfa239779efd0bc94cb9aa15f4187ce393feab",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/300/answers.md",
+            "sha256": "0edffd40aa0a5d3767089b3813d9a4c849a54a78c7cbdbcc02ed5ab78f7f4b27",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/300/handoff.json",
+            "sha256": "c42cda41c695cb33e415924126109cb2e01c31517cb1a3ec30d30ee763855b4c",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/301/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/301/answers.json",
+            "sha256": "65bbce4bc4d4a9710c84088efc558fc356e953c2d761b9f6ed83fe02fbde63ee",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/301/answers.md",
+            "sha256": "86413a1c8c393a6cc0dd83f7096f1842b9fa1886aad582523afc2739d055a1cd",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/301/handoff.json",
+            "sha256": "2b1c735e6d237a2586f51d049db54c86668dc8c548d594cc95846fb3e77ca5f8",
+            "bytes": 201
+          }
+        ],
+        "providerCounts": {
+          "observed": 8,
+          "expected": 8,
+          "observedTargeted": 2,
+          "expectedTargeted": 2
+        },
+        "lineage": {
+          "valid": true,
+          "failures": [],
+          "joins": [
+            {
+              "gapId": "4bf50abc16a2a088565d231178a87aeaa70146948a0ed39ba13ec828d7fd0256:0",
+              "targetedActionId": "b97fa0038ae2589fcb8fd17e17e6fbc53448d80fdf982f865c0350d947c75297",
+              "normalizedQuery": "补充资料",
+              "providerScope": [
+                {
+                  "capability": "search",
+                  "providerId": "zhihu-open-platform"
+                },
+                {
+                  "capability": "search",
+                  "providerId": "zhihu_search"
+                }
+              ],
+              "resultArtifact": "targeted-requery-subphase/action-b97fa0038ae2589fcb8fd17e17e6fbc53448d80fdf982f865c0350d947c75297/retrieval-pool.json",
+              "artifactHash": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+              "resultQuestionIds": [
+                "300",
+                "301"
+              ],
+              "reverse": [
+                {
+                  "resultQuestionId": "300",
+                  "targetedActionId": "b97fa0038ae2589fcb8fd17e17e6fbc53448d80fdf982f865c0350d947c75297",
+                  "gapId": "4bf50abc16a2a088565d231178a87aeaa70146948a0ed39ba13ec828d7fd0256:0",
+                  "finalArtifact": "coverage-final.json"
+                },
+                {
+                  "resultQuestionId": "301",
+                  "targetedActionId": "b97fa0038ae2589fcb8fd17e17e6fbc53448d80fdf982f865c0350d947c75297",
+                  "gapId": "4bf50abc16a2a088565d231178a87aeaa70146948a0ed39ba13ec828d7fd0256:0",
+                  "finalArtifact": "coverage-final.json"
+                }
+              ]
+            }
+          ],
+          "integrityVerdict": "PASS"
+        },
+        "requiredAssertions": [
+          {
+            "name": "same occurrence resumes",
+            "result": "PASS"
+          },
+          {
+            "name": "real kill at window",
+            "result": "PASS"
+          },
+          {
+            "name": "resume paid IO delta",
+            "result": "PASS"
+          },
+          {
+            "name": "one durable COMMIT",
+            "result": "PASS"
+          },
+          {
+            "name": "commit window checkpoint matches kill",
+            "result": "PASS"
+          },
+          {
+            "name": "final pool hash matches binding",
+            "result": "PASS"
+          },
+          {
+            "name": "replay decision",
+            "result": "PASS"
+          }
+        ]
+      },
+      "positiveAssertion": {
+        "scenarioId": "crash-after",
+        "checks": [
+          "same occurrence resumes",
+          "real kill at window",
+          "resume paid IO delta",
+          "one durable COMMIT",
+          "commit window checkpoint matches kill",
+          "final pool hash matches binding",
+          "replay decision"
+        ]
+      },
+      "negativeControlRefs": [
+        {
+          "scenarioId": "crash-before",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "5e1c5610-c97f-45a7-b375-1844f8c44b7e",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "same occurrence resumes",
+              "result": "PASS"
+            },
+            {
+              "name": "real kill at window",
+              "result": "PASS"
+            },
+            {
+              "name": "resume paid IO delta",
+              "result": "PASS"
+            },
+            {
+              "name": "one durable COMMIT",
+              "result": "PASS"
+            },
+            {
+              "name": "replay decision",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "crash-resolution-input",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "44a2952b-d2e4-423b-a6bb-4c709b24484b",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "same occurrence resumes",
+              "result": "PASS"
+            },
+            {
+              "name": "real kill at window",
+              "result": "PASS"
+            },
+            {
+              "name": "resume paid IO delta",
+              "result": "PASS"
+            },
+            {
+              "name": "one durable COMMIT",
+              "result": "PASS"
+            },
+            {
+              "name": "commit window checkpoint matches kill",
+              "result": "PASS"
+            },
+            {
+              "name": "final pool hash matches binding",
+              "result": "PASS"
+            },
+            {
+              "name": "replay decision",
+              "result": "PASS"
+            },
+            {
+              "name": "original and resume planned ids drift bidirectionally",
+              "result": "PASS"
+            },
+            {
+              "name": "targeted provider delta is zero",
+              "result": "PASS"
+            },
+            {
+              "name": "T08 preserves crash-time classification",
+              "result": "PASS"
+            },
+            {
+              "name": "one checkpoint-anchored COMMIT with valid result hash",
+              "result": "PASS"
+            },
+            {
+              "name": "original T08 snapshot bound before provider IO",
+              "result": "PASS"
+            },
+            {
+              "name": "snapshot prior IDs match initial provider facts",
+              "result": "PASS"
+            },
+            {
+              "name": "snapshot bytes and hash survive COMPLETE ordinary resume",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "crash-resolution-reverse",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "1e7c626f-ff99-41c8-b3b2-269fc7a4f5f3",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "same occurrence resumes",
+              "result": "PASS"
+            },
+            {
+              "name": "real kill at window",
+              "result": "PASS"
+            },
+            {
+              "name": "resume paid IO delta",
+              "result": "PASS"
+            },
+            {
+              "name": "one durable COMMIT",
+              "result": "PASS"
+            },
+            {
+              "name": "commit window checkpoint matches kill",
+              "result": "PASS"
+            },
+            {
+              "name": "final pool hash matches binding",
+              "result": "PASS"
+            },
+            {
+              "name": "replay decision",
+              "result": "PASS"
+            },
+            {
+              "name": "original and resume planned ids drift bidirectionally",
+              "result": "PASS"
+            },
+            {
+              "name": "targeted provider delta is zero",
+              "result": "PASS"
+            },
+            {
+              "name": "T08 preserves crash-time classification",
+              "result": "PASS"
+            },
+            {
+              "name": "one checkpoint-anchored COMMIT with valid result hash",
+              "result": "PASS"
+            },
+            {
+              "name": "original T08 snapshot bound before provider IO",
+              "result": "PASS"
+            },
+            {
+              "name": "snapshot prior IDs match initial provider facts",
+              "result": "PASS"
+            },
+            {
+              "name": "snapshot bytes and hash survive COMPLETE ordinary resume",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "crash-framing-drift",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "9848df66-b5d0-4890-a8a8-65039f861259",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "same occurrence resumes",
+              "result": "PASS"
+            },
+            {
+              "name": "real kill at window",
+              "result": "PASS"
+            },
+            {
+              "name": "resume paid IO delta",
+              "result": "PASS"
+            },
+            {
+              "name": "one durable COMMIT",
+              "result": "PASS"
+            },
+            {
+              "name": "commit window checkpoint matches kill",
+              "result": "PASS"
+            },
+            {
+              "name": "final pool hash matches binding",
+              "result": "PASS"
+            },
+            {
+              "name": "replay decision",
+              "result": "PASS"
+            },
+            {
+              "name": "framing provider coverage drifts across crash and resume",
+              "result": "PASS"
+            },
+            {
+              "name": "framing targeted result is new evidence",
+              "result": "PASS"
+            },
+            {
+              "name": "framing action anchors the intended contradiction gap",
+              "result": "PASS"
+            },
+            {
+              "name": "framing T08 uses original snapshot classification",
+              "result": "PASS"
+            },
+            {
+              "name": "framing targeted resume delta is zero",
+              "result": "PASS"
+            },
+            {
+              "name": "framing resume proposal only references prior anchored gap",
+              "result": "PASS"
+            },
+            {
+              "name": "framing snapshot bound before provider IO",
+              "result": "PASS"
+            },
+            {
+              "name": "framing snapshot prior IDs match initial provider facts",
+              "result": "PASS"
+            },
+            {
+              "name": "framing snapshot survives COMPLETE ordinary resume",
+              "result": "PASS"
+            },
+            {
+              "name": "framing feedback loop has actual budget STOP",
+              "result": "PASS"
+            },
+            {
+              "name": "framing has one anchored COMMIT",
+              "result": "PASS"
+            }
+          ]
+        }
+      ],
+      "boundaryLimit": null
+    },
+    {
+      "specItem": "§20-11",
+      "scenarioId": "canonical",
+      "verdict": "PASS",
+      "reason": "Required principal and negative-control checks passed on their individual recorded occurrences.",
+      "principalRun": {
+        "exactRepoSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+        "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+        "occurrenceId": "dc8d0c7b-f872-45d1-b271-131003277240",
+        "planId": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+        "generation": "dc8d0c7b-f872-45d1-b271-131003277240",
+        "commands": [
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child canonical --out \"$T14_OUT/canonical/work\" --phase initial --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "canonical/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "exitCodes": [
+          0
+        ],
+        "inputArtifacts": [
+          {
+            "path": "acceptance-input-initial.json",
+            "sha256": "3543c26dbf86f15c5b8977e6fbdcfa010c59fe4d5b13b3a2ac019951178deca2",
+            "bytes": 691
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          }
+        ],
+        "outputArtifacts": [
+          {
+            "path": ".p1-commit-staging/coverageState/0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8.json",
+            "sha256": "0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8",
+            "bytes": 4352
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d.json",
+            "sha256": "24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d",
+            "bytes": 3512
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202.json",
+            "sha256": "2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202",
+            "bytes": 1514
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae.json",
+            "sha256": "3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae",
+            "bytes": 3213
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f.json",
+            "sha256": "49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f",
+            "bytes": 2125
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548.json",
+            "sha256": "6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548",
+            "bytes": 4352
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/631bbec619c6797fbda5a298ac3ba29e32ded72265895cf2f0c9759631c5ecd7.json",
+            "sha256": "631bbec619c6797fbda5a298ac3ba29e32ded72265895cf2f0c9759631c5ecd7",
+            "bytes": 2861
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/7905609cc2e5dac7a84139689f1fc918782633826b05b0e4032c141047d2de80.json",
+            "sha256": "7905609cc2e5dac7a84139689f1fc918782633826b05b0e4032c141047d2de80",
+            "bytes": 1546
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/d1638e2f8872eaf332e1cd8fafe1d0f41fee94a57c5c3cf6dc2b7c8054f4f529.json",
+            "sha256": "d1638e2f8872eaf332e1cd8fafe1d0f41fee94a57c5c3cf6dc2b7c8054f4f529",
+            "bytes": 2365
+          },
+          {
+            "path": ".p1-commit-staging/targeted-resolution-input/f09e3be2b14b4108863d177ba57d2fd55730d6345720bcf708a31052390b2043.json",
+            "sha256": "f09e3be2b14b4108863d177ba57d2fd55730d6345720bcf708a31052390b2043",
+            "bytes": 396
+          },
+          {
+            "path": "coverage-final.json",
+            "sha256": "1e5c1d98af9e49d54e75913403ff4c6963ff734f6b1e80dc36d8e697513eb8ea",
+            "bytes": 4858
+          },
+          {
+            "path": "coverage-state.json",
+            "sha256": "9a23f236c282dec275d9b52272e061e46813cbecae57877a7b310cacff2dac5e",
+            "bytes": 4351
+          },
+          {
+            "path": "cross-source-synthesis.json",
+            "sha256": "e463c669750150a3847dd2a9a7b8a1ff29b87a5bcca6d58be1a4e4555d5df6b9",
+            "bytes": 5025
+          },
+          {
+            "path": "events.jsonl",
+            "sha256": "f125d8929fbb7356c8f8a19f1ffaf7fec21521ee658372ff9cb01ef3881338b8",
+            "bytes": 5059
+          },
+          {
+            "path": "multi-group-state.json",
+            "sha256": "843c0309abdf5b6441aeacb2bf9e11866d9b43a37c80389c474f2e2e06077e8d",
+            "bytes": 7745
+          },
+          {
+            "path": "orchestration-state.json",
+            "sha256": "194e870a424cb0f8c40583f39635cd84238499eff8d8856a098ebe625b87b2f8",
+            "bytes": 2309
+          },
+          {
+            "path": "per-group-claims.json",
+            "sha256": "e89b87710a7d25b8a43b4209b7b49434ffc653ead02ef5015248d4e47370979e",
+            "bytes": 4142
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          },
+          {
+            "path": "research-result.json",
+            "sha256": "618bff19af28a280449a1fd35f8cbd743b04ba0763b7e698ca5b25884fe7faf5",
+            "bytes": 3110
+          },
+          {
+            "path": "retrieval-rounds/accumulated-pool.json",
+            "sha256": "ac1df649684a9ecefa2862690f8173815e0840aad524f81f0b7d5a340c835adb",
+            "bytes": 5093
+          },
+          {
+            "path": "retrieval-rounds/round-1/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "retrieval-rounds/round-2/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "source-group-selection-decision.json",
+            "sha256": "011049e6ce84b66935df37ec69de11a0fcab8764697a4441b324989bc36238e3",
+            "bytes": 4599
+          },
+          {
+            "path": "targeted-requery-actions.json",
+            "sha256": "631bbec619c6797fbda5a298ac3ba29e32ded72265895cf2f0c9759631c5ecd7",
+            "bytes": 2861
+          },
+          {
+            "path": "targeted-requery-ledger.json",
+            "sha256": "6b7aa0d614c4d4ee8ffb5028c29f827ebeb5568c1dca6b17b59e5501ccc3f8d2",
+            "bytes": 695
+          },
+          {
+            "path": "targeted-requery-resolution.json",
+            "sha256": "326ea5fef3d0dfbd1af701c1fa0781f7812ddc60fcb7d5f7c643b3d0352c7d6b",
+            "bytes": 1207
+          },
+          {
+            "path": "targeted-requery-subphase/action-17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61/retrieval-pool.json",
+            "sha256": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+            "bytes": 2753
+          },
+          {
+            "path": "zhihu/100/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/100/answers.json",
+            "sha256": "4800f91b66e868cc9777d25a8d48635c2a525fc59de9d19bcfb0a71adb9eb1f8",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/100/answers.md",
+            "sha256": "6bc12bd6b9108da6987180b61e77ed62b36a1257fcc2150a85a26860f5e2597b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/100/handoff.json",
+            "sha256": "66a0b7837b6fc5c89308e5dabb88fca8cd5ec7c7f12ebdd39062fd31a1778db2",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/200/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/200/answers.json",
+            "sha256": "0dcb12e4c69ce9aba5a22e024486f8fa8bc8485abd96e1cb1d82b0787db75f59",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/200/answers.md",
+            "sha256": "15ad5b2025bc4044e2c2f8303d0526e373dce22e6be8c35adb4279e640898a1b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/200/handoff.json",
+            "sha256": "ac3ed33e4371117e8c1bba0bd0a5c5879f9aae826521bcd940ca367b4fe034a9",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/300/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/300/answers.json",
+            "sha256": "fb184ad1bbda91b2d1c47fbbb8dfa239779efd0bc94cb9aa15f4187ce393feab",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/300/answers.md",
+            "sha256": "0edffd40aa0a5d3767089b3813d9a4c849a54a78c7cbdbcc02ed5ab78f7f4b27",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/300/handoff.json",
+            "sha256": "c42cda41c695cb33e415924126109cb2e01c31517cb1a3ec30d30ee763855b4c",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/301/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/301/answers.json",
+            "sha256": "65bbce4bc4d4a9710c84088efc558fc356e953c2d761b9f6ed83fe02fbde63ee",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/301/answers.md",
+            "sha256": "86413a1c8c393a6cc0dd83f7096f1842b9fa1886aad582523afc2739d055a1cd",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/301/handoff.json",
+            "sha256": "2b1c735e6d237a2586f51d049db54c86668dc8c548d594cc95846fb3e77ca5f8",
+            "bytes": 201
+          }
+        ],
+        "providerCounts": {
+          "observed": 6,
+          "expected": 6,
+          "observedTargeted": 2,
+          "expectedTargeted": 2
+        },
+        "lineage": {
+          "valid": true,
+          "failures": [],
+          "joins": [
+            {
+              "gapId": "04c24d8f4071f95082aa69fd69c940c0566c0a20e90105ff0229c0f1f52edf00:0",
+              "targetedActionId": "17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61",
+              "normalizedQuery": "补充资料",
+              "providerScope": [
+                {
+                  "capability": "search",
+                  "providerId": "zhihu-open-platform"
+                },
+                {
+                  "capability": "search",
+                  "providerId": "zhihu_search"
+                }
+              ],
+              "resultArtifact": "targeted-requery-subphase/action-17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61/retrieval-pool.json",
+              "artifactHash": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+              "resultQuestionIds": [
+                "300",
+                "301"
+              ],
+              "reverse": [
+                {
+                  "resultQuestionId": "300",
+                  "targetedActionId": "17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61",
+                  "gapId": "04c24d8f4071f95082aa69fd69c940c0566c0a20e90105ff0229c0f1f52edf00:0",
+                  "finalArtifact": "coverage-final.json"
+                },
+                {
+                  "resultQuestionId": "301",
+                  "targetedActionId": "17339c0c81cc635475448a4a2c1cf6b15ee63c13beb35f679321b8e373616d61",
+                  "gapId": "04c24d8f4071f95082aa69fd69c940c0566c0a20e90105ff0229c0f1f52edf00:0",
+                  "finalArtifact": "coverage-final.json"
+                }
+              ]
+            }
+          ],
+          "integrityVerdict": "PASS"
+        },
+        "requiredAssertions": [
+          {
+            "name": "bidirectional lineage",
+            "result": "PASS"
+          }
+        ]
+      },
+      "positiveAssertion": {
+        "scenarioId": "canonical",
+        "checks": [
+          "bidirectional lineage"
+        ]
+      },
+      "negativeControlRefs": [
+        {
+          "scenarioId": "tampered-pool",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "cf2de74d-0454-4680-b5f8-c4beb6c5f70e",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "tampered committed product refused",
+              "result": "PASS"
+            },
+            {
+              "name": "fault does not pay again",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "stale-binding",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "65baf5d0-04d7-4055-9ff4-66d14bc30960",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "tampered committed product refused",
+              "result": "PASS"
+            },
+            {
+              "name": "fault does not pay again",
+              "result": "PASS"
+            }
+          ]
+        }
+      ],
+      "boundaryLimit": null
+    },
+    {
+      "specItem": "§20-12",
+      "scenarioId": "stale-action",
+      "verdict": "PASS",
+      "reason": "Required principal and negative-control checks passed on their individual recorded occurrences.",
+      "principalRun": {
+        "exactRepoSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+        "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+        "occurrenceId": "46dd6a85-8a0b-4ce4-9676-babce2cd6d9d",
+        "planId": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+        "generation": "46dd6a85-8a0b-4ce4-9676-babce2cd6d9d",
+        "commands": [
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child stale-action --out \"$T14_OUT/stale-action/work\" --phase initial --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "stale-action/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          },
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child stale-action --out \"$T14_OUT/stale-action/work\" --phase stale-negative --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "stale-action/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          },
+          {
+            "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child stale-action --out \"$T14_OUT/stale-action/work\" --phase stale-repaired --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+            "outputDirectoryRef": "stale-action/work",
+            "workingDirectory": "repository-root",
+            "exitCode": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "exitCodes": [
+          0,
+          0,
+          0
+        ],
+        "inputArtifacts": [
+          {
+            "path": "acceptance-input-initial.json",
+            "sha256": "76e4626f5db705eca3fc835f96600efa7bcce1f927ef1f8e8046e27e60a8ee1a",
+            "bytes": 691
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          }
+        ],
+        "outputArtifacts": [
+          {
+            "path": ".p1-commit-staging/coverageState/0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8.json",
+            "sha256": "0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8",
+            "bytes": 4352
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d.json",
+            "sha256": "24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d",
+            "bytes": 3512
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202.json",
+            "sha256": "2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202",
+            "bytes": 1514
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae.json",
+            "sha256": "3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae",
+            "bytes": 3213
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f.json",
+            "sha256": "49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f",
+            "bytes": 2125
+          },
+          {
+            "path": ".p1-commit-staging/coverageState/6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548.json",
+            "sha256": "6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548",
+            "bytes": 4352
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/4bacf419365dd4c9aaff63aeec270da55669d261aa60bfc57dca2f9eae7bff7f.json",
+            "sha256": "4bacf419365dd4c9aaff63aeec270da55669d261aa60bfc57dca2f9eae7bff7f",
+            "bytes": 2861
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/e507a2a07ea893f42b9f6cac6a5883622d7cf913933e0a9025a97612891a100f.json",
+            "sha256": "e507a2a07ea893f42b9f6cac6a5883622d7cf913933e0a9025a97612891a100f",
+            "bytes": 2365
+          },
+          {
+            "path": ".p1-commit-staging/targeted-action-ledger/eb7106294825edb81da7449dda1f10288d6970a60d0b4075f4c857ebbb2c512a.json",
+            "sha256": "eb7106294825edb81da7449dda1f10288d6970a60d0b4075f4c857ebbb2c512a",
+            "bytes": 1546
+          },
+          {
+            "path": ".p1-commit-staging/targeted-resolution-input/d0068d5328718be7b295a3faa37c0317a5daa150da727969ff75252852069e5b.json",
+            "sha256": "d0068d5328718be7b295a3faa37c0317a5daa150da727969ff75252852069e5b",
+            "bytes": 396
+          },
+          {
+            "path": "coverage-final.json",
+            "sha256": "a0c360b97c37ecc1baba4f77cce93f9eb741093e842f553faadaf4756e43d4d3",
+            "bytes": 4858
+          },
+          {
+            "path": "coverage-state.json",
+            "sha256": "9a23f236c282dec275d9b52272e061e46813cbecae57877a7b310cacff2dac5e",
+            "bytes": 4351
+          },
+          {
+            "path": "cross-source-synthesis.json",
+            "sha256": "e463c669750150a3847dd2a9a7b8a1ff29b87a5bcca6d58be1a4e4555d5df6b9",
+            "bytes": 5025
+          },
+          {
+            "path": "events.jsonl",
+            "sha256": "848d88f46a4d9fa770d268f6725c6d91ab8c985d2df7f91e379dc29627bbb1af",
+            "bytes": 5059
+          },
+          {
+            "path": "multi-group-state.json",
+            "sha256": "843c0309abdf5b6441aeacb2bf9e11866d9b43a37c80389c474f2e2e06077e8d",
+            "bytes": 7745
+          },
+          {
+            "path": "orchestration-state.json",
+            "sha256": "a0b1d47cf46d893d03968f7dadee1889d6db4b1c05342e22a90895c21d6a20e5",
+            "bytes": 2309
+          },
+          {
+            "path": "per-group-claims.json",
+            "sha256": "e89b87710a7d25b8a43b4209b7b49434ffc653ead02ef5015248d4e47370979e",
+            "bytes": 4142
+          },
+          {
+            "path": "research-plan.json",
+            "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365",
+            "bytes": 232
+          },
+          {
+            "path": "research-result.json",
+            "sha256": "384cd1e51d0a4af19a1656f3c6d84ef45dc594dcdd5844a768d0176c9ef01cf1",
+            "bytes": 3110
+          },
+          {
+            "path": "retrieval-rounds/accumulated-pool.json",
+            "sha256": "ac1df649684a9ecefa2862690f8173815e0840aad524f81f0b7d5a340c835adb",
+            "bytes": 5093
+          },
+          {
+            "path": "retrieval-rounds/round-1/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "retrieval-rounds/round-2/retrieval-pool.json",
+            "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584",
+            "bytes": 2753
+          },
+          {
+            "path": "source-group-selection-decision.json",
+            "sha256": "011049e6ce84b66935df37ec69de11a0fcab8764697a4441b324989bc36238e3",
+            "bytes": 4599
+          },
+          {
+            "path": "targeted-requery-actions.json",
+            "sha256": "4bacf419365dd4c9aaff63aeec270da55669d261aa60bfc57dca2f9eae7bff7f",
+            "bytes": 2861
+          },
+          {
+            "path": "targeted-requery-ledger.json",
+            "sha256": "48f9e6ba624c029dcae0c95fbf4b0a1eeb2444bc95173d4177f9334b420e3fb1",
+            "bytes": 695
+          },
+          {
+            "path": "targeted-requery-resolution.json",
+            "sha256": "9794571df4429f60b54f45d73058541bec3bb7dbf150d09fb56f398a8b313712",
+            "bytes": 1207
+          },
+          {
+            "path": "targeted-requery-subphase/action-8ecbd4ce80f39b5c53744818082f6704f029df627a51c9a1f709acb54afd446a/retrieval-pool.json",
+            "sha256": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+            "bytes": 2753
+          },
+          {
+            "path": "zhihu/100/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/100/answers.json",
+            "sha256": "4800f91b66e868cc9777d25a8d48635c2a525fc59de9d19bcfb0a71adb9eb1f8",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/100/answers.md",
+            "sha256": "6bc12bd6b9108da6987180b61e77ed62b36a1257fcc2150a85a26860f5e2597b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/100/handoff.json",
+            "sha256": "66a0b7837b6fc5c89308e5dabb88fca8cd5ec7c7f12ebdd39062fd31a1778db2",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/200/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/200/answers.json",
+            "sha256": "0dcb12e4c69ce9aba5a22e024486f8fa8bc8485abd96e1cb1d82b0787db75f59",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/200/answers.md",
+            "sha256": "15ad5b2025bc4044e2c2f8303d0526e373dce22e6be8c35adb4279e640898a1b",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/200/handoff.json",
+            "sha256": "ac3ed33e4371117e8c1bba0bd0a5c5879f9aae826521bcd940ca367b4fe034a9",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/300/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/300/answers.json",
+            "sha256": "fb184ad1bbda91b2d1c47fbbb8dfa239779efd0bc94cb9aa15f4187ce393feab",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/300/answers.md",
+            "sha256": "0edffd40aa0a5d3767089b3813d9a4c849a54a78c7cbdbcc02ed5ab78f7f4b27",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/300/handoff.json",
+            "sha256": "c42cda41c695cb33e415924126109cb2e01c31517cb1a3ec30d30ee763855b4c",
+            "bytes": 201
+          },
+          {
+            "path": "zhihu/301/.progress.json",
+            "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46",
+            "bytes": 35
+          },
+          {
+            "path": "zhihu/301/answers.json",
+            "sha256": "65bbce4bc4d4a9710c84088efc558fc356e953c2d761b9f6ed83fe02fbde63ee",
+            "bytes": 330
+          },
+          {
+            "path": "zhihu/301/answers.md",
+            "sha256": "86413a1c8c393a6cc0dd83f7096f1842b9fa1886aad582523afc2739d055a1cd",
+            "bytes": 100
+          },
+          {
+            "path": "zhihu/301/handoff.json",
+            "sha256": "2b1c735e6d237a2586f51d049db54c86668dc8c548d594cc95846fb3e77ca5f8",
+            "bytes": 201
+          }
+        ],
+        "providerCounts": {
+          "observed": 6,
+          "expected": 6,
+          "observedTargeted": 2,
+          "expectedTargeted": 2
+        },
+        "lineage": {
+          "valid": true,
+          "failures": [],
+          "joins": [
+            {
+              "gapId": "a6c898323d97078d10b5cf97064eb9667b99ad40e9a6d45c8a9e369cea7e1a1b:0",
+              "targetedActionId": "8ecbd4ce80f39b5c53744818082f6704f029df627a51c9a1f709acb54afd446a",
+              "normalizedQuery": "补充资料",
+              "providerScope": [
+                {
+                  "capability": "search",
+                  "providerId": "zhihu-open-platform"
+                },
+                {
+                  "capability": "search",
+                  "providerId": "zhihu_search"
+                }
+              ],
+              "resultArtifact": "targeted-requery-subphase/action-8ecbd4ce80f39b5c53744818082f6704f029df627a51c9a1f709acb54afd446a/retrieval-pool.json",
+              "artifactHash": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+              "resultQuestionIds": [
+                "300",
+                "301"
+              ],
+              "reverse": [
+                {
+                  "resultQuestionId": "300",
+                  "targetedActionId": "8ecbd4ce80f39b5c53744818082f6704f029df627a51c9a1f709acb54afd446a",
+                  "gapId": "a6c898323d97078d10b5cf97064eb9667b99ad40e9a6d45c8a9e369cea7e1a1b:0",
+                  "finalArtifact": "coverage-final.json"
+                },
+                {
+                  "resultQuestionId": "301",
+                  "targetedActionId": "8ecbd4ce80f39b5c53744818082f6704f029df627a51c9a1f709acb54afd446a",
+                  "gapId": "a6c898323d97078d10b5cf97064eb9667b99ad40e9a6d45c8a9e369cea7e1a1b:0",
+                  "finalArtifact": "coverage-final.json"
+                }
+              ]
+            }
+          ],
+          "integrityVerdict": "PASS"
+        },
+        "staleActionEvidence": {
+          "valid": true,
+          "faultResult": {
+            "ok": false,
+            "code": "state_invalid",
+            "details": "completed targeted action ledger is not checkpoint-bound to this occurrence"
+          },
+          "controlResult": {
+            "ok": true,
+            "reused": true,
+            "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+            "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b"
+          },
+          "rejectionReason": "completed targeted action ledger is not checkpoint-bound to this occurrence",
+          "faultProviderCallDelta": 0,
+          "expectedOccurrenceId": "46dd6a85-8a0b-4ce4-9676-babce2cd6d9d",
+          "presentedOccurrenceId": "stale-46dd6a85-8a0b-4ce4-9676-babce2cd6d9d",
+          "checkpointBeforeHash": "a0b1d47cf46d893d03968f7dadee1889d6db4b1c05342e22a90895c21d6a20e5",
+          "checkpointFaultHash": "1556e46f61dbe114b84ea940cbeec46f779d9e29d96e5843d2d6d301be56e5b0",
+          "checkpointRestoredHash": "a0b1d47cf46d893d03968f7dadee1889d6db4b1c05342e22a90895c21d6a20e5",
+          "restorationProviderCallDelta": 0,
+          "originalCommitCount": 1,
+          "restoredCommitCount": 1
+        },
+        "requiredAssertions": [
+          {
+            "name": "stale action occurrence checker refuses",
+            "result": "PASS"
+          },
+          {
+            "name": "stale action negative has zero provider delta",
+            "result": "PASS"
+          },
+          {
+            "name": "stale action restored checkpoint control reuses at zero IO",
+            "result": "PASS"
+          },
+          {
+            "name": "stale action checkpoint bytes restored",
+            "result": "PASS"
+          },
+          {
+            "name": "stale action does not pay again or duplicate COMMIT",
+            "result": "PASS"
+          },
+          {
+            "name": "bidirectional lineage",
+            "result": "PASS"
+          }
+        ]
+      },
+      "positiveAssertion": {
+        "scenarioId": "stale-action",
+        "checks": [
+          "stale action occurrence checker refuses",
+          "stale action negative has zero provider delta",
+          "stale action restored checkpoint control reuses at zero IO",
+          "stale action checkpoint bytes restored",
+          "stale action does not pay again or duplicate COMMIT",
+          "bidirectional lineage"
+        ]
+      },
+      "negativeControlRefs": [
+        {
+          "scenarioId": "stale-binding",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "65baf5d0-04d7-4055-9ff4-66d14bc30960",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "tampered committed product refused",
+              "result": "PASS"
+            },
+            {
+              "name": "fault does not pay again",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "tampered-pool",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "cf2de74d-0454-4680-b5f8-c4beb6c5f70e",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "tampered committed product refused",
+              "result": "PASS"
+            },
+            {
+              "name": "fault does not pay again",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "equivalent-query",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "b7a9f2d4-bfb4-4817-8272-07e6ab20c4a8",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "equivalent completed replay zero IO",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "missing-resolution",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "2cfe121a-ff91-4cf5-b1d8-d2024eee75f4",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "tampered committed product refused",
+              "result": "PASS"
+            },
+            {
+              "name": "fault does not pay again",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "tampered-resolution",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "99679f54-edca-4c3b-97a3-60d6220e778a",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "tampered committed product refused",
+              "result": "PASS"
+            },
+            {
+              "name": "fault does not pay again",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "foreign-resolution",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "5b332f60-c5d1-4f82-90dc-b2d9ae47ad6f",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "tampered committed product refused",
+              "result": "PASS"
+            },
+            {
+              "name": "fault does not pay again",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "scenarioId": "canonical-ledger-drift",
+          "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+          "occurrenceId": "1c5f4698-9171-4f81-a3a8-14aa4cbb1e3d",
+          "verdict": "PASS",
+          "checks": [
+            {
+              "name": "canonical ledger is not a replay credential",
+              "result": "PASS"
+            },
+            {
+              "name": "bidirectional lineage",
+              "result": "PASS"
+            }
+          ]
+        }
+      ],
+      "boundaryLimit": null
+    },
+    {
+      "specItem": "§20-13",
+      "scenarioId": "OUT_OF_SCOPE",
+      "verdict": "OUT_OF_SCOPE",
+      "reason": "Owner T15/#127. No research quality or value claim is made.",
+      "principalRun": "NOT_APPLICABLE",
+      "positiveAssertion": "OUT_OF_SCOPE",
+      "negativeControlRefs": []
+    }
+  ]
+}

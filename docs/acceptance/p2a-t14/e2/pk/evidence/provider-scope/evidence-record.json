@@ -1,0 +1,455 @@
+{
+  "schema": "p2a-t14-occurrence-evidence/v1",
+  "scenarioId": "provider-scope",
+  "exactRepoSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+  "sourceDirty": [],
+  "nodeVersion": "v26.10.0",
+  "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+  "occurrenceId": "8dfb0756-093e-4d58-a8b6-6baf00bfb09a",
+  "planId": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+  "generation": "8dfb0756-093e-4d58-a8b6-6baf00bfb09a",
+  "commands": [
+    {
+      "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child provider-scope --out \"$T14_OUT/provider-scope/work\" --phase initial --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+      "outputDirectoryRef": "provider-scope/work",
+      "workingDirectory": "repository-root",
+      "exitCode": 0,
+      "signal": null,
+      "error": null
+    }
+  ],
+  "inputArtifacts": [
+    {
+      "path": "acceptance-input-initial.json",
+      "bytes": 757,
+      "sha256": "ad921a9a0713d9d68efc42045fb49abe0f3060f4a8b81c96559909185f002499"
+    },
+    {
+      "path": "research-plan.json",
+      "bytes": 232,
+      "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365"
+    }
+  ],
+  "outputArtifacts": [
+    {
+      "path": ".p1-commit-staging/coverageState/0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8.json",
+      "bytes": 4352,
+      "sha256": "0ba29632848fe927f48f6706ad1fb540fbbc92140cb24ed2d4331d4c20ee7dc8"
+    },
+    {
+      "path": ".p1-commit-staging/coverageState/24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d.json",
+      "bytes": 3512,
+      "sha256": "24309bc7424895fb7b65455f05308fefb342e60fbb31cc4f26a411d4cf2fc53d"
+    },
+    {
+      "path": ".p1-commit-staging/coverageState/2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202.json",
+      "bytes": 1514,
+      "sha256": "2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202"
+    },
+    {
+      "path": ".p1-commit-staging/coverageState/3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae.json",
+      "bytes": 3213,
+      "sha256": "3a68380396235e2dc25c2c42fb3e505194cc91ed73ce4cb7c229b1b4ee09f0ae"
+    },
+    {
+      "path": ".p1-commit-staging/coverageState/49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f.json",
+      "bytes": 2125,
+      "sha256": "49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f"
+    },
+    {
+      "path": ".p1-commit-staging/coverageState/6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548.json",
+      "bytes": 4352,
+      "sha256": "6003c3b543cd1aa69aed8c6b6fde6d57cb73034d46111cd9e1049d01c942c548"
+    },
+    {
+      "path": ".p1-commit-staging/targeted-action-ledger/19a81a559cd58b280a42347be3d543568ae38b7c243dffe843dc2e031b2b8645.json",
+      "bytes": 2760,
+      "sha256": "19a81a559cd58b280a42347be3d543568ae38b7c243dffe843dc2e031b2b8645"
+    },
+    {
+      "path": ".p1-commit-staging/targeted-action-ledger/1da71a3d7f4c807ac638265a06b9b8dc0fe8b8a1368fa0040a89c9de486562b5.json",
+      "bytes": 1445,
+      "sha256": "1da71a3d7f4c807ac638265a06b9b8dc0fe8b8a1368fa0040a89c9de486562b5"
+    },
+    {
+      "path": ".p1-commit-staging/targeted-action-ledger/44b7adae7e16b1831f0f9fa3ecf4c083afa483214a0e0c169360bce4f1b0a0e7.json",
+      "bytes": 2264,
+      "sha256": "44b7adae7e16b1831f0f9fa3ecf4c083afa483214a0e0c169360bce4f1b0a0e7"
+    },
+    {
+      "path": ".p1-commit-staging/targeted-resolution-input/483700142cb534e101fcca3c513dd53044cd59d0bd6eab3bc49b0152d1c8e927.json",
+      "bytes": 396,
+      "sha256": "483700142cb534e101fcca3c513dd53044cd59d0bd6eab3bc49b0152d1c8e927"
+    },
+    {
+      "path": "coverage-final.json",
+      "bytes": 4733,
+      "sha256": "6f7ca1d1f0449cc22a8c553b6c6af354a1c8d5a83d224b6db3e3b56575b48eeb"
+    },
+    {
+      "path": "coverage-state.json",
+      "bytes": 4351,
+      "sha256": "9a23f236c282dec275d9b52272e061e46813cbecae57877a7b310cacff2dac5e"
+    },
+    {
+      "path": "cross-source-synthesis.json",
+      "bytes": 5025,
+      "sha256": "e463c669750150a3847dd2a9a7b8a1ff29b87a5bcca6d58be1a4e4555d5df6b9"
+    },
+    {
+      "path": "events.jsonl",
+      "bytes": 5059,
+      "sha256": "2849b7dcbf7c23cb4dbc29eccc7b4007149aff6d6b59fb60cf863b931f5e6c0e"
+    },
+    {
+      "path": "multi-group-state.json",
+      "bytes": 7745,
+      "sha256": "04ffac23ddcbec367990393582fe41b85aea7add4352434c8f8312b1349f58fd"
+    },
+    {
+      "path": "orchestration-state.json",
+      "bytes": 2309,
+      "sha256": "705a3cd97877c3ebfbc8428589ea5066ba79a955ed39c201129242a5e3c827cb"
+    },
+    {
+      "path": "per-group-claims.json",
+      "bytes": 4142,
+      "sha256": "e89b87710a7d25b8a43b4209b7b49434ffc653ead02ef5015248d4e47370979e"
+    },
+    {
+      "path": "research-plan.json",
+      "bytes": 232,
+      "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365"
+    },
+    {
+      "path": "research-result.json",
+      "bytes": 2985,
+      "sha256": "ca9e66a76dc6e2fe38e9e4a9eaaee515da20b12279e643d072badc06b353c351"
+    },
+    {
+      "path": "retrieval-rounds/accumulated-pool.json",
+      "bytes": 4095,
+      "sha256": "e164045abe2be64f731db413433cb73f1c97d1e46e90cdaf2870cc19dda34a70"
+    },
+    {
+      "path": "retrieval-rounds/round-1/retrieval-pool.json",
+      "bytes": 2753,
+      "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584"
+    },
+    {
+      "path": "retrieval-rounds/round-2/retrieval-pool.json",
+      "bytes": 2753,
+      "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584"
+    },
+    {
+      "path": "source-group-selection-decision.json",
+      "bytes": 4043,
+      "sha256": "e3eca9cff07a1914ddd7cec9b830fc711541a79049f697067109402be473b03e"
+    },
+    {
+      "path": "targeted-requery-actions.json",
+      "bytes": 2760,
+      "sha256": "19a81a559cd58b280a42347be3d543568ae38b7c243dffe843dc2e031b2b8645"
+    },
+    {
+      "path": "targeted-requery-ledger.json",
+      "bytes": 695,
+      "sha256": "3ddb04f59fd50ba6d6402e78c368bfec8caa8d25e11953e6d76d4b6d7178e00d"
+    },
+    {
+      "path": "targeted-requery-resolution.json",
+      "bytes": 1207,
+      "sha256": "8e068a54391efccd0845f6173064cda0a16a5f48d265f9c9112756291db17865"
+    },
+    {
+      "path": "targeted-requery-subphase/action-28d256c38a81921c3aa8783db5d7400dc013e77115cf03ea480878fdc7787966/retrieval-pool.json",
+      "bytes": 1755,
+      "sha256": "8e1db066b0abc62f37cd46a7775d6dc08e589d56f7a35b7d2f91f9cd1e94e784"
+    },
+    {
+      "path": "zhihu/100/.progress.json",
+      "bytes": 35,
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "zhihu/100/answers.json",
+      "bytes": 330,
+      "sha256": "4800f91b66e868cc9777d25a8d48635c2a525fc59de9d19bcfb0a71adb9eb1f8"
+    },
+    {
+      "path": "zhihu/100/answers.md",
+      "bytes": 100,
+      "sha256": "6bc12bd6b9108da6987180b61e77ed62b36a1257fcc2150a85a26860f5e2597b"
+    },
+    {
+      "path": "zhihu/100/handoff.json",
+      "bytes": 201,
+      "sha256": "66a0b7837b6fc5c89308e5dabb88fca8cd5ec7c7f12ebdd39062fd31a1778db2"
+    },
+    {
+      "path": "zhihu/200/.progress.json",
+      "bytes": 35,
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "zhihu/200/answers.json",
+      "bytes": 330,
+      "sha256": "0dcb12e4c69ce9aba5a22e024486f8fa8bc8485abd96e1cb1d82b0787db75f59"
+    },
+    {
+      "path": "zhihu/200/answers.md",
+      "bytes": 100,
+      "sha256": "15ad5b2025bc4044e2c2f8303d0526e373dce22e6be8c35adb4279e640898a1b"
+    },
+    {
+      "path": "zhihu/200/handoff.json",
+      "bytes": 201,
+      "sha256": "ac3ed33e4371117e8c1bba0bd0a5c5879f9aae826521bcd940ca367b4fe034a9"
+    },
+    {
+      "path": "zhihu/300/.progress.json",
+      "bytes": 35,
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "zhihu/300/answers.json",
+      "bytes": 330,
+      "sha256": "fb184ad1bbda91b2d1c47fbbb8dfa239779efd0bc94cb9aa15f4187ce393feab"
+    },
+    {
+      "path": "zhihu/300/answers.md",
+      "bytes": 100,
+      "sha256": "0edffd40aa0a5d3767089b3813d9a4c849a54a78c7cbdbcc02ed5ab78f7f4b27"
+    },
+    {
+      "path": "zhihu/300/handoff.json",
+      "bytes": 201,
+      "sha256": "c42cda41c695cb33e415924126109cb2e01c31517cb1a3ec30d30ee763855b4c"
+    },
+    {
+      "path": "zhihu/301/.progress.json",
+      "bytes": 35,
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "zhihu/301/answers.json",
+      "bytes": 330,
+      "sha256": "65bbce4bc4d4a9710c84088efc558fc356e953c2d761b9f6ed83fe02fbde63ee"
+    },
+    {
+      "path": "zhihu/301/answers.md",
+      "bytes": 100,
+      "sha256": "86413a1c8c393a6cc0dd83f7096f1842b9fa1886aad582523afc2739d055a1cd"
+    },
+    {
+      "path": "zhihu/301/handoff.json",
+      "bytes": 201,
+      "sha256": "2b1c735e6d237a2586f51d049db54c86668dc8c548d594cc95846fb3e77ca5f8"
+    }
+  ],
+  "observedProviderCallCount": 5,
+  "expectedTargetedProviderCallCount": 1,
+  "observedTargetedProviderCallCount": 1,
+  "expectedProviderCallCount": 5,
+  "initialTargetedProviderCallCount": 1,
+  "replay": null,
+  "fault": null,
+  "controllerControls": null,
+  "crashResolution": null,
+  "checks": [
+    {
+      "name": "child execution",
+      "pass": true,
+      "actual": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child provider-scope --out \"$T14_OUT/provider-scope/work\" --phase initial --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+          "outputDirectoryRef": "provider-scope/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "expected": null
+    },
+    {
+      "name": "targeted provider calls",
+      "pass": true,
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "name": "all provider calls",
+      "pass": true,
+      "actual": 5,
+      "expected": 5
+    },
+    {
+      "name": "no runtime or provider fallback",
+      "pass": true,
+      "actual": null,
+      "expected": null
+    },
+    {
+      "name": "composition completed",
+      "pass": true,
+      "actual": null,
+      "expected": true
+    },
+    {
+      "name": "all durable gaps visible",
+      "pass": true,
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "name": "controller before targeted IO",
+      "pass": true,
+      "actual": null,
+      "expected": null
+    },
+    {
+      "name": "bidirectional lineage",
+      "pass": true,
+      "actual": [],
+      "expected": null
+    }
+  ],
+  "lineage": {
+    "valid": true,
+    "failures": [],
+    "joins": [
+      {
+        "gapId": "6e7459bb55176070cd05184eba6dca0dc82c03465b73252e504ee1e5b752d14a:0",
+        "targetedActionId": "28d256c38a81921c3aa8783db5d7400dc013e77115cf03ea480878fdc7787966",
+        "normalizedQuery": "补充资料",
+        "providerScope": [
+          {
+            "capability": "search",
+            "providerId": "zhihu_search"
+          }
+        ],
+        "resultArtifact": "targeted-requery-subphase/action-28d256c38a81921c3aa8783db5d7400dc013e77115cf03ea480878fdc7787966/retrieval-pool.json",
+        "artifactHash": "8e1db066b0abc62f37cd46a7775d6dc08e589d56f7a35b7d2f91f9cd1e94e784",
+        "resultQuestionIds": [
+          "300",
+          "301"
+        ],
+        "reverse": [
+          {
+            "resultQuestionId": "300",
+            "targetedActionId": "28d256c38a81921c3aa8783db5d7400dc013e77115cf03ea480878fdc7787966",
+            "gapId": "6e7459bb55176070cd05184eba6dca0dc82c03465b73252e504ee1e5b752d14a:0",
+            "finalArtifact": "coverage-final.json"
+          },
+          {
+            "resultQuestionId": "301",
+            "targetedActionId": "28d256c38a81921c3aa8783db5d7400dc013e77115cf03ea480878fdc7787966",
+            "gapId": "6e7459bb55176070cd05184eba6dca0dc82c03465b73252e504ee1e5b752d14a:0",
+            "finalArtifact": "coverage-final.json"
+          }
+        ]
+      }
+    ]
+  },
+  "result": {
+    "ok": true,
+    "result": {
+      "schemaVersion": 1,
+      "type": "p1-research-result",
+      "ok": true,
+      "topic": "定向检索工程验收",
+      "mode": "p1-cross-question-deep-research",
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+      "runtime": {
+        "runtimeId": "deepseek-api-tool-less",
+        "model": "deepseek-v4-pro"
+      },
+      "disclosure": {
+        "pipeline": "p1-cross-question-deep-research",
+        "stage": "FINAL_COVERAGE_RECONCILIATION",
+        "isFullCoverage": true,
+        "complete": true,
+        "analysisCoverage": {
+          "selectedCount": 4,
+          "mappedCount": 4,
+          "analyzedCount": 4
+        },
+        "retrieval": {
+          "retrievalRounds": 2,
+          "stopReason": "zero_new_candidates",
+          "fusedCandidateCount": 4,
+          "fusedGroupCount": 4,
+          "providerFailureCount": 0
+        },
+        "gap": null
+      },
+      "targetedResearchGaps": {
+        "schema": "p2a-targeted-research-gaps/v1",
+        "gapCount": 1,
+        "resolvedCount": 1,
+        "unresolvedCount": 0,
+        "exhaustedWithinBudgetCount": 0,
+        "lineageComplete": true,
+        "gaps": [
+          {
+            "gapId": "6e7459bb55176070cd05184eba6dca0dc82c03465b73252e504ee1e5b752d14a:0",
+            "gapIdentityCore": "6e7459bb55176070cd05184eba6dca0dc82c03465b73252e504ee1e5b752d14a",
+            "lineage": [
+              {
+                "actionStatus": "RESOLVED",
+                "attempt": 1,
+                "providerScope": [
+                  {
+                    "capability": "search",
+                    "providerId": "zhihu_search"
+                  }
+                ],
+                "query": "补充资料",
+                "resultArtifact": "targeted-requery-subphase/action-28d256c38a81921c3aa8783db5d7400dc013e77115cf03ea480878fdc7787966/retrieval-pool.json",
+                "targetedActionId": "28d256c38a81921c3aa8783db5d7400dc013e77115cf03ea480878fdc7787966"
+              }
+            ],
+            "lineageComplete": true,
+            "missingActionIds": [],
+            "occurrenceId": "8dfb0756-093e-4d58-a8b6-6baf00bfb09a",
+            "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+            "resolutionBasis": "NEW_EVIDENCE_ATTRIBUTED",
+            "resolutionEvidence": [
+              "300",
+              "301"
+            ],
+            "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+            "status": "RESOLVED"
+          }
+        ]
+      },
+      "verification": {
+        "valid": true,
+        "basis": {
+          "t14PreSynthesisGuard": "PASS",
+          "t15FinalReconciliation": "PASS",
+          "groupsVerified": "4/4",
+          "analysisCoverage": {
+            "selectedCount": 4,
+            "mappedCount": 4,
+            "analyzedCount": 4
+          }
+        }
+      },
+      "artifacts": {
+        "researchPlan": "research-plan.json",
+        "selectionDecision": "source-group-selection-decision.json",
+        "coverageState": "coverage-state.json",
+        "coverageFinal": "coverage-final.json",
+        "perGroupClaims": "per-group-claims.json",
+        "synthesis": "cross-source-synthesis.json",
+        "researchResult": "research-result.json"
+      }
+    },
+    "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+    "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b"
+  },
+  "verdict": "PASS"
+}

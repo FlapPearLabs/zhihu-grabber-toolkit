@@ -1,0 +1,66 @@
+[
+  {
+    "version": "base",
+    "case": "integer",
+    "ok": true,
+    "code": null,
+    "details": null,
+    "targetedCalls": 2
+  },
+  {
+    "version": "base",
+    "case": "string",
+    "ok": false,
+    "code": "p1_compose_aborted",
+    "details": "maxQueryBudget must be a positive integer",
+    "targetedCalls": 0
+  },
+  {
+    "version": "base",
+    "case": "infinity",
+    "ok": false,
+    "code": "p1_compose_aborted",
+    "details": "maxQueryBudget must be a positive integer",
+    "targetedCalls": 0
+  },
+  {
+    "version": "base",
+    "case": "object",
+    "ok": false,
+    "code": "p1_compose_aborted",
+    "details": "maxQueryBudget must be a positive integer",
+    "targetedCalls": 0
+  },
+  {
+    "version": "candidate",
+    "case": "integer",
+    "ok": true,
+    "code": null,
+    "details": null,
+    "targetedCalls": 2
+  },
+  {
+    "version": "candidate",
+    "case": "string",
+    "ok": true,
+    "code": null,
+    "details": null,
+    "targetedCalls": 2
+  },
+  {
+    "version": "candidate",
+    "case": "infinity",
+    "ok": true,
+    "code": null,
+    "details": null,
+    "targetedCalls": 2
+  },
+  {
+    "version": "candidate",
+    "case": "object",
+    "ok": true,
+    "code": null,
+    "details": null,
+    "targetedCalls": 2
+  }
+]

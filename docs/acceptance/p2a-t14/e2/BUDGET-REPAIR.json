@@ -1,0 +1,100 @@
+{
+  "schema": "p2a-t14-budget-repair/v1",
+  "previousReviewedHead": "e2f60fd044d4bf45ce03cb7eb12b16c286aab8f0",
+  "producingSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+  "blocker": "Numeric coercion before the original positive-integer gate admitted string/Infinity/valueOf objects.",
+  "repair": "Read policy value once; only a positive integer may be capped by P1. Invalid raw values reach the original strict subphase gate unchanged.",
+  "authorityChange": false,
+  "newSafeIntegerContract": false,
+  "rejectedReviews": [
+    {
+      "role": "CODE_REVIEWER",
+      "path": "rejected-e2f/code.md",
+      "sha256": "fe5896664c8c9bfeef55727775d35ed05fc201db6db1ad09508549dab5bbcb16",
+      "bytes": 2096,
+      "rawBytesPreserved": true,
+      "reviewedHead": "e2f60fd044d4bf45ce03cb7eb12b16c286aab8f0",
+      "verdict": "CHANGES_REQUESTED",
+      "P0": 0,
+      "P1": 0,
+      "P2": 1
+    },
+    {
+      "role": "ARCHITECTURE_SEAM_CONFORMANCE_REVIEWER",
+      "path": "rejected-e2f/architecture.md",
+      "sha256": "9adc4043c1fdc1638bd36e757f19d9d715d5132c92ab484d957db7952260c75e",
+      "bytes": 2266,
+      "rawBytesPreserved": true,
+      "reviewedHead": "e2f60fd044d4bf45ce03cb7eb12b16c286aab8f0",
+      "verdict": "CHANGES_REQUESTED",
+      "P0": 0,
+      "P1": 0,
+      "P2": 1
+    },
+    {
+      "role": "ACCEPTANCE_EVIDENCE_REVIEWER",
+      "path": "rejected-e2f/acceptance.md",
+      "sha256": "cfb860c4ebee3112471f3736dc43cba3ff28c4e9170fac069a2cc3908f50d904",
+      "bytes": 5284,
+      "rawBytesPreserved": true,
+      "reviewedHead": "e2f60fd044d4bf45ce03cb7eb12b16c286aab8f0",
+      "verdict": "CHANGES_REQUESTED",
+      "P0": 0,
+      "P1": 0,
+      "P2": 1
+    }
+  ],
+  "baseHeadProbe": {
+    "path": "rejected-e2f/budget-probe.json",
+    "sha256": "21da924a0f3c85f86d52797b09854c2a5fc55ed8fb0d78cb0ce38fc8f76d32c6",
+    "bytes": 1253,
+    "rawBytesPreserved": true
+  },
+  "red": {
+    "sourceClass": "WORKING_TREE_SUPPORTING_WITH_PRODUCT_BYTES_AT_E2F",
+    "testFileUncommittedAtObservation": true,
+    "actualExitCode": 1,
+    "tests": 7,
+    "pass": 3,
+    "fail": 4,
+    "skip": 0,
+    "rawLogSha256": "b9a735a28408eb154551809b668ee9f8ca7ee5542a6d1de68edffb9bd8f2ac90",
+    "portableLog": "controls/budget-type-red.log",
+    "portableLogSha256": "3637400a5ae62ace0617e7a9e5f8ffbc01dea906604acc13e31601e0cf78811b",
+    "redaction": "Only the known source checkout prefix is replaced by <candidate-root>; raw original remains in temporary output."
+  },
+  "green": {
+    "sourceClass": "WORKING_TREE_SUPPORTING_BEFORE_D7D_COMMIT",
+    "actualExitCode": 0,
+    "tests": 83,
+    "pass": 83,
+    "fail": 0,
+    "skip": 0,
+    "rawLogSha256": "f0a6454c83a98188325ec912886ed25b5136fbfd9d781d32ff64e3ae818ddc6c",
+    "portableLog": "controls/budget-type-green.log",
+    "portableLogSha256": "f0a6454c83a98188325ec912886ed25b5136fbfd9d781d32ff64e3ae818ddc6c"
+  },
+  "unifiedExactShaRerun": {
+    "producingSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+    "scenarios": 25,
+    "matrix": {
+      "pass": 12,
+      "fail": 0,
+      "notProven": 0,
+      "outOfScope": 1
+    },
+    "exitCode": 0
+  },
+  "freshReviewRequired": true,
+  "reviewInheritance": false,
+  "reviewRouting": {
+    "authority": "DIRECT_USER_INSTRUCTION_2026-10-08",
+    "userInstruction": "更新记忆，如果是小的修复就不需要和大修复一样三角色重新审查了太浪费了",
+    "scope": "NARROW_BUDGET_TYPE_REPAIR_AFTER_THREE_ROLE_REVIEW",
+    "requiredFreshReview": "ONE_FRESH_CODE_REVIEWER_ON_FINAL_EXACT_SHA_PLUS_AFFECTED_VALIDATION",
+    "decisionRef": "e2/REVIEW-ROUTING.md",
+    "previousReceiptsRemain": "CHANGES_REQUESTED_AT_E2F",
+    "reviewInheritance": false,
+    "newFixedGlobalQuorum": false
+  }
+}

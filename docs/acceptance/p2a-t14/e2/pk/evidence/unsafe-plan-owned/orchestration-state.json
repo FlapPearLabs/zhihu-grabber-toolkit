@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+  "occurrenceId": "a7548a4b-c986-4e70-99d6-6c61b5f77d30",
+  "topic": "定向检索工程验收",
+  "mode": "p1-cross-question-deep-research",
+  "percent": null,
+  "runtime": "deepseek-api-tool-less",
+  "configFingerprint": null,
+  "forceQuestionId": null,
+  "stage": "COMPLETE",
+  "completedStages": [
+    "SEARCH",
+    "SELECT",
+    "CAPTURE",
+    "ANALYZE",
+    "RENDER"
+  ],
+  "selectedQuestionId": null,
+  "selection": null,
+  "artifacts": {
+    "researchPlan": "research-plan.json",
+    "selectionDecision": "source-group-selection-decision.json",
+    "coverageState": "coverage-state.json",
+    "coverageFinal": "coverage-final.json",
+    "perGroupClaims": "per-group-claims.json",
+    "synthesis": "cross-source-synthesis.json",
+    "researchResult": "research-result.json"
+  },
+  "hashes": {
+    "targeted-action-ledger": "ef491378b7d85eb572564c726ca52be362b8f00fb9fcef731dcb7f0883b39e56",
+    "researchPlan": "45ef1eda5431f6323e1a4ca20264cca51218280dc285a2bd5f0ca3d07f1697d7",
+    "coverageState": "ea424c729e2818d0f78cb279978f5c1ea500b1fca311a0ca8cc9a3ffa54813d7",
+    "coverageFinal": "88346439f8c344cf4966ebaf5921a68984111b923ee04044a2bd865076553f37",
+    "perGroupClaims": "15004dd930cd74de40c19fcd71e984357033050c6c951591d70066e7e4033ae3",
+    "synthesis": "7e035ebd6a2a67a993343a107a882cee0ed5aedad21f09c16366ee2f0cb4331c",
+    "researchResult": "269338d86292757c0030cddcf8b45f643e8a9362751fd87dc1ee0758ff64a744",
+    "accumulatedPool": "a73b3b6aab32e66ee1d60c54d40dab1ea4cb84c854affbf105113b2d7586f202",
+    "selectionDecision": "9642357c0213218e4726400e47617eb07a9b6bdfbbea33070614a42ba821f98b"
+  },
+  "verification": null,
+  "coverage": {
+    "is100PercentAnalysis": true,
+    "selectedCount": 2,
+    "analyzedCount": 2
+  },
+  "p1FinalCoveragePlanHash": "27f78acc28d446f7c1ccedaa987b2088d062596f5f8aa9ae4dc2607f3d494bcf",
+  "updatedAt": "2026-10-07T17:47:21.675Z"
+}

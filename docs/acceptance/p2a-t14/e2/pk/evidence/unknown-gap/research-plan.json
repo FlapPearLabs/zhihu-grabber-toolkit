@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "queryVariants": [
+    "基础资料"
+  ],
+  "aspects": [
+    "基础资料"
+  ],
+  "entities": [
+    "基础资料"
+  ],
+  "opposingFramings": [],
+  "terminologyVariants": [],
+  "sourceGroupIntents": []
+}

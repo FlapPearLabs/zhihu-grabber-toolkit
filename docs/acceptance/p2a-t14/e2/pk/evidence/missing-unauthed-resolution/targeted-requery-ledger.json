@@ -1,0 +1,17 @@
+{
+  "diagnosedGaps": [
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 0,
+      "gapId": "ff1e4be8480ff686200d2b8cb4a9086a698eafd0065a7bf27d00946979f329ba:0",
+      "gapIdentityCore": "ff1e4be8480ff686200d2b8cb4a9086a698eafd0065a7bf27d00946979f329ba",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "10ca4a7d-506e-46f5-8613-87e4dcbb8ca4",
+      "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+      "subjectKey": "aspect:补充资料"
+    }
+  ],
+  "occurrenceId": "10ca4a7d-506e-46f5-8613-87e4dcbb8ca4",
+  "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+  "schema": "p2-ari-targeted-requery-ledger/v1"
+}

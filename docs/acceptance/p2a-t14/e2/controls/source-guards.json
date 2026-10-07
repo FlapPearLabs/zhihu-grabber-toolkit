@@ -1,0 +1,76 @@
+{
+  "schema": "p2a-t14-source-guard-controls/v1",
+  "exactRepoSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+  "evidenceClass": "SOURCE_GUARD_NEGATIVE_CONTROL",
+  "isolatedClone": true,
+  "productCampaign": false,
+  "results": [
+    {
+      "control": "missing-head",
+      "exitCode": 1,
+      "signal": null,
+      "errorCode": "T14_EXPECTED_HEAD_REQUIRED",
+      "outputDirectoryCreated": false,
+      "providerIoPossible": false,
+      "caught": true
+    },
+    {
+      "control": "malformed-head",
+      "exitCode": 1,
+      "signal": null,
+      "errorCode": "T14_EXPECTED_HEAD_REQUIRED",
+      "outputDirectoryCreated": false,
+      "providerIoPossible": false,
+      "caught": true
+    },
+    {
+      "control": "foreign-head",
+      "exitCode": 1,
+      "signal": null,
+      "errorCode": "T14_EXPECTED_HEAD_MISMATCH",
+      "outputDirectoryCreated": false,
+      "providerIoPossible": false,
+      "caught": true
+    },
+    {
+      "control": "unstaged",
+      "exitCode": 1,
+      "signal": null,
+      "errorCode": "T14_EXACT_SOURCE_DIRTY",
+      "outputDirectoryCreated": false,
+      "providerIoPossible": false,
+      "caught": true
+    },
+    {
+      "control": "staged",
+      "exitCode": 1,
+      "signal": null,
+      "errorCode": "T14_EXACT_SOURCE_DIRTY",
+      "outputDirectoryCreated": false,
+      "providerIoPossible": false,
+      "caught": true
+    },
+    {
+      "control": "untracked",
+      "exitCode": 1,
+      "signal": null,
+      "errorCode": "T14_EXACT_SOURCE_DIRTY",
+      "outputDirectoryCreated": false,
+      "providerIoPossible": false,
+      "caught": true
+    },
+    {
+      "control": "executing-harness-drift",
+      "exitCode": 1,
+      "signal": null,
+      "errorCode": "T14_EXACT_SOURCE_DIRTY",
+      "outputDirectoryCreated": false,
+      "providerIoPossible": false,
+      "caught": true
+    }
+  ],
+  "counts": {
+    "tested": 7,
+    "caught": 7
+  }
+}

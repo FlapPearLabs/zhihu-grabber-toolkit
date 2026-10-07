@@ -1,0 +1,51 @@
+{
+  "occurrenceId": "9dffb126-ab6a-47b9-9f0a-96bd4c7f095f",
+  "planHash": "c448da7322c29a5eb10ba7510d70c882c5c7f3248fd2b28e8c8afe3610073990",
+  "resolutions": [
+    {
+      "audit": [
+        {
+          "basis": "PER_GAP_BOUND_EXHAUSTED",
+          "event": "EVALUATE",
+          "predicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+          "seq": 1,
+          "status": "EXHAUSTED_WITHIN_BUDGET",
+          "targetedActionId": "dcccde2ac758559e7fe856d6737ab45efc2943bbe0fe707a6f098254f330a3a7"
+        }
+      ],
+      "evaluatedActionIds": [
+        "dcccde2ac758559e7fe856d6737ab45efc2943bbe0fe707a6f098254f330a3a7"
+      ],
+      "gapId": "63bcb1167f912499bae337b0a6f20f8edd6946deb9b4057d1aec658658a66bf5:0",
+      "gapIdentityCore": "63bcb1167f912499bae337b0a6f20f8edd6946deb9b4057d1aec658658a66bf5",
+      "resolutionEvidence": [],
+      "occurrenceId": "9dffb126-ab6a-47b9-9f0a-96bd4c7f095f",
+      "planHash": "c448da7322c29a5eb10ba7510d70c882c5c7f3248fd2b28e8c8afe3610073990",
+      "resolutionBasis": "PER_GAP_BOUND_EXHAUSTED",
+      "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+      "status": "EXHAUSTED_WITHIN_BUDGET"
+    },
+    {
+      "audit": [
+        {
+          "basis": "PER_GAP_BOUND_EXHAUSTED",
+          "event": "EVALUATE",
+          "predicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+          "seq": 1,
+          "status": "EXHAUSTED_WITHIN_BUDGET",
+          "targetedActionId": null
+        }
+      ],
+      "evaluatedActionIds": [],
+      "gapId": "63bcb1167f912499bae337b0a6f20f8edd6946deb9b4057d1aec658658a66bf5:1",
+      "gapIdentityCore": "63bcb1167f912499bae337b0a6f20f8edd6946deb9b4057d1aec658658a66bf5",
+      "resolutionEvidence": [],
+      "occurrenceId": "9dffb126-ab6a-47b9-9f0a-96bd4c7f095f",
+      "planHash": "c448da7322c29a5eb10ba7510d70c882c5c7f3248fd2b28e8c8afe3610073990",
+      "resolutionBasis": "PER_GAP_BOUND_EXHAUSTED",
+      "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+      "status": "EXHAUSTED_WITHIN_BUDGET"
+    }
+  ],
+  "schema": "p2-ari-targeted-requery-resolution/v1"
+}

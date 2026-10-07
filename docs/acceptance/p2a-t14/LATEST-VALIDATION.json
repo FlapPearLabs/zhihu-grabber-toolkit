@@ -1,10 +1,10 @@
 {
   "schema": "p2a-t14-latest-validation/v2",
-  "executableCandidateSha": "4ab4f4e730d1c72dcd3e93d17691324eca8d65b9",
-  "exactCampaignRef": "e1/pk/source-campaign.json",
-  "matrixRef": "e1/matrix.json",
-  "archiveCheckRef": "e1/ARCHIVAL.json",
-  "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --expected-head 4ab4f4e730d1c72dcd3e93d17691324eca8d65b9 --out \"$T14_OUT\"",
+  "executableCandidateSha": "d7d335792df7ddd3fcab179fc7a6b61d6c683e5b",
+  "exactCampaignRef": "e2/pk/source-campaign.json",
+  "matrixRef": "e2/matrix.json",
+  "archiveCheckRef": "e2/ARCHIVAL.json",
+  "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --expected-head d7d335792df7ddd3fcab179fc7a6b61d6c683e5b --out \"$T14_OUT\"",
   "exitCode": 0,
   "scenarioChecks": {
     "pass": 25,
@@ -17,30 +17,16 @@
     "outOfScope": 1
   },
   "acceptanceVerdict": "PENDING_INDEPENDENT_REVIEW",
-  "reviewQuorum": "PENDING_SAME_FINAL_HEAD_THREE_ROLE_REVIEW",
+  "reviewQuorum": "PENDING_ONE_FRESH_CODE_REVIEWER_ON_FINAL_HEAD_PLUS_AFFECTED_VALIDATION",
   "previousIndependentReview": {
-    "role": "ACCEPTANCE_EVIDENCE_REVIEWER",
-    "reviewedHead": "96a4cc3b5b851e29589ecd80cc308baeae3356ca",
-    "reviewVerdict": "CHANGES_REQUESTED",
-    "acceptanceVerdict": "NOT_PROVEN",
-    "counts": {
-      "pass": 9,
-      "fail": 0,
-      "notProven": 3,
-      "outOfScope": 1
-    },
-    "summaryRef": "r96a/reviewer-validation-summary-96a4cc3.json",
-    "archiveRef": "r96a/ARCHIVAL.json",
-    "ordinaryRepairGroups": {
-      "B2": "CLOSED_ON_REVIEWED_HEAD",
-      "B3": "CLOSED_ON_REVIEWED_HEAD"
-    },
-    "remainingAcceptanceBlockerGroups": [
-      "B1"
-    ],
-    "sourceInputsFingerprintCount": 108,
-    "sourceInputsFingerprintMismatches": 0,
-    "newShaDoesNotInheritVerdict": true
+    "reviewedHead": "e2f60fd044d4bf45ce03cb7eb12b16c286aab8f0",
+    "verdict": "CHANGES_REQUESTED",
+    "P0": 0,
+    "P1": 0,
+    "P2": 1,
+    "acceptanceBlockers": 1,
+    "rawReceiptsRef": "e2/rejected-e2f",
+    "ordinaryRepair": "IMPLEMENTED_AWAITING_FRESH_REVIEW"
   },
   "authorityCorrection": "ACCEPTANCE_OVERREACH_CORRECTED: unknown diagnostics are rejected, never promoted to a valid durable unknown gap.",
   "limitedArchitectureAuthorization": "GRANTED_AND_INDEPENDENTLY_APPROVED_BEFORE_IMPLEMENTATION",
@@ -289,7 +275,7 @@
     },
     {
       "path": "research-orchestration/lib/p1-runtime-composer.mjs",
-      "sha256": "36ab9ae5aff10e90d93989dab0a32a1b7886b491fb05581acc023ccaaccdfe5c"
+      "sha256": "970cfe9f589af4d7dd84893eef33ed32e3feff65806bbbf444a3488255a9809e"
     },
     {
       "path": "research-orchestration/lib/per-group-claim-extraction.mjs",
@@ -480,12 +466,23 @@
       "sha256": "1b4966fc3acfa8612f1c49c6cf009076b0b9d3fa6095a7594e18a5299e4d78b2"
     }
   ],
-  "retainedCheckControlsRef": "e1/controls",
+  "retainedCheckControlsRef": "e2/controls",
   "nodeVersion": "v26.10.0",
   "closure": "PENDING_FINAL_GATES",
   "masterIntegration": "NOT_YET_EXECUTED",
   "qualityClaim": "OUT_OF_SCOPE",
   "producingShaPolicy": "The producing SHA remains explicit. A docs/evidence commit does not inherit review. PR #132 and Issue #126 carry the later final same-SHA receipts and post-master fresh-clone evidence.",
   "userDecisionRequired": false,
-  "projectMemoryUpdateRequired": "NO: bounded followup and snapshot contracts are recorded in approved architecture/evidence docs; no generic project authority change."
+  "projectMemoryUpdateRequired": "NO: bounded followup and snapshot contracts are recorded in approved architecture/evidence docs; no generic project authority change.",
+  "budgetRepairRef": "e2/BUDGET-REPAIR.json",
+  "reviewRouting": {
+    "authority": "DIRECT_USER_INSTRUCTION_2026-10-08",
+    "userInstruction": "更新记忆，如果是小的修复就不需要和大修复一样三角色重新审查了太浪费了",
+    "scope": "NARROW_BUDGET_TYPE_REPAIR_AFTER_THREE_ROLE_REVIEW",
+    "requiredFreshReview": "ONE_FRESH_CODE_REVIEWER_ON_FINAL_EXACT_SHA_PLUS_AFFECTED_VALIDATION",
+    "decisionRef": "e2/REVIEW-ROUTING.md",
+    "previousReceiptsRemain": "CHANGES_REQUESTED_AT_E2F",
+    "reviewInheritance": false,
+    "newFixedGlobalQuorum": false
+  }
 }
