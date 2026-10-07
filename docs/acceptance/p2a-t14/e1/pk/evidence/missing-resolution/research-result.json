@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "type": "p1-research-result",
+  "ok": true,
+  "topic": "定向检索工程验收",
+  "mode": "p1-cross-question-deep-research",
+  "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+  "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+  "runtime": {
+    "runtimeId": "deepseek-api-tool-less",
+    "model": "deepseek-v4-pro"
+  },
+  "disclosure": {
+    "pipeline": "p1-cross-question-deep-research",
+    "stage": "FINAL_COVERAGE_RECONCILIATION",
+    "isFullCoverage": true,
+    "complete": true,
+    "analysisCoverage": {
+      "selectedCount": 4,
+      "mappedCount": 4,
+      "analyzedCount": 4
+    },
+    "retrieval": {
+      "retrievalRounds": 2,
+      "stopReason": "zero_new_candidates",
+      "fusedCandidateCount": 4,
+      "fusedGroupCount": 4,
+      "providerFailureCount": 0
+    },
+    "gap": null
+  },
+  "targetedResearchGaps": {
+    "schema": "p2a-targeted-research-gaps/v1",
+    "gapCount": 1,
+    "resolvedCount": 1,
+    "unresolvedCount": 0,
+    "exhaustedWithinBudgetCount": 0,
+    "lineageComplete": true,
+    "gaps": [
+      {
+        "gapId": "3fb0b541f62d2aacf4b42eafdad598a1878e003634235fa7a4692c4b0bcbedb5:0",
+        "gapIdentityCore": "3fb0b541f62d2aacf4b42eafdad598a1878e003634235fa7a4692c4b0bcbedb5",
+        "lineage": [
+          {
+            "actionStatus": "RESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "补充资料",
+            "resultArtifact": "targeted-requery-subphase/action-c7ef8bf6583466a43fdade625c675199692cc72255798b01c81046d911d2358f/retrieval-pool.json",
+            "targetedActionId": "c7ef8bf6583466a43fdade625c675199692cc72255798b01c81046d911d2358f"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "fdb1fc70-5f68-4c2a-91cf-73f4eab8bbf1",
+        "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+        "resolutionBasis": "NEW_EVIDENCE_ATTRIBUTED",
+        "resolutionEvidence": [
+          "300",
+          "301"
+        ],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "RESOLVED"
+      }
+    ]
+  },
+  "verification": {
+    "valid": true,
+    "basis": {
+      "t14PreSynthesisGuard": "PASS",
+      "t15FinalReconciliation": "PASS",
+      "groupsVerified": "4/4",
+      "analysisCoverage": {
+        "selectedCount": 4,
+        "mappedCount": 4,
+        "analyzedCount": 4
+      }
+    }
+  },
+  "artifacts": {
+    "researchPlan": "research-plan.json",
+    "selectionDecision": "source-group-selection-decision.json",
+    "coverageState": "coverage-state.json",
+    "coverageFinal": "coverage-final.json",
+    "perGroupClaims": "per-group-claims.json",
+    "synthesis": "cross-source-synthesis.json",
+    "researchResult": "research-result.json"
+  }
+}

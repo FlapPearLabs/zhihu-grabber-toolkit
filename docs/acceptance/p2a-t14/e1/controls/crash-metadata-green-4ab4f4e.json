@@ -1,0 +1,899 @@
+{
+  "schema": "p2a-t14-crash-metadata-controls/v1",
+  "producingCampaignSha": "4ab4f4e730d1c72dcd3e93d17691324eca8d65b9",
+  "evidenceClass": "DATA_FIELD_NEGATIVE_CONTROL",
+  "productRuntimeMutation": false,
+  "baseline": {
+    "pass": 12,
+    "fail": 0,
+    "notProven": 0,
+    "outOfScope": 1
+  },
+  "mutations": [
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "delete-crashResolution",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "delete-resolutionInput",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "delete-bindingHash",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "mismatch-byteHash",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "priorIDs-mismatch",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "status-basis-wrong",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "commit-count-zero",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "preIO-false",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "input-hash-shape-invalid",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "snapshot-priorIDs-missing",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "snapshot-status-metadata-missing",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "foreign-action-snapshot-key",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "targeted-ids-foreign",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "empty-resume-planned-ids",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "zero-snapshot-bytes",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "initial-pool-binding-mismatch",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-input",
+      "mutation": "final-pool-binding-mismatch",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "delete-crashResolution",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "delete-resolutionInput",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "delete-bindingHash",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "mismatch-byteHash",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "priorIDs-mismatch",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "status-basis-wrong",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "commit-count-zero",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "preIO-false",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "input-hash-shape-invalid",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "snapshot-priorIDs-missing",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "snapshot-status-metadata-missing",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "foreign-action-snapshot-key",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "targeted-ids-foreign",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "empty-resume-planned-ids",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "zero-snapshot-bytes",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "initial-pool-binding-mismatch",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-resolution-reverse",
+      "mutation": "final-pool-binding-mismatch",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "delete-crashResolution",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "delete-resolutionInput",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "delete-bindingHash",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "mismatch-byteHash",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "priorIDs-mismatch",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "status-basis-wrong",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "commit-count-zero",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "preIO-false",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "input-hash-shape-invalid",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "snapshot-priorIDs-missing",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "snapshot-status-metadata-missing",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "foreign-action-snapshot-key",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "targeted-ids-foreign",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "empty-resume-planned-ids",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "zero-snapshot-bytes",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "missing-declared-framing",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "missing-covered-framings",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    },
+    {
+      "scenarioId": "crash-framing-drift",
+      "mutation": "false-covered-opposition",
+      "recordedScenarioVerdict": "PASS",
+      "recordedChecksUnchanged": true,
+      "rows": [
+        {
+          "item": "§20-8",
+          "verdict": "FAIL"
+        },
+        {
+          "item": "§20-10",
+          "verdict": "FAIL"
+        }
+      ],
+      "caught": true
+    }
+  ],
+  "uncaught": []
+}

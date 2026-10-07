@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "type": "p1-final-coverage-integration",
+  "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+  "pipeline": "p1-cross-question-deep-research",
+  "stage": "FINAL_COVERAGE_RECONCILIATION",
+  "assertion": {
+    "is100PercentAnalysis": true,
+    "basis": "MECHANICAL_SET_EQUALITY"
+  },
+  "doubleDefense": {
+    "t14PreSynthesisGuard": {
+      "guardResult": "PASS",
+      "selectedVerifiedSourceSetIdentity": "sha256:f7e326f744c9b9962e14553495740a0a62448af8f2f87f810fa544144a3272b4",
+      "mappedAnalyzedSourceSetIdentity": "sha256:f7e326f744c9b9962e14553495740a0a62448af8f2f87f810fa544144a3272b4"
+    },
+    "t15FinalReconciliation": "PASS",
+    "synthesisContract": {
+      "seamVersion": 2,
+      "semanticContractVersion": 2,
+      "synthesisIdentity": "sha256:de20dea962d6eb410536cfbf3ccfceaff72d6719a318f3c8519e4e82f56d68fa",
+      "familyCount": 1,
+      "unresolvedCount": 0,
+      "conflictingFamilyCount": 0,
+      "singleGroupFamilyCount": 0,
+      "multiGroupFamilyCount": 1
+    }
+  },
+  "coverage": {
+    "retrieval": {
+      "retrievalRounds": 2,
+      "stopReason": "zero_new_candidates",
+      "fusedCandidateCount": 3,
+      "fusedGroupCount": 3,
+      "providerFailureCount": 0
+    },
+    "analysisCoverage": {
+      "selectedCorpusSourceSet": [
+        "asrc-81e468602e5b377dc91f52b8",
+        "asrc-efbfd8e816e85d99913069be",
+        "asrc-f63f7a6de45385f0e2802a84"
+      ],
+      "mappedSourceSet": [
+        "asrc-81e468602e5b377dc91f52b8",
+        "asrc-efbfd8e816e85d99913069be",
+        "asrc-f63f7a6de45385f0e2802a84"
+      ],
+      "analyzedSourceSet": [
+        "asrc-81e468602e5b377dc91f52b8",
+        "asrc-efbfd8e816e85d99913069be",
+        "asrc-f63f7a6de45385f0e2802a84"
+      ],
+      "selectedCount": 3,
+      "mappedCount": 3,
+      "analyzedCount": 3,
+      "evidenceRefIssues": {
+        "missingRefs": [],
+        "duplicateRefs": [],
+        "staleRefs": [],
+        "invalidRefs": []
+      }
+    },
+    "sourceCompleteness": {
+      "totalSelectedCount": 3,
+      "totalVerifiedCount": 3,
+      "capturedNotVerifiedCount": 0
+    }
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 1,
+    "new_contradiction_rate": 0,
+    "novelty_gain": 0,
+    "selected_source_group_count": 3,
+    "selected_content_by_group": {
+      "100": 1,
+      "200": 1,
+      "300": 1
+    },
+    "largest_group_share": 0.3333333333333333,
+    "selected_author_concentration": 0,
+    "selected_content_type_distribution": {},
+    "claim_source_diversity": 1,
+    "per_group_selection_coverage": {
+      "100": 1,
+      "200": 1,
+      "300": 1
+    }
+  },
+  "hookConvergenceOrder": [
+    "RETRIEVAL_ROUNDS",
+    "SOURCE_GROUP_SELECTION",
+    "GROUP_EXECUTION",
+    "CORPUS_SELECTION",
+    "PER_GROUP_ANALYSIS",
+    "CROSS_SOURCE_SYNTHESIS",
+    "FINAL_COVERAGE_RECONCILIATION"
+  ],
+  "runtime": {
+    "runtimeId": "deepseek-api-tool-less",
+    "model": "deepseek-v4-pro"
+  },
+  "artifacts": {
+    "coverageState": "coverage-state.json",
+    "finalCoverage": "coverage-final.json",
+    "synthesis": "cross-source-synthesis.json"
+  },
+  "targetedResearchGaps": {
+    "schema": "p2a-targeted-research-gaps/v1",
+    "gapCount": 1,
+    "resolvedCount": 0,
+    "unresolvedCount": 1,
+    "exhaustedWithinBudgetCount": 0,
+    "lineageComplete": true,
+    "gaps": [
+      {
+        "gapId": "b62d4050355761b1bef79ada68f2340593b10ad79762b8bb59ba99ecb296a935:0",
+        "gapIdentityCore": "b62d4050355761b1bef79ada68f2340593b10ad79762b8bb59ba99ecb296a935",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "补充资料",
+            "resultArtifact": "targeted-requery-subphase/action-8157b96745df8b507c7e385183c303ea0dbcd26fc169ba4b5bc010876cb8a4e3/retrieval-pool.json",
+            "targetedActionId": "8157b96745df8b507c7e385183c303ea0dbcd26fc169ba4b5bc010876cb8a4e3"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "351079b1-547d-43d1-a5b1-86ed08b1dd60",
+        "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+        "resolutionBasis": "DUPLICATE_ONLY",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      }
+    ]
+  }
+}

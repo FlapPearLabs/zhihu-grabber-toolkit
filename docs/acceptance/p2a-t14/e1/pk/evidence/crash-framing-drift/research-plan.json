@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "queryVariants": [
+    "framing-a",
+    "framing-b"
+  ],
+  "aspects": [
+    "framing-b"
+  ],
+  "entities": [
+    "framing-b"
+  ],
+  "opposingFramings": [
+    "framing-a",
+    "framing-b"
+  ],
+  "terminologyVariants": [],
+  "sourceGroupIntents": []
+}

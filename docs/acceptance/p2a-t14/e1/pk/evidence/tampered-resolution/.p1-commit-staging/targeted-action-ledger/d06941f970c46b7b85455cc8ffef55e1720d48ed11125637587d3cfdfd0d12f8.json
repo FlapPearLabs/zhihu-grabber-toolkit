@@ -1,0 +1,76 @@
+{
+  "occurrenceId": "8de095b5-fb79-48f2-8006-d7b1bf6d63f9",
+  "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+      "artifactRel": "targeted-requery-subphase/action-480245e790a83513ecb433e4a7eef03ce37c261da9fbc633a8fb273ff7e22c60/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-480245e790a83513ecb433e4a7eef03ce37c261da9fbc633a8fb273ff7e22c60/retrieval-pool.json",
+          "bindingHash": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+          "bindingKey": "targeted-action:480245e790a83513ecb433e4a7eef03ce37c261da9fbc633a8fb273ff7e22c60",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "EVALUATE",
+          "from": "COMMITTED",
+          "reason": null,
+          "seq": 3,
+          "to": "EVALUATED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "CONCLUDE",
+          "from": "EVALUATED",
+          "reason": null,
+          "seq": 4,
+          "to": "RESOLVED"
+        }
+      ],
+      "bindingHash": "0eb3768dee2a0304bd5c9293785dc16e0aa392251c3b3989c647f18dd3ccf781",
+      "bindingKey": "targeted-action:480245e790a83513ecb433e4a7eef03ce37c261da9fbc633a8fb273ff7e22c60",
+      "dedupeKey": "5525b9415e1a5bd5e1d54a591ac3c81a34110b70121c51de2175f928a5ea3641",
+      "gapId": "2aca0185d41cd886e9e55b3c610e3caeaa75e59c117fc3b1c6c2afd6916f77bd:0",
+      "gapIdentityCore": "2aca0185d41cd886e9e55b3c610e3caeaa75e59c117fc3b1c6c2afd6916f77bd",
+      "normalizedQuery": "补充资料",
+      "occurrenceId": "8de095b5-fb79-48f2-8006-d7b1bf6d63f9",
+      "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+      "status": "RESOLVED",
+      "targetedActionId": "480245e790a83513ecb433e4a7eef03ce37c261da9fbc633a8fb273ff7e22c60"
+    }
+  ]
+}

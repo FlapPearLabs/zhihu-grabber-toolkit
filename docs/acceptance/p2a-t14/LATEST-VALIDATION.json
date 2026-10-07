@@ -1,26 +1,51 @@
 {
-  "schema": "p2a-t14-latest-validation/v1",
-  "executableCandidateSha": "19c281d30bc076f2ddd8a5c0c2b474f138ae3d8e",
-  "exactCampaignRef": "evidence-19c281d/source-campaign.json",
-  "matrixRef": "matrix-19c281d.json",
-  "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --out \"$T14_OUT\"",
-  "exitCode": 2,
+  "schema": "p2a-t14-latest-validation/v2",
+  "executableCandidateSha": "4ab4f4e730d1c72dcd3e93d17691324eca8d65b9",
+  "exactCampaignRef": "e1/pk/source-campaign.json",
+  "matrixRef": "e1/matrix.json",
+  "archiveCheckRef": "e1/ARCHIVAL.json",
+  "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --expected-head 4ab4f4e730d1c72dcd3e93d17691324eca8d65b9 --out \"$T14_OUT\"",
+  "exitCode": 0,
   "scenarioChecks": {
-    "pass": 22,
+    "pass": 25,
     "fail": 0
   },
   "engineeringMatrix": {
-    "pass": 9,
+    "pass": 12,
     "fail": 0,
-    "notProven": 3,
+    "notProven": 0,
     "outOfScope": 1
   },
-  "acceptanceVerdict": "NOT_PROVEN",
-  "reviewQuorum": "NOT_PROVEN",
-  "priorRejectedReviewRef": "reviews/acceptance-4cb4de6.md",
-  "archiveCheckRef": "archive-check-19c281d.json",
-  "retainedCheckControlsRef": "retained-check-controls-19c281d.json",
-  "nodeVersion": "v26.10.0",
+  "acceptanceVerdict": "PENDING_INDEPENDENT_REVIEW",
+  "reviewQuorum": "PENDING_SAME_FINAL_HEAD_THREE_ROLE_REVIEW",
+  "previousIndependentReview": {
+    "role": "ACCEPTANCE_EVIDENCE_REVIEWER",
+    "reviewedHead": "96a4cc3b5b851e29589ecd80cc308baeae3356ca",
+    "reviewVerdict": "CHANGES_REQUESTED",
+    "acceptanceVerdict": "NOT_PROVEN",
+    "counts": {
+      "pass": 9,
+      "fail": 0,
+      "notProven": 3,
+      "outOfScope": 1
+    },
+    "summaryRef": "r96a/reviewer-validation-summary-96a4cc3.json",
+    "archiveRef": "r96a/ARCHIVAL.json",
+    "ordinaryRepairGroups": {
+      "B2": "CLOSED_ON_REVIEWED_HEAD",
+      "B3": "CLOSED_ON_REVIEWED_HEAD"
+    },
+    "remainingAcceptanceBlockerGroups": [
+      "B1"
+    ],
+    "sourceInputsFingerprintCount": 108,
+    "sourceInputsFingerprintMismatches": 0,
+    "newShaDoesNotInheritVerdict": true
+  },
+  "authorityCorrection": "ACCEPTANCE_OVERREACH_CORRECTED: unknown diagnostics are rejected, never promoted to a valid durable unknown gap.",
+  "limitedArchitectureAuthorization": "GRANTED_AND_INDEPENDENTLY_APPROVED_BEFORE_IMPLEMENTATION",
+  "architectureApprovalRef": "ARCHITECTURE-APPROVALS.json",
+  "redFirstRef": "RED-FIRST.json",
   "sourceInputs": [
     {
       "path": "corpus-anthology/LICENSE",
@@ -200,7 +225,7 @@
     },
     {
       "path": "research-orchestration/lib/coverage-final-integration.mjs",
-      "sha256": "555e53d742df09ffb2c27d67aa990248ca0f6b20f2bc2892853211e7160a3be6"
+      "sha256": "52ea8e8bc65526d62ca8f999492c92a780e6169a744e315c4b7029bec1713620"
     },
     {
       "path": "research-orchestration/lib/coverage-state.mjs",
@@ -264,7 +289,7 @@
     },
     {
       "path": "research-orchestration/lib/p1-runtime-composer.mjs",
-      "sha256": "1f024009af28b338b1a5a49b5138f2191079af4282a8b909d2ba830a88c75706"
+      "sha256": "36ab9ae5aff10e90d93989dab0a32a1b7886b491fb05581acc023ccaaccdfe5c"
     },
     {
       "path": "research-orchestration/lib/per-group-claim-extraction.mjs",
@@ -364,7 +389,7 @@
     },
     {
       "path": "research-orchestration/lib/targeted-requery-subphase.mjs",
-      "sha256": "561eb13deb5435161a6c55d16db145c71056358aaf6505237187c3ed55b14850"
+      "sha256": "9b674e3740e6cf1a65998bb8b17b9ae5989761ab79887490b629536b1b4e7488"
     },
     {
       "path": "research-orchestration/lib/targeted-requery-trust.mjs",
@@ -372,19 +397,19 @@
     },
     {
       "path": "research-orchestration/scripts/p2a-t14/driver.mjs",
-      "sha256": "0ea2cf150b0a0ffe2fd3b40ad8970f919e0763c96fecfb767021a08bcc6c9e81"
+      "sha256": "80005f710df04e1da5726239cd225480fc90ff3b2f688e98dfef2277f7b4708c"
     },
     {
       "path": "research-orchestration/scripts/p2a-t14/fixtures.mjs",
-      "sha256": "10635a1d77348c758c20df0a9dcfca1d6a6337d9b3de044ac06eff014e8fdedb"
+      "sha256": "c22f27879e369ee8dc61c3074eeeefb9067bae2b5b1384d0cb0849bdea795945"
     },
     {
       "path": "research-orchestration/scripts/p2a-t14/matrix.mjs",
-      "sha256": "527501bc3b5ca4557e2e12a7bb58e356a310c69021f76103e7f6a9eaa4ef14c0"
+      "sha256": "c2ccfaf86ed1cd79b11077c5801b7aa07593297acb8bca9ceb0de9c2f106c8d1"
     },
     {
       "path": "research-orchestration/scripts/p2a-t14/package-evidence.mjs",
-      "sha256": "71e9dda91175c2f2417d4756774c90f4010becaba52d20dec07b4eceb809f833"
+      "sha256": "edecd039baa213e3b035c042fac826c91a2ffc874ebad618c3cafc0ddc5747e6"
     },
     {
       "path": "research-orchestration/test/helpers/p1-seam-contracts.mjs",
@@ -455,35 +480,12 @@
       "sha256": "1b4966fc3acfa8612f1c49c6cf009076b0b9d3fa6095a7594e18a5299e4d78b2"
     }
   ],
-  "closure": "BLOCKED",
-  "masterIntegration": "NOT_ALLOWED",
+  "retainedCheckControlsRef": "e1/controls",
+  "nodeVersion": "v26.10.0",
+  "closure": "PENDING_FINAL_GATES",
+  "masterIntegration": "NOT_YET_EXECUTED",
   "qualityClaim": "OUT_OF_SCOPE",
-  "producingShaPolicy": "This producing SHA remains explicit. Evidence/docs commits do not transfer a review or grant T14 PASS.",
-  "latestReviewedHead": "96a4cc3b5b851e29589ecd80cc308baeae3356ca",
-  "reviewerVerdictRef": "r96a/reviewer-receipt-96a4cc3.md",
-  "independentReview": {
-    "role": "ACCEPTANCE_EVIDENCE_REVIEWER",
-    "reviewedHead": "96a4cc3b5b851e29589ecd80cc308baeae3356ca",
-    "reviewVerdict": "CHANGES_REQUESTED",
-    "acceptanceVerdict": "NOT_PROVEN",
-    "counts": {
-      "pass": 9,
-      "fail": 0,
-      "notProven": 3,
-      "outOfScope": 1
-    },
-    "summaryRef": "r96a/reviewer-validation-summary-96a4cc3.json",
-    "archiveRef": "r96a/ARCHIVAL.json",
-    "ordinaryRepairGroups": {
-      "B2": "CLOSED_ON_REVIEWED_HEAD",
-      "B3": "CLOSED_ON_REVIEWED_HEAD"
-    },
-    "remainingAcceptanceBlockerGroups": [
-      "B1"
-    ],
-    "sourceInputsFingerprintCount": 108,
-    "sourceInputsFingerprintMismatches": 0,
-    "newShaDoesNotInheritVerdict": true
-  },
-  "userDecisionRequired": "Controller-owned diagnostic production seam and same-occurrence bounded subsequent diagnosis/proposal scheduling only; ordinary harness repairs are closed on the reviewed head."
+  "producingShaPolicy": "The producing SHA remains explicit. A docs/evidence commit does not inherit review. PR #132 and Issue #126 carry the later final same-SHA receipts and post-master fresh-clone evidence.",
+  "userDecisionRequired": false,
+  "projectMemoryUpdateRequired": "NO: bounded followup and snapshot contracts are recorded in approved architecture/evidence docs; no generic project authority change."
 }

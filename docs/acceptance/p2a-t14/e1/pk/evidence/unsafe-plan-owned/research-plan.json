@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "queryVariants": [
+    "基础资料"
+  ],
+  "aspects": [
+    "/etc/hosts 文件的作用"
+  ],
+  "entities": [
+    "/etc/hosts 文件的作用"
+  ],
+  "opposingFramings": [],
+  "terminologyVariants": [],
+  "sourceGroupIntents": []
+}

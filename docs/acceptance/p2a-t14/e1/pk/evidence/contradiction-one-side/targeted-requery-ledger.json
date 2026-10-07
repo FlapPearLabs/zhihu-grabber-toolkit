@@ -1,0 +1,17 @@
+{
+  "diagnosedGaps": [
+    {
+      "declaredGapType": "CONTRADICTION_GAP",
+      "diagnosisRound": 0,
+      "gapId": "fda008d715cca84faf17a8a028afff46137cac18c9a47e03b24c369fb3cee755:0",
+      "gapIdentityCore": "fda008d715cca84faf17a8a028afff46137cac18c9a47e03b24c369fb3cee755",
+      "gapType": "CONTRADICTION_GAP",
+      "occurrenceId": "031c823c-c198-431f-ba8c-d29dc3df7553",
+      "planHash": "34fef90151a9a3d563264e53fa253d2963bf847acf064623fefc5e0a2c093884",
+      "subjectKey": "opposing:相反观点"
+    }
+  ],
+  "occurrenceId": "031c823c-c198-431f-ba8c-d29dc3df7553",
+  "planHash": "34fef90151a9a3d563264e53fa253d2963bf847acf064623fefc5e0a2c093884",
+  "schema": "p2-ari-targeted-requery-ledger/v1"
+}

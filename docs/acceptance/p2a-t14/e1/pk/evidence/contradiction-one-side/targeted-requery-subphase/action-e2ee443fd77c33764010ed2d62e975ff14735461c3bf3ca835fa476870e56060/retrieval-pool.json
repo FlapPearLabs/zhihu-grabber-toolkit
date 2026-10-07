@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "type": "retrieval-pool",
+  "planHash": "34fef90151a9a3d563264e53fa253d2963bf847acf064623fefc5e0a2c093884",
+  "channels": [
+    {
+      "channel": {
+        "query": "相反观点",
+        "providerId": "zhihu_search",
+        "capability": "search"
+      },
+      "ok": true,
+      "auth_class": "official-secret",
+      "itemCount": 2,
+      "retrievedAt": "2026-10-07T00:00:00.000Z",
+      "completeness": {
+        "status": "unknown",
+        "evidence": {
+          "signal": "absent",
+          "reason": "offline_fixture"
+        }
+      }
+    },
+    {
+      "channel": {
+        "query": "相反观点",
+        "providerId": "zhihu-open-platform",
+        "capability": "search"
+      },
+      "ok": true,
+      "auth_class": "official-secret",
+      "itemCount": 2,
+      "retrievedAt": "2026-10-07T00:00:00.000Z",
+      "completeness": {
+        "status": "unknown",
+        "evidence": {
+          "signal": "absent",
+          "reason": "offline_fixture"
+        }
+      }
+    }
+  ],
+  "candidates": [
+    {
+      "identity": {
+        "kind": "candidate",
+        "questionId": "300"
+      },
+      "rrfScore": 0.03278688524590164,
+      "ranks": [
+        {
+          "channel": {
+            "query": "相反观点",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "offline-acceptance"
+        },
+        {
+          "channel": {
+            "query": "相反观点",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "offline-acceptance"
+        }
+      ],
+      "source_url": null,
+      "facts": {}
+    },
+    {
+      "identity": {
+        "kind": "candidate",
+        "questionId": "301"
+      },
+      "rrfScore": 0.03225806451612903,
+      "ranks": [
+        {
+          "channel": {
+            "query": "相反观点",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "offline-acceptance"
+        },
+        {
+          "channel": {
+            "query": "相反观点",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "offline-acceptance"
+        }
+      ],
+      "source_url": null,
+      "facts": {}
+    }
+  ],
+  "rejected": [],
+  "criteria": {
+    "fusion": "rrf",
+    "rrfK": 60,
+    "rankSource": "provenance.rank",
+    "tieBreak": "score-desc-questionId-asc",
+    "scope": "single-pass"
+  }
+}

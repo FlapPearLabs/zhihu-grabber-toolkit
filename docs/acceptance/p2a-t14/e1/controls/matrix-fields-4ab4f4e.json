@@ -1,0 +1,592 @@
+{
+  "schema": "p2a-t14-matrix-field-controls/v1",
+  "exactRepoSha": "4ab4f4e730d1c72dcd3e93d17691324eca8d65b9",
+  "evidenceClass": "DATA_FIELD_NEGATIVE_CONTROL",
+  "keepsRecordedVerdictsAndOtherChecks": true,
+  "productRuntimeMutation": false,
+  "baseline": {
+    "pass": 12,
+    "fail": 0,
+    "notProven": 0,
+    "outOfScope": 1
+  },
+  "mutations": [
+    {
+      "name": "missing exact occurrence",
+      "item": "§20-1",
+      "scenario": "unknown-gap",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "foreign source SHA",
+      "item": "§20-1",
+      "scenario": "unknown-gap",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "missing input artifact refs",
+      "item": "§20-1",
+      "scenario": "unknown-gap",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "actual provider count differs",
+      "item": "§20-1",
+      "scenario": "unknown-gap",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "command exit differs",
+      "item": "§20-1",
+      "scenario": "unknown-gap",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "required assertion rejected: unknown rejected by composition",
+      "item": "§20-1",
+      "scenario": "unknown-gap",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "missing exact occurrence",
+      "item": "§20-2",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "foreign source SHA",
+      "item": "§20-2",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "missing input artifact refs",
+      "item": "§20-2",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "actual provider count differs",
+      "item": "§20-2",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "command exit differs",
+      "item": "§20-2",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "required assertion rejected: bidirectional lineage",
+      "item": "§20-2",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "missing exact occurrence",
+      "item": "§20-3",
+      "scenario": "free-form",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "foreign source SHA",
+      "item": "§20-3",
+      "scenario": "free-form",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "missing input artifact refs",
+      "item": "§20-3",
+      "scenario": "free-form",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "actual provider count differs",
+      "item": "§20-3",
+      "scenario": "free-form",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "command exit differs",
+      "item": "§20-3",
+      "scenario": "free-form",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "required assertion rejected: controller before targeted IO",
+      "item": "§20-3",
+      "scenario": "free-form",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "missing exact occurrence",
+      "item": "§20-4",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "foreign source SHA",
+      "item": "§20-4",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "missing input artifact refs",
+      "item": "§20-4",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "actual provider count differs",
+      "item": "§20-4",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "command exit differs",
+      "item": "§20-4",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "required assertion rejected: all provider calls",
+      "item": "§20-4",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "missing exact occurrence",
+      "item": "§20-5",
+      "scenario": "provider-scope",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "foreign source SHA",
+      "item": "§20-5",
+      "scenario": "provider-scope",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "missing input artifact refs",
+      "item": "§20-5",
+      "scenario": "provider-scope",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "actual provider count differs",
+      "item": "§20-5",
+      "scenario": "provider-scope",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "command exit differs",
+      "item": "§20-5",
+      "scenario": "provider-scope",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "required assertion rejected: no runtime or provider fallback",
+      "item": "§20-5",
+      "scenario": "provider-scope",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "missing exact occurrence",
+      "item": "§20-6",
+      "scenario": "equivalent-query",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "foreign source SHA",
+      "item": "§20-6",
+      "scenario": "equivalent-query",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "missing input artifact refs",
+      "item": "§20-6",
+      "scenario": "equivalent-query",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "actual provider count differs",
+      "item": "§20-6",
+      "scenario": "equivalent-query",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "command exit differs",
+      "item": "§20-6",
+      "scenario": "equivalent-query",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "required assertion rejected: real composition round-1 proposal observed",
+      "item": "§20-6",
+      "scenario": "equivalent-query",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "missing exact occurrence",
+      "item": "§20-7",
+      "scenario": "per-gap-bound",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "foreign source SHA",
+      "item": "§20-7",
+      "scenario": "per-gap-bound",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "missing input artifact refs",
+      "item": "§20-7",
+      "scenario": "per-gap-bound",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "actual provider count differs",
+      "item": "§20-7",
+      "scenario": "per-gap-bound",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "command exit differs",
+      "item": "§20-7",
+      "scenario": "per-gap-bound",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "required assertion rejected: real composition round-1 proposal observed",
+      "item": "§20-7",
+      "scenario": "per-gap-bound",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "missing exact occurrence",
+      "item": "§20-8",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "foreign source SHA",
+      "item": "§20-8",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "missing input artifact refs",
+      "item": "§20-8",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "actual provider count differs",
+      "item": "§20-8",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "command exit differs",
+      "item": "§20-8",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "required assertion rejected: evidence resolution",
+      "item": "§20-8",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "missing exact occurrence",
+      "item": "§20-9",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "foreign source SHA",
+      "item": "§20-9",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "missing input artifact refs",
+      "item": "§20-9",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "actual provider count differs",
+      "item": "§20-9",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "command exit differs",
+      "item": "§20-9",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "required assertion rejected: all durable gaps visible",
+      "item": "§20-9",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "missing exact occurrence",
+      "item": "§20-10",
+      "scenario": "crash-after",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "foreign source SHA",
+      "item": "§20-10",
+      "scenario": "crash-after",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "missing input artifact refs",
+      "item": "§20-10",
+      "scenario": "crash-after",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "actual provider count differs",
+      "item": "§20-10",
+      "scenario": "crash-after",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "command exit differs",
+      "item": "§20-10",
+      "scenario": "crash-after",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "required assertion rejected: same occurrence resumes",
+      "item": "§20-10",
+      "scenario": "crash-after",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "missing exact occurrence",
+      "item": "§20-11",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "foreign source SHA",
+      "item": "§20-11",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "missing input artifact refs",
+      "item": "§20-11",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "actual provider count differs",
+      "item": "§20-11",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "command exit differs",
+      "item": "§20-11",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "required assertion rejected: bidirectional lineage",
+      "item": "§20-11",
+      "scenario": "canonical",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "missing exact occurrence",
+      "item": "§20-12",
+      "scenario": "stale-action",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "foreign source SHA",
+      "item": "§20-12",
+      "scenario": "stale-action",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "missing input artifact refs",
+      "item": "§20-12",
+      "scenario": "stale-action",
+      "before": "PASS",
+      "after": "NOT_PROVEN",
+      "caught": true
+    },
+    {
+      "name": "actual provider count differs",
+      "item": "§20-12",
+      "scenario": "stale-action",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "command exit differs",
+      "item": "§20-12",
+      "scenario": "stale-action",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    },
+    {
+      "name": "required assertion rejected: stale action occurrence checker refuses",
+      "item": "§20-12",
+      "scenario": "stale-action",
+      "before": "PASS",
+      "after": "FAIL",
+      "caught": true
+    }
+  ],
+  "failures": []
+}

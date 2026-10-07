@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "queryVariants": [
+    "基础资料"
+  ],
+  "aspects": [
+    "补充资料"
+  ],
+  "entities": [
+    "补充资料"
+  ],
+  "opposingFramings": [],
+  "terminologyVariants": [
+    {
+      "term": "补充资料",
+      "variants": [
+        "不同的补充资料查询"
+      ]
+    }
+  ],
+  "sourceGroupIntents": []
+}

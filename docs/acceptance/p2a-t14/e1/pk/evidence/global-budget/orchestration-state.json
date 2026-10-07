@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+  "occurrenceId": "472f015e-e5f7-4947-9522-4120fee15037",
+  "topic": "定向检索工程验收",
+  "mode": "p1-cross-question-deep-research",
+  "percent": null,
+  "runtime": "deepseek-api-tool-less",
+  "configFingerprint": "4241ae86f03a9e2c6438daa99e7ced26e1d3c4beab1e42dee3bfe23324d4542b",
+  "forceQuestionId": null,
+  "stage": "COMPLETE",
+  "completedStages": [
+    "SEARCH",
+    "SELECT",
+    "CAPTURE",
+    "ANALYZE",
+    "RENDER"
+  ],
+  "selectedQuestionId": null,
+  "selection": null,
+  "artifacts": {
+    "researchPlan": "research-plan.json",
+    "selectionDecision": "source-group-selection-decision.json",
+    "coverageState": "coverage-state.json",
+    "coverageFinal": "coverage-final.json",
+    "perGroupClaims": "per-group-claims.json",
+    "synthesis": "cross-source-synthesis.json",
+    "researchResult": "research-result.json"
+  },
+  "hashes": {
+    "targeted-resolution-input:8be0fc56da66f86a00cb32f97883aa41ff1cf8821a3b1097fbf7c22e35e8ed9c": "62e7180fa76c10f448e2450cbc7c018ed5f13ec8c59416eeb74a927f07bed530",
+    "targeted-action:8be0fc56da66f86a00cb32f97883aa41ff1cf8821a3b1097fbf7c22e35e8ed9c": "10073a1316101ddc30585b39ae70e1363e7d0a7bf292df199f331a803f794552",
+    "targeted-action-ledger": "f895502c76d1a07fd922346e86df404d65290d13acc42296266a8c03ccea503a",
+    "researchPlan": "55814d41c4187e8d48eb331197f7b1c51de9ffaecbb58affce4d0cdb4d7799dc",
+    "coverageState": "c853bbd0e08e947aeb7e051ff654e3fbe07f81b0b281aedee369fcb20b84305e",
+    "coverageFinal": "adc8b5ce4f25f3d3e53f47101b36f5398c9f3aa1c368babc58934325b1c5e471",
+    "perGroupClaims": "0d90d4000dea34ae82ce018a2fe3fe50e28d25a5aac96143a3d788d54869adb4",
+    "synthesis": "d86003cce347dcd7816ae12de8c46977e81e924182a4725e8dcc54da8d4ccb3e",
+    "researchResult": "e81953ad991300cb1d636a6346c7a29cf820d979cae9fc7dd4c79c85ed377247",
+    "accumulatedPool": "706c0d9b54362ad289a0f7ac3a94b1d7e364655d52c7708a70010e962c373203",
+    "selectionDecision": "22d8c0469e3988105ed0bde416e142921f544b0ddb12b0ea29b5ae03a8420a14"
+  },
+  "verification": null,
+  "coverage": {
+    "is100PercentAnalysis": true,
+    "selectedCount": 2,
+    "analyzedCount": 2
+  },
+  "p1FinalCoveragePlanHash": "9891c4b7b02c29e22ba8b97238b8fa50fe2572102bc5b9f0cedd4c0cf2895a05",
+  "updatedAt": "2026-10-07T17:16:01.119Z"
+}

@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "type": "p1-final-coverage-integration",
+  "planHash": "65277490e7791c1b413814aac83b96d2b3263e2be4cc3e1c15f7a30b27943c75",
+  "pipeline": "p1-cross-question-deep-research",
+  "stage": "FINAL_COVERAGE_RECONCILIATION",
+  "assertion": {
+    "is100PercentAnalysis": true,
+    "basis": "MECHANICAL_SET_EQUALITY"
+  },
+  "doubleDefense": {
+    "t14PreSynthesisGuard": {
+      "guardResult": "PASS",
+      "selectedVerifiedSourceSetIdentity": "sha256:5efede5a92ae0c4bc088a107733e9d006ec262ed8f6a9ca9d6f9041af10be00a",
+      "mappedAnalyzedSourceSetIdentity": "sha256:5efede5a92ae0c4bc088a107733e9d006ec262ed8f6a9ca9d6f9041af10be00a"
+    },
+    "t15FinalReconciliation": "PASS",
+    "synthesisContract": {
+      "seamVersion": 2,
+      "semanticContractVersion": 2,
+      "synthesisIdentity": "sha256:8027ac8114e57aeed7f19e4928ee2419010b4cb1294b04714e9e942453e6b8c9",
+      "familyCount": 1,
+      "unresolvedCount": 0,
+      "conflictingFamilyCount": 0,
+      "singleGroupFamilyCount": 0,
+      "multiGroupFamilyCount": 1
+    }
+  },
+  "coverage": {
+    "retrieval": {
+      "retrievalRounds": 2,
+      "stopReason": "query_budget_exhausted",
+      "fusedCandidateCount": 3,
+      "fusedGroupCount": 3,
+      "providerFailureCount": 4
+    },
+    "analysisCoverage": {
+      "selectedCorpusSourceSet": [
+        "asrc-81e468602e5b377dc91f52b8",
+        "asrc-efbfd8e816e85d99913069be",
+        "asrc-f63f7a6de45385f0e2802a84"
+      ],
+      "mappedSourceSet": [
+        "asrc-81e468602e5b377dc91f52b8",
+        "asrc-efbfd8e816e85d99913069be",
+        "asrc-f63f7a6de45385f0e2802a84"
+      ],
+      "analyzedSourceSet": [
+        "asrc-81e468602e5b377dc91f52b8",
+        "asrc-efbfd8e816e85d99913069be",
+        "asrc-f63f7a6de45385f0e2802a84"
+      ],
+      "selectedCount": 3,
+      "mappedCount": 3,
+      "analyzedCount": 3,
+      "evidenceRefIssues": {
+        "missingRefs": [],
+        "duplicateRefs": [],
+        "staleRefs": [],
+        "invalidRefs": []
+      }
+    },
+    "sourceCompleteness": {
+      "totalSelectedCount": 3,
+      "totalVerifiedCount": 3,
+      "capturedNotVerifiedCount": 0
+    }
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 1,
+    "new_contradiction_rate": 0,
+    "novelty_gain": 0,
+    "selected_source_group_count": 3,
+    "selected_content_by_group": {
+      "100": 1,
+      "200": 1,
+      "300": 1
+    },
+    "largest_group_share": 0.3333333333333333,
+    "selected_author_concentration": 0,
+    "selected_content_type_distribution": {},
+    "claim_source_diversity": 1,
+    "per_group_selection_coverage": {
+      "100": 1,
+      "200": 1,
+      "300": 1
+    }
+  },
+  "hookConvergenceOrder": [
+    "RETRIEVAL_ROUNDS",
+    "SOURCE_GROUP_SELECTION",
+    "GROUP_EXECUTION",
+    "CORPUS_SELECTION",
+    "PER_GROUP_ANALYSIS",
+    "CROSS_SOURCE_SYNTHESIS",
+    "FINAL_COVERAGE_RECONCILIATION"
+  ],
+  "runtime": {
+    "runtimeId": "deepseek-api-tool-less",
+    "model": "deepseek-v4-pro"
+  },
+  "artifacts": {
+    "coverageState": "coverage-state.json",
+    "finalCoverage": "coverage-final.json",
+    "synthesis": "cross-source-synthesis.json"
+  },
+  "targetedResearchGaps": {
+    "schema": "p2a-targeted-research-gaps/v1",
+    "gapCount": 3,
+    "resolvedCount": 1,
+    "unresolvedCount": 2,
+    "exhaustedWithinBudgetCount": 0,
+    "lineageComplete": false,
+    "gaps": [
+      {
+        "gapId": "3de2a3be77d373cb8ef0f38e9f0d271cafabac39c1e1f94061bb12435ba1410a:0",
+        "gapIdentityCore": "3de2a3be77d373cb8ef0f38e9f0d271cafabac39c1e1f94061bb12435ba1410a",
+        "lineage": [
+          {
+            "actionStatus": "RESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "framing-a",
+            "resultArtifact": "targeted-requery-subphase/action-baaf184a49c489a10708ce1aec75c36c9b32f2cd7b8ca8ae809c61c3a1a299af/retrieval-pool.json",
+            "targetedActionId": "baaf184a49c489a10708ce1aec75c36c9b32f2cd7b8ca8ae809c61c3a1a299af"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "4d40a22f-ad70-4eb0-aef0-c9581c70ba04",
+        "planHash": "65277490e7791c1b413814aac83b96d2b3263e2be4cc3e1c15f7a30b27943c75",
+        "resolutionBasis": "OPPOSING_SIDE_NEW_EVIDENCE",
+        "resolutionEvidence": [
+          "300"
+        ],
+        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "RESOLVED"
+      },
+      {
+        "gapId": "e41d18c1e2c85c65fa4c2ccce19e50e3c515ad31e6f444c4a1a7f1a4358cf0a3:0",
+        "gapIdentityCore": "e41d18c1e2c85c65fa4c2ccce19e50e3c515ad31e6f444c4a1a7f1a4358cf0a3",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "4d40a22f-ad70-4eb0-aef0-c9581c70ba04",
+        "planHash": "65277490e7791c1b413814aac83b96d2b3263e2be4cc3e1c15f7a30b27943c75",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "fd4da0151076ad519c9be0f41feb615990db8b4e72621a369c22619656c8b18f:0",
+        "gapIdentityCore": "fd4da0151076ad519c9be0f41feb615990db8b4e72621a369c22619656c8b18f",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "4d40a22f-ad70-4eb0-aef0-c9581c70ba04",
+        "planHash": "65277490e7791c1b413814aac83b96d2b3263e2be4cc3e1c15f7a30b27943c75",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      }
+    ]
+  }
+}
