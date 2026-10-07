@@ -1,0 +1,29 @@
+{
+  "schema": "p2a-t14-source-identity-negative-control/v1",
+  "controlRepoBase": "854dd3cb2f9d5fa06df1dd79e7aad4ab42aea2b3",
+  "records": [
+    {
+      "condition": "unstaged",
+      "exitCode": 1,
+      "rejection": "T14_EXACT_SOURCE_DIRTY",
+      "outputDirectoryCreated": false,
+      "rejectedBeforeIo": true
+    },
+    {
+      "condition": "staged",
+      "exitCode": 1,
+      "rejection": "T14_EXACT_SOURCE_DIRTY",
+      "outputDirectoryCreated": false,
+      "rejectedBeforeIo": true
+    },
+    {
+      "condition": "untracked",
+      "exitCode": 1,
+      "rejection": "T14_EXACT_SOURCE_DIRTY",
+      "outputDirectoryCreated": false,
+      "rejectedBeforeIo": true
+    }
+  ],
+  "verdict": "PASS",
+  "productAuthorityWritten": false
+}

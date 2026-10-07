@@ -1,0 +1,28 @@
+{
+  "occurrenceId": "fc837896-4269-4486-a68b-1d20e66fcb48",
+  "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+  "resolutions": [
+    {
+      "audit": [
+        {
+          "basis": "NEVER_AUTHORIZED",
+          "event": "EVALUATE",
+          "predicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+          "seq": 1,
+          "status": "UNRESOLVED",
+          "targetedActionId": null
+        }
+      ],
+      "evaluatedActionIds": [],
+      "gapId": "46b65ac3f8de1290575e4d473cd5f7d91fef772a08203747b602d6b2a06b91db:0",
+      "gapIdentityCore": "46b65ac3f8de1290575e4d473cd5f7d91fef772a08203747b602d6b2a06b91db",
+      "resolutionEvidence": [],
+      "occurrenceId": "fc837896-4269-4486-a68b-1d20e66fcb48",
+      "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+      "resolutionBasis": "NEVER_AUTHORIZED",
+      "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+      "status": "UNRESOLVED"
+    }
+  ],
+  "schema": "p2-ari-targeted-requery-resolution/v1"
+}

@@ -1,0 +1,8 @@
+{"phase":"initial","event":"provider_io","sequence":1,"kind":"planned","query":"基础资料","providerId":"zhihu_search"}
+{"phase":"initial","event":"provider_io","sequence":2,"kind":"planned","query":"基础资料","providerId":"zhihu-open-platform"}
+{"phase":"initial","event":"provider_io","sequence":3,"kind":"planned","query":"基础资料","providerId":"zhihu_search"}
+{"phase":"initial","event":"provider_io","sequence":4,"kind":"planned","query":"基础资料","providerId":"zhihu-open-platform"}
+{"phase":"initial","event":"proposal","runId":"1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699","occurrenceId":"d96e1edc-026b-4bbe-b911-514382a7fd24","planHash":"39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b","diagnosedGapIds":["a7316a600150e0c88c4b0f668fb8b24da089de8e76a48f28998a4e9046f49977:0"],"proposals":[{"gapId":"a7316a600150e0c88c4b0f668fb8b24da089de8e76a48f28998a4e9046f49977:0","queryText":"安全但未经授权的自由查询"}]}
+{"phase":"initial","event":"analysis","tokens":1}
+{"phase":"initial","event":"analysis","tokens":1}
+{"phase":"initial","event":"synthesis","claims":2}

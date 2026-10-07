@@ -1,0 +1,33 @@
+{
+  "occurrenceId": "59f3bcbc-3963-4b64-9a78-11da95566f98",
+  "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+  "resolutions": [
+    {
+      "audit": [
+        {
+          "basis": "NEW_EVIDENCE_ATTRIBUTED",
+          "event": "EVALUATE",
+          "predicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+          "seq": 1,
+          "status": "RESOLVED",
+          "targetedActionId": "93042f80e75167242d10883bed0e17fa39ea8a47c0885fd32b5b924de1f8a252"
+        }
+      ],
+      "evaluatedActionIds": [
+        "93042f80e75167242d10883bed0e17fa39ea8a47c0885fd32b5b924de1f8a252"
+      ],
+      "gapId": "9aeb8d8a577b4307a3b5d6854dfff6d733daaf7e5cfe408219dd61fadec52939:0",
+      "gapIdentityCore": "9aeb8d8a577b4307a3b5d6854dfff6d733daaf7e5cfe408219dd61fadec52939",
+      "resolutionEvidence": [
+        "300",
+        "301"
+      ],
+      "occurrenceId": "59f3bcbc-3963-4b64-9a78-11da95566f98",
+      "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+      "resolutionBasis": "NEW_EVIDENCE_ATTRIBUTED",
+      "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+      "status": "RESOLVED"
+    }
+  ],
+  "schema": "p2-ari-targeted-requery-resolution/v1"
+}

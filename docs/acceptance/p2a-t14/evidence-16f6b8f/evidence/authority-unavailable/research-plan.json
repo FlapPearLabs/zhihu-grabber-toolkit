@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "queryVariants": [
+    "基础资料"
+  ],
+  "aspects": [
+    "基础资料"
+  ],
+  "entities": [
+    "补充资料"
+  ],
+  "opposingFramings": [],
+  "terminologyVariants": [],
+  "sourceGroupIntents": [
+    {
+      "intent": "原始权威资料",
+      "constraints": [],
+      "groupKey": "300"
+    }
+  ]
+}

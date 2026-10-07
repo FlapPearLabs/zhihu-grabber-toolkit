@@ -1,0 +1,17 @@
+{
+  "diagnosedGaps": [
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 0,
+      "gapId": "036d4af255de342f28e5445a4744318037b26819bdee7cfc0690c129b7879bcf:0",
+      "gapIdentityCore": "036d4af255de342f28e5445a4744318037b26819bdee7cfc0690c129b7879bcf",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "5f50a1d8-4d37-4aa6-a368-e378a44c4111",
+      "planHash": "27f78acc28d446f7c1ccedaa987b2088d062596f5f8aa9ae4dc2607f3d494bcf",
+      "subjectKey": "aspect:/etc/hosts 文件的作用"
+    }
+  ],
+  "occurrenceId": "5f50a1d8-4d37-4aa6-a368-e378a44c4111",
+  "planHash": "27f78acc28d446f7c1ccedaa987b2088d062596f5f8aa9ae4dc2607f3d494bcf",
+  "schema": "p2-ari-targeted-requery-ledger/v1"
+}

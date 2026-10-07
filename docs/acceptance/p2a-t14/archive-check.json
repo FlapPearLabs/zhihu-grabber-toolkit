@@ -1,0 +1,10 @@
+{
+  "schema": "p2a-t14-archive-check/v1",
+  "relativeRefsVerified": 767,
+  "filesScanned": 385,
+  "bytesScanned": 3422944,
+  "executableFingerprintsVerified": 108,
+  "errors": [],
+  "verdict": "PASS",
+  "engineeringAcceptance": "NOT_PROVEN"
+}

@@ -1,0 +1,12 @@
+{"phase":"initial","event":"provider_io","sequence":1,"kind":"planned","query":"基础资料","providerId":"zhihu_search"}
+{"phase":"initial","event":"provider_io","sequence":2,"kind":"planned","query":"基础资料","providerId":"zhihu-open-platform"}
+{"phase":"initial","event":"provider_io","sequence":3,"kind":"planned","query":"基础资料","providerId":"zhihu_search"}
+{"phase":"initial","event":"provider_io","sequence":4,"kind":"planned","query":"基础资料","providerId":"zhihu-open-platform"}
+{"phase":"initial","event":"proposal","runId":"1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699","occurrenceId":"c53ba045-a6d4-43ce-955b-ec32f77cda2f","planHash":"34fef90151a9a3d563264e53fa253d2963bf847acf064623fefc5e0a2c093884","diagnosedGapIds":["1b44709358d92ea6ed3734f55ad2f43db0fe12603d18d0e0be1824bfba4259a0:0"],"proposals":[{"gapId":"1b44709358d92ea6ed3734f55ad2f43db0fe12603d18d0e0be1824bfba4259a0:0","planOwnedStringRef":{"field":"opposingFramings","index":0}}]}
+{"phase":"initial","event":"provider_io","sequence":5,"kind":"targeted","query":"相反观点","providerId":"zhihu_search"}
+{"phase":"initial","event":"provider_io","sequence":6,"kind":"targeted","query":"相反观点","providerId":"zhihu-open-platform"}
+{"phase":"initial","event":"analysis","tokens":1}
+{"phase":"initial","event":"analysis","tokens":1}
+{"phase":"initial","event":"analysis","tokens":1}
+{"phase":"initial","event":"analysis","tokens":1}
+{"phase":"initial","event":"synthesis","claims":4}

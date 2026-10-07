@@ -1,0 +1,291 @@
+{
+  "schema": "p2a-t14-occurrence-evidence/v1",
+  "scenarioId": "missing-unauthed-resolution",
+  "exactRepoSha": "16f6b8f161b4b44d66b814ffbfd1d0bddab8e68e",
+  "sourceDirty": [],
+  "nodeVersion": "v26.10.0",
+  "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+  "occurrenceId": "d96e1edc-026b-4bbe-b911-514382a7fd24",
+  "planId": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+  "generation": "d96e1edc-026b-4bbe-b911-514382a7fd24",
+  "commands": [
+    {
+      "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child missing-unauthed-resolution --out \"$T14_OUT/missing-unauthed-resolution/work\" --phase initial",
+      "outputDirectoryRef": "missing-unauthed-resolution/work",
+      "workingDirectory": "repository-root",
+      "exitCode": 0,
+      "signal": null,
+      "error": null
+    },
+    {
+      "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child missing-unauthed-resolution --out \"$T14_OUT/missing-unauthed-resolution/work\" --phase fault-resume",
+      "outputDirectoryRef": "missing-unauthed-resolution/work",
+      "workingDirectory": "repository-root",
+      "exitCode": 0,
+      "signal": null,
+      "error": null
+    }
+  ],
+  "inputArtifacts": [
+    {
+      "path": "acceptance-input-initial.json",
+      "bytes": 663,
+      "sha256": "9e60938c075037e1279af9c7911b5e3ad2f0c4a6db6b2d695dd60829e5cdbee3"
+    },
+    {
+      "path": "research-plan.json",
+      "bytes": 232,
+      "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365"
+    }
+  ],
+  "outputArtifacts": [
+    {
+      "path": ".p1-commit-staging/coverageState/2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202.json",
+      "bytes": 1514,
+      "sha256": "2f329e6c2df69f8ce72a0385fd426defab975ec2eef2dea4683be7704b43d202"
+    },
+    {
+      "path": ".p1-commit-staging/coverageState/3b756e5743f79aaf1b93f5a13adf51903f37c9ba3200db43a0ee2a8e2c232b91.json",
+      "bytes": 2827,
+      "sha256": "3b756e5743f79aaf1b93f5a13adf51903f37c9ba3200db43a0ee2a8e2c232b91"
+    },
+    {
+      "path": ".p1-commit-staging/coverageState/44376614ec9bcb19fffc372e504a9e68fb11240483df487fe80da186b25c756c.json",
+      "bytes": 2671,
+      "sha256": "44376614ec9bcb19fffc372e504a9e68fb11240483df487fe80da186b25c756c"
+    },
+    {
+      "path": ".p1-commit-staging/coverageState/49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f.json",
+      "bytes": 2125,
+      "sha256": "49b7142f466c331b7fdaa87d2cb359674da86886c5a63025a992d75e7ea7140f"
+    },
+    {
+      "path": ".p1-commit-staging/coverageState/75ba9541d9ec4e5f620b3f4b0e5ce708ab19262f25895e0c619e36f9cf5f763c.json",
+      "bytes": 3255,
+      "sha256": "75ba9541d9ec4e5f620b3f4b0e5ce708ab19262f25895e0c619e36f9cf5f763c"
+    },
+    {
+      "path": ".p1-commit-staging/coverageState/c23c6a4c499e74da727c8d085c6056ff23c8b96e0f20783fc06240b6db5c38d7.json",
+      "bytes": 3255,
+      "sha256": "c23c6a4c499e74da727c8d085c6056ff23c8b96e0f20783fc06240b6db5c38d7"
+    },
+    {
+      "path": ".p1-commit-staging/targeted-action-ledger/bf373a6f4105998b3242e3162672ab44eb19a4742bdc06eaca208ba89a78e2e4.json",
+      "bytes": 864,
+      "sha256": "bf373a6f4105998b3242e3162672ab44eb19a4742bdc06eaca208ba89a78e2e4"
+    },
+    {
+      "path": "coverage-final.json",
+      "bytes": 3828,
+      "sha256": "4044f4209624584129e483ee9c7b363ca896b270bfbd32e1b2d4cc9b1b97fc23"
+    },
+    {
+      "path": "coverage-state.json",
+      "bytes": 3254,
+      "sha256": "bb0e47dcdc0c6edb15b38a451974775f75ab74078767e2f5b664293852d6e487"
+    },
+    {
+      "path": "cross-source-synthesis.json",
+      "bytes": 3497,
+      "sha256": "afec8f083af340091b0d75f23b94c73f6e72e75fbe01952c81dae3424abc4d1a"
+    },
+    {
+      "path": "events.jsonl",
+      "bytes": 2955,
+      "sha256": "e8af283d0e76b02f5de506852803cd3db6723c77fe460fa2a14f4c28dc83a906"
+    },
+    {
+      "path": "multi-group-state.json",
+      "bytes": 4391,
+      "sha256": "f99b4975f144a7bb7b7729af099b03a01eb38acb2e809857d36afc767718a238"
+    },
+    {
+      "path": "orchestration-state.json",
+      "bytes": 1987,
+      "sha256": "97515c47f65d29a255a603fb9d25f3db740c309ec7476b5c60e822330ff9eadc"
+    },
+    {
+      "path": "per-group-claims.json",
+      "bytes": 2292,
+      "sha256": "ba10234bcb8d798a5e372dbe9f12ca7d5983eb9652eaead3f3044cc13187b536"
+    },
+    {
+      "path": "research-plan.json",
+      "bytes": 232,
+      "sha256": "f595b04beadcba3ba549f1ad0698b4704fd0f426ec0a1512293a4f5068ea2365"
+    },
+    {
+      "path": "research-result.json",
+      "bytes": 2391,
+      "sha256": "903f4a4d6dd384e96844e10d4a8a6c391978311a5c6280cc2b8b653b2ecc8f4f"
+    },
+    {
+      "path": "retrieval-rounds/accumulated-pool.json",
+      "bytes": 2693,
+      "sha256": "a47b8da545f2bd5b7c4bac2366a9edad90b1465e6585e2470fd225eddb65d220"
+    },
+    {
+      "path": "retrieval-rounds/round-1/retrieval-pool.json",
+      "bytes": 2753,
+      "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584"
+    },
+    {
+      "path": "retrieval-rounds/round-2/retrieval-pool.json",
+      "bytes": 2753,
+      "sha256": "51336e71dd1a2a40e006a2b6580a0d2100a896101a89e5729aebc70dfabd8584"
+    },
+    {
+      "path": "source-group-selection-decision.json",
+      "bytes": 2649,
+      "sha256": "268f101644a7bb61773a36544fe9d9a913830c8418bebe7c3df54fbd2c14ff9e"
+    },
+    {
+      "path": "targeted-requery-actions.json",
+      "bytes": 864,
+      "sha256": "bf373a6f4105998b3242e3162672ab44eb19a4742bdc06eaca208ba89a78e2e4"
+    },
+    {
+      "path": "targeted-requery-ledger.json",
+      "bytes": 695,
+      "sha256": "d55a20ba5d88df5f92c3b2270cc2aeb4fca1bbb5e81e5370c64b981905cc5d63"
+    },
+    {
+      "path": "zhihu/100/.progress.json",
+      "bytes": 35,
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "zhihu/100/answers.json",
+      "bytes": 330,
+      "sha256": "4800f91b66e868cc9777d25a8d48635c2a525fc59de9d19bcfb0a71adb9eb1f8"
+    },
+    {
+      "path": "zhihu/100/answers.md",
+      "bytes": 100,
+      "sha256": "6bc12bd6b9108da6987180b61e77ed62b36a1257fcc2150a85a26860f5e2597b"
+    },
+    {
+      "path": "zhihu/100/handoff.json",
+      "bytes": 201,
+      "sha256": "66a0b7837b6fc5c89308e5dabb88fca8cd5ec7c7f12ebdd39062fd31a1778db2"
+    },
+    {
+      "path": "zhihu/200/.progress.json",
+      "bytes": 35,
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "zhihu/200/answers.json",
+      "bytes": 330,
+      "sha256": "0dcb12e4c69ce9aba5a22e024486f8fa8bc8485abd96e1cb1d82b0787db75f59"
+    },
+    {
+      "path": "zhihu/200/answers.md",
+      "bytes": 100,
+      "sha256": "15ad5b2025bc4044e2c2f8303d0526e373dce22e6be8c35adb4279e640898a1b"
+    },
+    {
+      "path": "zhihu/200/handoff.json",
+      "bytes": 201,
+      "sha256": "ac3ed33e4371117e8c1bba0bd0a5c5879f9aae826521bcd940ca367b4fe034a9"
+    }
+  ],
+  "observedProviderCallCount": 4,
+  "expectedTargetedProviderCallCount": 0,
+  "observedTargetedProviderCallCount": 0,
+  "expectedProviderCallCount": 4,
+  "initialTargetedProviderCallCount": 0,
+  "replay": null,
+  "fault": {
+    "kind": "delete-real-produced-resolution"
+  },
+  "controllerControls": null,
+  "checks": [
+    {
+      "name": "child execution",
+      "pass": true,
+      "actual": [
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child missing-unauthed-resolution --out \"$T14_OUT/missing-unauthed-resolution/work\" --phase initial",
+          "outputDirectoryRef": "missing-unauthed-resolution/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "command": "node research-orchestration/scripts/p2a-t14/driver.mjs --child missing-unauthed-resolution --out \"$T14_OUT/missing-unauthed-resolution/work\" --phase fault-resume",
+          "outputDirectoryRef": "missing-unauthed-resolution/work",
+          "workingDirectory": "repository-root",
+          "exitCode": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "expected": null
+    },
+    {
+      "name": "targeted provider calls",
+      "pass": true,
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "all provider calls",
+      "pass": true,
+      "actual": 4,
+      "expected": 4
+    },
+    {
+      "name": "no runtime or provider fallback",
+      "pass": true,
+      "actual": null,
+      "expected": null
+    },
+    {
+      "name": "all durable gaps visible",
+      "pass": true,
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "name": "controller before targeted IO",
+      "pass": true,
+      "actual": null,
+      "expected": null
+    },
+    {
+      "name": "rejected proposal recorded",
+      "pass": true,
+      "actual": null,
+      "expected": null
+    },
+    {
+      "name": "tampered committed product refused",
+      "pass": true,
+      "actual": {
+        "ok": false,
+        "code": "state_invalid",
+        "details": "completed targeted resolution is unavailable for this occurrence"
+      },
+      "expected": null
+    },
+    {
+      "name": "fault does not pay again",
+      "pass": true,
+      "actual": null,
+      "expected": null
+    }
+  ],
+  "lineage": {
+    "valid": true,
+    "failures": [],
+    "joins": []
+  },
+  "result": {
+    "ok": false,
+    "code": "state_invalid",
+    "details": "completed targeted resolution is unavailable for this occurrence"
+  },
+  "verdict": "PASS"
+}
