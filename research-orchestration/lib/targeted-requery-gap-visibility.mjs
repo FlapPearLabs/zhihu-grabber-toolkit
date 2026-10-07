@@ -87,9 +87,11 @@
  *     root such as `/tmp` or `/etc` is NOT rejected by it;
  *   · its credential rule is ASSIGNMENT-shaped (`api_key: …`, `token= …`), so a bare
  *     provider key PREFIX (`sk-ant-…`, `ghp_…`, `AKIA…`) is NOT rejected.
- * Both are pre-existing properties of the shared policy for the `query` field, consumed
- * here unchanged. The suite pins both limits so they are visible assumptions rather than
- * implied guarantees.
+ * Both are pre-existing properties of the shared policy, consumed here unchanged. The
+ * suite PINS the credential-prefix limit (so a future change to the shared policy shows up
+ * as a visible diff); the single-component-root limit is stated here but NOT pinned by a
+ * test, and is therefore a disclosed assumption rather than a verified one. Widening
+ * `rrf.mjs` is out of this ticket's scope.
  */
 
 import { isBoundarySafeString } from './rrf.mjs';
