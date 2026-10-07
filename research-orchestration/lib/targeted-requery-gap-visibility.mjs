@@ -77,11 +77,12 @@
  * silent disappearance this ticket forbids; inventing a link would be a lie.
  *
  * PATH SAFETY: every emitted string is checked against the shared boundary-safety
- * helper before it leaves this module, so a multi-component machine path cannot reach
- * the final artifact even if a caller supplies one. `resultArtifact` gets a stricter,
- * locally-owned check (work-relative, no drive letter, no `..`). HONEST SCOPE OF THAT
- * GUARANTEE — the shared helper is narrower than "nothing bad gets through", and this
- * module does not widen it:
+ * helper before it leaves this module — on the BUILDER path and, since the round-3
+ * repair, on the emission seam as well, so a caller-supplied block cannot smuggle an
+ * unchecked field past the last function before the product. `resultArtifact` gets a
+ * stricter, locally-owned check (work-relative, no drive letter, no `..`).
+ * HONEST SCOPE OF THAT GUARANTEE — the shared helper is narrower than "nothing bad gets
+ * through", and this module does not widen it:
  *   · its private-path rule needs two or more path components, so a single-component
  *     root such as `/tmp` or `/etc` is NOT rejected by it;
  *   · its credential rule is ASSIGNMENT-shaped (`api_key: …`, `token= …`), so a bare
@@ -93,7 +94,13 @@
 
 import { isBoundarySafeString } from './rrf.mjs';
 import {
+  ACTION_STATUS_AUTHORIZED,
+  ACTION_STATUS_COMMITTED,
+  ACTION_STATUS_EVALUATED,
   ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET,
+  ACTION_STATUS_FAILED_OPERATIONAL,
+  ACTION_STATUS_PROPOSED,
+  ACTION_STATUS_REJECTED,
   ACTION_STATUS_RESOLVED,
   ACTION_STATUS_UNRESOLVED,
 } from './targeted-requery-lifecycle.mjs';
@@ -155,6 +162,25 @@ export const TARGETED_GAP_ENTRY_KEYS = Object.freeze([
   'resolutionEvidence',
   'resolutionPredicateRef',
   'status',
+]);
+
+/**
+ * T06's CLOSED action-status vocabulary. A lineage link's `actionStatus` is checked
+ * against this rather than merely for boundary-safety: an action status is a
+ * lifecycle state from a frozen set, and accepting an arbitrary string would let
+ * 'SATURATED' or an invented value be rendered as one. Consumed from T06, not
+ * redefined — the constants are imported, not re-spelled.
+ */
+export const ACTION_STATUSES = Object.freeze([
+  ACTION_STATUS_PROPOSED,
+  ACTION_STATUS_AUTHORIZED,
+  ACTION_STATUS_COMMITTED,
+  ACTION_STATUS_EVALUATED,
+  ACTION_STATUS_RESOLVED,
+  ACTION_STATUS_UNRESOLVED,
+  ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET,
+  ACTION_STATUS_REJECTED,
+  ACTION_STATUS_FAILED_OPERATIONAL,
 ]);
 
 /** The exact key set of one provider-scope entry inside a lineage link. */
@@ -556,9 +582,26 @@ function assertWellFormedBlock(block) {
     if (!Array.isArray(gap.resolutionEvidence)) {
       throw visibilityError(`block gap ${gap.gapId} must carry a resolutionEvidence array`);
     }
+    // ELEMENTS, not just the container. Round-3 review showed the seam type-checked
+    // this array and then let `['/Users/alice/.ssh/id_rsa']` through — the same class
+    // of unchecked field the round-2 finding was about, on the very field the ticket
+    // names as evidence. The builder validates elements, so this restores parity.
+    for (const evidenceId of gap.resolutionEvidence) {
+      requireSafeString(evidenceId, `block gap[${gap.gapId}].resolutionEvidence[]`);
+    }
     for (const id of gap.missingActionIds) {
       if (typeof id !== 'string' || !HEX64.test(id)) {
         throw visibilityError(`block gap ${gap.gapId} has a malformed missingActionId`);
+      }
+    }
+    // An action may not be asserted present AND missing in the same gap; that is a
+    // self-contradiction the builder cannot produce but a hand-built block could.
+    for (const link of gap.lineage) {
+      if (isPlainObject(link) && typeof link.targetedActionId === 'string'
+        && gap.missingActionIds.includes(link.targetedActionId)) {
+        throw visibilityError(
+          `block gap ${gap.gapId} lists action ${link.targetedActionId} as both linked and missing`,
+        );
       }
     }
     for (const link of gap.lineage) {
@@ -589,6 +632,44 @@ function assertWellFormedBlock(block) {
   if (block.exhaustedWithinBudgetCount !== countBy(block.gaps, ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET)) {
     throw visibilityError('block.exhaustedWithinBudgetCount disagrees with the gaps it summarises');
   }
+  // ---- COLLECTION-LEVEL coherence ------------------------------------------
+  // Round-3 review found four shapes that reach the surface only because the seam
+  // validated each gap in isolation and never compared them to each other. The builder
+  // refuses all four; these restore parity at the seam, which is the last chance.
+  const seenGapIds = new Set();
+  let anchorPlanHash = null;
+  let anchorOccurrence = null;
+  for (const gap of block.gaps) {
+    if (seenGapIds.has(gap.gapId)) {
+      throw visibilityError(`block contains a duplicate gapId: ${gap.gapId}`);
+    }
+    seenGapIds.add(gap.gapId);
+
+    // A block is anchored to ONE run, so every gap must carry the same anchors. Two
+    // gaps from different runs in one artifact would be a lineage impossibility.
+    if (anchorPlanHash === null) {
+      anchorPlanHash = gap.planHash;
+      anchorOccurrence = gap.occurrenceId;
+    } else if (gap.planHash !== anchorPlanHash || gap.occurrenceId !== anchorOccurrence) {
+      throw visibilityError(
+        `block mixes runs: gap ${gap.gapId} is anchored to a different planHash/occurrence`,
+      );
+    }
+
+    // One action may appear at most once per gap, otherwise the chain would double-count.
+    const seenActionIds = new Set();
+    for (const link of gap.lineage) {
+      if (isPlainObject(link) && typeof link.targetedActionId === 'string') {
+        if (seenActionIds.has(link.targetedActionId)) {
+          throw visibilityError(
+            `block gap ${gap.gapId} carries a duplicate lineage entry for action ${link.targetedActionId}`,
+          );
+        }
+        seenActionIds.add(link.targetedActionId);
+      }
+    }
+  }
+
   // The block-level completeness flag is derived too. Type-checking it as a boolean
   // left a hand-set `true` able to contradict a gap that reports itself incomplete.
   if (block.lineageComplete !== block.gaps.every((g) => g.lineageComplete === true)) {
@@ -610,6 +691,14 @@ function assertWellFormedLineageEntry(link, gapId) {
     throw visibilityError(`block gap ${gapId} has a lineage entry with a malformed targetedActionId`);
   }
   requireSafeString(link.actionStatus, `lineage[${link.targetedActionId}].actionStatus`);
+  if (!ACTION_STATUSES.includes(link.actionStatus)) {
+    // An action status is a lifecycle state from T06's frozen set, not free text.
+    // Boundary-safety alone would let 'SATURATED' or an invented value be rendered as
+    // one — a subtler sibling of the gap-status confusion this ticket exists to fence.
+    throw visibilityError(
+      `lineage[${link.targetedActionId}].actionStatus "${link.actionStatus}" is outside T06's action vocabulary`,
+    );
+  }
   requireSafeString(link.query, `lineage[${link.targetedActionId}].query`);
   if (link.resultArtifact !== null) {
     requireWorkRelativeRef(link.resultArtifact, `lineage[${link.targetedActionId}].resultArtifact`);

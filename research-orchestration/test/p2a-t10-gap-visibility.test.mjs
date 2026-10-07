@@ -880,6 +880,122 @@ test('I3 — an emptied providerScope is a missing link, refused rather than rep
   );
 });
 
+test('H3 — the seam validates evidence ELEMENTS and COLLECTION coherence', () => {
+  // Round-3 review found the remaining unchecked fields: the seam type-checked
+  // `resolutionEvidence` as an array without looking inside it, and validated each gap
+  // in isolation without comparing the gaps to each other. Both are builder/seam
+  // asymmetries — the builder refuses all of them.
+  const { artifact: actions, targetedActionId } = makeActionsArtifact();
+  let resolution = makeResolutionArtifact();
+  resolution = recordResolution(resolution, {
+    gapId: GAP_0, gapIdentityCore: GAP_CORE, targetedActionId,
+    status: ACTION_STATUS_UNRESOLVED, resolutionPredicateRef: RESOLUTION_PREDICATE_ASPECT,
+    resolutionBasis: RESOLUTION_BASIS_DUPLICATE_ONLY,
+    newEvidenceIds: ['100'], planHash: PLAN_HASH, occurrenceId: OCCURRENCE,
+  });
+  const real = buildTargetedResearchGapBlock({ resolutionArtifact: resolution, actionsArtifact: actions });
+  const base = real.gaps[0];
+  const finalLike = { schemaVersion: 2, gap: { missingAnalyzed: [], missingMapped: [] } };
+
+  const wrap = (gaps) => ({
+    schema: real.schema,
+    gapCount: gaps.length,
+    resolvedCount: gaps.filter((x) => x.status === ACTION_STATUS_RESOLVED).length,
+    unresolvedCount: gaps.filter((x) => x.status === ACTION_STATUS_UNRESOLVED).length,
+    exhaustedWithinBudgetCount: gaps.filter((x) => x.status === ACTION_STATUS_EXHAUSTED_WITHIN_BUDGET).length,
+    lineageComplete: gaps.every((x) => x.lineageComplete === true),
+    gaps,
+  });
+  const cloneGap = (over = {}) => ({
+    ...base,
+    lineage: base.lineage.map((l) => ({ ...l })),
+    resolutionEvidence: [...base.resolutionEvidence],
+    missingActionIds: [...base.missingActionIds],
+    ...over,
+  });
+  // Sanity: the untouched reconstruction is accepted, so each refusal below is
+  // attributable to its tampering.
+  assert.doesNotThrow(() => attachTargetedGapVisibility(finalLike, wrap([cloneGap()])));
+
+  // P2-1 — evidence ELEMENTS.
+  for (const [label, value] of [
+    ['an absolute path inside resolutionEvidence', '/Users/alice/.ssh/id_rsa'],
+    ['a credential assignment inside resolutionEvidence', 'token=abcd1234'],
+    ['a non-string inside resolutionEvidence', { secret: 1 }],
+  ]) {
+    expectRefusal(
+      () => attachTargetedGapVisibility(finalLike, wrap([cloneGap({ resolutionEvidence: [value] })])),
+      label,
+    );
+  }
+
+  // P2-2 — collection-level coherence.
+  expectRefusal(
+    () => attachTargetedGapVisibility(finalLike, wrap([cloneGap(), cloneGap()])),
+    'a duplicate gapId inflating gapCount for one real gap',
+  );
+  expectRefusal(
+    () => attachTargetedGapVisibility(finalLike, wrap([
+      cloneGap(),
+      cloneGap({ gapId: `${'d'.repeat(64)}:0`, gapIdentityCore: 'd'.repeat(64), planHash: 'e'.repeat(64) }),
+    ])),
+    'two gaps anchored to different planHash values',
+  );
+  expectRefusal(
+    () => attachTargetedGapVisibility(finalLike, wrap([
+      cloneGap(),
+      cloneGap({ gapId: `${'d'.repeat(64)}:0`, gapIdentityCore: 'd'.repeat(64), occurrenceId: 'other-run' }),
+    ])),
+    'two gaps anchored to different occurrences',
+  );
+  expectRefusal(
+    () => attachTargetedGapVisibility(finalLike, wrap([
+      cloneGap({ lineage: [base.lineage[0], { ...base.lineage[0] }] }),
+    ])),
+    'a duplicated lineage entry for one targetedActionId',
+  );
+  // The contradiction must be reached with a gap that is otherwise VALID, or an
+  // earlier guard refuses first and this case would silently prove nothing. The gap is
+  // kept internally consistent (`lineageComplete` false, matching its non-empty
+  // `missingActionIds`), so the ONLY incoherence left is the action being asserted
+  // present in `lineage` AND missing in `missingActionIds` — which is precisely the
+  // self-contradiction this case is meant to pin.
+  expectRefusal(
+    () => attachTargetedGapVisibility(finalLike, wrap([
+      cloneGap({ missingActionIds: [targetedActionId], lineageComplete: false }),
+    ])),
+    'an action asserted present AND missing in the same gap',
+  );
+  // Control: the same gap with the action ONLY missing (nothing linked) is coherent
+  // and must be accepted, so the refusal above is attributable to the contradiction.
+  assert.doesNotThrow(() => attachTargetedGapVisibility(finalLike, wrap([
+    cloneGap({ missingActionIds: [targetedActionId], lineageComplete: false, lineage: [] }),
+  ])), 'an action only-missing is coherent and must be accepted');
+
+  // P3 — an action status outside T06's vocabulary, which is a frozen lifecycle set
+  // and not free text. 'SATURATED' here is the subtler sibling of the gap-status
+  // confusion: the GAP status is fenced, the ACTION status must be too.
+  for (const bogus of ['SATURATED', 'TOTALLY_MADE_UP']) {
+    expectRefusal(
+      () => attachTargetedGapVisibility(finalLike, wrap([
+        cloneGap({ lineage: [{ ...base.lineage[0], actionStatus: bogus }] }),
+      ])),
+      `an action status outside T06's vocabulary (${bogus})`,
+    );
+  }
+  // Sanity: every REAL T06 status is still accepted, so the vocabulary check is not
+  // a blanket refusal.
+  for (const status of ['AUTHORIZED', 'COMMITTED', 'EVALUATED', 'RESOLVED', 'UNRESOLVED',
+    'EXHAUSTED_WITHIN_BUDGET', 'PROPOSED', 'REJECTED', 'FAILED_OPERATIONAL']) {
+    assert.doesNotThrow(
+      () => attachTargetedGapVisibility(finalLike, wrap([
+        cloneGap({ lineage: [{ ...base.lineage[0], actionStatus: status }] }),
+      ])),
+      `legitimate T06 action status ${status} must be accepted`,
+    );
+  }
+});
+
 // ===========================================================================
 // resource hygiene — remove every fixture work dir
 // ===========================================================================
