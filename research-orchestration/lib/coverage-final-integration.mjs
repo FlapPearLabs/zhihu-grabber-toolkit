@@ -111,6 +111,7 @@ import { produceCrossSourceSynthesis } from './cross-source-synthesis.mjs';
 import { canonicalJson } from './cross-group-aggregation.mjs';
 import { assertArtifactSafe } from './rrf.mjs';
 import { appendEvent } from './state.mjs';
+import { attachTargetedGapVisibility } from './targeted-requery-gap-visibility.mjs';
 
 /** Re-exported ledger identity for consumers of the integration module. */
 export { COVERAGE_STATE_FILENAME };
@@ -842,6 +843,7 @@ export function buildFinalDisclosure({ artifact } = {}) {
 export function finalizeResearchCoverage({
   coverageState, synthesisArtifact, workDir, journal,
   requireFullCoverage = true, runtimeIdentity = null, synthesisArtifactRef = null,
+  targetedResearchGaps = null,
 } = {}) {
   if (!isNonEmptyString(workDir) || !isPlainObject(synthesisArtifact)) {
     failClosed(CFI_ERROR_INVALID_INPUT, 'finalizeResearchCoverage requires coverageState, synthesisArtifact, workDir');
@@ -940,7 +942,7 @@ export function finalizeResearchCoverage({
   const singleGroupFamilyCount = canonicalFamilies.filter((f) => f?.supportBreadth === 'SINGLE_GROUP').length;
   const multiGroupFamilyCount = canonicalFamilies.filter((f) => f?.supportBreadth === 'MULTI_GROUP').length;
 
-  const artifact = {
+  let artifact = {
     schemaVersion: FINAL_COVERAGE_SCHEMA_VERSION,
     type: FINAL_COVERAGE_TYPE,
     planHash: reconciled.planHash,
@@ -994,6 +996,10 @@ export function finalizeResearchCoverage({
       ...(isNonEmptyString(synthesisArtifactRef) ? { synthesis: synthesisArtifactRef } : {}),
     },
   };
+
+  if (targetedResearchGaps !== null) {
+    artifact = attachTargetedGapVisibility(artifact, targetedResearchGaps);
+  }
 
   // Artifact safety walk before any write (no credentials, no machine-private
   // paths, no cycles — the repository's ONE artifact-safety authority).

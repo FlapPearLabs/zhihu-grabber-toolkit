@@ -119,7 +119,13 @@ import {
 import {
   RESOLUTION_FILENAME,
   createResolutionArtifact,
+  classifyGapTerminal,
   evaluateResolution,
+  TERMINATION_NONE,
+  TERMINATION_PER_GAP_BOUND_EXHAUSTED,
+  TERMINATION_RUN_BUDGET_STOP,
+  TERMINATION_ACTION_OPERATIONAL_FAILURE,
+  TERMINATION_NEVER_AUTHORIZED,
   loadResolutionArtifact,
   persistResolutionArtifact,
   recordResolution,
@@ -660,7 +666,7 @@ export function runTargetedSubphase({
         plan,
         planHash: expectedPlanHash,
         seam,
-        channels,
+        channels: channels.filter(channel => action.providerScope.some(scope => scope.providerId === channel.providerId)),
         workDir: roundDir,
         targetedQueries: [action.normalizedQuery],
       });
@@ -730,21 +736,50 @@ export function runTargetedSubphase({
         declaredFraming: framing?.declaredFraming ?? null,
         coveredFramings: framing?.coveredFramings ?? null,
       });
+      const paidCounts = computeTargetedAttemptCounts({ actions: actionsArtifact.targetedActions });
+      const terminationReason = attemptsByGapIdentityCore(actionsArtifact.targetedActions)[gap.gapIdentityCore] >= maxAttemptsPerGap
+        ? TERMINATION_PER_GAP_BOUND_EXHAUSTED
+        : plannedAttemptsBudgetCount + paidCounts.executed + paidCounts.failed >= maxQueryBudget
+          ? TERMINATION_RUN_BUDGET_STOP : TERMINATION_NONE;
+      const terminal = classifyGapTerminal({ predicateResult, terminationReason, everAuthorized: true });
       actionsArtifact = advanceActionStatusSafely(actionsArtifact, targetedActionId, ACTION_STATUS_EVALUATED, { event: 'EVALUATE' });
-      actionsArtifact = advanceActionStatusSafely(actionsArtifact, targetedActionId, predicateResult.status, { event: 'CONCLUDE' });
+      actionsArtifact = advanceActionStatusSafely(actionsArtifact, targetedActionId, terminal.status, { event: 'CONCLUDE' });
       persistActionsArtifact(workDir, actionsArtifact);
 
       resolutionArtifact = recordResolution(resolutionArtifact, {
         gapId: gap.gapId,
         gapIdentityCore: gap.gapIdentityCore,
         targetedActionId,
-        status: predicateResult.status,
-        resolutionPredicateRef: predicateResult.resolutionPredicateRef,
-        resolutionBasis: predicateResult.resolutionBasis,
+        ...terminal,
         newEvidenceIds: predicateResult.newEvidenceIds,
       });
       persistResolutionArtifact(workDir, resolutionArtifact);
     }
+  }
+
+  // H-8 / E.7: every diagnosed gap reaches an explicit terminal, including
+  // no-proposal, rejected and operational-failure paths. No action is fabricated.
+  for (const gap of gaps) {
+    if (resolutionArtifact.resolutions.some(record => record.gapId === gap.gapId)) continue;
+    const prior = latestActionForGap(actionsArtifact, gap.gapId);
+    const terminal = classifyGapTerminal({
+      predicateResult: evaluateResolution({ gapType: gap.gapType }),
+      terminationReason: prior?.status === ACTION_STATUS_FAILED_OPERATIONAL
+        ? TERMINATION_ACTION_OPERATIONAL_FAILURE : TERMINATION_NEVER_AUTHORIZED,
+      everAuthorized: prior !== null,
+    });
+    resolutionArtifact = recordResolution(resolutionArtifact, {
+      gapId: gap.gapId, gapIdentityCore: gap.gapIdentityCore,
+      targetedActionId: prior?.targetedActionId ?? null, ...terminal,
+    });
+  }
+  persistResolutionArtifact(workDir, resolutionArtifact);
+  persistActionsArtifact(workDir, actionsArtifact);
+  // Publish the terminal/rejection ledger through the existing checkpoint owner.
+  // This records decisions; finalizeTargetedCommit remains the retrieval commit.
+  if (stageLedgerBytes !== null) {
+    currentState = anchorLedgerVersion(currentState, actionsArtifact, stageLedgerBytes(actionsArtifactBytes(actionsArtifact)));
+    writeState(workDir, currentState);
   }
 
   // ---- 4. augment the accumulated pool (T09's single writer face) ------------

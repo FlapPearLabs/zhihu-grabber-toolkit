@@ -75,6 +75,9 @@ import {
 import { runTargetedSubphase, TARGETED_SUBPHASE_DIRNAME, computePlannedAttemptCount } from './targeted-requery-subphase.mjs';
 import { TARGETED_BINDING_PREFIX, LEDGER_CHECKPOINT_KEY, LEDGER_STAGING_KEY, ACTIONS_FILENAME, readAnchoredLedger } from './targeted-requery-lifecycle.mjs';
 import { computeTargetedAttemptCounts } from './targeted-requery-attempts.mjs';
+import { buildTargetedResearchGapBlock } from './targeted-requery-gap-visibility.mjs';
+import { loadResolutionArtifact } from './targeted-requery-resolution.mjs';
+import { decideTargetedReplay, RESUME_REUSE } from './targeted-requery-lifecycle.mjs';
 import { DECISION_PROVIDER_FAILURE } from './retrieval-round-controller.mjs';
 import {
   SELECTION_DECISION_FILENAME,
@@ -961,6 +964,40 @@ export async function composeP1Research({
           { reuseBoundary: closure.boundary },
         );
       }
+      // T14: a COMPLETE result also depends on each paid targeted product.
+      // Consume F.5's checkpoint-anchored ledger and replay authority; never use
+      // the canonical ledger as a second completion credential.
+      const targetedKeys = Object.keys(existing.hashes ?? {}).filter(key => key.startsWith(TARGETED_BINDING_PREFIX));
+      if (targetedKeys.length > 0 || existing.hashes?.[LEDGER_CHECKPOINT_KEY] !== undefined
+        || closure.result.targetedResearchGaps !== undefined) {
+        const actions = readAnchoredLedger(existing, sha => resolveAnchoredLedgerBytes(workDir, sha));
+        if (actions === null || actions.planHash !== existing.p1FinalCoveragePlanHash
+          || actions.occurrenceId !== existing.occurrenceId) {
+          return fail(CFC_STATE_INVALID, 'completed targeted action ledger is not checkpoint-bound to this occurrence');
+        }
+        for (const key of targetedKeys) {
+          const action = actions.targetedActions.find(record => record.bindingKey === key);
+          if (!action) return fail(CFC_STATE_INVALID, 'completed checkpoint has an orphan targeted binding');
+          const identity = Object.fromEntries(['runId', 'occurrenceId', 'planHash', 'gapId', 'attempt', 'normalizedQuery', 'providerScope']
+            .map(field => [field, action[field]]));
+          const replay = decideTargetedReplay({ workDir, state: existing, artifact: actions, identity });
+          if (replay.decision !== RESUME_REUSE) {
+            return fail(CFC_STATE_INVALID, `completed targeted product is not reusable: ${replay.reason}`);
+          }
+        }
+        const resolution = loadResolutionArtifact(workDir, existing.p1FinalCoveragePlanHash);
+        if (!resolution.ok || resolution.artifact.occurrenceId !== existing.occurrenceId) {
+          return fail(CFC_STATE_INVALID, 'completed targeted resolution is unavailable for this occurrence');
+        }
+        const gapBlock = buildTargetedResearchGapBlock({
+          resolutionArtifact: resolution.artifact, actionsArtifact: actions, occurrenceId: existing.occurrenceId,
+        });
+        // The completion credential is the checkpoint-bound final artifact.
+        // A derived resolution may reject reuse; it can never grant completion.
+        if (JSON.stringify(gapBlock) !== JSON.stringify(closure.result.targetedResearchGaps)) {
+          return fail(CFC_STATE_INVALID, 'completed targeted gap disclosure disagrees with its dependencies');
+        }
+      }
       // The closure already re-read and re-validated the result artifact; return
       // its parsed value rather than re-reading the file a second time.
       return { ok: true, reused: true, result: closure.result, runId, planHash: existing.p1FinalCoveragePlanHash };
@@ -1503,6 +1540,20 @@ export async function composeP1Research({
     recordLedgerBinding(state, workDir);
     writeState(workDir, state);
 
+    // T14 closes S10 at the real final-artifact owner. The action version
+    // comes from the checkpoint; T10 consumes T08 terminals without judging them.
+    let targetedResearchGaps = null;
+    if (targetedSubphase !== null) {
+      const resolution = loadResolutionArtifact(workDir, expectedPlanHash);
+      const actions = readAnchoredLedger(state, sha => resolveAnchoredLedgerBytes(workDir, sha));
+      if (!resolution.ok || actions === null) {
+        return persistFailure(CFC_STATE_INVALID, 'targeted gap artifacts are unavailable for final visibility');
+      }
+      targetedResearchGaps = buildTargetedResearchGapBlock({
+        resolutionArtifact: resolution.artifact, actionsArtifact: actions, occurrenceId,
+      });
+    }
+
     // 6. FINAL reconciliation (T15; second independent defense) — 100% ONLY via
     //    mechanical set equality; partial refuses completion.
     const fin = finalizeResearchCoverage({
@@ -1510,6 +1561,7 @@ export async function composeP1Research({
       requireFullCoverage: true,
       runtimeIdentity: { runtimeId: effectiveRuntime.runtimeId, model: effectiveRuntime.model },
       synthesisArtifactRef: SYNTHESIS_FILENAME,
+      targetedResearchGaps,
     });
     if (!fin.ok) {
       const result = {
@@ -1542,6 +1594,7 @@ export async function composeP1Research({
       planHash: expectedPlanHash,
       runtime: { runtimeId: effectiveRuntime.runtimeId, model: effectiveRuntime.model },
       disclosure: buildFinalDisclosure({ artifact: fin.artifact }),
+      ...(targetedResearchGaps === null ? {} : { targetedResearchGaps }),
       verification: {
         valid: true,
         basis: {
