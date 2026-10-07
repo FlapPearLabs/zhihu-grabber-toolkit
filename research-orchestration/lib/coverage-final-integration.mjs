@@ -318,6 +318,7 @@ export function runRetrievalFeedbackLoop({
   //                          + targeted executed + targeted failed
   // Default null keeps the historical behaviour verbatim (zero regression for #108-off).
   targetedAttempts = null,
+  targetedOnContinue = null,
 } = {}) {
   if (!isPlainObject(plan) || !isNonEmptyString(expectedPlanHash) || !isNonEmptyString(workDir) || !isPlainObject(seam)) {
     failClosed(CFI_ERROR_INVALID_INPUT, 'runRetrievalFeedbackLoop requires plan, planHash, workDir, seam');
@@ -329,6 +330,26 @@ export function runRetrievalFeedbackLoop({
   let roundIndex = 0;
   let decision = null;
   let stopReason = null;
+  let targetedInvoked = false;
+  if (targetedOnContinue !== null && typeof targetedOnContinue !== 'function') {
+    failClosed(CFI_ERROR_INVALID_INPUT, 'targetedOnContinue must be a function or null');
+  }
+  const persistAccumulated = () => {
+    const candidates = [...accumulated.values()].sort((a, b) => {
+      const score = Number(b.rrfScore) - Number(a.rrfScore);
+      return score || (String(a.identity.questionId) < String(b.identity.questionId) ? -1 : 1);
+    });
+    const accumulatedPool = { schemaVersion: RETRIEVAL_POOL_SCHEMA_VERSION, type: RETRIEVAL_POOL_TYPE,
+      planHash: expectedPlanHash, channels: [...accumulatedChannels.values()], candidates, rejected: [],
+      criteria: { fusion: 'rrf', scope: 'multi-round-accumulated', retrievalRounds: roundIndex } };
+    const safety = assertArtifactSafe(accumulatedPool, { trustedPlanStrings: new Set(Array.isArray(plan.queryVariants) ? plan.queryVariants : []) });
+    if (!safety.ok) failClosed(CFI_ERROR_RETRIEVAL_FAILED, `accumulated pool failed the artifact safety walk: ${safety.reason}`);
+    try {
+      fs.mkdirSync(path.join(workDir, RETRIEVAL_ROUNDS_DIRNAME), { recursive: true });
+      fs.writeFileSync(path.join(workDir, RETRIEVAL_ROUNDS_DIRNAME, ACCUMULATED_POOL_FILENAME), `${JSON.stringify(accumulatedPool, null, 2)}\n`);
+    } catch { failClosed(CFI_ERROR_RETRIEVAL_FAILED, 'accumulated pool persistence failed', { file: ACCUMULATED_POOL_FILENAME }); }
+    return accumulatedPool;
+  };
 
   for (;;) {
     roundIndex += 1;
@@ -412,18 +433,26 @@ export function runRetrievalFeedbackLoop({
       }));
     const providerFailuresThisRound = projectChannelFailures(pool.channels, roundIndex);
 
-    const evaluation = evaluateRetrievalRound({
-      coverageState,
-      roundIndex,
-      newCandidatesCount,
-      totalCandidatesCount: accumulated.size,
-      executedRoutesThisRound,
-      providerFailuresThisRound,
-      // F.6.1: the additive targeted half of `attemptsBudgetCount`.
-      targetedAttempts,
-      config,
+    const coverageBefore = coverageState;
+    const roundFacts = { coverageState: coverageBefore, roundIndex, newCandidatesCount,
+      totalCandidatesCount: accumulated.size, executedRoutesThisRound, providerFailuresThisRound, config };
+    let evaluation = evaluateRetrievalRound({
+      ...roundFacts, targetedAttempts,
     });
-    coverageState = applyRoundEvaluationToCoverageState(coverageState, evaluation);
+    if (!evaluation.shouldStop && targetedOnContinue !== null && !targetedInvoked) {
+      targetedInvoked = true;
+      appendEvent(workDir, { event: 'targeted_continue_window', roundIndex, decision: evaluation.decision });
+      const liveCoverage = applyRoundEvaluationToCoverageState(coverageBefore, evaluation);
+      persistCoverageState(workDir, liveCoverage);
+      const targeted = targetedOnContinue({ coverageState: liveCoverage, pool: persistAccumulated() });
+      targetedAttempts = targeted.counts;
+      // Same planned round and denominator: targeted affects budget only. Its
+      // candidates never enter the planned novelty map or saturation numerator.
+      evaluation = evaluateRetrievalRound({
+        ...roundFacts, targetedAttempts,
+      });
+    }
+    coverageState = applyRoundEvaluationToCoverageState(coverageBefore, evaluation);
     persistCoverageState(workDir, coverageState);
     appendEvent(workDir, {
       event: 'retrieval_round', roundIndex, decision: evaluation.decision,
@@ -441,35 +470,7 @@ export function runRetrievalFeedbackLoop({
   // Deterministic accumulated pool for downstream selection: candidates sorted
   // by rrfScore desc then questionId asc (the T06/RRF ordering contract);
   // channel records from the first round that produced them.
-  const sortedCandidates = [...accumulated.values()].sort((a, b) => {
-    const s = Number(b.rrfScore) - Number(a.rrfScore);
-    if (s !== 0) return s;
-    return String(a.identity.questionId) < String(b.identity.questionId) ? -1 : 1;
-  });
-  const accumulatedPool = {
-    schemaVersion: RETRIEVAL_POOL_SCHEMA_VERSION,
-    type: RETRIEVAL_POOL_TYPE,
-    planHash: expectedPlanHash,
-    channels: [...accumulatedChannels.values()],
-    candidates: sortedCandidates,
-    rejected: [],
-    criteria: {
-      fusion: 'rrf',
-      scope: 'multi-round-accumulated',
-      retrievalRounds: roundIndex,
-    },
-  };
-  const safety = assertArtifactSafe(accumulatedPool, { trustedPlanStrings: new Set(Array.isArray(plan.queryVariants) ? plan.queryVariants : []) });
-  if (!safety.ok) failClosed(CFI_ERROR_RETRIEVAL_FAILED, `accumulated pool failed the artifact safety walk: ${safety.reason}`);
-  try {
-    fs.mkdirSync(path.join(workDir, RETRIEVAL_ROUNDS_DIRNAME), { recursive: true });
-    fs.writeFileSync(
-      path.join(workDir, RETRIEVAL_ROUNDS_DIRNAME, ACCUMULATED_POOL_FILENAME),
-      `${JSON.stringify(accumulatedPool, null, 2)}\n`,
-    );
-  } catch {
-    failClosed(CFI_ERROR_RETRIEVAL_FAILED, 'accumulated pool persistence failed', { file: ACCUMULATED_POOL_FILENAME });
-  }
+  const accumulatedPool = persistAccumulated();
 
   recordStage(journal, STAGE_RETRIEVAL_ROUNDS);
   appendEvent(workDir, { event: 'retrieval_feedback_loop_complete', decision, stopReason, rounds: roundIndex });

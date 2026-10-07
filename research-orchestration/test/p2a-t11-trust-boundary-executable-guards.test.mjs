@@ -141,7 +141,7 @@ test('A1: the trust-set call surface is ENUMERATED, with nothing left unparsed',
   );
   assert.deepEqual(
     untrustedCallSiteFiles(e),
-    ['coverage-final-integration.mjs', 'multi-group-execution.mjs', 'p1-runtime-composer.mjs'],
+    ['coverage-final-integration.mjs', 'multi-group-execution.mjs', 'p1-runtime-composer.mjs', 'targeted-requery-subphase.mjs'],
     'modules calling the walker with no trust set',
   );
 });
@@ -2742,6 +2742,8 @@ function subphaseArgs(workDir, fixture, pool, proposals, extra = {}) {
     // content-addressed directory that makes an anchor recoverable.
     stageLedgerBytes: (bytes) => stageArtifactBytes(workDir, LEDGER_STAGING_KEY, bytes).sha,
     resolveAnchoredBytes: (sha) => resolveAnchoredLedgerBytes(workDir, sha),
+    stageResolutionInputBytes: (actionId, bytes) => stageArtifactBytes(workDir, 'targeted-resolution-input', bytes).sha,
+    resolveResolutionInputBytes: (actionId, sha) => resolveResolutionInputBytes(workDir, actionId, sha),
     ...extra,
   };
 }

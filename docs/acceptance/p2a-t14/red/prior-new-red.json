@@ -1,0 +1,169 @@
+{
+  "schema": "p2a-t14-resolution-loss-red/v1",
+  "testCase": "reverse-new-evidence",
+  "SOURCE_CLASS": "WORKING_TREE_SUPPORTING",
+  "sourceHead": "054ef8d8aafa26372af5b695b0ddb54e766b507b",
+  "sourceDirty": true,
+  "dirtyPaths": [
+    "research-orchestration/lib/coverage-final-integration.mjs",
+    "research-orchestration/lib/p1-runtime-composer.mjs",
+    "research-orchestration/lib/targeted-requery-subphase.mjs",
+    "research-orchestration/test/p2a-t09-targeted-subphase-orchestration.test.mjs"
+  ],
+  "exactHeadClaim": false,
+  "unifiedCampaignClaim": false,
+  "crashWindow": "after_targeted_commit_finalize",
+  "firstAction": {
+    "artifactHash": "b7ab16810975a95bf2ffa524f03ed13e04aac4519603e47845c0b4ea9c25e1bf",
+    "artifactRel": "targeted-requery-subphase/action-fa95e425ed7449a93090096c319196b739060962a24195013046a5d06d9d8d4f/retrieval-pool.json",
+    "attempt": 1,
+    "audit": [
+      {
+        "artifactRel": null,
+        "bindingHash": null,
+        "bindingKey": null,
+        "event": "REGISTER_AUTHORIZED",
+        "from": null,
+        "reason": null,
+        "seq": 1,
+        "to": "AUTHORIZED"
+      },
+      {
+        "artifactRel": "targeted-requery-subphase/action-fa95e425ed7449a93090096c319196b739060962a24195013046a5d06d9d8d4f/retrieval-pool.json",
+        "bindingHash": "b7ab16810975a95bf2ffa524f03ed13e04aac4519603e47845c0b4ea9c25e1bf",
+        "bindingKey": "targeted-action:fa95e425ed7449a93090096c319196b739060962a24195013046a5d06d9d8d4f",
+        "event": "COMMIT",
+        "from": "AUTHORIZED",
+        "reason": null,
+        "seq": 2,
+        "to": "COMMITTED"
+      }
+    ],
+    "bindingHash": "b7ab16810975a95bf2ffa524f03ed13e04aac4519603e47845c0b4ea9c25e1bf",
+    "bindingKey": "targeted-action:fa95e425ed7449a93090096c319196b739060962a24195013046a5d06d9d8d4f",
+    "dedupeKey": "3ff70b41f6d91bc24c123c4ad604d2a056dc292cd5e05af1feb3a82413a4f9ab",
+    "gapId": "e43316892c032aa93240e3d921f563dc30c22437fcf43fb14f47a5d0e3451a4d:0",
+    "gapIdentityCore": "e43316892c032aa93240e3d921f563dc30c22437fcf43fb14f47a5d0e3451a4d",
+    "normalizedQuery": "补充资料",
+    "occurrenceId": "2bc2dc2a-042d-48d0-aee1-4a55633a9e4f",
+    "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+    "providerScope": [
+      {
+        "capability": "search",
+        "providerId": "zhihu-open-platform"
+      },
+      {
+        "capability": "search",
+        "providerId": "zhihu_search"
+      }
+    ],
+    "runId": "1f9f4cff28ea450bdf88493ff11cf464ffd71eb836ff194428f9d1e2a6b2a699",
+    "status": "COMMITTED",
+    "targetedActionId": "fa95e425ed7449a93090096c319196b739060962a24195013046a5d06d9d8d4f"
+  },
+  "anchoredActionStatusAtCrash": "COMMITTED",
+  "initialCalls": 4,
+  "initialPlannedIds": [
+    "100",
+    "200"
+  ],
+  "targetedIds": [
+    "300"
+  ],
+  "finalCalls": 8,
+  "resumePlannedIds": [
+    "300",
+    "400"
+  ],
+  "targetedProviderCallDeltaOnResume": 0,
+  "resolution": [
+    {
+      "audit": [
+        {
+          "basis": "DUPLICATE_ONLY",
+          "event": "EVALUATE",
+          "predicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+          "seq": 1,
+          "status": "UNRESOLVED",
+          "targetedActionId": "fa95e425ed7449a93090096c319196b739060962a24195013046a5d06d9d8d4f"
+        }
+      ],
+      "evaluatedActionIds": [
+        "fa95e425ed7449a93090096c319196b739060962a24195013046a5d06d9d8d4f"
+      ],
+      "gapId": "e43316892c032aa93240e3d921f563dc30c22437fcf43fb14f47a5d0e3451a4d:0",
+      "gapIdentityCore": "e43316892c032aa93240e3d921f563dc30c22437fcf43fb14f47a5d0e3451a4d",
+      "resolutionEvidence": [],
+      "occurrenceId": "2bc2dc2a-042d-48d0-aee1-4a55633a9e4f",
+      "planHash": "39f4096876cbace36fbf65576177964f0f689f678b7a48b59ab577ecf5f63f4b",
+      "resolutionBasis": "DUPLICATE_ONLY",
+      "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+      "status": "UNRESOLVED"
+    }
+  ],
+  "checks": [
+    {
+      "name": "real SIGKILL after targeted commit finalize",
+      "pass": true,
+      "actual": "SIGKILL",
+      "expected": "SIGKILL"
+    },
+    {
+      "name": "checkpoint-anchored action was COMMITTED at crash",
+      "pass": true,
+      "actual": "COMMITTED",
+      "expected": "COMMITTED"
+    },
+    {
+      "name": "pre-crash planned prior has case-specific baseline",
+      "pass": true,
+      "actual": [
+        "100",
+        "200"
+      ],
+      "expectedContains300": false
+    },
+    {
+      "name": "targeted provider double returns only prior question 300",
+      "pass": true,
+      "actual": [
+        "300"
+      ],
+      "expected": [
+        "300"
+      ]
+    },
+    {
+      "name": "resume planned results have case-specific content",
+      "pass": true,
+      "actual": [
+        "300",
+        "400"
+      ],
+      "expectedContains300": true
+    },
+    {
+      "name": "resume targeted provider delta is zero",
+      "pass": true,
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "T08 preserves pre-crash evidence classification (reverse-new-evidence)",
+      "pass": false,
+      "actual": [
+        {
+          "status": "UNRESOLVED",
+          "basis": "DUPLICATE_ONLY"
+        }
+      ],
+      "expected": {
+        "status": "RESOLVED",
+        "basis": "NEW_EVIDENCE_ATTRIBUTED"
+      }
+    }
+  ],
+  "failures": [
+    "T08 preserves pre-crash evidence classification (reverse-new-evidence)"
+  ]
+}

@@ -7,7 +7,7 @@ export const SCENARIOS = [
   'canonical', 'duplicate-only', 'contradiction-one-side', 'authority-unavailable',
   'free-form', 'unsafe-plan-owned', 'unknown-gap', 'stale-action',
   'all-provider-failed', 'provider-scope', 'global-budget', 'per-gap-bound',
-  'crash-before', 'crash-after', 'tampered-pool', 'stale-binding', 'equivalent-query',
+  'crash-before', 'crash-after', 'crash-resolution-input', 'crash-resolution-reverse', 'crash-framing-drift', 'tampered-pool', 'stale-binding', 'equivalent-query',
   'missing-resolution', 'tampered-resolution', 'foreign-resolution', 'missing-unauthed-resolution', 'canonical-ledger-drift',
 ];
 
@@ -27,6 +27,12 @@ export async function createFixture({ repo, workDir, scenario, phase = 'initial'
     schemaVersion: 1, queryVariants: ['基础资料'], aspects: ['补充资料'],
     entities: ['补充资料'], opposingFramings: [], terminologyVariants: [], sourceGroupIntents: [],
   };
+  if (scenario === 'crash-framing-drift') {
+    plan.queryVariants = ['framing-a', 'framing-b'];
+    plan.aspects = ['framing-b'];
+    plan.entities = ['framing-b'];
+    plan.opposingFramings = ['framing-a', 'framing-b'];
+  }
   if (scenario === 'contradiction-one-side') {
     plan.aspects = ['基础资料'];
     plan.opposingFramings = ['相反观点'];
@@ -43,6 +49,13 @@ export async function createFixture({ repo, workDir, scenario, phase = 'initial'
     plan.aspects = ['第一补充资料', '第二补充资料'];
     plan.entities = [...plan.aspects];
   }
+  if (scenario === 'per-gap-bound') {
+    plan.terminologyVariants = [{ term: '补充资料', variants: ['不同的补充资料查询'] }];
+  }
+  if (scenario === 'unknown-gap') {
+    plan.aspects = ['基础资料'];
+    plan.entities = ['基础资料'];
+  }
   const planHash = planContract.planHash(plan);
   const providers = ['zhihu_search', 'zhihu-open-platform'];
   const traceFile = path.join(workDir, 'acceptance-provider-calls.jsonl');
@@ -53,14 +66,23 @@ export async function createFixture({ repo, workDir, scenario, phase = 'initial'
   const seam = provider.createProviderSeam({ adapters: providers.map(providerId => ({
     providerId, capability: provider.CAPABILITY_SEARCH, authClass: provider.AUTH_CLASS_OFFICIAL_SECRET,
     retrieve({ query }) {
-      const isTargeted = !plan.queryVariants.includes(query);
       const state = json(path.join(workDir, 'orchestration-state.json'));
       const ledger = lifecycle.readAnchoredLedger(state, sha => composer.resolveAnchoredLedgerBytes(workDir, sha));
       const gapLedger = json(path.join(workDir, 'targeted-requery-ledger.json'));
       const matching = (ledger?.targetedActions ?? []).filter(a => a.normalizedQuery === query);
-      const failed = isTargeted && scenario === 'all-provider-failed';
-      const ids = !isTargeted || scenario === 'duplicate-only' || scenario === 'per-gap-bound'
-        || scenario === 'global-budget' ? ['100', '200'] : ['300', '301'];
+      const isTargeted = scenario === 'crash-framing-drift'
+        ? matching.some(action => action.status === 'AUTHORIZED') : !plan.queryVariants.includes(query);
+      const failed = scenario === 'crash-framing-drift'
+        ? phase === 'initial' ? query === 'framing-a' && !isTargeted : query === 'framing-b'
+        : isTargeted && scenario === 'all-provider-failed';
+      const ids = ['crash-resolution-input', 'crash-resolution-reverse'].includes(scenario)
+        ? (isTargeted ? ['300'] : scenario === 'crash-resolution-input'
+          ? phase === 'initial' ? ['300', '400'] : ['100', '200']
+          : phase === 'initial' ? ['100', '200'] : ['300', '400'])
+        : scenario === 'crash-framing-drift' && isTargeted ? ['300']
+        : scenario === 'crash-framing-drift' ? ['100', '200']
+        : !isTargeted || scenario === 'duplicate-only' || scenario === 'per-gap-bound'
+          || scenario === 'global-budget' || scenario === 'equivalent-query' ? ['100', '200'] : ['300', '301'];
       const output = failed ? {
         ok: false, provider_id: providerId, capability: provider.CAPABILITY_SEARCH,
         auth_class: provider.AUTH_CLASS_OFFICIAL_SECRET,
@@ -158,8 +180,35 @@ export async function createFixture({ repo, workDir, scenario, phase = 'initial'
         policy: { maxQueryBudget: targetedSubphase.maxQueryBudget, maxAttemptsPerGap: targetedSubphase.maxAttemptsPerGap } });
       return proposals;
     },
-    maxQueryBudget: scenario === 'global-budget' ? 6 : 20,
+    maxQueryBudget: scenario === 'global-budget' ? 4 : 20,
     maxAttemptsPerGap: scenario === 'per-gap-bound' ? 1 : 3,
+    diagnosticCandidates: scenario === 'unknown-gap' ? [{ gapType: 'UNSUPPORTED_ACCEPTANCE_TYPE' }] : [],
+    // Product-candidate callback input for bounded follow-up composition scenarios.
+    // It is absent from every legacy fixture; the exact-source campaign still pins the harness revision.
+    ...(scenario === 'crash-framing-drift' ? {
+      proposeForDiagnosis({ gaps }) {
+        const state = json(path.join(workDir, 'orchestration-state.json'));
+        const ledger = lifecycle.readAnchoredLedger(state, sha => composer.resolveAnchoredLedgerBytes(workDir, sha));
+        const prior = ledger?.targetedActions?.[0];
+        const proposals = prior ? [{ gapId: prior.gapId, planOwnedStringRef: { field: 'opposingFramings', index: 0 } }]
+          : gaps.filter(gap => gap.gapType === 'CONTRADICTION_GAP')
+          .map(gap => ({ gapId: gap.gapId, planOwnedStringRef: { field: 'opposingFramings', index: 0 } }));
+        event({ event: 'framing_proposal_callback', runId: state?.runId, occurrenceId: state?.occurrenceId,
+          planHash, diagnosisRound: gaps[0]?.diagnosisRound ?? 0,
+          diagnosedGapIds: gaps.map(gap => gap.gapId), anchoredPriorGapId: prior?.gapId ?? null, proposals });
+        return proposals;
+      },
+    } : {}),
+    ...( ['equivalent-query', 'per-gap-bound'].includes(scenario) ? {
+      proposeForDiagnosis({ gaps, diagnosisRound }) {
+        return gaps.map(gap => ({
+          gapId: gap.gapId,
+          planOwnedStringRef: scenario === 'per-gap-bound' && diagnosisRound > 0
+            ? { field: 'terminologyVariants.variants', index: 0, subIndex: 0 }
+            : { field: 'entities', index: Math.max(0, plan.entities.findIndex(v => `aspect:${v.toLowerCase()}` === gap.subjectKey)) },
+        }));
+      },
+    } : {}),
   };
   const runner = defaultRunner();
   return {
@@ -167,6 +216,7 @@ export async function createFixture({ repo, workDir, scenario, phase = 'initial'
     options: {
       topic: '定向检索工程验收', workDir, plan, runtime, seam, captureAdapter, runner,
       embeddingProvider, targetedSubphase,
+      config: scenario === 'global-budget' ? { maxQueryBudget: 4 } : undefined,
       fetchImpl: () => { throw new Error('T14_UNEXPECTED_NETWORK'); },
       crashPoint(label) {
         if (label === crash) {

@@ -61,6 +61,7 @@
  */
 
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 
 import { isValidPlanHashFormat } from './plan-contract.mjs';
@@ -78,6 +79,9 @@ import {
 } from './coverage-final-integration.mjs';
 import {
   gapTypeAllowsRetrievalAction,
+  normalizeGapType,
+  makeGapId,
+  appendGapRecord,
   normalizeSubjectString,
   opposingFramingSubjectKey,
   persistLedger,
@@ -87,6 +91,8 @@ import { diagnoseGaps } from './targeted-requery-diagnosis.mjs';
 import {
   AUTHORIZATION_STATUS_AUTHORIZED,
   authorizeTargetedAction,
+  REJECTION_ATTEMPT_BOUND_EXCEEDED,
+  REJECTION_BUDGET_EXCEEDED,
 } from './targeted-requery-authorization.mjs';
 import {
   ACTION_STATUS_AUTHORIZED,
@@ -178,8 +184,54 @@ export const SUBPHASE_STATUS_COMPLETED = 'COMPLETED';
 /** Work-relative directory that owns every targeted round artifact. */
 export const TARGETED_SUBPHASE_DIRNAME = 'targeted-requery-subphase';
 
-/** Gap diagnosis round index for the MVP (a single diagnosis pass per run). */
+/** First diagnosis pass; later passes use the same frozen core identity. */
 export const SUBPHASE_DIAGNOSIS_ROUND = 0;
+
+/** Derived T08 input only; never a retrieval completion/replay credential. */
+export const TARGETED_RESOLUTION_INPUT_PREFIX = 'targeted-resolution-input:';
+export const TARGETED_RESOLUTION_INPUT_STAGING_KEY = 'targeted-resolution-input';
+export function targetedResolutionInputKey(targetedActionId) {
+  return `${TARGETED_RESOLUTION_INPUT_PREFIX}${targetedActionId}`;
+}
+
+const RESOLUTION_INPUT_KEYS = ['schemaVersion', 'type', 'targetedActionId', 'planHash',
+  'occurrenceId', 'priorQuestionIds', 'declaredFraming', 'coveredFramings'].sort();
+const canonicalStrings = values => [...new Set(values)].sort();
+
+function validateResolutionInput(snapshot, action, gapType) {
+  const canonicalArray = values => Array.isArray(values)
+    && values.every(value => isNonEmptyString(value))
+    && JSON.stringify(values) === JSON.stringify(canonicalStrings(values));
+  if (!isPlainObject(snapshot)
+      || JSON.stringify(Object.keys(snapshot).sort()) !== JSON.stringify(RESOLUTION_INPUT_KEYS)
+      || snapshot.schemaVersion !== 1 || snapshot.type !== 'TargetedResolutionInput'
+      || snapshot.targetedActionId !== action.targetedActionId
+      || snapshot.planHash !== action.planHash || snapshot.occurrenceId !== action.occurrenceId
+      || !canonicalArray(snapshot.priorQuestionIds)
+      || !snapshot.priorQuestionIds.every(id => /^[1-9]\d*$/.test(id))
+      || (gapType !== 'CONTRADICTION_GAP' && (snapshot.declaredFraming !== null || snapshot.coveredFramings !== null))
+      || !(snapshot.declaredFraming === null || isNonEmptyString(snapshot.declaredFraming))
+      || !(snapshot.coveredFramings === null || canonicalArray(snapshot.coveredFramings))) {
+    throw subphaseError('targeted resolution input is malformed or belongs to another action/occurrence');
+  }
+  // Default strict walk: no new trustedPlanStrings call site or exemptions.
+  const safety = assertArtifactSafe(snapshot);
+  if (!safety.ok) throw subphaseError('targeted resolution input failed the artifact safety boundary');
+  return snapshot;
+}
+
+function readResolutionInput(state, action, resolveBytes, gapType) {
+  const sha = state?.hashes?.[targetedResolutionInputKey(action.targetedActionId)];
+  if (typeof resolveBytes !== 'function' || typeof sha !== 'string' || !/^[0-9a-f]{64}$/.test(sha)) {
+    throw subphaseError('checkpoint-bound original targeted resolution input is missing');
+  }
+  const bytes = resolveBytes(action.targetedActionId, sha);
+  if (bytes === null) throw subphaseError('checkpoint-bound original targeted resolution input is unrecoverable');
+  let snapshot;
+  try { snapshot = JSON.parse(bytes.toString('utf8')); }
+  catch { throw subphaseError('checkpoint-bound original targeted resolution input is not JSON'); }
+  return validateResolutionInput(snapshot, action, gapType);
+}
 
 export class TargetedSubphaseError extends Error {
   constructor(code, message) {
@@ -312,6 +364,10 @@ export function runTargetedSubphase({
   plannedRoutes,
   accumulatedPool,
   proposals = [],
+  proposeForDiagnosis = null,
+  diagnosticCandidates = [],
+  executionAllowed = true,
+  runTerminationReason = TERMINATION_NONE,
   maxQueryBudget,
   maxAttemptsPerGap,
   // F.6 — the PLANNED half of the global attempt budget, resolved by the composition
@@ -330,6 +386,8 @@ export function runTargetedSubphase({
   // lifecycle cannot import the staging helper without a cycle.
   stageLedgerBytes = null,
   resolveAnchoredBytes = null,
+  stageResolutionInputBytes = null,
+  resolveResolutionInputBytes = null,
 } = {}) {
   // ---- fail-closed input gates (no artifact is produced on any failure) -------
   if (!isNonEmptyString(workDir)) throw subphaseError('workDir must be a non-empty string');
@@ -344,6 +402,9 @@ export function runTargetedSubphase({
     throw subphaseError('accumulatedPool must carry candidates[] and channels[]');
   }
   if (!Array.isArray(proposals)) throw subphaseError('proposals must be an array');
+  if (proposeForDiagnosis !== null && typeof proposeForDiagnosis !== 'function') throw subphaseError('proposeForDiagnosis must be a function or null');
+  if (!Array.isArray(diagnosticCandidates)) throw subphaseError('diagnosticCandidates must be an array');
+  if (typeof executionAllowed !== 'boolean') throw subphaseError('executionAllowed must be boolean');
   if (!isPositiveInteger(maxQueryBudget)) throw subphaseError('maxQueryBudget must be a positive integer');
   if (!isPositiveInteger(maxAttemptsPerGap)) throw subphaseError('maxAttemptsPerGap must be a positive integer');
   if (!isNonNegativeInteger(plannedAttemptsBudgetCount)) {
@@ -356,6 +417,17 @@ export function runTargetedSubphase({
   if (state !== null && !isPlainObject(state)) throw subphaseError('state must be a plain object or null');
   if (typeof crashAt !== 'function') throw subphaseError('crashAt must be a function');
   if (framingForGap !== null && typeof framingForGap !== 'function') throw subphaseError('framingForGap must be a function or null');
+
+  // Diagnostic candidates never acquire gap identity. T03 remains the producer
+  // of the three legitimate gap types; unknown is only a rejection audit.
+  for (let index = 0; index < diagnosticCandidates.length; index += 1) {
+    const gapType = normalizeGapType(diagnosticCandidates[index]?.gapType);
+    appendEvent(workDir, { event: 'targeted_diagnostic_validation', runId, occurrenceId,
+      planHash: expectedPlanHash, candidateIndex: index, gapType,
+      status: gapTypeAllowsRetrievalAction(gapType) ? 'REQUIRES_DIAGNOSIS' : 'REJECTED',
+      rejectionCode: gapTypeAllowsRetrievalAction(gapType) ? null : 'UNKNOWN_GAP_TYPE' });
+  }
+  let workingPool = accumulatedPool;
 
   // ---- 1. diagnose gaps from the executed-query provenance (T03) -------------
   const provenance = executedQueryProvenance(accumulatedPool);
@@ -383,8 +455,8 @@ export function runTargetedSubphase({
   persistLedger(workDir, diagnosed.ledger);
 
   // ---- 2. deterministic gapId-ascending selection (E.8) ----------------------
-  const gaps = sortGapsByGapId(diagnosed.records);
-  const actionable = gaps.filter((gap) => gapTypeAllowsRetrievalAction(gap.gapType));
+  let gapLedger = diagnosed.ledger;
+  let gaps = sortGapsByGapId(diagnosed.records);
 
   // ---- 3. artifacts (create when absent; the composer owns the work dir) -----
   // The two persisted artifacts are anchored on BOTH planHash and occurrenceId.
@@ -470,6 +542,24 @@ export function runTargetedSubphase({
     ? loadedResolution.artifact
     : createResolutionArtifact({ planHash: expectedPlanHash, occurrenceId });
 
+  // Rebuild legitimate audit subjects from the Approved plan and checkpoint-
+  // anchored actions, never from a canonical ledger file as a credential.
+  const templates = diagnoseGaps({ plan, executedQueryProvenance: [],
+    planHash: expectedPlanHash, occurrenceId, diagnosisRound: 0 }).records;
+  for (const prior of actionsArtifact.targetedActions) {
+    if (gaps.some(gap => gap.gapId === prior.gapId)) continue;
+    const template = templates.find(gap => gap.gapIdentityCore === prior.gapIdentityCore);
+    if (!template) throw subphaseError('anchored action has no legitimate plan-owned gap subject');
+    const diagnosisRound = Number(prior.gapId.split(':')[1]);
+    const record = { ...template, diagnosisRound, gapId: makeGapId(template.gapIdentityCore, diagnosisRound) };
+    gapLedger = appendGapRecord(gapLedger, record);
+    gaps = gapLedger.diagnosedGaps;
+  }
+  persistLedger(workDir, gapLedger);
+  const actionable = gaps.filter(gap => gapTypeAllowsRetrievalAction(gap.gapType));
+  const blockedCores = new Set();
+  let diagnosisRound = 0;
+  let roundGaps = actionable.filter(gap => gap.diagnosisRound === 0);
   const targetedPools = [];
   const executedActionIds = [];
   const reusedActionIds = [];
@@ -480,10 +570,26 @@ export function runTargetedSubphase({
     return found ? { gapId: found.gapId, gapType: found.gapType } : null;
   };
 
-  for (const gap of actionable) {
-    const proposal = proposals.find((p) => isPlainObject(p) && p.gapId === gap.gapId);
-    // E.7: a gap with no admissible controller proposal is NEVER silently re-run.
-    if (proposal === undefined) continue;
+  for (;;) {
+    appendEvent(workDir, { event: 'targeted_diagnosis', runId, occurrenceId,
+      planHash: expectedPlanHash, diagnosisRound, gaps: roundGaps.map(gap => ({
+        gapId: gap.gapId, gapIdentityCore: gap.gapIdentityCore, gapType: gap.gapType })) });
+    const roundProposals = !executionAllowed ? [] : proposeForDiagnosis === null
+      ? (diagnosisRound === 0 ? proposals : [])
+      : proposeForDiagnosis({ diagnosisRound, gaps: roundGaps.map(gap => ({ ...gap })) });
+    if (!Array.isArray(roundProposals)) throw subphaseError('diagnosis proposals must be an array');
+    for (const gap of roundGaps) {
+    const proposal = roundProposals.find(p => isPlainObject(p) && p.gapId === gap.gapId);
+    const prior = latestActionForGap(actionsArtifact, gap.gapId);
+    if (proposal === undefined && prior === null) { blockedCores.add(gap.gapIdentityCore); continue; }
+    if (proposal !== undefined) appendEvent(workDir, { event: 'targeted_proposal',
+      diagnosisRound, gapId: gap.gapId, gapIdentityCore: gap.gapIdentityCore,
+      runId, occurrenceId, planHash: expectedPlanHash,
+      planOwnedStringRef: proposal.planOwnedStringRef ?? null });
+    if (proposal !== undefined && prior === null && actionsArtifact.rejected.some(record =>
+      record.gapId === gap.gapId && JSON.stringify(record.proposalVerbatim) === JSON.stringify(proposal))) {
+      blockedCores.add(gap.gapIdentityCore); continue;
+    }
 
     // ---- F.5 REPLAY FIRST (the frozen decision outranks authorization) -------
     // A gap that already carries a recorded action is resolved by T06's replay
@@ -502,7 +608,6 @@ export function runTargetedSubphase({
     //       revoked. When `state.hashes[bindingKey]` is absent or mismatched the
     //       contract answer is a RE-RUN, admitting the possible double payment
     //       that `UNKNOWN != PASS` demands. Never fabricate completion evidence.
-    const prior = latestActionForGap(actionsArtifact, gap.gapId);
     let action;
     let mergedPool = null;
     let advanceToTerminal = false;
@@ -514,7 +619,7 @@ export function runTargetedSubphase({
         artifact: actionsArtifact,
         identity: identityOf(prior),
       });
-      if (replay.decision === RESUME_BLOCKED) continue; // non-advancing terminal: fail closed
+      if (replay.decision === RESUME_BLOCKED) { blockedCores.add(gap.gapIdentityCore); continue; }
       if (replay.decision === RESUME_REUSE) {
         // A committed-set action whose checkpoint binding validates: never repeat
         // the paid retrieval, and never drop the evidence already bought. REUSE
@@ -535,6 +640,7 @@ export function runTargetedSubphase({
         advanceToTerminal = !FINAL_EVIDENCE_STATUSES.includes(prior.status);
         action = prior;
       } else if (prior.status === ACTION_STATUS_AUTHORIZED) {
+        if (!executionAllowed) throw subphaseError('run STOP forbids re-paying an uncommitted targeted action');
         // F.5's plain safe re-run: an AUTHORIZED-only record carries no completion
         // evidence, so the single retrieval entry point below runs it for real. This
         // is the only re-run branch that may pay again — and it is the branch the
@@ -594,6 +700,7 @@ export function runTargetedSubphase({
         action = prior;
       }
     } else {
+      if (!executionAllowed) { blockedCores.add(gap.gapIdentityCore); continue; }
       const countsSoFar = computeTargetedAttemptCounts({ actions: actionsArtifact.targetedActions });
       // F.6 / E.5(7): the preflight denominator is BOTH halves of the budget. The
       // targeted half below is the ledger pure function; the planned half
@@ -622,13 +729,42 @@ export function runTargetedSubphase({
           .filter((k) => isNonEmptyString(k)),
       });
 
+      appendEvent(workDir, { event: 'targeted_decision', diagnosisRound,
+        gapId: gap.gapId, gapIdentityCore: gap.gapIdentityCore, runId, occurrenceId,
+        planHash: expectedPlanHash, status: decision.status,
+        rejectionCode: decision.rejectionCode, normalizedQuery: decision.normalizedQuery,
+        targetedActionId: decision.targetedActionId,
+        attemptsByCore: attemptsByGapIdentityCore(actionsArtifact.targetedActions)[gap.gapIdentityCore] ?? 0,
+        attemptsBudgetCount: plannedAttemptsBudgetCount + countsSoFar.executed + countsSoFar.failed });
       if (decision.status !== AUTHORIZATION_STATUS_AUTHORIZED) {
+        blockedCores.add(gap.gapIdentityCore);
         actionsArtifact = recordRejectedDecision(actionsArtifact, decision, proposal);
         persistActionsArtifact(workDir, actionsArtifact);
         if (isNonEmptyString(decision.gapId)) rejectedActionIds.push(decision.gapId);
         continue;
       }
 
+      if (typeof stageLedgerBytes !== 'function' || typeof stageResolutionInputBytes !== 'function'
+          || typeof resolveResolutionInputBytes !== 'function') {
+        throw subphaseError('targeted authorization requires the composition-owned resolution-input staging seam');
+      }
+      const framing = gap.gapType !== 'CONTRADICTION_GAP' ? null : framingForGap === null
+        ? defaultFramingForGap(gap, plan, executedQueryProvenance(workingPool)) : framingForGap(gap);
+      const snapshot = validateResolutionInput({
+        schemaVersion: 1, type: 'TargetedResolutionInput', targetedActionId: decision.targetedActionId,
+        planHash: expectedPlanHash, occurrenceId,
+        priorQuestionIds: canonicalStrings(workingPool.candidates.map(candidate => String(candidate.identity.questionId))),
+        declaredFraming: framing?.declaredFraming ?? null,
+        coveredFramings: Array.isArray(framing?.coveredFramings)
+          ? canonicalStrings(framing.coveredFramings) : framing?.coveredFramings ?? null,
+      }, decision, gap.gapType);
+      const snapshotBytes = `${JSON.stringify(snapshot, null, 2)}\n`;
+      const snapshotHash = stageResolutionInputBytes(decision.targetedActionId, snapshotBytes);
+      if (snapshotHash !== createHash('sha256').update(snapshotBytes).digest('hex')) {
+        throw subphaseError('resolution-input publisher must return an exact content hash');
+      }
+      currentState = { ...currentState, hashes: { ...currentState?.hashes,
+        [targetedResolutionInputKey(decision.targetedActionId)]: snapshotHash } };
       actionsArtifact = registerAuthorizedAction(actionsArtifact, decision);
       persistActionsArtifact(workDir, actionsArtifact);
       // F.5.1 ANCHOR 1 — an authorization is a decision to spend money, so it must be
@@ -661,6 +797,8 @@ export function runTargetedSubphase({
     // AUTHORIZED-only safe re-run above — the contract's acknowledged possible
     // double payment, admitted precisely because it has no evidence to prove it.
     if (action.status === ACTION_STATUS_AUTHORIZED) {
+      // AUTHORIZED-only safe re-run must retain its original G.1 inputs too.
+      readResolutionInput(currentState, action, resolveResolutionInputBytes, gap.gapType);
       const roundDir = path.join(workDir, TARGETED_SUBPHASE_DIRNAME, `action-${targetedActionId}`);
       const res = runMultiQueryRetrieval({
         plan,
@@ -679,6 +817,7 @@ export function runTargetedSubphase({
           actionsArtifact, targetedActionId, ACTION_STATUS_FAILED_OPERATIONAL, { event: 'EXECUTE_FAILED', reason: 'operational' },
         );
         persistActionsArtifact(workDir, actionsArtifact);
+        blockedCores.add(gap.gapIdentityCore);
         continue;
       }
 
@@ -724,11 +863,10 @@ export function runTargetedSubphase({
     // accumulated pool and could rewrite append-only history. Only a record that
     // still owes a conclusion is evaluated here.
     if (advanceToTerminal || !FINAL_EVIDENCE_STATUSES.includes(action.status)) {
-      const priorQuestionIds = [...new Set(accumulatedPool.candidates.map((c) => String(c.identity.questionId)))];
+      const snapshot = readResolutionInput(currentState, action, resolveResolutionInputBytes, gap.gapType);
+      const priorQuestionIds = snapshot.priorQuestionIds;
       const targetedQuestionIds = (mergedPool?.candidates ?? []).map((c) => String(c.identity.questionId));
-      const framing = framingForGap === null
-        ? defaultFramingForGap(gap, plan, provenance)
-        : framingForGap(gap);
+      const framing = snapshot;
       const predicateResult = evaluateResolution({
         gapType: gap.gapType,
         priorQuestionIds,
@@ -755,18 +893,32 @@ export function runTargetedSubphase({
       });
       persistResolutionArtifact(workDir, resolutionArtifact);
     }
+    if (resolutionArtifact.resolutions.some(record => record.gapId === gap.gapId && record.status === 'RESOLVED')) {
+      blockedCores.add(gap.gapIdentityCore);
+    }
+    // Evaluate novelty against the pre-action pool, then merge its bound product.
+    if (mergedPool !== null) workingPool = augmentAccumulatedPool({
+      workDir, plan, expectedPlanHash, accumulatedPool: workingPool, targetedPools: [mergedPool] });
   }
 
   // H-8 / E.7: every diagnosed gap reaches an explicit terminal, including
   // no-proposal, rejected and operational-failure paths. No action is fabricated.
-  for (const gap of gaps) {
+  for (const gap of roundGaps) {
     if (resolutionArtifact.resolutions.some(record => record.gapId === gap.gapId)) continue;
     const prior = latestActionForGap(actionsArtifact, gap.gapId);
+    const paidCounts = computeTargetedAttemptCounts({ actions: actionsArtifact.targetedActions });
+    const coreAttempts = attemptsByGapIdentityCore(actionsArtifact.targetedActions)[gap.gapIdentityCore] ?? 0;
+    const rejected = actionsArtifact.rejected.find(record => record.gapId === gap.gapId);
     const terminal = classifyGapTerminal({
       predicateResult: evaluateResolution({ gapType: gap.gapType }),
-      terminationReason: prior?.status === ACTION_STATUS_FAILED_OPERATIONAL
-        ? TERMINATION_ACTION_OPERATIONAL_FAILURE : TERMINATION_NEVER_AUTHORIZED,
-      everAuthorized: prior !== null,
+      terminationReason: prior?.status === ACTION_STATUS_FAILED_OPERATIONAL ? TERMINATION_ACTION_OPERATIONAL_FAILURE
+        : !executionAllowed ? runTerminationReason
+          : coreAttempts >= maxAttemptsPerGap || rejected?.rejectionCode === REJECTION_ATTEMPT_BOUND_EXCEEDED
+            ? TERMINATION_PER_GAP_BOUND_EXHAUSTED
+            : plannedAttemptsBudgetCount + paidCounts.executed + paidCounts.failed >= maxQueryBudget
+              || rejected?.rejectionCode === REJECTION_BUDGET_EXCEEDED ? TERMINATION_RUN_BUDGET_STOP
+                : TERMINATION_NEVER_AUTHORIZED,
+      everAuthorized: coreAttempts > 0,
     });
     resolutionArtifact = recordResolution(resolutionArtifact, {
       gapId: gap.gapId, gapIdentityCore: gap.gapIdentityCore,
@@ -780,6 +932,28 @@ export function runTargetedSubphase({
   if (stageLedgerBytes !== null) {
     currentState = anchorLedgerVersion(currentState, actionsArtifact, stageLedgerBytes(actionsArtifactBytes(actionsArtifact)));
     writeState(workDir, currentState);
+  }
+
+    const nextRound = diagnosisRound + 1;
+    const nextByCore = new Map(gaps.filter(gap => gap.diagnosisRound === nextRound)
+      .map(gap => [gap.gapIdentityCore, gap]));
+    if (executionAllowed && proposeForDiagnosis !== null) {
+      const nextDiagnosis = diagnoseGaps({ plan, executedQueryProvenance: executedQueryProvenance(workingPool),
+        planHash: expectedPlanHash, occurrenceId, diagnosisRound: nextRound });
+      for (const gap of [...nextDiagnosis.records, ...roundGaps]) {
+        if (blockedCores.has(gap.gapIdentityCore) || nextByCore.has(gap.gapIdentityCore)) continue;
+        nextByCore.set(gap.gapIdentityCore, { ...gap, diagnosisRound: nextRound,
+          gapId: makeGapId(gap.gapIdentityCore, nextRound) });
+      }
+    }
+    roundGaps = sortGapsByGapId([...nextByCore.values()]);
+    if (roundGaps.length === 0) break;
+    for (const gap of roundGaps) {
+      if (!gaps.some(record => record.gapId === gap.gapId)) gapLedger = appendGapRecord(gapLedger, gap);
+    }
+    gaps = gapLedger.diagnosedGaps;
+    persistLedger(workDir, gapLedger);
+    diagnosisRound = nextRound;
   }
 
   // ---- 4. augment the accumulated pool (T09's single writer face) ------------
@@ -913,7 +1087,7 @@ function readBoundTargetedPool(workDir, artifactRel, expectedHash) {
  * trustedPlanStrings. The targeted strings pass on their own merits: having
  * cleared both lenses at admission, they also clear the untrusted baseline.
  */
-function augmentAccumulatedPool({ workDir, plan, expectedPlanHash, accumulatedPool, targetedPools }) {
+export function augmentAccumulatedPool({ workDir, plan, expectedPlanHash, accumulatedPool, targetedPools }) {
   const candidates = mergeCandidates(accumulatedPool, targetedPools);
   const channels = mergeChannels(accumulatedPool, targetedPools);
   const trusted = new Set(Array.isArray(plan.queryVariants) ? plan.queryVariants : []);

@@ -72,11 +72,13 @@ import {
   beginConvergenceJournal,
   CoverageIntegrationError,
 } from './coverage-final-integration.mjs';
-import { runTargetedSubphase, TARGETED_SUBPHASE_DIRNAME, computePlannedAttemptCount } from './targeted-requery-subphase.mjs';
+import { TARGETED_RESOLUTION_INPUT_STAGING_KEY, TARGETED_RESOLUTION_INPUT_PREFIX, runTargetedSubphase, augmentAccumulatedPool, TARGETED_SUBPHASE_DIRNAME, computePlannedAttemptCount } from './targeted-requery-subphase.mjs';
 import { TARGETED_BINDING_PREFIX, LEDGER_CHECKPOINT_KEY, LEDGER_STAGING_KEY, ACTIONS_FILENAME, readAnchoredLedger } from './targeted-requery-lifecycle.mjs';
 import { computeTargetedAttemptCounts } from './targeted-requery-attempts.mjs';
 import { buildTargetedResearchGapBlock } from './targeted-requery-gap-visibility.mjs';
 import { loadResolutionArtifact } from './targeted-requery-resolution.mjs';
+import { resolveRoundControllerConfig } from './retrieval-round-controller.mjs';
+import { TERMINATION_NONE, TERMINATION_RUN_BUDGET_STOP, TERMINATION_RUN_SATURATED } from './targeted-requery-resolution.mjs';
 import { decideTargetedReplay, RESUME_REUSE } from './targeted-requery-lifecycle.mjs';
 import { DECISION_PROVIDER_FAILURE } from './retrieval-round-controller.mjs';
 import {
@@ -348,6 +350,17 @@ export function resolveAnchoredLedgerBytes(workDir, sha) {
   } catch {
     return null;
   }
+}
+
+/** Only checkpoint-hash-verified derived T08 input; not a replay decision. */
+export function resolveResolutionInputBytes(workDir, targetedActionId, sha) {
+  const inspect = inspectCommittedArtifact({
+    workDir, key: TARGETED_RESOLUTION_INPUT_STAGING_KEY,
+    canonicalRel: path.join('targeted-requery-subphase', `action-${targetedActionId}`, 'resolution-input.json'),
+    expectedHash: sha,
+  });
+  if (inspect.status !== ARTIFACT_STAGED_MATCH && inspect.status !== ARTIFACT_CANONICAL_MATCH) return null;
+  try { return readFileSync(inspect.absPath); } catch { return null; }
 }
 
 export function materializeStagedArtifact(workDir, stagedPath, canonicalRel) {
@@ -809,7 +822,10 @@ function targetedBindingsOf(hashes) {
   if (!isPlainObject(hashes)) return {};
   const out = {};
   for (const [key, value] of Object.entries(hashes)) {
-    if (key.startsWith(TARGETED_BINDING_PREFIX) && typeof value === 'string' && HEX64_BINDING.test(value)) {
+    const resolutionInputKey = key.startsWith(TARGETED_RESOLUTION_INPUT_PREFIX)
+      && HEX64_BINDING.test(key.slice(TARGETED_RESOLUTION_INPUT_PREFIX.length));
+    if ((key.startsWith(TARGETED_BINDING_PREFIX) || resolutionInputKey)
+        && typeof value === 'string' && HEX64_BINDING.test(value)) {
       out[key] = value;
     }
   }
@@ -1226,8 +1242,7 @@ export async function composeP1Research({
       // F.6 / F.6.1 — the targeted half of the global attempt budget, for the
       // BUDGET_STOP denominator of the frozen round loop.
       //
-      // The loop runs BEFORE the targeted sub-phase, so at this point the only
-      // targeted attempts that exist are the ones already recorded in the
+      // The loop starts with the targeted attempts already recorded in the
       // CHECKPOINT-ANCHORED ledger of the prior occurrence state (F.5.1): an
       // action paid for earlier but whose commit point was never reached is
       // precisely a payment the budget must still account for. Deriving them from
@@ -1244,6 +1259,45 @@ export async function composeP1Research({
         ? null
         : computeTargetedAttemptCounts({ actions: anchoredPriorLedger.targetedActions });
 
+      let targeted = null;
+      const invokeTargeted = (liveCoverage, livePool, executionAllowed, runTerminationReason = TERMINATION_NONE) => {
+        targeted = runTargetedSubphase({
+          ...targetedSubphase,
+          workDir,
+          plan,
+          planHash: expectedPlanHash,
+          runId,
+          occurrenceId,
+          seam: effectiveSeam,
+          channels: plannedRoutes.map((r) => ({ providerId: r.providerId })),
+          plannedRoutes,
+          accumulatedPool: livePool,
+          state,
+          crashAt,
+          // F.5.1 — the composition layer owns the content-addressed staging directory and
+          // injects the ledger and resolution-input staging primitives. Injection rather than a direct
+          // import is forced by the module graph (composer -> subphase -> lifecycle): the
+          // lifecycle must not import this module back, or the cycle would make the trust
+          // decision and the byte-movement mutually dependent.
+          stageLedgerBytes: (bytes) => stageArtifactBytes(workDir, LEDGER_STAGING_KEY, bytes).sha,
+          resolveAnchoredBytes: (sha) => resolveAnchoredLedgerBytes(workDir, sha),
+          stageResolutionInputBytes: (actionId, bytes) => stageArtifactBytes(workDir, TARGETED_RESOLUTION_INPUT_STAGING_KEY, bytes).sha,
+          resolveResolutionInputBytes: (actionId, sha) => resolveResolutionInputBytes(workDir, actionId, sha),
+          // F.6 / E.5(7): the PLANNED half of the global budget denominator, read from
+          // the live coverage snapshot in the current planned CONTINUE window.
+          // Without it the authorization preflight would see only the targeted half
+          // and could authorize work the global budget cannot pay for.
+          plannedAttemptsBudgetCount: computePlannedAttemptCount(liveCoverage),
+          maxQueryBudget: Math.min(targetedSubphase.maxQueryBudget, resolveRoundControllerConfig(config).maxQueryBudget),
+          executionAllowed,
+          runTerminationReason,
+        });
+        if (targeted.state !== null) state.hashes = targeted.state.hashes;
+        appendEvent(workDir, { event: 'targeted_subphase', status: targeted.status,
+          gapsDiagnosed: targeted.gaps.length, executed: targeted.counts.executed, failed: targeted.counts.failed });
+        return targeted;
+      };
+
       const loop = runRetrievalFeedbackLoop({
         coverageState, plan, planHash: expectedPlanHash, workDir,
         seam: effectiveSeam,
@@ -1254,6 +1308,8 @@ export async function composeP1Research({
         // F.6.1: additive; the controller adds this to the planned half it derives
         // from `coverageState.retrieval`, giving the contract's four-term sum.
         targetedAttempts: priorTargetedAttempts,
+        targetedOnContinue: targetedSubphase === null ? null : ({ coverageState: liveCoverage, pool: livePool }) =>
+          invokeTargeted(liveCoverage, livePool, true),
       });
       if (loop.pool === null || loop.decision === DECISION_PROVIDER_FAILURE) {
         return persistFailure(CFC_RETRIEVAL_FAILED, `retrieval ended without a candidate pool (decision=${String(loop.decision)}, stopReason=${String(loop.stopReason)})`);
@@ -1280,47 +1336,10 @@ export async function composeP1Research({
       // `runMultiQueryRetrieval({..., targetedQueries})` seam (no second pipeline).
       // ---------------------------------------------------------------------
       if (targetedSubphase !== null) {
-        // The opt-in config may supply ONLY sub-phase policy (proposals,
-        // maxQueryBudget, maxAttemptsPerGap, framingForGap); the wiring below is
-        // spread LAST so a config can never redirect the work dir, plan, checkpoint
-        // state, seam or crash seam.
-        const targeted = runTargetedSubphase({
-          ...targetedSubphase,
-          workDir,
-          plan,
-          planHash: expectedPlanHash,
-          runId,
-          occurrenceId,
-          seam: effectiveSeam,
-          channels: plannedRoutes.map((r) => ({ providerId: r.providerId })),
-          plannedRoutes,
-          accumulatedPool: pool,
-          state,
-          crashAt,
-          // F.5.1 — the composition layer owns the content-addressed staging directory and
-          // injects the two primitives the sub-phase needs. Injection rather than a direct
-          // import is forced by the module graph (composer -> subphase -> lifecycle): the
-          // lifecycle must not import this module back, or the cycle would make the trust
-          // decision and the byte-movement mutually dependent.
-          stageLedgerBytes: (bytes) => stageArtifactBytes(workDir, LEDGER_STAGING_KEY, bytes).sha,
-          resolveAnchoredBytes: (sha) => resolveAnchoredLedgerBytes(workDir, sha),
-          // F.6 / E.5(7): the PLANNED half of the global budget denominator, read from
-          // the live coverage state this layer owns (the loop has just returned it).
-          // Without it the authorization preflight would see only the targeted half
-          // and could authorize work the global budget cannot pay for.
-          plannedAttemptsBudgetCount: computePlannedAttemptCount(coverageState),
-        });
-        pool = targeted.pool;
-        // Adopt the targeted checkpoint bindings into the composition checkpoint so
-        // the checkpoint-first commit point stays the ONLY trust root (F.5 / AC5).
-        if (targeted.state !== null) state.hashes = targeted.state.hashes;
-        appendEvent(workDir, {
-          event: 'targeted_subphase',
-          status: targeted.status,
-          gapsDiagnosed: targeted.gaps.length,
-          executed: targeted.counts.executed,
-          failed: targeted.counts.failed,
-        });
+        if (targeted === null) invokeTargeted(coverageState, pool, false,
+          loop.decision === 'BUDGET_STOP' ? TERMINATION_RUN_BUDGET_STOP : TERMINATION_RUN_SATURATED);
+        pool = augmentAccumulatedPool({ workDir, plan, expectedPlanHash,
+          accumulatedPool: pool, targetedPools: [targeted.pool] });
       }
 
       // Crash-consistency seam: the T06 loop has returned
@@ -1636,7 +1655,7 @@ export async function composeP1Research({
     // the same way they are for an interrupted resume, so the COMPLETE gate
     // must be able to prove them too. Dropping them here is what let a
     // deleted/mutated pool ride through a COMPLETE reuse.
-    // The targeted-action:* namespace is carried THROUGH this rebuild: it is
+    // The targeted-action:* and derived resolution-input namespaces are carried THROUGH this rebuild: it is
     // rebuilt from scratch here (no spread), and dropping it would erase the
     // sub-phase's F.5 completion evidence from the final checkpoint — the exact
     // "no evidence ⇒ re-run the paid retrieval" downgrade the resume boundary

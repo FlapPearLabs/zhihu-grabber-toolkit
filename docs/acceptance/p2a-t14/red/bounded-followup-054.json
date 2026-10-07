@@ -1,0 +1,143 @@
+{
+  "schema": "p2a-t14-loadbearing-red/v2",
+  "resultKind": "EXPECTED_RED_ASSERTION_FAILURE",
+  "sourceHead": "054ef8d8aafa26372af5b695b0ddb54e766b507b",
+  "expectedHead": "054ef8d8aafa26372af5b695b0ddb54e766b507b",
+  "sourceClean": true,
+  "amendmentSha256": "734658c03e7c8d5f50fc55cc5af5578967ad890dd842952ef15363c4c27d8b19",
+  "findings": [
+    "equivalent-query: real round-1 diagnosis",
+    "equivalent-query: correct durable rejection code",
+    "per-gap-bound: real round-1 diagnosis",
+    "per-gap-bound: correct durable rejection code"
+  ],
+  "runs": {
+    "equivalent-query": {
+      "fixtureCallbackConfigured": true,
+      "externalDuplicateControl": true,
+      "callbackProposalResolvedQueries": [
+        "补充资料",
+        "补充资料"
+      ],
+      "roundZeroProposal": [
+        {
+          "gapId": "670f2b3b85d639358d03e07492be384a4886d7cdebc3312e9ae6c28f601f92da:0",
+          "planOwnedStringRef": {
+            "field": "entities",
+            "index": 0
+          }
+        }
+      ],
+      "roundOneProposal": [
+        {
+          "gapId": "670f2b3b85d639358d03e07492be384a4886d7cdebc3312e9ae6c28f601f92da:1",
+          "planOwnedStringRef": {
+            "field": "entities",
+            "index": 0
+          }
+        }
+      ],
+      "result": {
+        "ok": true,
+        "code": null
+      },
+      "occurrenceId": "978aff03-dc3b-49c3-9f42-cf727749a32c",
+      "diagnosisRounds": [
+        0
+      ],
+      "gapIdentityCores": [
+        "670f2b3b85d639358d03e07492be384a4886d7cdebc3312e9ae6c28f601f92da"
+      ],
+      "events": [],
+      "rejected": [],
+      "targetedCalls": 2,
+      "checks": [
+        {
+          "name": "real round-1 diagnosis",
+          "pass": false,
+          "expected": true,
+          "actual": {
+            "roundOneGap": false,
+            "roundOneEvent": false
+          }
+        },
+        {
+          "name": "correct durable rejection code",
+          "pass": false,
+          "expected": "EQUIVALENT_QUERY_ALREADY_AUTHORIZED",
+          "actual": []
+        },
+        {
+          "name": "rejected proposal causes zero additional provider IO",
+          "pass": true,
+          "expected": 2,
+          "actual": 2
+        }
+      ]
+    },
+    "per-gap-bound": {
+      "fixtureCallbackConfigured": true,
+      "externalDuplicateControl": true,
+      "callbackProposalResolvedQueries": [
+        "补充资料",
+        "不同的补充资料查询"
+      ],
+      "roundZeroProposal": [
+        {
+          "gapId": "09b670dae8b97d590eac1aacb145a7494673be2b4b12bce4ecbb327772441e43:0",
+          "planOwnedStringRef": {
+            "field": "entities",
+            "index": 0
+          }
+        }
+      ],
+      "roundOneProposal": [
+        {
+          "gapId": "09b670dae8b97d590eac1aacb145a7494673be2b4b12bce4ecbb327772441e43:1",
+          "planOwnedStringRef": {
+            "field": "terminologyVariants.variants",
+            "index": 0,
+            "subIndex": 0
+          }
+        }
+      ],
+      "result": {
+        "ok": true,
+        "code": null
+      },
+      "occurrenceId": "b9d12f2e-a0b0-4b45-be25-0e7836854f95",
+      "diagnosisRounds": [
+        0
+      ],
+      "gapIdentityCores": [
+        "09b670dae8b97d590eac1aacb145a7494673be2b4b12bce4ecbb327772441e43"
+      ],
+      "events": [],
+      "rejected": [],
+      "targetedCalls": 2,
+      "checks": [
+        {
+          "name": "real round-1 diagnosis",
+          "pass": false,
+          "expected": true,
+          "actual": {
+            "roundOneGap": false,
+            "roundOneEvent": false
+          }
+        },
+        {
+          "name": "correct durable rejection code",
+          "pass": false,
+          "expected": "PER_GAP_ATTEMPT_BOUND_EXCEEDED",
+          "actual": []
+        },
+        {
+          "name": "rejected proposal causes zero additional provider IO",
+          "pass": true,
+          "expected": 2,
+          "actual": 2
+        }
+      ]
+    }
+  }
+}

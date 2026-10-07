@@ -11,9 +11,15 @@ const arg = (key, fallback = null) => {
   const index = args.indexOf(`--${key}`);
   return index < 0 ? fallback : args[index + 1];
 };
+const expectedHead = arg('expected-head');
+if (!/^[a-f0-9]{40}$/.test(expectedHead ?? '')) {
+  console.error('T14_EXPECTED_HEAD_REQUIRED: pass --expected-head <reviewed 40-character SHA> before running the campaign');
+  process.exit(1);
+}
 const repo = path.resolve(arg('repo', fileURLToPath(new URL('../../../', import.meta.url))));
 const out = path.resolve(arg('out', '/tmp/p2a-t14-acceptance'));
 const exactSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim();
+if (exactSha !== expectedHead) throw new Error(`T14_EXPECTED_HEAD_MISMATCH: expected ${expectedHead}, got ${exactSha}`);
 const sourceDirty = [
   ...execFileSync('git', ['diff', 'HEAD', '--name-only'], { cwd: repo, encoding: 'utf8' }).trim().split('\n').filter(Boolean),
   ...execFileSync('git', ['ls-files', '--others', '--exclude-standard'], { cwd: repo, encoding: 'utf8' }).trim().split('\n').filter(Boolean),
@@ -28,8 +34,9 @@ for (const name of ['driver.mjs', 'fixtures.mjs', 'matrix.mjs', 'package-evidenc
   }
 }
 const load = rel => import(pathToFileURL(path.join(repo, 'research-orchestration', rel)).href);
-const [{ readAnchoredLedger }, { resolveAnchoredLedgerBytes }] = await Promise.all([
-  load('lib/targeted-requery-lifecycle.mjs'), load('lib/p1-runtime-composer.mjs'),
+const [{ readAnchoredLedger }, composer, authorizationCodes, { GAP_TYPES }, { targetedResolutionInputKey }] = await Promise.all([
+  load('lib/targeted-requery-lifecycle.mjs'), load('lib/p1-runtime-composer.mjs'), load('lib/targeted-requery-authorization.mjs'), load('lib/targeted-requery-ledger.mjs'),
+  load('lib/targeted-requery-subphase.mjs'),
 ]);
 const readLines = file => fs.existsSync(file)
   ? fs.readFileSync(file, 'utf8').trim().split('\n').filter(Boolean).map(line => JSON.parse(line)) : [];
@@ -50,12 +57,23 @@ function inventory(dir, prefix = '') {
 
 function observe(workDir) {
   const state = json(path.join(workDir, 'orchestration-state.json'));
+  const actions = json(path.join(workDir, 'targeted-requery-actions.json'));
+  const anchoredActions = readAnchoredLedger(state, sha => composer.resolveAnchoredLedgerBytes(workDir, sha));
+  const resolutionInputs = (anchoredActions?.targetedActions ?? actions?.targetedActions ?? []).map(action => {
+    const key = targetedResolutionInputKey(action.targetedActionId);
+    const bindingHash = state?.hashes?.[key] ?? null;
+    const bytes = bindingHash ? composer.resolveResolutionInputBytes(workDir, action.targetedActionId, bindingHash) : null;
+    let snapshot = null;
+    try { snapshot = bytes ? JSON.parse(bytes.toString('utf8')) : null; } catch {}
+    return { targetedActionId: action.targetedActionId, gapId: action.gapId, planHash: action.planHash,
+      occurrenceId: action.occurrenceId, key, bindingHash, byteHash: bytes ? hash(bytes) : null,
+      byteLength: bytes?.length ?? null, bytesHex: bytes?.toString('hex') ?? null, snapshot };
+  });
   return {
     exactRepoSha: exactSha, sourceDirty,
     runId: state?.runId ?? null, occurrenceId: state?.occurrenceId ?? null,
     plan: json(path.join(workDir, 'research-plan.json')),
-    state, actions: json(path.join(workDir, 'targeted-requery-actions.json')),
-    anchoredActions: readAnchoredLedger(state, sha => resolveAnchoredLedgerBytes(workDir, sha)),
+    state, actions, anchoredActions, resolutionInputs,
     resolution: json(path.join(workDir, 'targeted-requery-resolution.json')),
     gaps: json(path.join(workDir, 'targeted-requery-ledger.json')),
     finalResult: json(path.join(workDir, 'research-result.json')),
@@ -143,18 +161,18 @@ if (arg('child')) {
     if (fs.existsSync(workDir)) throw new Error('Campaign requires fresh scenario directories');
     fs.mkdirSync(scenarioDir, { recursive: true });
     const run = (phase, crash = null) => {
-      const childArgs = [childScript, '--child', scenario, '--repo', repo, '--out', workDir, '--phase', phase];
+      const childArgs = [childScript, '--child', scenario, '--repo', repo, '--out', workDir, '--phase', phase, '--expected-head', expectedHead];
       if (crash) childArgs.push('--crash', crash);
       const child = spawnSync(process.execPath, childArgs, { encoding: 'utf8', timeout: 120000, maxBuffer: 4 * 1024 * 1024 });
       fs.writeFileSync(path.join(scenarioDir, `${phase}.stdout.log`), child.stdout ?? '');
       fs.writeFileSync(path.join(scenarioDir, `${phase}.stderr.log`), child.stderr ?? '');
-      return { command: `node research-orchestration/scripts/p2a-t14/driver.mjs --child ${scenario} --out "$T14_OUT/${scenario}/work" --phase ${phase}${crash ? ` --crash ${crash}` : ''}`,
+      return { command: `node research-orchestration/scripts/p2a-t14/driver.mjs --child ${scenario} --out "$T14_OUT/${scenario}/work" --phase ${phase} --expected-head ${exactSha}${crash ? ` --crash ${crash}` : ''}`,
         outputDirectoryRef: `${scenario}/work`, workingDirectory: 'repository-root',
         exitCode: child.status ?? (child.signal === 'SIGKILL' ? 137 : null), signal: child.signal, error: child.error ? String(child.error.code) : null };
     };
     const commands = [];
     const crash = scenario === 'crash-before' ? 'after_targeted_execution'
-      : scenario === 'crash-after' ? 'after_targeted_commit_finalize' : null;
+      : ['crash-after', 'crash-resolution-input', 'crash-resolution-reverse', 'crash-framing-drift'].includes(scenario) ? 'after_targeted_commit_finalize' : null;
     commands.push(run('initial', crash));
     const initial = observe(workDir);
     writeJson(path.join(scenarioDir, 'initial-observation.json'), initial);
@@ -164,6 +182,7 @@ if (arg('child')) {
     let faultResultForRecord = null;
     let controlResultForRecord = null;
     let staleActionControlForRecord = null;
+    let completeResumeProviderCallDelta = null;
     if (crash) {
       const { decideTargetedReplay, readAnchoredLedger } = await load('lib/targeted-requery-lifecycle.mjs');
       const { resolveAnchoredLedgerBytes } = await load('lib/p1-runtime-composer.mjs');
@@ -175,6 +194,11 @@ if (arg('child')) {
       }
       commands.push(run('resume'));
       commands.push(run('resume-again'));
+      if (['crash-resolution-input', 'crash-resolution-reverse', 'crash-framing-drift'].includes(scenario)) {
+        const callsBeforeCompleteResume = readLines(path.join(workDir, 'acceptance-provider-calls.jsonl')).length;
+        commands.push(run('complete-resume'));
+        completeResumeProviderCallDelta = readLines(path.join(workDir, 'acceptance-provider-calls.jsonl')).length - callsBeforeCompleteResume;
+      }
     } else if (scenario === 'stale-action') {
       const checkpointFile = path.join(workDir, 'orchestration-state.json');
       const checkpointBefore = fs.readFileSync(checkpointFile);
@@ -290,24 +314,43 @@ if (arg('child')) {
         fault = { kind: 'foreign-occurrence-resolution', beforeHash: hash(before), afterHash: hash(fs.readFileSync(target)) };
       }
       commands.push(run('fault-resume'));
-    } else if (['equivalent-query', 'unknown-gap', 'per-gap-bound'].includes(scenario)) {
+    } else if (['equivalent-query', 'per-gap-bound'].includes(scenario)) {
       controllerControls = await runControllerControls({ repo, workDir });
       commands.push(run('resume'));
     }
     const observed = observe(workDir);
     const result = scenario === 'stale-action'
       ? controlResultForRecord
-      : json(path.join(workDir, `acceptance-compose-${commands.length > 1 ? (crash ? 'resume-again' : controllerControls ? 'resume' : 'fault-resume') : 'initial'}.json`));
+      : json(path.join(workDir, `acceptance-compose-${commands.length > 1 ? (crash ? (completeResumeProviderCallDelta === null ? 'resume-again' : 'complete-resume') : controllerControls ? 'resume' : 'fault-resume') : 'initial'}.json`));
     const checks = [];
+    let crashResolution = null;
     const check = (name, ok, actual = null, expected = null) => checks.push({ name, pass: !!ok, actual, expected });
     check('child execution', commands.every(c => c.error === null && (c.exitCode === 0 || (crash && c.signal === 'SIGKILL'))), commands);
     const initialCalls = initial.calls.filter(c => c.kind === 'targeted').length;
     const finalCalls = observed.calls.filter(c => c.kind === 'targeted').length;
-    const noTargeted = ['free-form', 'unsafe-plan-owned', 'missing-unauthed-resolution'].includes(scenario);
+    const noTargeted = ['free-form', 'unsafe-plan-owned', 'missing-unauthed-resolution', 'unknown-gap'].includes(scenario);
     const expectedTargetedCalls = noTargeted ? 0 : scenario === 'provider-scope' ? 1 : crash && scenario === 'crash-before' ? 4 : 2;
-    const expectedProviderCalls = expectedTargetedCalls + (crash ? 8 : 4);
+    const expectedProviderCalls = scenario === 'all-provider-failed' ? 6 : scenario === 'global-budget' ? 4 : crash && scenario === 'crash-framing-drift' ? 14 : crash && ['crash-resolution-input', 'crash-resolution-reverse'].includes(scenario) ? 8 : crash && ['crash-after', 'crash-before'].includes(scenario) ? 8 : scenario === 'provider-scope' ? 5 : scenario === 'unknown-gap' || ['free-form', 'unsafe-plan-owned', 'missing-unauthed-resolution'].includes(scenario) ? 4 : expectedTargetedCalls + 4;
     check('targeted provider calls', finalCalls === expectedTargetedCalls, finalCalls, expectedTargetedCalls);
     check('all provider calls', observed.calls.length === expectedProviderCalls, observed.calls.length, expectedProviderCalls);
+    if (scenario === 'equivalent-query' || scenario === 'per-gap-bound') {
+      const roundOne = (observed.gaps?.diagnosedGaps ?? []).filter(g => g.diagnosisRound === 1);
+      const recordedCodes = (observed.actions?.rejected ?? []).map(r => r.rejectionCode);
+      const wantedCode = scenario === 'equivalent-query' ? authorizationCodes.REJECTION_DEDUPE_ALREADY_AUTHORIZED : authorizationCodes.REJECTION_ATTEMPT_BOUND_EXCEEDED;
+      const targetedEvents = observed.events.filter(e => /targeted.*(diagnos|proposal|decision|reject)/i.test(e.event ?? '') || e.diagnosisRound !== undefined);
+      check('real composition round-1 proposal observed', roundOne.length > 0 && targetedEvents.some(e => e.diagnosisRound === 1), { gapRows: roundOne.length, events: targetedEvents }, 'round-1 controller trace');
+      check('same core across diagnosis rounds', roundOne.length > 0 && roundOne.every(g => (observed.gaps?.diagnosedGaps ?? []).some(old => old.diagnosisRound === 0 && old.gapIdentityCore === g.gapIdentityCore)), roundOne.map(g => g.gapIdentityCore), 'round 0 core equality');
+      check('different audit gap ids across rounds', roundOne.length > 0 && roundOne.every(g => (observed.gaps?.diagnosedGaps ?? []).some(old => old.diagnosisRound === 0 && old.gapIdentityCore === g.gapIdentityCore && old.gapId !== g.gapId)), roundOne.map(g => g.gapId), 'new audit suffix for same core');
+      check('real controller rejection persisted', recordedCodes.includes(wantedCode), recordedCodes, wantedCode);
+      check('rejected follow-up has zero provider delta', observed.calls.filter(c => c.kind === 'targeted').length === 2, observed.calls.filter(c => c.kind === 'targeted').length, 2);
+    }
+    if (scenario === 'unknown-gap') {
+      const unknownReject = observed.events.some(e => e.event === 'targeted_diagnostic_validation' && e.status === 'REJECTED' && e.rejectionCode === 'UNKNOWN_GAP_TYPE');
+      check('unknown rejected by composition', unknownReject, observed.events.filter(e => /unknown/i.test(e.event ?? '')), 'controller UNKNOWN_GAP_TYPE event');
+      check('zero legal unknown gaps', (observed.gaps?.diagnosedGaps ?? []).every(g => GAP_TYPES.includes(g.gapType)), (observed.gaps?.diagnosedGaps ?? []).map(g => g.gapType), GAP_TYPES);
+      check('zero targeted action delta', (observed.actions?.targetedActions ?? []).length === 0, observed.actions?.targetedActions?.length ?? null, 0);
+      check('zero targeted provider delta', observed.calls.filter(c => c.kind === 'targeted').length === 0, observed.calls.filter(c => c.kind === 'targeted').length, 0);
+    }
     check('no runtime or provider fallback', observed.finalResult?.runtime?.runtimeId === 'deepseek-api-tool-less'
       && observed.finalResult?.runtime?.model === 'deepseek-v4-pro'
       && observed.calls.every(c => ['zhihu_search', 'zhihu-open-platform'].includes(c.providerId) && c.capability === 'search'));
@@ -328,15 +371,17 @@ if (arg('child')) {
     if (scenario === 'authority-unavailable') check('no authority predicate', resolutions.length === 1 && resolutions[0].status === 'UNRESOLVED'
       && resolutions[0].resolutionBasis === 'UNKNOWN_NO_AUTHORITY_PREDICATE');
     if (scenario === 'global-budget') {
-      check('budget bounds real IO', observed.calls.length === 6, observed.calls.length, 6);
+      check('budget bounds real IO', observed.calls.length === 4, observed.calls.length, 4);
+      check('budget target literal', observed.calls.filter(c => c.kind === 'targeted').length === 2, observed.calls.filter(c => c.kind === 'targeted').length, 2);
       check('budget terminal honest', resolutions.some(r => r.status === 'EXHAUSTED_WITHIN_BUDGET')
         && !resolutions.some(r => r.status === 'SATURATED'));
-      check('budget refuses next gap', (observed.actions?.rejected ?? []).some(r => r.rejectionCode === 'GLOBAL_QUERY_BUDGET_EXCEEDED'));
+      check('T07 budget STOP is recorded', observed.events.some(e => e.event === 'retrieval_feedback_loop_complete' && e.decision === 'BUDGET_STOP'), observed.events.filter(e => e.event === 'retrieval_feedback_loop_complete').map(e => e.decision), 'BUDGET_STOP');
+      check('budget refuses next gap', (observed.actions?.rejected ?? []).some(r => r.rejectionCode === authorizationCodes.REJECTION_BUDGET_EXCEEDED));
     }
     if (scenario === 'per-gap-bound') check('per-gap terminal honest', resolutions.some(r => r.status === 'EXHAUSTED_WITHIN_BUDGET'));
     if (scenario === 'all-provider-failed') check('operational failure stays unresolved', observed.actions?.targetedActions?.[0]?.status === 'FAILED_OPERATIONAL'
       && resolutions.length === 1 && resolutions[0].status === 'UNRESOLVED');
-    if (noTargeted) check('rejected proposal recorded', (observed.actions?.rejected ?? []).length > 0);
+    if (['free-form', 'unsafe-plan-owned', 'missing-unauthed-resolution'].includes(scenario)) check('rejected proposal recorded', (observed.actions?.rejected ?? []).length > 0);
     if (crash) {
       check('same occurrence resumes', initial.occurrenceId === observed.occurrenceId);
       check('real kill at window', commands[0].signal === 'SIGKILL');
@@ -349,6 +394,176 @@ if (arg('child')) {
         : firstAction?.status === 'COMMITTED' && initial.state?.hashes?.[firstAction.bindingKey] === firstAction.artifactHash);
       check('final pool hash matches binding', finalAction?.artifactHash === observed.state?.hashes?.[finalAction?.bindingKey]);
       check('replay decision', replay?.decision === (scenario === 'crash-before' ? 'RERUN' : 'REUSE'), replay?.decision);
+      if (scenario === 'crash-resolution-input' || scenario === 'crash-resolution-reverse') {
+        const originalPlannedIds = [...new Set(initial.calls.filter(c => c.kind === 'planned').flatMap(c => c.output?.items?.map(i => String(i.identity.questionId)) ?? []))].sort();
+        const resumedPlannedIds = [...new Set(observed.calls.slice(initial.calls.length).filter(c => c.kind === 'planned').flatMap(c => c.output?.items?.map(i => String(i.identity.questionId)) ?? []))].sort();
+        const targetIds = [...new Set(initial.calls.filter(c => c.kind === 'targeted').flatMap(c => c.output?.items?.map(i => String(i.identity.questionId)) ?? []))].sort();
+        const expectedInput = scenario === 'crash-resolution-input';
+        const expectedResolution = expectedInput ? ['UNRESOLVED', 'DUPLICATE_ONLY'] : ['RESOLVED', 'NEW_EVIDENCE_ATTRIBUTED'];
+        const actualResolution = observed.resolution?.resolutions?.[0];
+        const firstCommitted = initial.anchoredActions?.targetedActions?.[0];
+        const inputAtCrash = initial.resolutionInputs?.find(input => input.targetedActionId === firstCommitted?.targetedActionId);
+        const inputAtResume = observed.resolutionInputs?.find(input => input.targetedActionId === firstCommitted?.targetedActionId);
+        const initialPlannedFacts = [...new Set(initial.calls.filter(c => c.kind === 'planned')
+          .flatMap(c => c.output?.items?.map(i => String(i.identity.questionId)) ?? []))].sort();
+        const targetedCall = initial.calls.find(c => c.kind === 'targeted'
+          && c.authorizedActionsBeforeIo?.some(a => a.targetedActionId === firstCommitted?.targetedActionId));
+        const snapshotShape = input => input?.snapshot
+          && JSON.stringify(Object.keys(input.snapshot).sort()) === JSON.stringify([
+            'coveredFramings', 'declaredFraming', 'occurrenceId', 'planHash', 'priorQuestionIds', 'schemaVersion', 'targetedActionId', 'type',
+          ]) && input.snapshot.schemaVersion === 1 && input.snapshot.type === 'TargetedResolutionInput'
+          && input.snapshot.targetedActionId === firstCommitted?.targetedActionId
+          && input.snapshot.planHash === firstCommitted?.planHash && input.snapshot.occurrenceId === firstCommitted?.occurrenceId;
+        const snapshotBoundBeforeIo = !!inputAtCrash && inputAtCrash.key === `targeted-resolution-input:${firstCommitted?.targetedActionId}`
+          && /^[0-9a-f]{64}$/.test(inputAtCrash.bindingHash ?? '') && inputAtCrash.byteHash === inputAtCrash.bindingHash
+          && snapshotShape(inputAtCrash) && targetedCall?.checkpointHashesBeforeIo?.[inputAtCrash.key] === inputAtCrash.bindingHash;
+        const snapshotPriorIdsMatchProviderFacts = !!inputAtCrash
+          && JSON.stringify(inputAtCrash.snapshot?.priorQuestionIds) === JSON.stringify(initialPlannedFacts);
+        const snapshotRetainedAfterResume = !!inputAtCrash && !!inputAtResume
+          && inputAtResume.bindingHash === inputAtCrash.bindingHash && inputAtResume.byteHash === inputAtCrash.byteHash
+          && inputAtResume.bytesHex === inputAtCrash.bytesHex && snapshotShape(inputAtResume)
+          && json(path.join(workDir, 'acceptance-compose-complete-resume.json'))?.ok === true
+          && json(path.join(workDir, 'acceptance-compose-complete-resume.json'))?.reused === true
+          && completeResumeProviderCallDelta === 0 && initial.occurrenceId === observed.occurrenceId;
+        crashResolution = {
+          originalPlannedIds, resumePlannedIds: resumedPlannedIds, targetedIds: targetIds,
+          targetedProviderCallDelta: finalCalls - initialCalls,
+          resolutionStatus: actualResolution?.status ?? null, resolutionBasis: actualResolution?.resolutionBasis ?? null,
+          commitCount: firstCommitted?.audit?.filter(e => e.event === 'COMMIT').length ?? 0,
+          artifactHash: firstCommitted?.artifactHash ?? null,
+          initialBindingHash: initial.state?.hashes?.[firstCommitted?.bindingKey] ?? null,
+          finalBindingHash: observed.state?.hashes?.[firstCommitted?.bindingKey] ?? null,
+          initialBindingValid: !!firstCommitted && initial.state?.hashes?.[firstCommitted.bindingKey] === firstCommitted.artifactHash,
+          finalBindingValid: !!firstCommitted && observed.state?.hashes?.[firstCommitted.bindingKey] === firstCommitted.artifactHash,
+          resolutionInput: { key: inputAtCrash?.key ?? null, bindingHash: inputAtCrash?.bindingHash ?? null,
+            byteHash: inputAtCrash?.byteHash ?? null, byteLength: inputAtCrash?.byteLength ?? null,
+            priorQuestionIds: inputAtCrash?.snapshot?.priorQuestionIds ?? null,
+            declaredFraming: inputAtCrash?.snapshot?.declaredFraming ?? null,
+            coveredFramings: inputAtCrash?.snapshot?.coveredFramings ?? null,
+            preIoCheckpointBindingValid: !!snapshotBoundBeforeIo, priorIdsMatchInitialProviderFacts: snapshotPriorIdsMatchProviderFacts,
+            retainedHashAndBytesOnCompleteResume: snapshotRetainedAfterResume },
+        };
+        check('original and resume planned ids drift bidirectionally', expectedInput
+          ? originalPlannedIds.includes('300') && !resumedPlannedIds.includes('300') && resumedPlannedIds.includes('100')
+          : !originalPlannedIds.includes('300') && resumedPlannedIds.includes('300'), { originalPlannedIds, resumedPlannedIds }, expectedInput ? 'prior includes 300; resume excludes 300 and includes 100' : 'prior excludes 300; resume includes 300');
+        check('targeted provider delta is zero', finalCalls - initialCalls === 0, finalCalls - initialCalls, 0);
+        check('T08 preserves crash-time classification', actualResolution?.status === expectedResolution[0] && actualResolution?.resolutionBasis === expectedResolution[1],
+          { status: actualResolution?.status ?? null, basis: actualResolution?.resolutionBasis ?? null }, expectedResolution);
+        check('one checkpoint-anchored COMMIT with valid result hash', !!firstCommitted && firstCommitted.status === 'COMMITTED'
+          && firstCommitted.audit.filter(e => e.event === 'COMMIT').length === 1
+          && /^[0-9a-f]{64}$/.test(firstCommitted.artifactHash ?? '')
+          && initial.state?.hashes?.[firstCommitted.bindingKey] === firstCommitted.artifactHash
+          && observed.state?.hashes?.[firstCommitted.bindingKey] === firstCommitted.artifactHash,
+        { status: firstCommitted?.status ?? null, commits: firstCommitted?.audit?.filter(e => e.event === 'COMMIT').length ?? null,
+          artifactHash: firstCommitted?.artifactHash ?? null, initialBinding: initial.state?.hashes?.[firstCommitted?.bindingKey] ?? null,
+          finalBinding: observed.state?.hashes?.[firstCommitted?.bindingKey] ?? null }, 'one COMMIT and checkpoint-bound result hash');
+        check('original T08 snapshot bound before provider IO', snapshotBoundBeforeIo, crashResolution.resolutionInput,
+          'exact action key, valid resolver bytes/hash, action scope, pre-IO checkpoint hash');
+        check('snapshot prior IDs match initial provider facts', snapshotPriorIdsMatchProviderFacts,
+          { snapshot: inputAtCrash?.snapshot?.priorQuestionIds ?? null, initialPlannedFacts }, initialPlannedFacts);
+        check('snapshot bytes and hash survive COMPLETE ordinary resume', snapshotRetainedAfterResume,
+          { initialHash: inputAtCrash?.byteHash ?? null, resumedHash: inputAtResume?.byteHash ?? null,
+            byteIdentical: inputAtResume?.bytesHex === inputAtCrash?.bytesHex,
+            completeResumeResult: json(path.join(workDir, 'acceptance-compose-complete-resume.json')) ?? null,
+            providerCallDelta: completeResumeProviderCallDelta, sameOccurrence: initial.occurrenceId === observed.occurrenceId },
+          'same valid content hash and bytes after COMPLETE reused same-occurrence call with zero provider delta');
+      }
+      if (scenario === 'crash-framing-drift') {
+        const firstCommitted = initial.anchoredActions?.targetedActions?.[0];
+        const anchoredGap = initial.gaps?.diagnosedGaps?.find(gap => gap.gapId === firstCommitted?.gapId);
+        const inputAtCrash = initial.resolutionInputs?.find(input => input.targetedActionId === firstCommitted?.targetedActionId);
+        const inputAtResume = observed.resolutionInputs?.find(input => input.targetedActionId === firstCommitted?.targetedActionId);
+        const plannedFacts = [...new Set(initial.calls.filter(c => c.kind === 'planned' && c.output?.ok)
+          .flatMap(c => c.output.items?.map(i => String(i.identity.questionId)) ?? []))].sort();
+        const targetedCall = initial.calls.find(c => c.kind === 'targeted'
+          && c.authorizedActionsBeforeIo?.some(a => a.targetedActionId === firstCommitted?.targetedActionId));
+        const callbackEvidence = observed.acceptanceEvents.filter(e => e.event === 'framing_proposal_callback');
+        const resumedCallback = callbackEvidence.find(e => e.phase === 'resume');
+        const targetResolution = observed.resolution?.resolutions?.find(r => r.evaluatedActionIds?.includes(firstCommitted?.targetedActionId));
+        const exactSnapshotShape = !!inputAtCrash?.snapshot
+          && JSON.stringify(Object.keys(inputAtCrash.snapshot).sort()) === JSON.stringify([
+            'coveredFramings', 'declaredFraming', 'occurrenceId', 'planHash', 'priorQuestionIds', 'schemaVersion', 'targetedActionId', 'type',
+          ]) && inputAtCrash.snapshot.schemaVersion === 1 && inputAtCrash.snapshot.type === 'TargetedResolutionInput';
+        const preIoBound = !!inputAtCrash && inputAtCrash.key === `targeted-resolution-input:${firstCommitted?.targetedActionId}`
+          && /^[0-9a-f]{64}$/.test(inputAtCrash.bindingHash ?? '') && inputAtCrash.bindingHash === inputAtCrash.byteHash
+          && targetedCall?.checkpointHashesBeforeIo?.[inputAtCrash.key] === inputAtCrash.bindingHash
+          && exactSnapshotShape
+          && inputAtCrash.snapshot?.targetedActionId === firstCommitted?.targetedActionId
+          && inputAtCrash.snapshot?.planHash === firstCommitted?.planHash
+          && inputAtCrash.snapshot?.occurrenceId === firstCommitted?.occurrenceId;
+        const priorFactsMatch = !!inputAtCrash && JSON.stringify(inputAtCrash.snapshot?.priorQuestionIds) === JSON.stringify(plannedFacts);
+        const retained = !!inputAtCrash && !!inputAtResume && inputAtCrash.byteHash === inputAtResume.byteHash
+          && inputAtCrash.bytesHex === inputAtResume.bytesHex && inputAtResume.bindingHash === inputAtCrash.bindingHash
+          && json(path.join(workDir, 'acceptance-compose-complete-resume.json'))?.ok === true
+          && json(path.join(workDir, 'acceptance-compose-complete-resume.json'))?.reused === true
+          && completeResumeProviderCallDelta === 0 && initial.occurrenceId === observed.occurrenceId;
+        const initialQueries = new Map(initial.calls.filter(c => c.kind === 'planned').map(c => [c.query, c.output?.ok === true]));
+        const resumedQueries = new Map(observed.calls.slice(initial.calls.length).filter(c => c.kind === 'planned').map(c => [c.query, c.output?.ok === true]));
+        const initialTargetIds = [...new Set(initial.calls.filter(c => c.kind === 'targeted')
+          .flatMap(c => c.output?.items?.map(i => String(i.identity.questionId)) ?? []))].sort();
+        const resumeTargetCalls = observed.calls.slice(initial.calls.length).filter(c => c.kind === 'targeted').length;
+        const feedbackStops = observed.events.filter(e => e.event === 'retrieval_feedback_loop_complete');
+        const oneCommit = firstCommitted?.status === 'COMMITTED' && firstCommitted.audit.filter(e => e.event === 'COMMIT').length === 1
+          && /^[0-9a-f]{64}$/.test(firstCommitted.artifactHash ?? '')
+          && initial.state?.hashes?.[firstCommitted.bindingKey] === firstCommitted.artifactHash
+          && observed.state?.hashes?.[firstCommitted.bindingKey] === firstCommitted.artifactHash;
+        crashResolution = { originalPlannedIds: plannedFacts, resumePlannedIds: [...new Set(observed.calls.slice(initial.calls.length)
+          .filter(c => c.kind === 'planned' && c.output?.ok).flatMap(c => c.output.items?.map(i => String(i.identity.questionId)) ?? []))].sort(),
+          targetedIds: initialTargetIds, targetedProviderCallDelta: resumeTargetCalls,
+          gapType: anchoredGap?.gapType ?? null, subjectKey: anchoredGap?.subjectKey ?? null,
+          resolutionStatus: targetResolution?.status ?? null, resolutionBasis: targetResolution?.resolutionBasis ?? null,
+          commitCount: firstCommitted?.audit?.filter(e => e.event === 'COMMIT').length ?? 0,
+          artifactHash: firstCommitted?.artifactHash ?? null,
+          initialBindingValid: !!firstCommitted && initial.state?.hashes?.[firstCommitted.bindingKey] === firstCommitted.artifactHash,
+          finalBindingValid: !!firstCommitted && observed.state?.hashes?.[firstCommitted.bindingKey] === firstCommitted.artifactHash,
+          resolutionInput: { key: inputAtCrash?.key ?? null, bindingHash: inputAtCrash?.bindingHash ?? null,
+            byteHash: inputAtCrash?.byteHash ?? null, byteLength: inputAtCrash?.byteLength ?? null,
+            priorQuestionIds: inputAtCrash?.snapshot?.priorQuestionIds ?? null,
+            declaredFraming: inputAtCrash?.snapshot?.declaredFraming ?? null,
+            coveredFramings: inputAtCrash?.snapshot?.coveredFramings ?? null,
+            preIoCheckpointBindingValid: preIoBound, priorIdsMatchInitialProviderFacts: priorFactsMatch,
+            retainedHashAndBytesOnCompleteResume: retained },
+          resumedProposal: resumedCallback ?? null };
+        check('framing provider coverage drifts across crash and resume', initialQueries.get('framing-a') === false
+          && initialQueries.get('framing-b') === true && resumedQueries.get('framing-a') === true && resumedQueries.get('framing-b') === false,
+        { initial: Object.fromEntries(initialQueries), resume: Object.fromEntries(resumedQueries) },
+        { initial: { 'framing-a': false, 'framing-b': true }, resume: { 'framing-a': true, 'framing-b': false } });
+        check('framing targeted result is new evidence', initialTargetIds.includes('300') && initialTargetIds.length === 1,
+          initialTargetIds, ['300']);
+        check('framing action anchors the intended contradiction gap', anchoredGap?.gapType === 'CONTRADICTION_GAP'
+          && anchoredGap?.subjectKey === 'opposing:framing-a' && firstCommitted?.gapId === anchoredGap?.gapId,
+        { gapType: anchoredGap?.gapType ?? null, subjectKey: anchoredGap?.subjectKey ?? null, actionGapId: firstCommitted?.gapId ?? null },
+        { gapType: 'CONTRADICTION_GAP', subjectKey: 'opposing:framing-a' });
+        check('framing T08 uses original snapshot classification', targetResolution?.status === 'RESOLVED'
+          && targetResolution?.resolutionBasis === 'OPPOSING_SIDE_NEW_EVIDENCE'
+          && JSON.stringify(targetResolution?.resolutionEvidence) === JSON.stringify(['300'])
+          && inputAtCrash?.snapshot?.declaredFraming === 'framing-a'
+          && JSON.stringify(inputAtCrash?.snapshot?.coveredFramings) === JSON.stringify(['framing-b']),
+        { status: targetResolution?.status ?? null, basis: targetResolution?.resolutionBasis ?? null,
+          evidence: targetResolution?.resolutionEvidence ?? null, declared: inputAtCrash?.snapshot?.declaredFraming ?? null,
+          covered: inputAtCrash?.snapshot?.coveredFramings ?? null },
+        { status: 'RESOLVED', basis: 'OPPOSING_SIDE_NEW_EVIDENCE', evidence: ['300'], declared: 'framing-a', covered: ['framing-b'] });
+        check('framing targeted resume delta is zero', resumeTargetCalls === 0, resumeTargetCalls, 0);
+        check('framing resume proposal only references prior anchored gap', !!resumedCallback
+          && resumedCallback.anchoredPriorGapId === firstCommitted?.gapId
+          && resumedCallback.proposals?.length === 1 && resumedCallback.proposals[0]?.gapId === firstCommitted?.gapId,
+        resumedCallback ?? null, firstCommitted?.gapId);
+        check('framing snapshot bound before provider IO', preIoBound, crashResolution.resolutionInput, 'valid resolver bytes/hash and pre-IO checkpoint key');
+        check('framing snapshot prior IDs match initial provider facts', priorFactsMatch,
+          { snapshot: inputAtCrash?.snapshot?.priorQuestionIds ?? null, providerFacts: plannedFacts }, plannedFacts);
+        check('framing snapshot survives COMPLETE ordinary resume', retained,
+          { originalHash: inputAtCrash?.byteHash ?? null, resumedHash: inputAtResume?.byteHash ?? null,
+            bytesEqual: inputAtCrash?.bytesHex === inputAtResume?.bytesHex,
+            completeResumeResult: json(path.join(workDir, 'acceptance-compose-complete-resume.json')) ?? null,
+            providerCallDelta: completeResumeProviderCallDelta, sameOccurrence: initial.occurrenceId === observed.occurrenceId },
+          'same hash and bytes after COMPLETE reused same-occurrence call with zero provider delta');
+        check('framing feedback loop has actual budget STOP', feedbackStops.some(e => e.decision === 'BUDGET_STOP'
+          && e.stopReason === 'query_budget_exhausted'), feedbackStops.map(e => ({ decision: e.decision, stopReason: e.stopReason, rounds: e.rounds })),
+        'actual T07 BUDGET_STOP/query_budget_exhausted event');
+        check('framing has one anchored COMMIT', oneCommit, { status: firstCommitted?.status ?? null,
+          commits: firstCommitted?.audit?.filter(e => e.event === 'COMMIT').length ?? null,
+          artifactHash: firstCommitted?.artifactHash ?? null }, 'COMMITTED, one COMMIT, initial/final checkpoint hash match');
+      }
     }
     if (refusal) {
       check('tampered committed product refused', result?.ok === false && result?.reused !== true, result);
@@ -403,7 +618,7 @@ if (arg('child')) {
       observedProviderCallCount: observed.calls.length,
       expectedTargetedProviderCallCount: expectedTargetedCalls, observedTargetedProviderCallCount: finalCalls,
       expectedProviderCallCount: expectedProviderCalls,
-      initialTargetedProviderCallCount: initialCalls, replay, fault, controllerControls, checks, lineage,
+      initialTargetedProviderCallCount: initialCalls, replay, fault, controllerControls, crashResolution, checks, lineage,
       ...(scenario === 'stale-action' ? { faultResult: faultResultForRecord, controlResult: controlResultForRecord,
         staleActionControl: staleActionControlForRecord } : {}),
       result, verdict: checks.every(c => c.pass) ? 'PASS' : 'FAIL',
@@ -414,6 +629,7 @@ if (arg('child')) {
     console.log(`${scenario}: ${record.verdict}; provider=${observed.calls.length}; targeted=${finalCalls}; failing=${checks.filter(c => !c.pass).map(c => c.name).join(', ')}`);
   }
   const campaign = { schema: 'p2a-t14-acceptance-campaign/v1', exactRepoSha: exactSha, sourceDirty,
+    campaignCommand: `node research-orchestration/scripts/p2a-t14/driver.mjs --repo <repository-root> --out <fresh-output-dir> --expected-head ${exactSha}`,
     nodeVersion: process.version, qualityClaim: 'OUT_OF_SCOPE', scenarios: records,
     verdict: records.every(r => r.verdict === 'PASS') ? 'PASS' : 'FAIL' };
   const matrix = buildMatrix(campaign);

@@ -1,0 +1,84 @@
+# ARCHITECTURE_SEAM_REVIEW — action原T08输入快照补充
+
+REVIEWED_DOCUMENT = /tmp/p2a-t14-amendment-20261007/AMENDMENT-RESOLUTION-INPUT.md
+REVIEWED_DOCUMENT_SHA256 = 1bde1f37e3508dd8933317a0fb8a61035bc5f750a7277ec6f2da57d7f724d202
+PREVIOUS_AMENDMENT_SHA256 = 734658c03e7c8d5f50fc55cc5af5578967ad890dd842952ef15363c4c27d8b19
+BASE_HEAD = 054ef8d8aafa26372af5b695b0ddb54e766b507b
+VERDICT = PASS
+P0 = 0
+P1 = 0
+IMPLEMENT_GATE = OPEN（仅本hash补充及此前reviewed设计；仍须真实RED-FIRST）
+USER_DECISION_REQUIRED = NO
+IMPLEMENTATION_ACCEPTANCE = NOT_PERFORMED（只读dirty代码用于验证调用与原语能力，补充尚未实施）
+
+## 问题本质 / 盲设计 / cross-check
+
+已在前一只读风险审查确定冻结G.1要求该action执行前的prior集合，ordered replay不能解决plannedprovider跨crash漂移。干净设计应将原resolution输入保存成checkpoint-bound派生材料，唯一消费者T08，不能改变任何支付/身份/预算/STOP授权。收到补充设计后对照既有stageArtifactBytes/inspectCommittedArtifact/actionrecord/池criteria/cleanup读取源码验证。
+
+本稿选择独立快照而不改actionrecord或poolcriteria；已覆盖原AUTHORIZATION锚定、COMMITTED欠T08恢复、同action安全重跑、历史terminal兼容、binding存活，符合最小设计。
+
+## producer / consumer / schema
+
+补充:11-16,20-27明确producer为controller/subphase，composer只注入原staging读写能力，spread-LAST保护caller不能重定向。键与路径只由已有targetedActionId派生；schema为v1封闭字段，包含既有actionId/planHash/occurrence绑定和原prior/framing输入。
+
+消费者仅evaluateResolution（补充:36-41,46-47）；actionrecord的闭合schema、targetedpoolcriteria和T06replay均不改变。这里加入的hash是既有checkpoint下的派生输入绑定，不能作为支付完成凭证或授权ledger。身份引用没有改变identity计算语义。
+
+## G.1 / G.4
+
+新action在providerIO前保存原workingPool的canonicalpriorQuestionIds；欠T08复用有效snapshot和原targeted结果。该定义机械保留“执行前”差集，修正漂移可能制造的假RESOLVED。
+
+contradiction的declaredFraming与coveredFramings同样保存原provenance/现有framing输入，数组只canonical排序去重，不内容推断侧别；T08仍使用原closedpredicate，null/信息不足仍沿UNKNOWN→UNRESOLVED。AUTHORITY_GAP不伪造predicate；非contradictionframingnull不会赋新resolution权威。
+
+## crash / snapshot原子性
+
+补充:31-37要求授权通过后publishbytes、snapshothash、原AUTHORIZEDledgeranchor同一次原writeState；该checkpoint在任何IO之前。孤立staging无权限，AUTHORIZED-onlysafe-rerun保留原输入，不能以新pool覆盖。
+
+COMMITTED本身仍由原T06writeState提交，原crash窗口不变；snapshotbinding由原state spread保留。T06决定付费是否重放，snapshot只决定后续T08能否合法评估。缺snapshot/mismatch/wrongscope先failclosed而不产生新IO，旧pending也诚实失败；旧terminal保留而不捏造input。没有第二commitpoint或第二root。
+
+## cleanup / resolver实际可用性
+
+源码composer:266-289的stageArtifactBytes按hash寻址并fsync；302-330的inspectCommittedArtifact只有canonical或staged字节hash等于expectedHash才返回有效。补充resolver传入checkpointhash，随后验证snapshot内部绑定与严格schema，故不能从文件存在自授权。
+
+snapshot只保存在staging，不进入现有stage-boundarymaterialize列表；既有cleanupStaging仅删除指定路径，而非整个目录。补充:48-50要求ordinaryresume和COMPLETEcheckpoint重建carry固定namespace的hash，并以行为测试证明字节存活，可保持checkpoint证据不降级。无需更改通用staging/inspection接口。
+
+## 安全 / budget / STOP / 范围
+
+snapshot走原assertArtifactSafe，trustset仍仅plan.queryVariants，无新增targeted字符串信任；严格数据域可验证，无provider原始payload/本机路径/credentials进入snapshot。
+
+无新loop、IO或scheduler。只有合法CONTINUE窗口能安全重跑AUTHORIZED；STOP后只复用原COMMITTED池并恢复欠缺T08，snapshot不能改变executionAllowed。预算、attempt、gapcore、dedupe、P1round、STOP和terminal vocabulary完全沿旧契约。
+
+本补充在owner有限architecture/seam授权内补齐冻结G.1/G.4的可恢复输入；未改变identity、checkpoint唯一root、terminal、P1STOP、provider/runtime或closedgap taxonomy，不需要USER_DECISION_REQUIRED。
+
+## 实施校验点
+
+- schemaVersion必须固定1、type固定controller常量；拒绝额外key及非法canonicalquestionId；哈希键仅固定prefix+64hexactionId，不能粗放携带任意namespace键。
+- 验证snapshothash来自state.hashes后再读bytes；stage返回hash应核对发布字节，不接受callback伪造绑定。
+- snapshot必须在欠T08的实时和恢复路径共同消费；已terminal不得重算。原AUTHORIZED缺snapshotfailure不能降级为当前pool生成新快照。
+- 保存framing原值/UNKNOWN信息，不做语义推断或NULL→默认值修补；既有framingForGap仅保存其当时输入，不新增信任权威。
+- 新binding需同时被ordinaryresume与COMPLETEcheckpoint rebuild保留；任一后续writeState不能丢掉仍被使用的派生输入绑定。
+- 真实composerSIGKILLaftercommit的双向ID漂移、framing漂移、AUTHORIZED重跑、missing/tamper/wrongscope及字节存活测试为必要验证，负控实际撤销PASS。补充:61-67已经列出。
+
+SKILL_USED = code-review（问题本质 → 盲设计 → cross-check）
+SUBAGENTS_USED = NONE
+PRODUCT/REPO/REF/REMOTE_MUTATION = NONE
+POST_GATE_MEMORY_UPDATE_REQUIRED = NO
+
+## 实施细节确认：snapshot使用默认严格walk（追加）
+
+仍绑定上述设计hash `1bde1f37e3508dd8933317a0fb8a61035bc5f750a7277ec6f2da57d7f724d202`，ARCHITECTURE_VERDICT继续PASS / P0=0 / P1=0。
+
+确认snapshot应调用 `assertArtifactSafe(snapshot)`，不传任何 `trustedPlanStrings`。这是“不扩大信任集合”的更严格实现：快照采用空信任集/默认provider-content边界，原四个带信任参数的poolwalk不新增、不放宽、不改写。无需修改设计hash；补充稿:15-16与本审查中的“仍仅plan.queryVariants”表示信任来源上界，并不要求快照一定传入该集合。使用空集合是其子集。
+
+原T11的四个带trustedPlanStrings生产调用点冻结继续完整有效。T09可将旧“所有assertArtifactSafe调用总数”断言收窄为“原唯一poolwalk仍传原plan.queryVariants集合，且快照新增walk无trustoptions”；不能删除信任来源、扩张集、双lens或别名逃逸的负对照。不得为了快照验证新增第五个带信任参数调用点，也不得用别名藏起调用。
+
+默认walk遇到unsafeframing数据时必须明确failclosed，不允许重试带扩展信任集或静默删除原framing以放行。该细节不会授权新provider/runtime/identity/checkpointroot或改变T08谓词；实际实现仍需新SHA conformance/code/evidence审查。
+
+## 实施细节确认：固定staging目录key（追加）
+
+仍绑定reviewed设计hash `1bde1f37e3508dd8933317a0fb8a61035bc5f750a7277ec6f2da57d7f724d202`，PASS / P0=0 / P1=0 / USER_DECISION_REQUIRED=NO。
+
+允许checkpointbinding维持 `targeted-resolution-input:<64hexactionId>`，而content-addressedstaging的物理目录key收缩为固定 `targeted-resolution-input`；文件仍按snapshot完整bytes的sha256寻址。snapshotpayload本身含actionId，且严格验证actionId/planHash/occurrence，所以不同action的合法snapshot字节不会共享同一个不同scope的内容hash。
+
+这是物理存储路径布局细节，不改变派生binding身份、snapshot字段、checkpointroot或staging/inspection合同，无需改设计hash。resolver必须用当前state中该action的bindinghash调用固定stagingkey的inspectCommittedArtifact，之后验证payloadscope；不得以目录存在、最新文件、canonical裸文件或自行计算hash挑选输入。hashcarry与字节存活仍按原要求测试；cleanup不得因为多action共享固定目录而删除仍被任何checkpoint绑定的bytes。
+
+本确认仅允许路径收缩，不宣称Windows路径限制已实测满足；最终exactSHAconformance应验证实际归档路径与独立snapshot恢复行为。

@@ -49,7 +49,7 @@ import {
   decideTargetedReplay,
 } from '../lib/targeted-requery-lifecycle.mjs';
 import { RESOLUTION_BASIS_DUPLICATE_ONLY, RESOLUTION_FILENAME } from '../lib/targeted-requery-resolution.mjs';
-import { composeP1Research, resolveAnchoredLedgerBytes, stageArtifactBytes, COMMIT_STAGING_DIR } from '../lib/p1-runtime-composer.mjs';
+import { composeP1Research, resolveAnchoredLedgerBytes, resolveResolutionInputBytes, stageArtifactBytes, COMMIT_STAGING_DIR } from '../lib/p1-runtime-composer.mjs';
 import { CHECKPOINT_BINDING_COVERAGE_STATE } from '../lib/p1-reuse-closure.mjs';
 import { LEDGER_STAGING_KEY } from '../lib/targeted-requery-lifecycle.mjs';
 import { T14_SYNTHESIS_RUNTIME_ID, T14_SYNTHESIS_MODEL } from '../lib/cross-source-synthesis.mjs';
@@ -188,6 +188,8 @@ function subphaseArgs(workDir, fixture, pool, proposals, extra = {}) {
     // injects, so a regression in either is visible here.
     stageLedgerBytes: (bytes) => stageArtifactBytes(workDir, LEDGER_STAGING_KEY, bytes).sha,
     resolveAnchoredBytes: (sha) => resolveAnchoredLedgerBytes(workDir, sha),
+    stageResolutionInputBytes: (actionId, bytes) => stageArtifactBytes(workDir, 'targeted-resolution-input', bytes).sha,
+    resolveResolutionInputBytes: (actionId, sha) => resolveResolutionInputBytes(workDir, actionId, sha),
     ...extra,
   };
 }
@@ -196,15 +198,25 @@ function subphaseArgs(workDir, fixture, pool, proposals, extra = {}) {
 // A. position + anti-second-pipeline + contact-surface guards
 // ---------------------------------------------------------------------------
 
-test('A1 — the sub-phase call site is INSIDE STAGE_SEARCH, after the retrieval loop and before T08 selection', () => {
-  const source = fs.readFileSync(path.join(LIB, 'p1-runtime-composer.mjs'), 'utf8');
-  const loop = source.indexOf('runRetrievalFeedbackLoop(');
-  const subphase = source.indexOf('runTargetedSubphase(');
-  const selection = source.indexOf('applySourceGroupSelection(');
-  assert.ok(loop >= 0 && subphase >= 0 && selection >= 0, 'all three call sites must exist');
-  assert.ok(loop < subphase, 'targeted sub-phase must run AFTER the retrieval feedback loop');
-  assert.ok(subphase < selection, 'targeted sub-phase must run BEFORE T08 source-group selection');
-  assert.equal(source.match(/runTargetedSubphase\(/g).length, 1);
+test('A1 — targeted IO runs only in a real CONTINUE window, before source-group selection', async () => {
+  const { createFixture } = await import('../scripts/p2a-t14/fixtures.mjs');
+  const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+  const repo = path.resolve(LIB, '../..');
+  for (const stopImmediately of [false, true]) {
+    const workDir = tmpWorkDir('t14-stop-precedence');
+    const fixture = await createFixture({ repo, workDir, scenario: 'canonical' });
+    const result = await composeP1Research({ ...fixture.options,
+      ...(stopImmediately ? { config: { maxRetrievalRounds: 1 } } : {}) });
+    assert.equal(result.ok, true);
+    assert.equal(fixture.providerCalls().filter(call => call.kind === 'targeted').length, stopImmediately ? 0 : 2);
+    const events = fs.readFileSync(path.join(workDir, 'events.jsonl'), 'utf8').trim().split('\n').map(JSON.parse);
+    const window = events.findIndex(event => event.event === 'targeted_continue_window');
+    const selection = events.findIndex(event => event.event === 'source_group_selection');
+    if (stopImmediately) assert.equal(window, -1, 'T07 STOP must prevent the targeted callback');
+    else assert.ok(window >= 0 && window < selection, 'CONTINUE admission precedes selection');
+    assert.equal(JSON.parse(fs.readFileSync(path.join(workDir, 'coverage-state.json'))).retrieval.retrievalRounds,
+      stopImmediately ? 1 : 2, 'targeted actions do not become P1 rounds');
+  }
 });
 
 test('A2 — no second retrieval pipeline: the sub-phase uses only runMultiQueryRetrieval', () => {
@@ -284,7 +296,8 @@ test('A4 — the frozen accumulated-pool artifact-walk call site is byte-unchang
     'the frozen accumulated-pool walk call site must be byte-identical',
   );
   const subphase = stripComments(fs.readFileSync(path.join(LIB, 'targeted-requery-subphase.mjs'), 'utf8'));
-  assert.equal(subphase.match(/assertArtifactSafe\(/g).length, 1, 'the sub-phase walks the augmented pool exactly once');
+  assert.equal(subphase.match(/assertArtifactSafe\([^;]*trustedPlanStrings/g).length, 1, 'only the original augmented-pool walk receives its frozen trust set');
+  assert.ok(subphase.includes('assertArtifactSafe(snapshot);'), 'derived resolution input uses the default strict walk without exemptions');
 });
 
 // ---------------------------------------------------------------------------
@@ -946,13 +959,11 @@ test('F4 — a second complete run over the same work dir REUSEs (zero new retri
 //    evidence and are run unchanged by the classified gate)
 // ---------------------------------------------------------------------------
 
-test('OPTIN-1 — the composer only runs the sub-phase behind an opt-in guard (default off)', () => {
+test('OPTIN-1 — the composer exposes a default-off targeted continuation seam', () => {
   const source = fs.readFileSync(path.join(LIB, 'p1-runtime-composer.mjs'), 'utf8');
-  const guard = source.indexOf('if (targetedSubphase !== null) {');
-  const call = source.indexOf('runTargetedSubphase(');
-  assert.ok(guard >= 0, 'the opt-in guard must exist');
-  assert.ok(guard < call, 'the call must be inside the opt-in guard');
-  assert.equal((source.match(/targetedSubphase\s*=\s*null/g) ?? []).length, 1, 'default value must be null (disabled)');
+  assert.match(source, /targetedSubphase = null,/);
+  assert.match(source, /targetedOnContinue:\s*targetedSubphase === null \? null/);
+  assert.match(source, /if \(targetedSubphase !== null\)/, 'STOP-only restoration is opt-in too');
 });
 
 // ---------------------------------------------------------------------------
@@ -1511,14 +1522,14 @@ test('BUDGET-2 — the preflight refuses to run without the planned half (fail c
   );
 });
 
-test('BUDGET-3 — the round loop forwards the targeted half into BOTH evaluateRetrievalRound call sites', () => {
+test('BUDGET-3 — every round evaluation sees the targeted half, including the CONTINUE re-evaluation', () => {
   const source = fs.readFileSync(path.join(LIB, 'coverage-final-integration.mjs'), 'utf8');
   const stripped = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   // Both branches — the normal round AND the all-providers-failed round — must
   // carry `targetedAttempts`. Omitting it on the failure branch would under-count
   // the budget exactly when the run is already degrading.
   const calls = stripped.match(/evaluateRetrievalRound\(\{[\s\S]*?\n\s*\}\)/g) ?? [];
-  assert.equal(calls.length, 2, 'the loop has exactly two evaluateRetrievalRound call sites');
+  assert.equal(calls.length, 3, 'failure, preliminary, and same-round budget evaluations all forward counts');
   for (const [i, call] of calls.entries()) {
     assert.match(call, /targetedAttempts\s*,/, `call site ${i + 1} forwards targetedAttempts`);
   }
@@ -1550,7 +1561,7 @@ test('BUDGET-4 — the composer derives the loop targeted half from the ANCHORED
   // The planned half the sub-phase needs is likewise derived, not supplied by config.
   assert.match(
     source,
-    /plannedAttemptsBudgetCount:\s*computePlannedAttemptCount\(coverageState\)/,
+    /plannedAttemptsBudgetCount:\s*computePlannedAttemptCount\(liveCoverage\)/,
     'the sub-phase preflight gets the planned half from the live coverage state',
   );
 
@@ -1567,3 +1578,75 @@ test('BUDGET-4 — the composer derives the loop targeted half from the ANCHORED
     'an anchor no artifact satisfies yields null — the canonical file is never an unanchored fallback',
   );
 });
+
+
+// T14 G.1: input recovery is distinct from T06 completion/replay authority.
+for (const window of ['after_targeted_execution', 'after_targeted_commit_finalize']) {
+  test(`T14 G.1 recovery retains original inputs at ${window}`, () => {
+    const workDir = tmpWorkDir('t14-resolution-input');
+    let drift = false;
+    const fixture = buildFixture(input => searchResult('fixture-a',
+      input.query === 'framing-a' || drift ? [['900', 1], ['901', 2]] : [['100', 1]], input.query));
+    const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+    const gap = contradictionGap(pool);
+    const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap)]);
+    assert.throws(() => runTargetedSubphase({ ...args,
+      crashAt(label) { if (label === window) throw new Error('input-recovery boundary'); },
+    }), /input-recovery boundary/);
+    const state = JSON.parse(fs.readFileSync(path.join(workDir, 'orchestration-state.json'), 'utf8'));
+    const actions = JSON.parse(resolveAnchoredLedgerBytes(workDir, state.hashes[LEDGER_STAGING_KEY]));
+    const action = actions.targetedActions[0];
+    const key = `targeted-resolution-input:${action.targetedActionId}`;
+    const originalHash = state.hashes[key];
+    const originalBytes = resolveResolutionInputBytes(workDir, action.targetedActionId, originalHash);
+    const snapshot = JSON.parse(originalBytes);
+    assert.deepEqual(snapshot.priorQuestionIds, ['100']);
+    assert.deepEqual(snapshot.coveredFramings, ['framing-b']);
+    drift = true;
+    const resumedPool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'new-planned'));
+    assert.deepEqual(resumedPool.candidates.map(c => c.identity.questionId).sort(), ['900', '901']);
+    const callsBefore = fixture.adapter.__calls();
+    const recovered = runTargetedSubphase({ ...args, accumulatedPool: resumedPool, state });
+    assert.equal(fixture.adapter.__calls() - callsBefore, window === 'after_targeted_execution' ? 1 : 0);
+    assert.equal(recovered.resolutionArtifact.resolutions.find(r => r.gapId === gap.gapId).status, 'RESOLVED');
+    assert.equal(recovered.state.hashes[key], originalHash, 'safe re-run never overwrites original context');
+    assert.deepEqual(resolveResolutionInputBytes(workDir, action.targetedActionId, originalHash), originalBytes);
+  });
+}
+
+for (const fault of ['missing-binding', 'corrupt-bytes', 'foreign-action', 'foreign-occurrence', 'extra-field', 'noncanonical-id', 'unsafe-framing']) {
+  test(`T14 resolution input fails closed before IO for ${fault}`, () => {
+    const workDir = tmpWorkDir('t14-resolution-fault');
+    const fixture = buildFixture();
+    const pool = baseAccumulatedPool(fixture.seam, fixture.channels, path.join(workDir, 'base'));
+    const gap = contradictionGap(pool);
+    const args = subphaseArgs(workDir, fixture, pool, [proposalFor(gap)]);
+    assert.throws(() => runTargetedSubphase({ ...args,
+      crashAt(label) { if (label === 'after_targeted_commit_finalize') throw new Error('pending input boundary'); },
+    }), /pending input boundary/);
+    const state = JSON.parse(fs.readFileSync(path.join(workDir, 'orchestration-state.json'), 'utf8'));
+    const action = JSON.parse(resolveAnchoredLedgerBytes(workDir, state.hashes[LEDGER_STAGING_KEY])).targetedActions[0];
+    const key = `targeted-resolution-input:${action.targetedActionId}`;
+    const bytes = resolveResolutionInputBytes(workDir, action.targetedActionId, state.hashes[key]);
+    const snapshot = JSON.parse(bytes);
+    if (fault === 'missing-binding') delete state.hashes[key];
+    else if (fault === 'corrupt-bytes') {
+      const staged = stageArtifactBytes(workDir, 'targeted-resolution-input', bytes).target;
+      fs.writeFileSync(staged, '{}');
+    } else {
+      if (fault === 'foreign-action') snapshot.targetedActionId = 'a'.repeat(64);
+      if (fault === 'foreign-occurrence') snapshot.occurrenceId = 'another-occurrence';
+      if (fault === 'extra-field') snapshot.newAuthority = true;
+      if (fault === 'noncanonical-id') snapshot.priorQuestionIds = ['01'];
+      if (fault === 'unsafe-framing') snapshot.coveredFramings = ['/etc/hosts'];
+      state.hashes[key] = stageArtifactBytes(workDir, 'targeted-resolution-input', JSON.stringify(snapshot)).sha;
+    }
+    writeState(workDir, state); // explicit fault injection, never a production credential.
+    const callsBefore = fixture.adapter.__calls();
+    assert.throws(() => runTargetedSubphase({ ...args, state }), /resolution input/);
+    assert.equal(fixture.adapter.__calls(), callsBefore);
+    assert.ok(fs.existsSync(path.join(workDir, action.artifactRel)), 'paid result bytes remain available');
+    const resolutionFile = path.join(workDir, RESOLUTION_FILENAME);
+    assert.ok(!fs.existsSync(resolutionFile) || !JSON.parse(fs.readFileSync(resolutionFile)).resolutions.some(r => r.status === 'RESOLVED'));
+  });
+}

@@ -1,46 +1,46 @@
-# T14 完整链缺口：待产品负责人决定
+# T14 有限架构授权与验收权威校正
 
-STATUS = USER_DECISION_REQUIRED（独立 reviewer 已确认有限架构根因；尚未获得新架构授权）
-CURRENT_TASK = P2A-T14 / #126
+STATUS = PARTIAL_ARCHITECTURE_AUTHORIZATION_GRANTED
+CURRENT_TASK = P2A-T14 / #126，B1：§20-1 / §20-6 / §20-7
 BASE_MASTER = 854dd3cb2f9d5fa06df1dd79e7aad4ab42aea2b3
-EXECUTABLE_CANDIDATE = 19c281d30bc076f2ddd8a5c0c2b474f138ae3d8e
-INDEPENDENT_REVIEWED_HEAD = 96a4cc3b5b851e29589ecd80cc308baeae3356ca
-REVIEW_VERDICT = CHANGES_REQUESTED / NOT_PROVEN
-ORDINARY_REPAIRS = B2 CLOSED / B3 CLOSED_ON_REVIEWED_HEAD
-MASTER_INTEGRATION = NOT_AUTHORIZED_BY_ACCEPTANCE_GATE
-ISSUE_CLOSE = NOT_ALLOWED
+PR = #132；新实现不能继承旧 SHA 的 review。
 
-## 已完成授权范围
+负责人已批准有限 controller-owned bounded followup 接线，并明确要求先独立设计审查、真实 RED，再实施。
+批准的是本文列出的边界，原本的 USER-DECISION.md 建议不被逐句追认。
+设计和独立原始审批收据见 [ARCHITECTURE-APPROVALS.json](ARCHITECTURE-APPROVALS.json)。
 
-真实 composition 的诊断、持久gap、授权、既有检索、融合/身份/血缘、commit/checkpoint、resolution与最终披露已运行。本次22个互斥场景各有具体occurrence，SIGKILL/replay与缺失/篡改负控使用真实产品工件。缺失gap可见性、scope执行偏差、终态落盘与COMPLETE依赖闭包P1已按既有冻结语义最小修复。Standards审查发现的staged-source身份P2也已修复，并在三个隔离clone独立验证。
+## ACCEPTANCE_OVERREACH_CORRECTED
 
-## 三项未闭合义务
+“unknown 必须成为合法 durable gap 并进入最终研究披露”没有冻结 Approved Spec/Seam 权威，已撤回。
+MVP 合法 gap 仍仅 ASPECT_GAP、CONTRADICTION_GAP、AUTHORITY_GAP。
+§20-1 的整链义务为 unknown diagnostic candidate → controller 类型校验 → UNKNOWN_GAP_TYPE 拒绝审计 →
+零 TargetedQueryAction、零 targeted provider IO。unknown 不进入合法 gap ledger；合法类型另有正对照。
+旧 9/3 否定收据保持历史原文；本校正不把旧结果改写为新候选 PASS。
 
-| 条款 | 已证实 | 缺失的完整链证据 |
-|---|---|---|
-| §20-1 | T01未知类型规范化与生产controller拒绝、放宽类型的正控、zero额外IO | composer真实持久未知gap并走到最终披露 |
-| §20-6 | 从本次checkpoint锚定ledger推导的跨diagnosisRound去重/per-gap拒绝及正控 | composer实际调度第二诊断轮/下一proposal，持久化真实拒绝 |
-| §20-7 | 全局预算包含planned+targeted，真实后续gap预算拒绝；预算终态诚实 | composer真实触发per-gap下一动作并拒绝；终态存在不能替代实际上界负控 |
+## 已批准的最小设计
 
-当前 `diagnoseGaps` 只生产三种已知MVP类型；`runTargetedSubphase` 固定diagnosisRound=0，每gap只消费一个proposal；composer只在planned loop后调用一次子阶段。ordinary resume先走checkpoint replay，不重新授权。直接调用公开guard虽可验证局部保护，却没有产品持久化的未知gap或第二轮全链。
+每个 diagnosis pass 仅处理 eligible unresolved core，每 gap 至多一个 proposal，继续经过原 T04/T05。
+同 occurrence 的跨 pass 等价 proposal 由原 core dedupe 拒绝；达到原 per-gap bound 后的实际 next proposal
+由原 controller 拒绝。global budget、既有 T08 re-evaluation、terminal 与 STOP 共同保证有界退出。
+diagnosisRound 仅审计；不改变 core、dedupe、actionId、planHash、occurrence、P1 retrieval round。
 
-这些缺口未被证明是产品P0/P1。为了满足完整链新增未知诊断生产入口、轮次调度或proposal消费语义，已超出本票默认evidence授权。不能把内部authority mock、手改durable JSON、或guard-only对照升级为完整T14 PASS。
+targeted IO 只能发生于首个真实 T07 CONTINUE 窗口；callback 后用同一 coverageBefore 和同一 planned facts
+再次纯评估更新 targeted budget，最终 apply 一次。targeted candidates 不影响 planned novelty/saturation。
+STOP-only 恢复只能读取 checkpoint-bound 已提交池并补齐 T08，不能新授权或付费。
 
-## 建议授权范围
+冻结 G.1/G.4 输入按 action 执行前保存：controller-derived resolution-input 在原 AUTHORIZED writeState
+中与 ledger 一起锚定；安全重跑不覆盖，欠 T08 恢复只消费原快照。快照只供 T08，不作授权、replay、预算或
+STOP 权限。旧 terminal 保留；缺少/损坏的 pending 输入诚实 fail closed，不用当前 pool 猜测 RESOLVED。
+默认严格安全检查不带信任豁免；staging 使用固定短目录和完整快照 hash，checkpoint 仍逐 action 绑定。
 
-建议产品负责人授权一份小型架构/Seam amendment，供独立architecture reviewer审批后实施：
+不新增 generic scheduler、arbitrary action graph、adaptive planner、priority engine、learned policy、#110
+行为或第二 retrieval pipeline。T01/T05/T06/T07/T08、P1 STOP、provider/runtime 权限均保持冻结。
 
-1. 定义controller拥有的诊断生产接缝，使合法未知记录能按T01规范化、持久化、拒绝检索并最终披露；未经controller验证的外部字段不能成为gap authority。
-2. 定义同occurrence内有界的诊断/后续proposal调度，让跨轮等价proposal和达到per-gap上限后的下一proposal真实经过既有T04/T05并持久拒绝。调度上限与STOP优先级必须明确，不能把targeted动作算作P1 retrieval round。
-3. 保持现有T01 gapIdentityCore、T05 dedupeKey/actionId、T06 checkpoint唯一authority、T07计数、T08 terminal集合与谓词、runtime/provider白名单和唯一retrieval路径。改变这些更高层合同必须另行明确裁决，不能夹带。
-4. 新接缝先有RED对照，再实现最小接线；同一统一driver重跑三项缺口及全部受影响场景，最终fresh exact-SHA审查后才可推进#126。
+## 最终门禁
 
-授权不等于当前草案已批准，也不意味着立即合入产品。具体API、持久化和crash窗口需形成可审查Seam差异并通过独立architecture quorum；本候选没有实施上述新增行为。
-
-## 不改变验收标准
-
-独立验收确认九项PASS、三项NOT_PROVEN（仅绑定96a4cc3）；#126保持OPEN，#108 ENGINEERING_ACCEPTANCE不能标COMPLETE。#107/#127仍不开始。若负责人选择暂不授权扩展，候选修复和证据保存在分支与draft PR，继续保持T14未完成，不宣称价值改善。
-
-触发来源是本轮用户请求的Product Code Change Policy与Operating Mode：“architecture change”“product semantics change”“identity/authority boundary change”需USER_DECISION_REQUIRED。这里请求的是新增组合接缝/调度的架构授权，不是重复询问已授权的测试、P2修复、模型替代或提交工作。
-
-普通修复状态：4cb4de6 指出的 matrix false-PASS 与 stale-action 空场景已在19c281d修复，fresh reviewer在96a4cc3确认B2/B3闭合，未发现其他未闭合普通harness/P2项。仅B1三项完整链缺口需要本文所列有限架构授权；收据见 [独立验收收据](r96a/reviewer-receipt-96a4cc3.md)。具体API尚未被批准，不降低任何验收条件。
+真实 RED 证明旧实现无法调度第二 pass/limit 后 next proposal；双向 planned-provider 漂移的真实 SIGKILL
+反例证明原输入恢复问题。新候选须统一重跑所有 §20-1…§20-12 及受影响场景，不能拼旧九项与三个局部测试。
+新 exact SHA 必须 CODE、ARCHITECTURE/SEAM conformance、ACCEPTANCE_EVIDENCE 三角色 PASS，P0=0/P1=0、
+12 PASS、ACCEPTANCE_BLOCKERS=0 后，才可 PR ready、ff-only、远端 master 相等、fresh clone T14 重跑、close #126。
+普通实现、测试、fixture、P2、模型 fallback 自主推进；只有突破上述冻结权限才 USER_DECISION_REQUIRED。
+§20-13 仍属于 #107 + #127 / T15；本票只作 ENGINEERING_ACCEPTANCE，不声明研究质量改善。

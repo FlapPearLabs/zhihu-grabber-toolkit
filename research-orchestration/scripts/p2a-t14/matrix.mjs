@@ -5,16 +5,16 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SPECS = [
-  { item: '§20-1', principal: 'unknown-gap', fixed: 'NOT_PROVEN', why: 'The unknown-gap observation is a controller-boundary negative control; no durable unknown gap is produced by composer persistence.', controls: [{ id: 'unknown-gap', checks: ['unknown guard and load-bearing control', 'controller before targeted IO'] }] },
+  { item: '§20-1', principal: 'unknown-gap', checks: ['unknown rejected by composition', 'zero legal unknown gaps', 'zero targeted action delta', 'zero targeted provider delta'], controls: [{ id: 'canonical', checks: ['evidence resolution', 'controller before targeted IO'] }] },
   { item: '§20-2', principal: 'canonical', checks: ['bidirectional lineage'], requireLineage: true, controls: [{ id: 'unknown-gap', checks: ['controller before targeted IO'] }, { id: 'free-form', checks: ['controller before targeted IO'] }] },
   { item: '§20-3', principal: 'free-form', checks: ['controller before targeted IO', 'rejected proposal recorded'], controls: [{ id: 'unsafe-plan-owned', checks: ['controller before targeted IO', 'rejected proposal recorded'] }], requireZeroTargeted: true },
   { item: '§20-4', principal: 'canonical', checks: ['all provider calls', 'bidirectional lineage'], requireLineage: true, controls: [{ id: 'provider-scope', checks: ['no runtime or provider fallback'] }] },
   { item: '§20-5', principal: 'provider-scope', checks: ['no runtime or provider fallback', 'all provider calls'], controls: [{ id: 'canonical', checks: ['no runtime or provider fallback'] }, { id: 'all-provider-failed', checks: ['no runtime or provider fallback'] }] },
-  { item: '§20-6', principal: 'equivalent-query', fixed: 'NOT_PROVEN', why: 'Equivalent-query and per-gap observations exercise controller guards, but do not prove a real second composer diagnosis round with persistent per-gap attempts.', controls: [{ id: 'equivalent-query', checks: ['cross-round dedupe guard and load-bearing control', 'equivalent completed replay zero IO'] }, { id: 'per-gap-bound', checks: ['per-gap guard and load-bearing control', 'per-gap terminal honest'] }] },
-  { item: '§20-7', principal: 'global-budget', fixed: 'NOT_PROVEN', why: 'Global budget enforcement is observed in composer; the per-gap limit counterfactual is only a controller-boundary control, not a production next action.', checks: ['budget bounds real IO', 'budget terminal honest', 'budget refuses next gap'], controls: [{ id: 'per-gap-bound', checks: ['per-gap terminal honest'] }] },
-  { item: '§20-8', principal: 'canonical', checks: ['evidence resolution'], requireLineage: true, controls: [{ id: 'duplicate-only', checks: ['duplicate-only unresolved'] }, { id: 'contradiction-one-side', checks: ['one-sided does not resolve'] }, { id: 'authority-unavailable', checks: ['no authority predicate'] }] },
+  { item: '§20-6', principal: 'equivalent-query', checks: ['real composition round-1 proposal observed', 'same core across diagnosis rounds', 'different audit gap ids across rounds', 'real controller rejection persisted', 'rejected follow-up has zero provider delta'], controls: [{ id: 'equivalent-query', checks: ['equivalent completed replay zero IO'] }] },
+  { item: '§20-7', principal: 'per-gap-bound', checks: ['real composition round-1 proposal observed', 'real controller rejection persisted', 'rejected follow-up has zero provider delta'], controls: [{ id: 'global-budget', checks: ['budget bounds real IO', 'budget target literal', 'budget terminal honest', 'budget refuses next gap'] }] },
+  { item: '§20-8', principal: 'canonical', checks: ['evidence resolution'], requireLineage: true, controls: [{ id: 'duplicate-only', checks: ['duplicate-only unresolved'] }, { id: 'crash-resolution-input', checks: ['original and resume planned ids drift bidirectionally', 'targeted provider delta is zero', 'T08 preserves crash-time classification', 'one checkpoint-anchored COMMIT with valid result hash', 'original T08 snapshot bound before provider IO', 'snapshot prior IDs match initial provider facts', 'snapshot bytes and hash survive COMPLETE ordinary resume'] }, { id: 'crash-resolution-reverse', checks: ['original and resume planned ids drift bidirectionally', 'targeted provider delta is zero', 'T08 preserves crash-time classification', 'one checkpoint-anchored COMMIT with valid result hash', 'original T08 snapshot bound before provider IO', 'snapshot prior IDs match initial provider facts', 'snapshot bytes and hash survive COMPLETE ordinary resume'] }, { id: 'crash-framing-drift', checks: ['framing provider coverage drifts across crash and resume', 'framing targeted result is new evidence', 'framing action anchors the intended contradiction gap', 'framing T08 uses original snapshot classification', 'framing targeted resume delta is zero', 'framing resume proposal only references prior anchored gap', 'framing snapshot bound before provider IO', 'framing snapshot prior IDs match initial provider facts', 'framing snapshot survives COMPLETE ordinary resume', 'framing feedback loop has actual budget STOP', 'framing has one anchored COMMIT'] }, { id: 'contradiction-one-side', checks: ['one-sided does not resolve'] }, { id: 'authority-unavailable', checks: ['no authority predicate'] }] },
   { item: '§20-9', principal: 'canonical', checks: ['all durable gaps visible', 'bidirectional lineage'], requireLineage: true, controls: [{ id: 'duplicate-only', checks: ['all durable gaps visible', 'duplicate-only unresolved'] }, { id: 'authority-unavailable', checks: ['all durable gaps visible', 'no authority predicate'] }] },
-  { item: '§20-10', principal: 'crash-after', checks: ['same occurrence resumes', 'real kill at window', 'resume paid IO delta', 'one durable COMMIT', 'commit window checkpoint matches kill', 'final pool hash matches binding', 'replay decision'], controls: [{ id: 'crash-before', checks: ['same occurrence resumes', 'real kill at window', 'resume paid IO delta', 'one durable COMMIT', 'replay decision'] }] },
+  { item: '§20-10', principal: 'crash-after', checks: ['same occurrence resumes', 'real kill at window', 'resume paid IO delta', 'one durable COMMIT', 'commit window checkpoint matches kill', 'final pool hash matches binding', 'replay decision'], controls: [{ id: 'crash-before', checks: ['same occurrence resumes', 'real kill at window', 'resume paid IO delta', 'one durable COMMIT', 'replay decision'] }, { id: 'crash-resolution-input', checks: ['same occurrence resumes', 'real kill at window', 'resume paid IO delta', 'one durable COMMIT', 'commit window checkpoint matches kill', 'final pool hash matches binding', 'replay decision', 'original and resume planned ids drift bidirectionally', 'targeted provider delta is zero', 'T08 preserves crash-time classification', 'one checkpoint-anchored COMMIT with valid result hash', 'original T08 snapshot bound before provider IO', 'snapshot prior IDs match initial provider facts', 'snapshot bytes and hash survive COMPLETE ordinary resume'] }, { id: 'crash-resolution-reverse', checks: ['same occurrence resumes', 'real kill at window', 'resume paid IO delta', 'one durable COMMIT', 'commit window checkpoint matches kill', 'final pool hash matches binding', 'replay decision', 'original and resume planned ids drift bidirectionally', 'targeted provider delta is zero', 'T08 preserves crash-time classification', 'one checkpoint-anchored COMMIT with valid result hash', 'original T08 snapshot bound before provider IO', 'snapshot prior IDs match initial provider facts', 'snapshot bytes and hash survive COMPLETE ordinary resume'] }, { id: 'crash-framing-drift', checks: ['same occurrence resumes', 'real kill at window', 'resume paid IO delta', 'one durable COMMIT', 'commit window checkpoint matches kill', 'final pool hash matches binding', 'replay decision', 'framing provider coverage drifts across crash and resume', 'framing targeted result is new evidence', 'framing action anchors the intended contradiction gap', 'framing T08 uses original snapshot classification', 'framing targeted resume delta is zero', 'framing resume proposal only references prior anchored gap', 'framing snapshot bound before provider IO', 'framing snapshot prior IDs match initial provider facts', 'framing snapshot survives COMPLETE ordinary resume', 'framing feedback loop has actual budget STOP', 'framing has one anchored COMMIT'] }] },
   { item: '§20-11', principal: 'canonical', checks: ['bidirectional lineage'], requireLineage: true, controls: [{ id: 'tampered-pool', checks: ['tampered committed product refused', 'fault does not pay again'] }, { id: 'stale-binding', checks: ['tampered committed product refused', 'fault does not pay again'] }] },
   { item: '§20-12', principal: 'stale-action', checks: ['stale action occurrence checker refuses', 'stale action negative has zero provider delta', 'stale action restored checkpoint control reuses at zero IO', 'stale action checkpoint bytes restored', 'stale action does not pay again or duplicate COMMIT', 'bidirectional lineage'], controls: [{ id: 'stale-binding', checks: ['tampered committed product refused', 'fault does not pay again'] }, { id: 'tampered-pool', checks: ['tampered committed product refused', 'fault does not pay again'] }, { id: 'equivalent-query', checks: ['equivalent completed replay zero IO'] }, { id: 'missing-resolution', checks: ['tampered committed product refused', 'fault does not pay again'] }, { id: 'tampered-resolution', checks: ['tampered committed product refused', 'fault does not pay again'] }, { id: 'foreign-resolution', checks: ['tampered committed product refused', 'fault does not pay again'] }, { id: 'canonical-ledger-drift', checks: ['canonical ledger is not a replay credential', 'bidirectional lineage'] }] },
 ];
@@ -41,16 +41,18 @@ const providerCountsMatch = scenario => !!scenario
 
 const commandStatusesValid = scenario => {
   if (!scenario || !Array.isArray(scenario.commands) || scenario.commands.length === 0) return false;
-  const isCrashWindow = scenario.scenarioId === 'crash-before' || scenario.scenarioId === 'crash-after';
+  const isCrashWindow = ['crash-before', 'crash-after', 'crash-resolution-input', 'crash-resolution-reverse', 'crash-framing-drift'].includes(scenario.scenarioId);
   return scenario.commands.every((command, index) => {
     if (!command || command.error !== null || !Number.isInteger(command.exitCode)) return false;
     if (isCrashWindow && index === 0 && command.signal !== 'SIGKILL') return false;
     if (command.signal === 'SIGKILL') {
       const expectedCrashPoint = scenario.scenarioId === 'crash-before' ? 'after_targeted_execution'
-        : scenario.scenarioId === 'crash-after' ? 'after_targeted_commit_finalize' : null;
+        : ['crash-after', 'crash-resolution-input', 'crash-resolution-reverse', 'crash-framing-drift'].includes(scenario.scenarioId) ? 'after_targeted_commit_finalize' : null;
       return isCrashWindow && index === 0 && command.exitCode === 137
         && (command.command ?? '').includes(`--child ${scenario.scenarioId} `)
-        && (command.command ?? '').includes(`--phase initial --crash ${expectedCrashPoint}`);
+        && (command.command ?? '').includes(`--expected-head ${scenario.exactRepoSha}`)
+        && (command.command ?? '').includes('--phase initial')
+        && (command.command ?? '').includes(`--crash ${expectedCrashPoint}`);
     }
     return command.signal == null && command.exitCode === 0;
   });
@@ -141,8 +143,8 @@ export function buildMatrix(campaign) {
       || participatingRuns.some(s => s && !commandStatusesValid(s))
       || (staleEvidence && !staleEvidence.valid)
       || lineageStatuses.some((status, index) => participantsLineage[index].required && status === 'FAIL');
-    const verdict = spec.fixed ?? (hardFailure ? 'FAIL' : !fieldsOk || !lineageOk ? 'NOT_PROVEN'
-      : principalChecksOk && controlsOk && zeroCallOk && scenarioVerdictsOk && countsOk && commandsOk ? 'PASS' : 'FAIL');
+    const verdict = hardFailure ? 'FAIL' : !fieldsOk || !lineageOk ? 'NOT_PROVEN'
+      : principalChecksOk && controlsOk && zeroCallOk && scenarioVerdictsOk && countsOk && commandsOk ? 'PASS' : 'FAIL';
     const inputRefs = portableRefs(principal?.inputArtifacts);
     const outputRefs = portableRefs(principal?.outputArtifacts);
     return {
@@ -170,7 +172,7 @@ export function buildMatrix(campaign) {
         ...(staleEvidence ? { staleActionEvidence: staleEvidence } : {}),
         requiredAssertions: (spec.checks ?? []).map(name => ({ name, result: findCheck(principal, name)?.pass === true ? 'PASS' : 'NOT_PROVEN' })),
       } : 'NOT_PROVEN',
-      positiveAssertion: { scenarioId: spec.principal, checks: spec.checks ?? (spec.fixed ? ['controller guard observation (limited scope)'] : 'NOT_PROVEN') },
+      positiveAssertion: { scenarioId: spec.principal, checks: spec.checks ?? 'NOT_PROVEN' },
       negativeControlRefs: controls.map(c => ({
         scenarioId: c.id,
         runId: c.scenario?.runId ?? 'UNKNOWN',
@@ -178,7 +180,7 @@ export function buildMatrix(campaign) {
         verdict: c.scenario?.verdict ?? 'UNKNOWN',
         checks: c.checks.map(name => ({ name, result: findCheck(c.scenario, name)?.pass === true ? 'PASS' : 'NOT_PROVEN' })),
       })),
-      boundaryLimit: spec.fixed ? 'CONTROLLER_BOUNDARY_NEGATIVE_CONTROL; does not close the full composer persistence/round-trip obligation.' : null,
+      boundaryLimit: null,
     };
   });
   rows.push({ specItem: '§20-13', scenarioId: 'OUT_OF_SCOPE', verdict: 'OUT_OF_SCOPE', reason: 'Owner T15/#127. No research quality or value claim is made.', principalRun: 'NOT_APPLICABLE', positiveAssertion: 'OUT_OF_SCOPE', negativeControlRefs: [] });

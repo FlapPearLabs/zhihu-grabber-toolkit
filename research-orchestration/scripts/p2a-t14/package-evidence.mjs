@@ -71,6 +71,32 @@ for (const scenarioEntry of campaign.scenarios) {
     continue;
   }
   const evidence = readJson(evidenceFile);
+  const isResolutionCrash = ['crash-resolution-input', 'crash-resolution-reverse', 'crash-framing-drift'].includes(scenarioId);
+  const crashRequiredChecks = ['same occurrence resumes', 'real kill at window', 'original and resume planned ids drift bidirectionally',
+    'targeted provider delta is zero', 'one checkpoint-anchored COMMIT with valid result hash',
+    'original T08 snapshot bound before provider IO', 'snapshot prior IDs match initial provider facts',
+    'snapshot bytes and hash survive COMPLETE ordinary resume'];
+  if (isResolutionCrash) {
+    const checks = new Map((evidence.checks ?? []).map(c => [c.name, c]));
+    const requiredChecks = scenarioId === 'crash-framing-drift'
+      ? ['framing provider coverage drifts across crash and resume', 'framing targeted result is new evidence',
+        'framing T08 uses original snapshot classification', 'framing targeted resume delta is zero',
+        'framing resume proposal only references prior anchored gap', 'framing snapshot bound before provider IO',
+        'framing snapshot prior IDs match initial provider facts', 'framing snapshot survives COMPLETE ordinary resume', 'framing feedback loop has actual budget STOP', 'framing has one anchored COMMIT']
+      : crashRequiredChecks;
+    for (const name of requiredChecks) if (checks.get(name)?.pass !== true) validation.errors.push(`${scenarioId}: missing or failed required crash-resolution check ${name}`);
+    if (!Array.isArray(evidence.crashResolution?.originalPlannedIds) || !Array.isArray(evidence.crashResolution?.resumePlannedIds)
+      || !Array.isArray(evidence.crashResolution?.targetedIds) || evidence.crashResolution?.targetedProviderCallDelta !== 0
+      || !/^[0-9a-f]{64}$/.test(evidence.crashResolution?.artifactHash ?? '')
+      || evidence.crashResolution?.commitCount !== 1 || !evidence.crashResolution?.initialBindingValid || !evidence.crashResolution?.finalBindingValid
+      || evidence.crashResolution?.resolutionInput?.preIoCheckpointBindingValid !== true
+      || evidence.crashResolution?.resolutionInput?.priorIdsMatchInitialProviderFacts !== true
+      || evidence.crashResolution?.resolutionInput?.retainedHashAndBytesOnCompleteResume !== true
+      || !/^[0-9a-f]{64}$/.test(evidence.crashResolution?.resolutionInput?.bindingHash ?? '')
+      || evidence.crashResolution?.resolutionInput?.bindingHash !== evidence.crashResolution?.resolutionInput?.byteHash) {
+      validation.errors.push(`${scenarioId}: crash-resolution evidence fields are incomplete or invalid`);
+    }
+  }
   const initialFile = path.join(scenarioDir, 'initial-observation.json');
   const finalFile = path.join(scenarioDir, 'final-observation.json');
   const initial = fs.existsSync(initialFile) ? readJson(initialFile) : null;
@@ -91,13 +117,24 @@ for (const scenarioEntry of campaign.scenarios) {
   const requiredRefs = new Set([
     'orchestration-state.json', 'research-plan.json', 'targeted-requery-ledger.json',
     'targeted-requery-actions.json', 'targeted-requery-resolution.json',
-    'acceptance-events.jsonl', 'acceptance-provider-calls.jsonl',
+    'events.jsonl', 'acceptance-provider-calls.jsonl',
     'research-result.json', 'coverage-final.json',
   ]);
+  if (scenarioId === 'crash-framing-drift') requiredRefs.add('acceptance-events.jsonl');
+  if (isResolutionCrash) {
+    for (const rel of ['events.jsonl', 'acceptance-provider-calls.jsonl', 'orchestration-state.json', 'targeted-requery-actions.json',
+      'targeted-requery-resolution.json', 'research-result.json', 'coverage-final.json',
+      'acceptance-compose-resume.json', 'acceptance-compose-complete-resume.json']) requiredRefs.add(rel);
+  }
   for (const item of [...(evidence.inputArtifacts ?? []), ...(evidence.outputArtifacts ?? [])]) {
     if (item?.path && /^(?:acceptance-compose-|retrieval-rounds\/|targeted-requery-subphase\/)/.test(item.path)) requiredRefs.add(item.path);
   }
   for (const observation of [initial, final]) {
+    for (const [key, sha] of Object.entries(observation?.state?.hashes ?? {})) {
+      if (/^targeted-resolution-input:[0-9a-f]{64}$/.test(key) && /^[0-9a-f]{64}$/.test(sha)) {
+        requiredRefs.add(`.p1-commit-staging/targeted-resolution-input/${sha}.json`);
+      }
+    }
     for (const action of [...(observation?.actions?.targetedActions ?? []), ...(observation?.anchoredActions?.targetedActions ?? [])]) if (action.artifactRel) requiredRefs.add(action.artifactRel);
     const ledgerHash = observation?.state?.hashes?.['targeted-action-ledger'];
     if (ledgerHash) {
@@ -228,6 +265,11 @@ for (const scenarioEntry of campaign.scenarios) {
     gaps: gaps.map(g => ({ gapId: g.gapId ?? 'UNKNOWN', gapType: g.gapType ?? 'UNKNOWN', occurrenceId: g.occurrenceId ?? 'UNKNOWN', planHash: g.planHash ?? 'UNKNOWN' })),
     actionIndexStatus: (final?.actions?.targetedActions ?? initial?.actions?.targetedActions) ? 'OBSERVED' : 'NOT_PROVEN',
     actions: actions.map(a => ({ targetedActionId: a.targetedActionId ?? 'UNKNOWN', gapId: a.gapId ?? 'UNKNOWN', occurrenceId: a.occurrenceId ?? 'UNKNOWN', normalizedQuery: a.normalizedQuery ?? 'UNKNOWN', providerScope: a.providerScope ?? 'UNKNOWN', status: a.status ?? 'UNKNOWN', artifactRel: a.artifactRel ?? 'UNKNOWN', artifactHash: a.artifactHash ?? 'UNKNOWN' })),
+    ...(isResolutionCrash ? { crashResolution: evidence.crashResolution ?? 'NOT_PROVEN' } : {}),
+    resolutionInputs: (final?.resolutionInputs ?? initial?.resolutionInputs ?? []).map(input => ({ targetedActionId: input.targetedActionId ?? 'UNKNOWN',
+      gapId: input.gapId ?? 'UNKNOWN', planHash: input.planHash ?? 'UNKNOWN', occurrenceId: input.occurrenceId ?? 'UNKNOWN',
+      key: input.key ?? 'UNKNOWN', bindingHash: input.bindingHash ?? 'UNKNOWN', byteHash: input.byteHash ?? 'UNKNOWN',
+      byteLength: input.byteLength ?? 'UNKNOWN', snapshot: input.snapshot ?? 'NOT_PROVEN' })),
     providerCallIndexStatus: (final?.calls ?? initial?.calls) ? 'OBSERVED' : 'NOT_PROVEN',
     providerCalls: calls.map(c => ({ sequence: c.sequence ?? 'UNKNOWN', phase: c.phase ?? 'UNKNOWN', kind: c.kind ?? 'UNKNOWN', query: c.query ?? 'UNKNOWN', providerId: c.providerId ?? c.output?.provider_id ?? 'UNKNOWN', capability: c.capability ?? c.output?.capability ?? 'UNKNOWN', questionIds: (c.output?.items ?? []).map(i => i.identity?.questionId).filter(Boolean) })),
     checkpointHashes: checkpoint ?? 'UNKNOWN',
@@ -240,7 +282,7 @@ for (const scenarioEntry of campaign.scenarios) {
   };
   index.scenarios.push(scenarioIndex);
   manifest.scenarios.push({ scenarioId, sourceVerdict: scenarioIndex.sourceVerdict, verdict: scenarioIndex.sourceVerdict, refs: packagedRefs.map(r => ({ path: r.path, sha256: r.sha256, bytes: r.bytes })) });
-  minimumSuggestions.push({ scenarioId, minimumForReview: ['evidence.json', 'work/orchestration-state.json', 'work/research-plan.json', 'work/targeted-requery-ledger.json', 'work/targeted-requery-actions.json', 'work/targeted-requery-resolution.json', 'work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json', 'work/acceptance-events.jsonl', 'work/acceptance-provider-calls.jsonl', 'work/acceptance-controller-controls.json when present', 'work/acceptance-stale-action-control.json and original checkpoint backup for stale-action', 'work/research-result.json', 'work/coverage-final.json', 'work/<action.artifactRel>', 'initial/final observation summary snapshots'], faultHandling: 'Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.', excludedByDefault: ['zhihu/** capture/corpus payloads', 'large logs', 'full initial/final observation snapshots'] });
+  minimumSuggestions.push({ scenarioId, minimumForReview: ['evidence.json', 'work/orchestration-state.json', 'work/research-plan.json', 'work/targeted-requery-ledger.json', 'work/targeted-requery-actions.json', 'work/targeted-requery-resolution.json', 'work/.p1-commit-staging/targeted-action-ledger/<checkpoint-hash>.json', 'work/events.jsonl (actual controller trace)', 'work/acceptance-provider-calls.jsonl', 'work/acceptance-controller-controls.json when present', 'work/acceptance-stale-action-control.json and original checkpoint backup for stale-action', 'work/research-result.json', 'work/coverage-final.json', 'work/<action.artifactRel>', 'initial/final observation summary snapshots', ...(isResolutionCrash ? ['work/acceptance-compose-resume.json', 'work/acceptance-compose-complete-resume.json', 'initial/final planned-ID sets', 'targeted provider delta', 'T08 status and resolutionBasis', 'original checkpoint-bound resolution-input bytes/hash', 'single COMMIT with initial/final checkpoint result hash'] : [])], faultHandling: 'Preserve pre-fault observation snapshot and recorded hash; label current changed bytes as post-fault; classify deleted fault artifacts as FAULT_EVIDENCE, never as valid pre-fault bytes.', excludedByDefault: ['zhihu/** capture/corpus payloads', 'large logs', 'full initial/final observation snapshots'] });
 }
 
 function recursivelyCheckRefs(value, owner, checks = []) {

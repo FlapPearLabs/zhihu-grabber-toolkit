@@ -1,0 +1,46 @@
+{
+  "schema": "p2a-t14-limited-architecture-approvals/v1",
+  "authority": "Owner PARTIAL_ARCHITECTURE_AUTHORIZATION for T14 B1; Approved Spec/Seam remain frozen",
+  "sourceHeadBeforeImplementation": "054ef8d8aafa26372af5b695b0ddb54e766b507b",
+  "baseMaster": "854dd3cb2f9d5fa06df1dd79e7aad4ab42aea2b3",
+  "taxonomyCorrection": "ACCEPTANCE_OVERREACH_CORRECTED",
+  "boundedFollowupDesignSha256": "734658c03e7c8d5f50fc55cc5af5578967ad890dd842952ef15363c4c27d8b19",
+  "resolutionInputDesignSha256": "1bde1f37e3508dd8933317a0fb8a61035bc5f750a7277ec6f2da57d7f724d202",
+  "architectureVerdict": "PASS",
+  "P0": 0,
+  "P1": 0,
+  "approvalScope": "Design approval only; no implementation, exact-SHA review or integration authority is inherited",
+  "rawReviewPolicy": "Owner archives immutable reviewer bytes; original temporary references are retained as raw archival data",
+  "files": [
+    {
+      "path": "architecture/bounded-followup.md",
+      "sha256": "734658c03e7c8d5f50fc55cc5af5578967ad890dd842952ef15363c4c27d8b19",
+      "bytes": 10353,
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "architecture/resolution-input.md",
+      "sha256": "1bde1f37e3508dd8933317a0fb8a61035bc5f750a7277ec6f2da57d7f724d202",
+      "bytes": 5590,
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "architecture/taxonomy-authority-review.md",
+      "sha256": "ac2946d5b3c03aeb4bae0d6857619ee16fbd2428714f052b9c3d2ffa412ddd02",
+      "bytes": 6395,
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "architecture/bounded-followup-review.md",
+      "sha256": "404b72b7a473038f4052e99c0059f9c87c6b064f98e31a40e6810dfdfec68e14",
+      "bytes": 5739,
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "architecture/resolution-input-review.md",
+      "sha256": "c21194523302b3664739cc170c256bbc192fcd1bc36dedf80d86e7d9e2a24ff0",
+      "bytes": 8393,
+      "originalBytesPreserved": true
+    }
+  ]
+}
