@@ -2,6 +2,7 @@
 // Draft-only evidence packager. It preserves campaign verdicts and never creates a review receipt.
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolutionCrashEvidence } from './matrix.mjs';
 import crypto from 'node:crypto';
 
 const [campaignArg, outputArg] = process.argv.slice(2);
@@ -85,15 +86,7 @@ for (const scenarioEntry of campaign.scenarios) {
         'framing snapshot prior IDs match initial provider facts', 'framing snapshot survives COMPLETE ordinary resume', 'framing feedback loop has actual budget STOP', 'framing has one anchored COMMIT']
       : crashRequiredChecks;
     for (const name of requiredChecks) if (checks.get(name)?.pass !== true) validation.errors.push(`${scenarioId}: missing or failed required crash-resolution check ${name}`);
-    if (!Array.isArray(evidence.crashResolution?.originalPlannedIds) || !Array.isArray(evidence.crashResolution?.resumePlannedIds)
-      || !Array.isArray(evidence.crashResolution?.targetedIds) || evidence.crashResolution?.targetedProviderCallDelta !== 0
-      || !/^[0-9a-f]{64}$/.test(evidence.crashResolution?.artifactHash ?? '')
-      || evidence.crashResolution?.commitCount !== 1 || !evidence.crashResolution?.initialBindingValid || !evidence.crashResolution?.finalBindingValid
-      || evidence.crashResolution?.resolutionInput?.preIoCheckpointBindingValid !== true
-      || evidence.crashResolution?.resolutionInput?.priorIdsMatchInitialProviderFacts !== true
-      || evidence.crashResolution?.resolutionInput?.retainedHashAndBytesOnCompleteResume !== true
-      || !/^[0-9a-f]{64}$/.test(evidence.crashResolution?.resolutionInput?.bindingHash ?? '')
-      || evidence.crashResolution?.resolutionInput?.bindingHash !== evidence.crashResolution?.resolutionInput?.byteHash) {
+    if (!resolutionCrashEvidence(evidence)) {
       validation.errors.push(`${scenarioId}: crash-resolution evidence fields are incomplete or invalid`);
     }
   }

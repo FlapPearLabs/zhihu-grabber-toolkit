@@ -115,6 +115,41 @@ const staleActionEvidence = scenario => {
   originalCommitCount: restoration?.originalCommitCount ?? 'NOT_PROVEN', restoredCommitCount: restoration?.restoredCommitCount ?? 'NOT_PROVEN' };
 };
 
+export const resolutionCrashEvidence = scenario => {
+  if (!['crash-resolution-input', 'crash-resolution-reverse', 'crash-framing-drift'].includes(scenario?.scenarioId)) return true;
+  const audit = scenario?.crashResolution;
+  const input = audit?.resolutionInput;
+  const framing = scenario.scenarioId === 'crash-framing-drift';
+  const expected = scenario.scenarioId === 'crash-resolution-input' ? ['UNRESOLVED', 'DUPLICATE_ONLY']
+    : scenario.scenarioId === 'crash-resolution-reverse' ? ['RESOLVED', 'NEW_EVIDENCE_ATTRIBUTED']
+      : ['RESOLVED', 'OPPOSING_SIDE_NEW_EVIDENCE'];
+  const validIds = ids => Array.isArray(ids) && ids.length > 0
+    && ids.every(id => typeof id === 'string' && /^[1-9]\d*$/.test(id)) && new Set(ids).size === ids.length;
+  const join = scenario.lineage?.joins?.find(j => input?.key === 'targeted-resolution-input:' + j.targetedActionId);
+  const priorIds = audit?.originalPlannedIds;
+  if (!audit || !validIds(priorIds) || !validIds(audit.resumePlannedIds) || !validIds(audit.targetedIds)) return false;
+  const driftValid = framing
+    ? audit.gapType === 'CONTRADICTION_GAP' && typeof input?.declaredFraming === 'string' && input.declaredFraming.length > 0
+      && audit.subjectKey === 'opposing:' + input.declaredFraming
+      && Array.isArray(input.coveredFramings) && input.coveredFramings.length > 0
+      && input.coveredFramings.every(f => typeof f === 'string' && f.length > 0 && f !== input.declaredFraming)
+    : audit.targetedIds.every(id => priorIds.includes(id) === (scenario.scenarioId === 'crash-resolution-input')
+      && audit.resumePlannedIds.includes(id) === (scenario.scenarioId === 'crash-resolution-reverse'))
+      && audit.initialBindingHash === audit.artifactHash && audit.finalBindingHash === audit.artifactHash
+      && input?.declaredFraming === null && input?.coveredFramings === null;
+  return driftValid && audit.targetedProviderCallDelta === 0
+    && audit.resolutionStatus === expected[0] && audit.resolutionBasis === expected[1]
+    && audit.commitCount === 1 && /^[0-9a-f]{64}$/.test(audit.artifactHash ?? '')
+    && audit.initialBindingValid === true && audit.finalBindingValid === true
+    && typeof input?.key === 'string' && /^targeted-resolution-input:[0-9a-f]{64}$/.test(input.key)
+    && join?.artifactHash === audit.artifactHash && JSON.stringify(join?.resultQuestionIds) === JSON.stringify(audit.targetedIds)
+    && /^[0-9a-f]{64}$/.test(input.bindingHash ?? '') && input.bindingHash === input.byteHash
+    && Number.isInteger(input.byteLength) && input.byteLength > 0
+    && JSON.stringify(input.priorQuestionIds) === JSON.stringify(priorIds)
+    && input.preIoCheckpointBindingValid === true && input.priorIdsMatchInitialProviderFacts === true
+    && input.retainedHashAndBytesOnCompleteResume === true;
+};
+
 export function buildMatrix(campaign) {
   const scenarios = new Map((campaign?.scenarios ?? []).map(s => [s.scenarioId, s]));
   const rows = SPECS.map(spec => {
@@ -129,6 +164,7 @@ export function buildMatrix(campaign) {
     const countsOk = participatingRuns.every(providerCountsMatch);
     const commandsOk = participatingRuns.every(commandStatusesValid);
     const staleEvidence = spec.principal === 'stale-action' ? staleActionEvidence(principal) : null;
+    const crashResolutionEvidenceOk = participatingRuns.every(resolutionCrashEvidence);
     const principalLineageRequired = !!spec.requireLineage || (spec.checks ?? []).includes('bidirectional lineage');
     const participantsLineage = participatingRuns.map((scenario, index) => ({
       scenario,
@@ -142,6 +178,7 @@ export function buildMatrix(campaign) {
       || participatingRuns.some(s => s && !providerCountsMatch(s))
       || participatingRuns.some(s => s && !commandStatusesValid(s))
       || (staleEvidence && !staleEvidence.valid)
+      || !crashResolutionEvidenceOk
       || lineageStatuses.some((status, index) => participantsLineage[index].required && status === 'FAIL');
     const verdict = hardFailure ? 'FAIL' : !fieldsOk || !lineageOk ? 'NOT_PROVEN'
       : principalChecksOk && controlsOk && zeroCallOk && scenarioVerdictsOk && countsOk && commandsOk ? 'PASS' : 'FAIL';
