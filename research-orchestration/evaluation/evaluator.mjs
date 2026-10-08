@@ -101,8 +101,12 @@ export function measureTargets(observation, targets) {
 
 /** No weights, aggregate quality score, or value verdict. */
 export function compareResults(baseline, candidate) {
+  const costDeltas = Object.fromEntries(Object.keys(baseline.cost).map(key => [key,
+    typeof baseline.cost[key] === 'number' && typeof candidate.cost[key] === 'number'
+      ? candidate.cost[key] - baseline.cost[key] : 'UNKNOWN']));
   if (baseline.status !== 'VALID' || candidate.status !== 'VALID') {
     return { status: 'INVALID', reason: 'PRODUCT_RUN_INCOMPLETE',
+      incremental_cost: costDeltas, quality_change: 'UNKNOWN',
       product_failures: { baseline: baseline.product_failure ?? null, candidate: candidate.product_failure ?? null } };
   }
   if (canonicalJson(baseline.identity) !== canonicalJson(candidate.identity)) {
@@ -116,9 +120,6 @@ export function compareResults(baseline, candidate) {
       delta_hits: b.hits - a.hits, delta_ratio: a.total ? b.ratio - a.ratio : 'UNKNOWN' }];
   }));
   const deltas = Object.values(metricDeltas).map(value => value.delta_hits);
-  const costDeltas = Object.fromEntries(Object.keys(baseline.cost).map(key => [key,
-    typeof baseline.cost[key] === 'number' && typeof candidate.cost[key] === 'number'
-      ? candidate.cost[key] - baseline.cost[key] : 'UNKNOWN']));
   return { status: 'VALID', metrics: metricDeltas, incremental_cost: costDeltas,
     quality_change: deltas.some(value => value < 0) ? 'REGRESSION'
       : deltas.some(value => value > 0) ? 'GAIN_ON_CURATED_TARGETS' : 'NO_MEASURABLE_GAIN',

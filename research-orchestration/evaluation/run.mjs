@@ -43,7 +43,7 @@ function preflight(repo) {
 }
 
 function summarize(caseId, comparison) {
-  if (comparison.status !== 'VALID') return `| ${caseId} | UNKNOWN | UNKNOWN | UNKNOWN | see run costs | INVALID: ${comparison.reason} |`;
+  if (comparison.status !== 'VALID') return `| ${caseId} | UNKNOWN | UNKNOWN | UNKNOWN | ${comparison.incremental_cost?.retrieval_calls ?? 'UNKNOWN'} | INVALID: ${comparison.reason} |`;
   const values = Object.values(comparison.metrics);
   return `| ${caseId} | ${values.map(v => `${v.baseline_hits} → ${v.candidate_hits} / ${v.total}`).join(' | ')} | ${comparison.incremental_cost.retrieval_calls >= 0 ? '+' : ''}${comparison.incremental_cost.retrieval_calls} | ${comparison.quality_change} |`;
 }
