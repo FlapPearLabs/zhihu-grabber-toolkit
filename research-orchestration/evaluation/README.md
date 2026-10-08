@@ -129,3 +129,8 @@ Tier 1 的稳定性不得转述为开放世界研究质量。
 约数秒，证明 **HARNESS_INTEGRITY**。live provider、付费模型、大规模 benchmark 不进入普通 CI。
 
 T15 的价值结论另记于 #127；#107 本票只交付可审计的比较证据。
+
+
+Hidden 文件隔离：每个 arm 执行前，evaluation runner 只拷贝所需产品代码、既有共享 handoff schema、两份 test doubles helper 与一个公开 input 到全新执行目录。该目录没有 `.git`、benchmark/gold、evaluator 或 acceptance 产物；没有回指原仓库的 symlink。worker、公开 input 与原 defaultRunner 的真实 verifier/handoff 子进程均从此目录执行；结束后 runner 将产品产物完整拷出供只读观察，清理自己的临时目录。普通 repository-relative hidden 读取的父/子 Node 负控均为 ENOENT。这是冻结 benchmark 的文件存放隔离，并非针对恶意可执行代码的 host/OS 全文件系统 sandbox；未改生产权限模型。
+
+Manifest 使用闭合 schema、非空 benchmark version、冻结 scope、唯一安全 case ID 和绑定到 case 目录的公开/评测相对路径；全部公开 case ID 在 workers 前核验。比较要求实际 owner run_id/plan_hash 相等、occurrence_id 不同。归一化 route key 碰撞拒绝，查找使用 Map 避免继承属性。展示用既有 HTML/Markdown 转义，canonical source text 不变。degraded 控制从有效 candidate 的任意 metric family 选实际已命中来源；全 campaign 没有已命中来源时拒绝，不能伪造 regression PASS。报告数量和 credential reason 来自实际 campaign。

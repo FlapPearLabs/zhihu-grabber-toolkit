@@ -4,9 +4,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import { validateProductInput } from '../evaluation/input.mjs';
 import { measureTargets, compareResults, observeProduct, inventory, validateEvaluationCase } from '../evaluation/evaluator.mjs';
-import { executeProductWorker, bindEvaluationFile, readBoundEvaluationFile } from '../evaluation/run.mjs';
+import { executeProductWorker, stageProductTree, validateBenchmark, validateObservedPair, degradeKnownHit, bindEvaluationFile, readBoundEvaluationFile } from '../evaluation/run.mjs';
 import { configFingerprint, sha256File } from '../lib/state.mjs';
 import { EXPERIMENT_CONFIG } from '../evaluation/product-worker.mjs';
 import { loadPlan } from '../lib/plan-contract.mjs';
@@ -161,5 +162,81 @@ test('hidden-file binding uses committed metadata and refuses a changed file bef
     assert.equal(readBoundEvaluationFile(repo, file, bound).value.case_id, 'P2-F01-ASPECT-01');
     fs.appendFileSync(file, '\n');
     assert.throws(() => readBoundEvaluationFile(repo, file, bound), /EVALUATION_CASE_CHANGED_DURING_RUN/);
+  } finally { fs.rmSync(temp, { recursive: true, force: true }); }
+});
+
+
+test('normalized route collisions are rejected rather than silently replacing the authored route', () => {
+  const input = publicInput();
+  input.routes = { Q: ['100'], ' q ': [] };
+  assert.throws(() => validateProductInput(input), /BENCHMARK_CONTAMINATION/);
+});
+
+
+test('closed manifest rejects version, identity, duplicate and path packaging errors before outputs', () => {
+  const repo = fileURLToPath(new URL('../../', import.meta.url));
+  const manifest = JSON.parse(fs.readFileSync(path.join(repo, 'research-orchestration/evaluation/benchmark/benchmark.json')));
+  assert.doesNotThrow(() => validateBenchmark(manifest));
+  for (const change of [
+    value => { value.benchmark_version = null; },
+    value => { value.benchmark_version = ' '; },
+    value => { value.extra = true; },
+    value => { value.scope = 'complete truth'; },
+    value => { value.cases[0].case_id = '../escaped'; },
+    value => { value.cases[0].product_input = '/tmp/public.json'; },
+    value => { value.cases[0].evaluation_case = value.cases[1].evaluation_case; },
+    value => { value.cases[1] = value.cases[0]; },
+  ]) { const bad = structuredClone(manifest);change(bad);assert.throws(() => validateBenchmark(bad), /EVALUATION_BENCHMARK_INVALID/); }
+});
+
+test('observed owner run and plan identity must match while occurrences must be separate', () => {
+  const baseline = { run_id: 'owner-run', plan_hash: 'owner-plan', occurrence_id: 'baseline-occurrence' };
+  const candidate = { ...baseline, occurrence_id: 'candidate-occurrence' };
+  assert.doesNotThrow(() => validateObservedPair(baseline, candidate));
+  for (const key of ['run_id', 'plan_hash']) assert.throws(() => validateObservedPair(baseline, { ...candidate, [key]: 'foreign' }), /OBSERVED_IDENTITY_MISMATCH/);
+  assert.throws(() => validateObservedPair(baseline, baseline), /SHARED_OCCURRENCE/);
+});
+
+test('degradation uses an actually hit aspect even when key evidence is empty', () => {
+  const noKey = { ...targets, key_evidence: [] };
+  const degraded = degradeKnownHit(observation(), noKey);
+  assert.equal(degraded.removed_question_id, '100');
+  assert.equal(measureTargets(degraded.observation, noKey).important_aspect_discovery.hits, 0);
+  assert.equal(degradeKnownHit({ ...observation(), claims: [] }, noKey), null);
+});
+
+test('copied product root and its Node child cannot open gold through normal repository-relative paths', () => {
+  const repo = fileURLToPath(new URL('../../', import.meta.url));
+  const file = path.join(repo, 'research-orchestration/evaluation/benchmark/cases/P2-F01-ASPECT-01/product-input.json');
+  const stage = stageProductTree(repo, file);
+  try {
+    assert.equal(sha256File(path.join(stage, 'product-input.json')), sha256File(file));
+    for (const ref of ['.git', 'docs', 'research-orchestration/evaluation/benchmark', 'research-orchestration/evaluation/evaluator.mjs']) assert.equal(fs.existsSync(path.join(stage, ref)), false);
+    const probe = `import fs from 'node:fs';import {spawnSync} from 'node:child_process';
+      const read = () => { try {fs.readFileSync('research-orchestration/evaluation/benchmark/cases/P2-F01-ASPECT-01/eval-case.json');return 'LEAK';} catch(e) {return e.code;} };
+      console.log(read());const child=spawnSync(process.execPath,['--input-type=module','-e','import fs from "node:fs";try{fs.readFileSync("research-orchestration/evaluation/benchmark/cases/P2-F01-ASPECT-01/eval-case.json");process.exitCode=1;}catch(e){console.log(e.code);}'],{encoding:'utf8'});console.log(child.stdout.trim());process.exitCode=child.status;`;
+    const result = spawnSync(process.execPath, ['--input-type=module', '-e', probe], { cwd: stage, encoding: 'utf8' });
+    assert.equal(result.status, 0);assert.equal(result.stdout.trim(), 'ENOENT\nENOENT');
+    const walk = dir => { for (const name of fs.readdirSync(dir)) { const file = path.join(dir, name);const stat = fs.lstatSync(file);assert.equal(stat.isSymbolicLink(), false);if (stat.isDirectory()) walk(file); } };walk(stage);
+  } finally { fs.rmSync(stage, { recursive: true, force: true }); }
+});
+
+test('untrusted curated text stays canonical while Markdown controls and inherited route names stay inert', () => {
+  const repo = fileURLToPath(new URL('../../', import.meta.url));
+  const input = publicInput();
+  input.plan.queryVariants = ['资料', 'constructor', '__proto__'];
+  input.corpus[0].text = '<script>alert(1)</script>\n## 2. injected\n```active';
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'p2-f01-untrusted-'));
+  try {
+    const file = path.join(temp, 'product-input.json');fs.writeFileSync(file, JSON.stringify(input));
+    const workDir = path.join(temp, 'product');
+    executeProductWorker({ repo, file, workDir, arm: 'baseline', inputHash: sha256File(file) });
+    const canonical = JSON.parse(fs.readFileSync(path.join(workDir, 'zhihu/100/answers.json')));
+    assert.equal(canonical.answers[0].content, input.corpus[0].text);
+    const md = fs.readFileSync(path.join(workDir, 'zhihu/100/answers.md'), 'utf8');
+    assert.equal(md.includes('<script>'), false);assert.equal((md.match(/^## \d+\./gm) ?? []).length, 1);
+    const trace = JSON.parse(fs.readFileSync(path.join(workDir, 'evaluation-execution-observation.json')));
+    const empty = trace.calls.filter(call => ['constructor', '__proto__'].includes(call.query));
+    assert.ok(empty.length > 0);assert.ok(empty.every(call => call.question_ids.length === 0));
   } finally { fs.rmSync(temp, { recursive: true, force: true }); }
 });

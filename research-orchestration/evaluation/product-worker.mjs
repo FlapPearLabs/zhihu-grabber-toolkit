@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
+import { escapeUntrustedMarkdownText } from '../../zhihu-answer-grabber/src/markdown-security.js';
+import { escapeRawHtml } from '../../corpus-anthology/lib/text.mjs';
 import { validateProductInput } from './input.mjs';
 import { composeP1Research } from '../lib/p1-runtime-composer.mjs';
 import { sha256File } from '../lib/state.mjs';
@@ -29,11 +31,11 @@ export async function runProduct({ input, workDir, arm }) {
     completeness: { status: capability === 'capture' ? 'complete' : 'unknown',
       evidence: { basis: 'authored-curated-frozen-fixture' } }, ...extra,
   });
-  const routes = Object.fromEntries(Object.entries(input.routes).map(([query, ids]) => [normalizeQueryString(query), ids]));
+  const routes = new Map(Object.entries(input.routes).map(([query, ids]) => [normalizeQueryString(query), ids]));
   const seam = createProviderSeam({ adapters: ['zhihu_search', 'zhihu-open-platform'].map(providerId => ({
     providerId, capability: CAPABILITY_SEARCH, authClass: AUTH_CLASS_OFFICIAL_SECRET,
     retrieve({ query }) {
-      const ids = routes[normalizeQueryString(query)] ?? [];
+      const ids = routes.get(normalizeQueryString(query)) ?? [];
       calls.push({ kind: 'retrieval', provider_id: providerId, query, question_ids: ids });
       return envelope(providerId, CAPABILITY_SEARCH, AUTH_CLASS_OFFICIAL_SECRET, ids.map((questionId, rank) => ({
         identity: { kind: 'candidate', questionId }, source_url: null, facts: {},
@@ -52,7 +54,7 @@ export async function runProduct({ input, workDir, arm }) {
       writeJson(path.join(dir, 'answers.json'), { questionId, questionTitle: source.title,
         answers: [{ id: `${questionId}01`, content: source.text, excerpt: source.text,
           author: '合成语料', voteupCount: 0 }] });
-      fs.writeFileSync(path.join(dir, 'answers.md'), `## 1. 合成语料 — 0 赞 · 0 评论\n\n${source.text}\n`);
+      fs.writeFileSync(path.join(dir, 'answers.md'), `## 1. 合成语料 — 0 赞 · 0 评论\n\n${escapeUntrustedMarkdownText(escapeRawHtml(source.text))}\n`);
       writeJson(path.join(dir, '.progress.json'), { offset: 60, done: true });
       return envelope('frozen-evaluation-capture', 'capture', 'session', [{
         identity: { kind: 'group', questionId }, facts: { capturedAnswerCount: 1 },

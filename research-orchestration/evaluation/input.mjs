@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { normalizeQueryString } from '../lib/targeted-requery-authorization.mjs';
 import { validatePlanInput } from '../lib/plan-contract.mjs';
 
 const reject = () => { throw new Error('BENCHMARK_CONTAMINATION_OR_INVALID_INPUT'); };
@@ -20,8 +21,11 @@ export function validateProductInput(input) {
         || !text(source.title) || !text(source.text)) reject();
     ids.add(source.question_id);
   }
+  const normalizedQueries = new Set();
   for (const [query, routes] of Object.entries(input.routes)) {
-    if (!text(query) || !Array.isArray(routes) || routes.some(id => typeof id !== 'string' || !ids.has(id))) reject();
+    const normalized = normalizeQueryString(query);
+    if (!text(query) || normalizedQueries.has(normalized) || !Array.isArray(routes) || routes.some(id => typeof id !== 'string' || !ids.has(id))) reject();
+    normalizedQueries.add(normalized);
   }
   return input;
 }

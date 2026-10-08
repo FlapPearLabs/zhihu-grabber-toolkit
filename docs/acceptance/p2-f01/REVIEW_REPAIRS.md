@@ -25,3 +25,12 @@ F3：CONTROL baseline真实aspect 2/2；保持product artifacts不变，仅将�
 F4：在隔离exact0a clone，首个product目录出现后替换CONTROL hidden time_scope，旧CLI仍exit0/stability PASS并把未提交bytes绑定到0a。修复：worker前仅读取commit blob OID元数据，不读取hidden内容；两个workers完成后一次读取buffer，对同buffer算GitOID/sha256并parse。root benchmark与public input同样绑定已提交字节，post-run不重新读另一版本作hash。新增两个负控：curator错误/unknown schema拒绝、metadata绑定后hidden字节变化拒绝。
 
 第二次独立验证：7/7focused、20 owner planHash、678 archived hashes和40manifest hashes、16closure+metrics、10comparison；额外20产品执行稳定。以上仍不能抵消F3/F4，旧结论不转移。当前完成修复与campaign-bound，需最终fresh exact-SHA reviewer通过。
+
+
+## c4aeba40f46b8f651739c01a30b68e7a9f6a16d2 后续反馈
+
+自动 review 在 original heads 0a6081cc / c4aeba40 上提出11条剩余反馈（原评论永久保留于PR133 discussion_r4214236194 至 discussion_r4214290519）；前述F3/F4已修不重复计。fresh evaluation_reviewer_final 重新读取后确认 hidden 的仅逻辑输入白名单没有满足物理存放边界，不能沿用先前无finding的中间判断授予PASS。
+
+本次修复仅evaluation：staged product tree不含gold/.git/evaluator/acceptance，无回原repo链接；真实production defaultRunner从stage运行。descriptor安全唯一ID、相对文件与公开payloadID一致、manifest version/scope/闭合schema；真实pair owner run/plan身份相等且occurrence不同；normalized route碰撞拒绝并用Map；canonical原text保留且md展示复用既有HTML/Markdown转义；degraded从实际已hit任意family选取，全部无hit拒绝；报告case数量/credential reason从实际campaign渲染。未改case、route、target、metric或产品实现/authority。
+
+TDD：normalized collision原代码为Missing expected exception，修复后拒绝。focused15/15包括manifest错误/路径/duplicate、observed owner drift、空key family真实aspect degradation、copied root及其Node child隐藏路径ENOENT/no symlink、恶意HTML/heading/fence canonical保留且展示惰性、constructor/__proto__无route为真正空结果。需要在新SHA重跑全部campaign、fresh clone、CI与fresh independent review；旧PASS不转移。
