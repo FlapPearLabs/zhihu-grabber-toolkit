@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "runId": "6c55752597c7f68afab93e0a0c67b9442aec0c02ed11e1eb1b6b28272bc548b1",
+  "occurrenceId": "9af543de-d25d-4d49-a81a-50a1378ea41f",
+  "topic": "在假设老旧街区中，是否应优先增设固定遮阴设施？请结合居民舒适、场地适配与长期使用条件给出有证据支持的建议。",
+  "mode": "p1-cross-question-deep-research",
+  "percent": null,
+  "runtime": "deepseek-api-tool-less",
+  "configFingerprint": "7bb48764eaee68a197bc9ecc9ded5ea1102a8fe8173c2539c0419c01e5cd6306",
+  "forceQuestionId": null,
+  "stage": "COMPLETE",
+  "completedStages": [
+    "SEARCH",
+    "SELECT",
+    "CAPTURE",
+    "ANALYZE",
+    "RENDER"
+  ],
+  "selectedQuestionId": null,
+  "selection": null,
+  "artifacts": {
+    "researchPlan": "research-plan.json",
+    "selectionDecision": "source-group-selection-decision.json",
+    "coverageState": "coverage-state.json",
+    "coverageFinal": "coverage-final.json",
+    "perGroupClaims": "per-group-claims.json",
+    "synthesis": "cross-source-synthesis.json",
+    "researchResult": "research-result.json"
+  },
+  "hashes": {
+    "researchPlan": "38cee91a44dce8618f8c6d538e2768148145c2bffe41443ccebc96cd87389f30",
+    "coverageState": "f261985702767cf2b6c3316bccb235c3ff0b1fcf00dda93da8a6ad5a41dc6a9b",
+    "coverageFinal": "d71e5c0058bec467db5974add250dca990cc62639c8c0c54c794dc67ed619c3b",
+    "perGroupClaims": "feca2ccf34d92f57baa2163951fc73d9b4bca61835e6817052972f84eccd30a4",
+    "synthesis": "da712d599cf1c737ef23f5aa112448f60697082bfa45535c5bbc9d97655ffdcd",
+    "researchResult": "65d0800fd630845c380882c88d41342b7ce499cb41fd2472503e76cd47de7403",
+    "accumulatedPool": "81623d7609ba68f20988fe3b8f61b54523740cbcf989d096ec5fd94f88996b7a",
+    "selectionDecision": "895c936a20d95a4c507c0f2e912142f16c0b2ca0144f0eb388b57569a3c3af9c"
+  },
+  "verification": null,
+  "coverage": {
+    "is100PercentAnalysis": true,
+    "selectedCount": 2,
+    "analyzedCount": 2
+  },
+  "p1FinalCoveragePlanHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+  "updatedAt": "2026-10-08T03:07:03.436Z"
+}

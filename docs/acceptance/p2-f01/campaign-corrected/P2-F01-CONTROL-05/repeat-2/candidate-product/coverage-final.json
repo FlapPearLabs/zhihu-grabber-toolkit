@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "type": "p1-final-coverage-integration",
+  "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "pipeline": "p1-cross-question-deep-research",
+  "stage": "FINAL_COVERAGE_RECONCILIATION",
+  "assertion": {
+    "is100PercentAnalysis": true,
+    "basis": "MECHANICAL_SET_EQUALITY"
+  },
+  "doubleDefense": {
+    "t14PreSynthesisGuard": {
+      "guardResult": "PASS",
+      "selectedVerifiedSourceSetIdentity": "sha256:47214123f221d67b4c871bd8594ccbba9d971db5cb745b4b056d895b7dfa4284",
+      "mappedAnalyzedSourceSetIdentity": "sha256:47214123f221d67b4c871bd8594ccbba9d971db5cb745b4b056d895b7dfa4284"
+    },
+    "t15FinalReconciliation": "PASS",
+    "synthesisContract": {
+      "seamVersion": 2,
+      "semanticContractVersion": 2,
+      "synthesisIdentity": "sha256:16dc8fd17411c2f490e35a4c8b49dda9df2d82d6d9e5660f7330a666c763993b",
+      "familyCount": 3,
+      "unresolvedCount": 0,
+      "conflictingFamilyCount": 0,
+      "singleGroupFamilyCount": 3,
+      "multiGroupFamilyCount": 0
+    }
+  },
+  "coverage": {
+    "retrieval": {
+      "retrievalRounds": 2,
+      "stopReason": "zero_new_candidates",
+      "fusedCandidateCount": 3,
+      "fusedGroupCount": 3,
+      "providerFailureCount": 0
+    },
+    "analysisCoverage": {
+      "selectedCorpusSourceSet": [
+        "asrc-10b395e1b4a46b5ea107d4e3",
+        "asrc-8ee250eabf5b8b162d5a3004",
+        "asrc-9f0b74ddf8f5535d56ea8b01"
+      ],
+      "mappedSourceSet": [
+        "asrc-10b395e1b4a46b5ea107d4e3",
+        "asrc-8ee250eabf5b8b162d5a3004",
+        "asrc-9f0b74ddf8f5535d56ea8b01"
+      ],
+      "analyzedSourceSet": [
+        "asrc-10b395e1b4a46b5ea107d4e3",
+        "asrc-8ee250eabf5b8b162d5a3004",
+        "asrc-9f0b74ddf8f5535d56ea8b01"
+      ],
+      "selectedCount": 3,
+      "mappedCount": 3,
+      "analyzedCount": 3,
+      "evidenceRefIssues": {
+        "missingRefs": [],
+        "duplicateRefs": [],
+        "staleRefs": [],
+        "invalidRefs": []
+      }
+    },
+    "sourceCompleteness": {
+      "totalSelectedCount": 3,
+      "totalVerifiedCount": 3,
+      "capturedNotVerifiedCount": 0
+    }
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "novelty_gain": 0,
+    "selected_source_group_count": 3,
+    "selected_content_by_group": {
+      "5501": 1,
+      "5502": 1,
+      "5503": 1
+    },
+    "largest_group_share": 0.3333333333333333,
+    "selected_author_concentration": 0,
+    "selected_content_type_distribution": {},
+    "claim_source_diversity": 1,
+    "per_group_selection_coverage": {
+      "5501": 1,
+      "5502": 1,
+      "5503": 1
+    }
+  },
+  "hookConvergenceOrder": [
+    "RETRIEVAL_ROUNDS",
+    "SOURCE_GROUP_SELECTION",
+    "GROUP_EXECUTION",
+    "CORPUS_SELECTION",
+    "PER_GROUP_ANALYSIS",
+    "CROSS_SOURCE_SYNTHESIS",
+    "FINAL_COVERAGE_RECONCILIATION"
+  ],
+  "runtime": {
+    "runtimeId": "deepseek-api-tool-less",
+    "model": "deepseek-v4-pro"
+  },
+  "artifacts": {
+    "coverageState": "coverage-state.json",
+    "finalCoverage": "coverage-final.json",
+    "synthesis": "cross-source-synthesis.json"
+  },
+  "targetedResearchGaps": {
+    "schema": "p2a-targeted-research-gaps/v1",
+    "gapCount": 4,
+    "resolvedCount": 0,
+    "unresolvedCount": 4,
+    "exhaustedWithinBudgetCount": 0,
+    "lineageComplete": false,
+    "gaps": [
+      {
+        "gapId": "5b85bcee8ebbc8ec08e583ec1cc8239ae561735ba772d0c873ee367f2bfab8ac:0",
+        "gapIdentityCore": "5b85bcee8ebbc8ec08e583ec1cc8239ae561735ba772d0c873ee367f2bfab8ac",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "家用雨水浇灌",
+            "resultArtifact": "targeted-requery-subphase/action-c4fa81e5f73a6593919d29c1d0844887cd512096338dc2ba45499ba01931b6a5/retrieval-pool.json",
+            "targetedActionId": "c4fa81e5f73a6593919d29c1d0844887cd512096338dc2ba45499ba01931b6a5"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "600ad44e-fd41-496f-9baf-ee9023876735",
+        "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+        "resolutionBasis": "DUPLICATE_ONLY",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "5b85bcee8ebbc8ec08e583ec1cc8239ae561735ba772d0c873ee367f2bfab8ac:1",
+        "gapIdentityCore": "5b85bcee8ebbc8ec08e583ec1cc8239ae561735ba772d0c873ee367f2bfab8ac",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "600ad44e-fd41-496f-9baf-ee9023876735",
+        "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "aa8bfe62337b94672811907da3b4e1adcecf9f791bc30b3a0da985ed8e9da753:0",
+        "gapIdentityCore": "aa8bfe62337b94672811907da3b4e1adcecf9f791bc30b3a0da985ed8e9da753",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "雨水浇灌 替代供水的局限",
+            "resultArtifact": "targeted-requery-subphase/action-650287564d22559212e02bc72e1a41e3cdf6e78034ee091e332e95b4b3df854a/retrieval-pool.json",
+            "targetedActionId": "650287564d22559212e02bc72e1a41e3cdf6e78034ee091e332e95b4b3df854a"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "600ad44e-fd41-496f-9baf-ee9023876735",
+        "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+        "resolutionBasis": "UNKNOWN_SIDE_NOT_DECLARED",
+        "resolutionEvidence": [
+          "5503"
+        ],
+        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "aa8bfe62337b94672811907da3b4e1adcecf9f791bc30b3a0da985ed8e9da753:1",
+        "gapIdentityCore": "aa8bfe62337b94672811907da3b4e1adcecf9f791bc30b3a0da985ed8e9da753",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "600ad44e-fd41-496f-9baf-ee9023876735",
+        "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      }
+    ]
+  }
+}

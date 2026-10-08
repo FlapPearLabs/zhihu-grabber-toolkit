@@ -1,0 +1,47 @@
+{
+  "diagnosedGaps": [
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 0,
+      "gapId": "79c1b8c61862f320337700eaad26dcab65411dd5f04a9859a30a4d15d0082e1c:0",
+      "gapIdentityCore": "79c1b8c61862f320337700eaad26dcab65411dd5f04a9859a30a4d15d0082e1c",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "7947f2a6-3faf-47da-969e-6361af358f9d",
+      "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+      "subjectKey": "aspect:雨水收集桶 维护与供水"
+    },
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 1,
+      "gapId": "79c1b8c61862f320337700eaad26dcab65411dd5f04a9859a30a4d15d0082e1c:1",
+      "gapIdentityCore": "79c1b8c61862f320337700eaad26dcab65411dd5f04a9859a30a4d15d0082e1c",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "7947f2a6-3faf-47da-969e-6361af358f9d",
+      "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+      "subjectKey": "aspect:雨水收集桶 维护与供水"
+    },
+    {
+      "declaredGapType": "CONTRADICTION_GAP",
+      "diagnosisRound": 0,
+      "gapId": "b11875453ef228484ee15e5a246aaa97d884d351bd08a4aee5eb6517fc9c1426:0",
+      "gapIdentityCore": "b11875453ef228484ee15e5a246aaa97d884d351bd08a4aee5eb6517fc9c1426",
+      "gapType": "CONTRADICTION_GAP",
+      "occurrenceId": "7947f2a6-3faf-47da-969e-6361af358f9d",
+      "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+      "subjectKey": "opposing:雨水浇灌 替代供水的局限"
+    },
+    {
+      "declaredGapType": "CONTRADICTION_GAP",
+      "diagnosisRound": 1,
+      "gapId": "b11875453ef228484ee15e5a246aaa97d884d351bd08a4aee5eb6517fc9c1426:1",
+      "gapIdentityCore": "b11875453ef228484ee15e5a246aaa97d884d351bd08a4aee5eb6517fc9c1426",
+      "gapType": "CONTRADICTION_GAP",
+      "occurrenceId": "7947f2a6-3faf-47da-969e-6361af358f9d",
+      "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+      "subjectKey": "opposing:雨水浇灌 替代供水的局限"
+    }
+  ],
+  "occurrenceId": "7947f2a6-3faf-47da-969e-6361af358f9d",
+  "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "schema": "p2-ari-targeted-requery-ledger/v1"
+}

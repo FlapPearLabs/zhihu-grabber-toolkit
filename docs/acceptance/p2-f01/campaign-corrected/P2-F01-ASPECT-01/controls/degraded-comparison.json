@@ -1,0 +1,41 @@
+{
+  "status": "VALID",
+  "metrics": {
+    "important_aspect_discovery": {
+      "baseline_hits": 3,
+      "candidate_hits": 1,
+      "total": 3,
+      "delta_hits": -2,
+      "delta_ratio": -0.6666666666666667
+    },
+    "counterposition_discovery": {
+      "baseline_hits": 1,
+      "candidate_hits": 1,
+      "total": 1,
+      "delta_hits": 0,
+      "delta_ratio": 0
+    },
+    "key_evidence_discovery": {
+      "baseline_hits": 1,
+      "candidate_hits": 0,
+      "total": 1,
+      "delta_hits": -1,
+      "delta_ratio": -1
+    }
+  },
+  "incremental_cost": {
+    "retrieval_calls": 0,
+    "retrieval_attempts": 0,
+    "provider_calls": 0,
+    "external_provider_calls": 0,
+    "model_invocations": 0,
+    "semantic_adapter_invocations": 0,
+    "wall_clock_ms": 0,
+    "token_cost": "UNKNOWN",
+    "money_cost": "UNKNOWN",
+    "selected_corpus_sources": 0,
+    "downstream_material_chars": 0
+  },
+  "quality_change": "REGRESSION",
+  "scope": "CURATED_TARGETS != OPEN_WORLD_COMPLETENESS"
+}

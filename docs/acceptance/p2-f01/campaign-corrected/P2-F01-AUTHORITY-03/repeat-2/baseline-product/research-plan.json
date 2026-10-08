@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "queryVariants": [
+    "卧室净化器 风量选购"
+  ],
+  "aspects": [
+    "卧室净化器 长期使用条件"
+  ],
+  "entities": [
+    "卧室空气净化器"
+  ],
+  "opposingFramings": [
+    "净化器 仅看风量的局限"
+  ],
+  "terminologyVariants": [
+    {
+      "term": "空气净化设备 卧室选购",
+      "variants": [
+        "空气净化设备 卧室选购"
+      ]
+    }
+  ],
+  "sourceGroupIntents": [
+    {
+      "intent": "净化器 原始试验记录",
+      "constraints": [],
+      "groupKey": null
+    }
+  ]
+}

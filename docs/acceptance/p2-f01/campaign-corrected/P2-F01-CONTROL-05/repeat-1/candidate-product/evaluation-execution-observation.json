@@ -1,0 +1,106 @@
+{
+  "implementation": "DETERMINISTIC_DOUBLE",
+  "calls": [
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "雨水收集桶 小院浇灌条件",
+      "question_ids": [
+        "5501",
+        "5502"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "雨水收集桶 小院浇灌条件",
+      "question_ids": [
+        "5501",
+        "5502"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "家用雨水浇灌",
+      "question_ids": [
+        "5501",
+        "5502"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "家用雨水浇灌",
+      "question_ids": [
+        "5501",
+        "5502"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "雨水浇灌 替代供水的局限",
+      "question_ids": [
+        "5502",
+        "5503"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "雨水浇灌 替代供水的局限",
+      "question_ids": [
+        "5502",
+        "5503"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "雨水收集桶 小院浇灌条件",
+      "question_ids": [
+        "5501",
+        "5502"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "雨水收集桶 小院浇灌条件",
+      "question_ids": [
+        "5501",
+        "5502"
+      ]
+    },
+    {
+      "kind": "capture",
+      "question_id": "5501"
+    },
+    {
+      "kind": "capture",
+      "question_id": "5502"
+    },
+    {
+      "kind": "capture",
+      "question_id": "5503"
+    }
+  ],
+  "semantic_calls": [
+    "analyze",
+    "analyze",
+    "analyze",
+    "synthesize"
+  ],
+  "cost": {
+    "retrieval_calls": 8,
+    "retrieval_attempts": 8,
+    "provider_calls": 11,
+    "external_provider_calls": 0,
+    "model_invocations": 0,
+    "semantic_adapter_invocations": 4,
+    "wall_clock_ms": 741.428875,
+    "token_cost": "UNKNOWN",
+    "money_cost": "UNKNOWN"
+  }
+}

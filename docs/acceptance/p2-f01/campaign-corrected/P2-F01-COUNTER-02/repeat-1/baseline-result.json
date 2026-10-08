@@ -1,0 +1,261 @@
+{
+  "schema_version": 1,
+  "status": "VALID",
+  "product_failure": null,
+  "arm": "baseline",
+  "repetition": 1,
+  "identity": {
+    "repo_sha": "72bc934d4c57ef0f1674913e086d75c1968b0c0e",
+    "case_id": "P2-F01-COUNTER-02",
+    "benchmark_version": "p2-f01-authored-curated-v1",
+    "benchmark_hashes": {
+      "research-orchestration/evaluation/benchmark/benchmark.json": "533d0e7fa442ea1986b6edf6302b38ef9aecf8bc191be1b224bf6ed1cc09280b",
+      "research-orchestration/evaluation/benchmark/cases/P2-F01-COUNTER-02/product-input.json": "287d96c0c5e6359bf5af09b349fe55fb8754d4591e37327f89612ad98f498548",
+      "research-orchestration/evaluation/benchmark/cases/P2-F01-COUNTER-02/eval-case.json": "3831a3f73591ce3d228721b78f9db89bbb069e0d0ae4177c02598bf528c1b880"
+    },
+    "evaluator_version": "p2-f01-exact-supported-statements-v1",
+    "product_input_hash": "287d96c0c5e6359bf5af09b349fe55fb8754d4591e37327f89612ad98f498548",
+    "canonical_product_input_hash": "80b1811cb8b0e5c7f64e39ef2bbc7ac3aade3523c6ce20ce5cffd38a6dcc5b9c",
+    "time_scope": "假设一个教学单元的实施期，不对应真实学校或学期",
+    "shared_product_config": {
+      "maxQueryBudget": 20
+    },
+    "runtime_identity": {
+      "implementation": "DETERMINISTIC_DOUBLE",
+      "node": "v26.10.0",
+      "contract_runtime_pin": "deepseek-api-tool-less",
+      "embedding": "existing mockVector768(7)"
+    },
+    "model_identity": {
+      "actual_model": "NONE",
+      "contract_model_pin": "deepseek-v4-pro",
+      "semantic_policy": "verbatim-fenced-content-v1"
+    },
+    "provider_identity": [
+      "zhihu_search:frozen-double",
+      "zhihu-open-platform:frozen-double",
+      "frozen-evaluation-capture"
+    ]
+  },
+  "product_config": {
+    "maxQueryBudget": 20,
+    "targeted_enabled": false,
+    "proposal_policy": "NONE",
+    "max_attempts_per_gap": 2,
+    "cache_state": "COLD_SEPARATE_DIRECTORY",
+    "planner": "PUBLIC_FROZEN_PLAN"
+  },
+  "timestamp": "2026-10-08T03:07:07.497Z",
+  "product_identity": {
+    "run_id": "6208462f74d625ee97a9478011afde316c4ed188c2e4394b88fdf01b08aa453a",
+    "occurrence_id": "43a5af9e-ebbf-4684-a7d8-52c4855d2209",
+    "plan_hash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94"
+  },
+  "artifact_hashes": [
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/.p1-commit-staging/coverageState/42847b199144ca2cca18bde73f056ab13b80329c0d9becea3c1d13cb843f874f.json",
+      "sha256": "42847b199144ca2cca18bde73f056ab13b80329c0d9becea3c1d13cb843f874f"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/.p1-commit-staging/coverageState/6ee7679bf9c875f6a1d90549e8aaf5d226f4673bf8ebc1f12fdf485d03754679.json",
+      "sha256": "6ee7679bf9c875f6a1d90549e8aaf5d226f4673bf8ebc1f12fdf485d03754679"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/.p1-commit-staging/coverageState/c238438a9320731a36e926cd45ad98ff75af01ba0873f3d0cf1969812fbde9d9.json",
+      "sha256": "c238438a9320731a36e926cd45ad98ff75af01ba0873f3d0cf1969812fbde9d9"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/.p1-commit-staging/coverageState/d616ca59084a490a3860834fe440403eb3352e58584f95e052cacfa6ec1f3304.json",
+      "sha256": "d616ca59084a490a3860834fe440403eb3352e58584f95e052cacfa6ec1f3304"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/.p1-commit-staging/coverageState/e882f4be44a364914883c944e6633b54389868d7002a66165fb6597d5073dcf5.json",
+      "sha256": "e882f4be44a364914883c944e6633b54389868d7002a66165fb6597d5073dcf5"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/.p1-commit-staging/coverageState/ee5a998b74b0d98c2b4679aeb804371954c7297ae2a157db26b606e495d03ce7.json",
+      "sha256": "ee5a998b74b0d98c2b4679aeb804371954c7297ae2a157db26b606e495d03ce7"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/coverage-final.json",
+      "sha256": "ba927e1d419592ccf4279e37ade962173d606764d08dca44ff3bfa8b6796b28d"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/coverage-state.json",
+      "sha256": "5f8660d945f4a3a755e73d2f4394485a0b876b46c66acab9d462894480558f60"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/cross-source-synthesis.json",
+      "sha256": "104de557e287eaa3bdf6a97bd1838fce34b4b1ab6d57c94c40c6153ae1907c5d"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/evaluation-execution-observation.json",
+      "sha256": "0f0667664c504fc76ef7aaebd672a114f59bb5d0b10ba090993734a39ba41297"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/events.jsonl",
+      "sha256": "7f53332fbe4009c4a5a6f89446e3695b9cd5980cdfadafd0d8434d50111c8190"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/multi-group-state.json",
+      "sha256": "58b645d433b3e2157c085083b5629f33e5ee06e6eae2e404a3cfbdbdf95d000e"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/orchestration-state.json",
+      "sha256": "68edf0dbb19245c5094ef88395b919b002a21418be7653f0172a31fb96c42478"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/per-group-claims.json",
+      "sha256": "0fa1e70c8186c0b90ff7bef047e76269d7e71e7a4fdd22334426a0a8ef868b7c"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/research-plan.json",
+      "sha256": "86d3ea6163f88f523fe3fbbe11a6bc067ea2c269d03b9b363b0d2811895d9139"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/research-result.json",
+      "sha256": "aca398e464c269fe162ace3023bf307e10294a26ebd92390cb6b0e9a559f090e"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/retrieval-rounds/accumulated-pool.json",
+      "sha256": "583b2e5e922ed7adb275bd8245084f15567429e4dfc88e550fc679aa802259a5"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/retrieval-rounds/round-1/retrieval-pool.json",
+      "sha256": "233b1ffbf9e8a6ffd097663aa09dcbfea23ee1b6f66934e9eb6cf2c5819fc3ee"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/retrieval-rounds/round-2/retrieval-pool.json",
+      "sha256": "233b1ffbf9e8a6ffd097663aa09dcbfea23ee1b6f66934e9eb6cf2c5819fc3ee"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/source-group-selection-decision.json",
+      "sha256": "e2ea1afc1bb07af7b9e349843df893ed5becd839afa935ae82071e57a4be3fc8"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/zhihu/2201/.progress.json",
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/zhihu/2201/answers.json",
+      "sha256": "cacc42374cfcd1cfa53db8749add2a54050c8db3a5647a8c0adae6c35f87def1"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/zhihu/2201/answers.md",
+      "sha256": "f22bc235d4aa8b75e65cb574c6c4e8f8cdeb1f9560f8ff3c58d9a2728cbe3f86"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/zhihu/2201/handoff.json",
+      "sha256": "2014325532846f4c27c5258ff8a430a0cec3d619b7bcb4039756796476315cb5"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/zhihu/2202/.progress.json",
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/zhihu/2202/answers.json",
+      "sha256": "6566883e06a2a22ed266a529e6a133e5a760d5c3c46316acab9f0e70748e3e09"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/zhihu/2202/answers.md",
+      "sha256": "b8254ad4da6256dac1c376291fbae19eacdc41ec7a829b76bc825e1c0ca1d43a"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-COUNTER-02/repeat-1/baseline-product/zhihu/2202/handoff.json",
+      "sha256": "66cf7c2e21ad8c7e9189a0b443e29abe83080c32f3db8208d06fe4d7e1b73bdd"
+    }
+  ],
+  "product_checkpoint_hashes": {
+    "researchPlan": "86d3ea6163f88f523fe3fbbe11a6bc067ea2c269d03b9b363b0d2811895d9139",
+    "coverageState": "5f8660d945f4a3a755e73d2f4394485a0b876b46c66acab9d462894480558f60",
+    "coverageFinal": "ba927e1d419592ccf4279e37ade962173d606764d08dca44ff3bfa8b6796b28d",
+    "perGroupClaims": "0fa1e70c8186c0b90ff7bef047e76269d7e71e7a4fdd22334426a0a8ef868b7c",
+    "synthesis": "104de557e287eaa3bdf6a97bd1838fce34b4b1ab6d57c94c40c6153ae1907c5d",
+    "researchResult": "aca398e464c269fe162ace3023bf307e10294a26ebd92390cb6b0e9a559f090e",
+    "accumulatedPool": "583b2e5e922ed7adb275bd8245084f15567429e4dfc88e550fc679aa802259a5",
+    "selectionDecision": "e2ea1afc1bb07af7b9e349843df893ed5becd839afa935ae82071e57a4be3fc8"
+  },
+  "metrics": {
+    "important_aspect_discovery": {
+      "hits": 2,
+      "total": 3,
+      "ratio": 0.6666666666666666,
+      "targets": [
+        {
+          "target_id": "A1",
+          "hit": true,
+          "proof": {
+            "question_id": "2201",
+            "source_id": "asrc-418b91796334b172f0447c52",
+            "claim_id": "c-2201-001",
+            "statement": "在假设课程中，可选练习让已掌握内容的学生免于机械重复；支持者认为选择权能够减少重复负担。"
+          }
+        },
+        {
+          "target_id": "A2",
+          "hit": true,
+          "proof": {
+            "question_id": "2202",
+            "source_id": "asrc-da917a3f358b1876323d66ff",
+            "claim_id": "c-2202-001",
+            "statement": "模拟访谈中，自主安排能力较强的学生说，可选练习允许按薄弱点复习；记录支持自主安排的收益。"
+          }
+        },
+        {
+          "target_id": "A3",
+          "hit": false,
+          "proof": null
+        }
+      ]
+    },
+    "counterposition_discovery": {
+      "hits": 0,
+      "total": 2,
+      "ratio": 0,
+      "targets": [
+        {
+          "target_id": "C1",
+          "hit": false,
+          "proof": null
+        },
+        {
+          "target_id": "C2",
+          "hit": false,
+          "proof": null
+        }
+      ]
+    },
+    "key_evidence_discovery": {
+      "hits": 0,
+      "total": 1,
+      "ratio": 0,
+      "targets": [
+        {
+          "target_id": "K1",
+          "hit": false,
+          "proof": null
+        }
+      ]
+    }
+  },
+  "cost": {
+    "retrieval_calls": 4,
+    "retrieval_attempts": 4,
+    "provider_calls": 6,
+    "external_provider_calls": 0,
+    "model_invocations": 0,
+    "semantic_adapter_invocations": 3,
+    "wall_clock_ms": 435.545,
+    "token_cost": "UNKNOWN",
+    "money_cost": "UNKNOWN",
+    "selected_corpus_sources": 2,
+    "downstream_material_chars": 88
+  },
+  "supporting": {
+    "stop_reason": "zero_new_candidates",
+    "duplicate_ratio": 0.75,
+    "unresolved_gap_rate": "UNKNOWN",
+    "targeted_action_count": 0,
+    "new_materially_useful_sources_per_targeted_round": "UNKNOWN"
+  }
+}

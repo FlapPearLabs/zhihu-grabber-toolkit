@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "queryVariants": [
+    "村镇就医公交 增加班次"
+  ],
+  "aspects": [
+    "村镇就医公交 服务限制"
+  ],
+  "entities": [
+    "村镇就医公交"
+  ],
+  "opposingFramings": [
+    "增加公交班次 适用边界"
+  ],
+  "terminologyVariants": [
+    {
+      "term": "乡村医疗出行 公交可达性",
+      "variants": [
+        "乡村医疗出行 公交可达性"
+      ]
+    }
+  ],
+  "sourceGroupIntents": []
+}

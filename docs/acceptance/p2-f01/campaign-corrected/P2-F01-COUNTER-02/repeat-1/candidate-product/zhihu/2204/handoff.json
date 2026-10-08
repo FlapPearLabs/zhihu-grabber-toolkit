@@ -1,0 +1,10 @@
+{
+  "task": "digest",
+  "sourceType": "zhihu-answers",
+  "questionId": "2204",
+  "inputJson": "answers.json",
+  "inputMarkdown": "answers.md",
+  "verified": true,
+  "answerCount": 1,
+  "warnings": []
+}

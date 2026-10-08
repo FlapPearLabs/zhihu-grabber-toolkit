@@ -1,3 +1,5 @@
+> 历史收据：71e4ae1 因独立审查 F1/F2 未获验收。当前候选与修复证据见 [CURRENT](CURRENT.md)；下文历史产物保留原文。
+
 # #107 MVP implementation and evidence receipt
 
 EVALUATION_HARNESS = IMPLEMENTED; independent review / remote CI / integration are recorded in PR and Issue, not self-authorized here.

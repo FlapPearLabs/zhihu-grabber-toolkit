@@ -1,0 +1,212 @@
+{
+  "occurrenceId": "0014560f-32c2-44cd-9eb1-15dbcb5b7152",
+  "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": "3d1285488617a3f136cb9af9f554bcab3b13a14f01a8827fbafe0242abe14c19",
+      "artifactRel": "targeted-requery-subphase/action-26e319d344006d74bc9ab2a80134601b1790ba62290001f37153ab9c56fdd427/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-26e319d344006d74bc9ab2a80134601b1790ba62290001f37153ab9c56fdd427/retrieval-pool.json",
+          "bindingHash": "3d1285488617a3f136cb9af9f554bcab3b13a14f01a8827fbafe0242abe14c19",
+          "bindingKey": "targeted-action:26e319d344006d74bc9ab2a80134601b1790ba62290001f37153ab9c56fdd427",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "EVALUATE",
+          "from": "COMMITTED",
+          "reason": null,
+          "seq": 3,
+          "to": "EVALUATED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "CONCLUDE",
+          "from": "EVALUATED",
+          "reason": null,
+          "seq": 4,
+          "to": "UNRESOLVED"
+        }
+      ],
+      "bindingHash": "3d1285488617a3f136cb9af9f554bcab3b13a14f01a8827fbafe0242abe14c19",
+      "bindingKey": "targeted-action:26e319d344006d74bc9ab2a80134601b1790ba62290001f37153ab9c56fdd427",
+      "dedupeKey": "7c20b5be79826d3b191251bd8706ce9a13a1f1a55a4de13a1432e480f5971ea3",
+      "gapId": "808b35f0f984168f216ed22994317af6d725a698a2303d81ff2b8adb3ae1067b:0",
+      "gapIdentityCore": "808b35f0f984168f216ed22994317af6d725a698a2303d81ff2b8adb3ae1067b",
+      "normalizedQuery": "净化器 原始试验记录",
+      "occurrenceId": "0014560f-32c2-44cd-9eb1-15dbcb5b7152",
+      "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
+      "status": "UNRESOLVED",
+      "targetedActionId": "26e319d344006d74bc9ab2a80134601b1790ba62290001f37153ab9c56fdd427"
+    },
+    {
+      "artifactHash": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708",
+      "artifactRel": "targeted-requery-subphase/action-92112121af46cd40acb9d33d3cb432eeef6addbe9f3cdcb9ce778edc9503aba0/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-92112121af46cd40acb9d33d3cb432eeef6addbe9f3cdcb9ce778edc9503aba0/retrieval-pool.json",
+          "bindingHash": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708",
+          "bindingKey": "targeted-action:92112121af46cd40acb9d33d3cb432eeef6addbe9f3cdcb9ce778edc9503aba0",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "EVALUATE",
+          "from": "COMMITTED",
+          "reason": null,
+          "seq": 3,
+          "to": "EVALUATED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "CONCLUDE",
+          "from": "EVALUATED",
+          "reason": null,
+          "seq": 4,
+          "to": "UNRESOLVED"
+        }
+      ],
+      "bindingHash": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708",
+      "bindingKey": "targeted-action:92112121af46cd40acb9d33d3cb432eeef6addbe9f3cdcb9ce778edc9503aba0",
+      "dedupeKey": "a66ecfdc2d14ee82993c282c019c1e4c175a73697c32767dceddcc56632e3c0a",
+      "gapId": "e69a3277f368f5b397e3a1a436728e3272168b34736553cb5be6e759e60cce85:0",
+      "gapIdentityCore": "e69a3277f368f5b397e3a1a436728e3272168b34736553cb5be6e759e60cce85",
+      "normalizedQuery": "卧室空气净化器",
+      "occurrenceId": "0014560f-32c2-44cd-9eb1-15dbcb5b7152",
+      "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
+      "status": "UNRESOLVED",
+      "targetedActionId": "92112121af46cd40acb9d33d3cb432eeef6addbe9f3cdcb9ce778edc9503aba0"
+    },
+    {
+      "artifactHash": "51b9871f04e9602e07f5aa7be01f7d9c9d939f155a70ff86667e6d8b1dca5566",
+      "artifactRel": "targeted-requery-subphase/action-f67a5bf6198aea1ffcd97aecc7ba6cc0b6683792f3029dd4fb0eb8034b4e175c/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-f67a5bf6198aea1ffcd97aecc7ba6cc0b6683792f3029dd4fb0eb8034b4e175c/retrieval-pool.json",
+          "bindingHash": "51b9871f04e9602e07f5aa7be01f7d9c9d939f155a70ff86667e6d8b1dca5566",
+          "bindingKey": "targeted-action:f67a5bf6198aea1ffcd97aecc7ba6cc0b6683792f3029dd4fb0eb8034b4e175c",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "EVALUATE",
+          "from": "COMMITTED",
+          "reason": null,
+          "seq": 3,
+          "to": "EVALUATED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "CONCLUDE",
+          "from": "EVALUATED",
+          "reason": null,
+          "seq": 4,
+          "to": "UNRESOLVED"
+        }
+      ],
+      "bindingHash": "51b9871f04e9602e07f5aa7be01f7d9c9d939f155a70ff86667e6d8b1dca5566",
+      "bindingKey": "targeted-action:f67a5bf6198aea1ffcd97aecc7ba6cc0b6683792f3029dd4fb0eb8034b4e175c",
+      "dedupeKey": "4cd3d556f3f90924bdacc66c440f7ec068e6eaa2f84f4e92562952feca687c24",
+      "gapId": "7fad5d8808acaeb36152e7fc9b9a7dacc2625061add51e8dfb8060bf5b102137:0",
+      "gapIdentityCore": "7fad5d8808acaeb36152e7fc9b9a7dacc2625061add51e8dfb8060bf5b102137",
+      "normalizedQuery": "净化器 仅看风量的局限",
+      "occurrenceId": "0014560f-32c2-44cd-9eb1-15dbcb5b7152",
+      "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
+      "status": "UNRESOLVED",
+      "targetedActionId": "f67a5bf6198aea1ffcd97aecc7ba6cc0b6683792f3029dd4fb0eb8034b4e175c"
+    }
+  ]
+}

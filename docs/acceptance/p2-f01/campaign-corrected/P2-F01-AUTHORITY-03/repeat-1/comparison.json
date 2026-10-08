@@ -1,0 +1,60 @@
+{
+  "status": "INVALID",
+  "reason": "PRODUCT_RUN_INCOMPLETE",
+  "incremental_cost": {
+    "retrieval_calls": 6,
+    "retrieval_attempts": 6,
+    "provider_calls": 6,
+    "external_provider_calls": 0,
+    "model_invocations": 0,
+    "semantic_adapter_invocations": 0,
+    "wall_clock_ms": 204.29654100000005,
+    "token_cost": "UNKNOWN",
+    "money_cost": "UNKNOWN",
+    "selected_corpus_sources": 0,
+    "downstream_material_chars": 0
+  },
+  "quality_change": "UNKNOWN",
+  "product_failures": {
+    "baseline": "clarification_required",
+    "candidate": "clarification_required"
+  },
+  "identity": {
+    "repo_sha": "72bc934d4c57ef0f1674913e086d75c1968b0c0e",
+    "case_id": "P2-F01-AUTHORITY-03",
+    "benchmark_version": "p2-f01-authored-curated-v1",
+    "benchmark_hashes": {
+      "research-orchestration/evaluation/benchmark/benchmark.json": "533d0e7fa442ea1986b6edf6302b38ef9aecf8bc191be1b224bf6ed1cc09280b",
+      "research-orchestration/evaluation/benchmark/cases/P2-F01-AUTHORITY-03/product-input.json": "b9f105fb5d26a39e0db6f0d2ee86c104a9977a83b07d327c8a726637467bfa44",
+      "research-orchestration/evaluation/benchmark/cases/P2-F01-AUTHORITY-03/eval-case.json": "547e24fbbe1e95f435512b052a4bdeccdef51b49d4843565683ef57cc55fc50d"
+    },
+    "evaluator_version": "p2-f01-exact-supported-statements-v1",
+    "product_input_hash": "b9f105fb5d26a39e0db6f0d2ee86c104a9977a83b07d327c8a726637467bfa44",
+    "canonical_product_input_hash": "9d60ccc7a19498bd82fafdb4552e639bbd5fddd77950684a3534f2f31d1c7f71",
+    "time_scope": "假设一个持续使用周期；不引用现实产品、标准或测试结果",
+    "shared_product_config": {
+      "maxQueryBudget": 20
+    },
+    "runtime_identity": {
+      "implementation": "DETERMINISTIC_DOUBLE",
+      "node": "v26.10.0",
+      "contract_runtime_pin": "deepseek-api-tool-less",
+      "embedding": "existing mockVector768(7)"
+    },
+    "model_identity": {
+      "actual_model": "NONE",
+      "contract_model_pin": "deepseek-v4-pro",
+      "semantic_policy": "verbatim-fenced-content-v1"
+    },
+    "provider_identity": [
+      "zhihu_search:frozen-double",
+      "zhihu-open-platform:frozen-double",
+      "frozen-evaluation-capture"
+    ]
+  },
+  "confound": [
+    "Synthetic curated corpus and exact verbatim semantic double; excludes live quality.",
+    "Fixed public planner output and injected proposal policy; default CLI targeted re-query remains disabled.",
+    "Shared host wall-clock latency varies; order alternates across identical reruns."
+  ]
+}

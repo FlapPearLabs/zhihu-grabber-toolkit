@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "type": "multi-group-execution-state",
+  "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "selectionIdentity": "e9f637d7b8c246081efa6d6313b36ecf5302223f8bbcae24902582bf65d4ebd0",
+  "selectionDecisionHash": "97ecae8d32412407291cc18c9124413c9e944563fb5277d72cf87735d6325f88",
+  "groups": {
+    "5501": {
+      "groupId": "5501",
+      "questionId": "5501",
+      "stage": "handed_off",
+      "captured": true,
+      "verified": true,
+      "handoffValid": true,
+      "failed": false,
+      "partial": false,
+      "paginationStatus": "complete",
+      "evidenceRef": "zhihu/5501/answers.json",
+      "handoffRef": "zhihu/5501/handoff.json",
+      "artifactHashes": {
+        "answersJson": "fe364dc2a3f2002e4302944e447bc21c2c499dbcc06a9c4a526618e47ca85ebe",
+        "handoffJson": "8852fbc6ab1b3a6b4b08a0fe67ba8f5c0bcb4bc1e2c8ee06aaa6b102e0006ad3"
+      },
+      "capturedAnswerCount": 1,
+      "verification": {
+        "valid": true,
+        "questionId": "5501",
+        "capturedAnswerCount": 1,
+        "reportedAnswerCount": null
+      },
+      "failure": null
+    },
+    "5502": {
+      "groupId": "5502",
+      "questionId": "5502",
+      "stage": "handed_off",
+      "captured": true,
+      "verified": true,
+      "handoffValid": true,
+      "failed": false,
+      "partial": false,
+      "paginationStatus": "complete",
+      "evidenceRef": "zhihu/5502/answers.json",
+      "handoffRef": "zhihu/5502/handoff.json",
+      "artifactHashes": {
+        "answersJson": "c1725f593b0bdadaac003ded6584855fa552667c5110f546b969ceb56cf84df6",
+        "handoffJson": "abca3c0828730676cac158cba23ca728a0ee67884135cf8d2bb5227fa8c75cf8"
+      },
+      "capturedAnswerCount": 1,
+      "verification": {
+        "valid": true,
+        "questionId": "5502",
+        "capturedAnswerCount": 1,
+        "reportedAnswerCount": null
+      },
+      "failure": null
+    }
+  },
+  "verifiedGroupRefs": [
+    {
+      "groupId": "5501",
+      "questionId": "5501",
+      "answersRel": "zhihu/5501/answers.json",
+      "handoffRel": "zhihu/5501/handoff.json",
+      "answersHash": "fe364dc2a3f2002e4302944e447bc21c2c499dbcc06a9c4a526618e47ca85ebe",
+      "handoffHash": "8852fbc6ab1b3a6b4b08a0fe67ba8f5c0bcb4bc1e2c8ee06aaa6b102e0006ad3",
+      "capturedAnswerCount": 1,
+      "reportedAnswerCount": null,
+      "paginationStatus": "complete"
+    },
+    {
+      "groupId": "5502",
+      "questionId": "5502",
+      "answersRel": "zhihu/5502/answers.json",
+      "handoffRel": "zhihu/5502/handoff.json",
+      "answersHash": "c1725f593b0bdadaac003ded6584855fa552667c5110f546b969ceb56cf84df6",
+      "handoffHash": "abca3c0828730676cac158cba23ca728a0ee67884135cf8d2bb5227fa8c75cf8",
+      "capturedAnswerCount": 1,
+      "reportedAnswerCount": null,
+      "paginationStatus": "complete"
+    }
+  ],
+  "manifest": {
+    "schemaVersion": 1,
+    "type": "research-corpus-manifest",
+    "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+    "selectionIdentity": "e9f637d7b8c246081efa6d6313b36ecf5302223f8bbcae24902582bf65d4ebd0",
+    "selectionDecisionHash": "97ecae8d32412407291cc18c9124413c9e944563fb5277d72cf87735d6325f88",
+    "groups": [
+      {
+        "groupId": "5501",
+        "questionId": "5501",
+        "answersRel": "zhihu/5501/answers.json",
+        "handoffRel": "zhihu/5501/handoff.json",
+        "answersHash": "fe364dc2a3f2002e4302944e447bc21c2c499dbcc06a9c4a526618e47ca85ebe",
+        "handoffHash": "8852fbc6ab1b3a6b4b08a0fe67ba8f5c0bcb4bc1e2c8ee06aaa6b102e0006ad3",
+        "capturedAnswerCount": 1,
+        "reportedAnswerCount": null,
+        "paginationStatus": "complete"
+      },
+      {
+        "groupId": "5502",
+        "questionId": "5502",
+        "answersRel": "zhihu/5502/answers.json",
+        "handoffRel": "zhihu/5502/handoff.json",
+        "answersHash": "c1725f593b0bdadaac003ded6584855fa552667c5110f546b969ceb56cf84df6",
+        "handoffHash": "abca3c0828730676cac158cba23ca728a0ee67884135cf8d2bb5227fa8c75cf8",
+        "capturedAnswerCount": 1,
+        "reportedAnswerCount": null,
+        "paginationStatus": "complete"
+      }
+    ],
+    "accounting": {
+      "selectedGroupCount": 2,
+      "verifiedGroupCount": 2,
+      "capturedNotVerifiedGroupCount": 0,
+      "failedGroupCount": 0
+    },
+    "manifestHash": "c93643bcea960d0477ce316606ce9bf7e2c99f367412fd61e166461cd9bf04cf"
+  },
+  "researchComplete": false
+}

@@ -1,0 +1,46 @@
+{
+  "occurrenceId": "879ac8be-5efb-4e74-8ec6-44e11f750ece",
+  "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": null,
+      "artifactRel": null,
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        }
+      ],
+      "bindingHash": null,
+      "bindingKey": null,
+      "dedupeKey": "5dfac4cfa65e85fc513bfa02cff0d62461b986948a533f87f618694149fe0e64",
+      "gapId": "1ace630b9f26be456ef0914c4a2bd38b5d2e88f760eb5476d81e888178112238:0",
+      "gapIdentityCore": "1ace630b9f26be456ef0914c4a2bd38b5d2e88f760eb5476d81e888178112238",
+      "normalizedQuery": "村镇就医公交",
+      "occurrenceId": "879ac8be-5efb-4e74-8ec6-44e11f750ece",
+      "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "4df426b50f3e276a409b0f066719bda07351cfb0835c994c6bcdcf99fd03df23",
+      "status": "AUTHORIZED",
+      "targetedActionId": "8c86dec7070f61c4cbc5e44eab9694194102e5dcf5ef9e9e1606c218c9ea0e69"
+    }
+  ]
+}

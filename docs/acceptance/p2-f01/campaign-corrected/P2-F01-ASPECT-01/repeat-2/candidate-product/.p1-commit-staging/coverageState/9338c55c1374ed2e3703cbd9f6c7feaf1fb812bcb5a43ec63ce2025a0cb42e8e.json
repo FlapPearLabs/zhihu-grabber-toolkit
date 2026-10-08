@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+  "retrieval": {
+    "plannedQueryVariants": [
+      "街区固定遮阴 居民舒适"
+    ],
+    "plannedRoutes": [
+      {
+        "providerId": "zhihu_search",
+        "capability": "search"
+      },
+      {
+        "providerId": "zhihu-open-platform",
+        "capability": "search"
+      }
+    ],
+    "executedRoutes": [
+      {
+        "query": "街区固定遮阴 居民舒适",
+        "providerId": "zhihu_search",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "街区固定遮阴 居民舒适",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "街区固定遮阴 居民舒适",
+        "providerId": "zhihu_search",
+        "capability": "search",
+        "roundIndex": 2
+      },
+      {
+        "query": "街区固定遮阴 居民舒适",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 2
+      }
+    ],
+    "fusedCandidateCount": 4,
+    "fusedGroupCount": 4,
+    "providerFailures": [],
+    "retrievalRounds": 2,
+    "stopReason": "zero_new_candidates"
+  },
+  "sourceCompleteness": {
+    "perGroupStatus": {
+      "1101": {
+        "captured": true,
+        "verified": true,
+        "partial": false,
+        "failed": false,
+        "paginationStatus": "complete",
+        "evidenceRef": "zhihu/1101/answers.json",
+        "selectedCount": 1,
+        "verifiedCount": 1
+      },
+      "1102": {
+        "captured": true,
+        "verified": true,
+        "partial": false,
+        "failed": false,
+        "paginationStatus": "complete",
+        "evidenceRef": "zhihu/1102/answers.json",
+        "selectedCount": 1,
+        "verifiedCount": 1
+      },
+      "1103": {
+        "captured": true,
+        "verified": true,
+        "partial": false,
+        "failed": false,
+        "paginationStatus": "complete",
+        "evidenceRef": "zhihu/1103/answers.json",
+        "selectedCount": 1,
+        "verifiedCount": 1
+      },
+      "1104": {
+        "captured": true,
+        "verified": true,
+        "partial": false,
+        "failed": false,
+        "paginationStatus": "complete",
+        "evidenceRef": "zhihu/1104/answers.json",
+        "selectedCount": 1,
+        "verifiedCount": 1
+      }
+    },
+    "diagnostics": {
+      "capturedNotVerifiedCount": 0,
+      "totalSelectedCount": 4,
+      "totalVerifiedCount": 4
+    }
+  },
+  "analysisCoverage": {
+    "selectedCorpusSourceSet": [
+      "asrc-011d0d401a20d9219b2a661c",
+      "asrc-493bdd8cdaa06fe0148f6419",
+      "asrc-a09e89a9a360c0243e706966",
+      "asrc-efffa7d80c64168eda69d0a2"
+    ],
+    "mappedSourceSet": [],
+    "analyzedSourceSet": [],
+    "perGroupMappedSourceSet": {},
+    "perGroupAnalyzedSourceSet": {},
+    "evidenceRefIssues": {
+      "missingRefs": [],
+      "duplicateRefs": [],
+      "staleRefs": [],
+      "invalidRefs": []
+    },
+    "is100PercentAnalysis": false
+  },
+  "diagnostics": {
+    "new_aspect_rate": 0,
+    "new_claim_rate": 0,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "novelty_gain": 0,
+    "selected_source_group_count": 4,
+    "selected_content_by_group": {
+      "1101": 1,
+      "1102": 1,
+      "1103": 1,
+      "1104": 1
+    },
+    "largest_group_share": 0.25,
+    "selected_author_concentration": 0,
+    "selected_content_type_distribution": {},
+    "claim_source_diversity": 0,
+    "per_group_selection_coverage": {
+      "1101": 1,
+      "1102": 1,
+      "1103": 1,
+      "1104": 1
+    }
+  }
+}

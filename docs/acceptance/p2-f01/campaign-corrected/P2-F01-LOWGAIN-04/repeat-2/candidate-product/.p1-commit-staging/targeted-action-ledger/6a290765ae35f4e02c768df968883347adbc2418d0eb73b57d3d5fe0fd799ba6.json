@@ -1,0 +1,46 @@
+{
+  "occurrenceId": "572c5f57-522a-49a3-a9b2-42ad2b4f36b5",
+  "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": null,
+      "artifactRel": null,
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        }
+      ],
+      "bindingHash": null,
+      "bindingKey": null,
+      "dedupeKey": "4a67e2ba15aa3dd3114f245201db312ba692e4cbdaeb54383474d0c153d26705",
+      "gapId": "8fdd1b4fe3d38229de32432509181f927437d67b78338e9fbf42093b9e62d81b:0",
+      "gapIdentityCore": "8fdd1b4fe3d38229de32432509181f927437d67b78338e9fbf42093b9e62d81b",
+      "normalizedQuery": "增加公交班次 适用边界",
+      "occurrenceId": "572c5f57-522a-49a3-a9b2-42ad2b4f36b5",
+      "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "4df426b50f3e276a409b0f066719bda07351cfb0835c994c6bcdcf99fd03df23",
+      "status": "AUTHORIZED",
+      "targetedActionId": "d00be40c3cacd6608fbc73f81f62c7269f7141660a329f887570406da682b769"
+    }
+  ]
+}

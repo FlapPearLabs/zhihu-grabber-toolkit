@@ -1,0 +1,115 @@
+{
+  "seam": "T13_TO_T14",
+  "seamVersion": 1,
+  "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "selectedCorpusIdentityRef": "sha256:47214123f221d67b4c871bd8594ccbba9d971db5cb745b4b056d895b7dfa4284",
+  "groupRepresentations": [
+    {
+      "groupId": "5501",
+      "canonicalGroupIdentity": {
+        "questionId": "5501",
+        "providerId": "zhihu",
+        "capability": "zhihu-answers"
+      },
+      "accounting": {
+        "selected": 1,
+        "verified": 1,
+        "mapped": 1,
+        "analyzed": 1
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-5501-001",
+            "statement": "模拟小院记录显示，储水加盖能减少蚊虫进入；雨季可用于浇灌，旱季仍需补水，不能视为全年稳定供水。",
+            "sourceRefs": [
+              "asrc-9f0b74ddf8f5535d56ea8b01"
+            ],
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 1
+      }
+    },
+    {
+      "groupId": "5502",
+      "canonicalGroupIdentity": {
+        "questionId": "5502",
+        "providerId": "zhihu",
+        "capability": "zhihu-answers"
+      },
+      "accounting": {
+        "selected": 1,
+        "verified": 1,
+        "mapped": 1,
+        "analyzed": 1
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-5502-001",
+            "statement": "这份假设评论建议只把集雨桶作为浇灌补充：旱季供水不可靠，不能完全替代原有供水，储水还应保持加盖。",
+            "sourceRefs": [
+              "asrc-8ee250eabf5b8b162d5a3004"
+            ],
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 1
+      }
+    },
+    {
+      "groupId": "5503",
+      "canonicalGroupIdentity": {
+        "questionId": "5503",
+        "providerId": "zhihu",
+        "capability": "zhihu-answers"
+      },
+      "accounting": {
+        "selected": 1,
+        "verified": 1,
+        "mapped": 1,
+        "analyzed": 1
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-5503-001",
+            "statement": "这份假设维护说明重复储水加盖和旱季仍需补水两点；它未提供超出已有小院记录的新决策依据。",
+            "sourceRefs": [
+              "asrc-10b395e1b4a46b5ea107d4e3"
+            ],
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 1
+      }
+    }
+  ],
+  "aggregateAnalyzedIdentity": {
+    "mappedAnalyzedSourceSetIdentity": "sha256:47214123f221d67b4c871bd8594ccbba9d971db5cb745b4b056d895b7dfa4284",
+    "perGroup": {
+      "5501": "sha256:10784c0a1760c5eb5481d84a42c35e7665b2eb3a96fde001004ca16a7d12012f",
+      "5502": "sha256:3481281a77449699a94e5a2931106f44fb646da18b1ba024b2c01f356e2dd16a",
+      "5503": "sha256:dda1d3e07e4b715f5ed96bf91d36a38c7414d0e1244d0f99700a0564f5fbf561"
+    }
+  }
+}

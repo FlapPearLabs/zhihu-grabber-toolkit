@@ -1,0 +1,270 @@
+{
+  "seam": "T14_TO_T15",
+  "seamVersion": 2,
+  "semanticContractVersion": 2,
+  "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+  "preSynthesisGuard": {
+    "guardResult": "PASS",
+    "selectedVerifiedSourceSetIdentity": "sha256:68cb8aac59a1870c5300031f1eac9364ce0d3e568bbf8aa9c4acfd9aef7f49be",
+    "mappedAnalyzedSourceSetIdentity": "sha256:68cb8aac59a1870c5300031f1eac9364ce0d3e568bbf8aa9c4acfd9aef7f49be"
+  },
+  "synthesis": {
+    "synthesisIdentity": "sha256:3e4f99f0e16316cc4da4a3e6680a84cf56068dc0b7c9f41ba1046be8e5c677f7",
+    "families": [
+      {
+        "familyKey": "fam-9829593873b0f517",
+        "aspect": "独立材料观点",
+        "anchor": {
+          "sourceClaimId": "c-2202-001",
+          "statement": "模拟访谈中，自主安排能力较强的学生说，可选练习允许按薄弱点复习；记录支持自主安排的收益。"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-2202-001",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-2202-001",
+            "statement": "模拟访谈中，自主安排能力较强的学生说，可选练习允许按薄弱点复习；记录支持自主安排的收益。",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "asrc-da917a3f358b1876323d66ff",
+                "groupId": "2202",
+                "authorRef": "author-d658846a6dd32dd4"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-2202-001",
+            "sourceRef": "asrc-da917a3f358b1876323d66ff",
+            "groupId": "2202",
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": false
+      },
+      {
+        "familyKey": "fam-a730035789a7de1a",
+        "aspect": "独立材料观点",
+        "anchor": {
+          "sourceClaimId": "c-2204-001",
+          "statement": "这份假设方案保留基础练习并开放拓展选择，以分层支持回应学生差异；它反对把全可选作为统一规则。"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-2204-001",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-2204-001",
+            "statement": "这份假设方案保留基础练习并开放拓展选择，以分层支持回应学生差异；它反对把全可选作为统一规则。",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "asrc-3c16ab4c098ccef2e1a0d3e4",
+                "groupId": "2204",
+                "authorRef": "author-d658846a6dd32dd4"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-2204-001",
+            "sourceRef": "asrc-3c16ab4c098ccef2e1a0d3e4",
+            "groupId": "2204",
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": false
+      },
+      {
+        "familyKey": "fam-b8e2df78e28f6997",
+        "aspect": "独立材料观点",
+        "anchor": {
+          "sourceClaimId": "c-2203-001",
+          "statement": "模拟观察中，依赖外部结构的学生在练习全可选后跳过复习；全面取消统一安排可能使这类学生缺少学习支架。"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-2203-001",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-2203-001",
+            "statement": "模拟观察中，依赖外部结构的学生在练习全可选后跳过复习；全面取消统一安排可能使这类学生缺少学习支架。",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "asrc-90dc19b6050e3fe653ff53e2",
+                "groupId": "2203",
+                "authorRef": "author-d658846a6dd32dd4"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-2203-001",
+            "sourceRef": "asrc-90dc19b6050e3fe653ff53e2",
+            "groupId": "2203",
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": false
+      },
+      {
+        "familyKey": "fam-c9b2d3fb49b9a433",
+        "aspect": "独立材料观点",
+        "anchor": {
+          "sourceClaimId": "c-2201-001",
+          "statement": "在假设课程中，可选练习让已掌握内容的学生免于机械重复；支持者认为选择权能够减少重复负担。"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-2201-001",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-2201-001",
+            "statement": "在假设课程中，可选练习让已掌握内容的学生免于机械重复；支持者认为选择权能够减少重复负担。",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "asrc-418b91796334b172f0447c52",
+                "groupId": "2201",
+                "authorRef": "author-d658846a6dd32dd4"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-2201-001",
+            "sourceRef": "asrc-418b91796334b172f0447c52",
+            "groupId": "2201",
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": false
+      }
+    ],
+    "unresolved": [],
+    "groupDifferences": [
+      {
+        "groupId": "2201",
+        "uncoveredAspects": []
+      },
+      {
+        "groupId": "2202",
+        "uncoveredAspects": []
+      },
+      {
+        "groupId": "2203",
+        "uncoveredAspects": []
+      },
+      {
+        "groupId": "2204",
+        "uncoveredAspects": []
+      }
+    ],
+    "evidenceStrength": [
+      {
+        "familyKey": "fam-9829593873b0f517",
+        "expertEvidenceRichSupport": false,
+        "crossGroupSupport": false,
+        "supportSourceCount": 1,
+        "opposeSourceCount": 0
+      },
+      {
+        "familyKey": "fam-a730035789a7de1a",
+        "expertEvidenceRichSupport": false,
+        "crossGroupSupport": false,
+        "supportSourceCount": 1,
+        "opposeSourceCount": 0
+      },
+      {
+        "familyKey": "fam-b8e2df78e28f6997",
+        "expertEvidenceRichSupport": false,
+        "crossGroupSupport": false,
+        "supportSourceCount": 1,
+        "opposeSourceCount": 0
+      },
+      {
+        "familyKey": "fam-c9b2d3fb49b9a433",
+        "expertEvidenceRichSupport": false,
+        "crossGroupSupport": false,
+        "supportSourceCount": 1,
+        "opposeSourceCount": 0
+      }
+    ],
+    "discussionVolumeDifferences": {
+      "byGroup": {
+        "2201": 1,
+        "2202": 1,
+        "2203": 1,
+        "2204": 1
+      }
+    }
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "claim_source_diversity": 1
+  },
+  "legacyDerivedView": {
+    "derivedFrom": "canonical V2 families/unresolved (one-way presentation; never an input to relationStatus/supportBreadth)",
+    "families": [
+      {
+        "familyKey": "fam-9829593873b0f517",
+        "legacyCategory": "group-specific",
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP"
+      },
+      {
+        "familyKey": "fam-a730035789a7de1a",
+        "legacyCategory": "group-specific",
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP"
+      },
+      {
+        "familyKey": "fam-b8e2df78e28f6997",
+        "legacyCategory": "group-specific",
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP"
+      },
+      {
+        "familyKey": "fam-c9b2d3fb49b9a433",
+        "legacyCategory": "group-specific",
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP"
+      }
+    ],
+    "unresolved": []
+  }
+}

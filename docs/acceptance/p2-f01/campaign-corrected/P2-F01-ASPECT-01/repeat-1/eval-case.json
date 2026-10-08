@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "benchmark_version": "p2-f01-authored-curated-v1",
+  "case_id": "P2-F01-ASPECT-01",
+  "domain": "城市公共空间",
+  "failure_family": "ASPECT MISS",
+  "time_scope": "假设未来一个完整使用年度，覆盖夏季与冬季；不对应现实日期",
+  "provenance": {
+    "kind": "synthetic authored-curated",
+    "author_role": "benchmark case drafter",
+    "language": "zh-CN",
+    "description": "以下研究任务与材料均为人工编写的假设情境，仅用于冻结语料评估。它们不是现实研究结果，不含真实人物、论文、机构、测量数值或引文。",
+    "source_identity": "questionId 是 canonical 数字字符串 fixture identity，不是真实知乎 ID；simulated-direct-record 仅表示合成情境中直接记录的材料角色，不表示现实权威。",
+    "materials": [
+      {
+        "question_id": "1101",
+        "role": "commentary"
+      },
+      {
+        "question_id": "1102",
+        "role": "simulated-direct-record"
+      },
+      {
+        "question_id": "1103",
+        "role": "simulated-direct-record"
+      },
+      {
+        "question_id": "1104",
+        "role": "commentary"
+      }
+    ]
+  },
+  "scope": "CURATED_TARGETS != OPEN_WORLD_COMPLETENESS",
+  "targets": {
+    "important_aspects": [
+      {
+        "target_id": "A1",
+        "label": "夏季步行舒适",
+        "support_any_of": [
+          {
+            "question_id": "1101",
+            "accepted_statements": [
+              "在这条假设街道，连续遮阴让午后步行者少受直晒；增设设施的主要收益是热舒适。"
+            ]
+          }
+        ]
+      },
+      {
+        "target_id": "A2",
+        "label": "应急通行空间",
+        "support_any_of": [
+          {
+            "question_id": "1103",
+            "accepted_statements": [
+              "模拟现场核查发现，固定立柱占用应急通道，全年顶棚遮挡冬季采光；设计需要同时保留通行空间和季节调整能力。"
+            ]
+          }
+        ]
+      },
+      {
+        "target_id": "A3",
+        "label": "全年采光适配",
+        "support_any_of": [
+          {
+            "question_id": "1103",
+            "accepted_statements": [
+              "模拟现场核查发现，固定立柱占用应急通道，全年顶棚遮挡冬季采光；设计需要同时保留通行空间和季节调整能力。"
+            ]
+          }
+        ]
+      }
+    ],
+    "counterpositions": [
+      {
+        "target_id": "C1",
+        "label": "狭窄路段应采用季节性方案",
+        "support_any_of": [
+          {
+            "question_id": "1104",
+            "accepted_statements": [
+              "在通道狭窄的假设路段，季节性可收回遮阴比统一固定顶棚更合适，因为能在非炎热季节恢复开放空间。"
+            ]
+          }
+        ]
+      }
+    ],
+    "key_evidence": [
+      {
+        "target_id": "K1",
+        "label": "同时核查通行与采光的现场材料",
+        "question_id": "1103",
+        "expected_text": "模拟现场核查发现，固定立柱占用应急通道，全年顶棚遮挡冬季采光；设计需要同时保留通行空间和季节调整能力。"
+      }
+    ]
+  },
+  "hidden_targets": [
+    "A1",
+    "A2",
+    "A3",
+    "C1",
+    "K1"
+  ],
+  "evaluation_notes": "初始路线围绕夏季舒适。场地适配路线能取得不同证据，但必须实际检索并分析；这只是 known-weak fixture 设计，实际 baseline 缺失须由 run 证明。"
+}

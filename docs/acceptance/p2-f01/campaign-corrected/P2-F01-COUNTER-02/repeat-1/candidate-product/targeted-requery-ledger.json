@@ -1,0 +1,47 @@
+{
+  "diagnosedGaps": [
+    {
+      "declaredGapType": "CONTRADICTION_GAP",
+      "diagnosisRound": 0,
+      "gapId": "035bcd961ba2ff5fbedbd0ad03b291d78ba60bc4480ee95da1f92daed07e569a:0",
+      "gapIdentityCore": "035bcd961ba2ff5fbedbd0ad03b291d78ba60bc4480ee95da1f92daed07e569a",
+      "gapType": "CONTRADICTION_GAP",
+      "occurrenceId": "4b313595-7946-43d0-bb8c-42e29c4d6eec",
+      "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+      "subjectKey": "opposing:课后可选练习 反向论证"
+    },
+    {
+      "declaredGapType": "CONTRADICTION_GAP",
+      "diagnosisRound": 1,
+      "gapId": "035bcd961ba2ff5fbedbd0ad03b291d78ba60bc4480ee95da1f92daed07e569a:1",
+      "gapIdentityCore": "035bcd961ba2ff5fbedbd0ad03b291d78ba60bc4480ee95da1f92daed07e569a",
+      "gapType": "CONTRADICTION_GAP",
+      "occurrenceId": "4b313595-7946-43d0-bb8c-42e29c4d6eec",
+      "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+      "subjectKey": "opposing:课后可选练习 反向论证"
+    },
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 0,
+      "gapId": "e498ebe0b19f943a1306f6ae85c221bec036e689650ebf64cb460d7e630ee5bc:0",
+      "gapIdentityCore": "e498ebe0b19f943a1306f6ae85c221bec036e689650ebf64cb460d7e630ee5bc",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "4b313595-7946-43d0-bb8c-42e29c4d6eec",
+      "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+      "subjectKey": "aspect:课后可选练习 学生差异"
+    },
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 1,
+      "gapId": "e498ebe0b19f943a1306f6ae85c221bec036e689650ebf64cb460d7e630ee5bc:1",
+      "gapIdentityCore": "e498ebe0b19f943a1306f6ae85c221bec036e689650ebf64cb460d7e630ee5bc",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "4b313595-7946-43d0-bb8c-42e29c4d6eec",
+      "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+      "subjectKey": "aspect:课后可选练习 学生差异"
+    }
+  ],
+  "occurrenceId": "4b313595-7946-43d0-bb8c-42e29c4d6eec",
+  "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+  "schema": "p2-ari-targeted-requery-ledger/v1"
+}

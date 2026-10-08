@@ -1,0 +1,333 @@
+{
+  "schema_version": 1,
+  "status": "VALID",
+  "product_failure": null,
+  "arm": "candidate",
+  "repetition": 1,
+  "identity": {
+    "repo_sha": "72bc934d4c57ef0f1674913e086d75c1968b0c0e",
+    "case_id": "P2-F01-CONTROL-05",
+    "benchmark_version": "p2-f01-authored-curated-v1",
+    "benchmark_hashes": {
+      "research-orchestration/evaluation/benchmark/benchmark.json": "533d0e7fa442ea1986b6edf6302b38ef9aecf8bc191be1b224bf6ed1cc09280b",
+      "research-orchestration/evaluation/benchmark/cases/P2-F01-CONTROL-05/product-input.json": "ab7dc1ba5268bc3094a91a4e7d4bf1c217bfaa1eb2758f4616e7a4897ab7506e",
+      "research-orchestration/evaluation/benchmark/cases/P2-F01-CONTROL-05/eval-case.json": "eef967d50a6b00f499a115e48ca9b0aa915c2e8e6925db7d4132c3ebb125db35"
+    },
+    "evaluator_version": "p2-f01-exact-supported-statements-v1",
+    "product_input_hash": "ab7dc1ba5268bc3094a91a4e7d4bf1c217bfaa1eb2758f4616e7a4897ab7506e",
+    "canonical_product_input_hash": "d33471efee4cca025ebe72314870367ef93dd436a5326d75e268a1efa69729d4",
+    "time_scope": "假设一个包含雨季和旱季的使用年度，不引用现实降雨数据",
+    "shared_product_config": {
+      "maxQueryBudget": 20
+    },
+    "runtime_identity": {
+      "implementation": "DETERMINISTIC_DOUBLE",
+      "node": "v26.10.0",
+      "contract_runtime_pin": "deepseek-api-tool-less",
+      "embedding": "existing mockVector768(7)"
+    },
+    "model_identity": {
+      "actual_model": "NONE",
+      "contract_model_pin": "deepseek-v4-pro",
+      "semantic_policy": "verbatim-fenced-content-v1"
+    },
+    "provider_identity": [
+      "zhihu_search:frozen-double",
+      "zhihu-open-platform:frozen-double",
+      "frozen-evaluation-capture"
+    ]
+  },
+  "product_config": {
+    "maxQueryBudget": 20,
+    "targeted_enabled": true,
+    "proposal_policy": "public-plan-first-reference-v1",
+    "max_attempts_per_gap": 2,
+    "cache_state": "COLD_SEPARATE_DIRECTORY",
+    "planner": "PUBLIC_FROZEN_PLAN"
+  },
+  "timestamp": "2026-10-08T03:07:13.692Z",
+  "product_identity": {
+    "run_id": "7fe8b9f5639702c975412a8efb937414d3b14677f22428f47b16379d0ea3f46c",
+    "occurrence_id": "7947f2a6-3faf-47da-969e-6361af358f9d",
+    "plan_hash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7"
+  },
+  "artifact_hashes": [
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/.p1-commit-staging/coverageState/5cfa8530237e480f376f6ab93813dde0c40e02f3524e479bac36f09aff8d649e.json",
+      "sha256": "5cfa8530237e480f376f6ab93813dde0c40e02f3524e479bac36f09aff8d649e"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/.p1-commit-staging/coverageState/6ba7e837c38f028278075265412f352da717a9305c1397aafedae7365da6550a.json",
+      "sha256": "6ba7e837c38f028278075265412f352da717a9305c1397aafedae7365da6550a"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/.p1-commit-staging/coverageState/856fb908f02406b77ffcd74a43a21ed85877cdc3ff8c6fefe3c02bc74e5d0278.json",
+      "sha256": "856fb908f02406b77ffcd74a43a21ed85877cdc3ff8c6fefe3c02bc74e5d0278"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/.p1-commit-staging/coverageState/8b5b06ffb6cfa0f5614661170f272262736c5d8ae58245dc0a47725944d0d0f4.json",
+      "sha256": "8b5b06ffb6cfa0f5614661170f272262736c5d8ae58245dc0a47725944d0d0f4"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/.p1-commit-staging/coverageState/cd1763c50ce6d7ecd6261dff15764f2e7fa6fc10d10d6b93e3f889d234d3e1e2.json",
+      "sha256": "cd1763c50ce6d7ecd6261dff15764f2e7fa6fc10d10d6b93e3f889d234d3e1e2"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/.p1-commit-staging/coverageState/ce17750308644543f1ab90325843cff511efcfc52864bf08b4f7979893aa4fdf.json",
+      "sha256": "ce17750308644543f1ab90325843cff511efcfc52864bf08b4f7979893aa4fdf"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/27dcb2a05f5b919ff1a8e529923114c8d167f682ff77518afd521bcb3292f19f.json",
+      "sha256": "27dcb2a05f5b919ff1a8e529923114c8d167f682ff77518afd521bcb3292f19f"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/5a56e562051c754f6ab0e4d5626b27370e0d4683498161365d9495cf9c3426bc.json",
+      "sha256": "5a56e562051c754f6ab0e4d5626b27370e0d4683498161365d9495cf9c3426bc"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/8087e65c66471716c36861017fe8a0f53a206e8d1cb276dc817162b434e477e3.json",
+      "sha256": "8087e65c66471716c36861017fe8a0f53a206e8d1cb276dc817162b434e477e3"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/a9cb72d3892119edcdbf95b6e1bac05d65d51da01c6fee3da513c3a4a8d2f823.json",
+      "sha256": "a9cb72d3892119edcdbf95b6e1bac05d65d51da01c6fee3da513c3a4a8d2f823"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/c336f222a22342bec2367b5ec1200aab1c77da683bc909e23e45c562eab88773.json",
+      "sha256": "c336f222a22342bec2367b5ec1200aab1c77da683bc909e23e45c562eab88773"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/c4fb845a76a195af6780f45a43c3f4263d40c1ee7138b5e2e2ac3ae87e843702.json",
+      "sha256": "c4fb845a76a195af6780f45a43c3f4263d40c1ee7138b5e2e2ac3ae87e843702"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/.p1-commit-staging/targeted-resolution-input/cc3f84642ca68d6bbd6979770062f4664506afe76c70a0ef911092a671b51055.json",
+      "sha256": "cc3f84642ca68d6bbd6979770062f4664506afe76c70a0ef911092a671b51055"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/.p1-commit-staging/targeted-resolution-input/f89093551cf6f7346f31fb7ab8255c8b87dae43e0ba42a6ad1cf74d7544da34a.json",
+      "sha256": "f89093551cf6f7346f31fb7ab8255c8b87dae43e0ba42a6ad1cf74d7544da34a"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/coverage-final.json",
+      "sha256": "6c9934be3212f33f1866860f220669bc884aa2d0b4ee9954f9ead72b8e0cf37e"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/coverage-state.json",
+      "sha256": "0dcd17f67fcbd610a5747b67f803ca04a68506b27fa2cc7dadf9f9c169688cad"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/cross-source-synthesis.json",
+      "sha256": "d6e42255400ff67321b9907090d2963812773c38d8800f71a29f67e04ee01ba5"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/evaluation-execution-observation.json",
+      "sha256": "277700ee469b6a1155ebecb8503c84530868860dc1d5c5b172deec7503a0dbb1"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/events.jsonl",
+      "sha256": "b5bf4807ac094ea805a7b46ee7cb3538fe933dba109e80b16ed8f2d93f8df5ba"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/multi-group-state.json",
+      "sha256": "5b2436b8d507f6fb35f4dc4f4428e1e43f827598f17414e63c150693b1c07204"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/orchestration-state.json",
+      "sha256": "a2b76889304930a1d7a956cbf69c5570b3f779def35f71e63d80732018f6769c"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/per-group-claims.json",
+      "sha256": "9bf9cbe7695bcc98479d38568c6772c9f8315f85c5bf0483c324d43291f68da8"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/research-plan.json",
+      "sha256": "09e1105d8c8d39cd925810c205ba3c94ac7a3b8c5ca00be26ac0dd94d3212a7a"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/research-result.json",
+      "sha256": "25bb3e15dc90af060f663d64b4177ae0ac8cc9328db0c9ab988a357f703da094"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/retrieval-rounds/accumulated-pool.json",
+      "sha256": "a418bea2b55b7ec02110b7e17d547d556b4cc11e402f1f7f67cdcae8da74f170"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/retrieval-rounds/round-1/retrieval-pool.json",
+      "sha256": "46d553f916e7e4fef882bdf1bf8b1db9c36fda2d75d8939637362f122bfc95e9"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/retrieval-rounds/round-2/retrieval-pool.json",
+      "sha256": "46d553f916e7e4fef882bdf1bf8b1db9c36fda2d75d8939637362f122bfc95e9"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/source-group-selection-decision.json",
+      "sha256": "b0084f5fab54876c820b6dd2935abe3d67ee8c118a4455e3dd955bc972448530"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/targeted-requery-actions.json",
+      "sha256": "c4fb845a76a195af6780f45a43c3f4263d40c1ee7138b5e2e2ac3ae87e843702"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/targeted-requery-ledger.json",
+      "sha256": "f8ef94cc9ef6a54e6855a2b31b4f6a1faf4eaf6b709279d0eee112ee408051e1"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/targeted-requery-resolution.json",
+      "sha256": "6070f51fef5e0676815e8c77538da1e9ca9086fdc29fcbf6b8dcec253d65c536"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/targeted-requery-subphase/action-c3366ae929b2b49b95ca4ec2cc4fbcf2438611e22fd33a6f83dc32f8ed65c32b/retrieval-pool.json",
+      "sha256": "c29138bdcab25e73c5dd37252a6e23796d9c74467c1d1d0852740f5aae7b030d"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/targeted-requery-subphase/action-ec3462a54feff3f5ba87ad134081d59c5d9b457aeb14ef928f7d8c2d41320c96/retrieval-pool.json",
+      "sha256": "b2024344e050423f0d9ab672dad80853fd56f492a5e5de9cf6afc23562102e53"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/zhihu/5501/.progress.json",
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/zhihu/5501/answers.json",
+      "sha256": "fe364dc2a3f2002e4302944e447bc21c2c499dbcc06a9c4a526618e47ca85ebe"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/zhihu/5501/answers.md",
+      "sha256": "9f862cfa76e95c0a3c7243cce685e60e7274bde5c051a87eea8e7f6e3003c349"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/zhihu/5501/handoff.json",
+      "sha256": "8852fbc6ab1b3a6b4b08a0fe67ba8f5c0bcb4bc1e2c8ee06aaa6b102e0006ad3"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/zhihu/5502/.progress.json",
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/zhihu/5502/answers.json",
+      "sha256": "c1725f593b0bdadaac003ded6584855fa552667c5110f546b969ceb56cf84df6"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/zhihu/5502/answers.md",
+      "sha256": "c7bf0fe328bc924cb6298c306878efe282332ceb25f781b0b6e57a5b670fe694"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/zhihu/5502/handoff.json",
+      "sha256": "abca3c0828730676cac158cba23ca728a0ee67884135cf8d2bb5227fa8c75cf8"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/zhihu/5503/.progress.json",
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/zhihu/5503/answers.json",
+      "sha256": "0092aa3ff573eb14a1950a476382c4ce404a6b5e54c70f509b67199047d78820"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/zhihu/5503/answers.md",
+      "sha256": "f31282724b8d73d64a347e0c7d435b7208dbff23b8bf26187b8a89fbfe643cd0"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-CONTROL-05/repeat-1/candidate-product/zhihu/5503/handoff.json",
+      "sha256": "ad290fb23ca05dcfcb2c1f9778577ac58a4dc80e71fbd7a341922dd7ba510dae"
+    }
+  ],
+  "product_checkpoint_hashes": {
+    "targeted-resolution-input:ec3462a54feff3f5ba87ad134081d59c5d9b457aeb14ef928f7d8c2d41320c96": "f89093551cf6f7346f31fb7ab8255c8b87dae43e0ba42a6ad1cf74d7544da34a",
+    "targeted-action:ec3462a54feff3f5ba87ad134081d59c5d9b457aeb14ef928f7d8c2d41320c96": "b2024344e050423f0d9ab672dad80853fd56f492a5e5de9cf6afc23562102e53",
+    "targeted-resolution-input:c3366ae929b2b49b95ca4ec2cc4fbcf2438611e22fd33a6f83dc32f8ed65c32b": "cc3f84642ca68d6bbd6979770062f4664506afe76c70a0ef911092a671b51055",
+    "targeted-action:c3366ae929b2b49b95ca4ec2cc4fbcf2438611e22fd33a6f83dc32f8ed65c32b": "c29138bdcab25e73c5dd37252a6e23796d9c74467c1d1d0852740f5aae7b030d",
+    "targeted-action-ledger": "c4fb845a76a195af6780f45a43c3f4263d40c1ee7138b5e2e2ac3ae87e843702",
+    "researchPlan": "09e1105d8c8d39cd925810c205ba3c94ac7a3b8c5ca00be26ac0dd94d3212a7a",
+    "coverageState": "0dcd17f67fcbd610a5747b67f803ca04a68506b27fa2cc7dadf9f9c169688cad",
+    "coverageFinal": "6c9934be3212f33f1866860f220669bc884aa2d0b4ee9954f9ead72b8e0cf37e",
+    "perGroupClaims": "9bf9cbe7695bcc98479d38568c6772c9f8315f85c5bf0483c324d43291f68da8",
+    "synthesis": "d6e42255400ff67321b9907090d2963812773c38d8800f71a29f67e04ee01ba5",
+    "researchResult": "25bb3e15dc90af060f663d64b4177ae0ac8cc9328db0c9ab988a357f703da094",
+    "accumulatedPool": "a418bea2b55b7ec02110b7e17d547d556b4cc11e402f1f7f67cdcae8da74f170",
+    "selectionDecision": "b0084f5fab54876c820b6dd2935abe3d67ee8c118a4455e3dd955bc972448530"
+  },
+  "metrics": {
+    "important_aspect_discovery": {
+      "hits": 2,
+      "total": 2,
+      "ratio": 1,
+      "targets": [
+        {
+          "target_id": "A1",
+          "hit": true,
+          "proof": {
+            "question_id": "5501",
+            "source_id": "asrc-9f0b74ddf8f5535d56ea8b01",
+            "claim_id": "c-5501-001",
+            "statement": "模拟小院记录显示，储水加盖能减少蚊虫进入；雨季可用于浇灌，旱季仍需补水，不能视为全年稳定供水。"
+          }
+        },
+        {
+          "target_id": "A2",
+          "hit": true,
+          "proof": {
+            "question_id": "5501",
+            "source_id": "asrc-9f0b74ddf8f5535d56ea8b01",
+            "claim_id": "c-5501-001",
+            "statement": "模拟小院记录显示，储水加盖能减少蚊虫进入；雨季可用于浇灌，旱季仍需补水，不能视为全年稳定供水。"
+          }
+        }
+      ]
+    },
+    "counterposition_discovery": {
+      "hits": 1,
+      "total": 1,
+      "ratio": 1,
+      "targets": [
+        {
+          "target_id": "C1",
+          "hit": true,
+          "proof": {
+            "question_id": "5502",
+            "source_id": "asrc-8ee250eabf5b8b162d5a3004",
+            "claim_id": "c-5502-001",
+            "statement": "这份假设评论建议只把集雨桶作为浇灌补充：旱季供水不可靠，不能完全替代原有供水，储水还应保持加盖。"
+          }
+        }
+      ]
+    },
+    "key_evidence_discovery": {
+      "hits": 1,
+      "total": 1,
+      "ratio": 1,
+      "targets": [
+        {
+          "target_id": "K1",
+          "hit": true,
+          "proof": {
+            "question_id": "5501",
+            "source_id": "asrc-9f0b74ddf8f5535d56ea8b01",
+            "artifact_hash": "fe364dc2a3f2002e4302944e447bc21c2c499dbcc06a9c4a526618e47ca85ebe"
+          }
+        }
+      ]
+    }
+  },
+  "cost": {
+    "retrieval_calls": 8,
+    "retrieval_attempts": 8,
+    "provider_calls": 11,
+    "external_provider_calls": 0,
+    "model_invocations": 0,
+    "semantic_adapter_invocations": 4,
+    "wall_clock_ms": 741.428875,
+    "token_cost": "UNKNOWN",
+    "money_cost": "UNKNOWN",
+    "selected_corpus_sources": 3,
+    "downstream_material_chars": 138
+  },
+  "supporting": {
+    "stop_reason": "zero_new_candidates",
+    "duplicate_ratio": 0.8125,
+    "unresolved_gap_rate": 1,
+    "targeted_action_count": 2,
+    "new_materially_useful_sources_per_targeted_round": "UNKNOWN"
+  }
+}

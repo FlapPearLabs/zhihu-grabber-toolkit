@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "runId": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
+  "occurrenceId": "0014560f-32c2-44cd-9eb1-15dbcb5b7152",
+  "topic": "在假设卧室使用情境中，是否能仅凭净化器标示风量选型？请比较二手选购观点与直接实验材料，并说明长期运行条件。",
+  "mode": "p1-cross-question-deep-research",
+  "percent": null,
+  "runtime": "deepseek-api-tool-less",
+  "configFingerprint": "7bb48764eaee68a197bc9ecc9ded5ea1102a8fe8173c2539c0419c01e5cd6306",
+  "forceQuestionId": null,
+  "stage": "SELECT",
+  "completedStages": [],
+  "selectedQuestionId": null,
+  "selection": null,
+  "artifacts": {},
+  "hashes": {
+    "coverageState": "81b2dd73f1dbb1ffbc4a4ea8d73588825444f5ef3cf50da36e609923ec428475",
+    "targeted-resolution-input:f67a5bf6198aea1ffcd97aecc7ba6cc0b6683792f3029dd4fb0eb8034b4e175c": "d2916494acee527011fc823a74e48d2d2c6338a818e1fd22485ecaef9f7e1b69",
+    "targeted-action-ledger": "d6d82cf4ccd0d1d2eefd461272acfcf2edf0a87179c6617269e9a3df72804b0c",
+    "targeted-action:f67a5bf6198aea1ffcd97aecc7ba6cc0b6683792f3029dd4fb0eb8034b4e175c": "51b9871f04e9602e07f5aa7be01f7d9c9d939f155a70ff86667e6d8b1dca5566",
+    "targeted-resolution-input:26e319d344006d74bc9ab2a80134601b1790ba62290001f37153ab9c56fdd427": "1220b1ed582c7916e7332fb280647fa8dc08391bb889aca749f18de921160fd0",
+    "targeted-action:26e319d344006d74bc9ab2a80134601b1790ba62290001f37153ab9c56fdd427": "3d1285488617a3f136cb9af9f554bcab3b13a14f01a8827fbafe0242abe14c19",
+    "targeted-resolution-input:92112121af46cd40acb9d33d3cb432eeef6addbe9f3cdcb9ce778edc9503aba0": "58b30ca59d2513d91c272de0d24388b749b77cc3da6aaeed8c3cebdea3755bc7",
+    "targeted-action:92112121af46cd40acb9d33d3cb432eeef6addbe9f3cdcb9ce778edc9503aba0": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708",
+    "accumulatedPool": "8cfd46e3733ef5d8226fbffeb622e995f7ee6ab9f1ae7bcaa02a5e621fb72ebe"
+  },
+  "verification": null,
+  "coverage": null,
+  "p1FinalCoveragePlanHash": null,
+  "updatedAt": "2026-10-08T03:07:09.341Z"
+}

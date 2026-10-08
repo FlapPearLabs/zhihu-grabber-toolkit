@@ -1,0 +1,53 @@
+{
+  "implementation": "DETERMINISTIC_DOUBLE",
+  "calls": [
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "卧室净化器 风量选购",
+      "question_ids": [
+        "3301",
+        "3302"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "卧室净化器 风量选购",
+      "question_ids": [
+        "3301",
+        "3302"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "卧室净化器 风量选购",
+      "question_ids": [
+        "3301",
+        "3302"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "卧室净化器 风量选购",
+      "question_ids": [
+        "3301",
+        "3302"
+      ]
+    }
+  ],
+  "semantic_calls": [],
+  "cost": {
+    "retrieval_calls": 4,
+    "retrieval_attempts": 4,
+    "provider_calls": 4,
+    "external_provider_calls": 0,
+    "model_invocations": 0,
+    "semantic_adapter_invocations": 0,
+    "wall_clock_ms": 39.33774999999999,
+    "token_cost": "UNKNOWN",
+    "money_cost": "UNKNOWN"
+  }
+}

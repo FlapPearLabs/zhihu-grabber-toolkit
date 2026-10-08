@@ -1,0 +1,247 @@
+{
+  "schema_version": 1,
+  "status": "INVALID",
+  "product_failure": "clarification_required",
+  "arm": "candidate",
+  "repetition": 1,
+  "identity": {
+    "repo_sha": "72bc934d4c57ef0f1674913e086d75c1968b0c0e",
+    "case_id": "P2-F01-AUTHORITY-03",
+    "benchmark_version": "p2-f01-authored-curated-v1",
+    "benchmark_hashes": {
+      "research-orchestration/evaluation/benchmark/benchmark.json": "533d0e7fa442ea1986b6edf6302b38ef9aecf8bc191be1b224bf6ed1cc09280b",
+      "research-orchestration/evaluation/benchmark/cases/P2-F01-AUTHORITY-03/product-input.json": "b9f105fb5d26a39e0db6f0d2ee86c104a9977a83b07d327c8a726637467bfa44",
+      "research-orchestration/evaluation/benchmark/cases/P2-F01-AUTHORITY-03/eval-case.json": "547e24fbbe1e95f435512b052a4bdeccdef51b49d4843565683ef57cc55fc50d"
+    },
+    "evaluator_version": "p2-f01-exact-supported-statements-v1",
+    "product_input_hash": "b9f105fb5d26a39e0db6f0d2ee86c104a9977a83b07d327c8a726637467bfa44",
+    "canonical_product_input_hash": "9d60ccc7a19498bd82fafdb4552e639bbd5fddd77950684a3534f2f31d1c7f71",
+    "time_scope": "假设一个持续使用周期；不引用现实产品、标准或测试结果",
+    "shared_product_config": {
+      "maxQueryBudget": 20
+    },
+    "runtime_identity": {
+      "implementation": "DETERMINISTIC_DOUBLE",
+      "node": "v26.10.0",
+      "contract_runtime_pin": "deepseek-api-tool-less",
+      "embedding": "existing mockVector768(7)"
+    },
+    "model_identity": {
+      "actual_model": "NONE",
+      "contract_model_pin": "deepseek-v4-pro",
+      "semantic_policy": "verbatim-fenced-content-v1"
+    },
+    "provider_identity": [
+      "zhihu_search:frozen-double",
+      "zhihu-open-platform:frozen-double",
+      "frozen-evaluation-capture"
+    ]
+  },
+  "product_config": {
+    "maxQueryBudget": 20,
+    "targeted_enabled": true,
+    "proposal_policy": "public-plan-first-reference-v1",
+    "max_attempts_per_gap": 2,
+    "cache_state": "COLD_SEPARATE_DIRECTORY",
+    "planner": "PUBLIC_FROZEN_PLAN"
+  },
+  "timestamp": "2026-10-08T03:07:09.359Z",
+  "product_identity": {
+    "run_id": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
+    "occurrence_id": "0014560f-32c2-44cd-9eb1-15dbcb5b7152",
+    "plan_hash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b"
+  },
+  "artifact_hashes": [
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/coverageState/32b1e12aff515188e6afbc3ce122074af71624ae9dea874b716b8673f98b01cf.json",
+      "sha256": "32b1e12aff515188e6afbc3ce122074af71624ae9dea874b716b8673f98b01cf"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/coverageState/81b2dd73f1dbb1ffbc4a4ea8d73588825444f5ef3cf50da36e609923ec428475.json",
+      "sha256": "81b2dd73f1dbb1ffbc4a4ea8d73588825444f5ef3cf50da36e609923ec428475"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/01efa1efdb180a0bfbd8a05487d2f2dcdb4400a8a2c550889a1401344435740a.json",
+      "sha256": "01efa1efdb180a0bfbd8a05487d2f2dcdb4400a8a2c550889a1401344435740a"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/443014a111f269ccb34d619800b00e36513167c64ef0aff5610cf16e94d31f75.json",
+      "sha256": "443014a111f269ccb34d619800b00e36513167c64ef0aff5610cf16e94d31f75"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/4fc7ab480d25cc1cb36e4118766488e45e3a6096d39f1eb8dcf371cf1dd83b91.json",
+      "sha256": "4fc7ab480d25cc1cb36e4118766488e45e3a6096d39f1eb8dcf371cf1dd83b91"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/76c1941d0851f935c81073373755bfd2006685e9bda8eade4a02f9bc1b89baf1.json",
+      "sha256": "76c1941d0851f935c81073373755bfd2006685e9bda8eade4a02f9bc1b89baf1"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/84bd7fa8e3be89c077ebcecc974ca9ec2308835364b56ef602dd48bca3c53589.json",
+      "sha256": "84bd7fa8e3be89c077ebcecc974ca9ec2308835364b56ef602dd48bca3c53589"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/9d7826d40d867423dd20196a57c763fc6ea0623a3f63f661830903df6083043b.json",
+      "sha256": "9d7826d40d867423dd20196a57c763fc6ea0623a3f63f661830903df6083043b"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/d6d82cf4ccd0d1d2eefd461272acfcf2edf0a87179c6617269e9a3df72804b0c.json",
+      "sha256": "d6d82cf4ccd0d1d2eefd461272acfcf2edf0a87179c6617269e9a3df72804b0c"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/f6a03961777852563870f1a1b48a16fbb1b5e00756ef266494e3a64146850cdc.json",
+      "sha256": "f6a03961777852563870f1a1b48a16fbb1b5e00756ef266494e3a64146850cdc"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-resolution-input/1220b1ed582c7916e7332fb280647fa8dc08391bb889aca749f18de921160fd0.json",
+      "sha256": "1220b1ed582c7916e7332fb280647fa8dc08391bb889aca749f18de921160fd0"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-resolution-input/58b30ca59d2513d91c272de0d24388b749b77cc3da6aaeed8c3cebdea3755bc7.json",
+      "sha256": "58b30ca59d2513d91c272de0d24388b749b77cc3da6aaeed8c3cebdea3755bc7"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-resolution-input/d2916494acee527011fc823a74e48d2d2c6338a818e1fd22485ecaef9f7e1b69.json",
+      "sha256": "d2916494acee527011fc823a74e48d2d2c6338a818e1fd22485ecaef9f7e1b69"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/coverage-state.json",
+      "sha256": "81b2dd73f1dbb1ffbc4a4ea8d73588825444f5ef3cf50da36e609923ec428475"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/evaluation-execution-observation.json",
+      "sha256": "b48a5ca904c55cfb03c8b8af3396db284986fce7741ee0c5c2980b175c572b79"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/events.jsonl",
+      "sha256": "25033cef93e4d5a748316d0219dcb9519e0abbf861ba5c9b6b76fcd5ea14633f"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/orchestration-state.json",
+      "sha256": "d1af93b2e0edb2e7926ab03e652a8323e8f5817e69f1ec6ec74fdf507cc191f5"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/research-plan.json",
+      "sha256": "e64e266a3ac348bd8a92906aa23232c78a0005d30becd9e00088d9497423aa24"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/retrieval-rounds/accumulated-pool.json",
+      "sha256": "8cfd46e3733ef5d8226fbffeb622e995f7ee6ab9f1ae7bcaa02a5e621fb72ebe"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/retrieval-rounds/round-1/retrieval-pool.json",
+      "sha256": "e50cf5335a499f74649e7aa61adc668a130766a9be952c346f34db4599d3a7f2"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/retrieval-rounds/round-2/retrieval-pool.json",
+      "sha256": "e50cf5335a499f74649e7aa61adc668a130766a9be952c346f34db4599d3a7f2"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/source-group-selection-decision.json",
+      "sha256": "448988ac403fccda58a91078c4d35813558bc00e9d2c17aa736a436d1314f688"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/targeted-requery-actions.json",
+      "sha256": "d6d82cf4ccd0d1d2eefd461272acfcf2edf0a87179c6617269e9a3df72804b0c"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/targeted-requery-ledger.json",
+      "sha256": "7f6ff1181c6fb2c449fb8dfa692a5c8d5a59be9fedcdbab6602255af507531d3"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/targeted-requery-resolution.json",
+      "sha256": "f79a775117f8aff809db724e16f00bac5420dbf6b260169e28635c4573b7323e"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/targeted-requery-subphase/action-26e319d344006d74bc9ab2a80134601b1790ba62290001f37153ab9c56fdd427/retrieval-pool.json",
+      "sha256": "3d1285488617a3f136cb9af9f554bcab3b13a14f01a8827fbafe0242abe14c19"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/targeted-requery-subphase/action-92112121af46cd40acb9d33d3cb432eeef6addbe9f3cdcb9ce778edc9503aba0/retrieval-pool.json",
+      "sha256": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-corrected/P2-F01-AUTHORITY-03/repeat-1/candidate-product/targeted-requery-subphase/action-f67a5bf6198aea1ffcd97aecc7ba6cc0b6683792f3029dd4fb0eb8034b4e175c/retrieval-pool.json",
+      "sha256": "51b9871f04e9602e07f5aa7be01f7d9c9d939f155a70ff86667e6d8b1dca5566"
+    }
+  ],
+  "product_checkpoint_hashes": {
+    "coverageState": "81b2dd73f1dbb1ffbc4a4ea8d73588825444f5ef3cf50da36e609923ec428475",
+    "targeted-resolution-input:f67a5bf6198aea1ffcd97aecc7ba6cc0b6683792f3029dd4fb0eb8034b4e175c": "d2916494acee527011fc823a74e48d2d2c6338a818e1fd22485ecaef9f7e1b69",
+    "targeted-action-ledger": "d6d82cf4ccd0d1d2eefd461272acfcf2edf0a87179c6617269e9a3df72804b0c",
+    "targeted-action:f67a5bf6198aea1ffcd97aecc7ba6cc0b6683792f3029dd4fb0eb8034b4e175c": "51b9871f04e9602e07f5aa7be01f7d9c9d939f155a70ff86667e6d8b1dca5566",
+    "targeted-resolution-input:26e319d344006d74bc9ab2a80134601b1790ba62290001f37153ab9c56fdd427": "1220b1ed582c7916e7332fb280647fa8dc08391bb889aca749f18de921160fd0",
+    "targeted-action:26e319d344006d74bc9ab2a80134601b1790ba62290001f37153ab9c56fdd427": "3d1285488617a3f136cb9af9f554bcab3b13a14f01a8827fbafe0242abe14c19",
+    "targeted-resolution-input:92112121af46cd40acb9d33d3cb432eeef6addbe9f3cdcb9ce778edc9503aba0": "58b30ca59d2513d91c272de0d24388b749b77cc3da6aaeed8c3cebdea3755bc7",
+    "targeted-action:92112121af46cd40acb9d33d3cb432eeef6addbe9f3cdcb9ce778edc9503aba0": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708",
+    "accumulatedPool": "8cfd46e3733ef5d8226fbffeb622e995f7ee6ab9f1ae7bcaa02a5e621fb72ebe"
+  },
+  "metrics": {
+    "important_aspect_discovery": {
+      "hits": "UNKNOWN",
+      "total": 3,
+      "ratio": "UNKNOWN",
+      "targets": [
+        {
+          "target_id": "A1",
+          "hit": "UNKNOWN",
+          "proof": null
+        },
+        {
+          "target_id": "A2",
+          "hit": "UNKNOWN",
+          "proof": null
+        },
+        {
+          "target_id": "A3",
+          "hit": "UNKNOWN",
+          "proof": null
+        }
+      ]
+    },
+    "counterposition_discovery": {
+      "hits": "UNKNOWN",
+      "total": 1,
+      "ratio": "UNKNOWN",
+      "targets": [
+        {
+          "target_id": "C1",
+          "hit": "UNKNOWN",
+          "proof": null
+        }
+      ]
+    },
+    "key_evidence_discovery": {
+      "hits": "UNKNOWN",
+      "total": 1,
+      "ratio": "UNKNOWN",
+      "targets": [
+        {
+          "target_id": "K1",
+          "hit": "UNKNOWN",
+          "proof": null
+        }
+      ]
+    }
+  },
+  "cost": {
+    "retrieval_calls": 10,
+    "retrieval_attempts": 10,
+    "provider_calls": 10,
+    "external_provider_calls": 0,
+    "model_invocations": 0,
+    "semantic_adapter_invocations": 0,
+    "wall_clock_ms": 240.31962500000003,
+    "token_cost": "UNKNOWN",
+    "money_cost": "UNKNOWN",
+    "selected_corpus_sources": 0,
+    "downstream_material_chars": 0
+  },
+  "supporting": {
+    "stop_reason": "clarification_required",
+    "duplicate_ratio": 0.8,
+    "unresolved_gap_rate": "UNKNOWN",
+    "targeted_action_count": "UNKNOWN",
+    "new_materially_useful_sources_per_targeted_round": "UNKNOWN"
+  }
+}

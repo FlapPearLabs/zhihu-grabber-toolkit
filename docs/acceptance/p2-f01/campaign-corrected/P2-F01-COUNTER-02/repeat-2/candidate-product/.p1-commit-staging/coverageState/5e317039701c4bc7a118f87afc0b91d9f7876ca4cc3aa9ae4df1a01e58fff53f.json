@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+  "retrieval": {
+    "plannedQueryVariants": [
+      "课后可选练习 学习体验"
+    ],
+    "plannedRoutes": [
+      {
+        "providerId": "zhihu_search",
+        "capability": "search"
+      },
+      {
+        "providerId": "zhihu-open-platform",
+        "capability": "search"
+      }
+    ],
+    "executedRoutes": [
+      {
+        "query": "课后可选练习 学习体验",
+        "providerId": "zhihu_search",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "课后可选练习 学习体验",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "课后可选练习 学习体验",
+        "providerId": "zhihu_search",
+        "capability": "search",
+        "roundIndex": 2
+      },
+      {
+        "query": "课后可选练习 学习体验",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 2
+      }
+    ],
+    "fusedCandidateCount": 4,
+    "fusedGroupCount": 4,
+    "providerFailures": [],
+    "retrievalRounds": 2,
+    "stopReason": "zero_new_candidates"
+  },
+  "sourceCompleteness": {
+    "perGroupStatus": {
+      "2201": {
+        "captured": true,
+        "verified": true,
+        "partial": false,
+        "failed": false,
+        "paginationStatus": "complete",
+        "evidenceRef": "zhihu/2201/answers.json",
+        "selectedCount": 1,
+        "verifiedCount": 1
+      },
+      "2202": {
+        "captured": true,
+        "verified": true,
+        "partial": false,
+        "failed": false,
+        "paginationStatus": "complete",
+        "evidenceRef": "zhihu/2202/answers.json",
+        "selectedCount": 1,
+        "verifiedCount": 1
+      },
+      "2203": {
+        "captured": true,
+        "verified": true,
+        "partial": false,
+        "failed": false,
+        "paginationStatus": "complete",
+        "evidenceRef": "zhihu/2203/answers.json",
+        "selectedCount": 1,
+        "verifiedCount": 1
+      },
+      "2204": {
+        "captured": true,
+        "verified": true,
+        "partial": false,
+        "failed": false,
+        "paginationStatus": "complete",
+        "evidenceRef": "zhihu/2204/answers.json",
+        "selectedCount": 1,
+        "verifiedCount": 1
+      }
+    },
+    "diagnostics": {
+      "capturedNotVerifiedCount": 0,
+      "totalSelectedCount": 4,
+      "totalVerifiedCount": 4
+    }
+  },
+  "analysisCoverage": {
+    "selectedCorpusSourceSet": [
+      "asrc-3c16ab4c098ccef2e1a0d3e4",
+      "asrc-418b91796334b172f0447c52",
+      "asrc-90dc19b6050e3fe653ff53e2",
+      "asrc-da917a3f358b1876323d66ff"
+    ],
+    "mappedSourceSet": [
+      "asrc-3c16ab4c098ccef2e1a0d3e4",
+      "asrc-418b91796334b172f0447c52",
+      "asrc-90dc19b6050e3fe653ff53e2",
+      "asrc-da917a3f358b1876323d66ff"
+    ],
+    "analyzedSourceSet": [
+      "asrc-3c16ab4c098ccef2e1a0d3e4",
+      "asrc-418b91796334b172f0447c52",
+      "asrc-90dc19b6050e3fe653ff53e2",
+      "asrc-da917a3f358b1876323d66ff"
+    ],
+    "perGroupMappedSourceSet": {
+      "2201": [
+        "asrc-418b91796334b172f0447c52"
+      ],
+      "2202": [
+        "asrc-da917a3f358b1876323d66ff"
+      ],
+      "2203": [
+        "asrc-90dc19b6050e3fe653ff53e2"
+      ],
+      "2204": [
+        "asrc-3c16ab4c098ccef2e1a0d3e4"
+      ]
+    },
+    "perGroupAnalyzedSourceSet": {
+      "2201": [
+        "asrc-418b91796334b172f0447c52"
+      ],
+      "2202": [
+        "asrc-da917a3f358b1876323d66ff"
+      ],
+      "2203": [
+        "asrc-90dc19b6050e3fe653ff53e2"
+      ],
+      "2204": [
+        "asrc-3c16ab4c098ccef2e1a0d3e4"
+      ]
+    },
+    "evidenceRefIssues": {
+      "missingRefs": [],
+      "duplicateRefs": [],
+      "staleRefs": [],
+      "invalidRefs": []
+    },
+    "is100PercentAnalysis": false
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "novelty_gain": 0,
+    "selected_source_group_count": 4,
+    "selected_content_by_group": {
+      "2201": 1,
+      "2202": 1,
+      "2203": 1,
+      "2204": 1
+    },
+    "largest_group_share": 0.25,
+    "selected_author_concentration": 0,
+    "selected_content_type_distribution": {},
+    "claim_source_diversity": 1,
+    "per_group_selection_coverage": {
+      "2201": 1,
+      "2202": 1,
+      "2203": 1,
+      "2204": 1
+    }
+  }
+}

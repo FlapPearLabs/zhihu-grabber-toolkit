@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "type": "p1-research-result",
+  "ok": true,
+  "topic": "在假设老旧街区中，是否应优先增设固定遮阴设施？请结合居民舒适、场地适配与长期使用条件给出有证据支持的建议。",
+  "mode": "p1-cross-question-deep-research",
+  "runId": "6c55752597c7f68afab93e0a0c67b9442aec0c02ed11e1eb1b6b28272bc548b1",
+  "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+  "runtime": {
+    "runtimeId": "deepseek-api-tool-less",
+    "model": "deepseek-v4-pro"
+  },
+  "disclosure": {
+    "pipeline": "p1-cross-question-deep-research",
+    "stage": "FINAL_COVERAGE_RECONCILIATION",
+    "isFullCoverage": true,
+    "complete": true,
+    "analysisCoverage": {
+      "selectedCount": 4,
+      "mappedCount": 4,
+      "analyzedCount": 4
+    },
+    "retrieval": {
+      "retrievalRounds": 2,
+      "stopReason": "zero_new_candidates",
+      "fusedCandidateCount": 4,
+      "fusedGroupCount": 4,
+      "providerFailureCount": 0
+    },
+    "gap": null
+  },
+  "targetedResearchGaps": {
+    "schema": "p2a-targeted-research-gaps/v1",
+    "gapCount": 4,
+    "resolvedCount": 0,
+    "unresolvedCount": 4,
+    "exhaustedWithinBudgetCount": 0,
+    "lineageComplete": false,
+    "gaps": [
+      {
+        "gapId": "039f4f9e1b1d06188c4e88bba2eda234552cb3afa3d66b96157d137f619b9363:0",
+        "gapIdentityCore": "039f4f9e1b1d06188c4e88bba2eda234552cb3afa3d66b96157d137f619b9363",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "老旧街区固定遮阴",
+            "resultArtifact": "targeted-requery-subphase/action-9db39f9438767515a78bd2a5d771494c04b5a103763a70b0bf1327b8401cbf5c/retrieval-pool.json",
+            "targetedActionId": "9db39f9438767515a78bd2a5d771494c04b5a103763a70b0bf1327b8401cbf5c"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "476f128f-3cf5-4419-bb18-40d3ca0c0636",
+        "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+        "resolutionBasis": "DUPLICATE_ONLY",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "039f4f9e1b1d06188c4e88bba2eda234552cb3afa3d66b96157d137f619b9363:1",
+        "gapIdentityCore": "039f4f9e1b1d06188c4e88bba2eda234552cb3afa3d66b96157d137f619b9363",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "476f128f-3cf5-4419-bb18-40d3ca0c0636",
+        "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "7195e679fc1dd4b6c1a7bfae84d8ed8ca3b2ab4c4e2bff55422a1fde9f791701:0",
+        "gapIdentityCore": "7195e679fc1dd4b6c1a7bfae84d8ed8ca3b2ab4c4e2bff55422a1fde9f791701",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "固定遮阴 可替代方案",
+            "resultArtifact": "targeted-requery-subphase/action-e294db67232f54dd7d32741d676541bcee0f7f1d30eb098a6df19f44d51f277e/retrieval-pool.json",
+            "targetedActionId": "e294db67232f54dd7d32741d676541bcee0f7f1d30eb098a6df19f44d51f277e"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "476f128f-3cf5-4419-bb18-40d3ca0c0636",
+        "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+        "resolutionBasis": "UNKNOWN_SIDE_NOT_DECLARED",
+        "resolutionEvidence": [
+          "1103",
+          "1104"
+        ],
+        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "7195e679fc1dd4b6c1a7bfae84d8ed8ca3b2ab4c4e2bff55422a1fde9f791701:1",
+        "gapIdentityCore": "7195e679fc1dd4b6c1a7bfae84d8ed8ca3b2ab4c4e2bff55422a1fde9f791701",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "476f128f-3cf5-4419-bb18-40d3ca0c0636",
+        "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      }
+    ]
+  },
+  "verification": {
+    "valid": true,
+    "basis": {
+      "t14PreSynthesisGuard": "PASS",
+      "t15FinalReconciliation": "PASS",
+      "groupsVerified": "4/4",
+      "analysisCoverage": {
+        "selectedCount": 4,
+        "mappedCount": 4,
+        "analyzedCount": 4
+      }
+    }
+  },
+  "artifacts": {
+    "researchPlan": "research-plan.json",
+    "selectionDecision": "source-group-selection-decision.json",
+    "coverageState": "coverage-state.json",
+    "coverageFinal": "coverage-final.json",
+    "perGroupClaims": "per-group-claims.json",
+    "synthesis": "cross-source-synthesis.json",
+    "researchResult": "research-result.json"
+  }
+}

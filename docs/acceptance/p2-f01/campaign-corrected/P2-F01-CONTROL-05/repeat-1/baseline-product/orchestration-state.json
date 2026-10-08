@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "runId": "7fe8b9f5639702c975412a8efb937414d3b14677f22428f47b16379d0ea3f46c",
+  "occurrenceId": "8e89e72a-9268-4698-9958-43959f7698ba",
+  "topic": "在假设小院中，家用雨水收集桶是否适合用于日常浇灌？请结合储水安全、季节供水和用途边界作出建议。",
+  "mode": "p1-cross-question-deep-research",
+  "percent": null,
+  "runtime": "deepseek-api-tool-less",
+  "configFingerprint": "7bb48764eaee68a197bc9ecc9ded5ea1102a8fe8173c2539c0419c01e5cd6306",
+  "forceQuestionId": null,
+  "stage": "COMPLETE",
+  "completedStages": [
+    "SEARCH",
+    "SELECT",
+    "CAPTURE",
+    "ANALYZE",
+    "RENDER"
+  ],
+  "selectedQuestionId": null,
+  "selection": null,
+  "artifacts": {
+    "researchPlan": "research-plan.json",
+    "selectionDecision": "source-group-selection-decision.json",
+    "coverageState": "coverage-state.json",
+    "coverageFinal": "coverage-final.json",
+    "perGroupClaims": "per-group-claims.json",
+    "synthesis": "cross-source-synthesis.json",
+    "researchResult": "research-result.json"
+  },
+  "hashes": {
+    "researchPlan": "09e1105d8c8d39cd925810c205ba3c94ac7a3b8c5ca00be26ac0dd94d3212a7a",
+    "coverageState": "6f3a49d5d27c130e8a860d57229ca249df68dcb06af76b0e740db4ab997896de",
+    "coverageFinal": "c0794b5a4daaace7a4d4eddf532b350f10b29aa1505a3f18c2343d20b29d3b7d",
+    "perGroupClaims": "e52273b88ae1d5dbea30a67d549ecefcfb58e8bc212e0ced07df36f1db54ecf2",
+    "synthesis": "142b222f9afdbb8893f5a38a60f49b3c6df061e7adea228ddf53d2d0a74496d9",
+    "researchResult": "fab5efcf5e21891ce37961e36403db336690d0e6ee3fccc7eb6487f5d04dbb82",
+    "accumulatedPool": "b63b9935f9775af8bf969d0c91756024ba8d7011352fbf6fcc2fac57faf5b9fe",
+    "selectionDecision": "df67d72551d99f6cdfe7b291687fa7fa2650368ac9c61ec96b2d38f1bb7f7687"
+  },
+  "verification": null,
+  "coverage": {
+    "is100PercentAnalysis": true,
+    "selectedCount": 2,
+    "analyzedCount": 2
+  },
+  "p1FinalCoveragePlanHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "updatedAt": "2026-10-08T03:07:12.859Z"
+}

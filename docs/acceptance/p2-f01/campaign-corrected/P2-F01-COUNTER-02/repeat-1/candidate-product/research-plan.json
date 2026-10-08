@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "queryVariants": [
+    "课后可选练习 学习体验"
+  ],
+  "aspects": [
+    "课后可选练习 学生差异"
+  ],
+  "entities": [
+    "学生可选课后练习"
+  ],
+  "opposingFramings": [
+    "课后可选练习 反向论证"
+  ],
+  "terminologyVariants": [
+    {
+      "term": "自主选择作业 学习体验",
+      "variants": [
+        "自主选择作业 学习体验"
+      ]
+    }
+  ],
+  "sourceGroupIntents": []
+}

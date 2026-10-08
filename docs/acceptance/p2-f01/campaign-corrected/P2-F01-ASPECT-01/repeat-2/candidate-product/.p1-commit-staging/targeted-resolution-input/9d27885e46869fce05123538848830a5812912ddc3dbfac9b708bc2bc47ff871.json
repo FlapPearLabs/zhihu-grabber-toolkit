@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "type": "TargetedResolutionInput",
+  "targetedActionId": "81f403826be905701297687e3fa31b70b7c4cf33b4e0dff306499dea205a14a3",
+  "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+  "occurrenceId": "ba0619e9-0634-4a53-9477-60b9deb4f3c6",
+  "priorQuestionIds": [
+    "1101",
+    "1102"
+  ],
+  "declaredFraming": "固定遮阴 可替代方案",
+  "coveredFramings": []
+}
