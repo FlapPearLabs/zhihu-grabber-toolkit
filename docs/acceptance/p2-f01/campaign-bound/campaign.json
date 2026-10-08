@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "repo_sha": "34ff398bafd781788055d1d2c30680b89d8e1f80",
+  "repo_sha": "f75b0b123398252b14628c59ee5d175e35df6183",
   "benchmark_version": "p2-f01-authored-curated-v1",
   "evaluator_version": "p2-f01-exact-supported-statements-v1",
   "case_count": 5,
@@ -90,7 +90,7 @@
       "result": "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/controls/degraded-comparison.json"
     }
   },
-  "stability": "PASS_METRICS_AND_NON_LATENCY_COST",
+  "stability": "PASS_IDENTITY_METRICS_AND_NON_LATENCY_COST",
   "known_weak_baseline": true,
   "candidate_runs": 10,
   "baseline_runs": 10

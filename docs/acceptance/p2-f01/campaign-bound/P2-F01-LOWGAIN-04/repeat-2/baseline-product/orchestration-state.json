@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "runId": "4df426b50f3e276a409b0f066719bda07351cfb0835c994c6bcdcf99fd03df23",
-  "occurrenceId": "b3c741fb-ed83-4c5b-a772-4aa966553c79",
+  "occurrenceId": "261b905d-d040-4c5f-8472-ccd6a78b3067",
   "topic": "在假设偏远村镇中，增加公交班次是否足以改善居民就医出行？请评估便利性、服务限制和适用条件。",
   "mode": "p1-cross-question-deep-research",
   "percent": null,
@@ -44,5 +44,5 @@
     "analyzedCount": 2
   },
   "p1FinalCoveragePlanHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
-  "updatedAt": "2026-10-08T08:22:07.151Z"
+  "updatedAt": "2026-10-08T08:44:17.952Z"
 }

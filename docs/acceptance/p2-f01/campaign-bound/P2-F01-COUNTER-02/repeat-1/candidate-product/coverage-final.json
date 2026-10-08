@@ -120,52 +120,8 @@
     "lineageComplete": false,
     "gaps": [
       {
-        "gapId": "0c4c3f4b2cafbbe625ee281c6076626908545802ddcca0525d081097b7d4cb9c:0",
-        "gapIdentityCore": "0c4c3f4b2cafbbe625ee281c6076626908545802ddcca0525d081097b7d4cb9c",
-        "lineage": [
-          {
-            "actionStatus": "UNRESOLVED",
-            "attempt": 1,
-            "providerScope": [
-              {
-                "capability": "search",
-                "providerId": "zhihu-open-platform"
-              },
-              {
-                "capability": "search",
-                "providerId": "zhihu_search"
-              }
-            ],
-            "query": "学生可选课后练习",
-            "resultArtifact": "targeted-requery-subphase/action-b20305f58c4ed30a2b97397e717bc49ba171f011bf51a6f0d4887d95de29e997/retrieval-pool.json",
-            "targetedActionId": "b20305f58c4ed30a2b97397e717bc49ba171f011bf51a6f0d4887d95de29e997"
-          }
-        ],
-        "lineageComplete": true,
-        "missingActionIds": [],
-        "occurrenceId": "dd54e0bb-80b1-4ee7-b631-71217055717d",
-        "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
-        "resolutionBasis": "DUPLICATE_ONLY",
-        "resolutionEvidence": [],
-        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
-        "status": "UNRESOLVED"
-      },
-      {
-        "gapId": "0c4c3f4b2cafbbe625ee281c6076626908545802ddcca0525d081097b7d4cb9c:1",
-        "gapIdentityCore": "0c4c3f4b2cafbbe625ee281c6076626908545802ddcca0525d081097b7d4cb9c",
-        "lineage": [],
-        "lineageComplete": false,
-        "missingActionIds": [],
-        "occurrenceId": "dd54e0bb-80b1-4ee7-b631-71217055717d",
-        "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
-        "resolutionBasis": "NEVER_AUTHORIZED",
-        "resolutionEvidence": [],
-        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
-        "status": "UNRESOLVED"
-      },
-      {
-        "gapId": "abe286b7d74f6fae0848f84fc39c23336bf70877ce6128678b818a3b22f911a7:0",
-        "gapIdentityCore": "abe286b7d74f6fae0848f84fc39c23336bf70877ce6128678b818a3b22f911a7",
+        "gapId": "09d65b7bb0440233fddde61bcabdf0eedf85a72e8a318419a1067920742f8e39:0",
+        "gapIdentityCore": "09d65b7bb0440233fddde61bcabdf0eedf85a72e8a318419a1067920742f8e39",
         "lineage": [
           {
             "actionStatus": "UNRESOLVED",
@@ -181,13 +137,13 @@
               }
             ],
             "query": "课后可选练习 反向论证",
-            "resultArtifact": "targeted-requery-subphase/action-418ae861b0d8315255a1e54e2fb2a7213431e76286e165b6093b54022c5eb17c/retrieval-pool.json",
-            "targetedActionId": "418ae861b0d8315255a1e54e2fb2a7213431e76286e165b6093b54022c5eb17c"
+            "resultArtifact": "targeted-requery-subphase/action-aa91c428e702589908820fe2ec04d70923301b638cce1ed402c256f3e3d64ee0/retrieval-pool.json",
+            "targetedActionId": "aa91c428e702589908820fe2ec04d70923301b638cce1ed402c256f3e3d64ee0"
           }
         ],
         "lineageComplete": true,
         "missingActionIds": [],
-        "occurrenceId": "dd54e0bb-80b1-4ee7-b631-71217055717d",
+        "occurrenceId": "ae8dde62-0fc6-41a0-aa10-09ecc952deee",
         "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
         "resolutionBasis": "UNKNOWN_SIDE_NOT_DECLARED",
         "resolutionEvidence": [
@@ -198,16 +154,60 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "abe286b7d74f6fae0848f84fc39c23336bf70877ce6128678b818a3b22f911a7:1",
-        "gapIdentityCore": "abe286b7d74f6fae0848f84fc39c23336bf70877ce6128678b818a3b22f911a7",
+        "gapId": "09d65b7bb0440233fddde61bcabdf0eedf85a72e8a318419a1067920742f8e39:1",
+        "gapIdentityCore": "09d65b7bb0440233fddde61bcabdf0eedf85a72e8a318419a1067920742f8e39",
         "lineage": [],
         "lineageComplete": false,
         "missingActionIds": [],
-        "occurrenceId": "dd54e0bb-80b1-4ee7-b631-71217055717d",
+        "occurrenceId": "ae8dde62-0fc6-41a0-aa10-09ecc952deee",
         "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
         "resolutionBasis": "NEVER_AUTHORIZED",
         "resolutionEvidence": [],
         "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "4aebb010282b957a5fb9f2e3434900ae92e2d83afbbcbff4ef117d6658740deb:0",
+        "gapIdentityCore": "4aebb010282b957a5fb9f2e3434900ae92e2d83afbbcbff4ef117d6658740deb",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "学生可选课后练习",
+            "resultArtifact": "targeted-requery-subphase/action-212afb175c3249fdb0d354f8c2ba9b8fbe11f619538d02f273a4b3af15eb162c/retrieval-pool.json",
+            "targetedActionId": "212afb175c3249fdb0d354f8c2ba9b8fbe11f619538d02f273a4b3af15eb162c"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "ae8dde62-0fc6-41a0-aa10-09ecc952deee",
+        "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+        "resolutionBasis": "DUPLICATE_ONLY",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "4aebb010282b957a5fb9f2e3434900ae92e2d83afbbcbff4ef117d6658740deb:1",
+        "gapIdentityCore": "4aebb010282b957a5fb9f2e3434900ae92e2d83afbbcbff4ef117d6658740deb",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "ae8dde62-0fc6-41a0-aa10-09ecc952deee",
+        "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
         "status": "UNRESOLVED"
       }
     ]

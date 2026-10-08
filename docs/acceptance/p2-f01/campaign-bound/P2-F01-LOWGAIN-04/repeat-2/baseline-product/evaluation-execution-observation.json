@@ -58,7 +58,7 @@
     "external_provider_calls": 0,
     "model_invocations": 0,
     "semantic_adapter_invocations": 3,
-    "wall_clock_ms": 458.190375,
+    "wall_clock_ms": 427.717333,
     "token_cost": "UNKNOWN",
     "money_cost": "UNKNOWN"
   }

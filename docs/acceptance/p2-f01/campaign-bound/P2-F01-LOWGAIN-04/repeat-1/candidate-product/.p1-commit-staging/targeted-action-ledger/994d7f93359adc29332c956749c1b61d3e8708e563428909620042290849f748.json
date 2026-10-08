@@ -1,0 +1,114 @@
+{
+  "occurrenceId": "c66e9380-901e-4db3-9c88-2b5de3aa2fac",
+  "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": null,
+      "artifactRel": null,
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        }
+      ],
+      "bindingHash": null,
+      "bindingKey": null,
+      "dedupeKey": "03afc9fdc723f8df47cd3db7a5204b07629bc8ed82f97a6cc4aa5e2f8329e50a",
+      "gapId": "1813f64fd587d1216865adf6c1ee07f3b33c8bdbd009a6d48858054c26e25d64:0",
+      "gapIdentityCore": "1813f64fd587d1216865adf6c1ee07f3b33c8bdbd009a6d48858054c26e25d64",
+      "normalizedQuery": "增加公交班次 适用边界",
+      "occurrenceId": "c66e9380-901e-4db3-9c88-2b5de3aa2fac",
+      "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "4df426b50f3e276a409b0f066719bda07351cfb0835c994c6bcdcf99fd03df23",
+      "status": "AUTHORIZED",
+      "targetedActionId": "35eaec679b36ee2114034465473d4bb0773532f6f701000956b0b3bb64ed9632"
+    },
+    {
+      "artifactHash": "7b6c81e513bc30364fa6e354c3a1977be28d7eb32d1131cc48255ae9f6d09666",
+      "artifactRel": "targeted-requery-subphase/action-f9b7f849ed41f67ae7de1b31ed41a3d74cc8b8fc69c5cb6977073eec6cb46232/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-f9b7f849ed41f67ae7de1b31ed41a3d74cc8b8fc69c5cb6977073eec6cb46232/retrieval-pool.json",
+          "bindingHash": "7b6c81e513bc30364fa6e354c3a1977be28d7eb32d1131cc48255ae9f6d09666",
+          "bindingKey": "targeted-action:f9b7f849ed41f67ae7de1b31ed41a3d74cc8b8fc69c5cb6977073eec6cb46232",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "EVALUATE",
+          "from": "COMMITTED",
+          "reason": null,
+          "seq": 3,
+          "to": "EVALUATED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "CONCLUDE",
+          "from": "EVALUATED",
+          "reason": null,
+          "seq": 4,
+          "to": "UNRESOLVED"
+        }
+      ],
+      "bindingHash": "7b6c81e513bc30364fa6e354c3a1977be28d7eb32d1131cc48255ae9f6d09666",
+      "bindingKey": "targeted-action:f9b7f849ed41f67ae7de1b31ed41a3d74cc8b8fc69c5cb6977073eec6cb46232",
+      "dedupeKey": "5a7a2565bef83f66f1d203a6ceabe95f3128d75d0f648111a3fefef0a18e6b7a",
+      "gapId": "0974d437b76dfe6968e02bdd447209ef9958034fca3df26e56efbe9c0727d201:0",
+      "gapIdentityCore": "0974d437b76dfe6968e02bdd447209ef9958034fca3df26e56efbe9c0727d201",
+      "normalizedQuery": "村镇就医公交",
+      "occurrenceId": "c66e9380-901e-4db3-9c88-2b5de3aa2fac",
+      "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "4df426b50f3e276a409b0f066719bda07351cfb0835c994c6bcdcf99fd03df23",
+      "status": "UNRESOLVED",
+      "targetedActionId": "f9b7f849ed41f67ae7de1b31ed41a3d74cc8b8fc69c5cb6977073eec6cb46232"
+    }
+  ]
+}

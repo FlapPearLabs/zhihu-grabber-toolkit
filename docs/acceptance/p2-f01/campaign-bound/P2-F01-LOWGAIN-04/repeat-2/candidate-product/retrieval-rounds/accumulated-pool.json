@@ -39,7 +39,7 @@
     },
     {
       "channel": {
-        "query": "增加公交班次 适用边界",
+        "query": "村镇就医公交",
         "providerId": "zhihu_search",
         "capability": "search"
       },
@@ -56,7 +56,7 @@
     },
     {
       "channel": {
-        "query": "增加公交班次 适用边界",
+        "query": "村镇就医公交",
         "providerId": "zhihu-open-platform",
         "capability": "search"
       },
@@ -73,7 +73,7 @@
     },
     {
       "channel": {
-        "query": "村镇就医公交",
+        "query": "增加公交班次 适用边界",
         "providerId": "zhihu_search",
         "capability": "search"
       },
@@ -90,7 +90,7 @@
     },
     {
       "channel": {
-        "query": "村镇就医公交",
+        "query": "增加公交班次 适用边界",
         "providerId": "zhihu-open-platform",
         "capability": "search"
       },

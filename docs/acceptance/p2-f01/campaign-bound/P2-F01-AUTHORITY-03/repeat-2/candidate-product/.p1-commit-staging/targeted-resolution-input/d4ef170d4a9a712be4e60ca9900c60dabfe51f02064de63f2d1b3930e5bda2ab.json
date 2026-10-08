@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "type": "TargetedResolutionInput",
+  "targetedActionId": "822593192f1ac71709e7c760e864fca97a0db506ca386970fb355d610148e0b9",
+  "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+  "occurrenceId": "af7cce98-0ea1-4fe5-af07-4fb1200f1e79",
+  "priorQuestionIds": [
+    "3301",
+    "3302",
+    "3303",
+    "3304"
+  ],
+  "declaredFraming": null,
+  "coveredFramings": null
+}

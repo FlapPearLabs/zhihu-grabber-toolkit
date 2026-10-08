@@ -30,7 +30,7 @@
     "external_provider_calls": 0,
     "model_invocations": 0,
     "semantic_adapter_invocations": 2,
-    "wall_clock_ms": 508.7522919999999,
+    "wall_clock_ms": 436.639333,
     "token_cost": "UNKNOWN",
     "money_cost": "UNKNOWN",
     "selected_corpus_sources": 2,
@@ -39,7 +39,7 @@
   "quality_change": "GAIN_ON_CURATED_TARGETS",
   "scope": "CURATED_TARGETS != OPEN_WORLD_COMPLETENESS",
   "identity": {
-    "repo_sha": "34ff398bafd781788055d1d2c30680b89d8e1f80",
+    "repo_sha": "f75b0b123398252b14628c59ee5d175e35df6183",
     "case_id": "P2-F01-COUNTER-02",
     "benchmark_version": "p2-f01-authored-curated-v1",
     "benchmark_hashes": {

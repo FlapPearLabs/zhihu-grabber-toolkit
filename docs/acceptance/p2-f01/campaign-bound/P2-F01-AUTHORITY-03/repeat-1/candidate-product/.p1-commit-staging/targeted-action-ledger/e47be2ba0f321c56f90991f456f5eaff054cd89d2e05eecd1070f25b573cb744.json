@@ -1,0 +1,46 @@
+{
+  "occurrenceId": "26a8794f-3d89-481c-82bc-44900d0773f9",
+  "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": null,
+      "artifactRel": null,
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        }
+      ],
+      "bindingHash": null,
+      "bindingKey": null,
+      "dedupeKey": "7e818a2e7e5f3baef0e71b20fa9f975efe28ab959b83478f4f8cc117a55516a9",
+      "gapId": "5affda5c423b8091c49abc6be53273240ac45eba711a72508ab1d62536d716fc:0",
+      "gapIdentityCore": "5affda5c423b8091c49abc6be53273240ac45eba711a72508ab1d62536d716fc",
+      "normalizedQuery": "卧室空气净化器",
+      "occurrenceId": "26a8794f-3d89-481c-82bc-44900d0773f9",
+      "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
+      "status": "AUTHORIZED",
+      "targetedActionId": "bb9ac0749e0a3588c63519e618634cb985ad028bd42353aaf301237f5846eaa9"
+    }
+  ]
+}

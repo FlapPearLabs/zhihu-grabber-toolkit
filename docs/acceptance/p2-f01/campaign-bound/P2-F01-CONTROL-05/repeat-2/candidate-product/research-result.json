@@ -38,52 +38,8 @@
     "lineageComplete": false,
     "gaps": [
       {
-        "gapId": "25e8ff6d7c0aff75a654e1b5ccef5eccd07e1afdd1ec036514c06c927a365216:0",
-        "gapIdentityCore": "25e8ff6d7c0aff75a654e1b5ccef5eccd07e1afdd1ec036514c06c927a365216",
-        "lineage": [
-          {
-            "actionStatus": "UNRESOLVED",
-            "attempt": 1,
-            "providerScope": [
-              {
-                "capability": "search",
-                "providerId": "zhihu-open-platform"
-              },
-              {
-                "capability": "search",
-                "providerId": "zhihu_search"
-              }
-            ],
-            "query": "家用雨水浇灌",
-            "resultArtifact": "targeted-requery-subphase/action-1630d210fdb4be41205cf6d0a3948a7c487459ed7f3c4560542f518501fd2736/retrieval-pool.json",
-            "targetedActionId": "1630d210fdb4be41205cf6d0a3948a7c487459ed7f3c4560542f518501fd2736"
-          }
-        ],
-        "lineageComplete": true,
-        "missingActionIds": [],
-        "occurrenceId": "b8408e56-e9b3-48dd-ad78-03858ca2e56d",
-        "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
-        "resolutionBasis": "DUPLICATE_ONLY",
-        "resolutionEvidence": [],
-        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
-        "status": "UNRESOLVED"
-      },
-      {
-        "gapId": "25e8ff6d7c0aff75a654e1b5ccef5eccd07e1afdd1ec036514c06c927a365216:1",
-        "gapIdentityCore": "25e8ff6d7c0aff75a654e1b5ccef5eccd07e1afdd1ec036514c06c927a365216",
-        "lineage": [],
-        "lineageComplete": false,
-        "missingActionIds": [],
-        "occurrenceId": "b8408e56-e9b3-48dd-ad78-03858ca2e56d",
-        "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
-        "resolutionBasis": "NEVER_AUTHORIZED",
-        "resolutionEvidence": [],
-        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
-        "status": "UNRESOLVED"
-      },
-      {
-        "gapId": "4348875d6c25fe5f237735d04f1e594bb33d80b783b3b59e9ab2fdfd1ecbaf4c:0",
-        "gapIdentityCore": "4348875d6c25fe5f237735d04f1e594bb33d80b783b3b59e9ab2fdfd1ecbaf4c",
+        "gapId": "542bd03a6e78ac9a7d82379448696781f9b2578e6282b77bfab106ded95c3adb:0",
+        "gapIdentityCore": "542bd03a6e78ac9a7d82379448696781f9b2578e6282b77bfab106ded95c3adb",
         "lineage": [
           {
             "actionStatus": "UNRESOLVED",
@@ -99,13 +55,13 @@
               }
             ],
             "query": "雨水浇灌 替代供水的局限",
-            "resultArtifact": "targeted-requery-subphase/action-15f547ab93916bf9dca759f70eba17a30866a94a682acadf5f1399fe780d6091/retrieval-pool.json",
-            "targetedActionId": "15f547ab93916bf9dca759f70eba17a30866a94a682acadf5f1399fe780d6091"
+            "resultArtifact": "targeted-requery-subphase/action-79ac8a4018ca92383096d08ef759158e83b6ed8f6de2d9f495f66aa1548a489c/retrieval-pool.json",
+            "targetedActionId": "79ac8a4018ca92383096d08ef759158e83b6ed8f6de2d9f495f66aa1548a489c"
           }
         ],
         "lineageComplete": true,
         "missingActionIds": [],
-        "occurrenceId": "b8408e56-e9b3-48dd-ad78-03858ca2e56d",
+        "occurrenceId": "c7a2be9e-a02b-455e-a84c-92a3dddc9eb5",
         "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
         "resolutionBasis": "UNKNOWN_SIDE_NOT_DECLARED",
         "resolutionEvidence": [
@@ -115,16 +71,60 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "4348875d6c25fe5f237735d04f1e594bb33d80b783b3b59e9ab2fdfd1ecbaf4c:1",
-        "gapIdentityCore": "4348875d6c25fe5f237735d04f1e594bb33d80b783b3b59e9ab2fdfd1ecbaf4c",
+        "gapId": "542bd03a6e78ac9a7d82379448696781f9b2578e6282b77bfab106ded95c3adb:1",
+        "gapIdentityCore": "542bd03a6e78ac9a7d82379448696781f9b2578e6282b77bfab106ded95c3adb",
         "lineage": [],
         "lineageComplete": false,
         "missingActionIds": [],
-        "occurrenceId": "b8408e56-e9b3-48dd-ad78-03858ca2e56d",
+        "occurrenceId": "c7a2be9e-a02b-455e-a84c-92a3dddc9eb5",
         "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
         "resolutionBasis": "NEVER_AUTHORIZED",
         "resolutionEvidence": [],
         "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "5d659f130c586905e27fdf074ec03d5f8d902dd63dac47d4e23a677bf1824733:0",
+        "gapIdentityCore": "5d659f130c586905e27fdf074ec03d5f8d902dd63dac47d4e23a677bf1824733",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "家用雨水浇灌",
+            "resultArtifact": "targeted-requery-subphase/action-f4f2efd59e532c4277863691d680ab4f2e0fa8947b7824f03743481b9f0d9090/retrieval-pool.json",
+            "targetedActionId": "f4f2efd59e532c4277863691d680ab4f2e0fa8947b7824f03743481b9f0d9090"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "c7a2be9e-a02b-455e-a84c-92a3dddc9eb5",
+        "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+        "resolutionBasis": "DUPLICATE_ONLY",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "5d659f130c586905e27fdf074ec03d5f8d902dd63dac47d4e23a677bf1824733:1",
+        "gapIdentityCore": "5d659f130c586905e27fdf074ec03d5f8d902dd63dac47d4e23a677bf1824733",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "c7a2be9e-a02b-455e-a84c-92a3dddc9eb5",
+        "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
         "status": "UNRESOLVED"
       }
     ]

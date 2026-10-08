@@ -1,47 +1,47 @@
 {
   "diagnosedGaps": [
     {
-      "declaredGapType": "ASPECT_GAP",
-      "diagnosisRound": 0,
-      "gapId": "25e8ff6d7c0aff75a654e1b5ccef5eccd07e1afdd1ec036514c06c927a365216:0",
-      "gapIdentityCore": "25e8ff6d7c0aff75a654e1b5ccef5eccd07e1afdd1ec036514c06c927a365216",
-      "gapType": "ASPECT_GAP",
-      "occurrenceId": "b8408e56-e9b3-48dd-ad78-03858ca2e56d",
-      "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
-      "subjectKey": "aspect:雨水收集桶 维护与供水"
-    },
-    {
-      "declaredGapType": "ASPECT_GAP",
-      "diagnosisRound": 1,
-      "gapId": "25e8ff6d7c0aff75a654e1b5ccef5eccd07e1afdd1ec036514c06c927a365216:1",
-      "gapIdentityCore": "25e8ff6d7c0aff75a654e1b5ccef5eccd07e1afdd1ec036514c06c927a365216",
-      "gapType": "ASPECT_GAP",
-      "occurrenceId": "b8408e56-e9b3-48dd-ad78-03858ca2e56d",
-      "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
-      "subjectKey": "aspect:雨水收集桶 维护与供水"
-    },
-    {
       "declaredGapType": "CONTRADICTION_GAP",
       "diagnosisRound": 0,
-      "gapId": "4348875d6c25fe5f237735d04f1e594bb33d80b783b3b59e9ab2fdfd1ecbaf4c:0",
-      "gapIdentityCore": "4348875d6c25fe5f237735d04f1e594bb33d80b783b3b59e9ab2fdfd1ecbaf4c",
+      "gapId": "542bd03a6e78ac9a7d82379448696781f9b2578e6282b77bfab106ded95c3adb:0",
+      "gapIdentityCore": "542bd03a6e78ac9a7d82379448696781f9b2578e6282b77bfab106ded95c3adb",
       "gapType": "CONTRADICTION_GAP",
-      "occurrenceId": "b8408e56-e9b3-48dd-ad78-03858ca2e56d",
+      "occurrenceId": "c7a2be9e-a02b-455e-a84c-92a3dddc9eb5",
       "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
       "subjectKey": "opposing:雨水浇灌 替代供水的局限"
     },
     {
       "declaredGapType": "CONTRADICTION_GAP",
       "diagnosisRound": 1,
-      "gapId": "4348875d6c25fe5f237735d04f1e594bb33d80b783b3b59e9ab2fdfd1ecbaf4c:1",
-      "gapIdentityCore": "4348875d6c25fe5f237735d04f1e594bb33d80b783b3b59e9ab2fdfd1ecbaf4c",
+      "gapId": "542bd03a6e78ac9a7d82379448696781f9b2578e6282b77bfab106ded95c3adb:1",
+      "gapIdentityCore": "542bd03a6e78ac9a7d82379448696781f9b2578e6282b77bfab106ded95c3adb",
       "gapType": "CONTRADICTION_GAP",
-      "occurrenceId": "b8408e56-e9b3-48dd-ad78-03858ca2e56d",
+      "occurrenceId": "c7a2be9e-a02b-455e-a84c-92a3dddc9eb5",
       "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
       "subjectKey": "opposing:雨水浇灌 替代供水的局限"
+    },
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 0,
+      "gapId": "5d659f130c586905e27fdf074ec03d5f8d902dd63dac47d4e23a677bf1824733:0",
+      "gapIdentityCore": "5d659f130c586905e27fdf074ec03d5f8d902dd63dac47d4e23a677bf1824733",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "c7a2be9e-a02b-455e-a84c-92a3dddc9eb5",
+      "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+      "subjectKey": "aspect:雨水收集桶 维护与供水"
+    },
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 1,
+      "gapId": "5d659f130c586905e27fdf074ec03d5f8d902dd63dac47d4e23a677bf1824733:1",
+      "gapIdentityCore": "5d659f130c586905e27fdf074ec03d5f8d902dd63dac47d4e23a677bf1824733",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "c7a2be9e-a02b-455e-a84c-92a3dddc9eb5",
+      "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+      "subjectKey": "aspect:雨水收集桶 维护与供水"
     }
   ],
-  "occurrenceId": "b8408e56-e9b3-48dd-ad78-03858ca2e56d",
+  "occurrenceId": "c7a2be9e-a02b-455e-a84c-92a3dddc9eb5",
   "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
   "schema": "p2-ari-targeted-requery-ledger/v1"
 }

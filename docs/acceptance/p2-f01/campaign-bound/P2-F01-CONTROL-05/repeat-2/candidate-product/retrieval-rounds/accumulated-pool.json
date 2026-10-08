@@ -39,7 +39,7 @@
     },
     {
       "channel": {
-        "query": "家用雨水浇灌",
+        "query": "雨水浇灌 替代供水的局限",
         "providerId": "zhihu_search",
         "capability": "search"
       },
@@ -56,7 +56,7 @@
     },
     {
       "channel": {
-        "query": "家用雨水浇灌",
+        "query": "雨水浇灌 替代供水的局限",
         "providerId": "zhihu-open-platform",
         "capability": "search"
       },
@@ -73,7 +73,7 @@
     },
     {
       "channel": {
-        "query": "雨水浇灌 替代供水的局限",
+        "query": "家用雨水浇灌",
         "providerId": "zhihu_search",
         "capability": "search"
       },
@@ -90,7 +90,7 @@
     },
     {
       "channel": {
-        "query": "雨水浇灌 替代供水的局限",
+        "query": "家用雨水浇灌",
         "providerId": "zhihu-open-platform",
         "capability": "search"
       },

@@ -39,7 +39,7 @@
     },
     {
       "channel": {
-        "query": "老旧街区固定遮阴",
+        "query": "固定遮阴 可替代方案",
         "providerId": "zhihu_search",
         "capability": "search"
       },
@@ -56,7 +56,7 @@
     },
     {
       "channel": {
-        "query": "老旧街区固定遮阴",
+        "query": "固定遮阴 可替代方案",
         "providerId": "zhihu-open-platform",
         "capability": "search"
       },
@@ -73,7 +73,7 @@
     },
     {
       "channel": {
-        "query": "固定遮阴 可替代方案",
+        "query": "老旧街区固定遮阴",
         "providerId": "zhihu_search",
         "capability": "search"
       },
@@ -90,7 +90,7 @@
     },
     {
       "channel": {
-        "query": "固定遮阴 可替代方案",
+        "query": "老旧街区固定遮阴",
         "providerId": "zhihu-open-platform",
         "capability": "search"
       },

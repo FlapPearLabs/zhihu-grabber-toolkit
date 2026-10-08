@@ -38,54 +38,8 @@
     "lineageComplete": false,
     "gaps": [
       {
-        "gapId": "1e333ee924d94612fa431a2643274e7cc7316db52fe778aa8f1352587eb82d5a:0",
-        "gapIdentityCore": "1e333ee924d94612fa431a2643274e7cc7316db52fe778aa8f1352587eb82d5a",
-        "lineage": [
-          {
-            "actionStatus": "UNRESOLVED",
-            "attempt": 1,
-            "providerScope": [
-              {
-                "capability": "search",
-                "providerId": "zhihu-open-platform"
-              },
-              {
-                "capability": "search",
-                "providerId": "zhihu_search"
-              }
-            ],
-            "query": "增加公交班次 适用边界",
-            "resultArtifact": "targeted-requery-subphase/action-9a468add80da8b78f4312eec2573bc100375a3cb1f5164e88b829631731d504c/retrieval-pool.json",
-            "targetedActionId": "9a468add80da8b78f4312eec2573bc100375a3cb1f5164e88b829631731d504c"
-          }
-        ],
-        "lineageComplete": true,
-        "missingActionIds": [],
-        "occurrenceId": "6bc1cc4e-9aa5-4570-9d7b-db0822c8b4c9",
-        "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
-        "resolutionBasis": "UNKNOWN_SIDE_NOT_DECLARED",
-        "resolutionEvidence": [
-          "4404"
-        ],
-        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
-        "status": "UNRESOLVED"
-      },
-      {
-        "gapId": "1e333ee924d94612fa431a2643274e7cc7316db52fe778aa8f1352587eb82d5a:1",
-        "gapIdentityCore": "1e333ee924d94612fa431a2643274e7cc7316db52fe778aa8f1352587eb82d5a",
-        "lineage": [],
-        "lineageComplete": false,
-        "missingActionIds": [],
-        "occurrenceId": "6bc1cc4e-9aa5-4570-9d7b-db0822c8b4c9",
-        "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
-        "resolutionBasis": "NEVER_AUTHORIZED",
-        "resolutionEvidence": [],
-        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
-        "status": "UNRESOLVED"
-      },
-      {
-        "gapId": "3d781763136836388f5b3193c8cbe727cd2779831f1c086d72920f13d1e4c418:0",
-        "gapIdentityCore": "3d781763136836388f5b3193c8cbe727cd2779831f1c086d72920f13d1e4c418",
+        "gapId": "77414e4b4b2834b3ee56e791d28b41685b9cb55470d45cb399b1fab9bae4fd2c:0",
+        "gapIdentityCore": "77414e4b4b2834b3ee56e791d28b41685b9cb55470d45cb399b1fab9bae4fd2c",
         "lineage": [
           {
             "actionStatus": "UNRESOLVED",
@@ -101,13 +55,13 @@
               }
             ],
             "query": "村镇就医公交",
-            "resultArtifact": "targeted-requery-subphase/action-bf55a10f6f414711963feb5cc236944df9cf1bb38ff4dd963d809e8471edb2ed/retrieval-pool.json",
-            "targetedActionId": "bf55a10f6f414711963feb5cc236944df9cf1bb38ff4dd963d809e8471edb2ed"
+            "resultArtifact": "targeted-requery-subphase/action-62ebc44c74d65bda2faebcfbcdbd8016d49635cbd151b8a3e974959b1b75a6c6/retrieval-pool.json",
+            "targetedActionId": "62ebc44c74d65bda2faebcfbcdbd8016d49635cbd151b8a3e974959b1b75a6c6"
           }
         ],
         "lineageComplete": true,
         "missingActionIds": [],
-        "occurrenceId": "6bc1cc4e-9aa5-4570-9d7b-db0822c8b4c9",
+        "occurrenceId": "26dcbc9d-0c58-48d7-803d-d1688b787692",
         "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
         "resolutionBasis": "DUPLICATE_ONLY",
         "resolutionEvidence": [],
@@ -115,16 +69,62 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "3d781763136836388f5b3193c8cbe727cd2779831f1c086d72920f13d1e4c418:1",
-        "gapIdentityCore": "3d781763136836388f5b3193c8cbe727cd2779831f1c086d72920f13d1e4c418",
+        "gapId": "77414e4b4b2834b3ee56e791d28b41685b9cb55470d45cb399b1fab9bae4fd2c:1",
+        "gapIdentityCore": "77414e4b4b2834b3ee56e791d28b41685b9cb55470d45cb399b1fab9bae4fd2c",
         "lineage": [],
         "lineageComplete": false,
         "missingActionIds": [],
-        "occurrenceId": "6bc1cc4e-9aa5-4570-9d7b-db0822c8b4c9",
+        "occurrenceId": "26dcbc9d-0c58-48d7-803d-d1688b787692",
         "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
         "resolutionBasis": "NEVER_AUTHORIZED",
         "resolutionEvidence": [],
         "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "794118e34fd83ebb570ede9f29fffc58fc3177b146ff797cc1368496f5a28735:0",
+        "gapIdentityCore": "794118e34fd83ebb570ede9f29fffc58fc3177b146ff797cc1368496f5a28735",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "增加公交班次 适用边界",
+            "resultArtifact": "targeted-requery-subphase/action-7745f3e133d162ea53276e73ea8ed61141a6d4ab6bff6a59073961324a9d8c63/retrieval-pool.json",
+            "targetedActionId": "7745f3e133d162ea53276e73ea8ed61141a6d4ab6bff6a59073961324a9d8c63"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "26dcbc9d-0c58-48d7-803d-d1688b787692",
+        "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+        "resolutionBasis": "UNKNOWN_SIDE_NOT_DECLARED",
+        "resolutionEvidence": [
+          "4404"
+        ],
+        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "794118e34fd83ebb570ede9f29fffc58fc3177b146ff797cc1368496f5a28735:1",
+        "gapIdentityCore": "794118e34fd83ebb570ede9f29fffc58fc3177b146ff797cc1368496f5a28735",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "26dcbc9d-0c58-48d7-803d-d1688b787692",
+        "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
         "status": "UNRESOLVED"
       }
     ]

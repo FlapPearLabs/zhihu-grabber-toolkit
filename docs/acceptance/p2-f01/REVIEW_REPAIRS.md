@@ -44,3 +44,14 @@ Completed但有4条有效finding：discussion_r4214440774/775/779/784。stage环
 ## 7f84919885c387427cbaba057f519085ebeb55c8 CI真实失败
 
 CI37749477059三个matrix jobs SUCCESS，research-classification失败，focused17为12pass/5fail；该job此前未安装既有parse5/entities，stage依赖检查正确拒绝缺依赖，不能按ENV_BLOCKED算PASS。修复仅在此既有job增加与matrix相同的现有lock npm ci步骤，无新依赖、live/paid研究或产品源码修改。最终需新head CI真正通过；34ff398b源码campaign不因CI安装配置变更而追溯换身份。
+
+
+## fab0b008b2aa281edd2d23df3d65fcaabc12b1b6 新发现
+
+自动review Completed仍有4条意见（discussion_r4216781535/1543/1549/1555），独立evaluation_reviewer_ci_final针对fab复核。有效P2 correctness blockers=2：未完成结果先返回PRODUCT_RUN_INCOMPLETE，跳过完整runtime identity；两个repeat之间依赖字节改变但每pair内相同、指标和成本不变时错误报稳定。独立真实AUTHORITY结果副本改dependency hash复现第一项；另exact-fab clone在repeat1后给same-version entities加入无语义注释，完整20-run仍exit0/PASS复现第二项。旧fab不得集成。
+
+修复仅evaluator/run及focused反例：compare先核完整identity，confound不报告可信增量；重复运行同时核各arm冻结identity，漂移以EVALUATION_RUNTIME_IDENTITY_DRIFT拒绝。RED两项实际失败，GREEN19/19；冻结case/四primary语义、product owner identity/authority不变。新f75b0b123实跑20次并归档，旧证据不冒充修后PASS。
+
+discussion_r4216781535不适用：意见引用0405db4 squash snapshot，而真实远端候选fab的parent=7f84919、7f的parent=34ff398；merge-base --is-ancestor 34ff fab返回0，实际fresh clone包含全部Git对象。未执行squash或历史重写，不改真实历史迎合错误引用。
+
+discussion_r4216781555记录为本轮非blocker边界：历史readiness audit建议live-gated suite；用户本轮§3闭合MVP、§9两层优先、§17 CI和Issue107 MVP约束以5案/4度量/确定性subset为当前交付范围。Tier2没有live executor且未运行，明确NOT_RUN/UNKNOWN；不得宣称凭据齐全就能用本runner跑现实质量，也不得把合成假设qid提交live provider。现实价值不足保留在T15，后续须冻结真实来源并复用canonical runtime取得证据。独立review适用性判定不替代实际Tier2证据。

@@ -1,47 +1,47 @@
 {
   "diagnosedGaps": [
     {
-      "declaredGapType": "CONTRADICTION_GAP",
-      "diagnosisRound": 0,
-      "gapId": "4a98c424f5ba6a3c9b12f518c854af70a95c37437c4838ce1a4326c2fef2e92a:0",
-      "gapIdentityCore": "4a98c424f5ba6a3c9b12f518c854af70a95c37437c4838ce1a4326c2fef2e92a",
-      "gapType": "CONTRADICTION_GAP",
-      "occurrenceId": "d2d4cfec-2f4b-4251-9e65-ebd47405bc15",
-      "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
-      "subjectKey": "opposing:增加公交班次 适用边界"
-    },
-    {
-      "declaredGapType": "CONTRADICTION_GAP",
-      "diagnosisRound": 1,
-      "gapId": "4a98c424f5ba6a3c9b12f518c854af70a95c37437c4838ce1a4326c2fef2e92a:1",
-      "gapIdentityCore": "4a98c424f5ba6a3c9b12f518c854af70a95c37437c4838ce1a4326c2fef2e92a",
-      "gapType": "CONTRADICTION_GAP",
-      "occurrenceId": "d2d4cfec-2f4b-4251-9e65-ebd47405bc15",
-      "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
-      "subjectKey": "opposing:增加公交班次 适用边界"
-    },
-    {
       "declaredGapType": "ASPECT_GAP",
       "diagnosisRound": 0,
-      "gapId": "e884f5927fd3ffbd868f1c2461bbe70fc65958e092eb4790d0eba3a4def669aa:0",
-      "gapIdentityCore": "e884f5927fd3ffbd868f1c2461bbe70fc65958e092eb4790d0eba3a4def669aa",
+      "gapId": "0974d437b76dfe6968e02bdd447209ef9958034fca3df26e56efbe9c0727d201:0",
+      "gapIdentityCore": "0974d437b76dfe6968e02bdd447209ef9958034fca3df26e56efbe9c0727d201",
       "gapType": "ASPECT_GAP",
-      "occurrenceId": "d2d4cfec-2f4b-4251-9e65-ebd47405bc15",
+      "occurrenceId": "c66e9380-901e-4db3-9c88-2b5de3aa2fac",
       "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
       "subjectKey": "aspect:村镇就医公交 服务限制"
     },
     {
       "declaredGapType": "ASPECT_GAP",
       "diagnosisRound": 1,
-      "gapId": "e884f5927fd3ffbd868f1c2461bbe70fc65958e092eb4790d0eba3a4def669aa:1",
-      "gapIdentityCore": "e884f5927fd3ffbd868f1c2461bbe70fc65958e092eb4790d0eba3a4def669aa",
+      "gapId": "0974d437b76dfe6968e02bdd447209ef9958034fca3df26e56efbe9c0727d201:1",
+      "gapIdentityCore": "0974d437b76dfe6968e02bdd447209ef9958034fca3df26e56efbe9c0727d201",
       "gapType": "ASPECT_GAP",
-      "occurrenceId": "d2d4cfec-2f4b-4251-9e65-ebd47405bc15",
+      "occurrenceId": "c66e9380-901e-4db3-9c88-2b5de3aa2fac",
       "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
       "subjectKey": "aspect:村镇就医公交 服务限制"
+    },
+    {
+      "declaredGapType": "CONTRADICTION_GAP",
+      "diagnosisRound": 0,
+      "gapId": "1813f64fd587d1216865adf6c1ee07f3b33c8bdbd009a6d48858054c26e25d64:0",
+      "gapIdentityCore": "1813f64fd587d1216865adf6c1ee07f3b33c8bdbd009a6d48858054c26e25d64",
+      "gapType": "CONTRADICTION_GAP",
+      "occurrenceId": "c66e9380-901e-4db3-9c88-2b5de3aa2fac",
+      "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+      "subjectKey": "opposing:增加公交班次 适用边界"
+    },
+    {
+      "declaredGapType": "CONTRADICTION_GAP",
+      "diagnosisRound": 1,
+      "gapId": "1813f64fd587d1216865adf6c1ee07f3b33c8bdbd009a6d48858054c26e25d64:1",
+      "gapIdentityCore": "1813f64fd587d1216865adf6c1ee07f3b33c8bdbd009a6d48858054c26e25d64",
+      "gapType": "CONTRADICTION_GAP",
+      "occurrenceId": "c66e9380-901e-4db3-9c88-2b5de3aa2fac",
+      "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+      "subjectKey": "opposing:增加公交班次 适用边界"
     }
   ],
-  "occurrenceId": "d2d4cfec-2f4b-4251-9e65-ebd47405bc15",
+  "occurrenceId": "c66e9380-901e-4db3-9c88-2b5de3aa2fac",
   "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
   "schema": "p2-ari-targeted-requery-ledger/v1"
 }

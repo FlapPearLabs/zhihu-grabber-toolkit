@@ -39,7 +39,7 @@
     },
     {
       "channel": {
-        "query": "学生可选课后练习",
+        "query": "课后可选练习 反向论证",
         "providerId": "zhihu_search",
         "capability": "search"
       },
@@ -56,7 +56,7 @@
     },
     {
       "channel": {
-        "query": "学生可选课后练习",
+        "query": "课后可选练习 反向论证",
         "providerId": "zhihu-open-platform",
         "capability": "search"
       },
@@ -73,7 +73,7 @@
     },
     {
       "channel": {
-        "query": "课后可选练习 反向论证",
+        "query": "学生可选课后练习",
         "providerId": "zhihu_search",
         "capability": "search"
       },
@@ -90,7 +90,7 @@
     },
     {
       "channel": {
-        "query": "课后可选练习 反向论证",
+        "query": "学生可选课后练习",
         "providerId": "zhihu-open-platform",
         "capability": "search"
       },
