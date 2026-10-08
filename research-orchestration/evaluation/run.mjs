@@ -8,7 +8,7 @@ import { configFingerprint, sha256, sha256File } from '../lib/state.mjs';
 import { canonicalJson } from '../lib/cross-group-aggregation.mjs';
 import { json, writeJson } from '../scripts/p2a-t14/fixtures.mjs';
 import { validateProductInput } from './input.mjs';
-import { observeProduct, measureTargets, compareResults, EVALUATOR_VERSION } from './evaluator.mjs';
+import { observeProduct, measureTargets, compareResults, inventory, EVALUATOR_VERSION } from './evaluator.mjs';
 import { EXPERIMENT_CONFIG, PROPOSAL_POLICY_VERSION } from './product-worker.mjs';
 
 export function executeProductWorker({ repo, file, workDir, arm, inputHash }) {
@@ -43,6 +43,7 @@ function preflight(repo) {
 }
 
 function summarize(caseId, comparison) {
+  if (comparison.status !== 'VALID') return `| ${caseId} | UNKNOWN | UNKNOWN | UNKNOWN | see run costs | INVALID: ${comparison.reason} |`;
   const values = Object.values(comparison.metrics);
   return `| ${caseId} | ${values.map(v => `${v.baseline_hits} → ${v.candidate_hits} / ${v.total}`).join(' | ')} | ${comparison.incremental_cost.retrieval_calls >= 0 ? '+' : ''}${comparison.incremental_cost.retrieval_calls} | ${comparison.quality_change} |`;
 }
@@ -76,8 +77,17 @@ export function runBenchmark({ repo, out, productRoot, repoSha, repeats = 2 }) {
       for (const arm of order) {
         const workDir = path.join(productRoot, descriptor.case_id, `${repetition}-${arm}`);
         const result = executeProductWorker({ repo, file, workDir, arm, inputHash });
-        if (!result.ok) throw new Error(`EVALUATION_PRODUCT_FAILED:${descriptor.case_id}:${arm}:${result.code}`);
-        observations[arm] = observeProduct(workDir, configFingerprint(EXPERIMENT_CONFIG));
+        if (!result.ok && !fs.existsSync(path.join(workDir, 'evaluation-execution-observation.json'))) {
+          throw new Error(`EVALUATION_WORKER_FAILED:${descriptor.case_id}:${arm}:${result.code}`);
+        }
+        if (result.ok) observations[arm] = observeProduct(workDir, configFingerprint(EXPERIMENT_CONFIG));
+        else {
+          const state = json(path.join(workDir, 'orchestration-state.json'));
+          observations[arm] = { valid: false, product_failure: result.code, run_id: state.runId,
+            occurrence_id: state.occurrenceId, plan_hash: sha256(canonicalJson(publicInput.plan)),
+            artifact_hashes: inventory(workDir), product_checkpoint_hashes: state.hashes,
+            sources: [], claims: [], selected: [], analyzed: [], stop_reason: result.code };
+        }
         executions[arm] = json(path.join(workDir, 'evaluation-execution-observation.json'));
         const copy = path.join(pairDir, `${arm}-product`);
         fs.cpSync(workDir, copy, { recursive: true });
@@ -100,7 +110,8 @@ export function runBenchmark({ repo, out, productRoot, repoSha, repeats = 2 }) {
         const selectedSources = observation.sources.filter(source => observation.selected.includes(source.source_id));
         const returnedIds = execution.calls.filter(call => call.kind === 'retrieval').flatMap(call => call.question_ids);
         const gaps = observation.targeted_gaps?.gaps ?? [];
-        results[arm] = { schema_version: 1, status: 'VALID', arm, repetition,
+        results[arm] = { schema_version: 1, status: observation.valid ? 'VALID' : 'INVALID',
+          product_failure: observation.product_failure ?? null, arm, repetition,
           identity: { repo_sha: repoSha, case_id: descriptor.case_id, benchmark_version: benchmark.benchmark_version,
             benchmark_hashes: benchmarkHashes, evaluator_version: EVALUATOR_VERSION,
             product_input_hash: inputHash, canonical_product_input_hash: canonicalInputHash,
@@ -115,7 +126,11 @@ export function runBenchmark({ repo, out, productRoot, repoSha, repeats = 2 }) {
           timestamp: new Date().toISOString(),
           product_identity: { run_id: observation.run_id, occurrence_id: observation.occurrence_id, plan_hash: observation.plan_hash },
           artifact_hashes: observation.artifact_hashes, product_checkpoint_hashes: observation.product_checkpoint_hashes,
-          metrics: measureTargets(observation, evaluationCase.targets),
+          metrics: observation.valid ? measureTargets(observation, evaluationCase.targets)
+            : Object.fromEntries(['important_aspects', 'counterpositions', 'key_evidence'].map((family, index) =>
+              [['important_aspect_discovery', 'counterposition_discovery', 'key_evidence_discovery'][index],
+                { hits: 'UNKNOWN', total: evaluationCase.targets[family].length, ratio: 'UNKNOWN',
+                  targets: evaluationCase.targets[family].map(target => ({ target_id: target.target_id, hit: 'UNKNOWN', proof: null })) }])),
           cost: { ...execution.cost, selected_corpus_sources: selectedSources.length,
             downstream_material_chars: selectedSources.reduce((sum, source) => sum + source.text.length, 0) },
           supporting: { stop_reason: observation.stop_reason,
@@ -141,7 +156,7 @@ export function runBenchmark({ repo, out, productRoot, repoSha, repeats = 2 }) {
         result_artifact_hashes: Object.fromEntries(['eval-case.json', 'baseline-result.json', 'candidate-result.json', 'comparison.json']
           .map(name => [relative(repo, path.join(pairDir, name)), sha256File(path.join(pairDir, name))])),
       });
-      fs.writeFileSync(path.join(pairDir, 'human-readable-summary.md'), `# ${descriptor.case_id}\n\n合成冻结语料；actual model = NONE。${comparison.quality_change}。\n\n| case | aspect | counterposition | key evidence | extra retrieval calls | result |\n|---|---|---|---|---|---|\n${summarize(descriptor.case_id, comparison)}\n\nCURATED_TARGETS != OPEN_WORLD_COMPLETENESS。成本和全部原始产物见同目录 JSON；这份报告不裁定 #108 产品价值。\n`);
+      fs.writeFileSync(path.join(pairDir, 'human-readable-summary.md'), `# ${descriptor.case_id}\n\n合成冻结语料；actual model = NONE。${comparison.quality_change ?? comparison.status}。\n\n| case | aspect | counterposition | key evidence | extra retrieval calls | result |\n|---|---|---|---|---|---|\n${summarize(descriptor.case_id, comparison)}\n\nCURATED_TARGETS != OPEN_WORLD_COMPLETENESS。成本和全部原始产物见同目录 JSON；这份报告不裁定 #108 产品价值。\n`);
       pairs.push(results);
       campaign.pairs.push({ case_id: descriptor.case_id, repetition, comparison: relative(repo, path.join(pairDir, 'comparison.json')) });
       if (repetition === 1 && descriptor === benchmark.cases[0]) {
@@ -168,13 +183,14 @@ export function runBenchmark({ repo, out, productRoot, repoSha, repeats = 2 }) {
     }
     const stable = pairs.every(pair => ['baseline', 'candidate'].every(arm =>
       canonicalJson(pair[arm].metrics) === canonicalJson(pairs[0][arm].metrics)
-      && canonicalJson(stableCost(pair[arm].cost)) === canonicalJson(stableCost(pairs[0][arm].cost))));
+        && pair[arm].status === pairs[0][arm].status && pair[arm].product_failure === pairs[0][arm].product_failure
+        && canonicalJson(stableCost(pair[arm].cost)) === canonicalJson(stableCost(pairs[0][arm].cost))));
     if (!stable) throw new Error('EVALUATION_UNEXPLAINED_METRIC_DRIFT');
   }
   campaign.stability = 'PASS_METRICS_AND_NON_LATENCY_COST';
   campaign.known_weak_baseline = campaign.pairs.some(pair => {
     const comparison = json(path.join(repo, pair.comparison));
-    return Object.values(comparison.metrics).some(metric => metric.baseline_hits < metric.total);
+    return comparison.status === 'VALID' && Object.values(comparison.metrics).some(metric => metric.baseline_hits < metric.total);
   });
   if (!campaign.known_weak_baseline) throw new Error('EVALUATION_WEAK_BASELINE_NOT_DETECTED');
   campaign.baseline_runs = campaign.candidate_runs = benchmark.cases.length * repeats;

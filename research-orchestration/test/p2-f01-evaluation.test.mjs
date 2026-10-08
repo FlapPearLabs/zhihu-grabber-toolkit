@@ -45,12 +45,19 @@ test('discovery requires verified selected evidence and a supported final claim,
 });
 
 test('a deliberately degraded candidate is a regression and an unequal model is invalid', () => {
-  const baseline = { identity: { pair: 'same' }, metrics: measureTargets(observation(), targets), cost: { retrieval_calls: 2 } };
+  const baseline = { status: 'VALID', identity: { pair: 'same' }, metrics: measureTargets(observation(), targets), cost: { retrieval_calls: 2 } };
   const degraded = structuredClone(baseline);
   degraded.metrics = measureTargets({ ...observation(), sources: [], claims: [] }, targets);
   assert.equal(compareResults(baseline, degraded).quality_change, 'REGRESSION');
   degraded.identity.pair = 'stronger-model';
   assert.equal(compareResults(baseline, degraded).status, 'INVALID');
+});
+
+test('a product clarification or failed run is INVALID, never zero gain or a quality pass', () => {
+  const valid = { status: 'VALID', identity: { pair: 'same' }, metrics: measureTargets(observation(), targets), cost: {} };
+  const incomplete = { ...valid, status: 'INVALID', product_failure: 'clarification_required' };
+  assert.equal(compareResults(valid, incomplete).status, 'INVALID');
+  assert.equal(compareResults(incomplete, incomplete).status, 'INVALID');
 });
 
 test('empty target support and a different document with the same identity cannot manufacture hits', () => {

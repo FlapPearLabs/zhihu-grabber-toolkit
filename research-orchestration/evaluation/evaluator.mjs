@@ -101,6 +101,10 @@ export function measureTargets(observation, targets) {
 
 /** No weights, aggregate quality score, or value verdict. */
 export function compareResults(baseline, candidate) {
+  if (baseline.status !== 'VALID' || candidate.status !== 'VALID') {
+    return { status: 'INVALID', reason: 'PRODUCT_RUN_INCOMPLETE',
+      product_failures: { baseline: baseline.product_failure ?? null, candidate: candidate.product_failure ?? null } };
+  }
   if (canonicalJson(baseline.identity) !== canonicalJson(candidate.identity)) {
     return { status: 'INVALID', reason: 'PAIR_CONFOUND_IDENTITY_MISMATCH' };
   }

@@ -87,6 +87,8 @@ worker 的字段白名单和父进程传入的 expected input hash 均 fail clos
 改变匹配语义或 benchmark version 必须独立 review；不得为 candidate 获胜而修改冻结 case。
 四个指标独立报告，无权重、总质量分或自动价值 PASS。
 无 target 的 family 输出 UNKNOWN。非法/空支持集、identity mismatch、source hash/closure 失败均拒绝。
+产品停在澄清或执行失败时，保留其原始产物、原因和实际调用成本；该 result/pair 为 INVALID，
+质量 hits/ratio 为 UNKNOWN，不能写零增益或 PASS。进程崩溃、缺失执行记录等 harness 故障仍使命令失败。
 
 ## 公平性、复用和边界
 
