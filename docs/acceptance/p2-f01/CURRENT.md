@@ -15,6 +15,8 @@ PRODUCTION_MUTATION = NONE
 
 focused9/9通过（廉价actual composition pair、实际incomplete-worker、curator错误和hidden文件变化控制），静态node --check/git diff --check通过。既有广回归结果见历史收据，当前head CI执行完整套件；最终fresh clone复跑全部20次后再核验metrics/status/failure/supporting/非latency cost与raw hashes。
 
+跨平台字节门禁：在 core.autocrlf=true 的实际独立clone中，原checkout换行转换导致blob不匹配。仅在benchmark目录加入JSON -text属性，保证平台checkout保留冻结字节；不修改任何case内容或指标定义。修复后用另一份相同设置clone重新核验。
+
 actual model=NONE，external provider calls=0，token/money=UNKNOWN。Tier2 credential preflight NOT_RUN、run_count=0、variance=UNKNOWN。两案target增益、两案NO_MEASURABLE_GAIN、一案INVALID；default CLI targeted disabled。无现实权威、通用quality/exhaustive研究或paid成本可接受声明。本票不替T15裁定#108价值。
 
 只改evaluation目录、新增focused测试及既有CI分类登记；没有新runtime依赖、生产实现、治理、Spec、project-memory修改。实际使用scanner/doc drafter、/implement、/tdd、CodeGraph、code-review方法和GitHub workflow。review按实际finding迭代，每次修复后fresh context审最新SHA；没有默认三角色quorum。
