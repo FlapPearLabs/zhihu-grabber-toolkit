@@ -34,3 +34,8 @@ F4：在隔离exact0a clone，首个product目录出现后替换CONTROL hidden t
 本次修复仅evaluation：staged product tree不含gold/.git/evaluator/acceptance，无回原repo链接；真实production defaultRunner从stage运行。descriptor安全唯一ID、相对文件与公开payloadID一致、manifest version/scope/闭合schema；真实pair owner run/plan身份相等且occurrence不同；normalized route碰撞拒绝并用Map；canonical原text保留且md展示复用既有HTML/Markdown转义；degraded从实际已hit任意family选取，全部无hit拒绝；报告case数量/credential reason从实际campaign渲染。未改case、route、target、metric或产品实现/authority。
 
 TDD：normalized collision原代码为Missing expected exception，修复后拒绝。focused15/15包括manifest错误/路径/duplicate、observed owner drift、空key family真实aspect degradation、copied root及其Node child隐藏路径ENOENT/no symlink、恶意HTML/heading/fence canonical保留且展示惰性、constructor/__proto__无route为真正空结果。需要在新SHA重跑全部campaign、fresh clone、CI与fresh independent review；旧PASS不转移。
+
+
+## 476db0d602c664d20af5609f78b8b9415cbade50 自动review终态
+
+Completed但有4条有效finding：discussion_r4214440774/775/779/784。stage环境PWD指向原checkout；HTML投影缺parse5/entities；stage复制currentworktree而非boundcommit；CLI缺out误取flag。不能称Completed为PASS。修复：platform最小env、stage复制已安装lock版本依赖并记录实际文件fingerprint、Git ls-tree/cat-file源码、option存在与值检查。HTML测试新增真实product.ok断言后原476失败（false != true），补依赖后通过。新增实际子进程无pointer/env injection，实际小Gitrepo boundsource与后来dirtytext隔离；focused17/17。需新SHA全20run/fresh/CI/fresh independent review。

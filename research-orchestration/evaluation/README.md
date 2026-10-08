@@ -134,3 +134,6 @@ T15 的价值结论另记于 #127；#107 本票只交付可审计的比较证据
 Hidden 文件隔离：每个 arm 执行前，evaluation runner 只拷贝所需产品代码、既有共享 handoff schema、两份 test doubles helper 与一个公开 input 到全新执行目录。该目录没有 `.git`、benchmark/gold、evaluator 或 acceptance 产物；没有回指原仓库的 symlink。worker、公开 input 与原 defaultRunner 的真实 verifier/handoff 子进程均从此目录执行；结束后 runner 将产品产物完整拷出供只读观察，清理自己的临时目录。普通 repository-relative hidden 读取的父/子 Node 负控均为 ENOENT。这是冻结 benchmark 的文件存放隔离，并非针对恶意可执行代码的 host/OS 全文件系统 sandbox；未改生产权限模型。
 
 Manifest 使用闭合 schema、非空 benchmark version、冻结 scope、唯一安全 case ID 和绑定到 case 目录的公开/评测相对路径；全部公开 case ID 在 workers 前核验。比较要求实际 owner run_id/plan_hash 相等、occurrence_id 不同。归一化 route key 碰撞拒绝，查找使用 Map 避免继承属性。展示用既有 HTML/Markdown 转义，canonical source text 不变。degraded 控制从有效 candidate 的任意 metric family 选实际已命中来源；全 campaign 没有已命中来源时拒绝，不能伪造 regression PASS。报告数量和 credential reason 来自实际 campaign。
+
+
+Stage源码从指定repoSha的Git blob读取，批量cat-file写入，拒绝symlink对象；不会拷贝后来被改动的worktree代码。HTML safe projection需要的parse5/entities从既有已安装依赖复制进stage，版本必须匹配同commit的既有lock，依赖文件指纹复用inventory/sha256并绑定每个arm的runtime identity（不同则比较INVALID）。worker环境只保留平台必需SystemRoot/WINDIR、Node目录PATH和固定locale/timezone与stage临时目录，不传播PWD/OLDPWD/INIT_CWD、HOME、Node注入或credential/checkout变量。CLI必需option缺值或后接flag时先拒绝，不启动campaign。

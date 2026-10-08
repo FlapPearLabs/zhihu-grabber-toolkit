@@ -9,12 +9,12 @@ import { configFingerprint, sha256, sha256File } from '../lib/state.mjs';
 import { canonicalJson } from '../lib/cross-group-aggregation.mjs';
 import { json, writeJson } from '../scripts/p2a-t14/fixtures.mjs';
 import { validateProductInput } from './input.mjs';
-import { observeProduct, measureTargets, compareResults, validateEvaluationCase, EVALUATOR_VERSION } from './evaluator.mjs';
+import { observeProduct, measureTargets, compareResults, validateEvaluationCase, inventory, EVALUATOR_VERSION } from './evaluator.mjs';
 import { EXPERIMENT_CONFIG, PROPOSAL_POLICY_VERSION } from './product-worker.mjs';
 
 // A copied execution root contains production code/dependencies and one public input only.
 // This is a benchmark file boundary, not an OS sandbox for hostile executable code.
-export function stageProductTree(repo, file) {
+export function stageProductTree(repo, file, repoSha = 'HEAD') {
   const stage = fs.mkdtempSync(path.join(os.tmpdir(), 'p2-f01-product-'));
   try {
     const refs = [
@@ -24,37 +24,69 @@ export function stageProductTree(repo, file) {
       'research-orchestration/scripts/p2a-t14/fixtures.mjs',
       'research-orchestration/test/helpers/test-embedding-provider.mjs',
       'corpus-anthology/package.json', 'corpus-anthology/lib', 'corpus-anthology/scripts',
-      'zhihu-answer-grabber/package.json', 'zhihu-answer-grabber/src', 'zhihu-answer-grabber/scripts',
+      'zhihu-answer-grabber/package.json', 'zhihu-answer-grabber/package-lock.json', 'zhihu-answer-grabber/src', 'zhihu-answer-grabber/scripts',
     ];
     const rejectLinks = source => {
       const stat = fs.lstatSync(source);
       if (stat.isSymbolicLink()) throw new Error('EVALUATION_STAGE_SYMLINK_REJECTED');
       if (stat.isDirectory()) for (const entry of fs.readdirSync(source)) rejectLinks(path.join(source, entry));
     };
-    for (const ref of refs) {
-      const source = path.join(repo, ref); rejectLinks(source);
-      const dest = path.join(stage, ref); fs.mkdirSync(path.dirname(dest), { recursive: true });
-      fs.cpSync(source, dest, { recursive: true });
+    const entries = execFileSync('git', ['ls-tree', '-rz', '--full-tree', repoSha, '--', ...refs], { cwd: repo })
+      .toString('utf8').split('\0').filter(Boolean).map(entry => {
+        const [meta, ref] = entry.split('\t'); const [mode, type, oid] = meta.split(' ');
+        if (type !== 'blob' || !['100644', '100755'].includes(mode)) throw new Error('EVALUATION_STAGE_SYMLINK_REJECTED');
+        return { mode, oid, ref };
+      });
+    if (!entries.length) throw new Error('EVALUATION_STAGE_SOURCE_MISSING');
+    const blobs = execFileSync('git', ['cat-file', '--batch'], { cwd: repo,
+      input: entries.map(entry => entry.oid).join('\n') + '\n', maxBuffer: 32 * 1024 * 1024 });
+    let offset = 0;
+    for (const entry of entries) {
+      const end = blobs.indexOf(10, offset);
+      const [oid, type, size] = blobs.subarray(offset, end).toString('utf8').split(' ');
+      if (oid !== entry.oid || type !== 'blob' || !/^\d+$/.test(size)) throw new Error('EVALUATION_STAGE_BLOB_INVALID');
+      const dest = path.join(stage, entry.ref); fs.mkdirSync(path.dirname(dest), { recursive: true });
+      const start = end + 1; const length = Number(size);
+      fs.writeFileSync(dest, blobs.subarray(start, start + length), { mode: entry.mode === '100755' ? 0o755 : 0o644 });
+      offset = start + length + 1;
+    }
+    const lock = json(path.join(stage, 'zhihu-answer-grabber/package-lock.json'));
+    for (const name of ['parse5', 'entities']) {
+      const source = path.join(repo, 'zhihu-answer-grabber/node_modules', name); rejectLinks(source);
+      if (json(path.join(source, 'package.json')).version !== lock.packages[`node_modules/${name}`].version) throw new Error('EVALUATION_RUNTIME_DEPENDENCY_VERSION_MISMATCH');
+      fs.cpSync(source, path.join(stage, 'zhihu-answer-grabber/node_modules', name), { recursive: true });
     }
     fs.copyFileSync(file, path.join(stage, 'product-input.json'));
     return stage;
   } catch (error) { fs.rmSync(stage, { recursive: true, force: true }); throw error; }
 }
 
-export function executeProductWorker({ repo, file, workDir, arm, inputHash }) {
+export function productWorkerEnvironment(stage) {
+  const temp = path.join(stage, 'tmp'); fs.mkdirSync(temp);
+  return { ...Object.fromEntries(['SystemRoot', 'WINDIR'].filter(key => process.env[key]).map(key => [key, process.env[key]])),
+    PATH: path.dirname(process.execPath), LANG: 'C.UTF-8', TZ: 'UTC', TMPDIR: temp, TMP: temp, TEMP: temp };
+}
+
+export function optionValue(args, key) {
+  const index = args.indexOf(`--${key}`);
+  return index >= 0 && args[index + 1] && !args[index + 1].startsWith('--') ? args[index + 1] : null;
+}
+
+export function executeProductWorker({ repo, file, workDir, arm, inputHash, repoSha = 'HEAD' }) {
   if (fs.existsSync(workDir)) throw new Error('EVALUATION_COLD_DIRECTORY_REQUIRED');
-  const stage = stageProductTree(repo, file);
+  const stage = stageProductTree(repo, file, repoSha);
   try {
     const output = path.join(stage, 'product-output');
+    const runtimeDependencyHash = sha256(canonicalJson(inventory(path.join(stage, 'zhihu-answer-grabber/node_modules'))));
     const child = spawnSync(process.execPath, ['research-orchestration/evaluation/product-worker.mjs',
       '--input', 'product-input.json', '--expected-input-hash', inputHash, '--work-dir', output, '--arm', arm],
-    { cwd: stage, env: { ...process.env, NODE_PATH: '' }, encoding: 'utf8', timeout: 90_000, maxBuffer: 64 * 1024 });
+    { cwd: stage, env: productWorkerEnvironment(stage), encoding: 'utf8', timeout: 90_000, maxBuffer: 64 * 1024 });
     if (fs.existsSync(output)) fs.cpSync(output, workDir, { recursive: true });
     let result;
     try { result = JSON.parse(child.stdout); }
-    catch { return { ok: false, code: 'EVALUATION_WORKER_PROCESS_FAILED' }; }
-    return child.status === 0 && result.ok === true ? result
-      : { ok: false, code: result.code ?? 'EVALUATION_WORKER_FAILED' };
+    catch { return { ok: false, code: 'EVALUATION_WORKER_PROCESS_FAILED', runtime_dependency_hash: runtimeDependencyHash }; }
+    return { ...(child.status === 0 && result.ok === true ? result
+      : { ok: false, code: result.code ?? 'EVALUATION_WORKER_FAILED' }), runtime_dependency_hash: runtimeDependencyHash };
   } finally { fs.rmSync(stage, { recursive: true, force: true }); }
 }
 
@@ -170,12 +202,12 @@ export function runBenchmark({ repo, out, productRoot, repoSha, repeats = 2 }) {
       // Every arm is cold, separate, with identical provider/corpus/model doubles.
       for (const arm of order) {
         const workDir = path.join(productRoot, descriptor.case_id, `${repetition}-${arm}`);
-        const result = executeProductWorker({ repo, file, workDir, arm, inputHash });
+        const result = executeProductWorker({ repo, file, workDir, arm, inputHash, repoSha });
         if (!result.ok && !fs.existsSync(path.join(workDir, 'evaluation-execution-observation.json'))) {
           throw new Error(`EVALUATION_WORKER_FAILED:${descriptor.case_id}:${arm}:${result.code}`);
         }
         observations[arm] = observeProduct(workDir, configFingerprint(EXPERIMENT_CONFIG), result);
-        executions[arm] = json(path.join(workDir, 'evaluation-execution-observation.json'));
+        executions[arm] = { ...json(path.join(workDir, 'evaluation-execution-observation.json')), runtime_dependency_hash: result.runtime_dependency_hash };
         const copy = path.join(pairDir, `${arm}-product`);
         fs.cpSync(workDir, copy, { recursive: true });
         observations[arm].artifact_hashes = observations[arm].artifact_hashes.map(item =>
@@ -203,7 +235,7 @@ export function runBenchmark({ repo, out, productRoot, repoSha, repeats = 2 }) {
             benchmark_hashes: benchmarkHashes, evaluator_case_git_blob: evaluatorBlob, evaluator_version: EVALUATOR_VERSION,
             product_input_hash: inputHash, canonical_product_input_hash: canonicalInputHash,
             time_scope: publicInput.time_scope, shared_product_config: EXPERIMENT_CONFIG,
-            runtime_identity: { implementation: 'DETERMINISTIC_DOUBLE', node: process.version,
+            runtime_identity: { implementation: 'DETERMINISTIC_DOUBLE', node: process.version, runtime_dependency_hash: execution.runtime_dependency_hash,
               contract_runtime_pin: 'deepseek-api-tool-less', embedding: 'existing mockVector768(7)' },
             model_identity: { actual_model: 'NONE', contract_model_pin: 'deepseek-v4-pro', semantic_policy: 'verbatim-fenced-content-v1' },
             provider_identity: ['zhihu_search:frozen-double', 'zhihu-open-platform:frozen-double', 'frozen-evaluation-capture'] },
@@ -254,7 +286,7 @@ export function runBenchmark({ repo, out, productRoot, repoSha, repeats = 2 }) {
         const contaminatedFile = path.join(controls, 'contaminated-input.json');
         writeJson(contaminatedFile, { ...publicInput, hidden_targets: evaluationCase.hidden_targets });
         const invalidWork = path.join(productRoot, 'contamination-control');
-        const invalid = executeProductWorker({ repo, file: contaminatedFile, workDir: invalidWork, arm: 'candidate', inputHash: sha256File(contaminatedFile) });
+        const invalid = executeProductWorker({ repo, file: contaminatedFile, workDir: invalidWork, arm: 'candidate', inputHash: sha256File(contaminatedFile), repoSha });
         if (invalid.ok || !invalid.code.includes('BENCHMARK_CONTAMINATION') || fs.existsSync(invalidWork)) throw new Error('EVALUATION_LEAKAGE_CONTROL_FAILED');
         const degraded = { ...results.candidate, control_kind: 'DELIBERATELY_DEGRADED_EVALUATOR_COPY_NOT_PRODUCT_RUN',
           metrics: measureTargets(degradation.observation, evaluationCase.targets) };
@@ -288,16 +320,16 @@ export function runBenchmark({ repo, out, productRoot, repoSha, repeats = 2 }) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const args = process.argv.slice(2); const arg = key => args[args.indexOf(`--${key}`) + 1];
+  const args = process.argv.slice(2); const arg = key => optionValue(args, key);
   const repo = fileURLToPath(new URL('../../', import.meta.url));
   const expected = arg('expected-head');
+  const outputRel = arg('out');
+  if (!outputRel || path.isAbsolute(outputRel) || outputRel.startsWith('--') || outputRel.split(/[\\/]/).includes('..')) throw new Error('EVALUATION_REPO_RELATIVE_OUTPUT_REQUIRED');
   const actual = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim();
   if (!/^[0-9a-f]{40}$/.test(expected ?? '') || actual !== expected) throw new Error('EVALUATION_EXACT_HEAD_REQUIRED');
   const sourcePaths = ['research-orchestration', 'corpus-anthology', 'zhihu-answer-grabber', 'AGENTS.md', 'RULES.md', 'docs/specs', '.github'];
   const dirty = execFileSync('git', ['status', '--porcelain', '--', ...sourcePaths], { cwd: repo, encoding: 'utf8' }).trim();
   if (dirty) throw new Error('EVALUATION_EXACT_SOURCE_DIRTY');
-  const outputRel = arg('out');
-  if (!outputRel || path.isAbsolute(outputRel) || outputRel.split(/[\\/]/).includes('..')) throw new Error('EVALUATION_REPO_RELATIVE_OUTPUT_REQUIRED');
   const campaign = runBenchmark({ repo, out: path.join(repo, outputRel),
     productRoot: path.join(repo, 'work', `p2-f01-products-${path.basename(outputRel)}`), repoSha: actual });
   console.log(JSON.stringify({ repo_sha: actual, case_count: campaign.case_count, stability: campaign.stability, controls: campaign.controls }));

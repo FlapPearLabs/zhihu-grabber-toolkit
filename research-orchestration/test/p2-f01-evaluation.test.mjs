@@ -4,10 +4,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { validateProductInput } from '../evaluation/input.mjs';
 import { measureTargets, compareResults, observeProduct, inventory, validateEvaluationCase } from '../evaluation/evaluator.mjs';
-import { executeProductWorker, stageProductTree, validateBenchmark, validateObservedPair, degradeKnownHit, bindEvaluationFile, readBoundEvaluationFile } from '../evaluation/run.mjs';
+import { executeProductWorker, stageProductTree, productWorkerEnvironment, optionValue, validateBenchmark, validateObservedPair, degradeKnownHit, bindEvaluationFile, readBoundEvaluationFile } from '../evaluation/run.mjs';
 import { configFingerprint, sha256File } from '../lib/state.mjs';
 import { EXPERIMENT_CONFIG } from '../evaluation/product-worker.mjs';
 import { loadPlan } from '../lib/plan-contract.mjs';
@@ -230,7 +230,7 @@ test('untrusted curated text stays canonical while Markdown controls and inherit
   try {
     const file = path.join(temp, 'product-input.json');fs.writeFileSync(file, JSON.stringify(input));
     const workDir = path.join(temp, 'product');
-    executeProductWorker({ repo, file, workDir, arm: 'baseline', inputHash: sha256File(file) });
+    assert.equal(executeProductWorker({ repo, file, workDir, arm: 'baseline', inputHash: sha256File(file) }).ok, true);
     const canonical = JSON.parse(fs.readFileSync(path.join(workDir, 'zhihu/100/answers.json')));
     assert.equal(canonical.answers[0].content, input.corpus[0].text);
     const md = fs.readFileSync(path.join(workDir, 'zhihu/100/answers.md'), 'utf8');
@@ -239,4 +239,42 @@ test('untrusted curated text stays canonical while Markdown controls and inherit
     const empty = trace.calls.filter(call => ['constructor', '__proto__'].includes(call.query));
     assert.ok(empty.length > 0);assert.ok(empty.every(call => call.question_ids.length === 0));
   } finally { fs.rmSync(temp, { recursive: true, force: true }); }
+});
+
+
+test('product environment omits checkout pointers and Node injection, and option values cannot be missing flags', () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'p2-f01-env-'));
+  try {
+    const env = productWorkerEnvironment(temp);
+    for (const key of ['PWD', 'OLDPWD', 'INIT_CWD', 'HOME', 'NODE_OPTIONS', 'NODE_PATH', 'CODEX_HOME']) assert.equal(Object.hasOwn(env, key), false);
+    assert.equal(env.PATH, path.dirname(process.execPath));
+    const probe = spawnSync(process.execPath, ['-e', 'console.log(JSON.stringify({pwd:process.env.PWD,oldpwd:process.env.OLDPWD,initcwd:process.env.INIT_CWD,nodeOptions:process.env.NODE_OPTIONS}))'], { cwd: temp, env, encoding: 'utf8' });
+    assert.equal(probe.status, 0);assert.deepEqual(JSON.parse(probe.stdout), {});
+    assert.equal(optionValue(['--expected-head', 'abc'], 'out'), null);
+    assert.equal(optionValue(['--out', '--expected-head', 'abc'], 'out'), null);
+    assert.equal(optionValue(['--out'], 'out'), null);
+    assert.equal(optionValue(['--out', 'work/campaign'], 'out'), 'work/campaign');
+  } finally { fs.rmSync(temp, { recursive: true, force: true }); }
+});
+
+test('stage source comes from the bound Git object despite concurrent worktree edits', () => {
+  const repo = fileURLToPath(new URL('../../', import.meta.url));
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'p2-f01-git-stage-'));
+  let stage;
+  try {
+    const ref = 'research-orchestration/evaluation/input.mjs';const source = path.join(temp, ref);
+    fs.mkdirSync(path.dirname(source), { recursive: true });fs.writeFileSync(source, 'bound source\n');
+    fs.mkdirSync(path.join(temp, 'zhihu-answer-grabber'), { recursive: true });
+    fs.copyFileSync(path.join(repo, 'zhihu-answer-grabber/package-lock.json'), path.join(temp, 'zhihu-answer-grabber/package-lock.json'));
+    execFileSync('git', ['init', '-q', temp]);execFileSync('git', ['add', ref, 'zhihu-answer-grabber/package-lock.json'], { cwd: temp });
+    execFileSync('git', ['-c', 'user.name=Evaluation fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-q', '-m', 'bound source'], { cwd: temp });
+    const sha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: temp, encoding: 'utf8' }).trim();
+    fs.writeFileSync(source, 'uncommitted source drift\n');
+    for (const name of ['parse5', 'entities']) fs.cpSync(path.join(repo, 'zhihu-answer-grabber/node_modules', name), path.join(temp, 'zhihu-answer-grabber/node_modules', name), { recursive: true });
+    const file = path.join(temp, 'public.json');fs.writeFileSync(file, JSON.stringify(publicInput()));
+    stage = stageProductTree(temp, file, sha);
+    assert.equal(fs.readFileSync(path.join(stage, ref), 'utf8'), 'bound source\n');
+    assert.equal(fs.existsSync(path.join(stage, '.git')), false);
+    assert.ok(fs.existsSync(path.join(stage, 'zhihu-answer-grabber/node_modules/parse5/package.json')));
+  } finally { if (stage) fs.rmSync(stage, { recursive: true, force: true });fs.rmSync(temp, { recursive: true, force: true }); }
 });
