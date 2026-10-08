@@ -46,6 +46,7 @@ export function validateEvaluationCase(value, input, benchmarkVersion) {
       || value.hidden_targets.some(id => !ids.has(id))) reject();
   const provenance = value.provenance;
   if (!keys(provenance, ['kind', 'author_role', 'language', 'description', 'source_identity', 'materials'])
+      || provenance.kind !== 'synthetic authored-curated'
       || !['kind', 'author_role', 'language', 'description', 'source_identity'].every(key => text(provenance[key]))
       || !Array.isArray(provenance.materials)
       || provenance.materials.some(item => !keys(item, ['question_id', 'role']) || !corpus.has(item.question_id) || !text(item.role))

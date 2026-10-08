@@ -12,6 +12,7 @@ const exactKeys = (value, keys) => object(value)
 export function validateProductInput(input) {
   if (!exactKeys(input, ['schema_version', 'case_id', 'task', 'time_scope', 'plan', 'corpus', 'routes'])
       || input.schema_version !== 1 || ![input.case_id, input.task, input.time_scope].every(text)
+      || input.task.trim().length > 2000
       || !validatePlanInput(input.plan).ok || !Array.isArray(input.corpus) || !input.corpus.length
       || !object(input.routes)) reject();
   const ids = new Set();

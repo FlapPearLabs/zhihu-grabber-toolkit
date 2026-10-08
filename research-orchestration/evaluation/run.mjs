@@ -101,6 +101,7 @@ export function validateBenchmark(benchmark) {
   for (const descriptor of benchmark.cases) {
     if (!exact(descriptor, ['case_id', 'product_input', 'evaluation_case'])
         || typeof descriptor.case_id !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(descriptor.case_id)
+        || descriptor.case_id === 'contamination-control'
         || ids.has(descriptor.case_id)
         || ['product_input', 'evaluation_case'].some(key => typeof descriptor[key] !== 'string'
           || descriptor[key] !== `research-orchestration/evaluation/benchmark/cases/${descriptor.case_id}/${key === 'product_input' ? 'product-input' : 'eval-case'}.json`)) throw new Error('EVALUATION_BENCHMARK_INVALID');

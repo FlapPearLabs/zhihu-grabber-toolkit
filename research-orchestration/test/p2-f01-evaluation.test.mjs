@@ -192,6 +192,32 @@ test('normalized route collisions are rejected rather than silently replacing th
   assert.throws(() => validateProductInput(input), /BENCHMARK_CONTAMINATION/);
 });
 
+test('public tasks exceeding the production topic bound are rejected before product IO', () => {
+  const input = publicInput();
+  input.task = '题'.repeat(2000);
+  assert.doesNotThrow(() => validateProductInput(input));
+  input.task += '题';
+  assert.throws(() => validateProductInput(input), /BENCHMARK_CONTAMINATION_OR_INVALID_INPUT/);
+});
+
+test('synthetic benchmark provenance cannot silently claim real-world material', () => {
+  const repo = fileURLToPath(new URL('../../', import.meta.url));
+  const dir = path.join(repo, 'research-orchestration/evaluation/benchmark/cases/P2-F01-ASPECT-01');
+  const input = JSON.parse(fs.readFileSync(path.join(dir, 'product-input.json')));
+  const gold = JSON.parse(fs.readFileSync(path.join(dir, 'eval-case.json')));
+  gold.provenance.kind = 'real-world';
+  assert.throws(() => validateEvaluationCase(gold, input, gold.benchmark_version), /EVALUATION_CASE_INVALID/);
+});
+
+test('benchmark case IDs cannot collide with the contamination control directory', () => {
+  const repo = fileURLToPath(new URL('../../', import.meta.url));
+  const manifest = JSON.parse(fs.readFileSync(path.join(repo, 'research-orchestration/evaluation/benchmark/benchmark.json')));
+  manifest.cases[0] = { case_id: 'contamination-control',
+    product_input: 'research-orchestration/evaluation/benchmark/cases/contamination-control/product-input.json',
+    evaluation_case: 'research-orchestration/evaluation/benchmark/cases/contamination-control/eval-case.json' };
+  assert.throws(() => validateBenchmark(manifest), /EVALUATION_BENCHMARK_INVALID/);
+});
+
 
 test('closed manifest rejects version, identity, duplicate and path packaging errors before outputs', () => {
   const repo = fileURLToPath(new URL('../../', import.meta.url));
