@@ -1,0 +1,111 @@
+{
+  "implementation": "DETERMINISTIC_DOUBLE",
+  "calls": [
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "课后可选练习 学习体验",
+      "question_ids": [
+        "2201",
+        "2202"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "课后可选练习 学习体验",
+      "question_ids": [
+        "2201",
+        "2202"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "学生可选课后练习",
+      "question_ids": [
+        "2201",
+        "2202"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "学生可选课后练习",
+      "question_ids": [
+        "2201",
+        "2202"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "课后可选练习 反向论证",
+      "question_ids": [
+        "2203",
+        "2204"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "课后可选练习 反向论证",
+      "question_ids": [
+        "2203",
+        "2204"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "课后可选练习 学习体验",
+      "question_ids": [
+        "2201",
+        "2202"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "课后可选练习 学习体验",
+      "question_ids": [
+        "2201",
+        "2202"
+      ]
+    },
+    {
+      "kind": "capture",
+      "question_id": "2201"
+    },
+    {
+      "kind": "capture",
+      "question_id": "2202"
+    },
+    {
+      "kind": "capture",
+      "question_id": "2203"
+    },
+    {
+      "kind": "capture",
+      "question_id": "2204"
+    }
+  ],
+  "semantic_calls": [
+    "analyze",
+    "analyze",
+    "analyze",
+    "analyze",
+    "synthesize"
+  ],
+  "cost": {
+    "retrieval_calls": 8,
+    "retrieval_attempts": 8,
+    "provider_calls": 12,
+    "external_provider_calls": 0,
+    "model_invocations": 0,
+    "semantic_adapter_invocations": 5,
+    "wall_clock_ms": 863.043208,
+    "token_cost": "UNKNOWN",
+    "money_cost": "UNKNOWN"
+  }
+}

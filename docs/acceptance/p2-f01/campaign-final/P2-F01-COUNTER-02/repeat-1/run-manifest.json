@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "repo_sha": "b6fb5265043da398b7a1e92a8fade55d64c59373",
+  "case_id": "P2-F01-COUNTER-02",
+  "benchmark_version": "p2-f01-authored-curated-v1",
+  "benchmark_hashes": {
+    "research-orchestration/evaluation/benchmark/benchmark.json": "533d0e7fa442ea1986b6edf6302b38ef9aecf8bc191be1b224bf6ed1cc09280b",
+    "research-orchestration/evaluation/benchmark/cases/P2-F01-COUNTER-02/product-input.json": "287d96c0c5e6359bf5af09b349fe55fb8754d4591e37327f89612ad98f498548",
+    "research-orchestration/evaluation/benchmark/cases/P2-F01-COUNTER-02/eval-case.json": "3831a3f73591ce3d228721b78f9db89bbb069e0d0ae4177c02598bf528c1b880"
+  },
+  "evaluator_version": "p2-f01-exact-supported-statements-v1",
+  "product_input_hash": "287d96c0c5e6359bf5af09b349fe55fb8754d4591e37327f89612ad98f498548",
+  "canonical_product_input_hash": "80b1811cb8b0e5c7f64e39ef2bbc7ac3aade3523c6ce20ce5cffd38a6dcc5b9c",
+  "time_scope": "假设一个教学单元的实施期，不对应真实学校或学期",
+  "shared_product_config": {
+    "maxQueryBudget": 20
+  },
+  "runtime_identity": {
+    "implementation": "DETERMINISTIC_DOUBLE",
+    "node": "v26.10.0",
+    "contract_runtime_pin": "deepseek-api-tool-less",
+    "embedding": "existing mockVector768(7)"
+  },
+  "model_identity": {
+    "actual_model": "NONE",
+    "contract_model_pin": "deepseek-v4-pro",
+    "semantic_policy": "verbatim-fenced-content-v1"
+  },
+  "provider_identity": [
+    "zhihu_search:frozen-double",
+    "zhihu-open-platform:frozen-double",
+    "frozen-evaluation-capture"
+  ],
+  "timestamp": "2026-10-08T02:55:47.032Z",
+  "product_input_excludes": [
+    "hidden_targets",
+    "evaluation_notes",
+    "targets",
+    "gold_labels"
+  ],
+  "execution_order": [
+    "baseline",
+    "candidate"
+  ],
+  "worker_process_separate_from_evaluator": true,
+  "product_identities": {
+    "baseline": {
+      "run_id": "6208462f74d625ee97a9478011afde316c4ed188c2e4394b88fdf01b08aa453a",
+      "occurrence_id": "bb998f55-4c8f-4ba7-bb81-af5a2dfec8d5",
+      "plan_hash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94"
+    },
+    "candidate": {
+      "run_id": "6208462f74d625ee97a9478011afde316c4ed188c2e4394b88fdf01b08aa453a",
+      "occurrence_id": "7ad73970-f9a5-411d-add5-9360dfdd999b",
+      "plan_hash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94"
+    }
+  },
+  "product_configs": {
+    "baseline": {
+      "maxQueryBudget": 20,
+      "targeted_enabled": false,
+      "proposal_policy": "NONE",
+      "max_attempts_per_gap": 2,
+      "cache_state": "COLD_SEPARATE_DIRECTORY",
+      "planner": "PUBLIC_FROZEN_PLAN"
+    },
+    "candidate": {
+      "maxQueryBudget": 20,
+      "targeted_enabled": true,
+      "proposal_policy": "public-plan-first-reference-v1",
+      "max_attempts_per_gap": 2,
+      "cache_state": "COLD_SEPARATE_DIRECTORY",
+      "planner": "PUBLIC_FROZEN_PLAN"
+    }
+  },
+  "result_artifact_hashes": {
+    "docs/acceptance/p2-f01/campaign-final/P2-F01-COUNTER-02/repeat-1/eval-case.json": "3831a3f73591ce3d228721b78f9db89bbb069e0d0ae4177c02598bf528c1b880",
+    "docs/acceptance/p2-f01/campaign-final/P2-F01-COUNTER-02/repeat-1/baseline-result.json": "3b71d3897f33a6fc009738087285bf3d60c03e0fc02e0288b2acf8391ad08319",
+    "docs/acceptance/p2-f01/campaign-final/P2-F01-COUNTER-02/repeat-1/candidate-result.json": "cfc6960f94331fddc7bb9bcc1f6f950ee6b161cead084deb9ca20503640bab75",
+    "docs/acceptance/p2-f01/campaign-final/P2-F01-COUNTER-02/repeat-1/comparison.json": "ad4cd8cfc76a9b380c781ef7edf5ef766cad8e47f89149ec8dc21e2210d0315c"
+  }
+}

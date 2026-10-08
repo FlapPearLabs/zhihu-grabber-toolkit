@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 1,
+  "type": "retrieval-pool",
+  "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+  "channels": [
+    {
+      "channel": {
+        "query": "卧室净化器 风量选购",
+        "providerId": "zhihu_search",
+        "capability": "search"
+      },
+      "ok": true,
+      "auth_class": "official-secret",
+      "itemCount": 2,
+      "retrievedAt": "2026-10-08T00:00:00.000Z",
+      "completeness": {
+        "status": "unknown",
+        "evidence": {
+          "basis": "authored-curated-frozen-fixture"
+        }
+      }
+    },
+    {
+      "channel": {
+        "query": "卧室净化器 风量选购",
+        "providerId": "zhihu-open-platform",
+        "capability": "search"
+      },
+      "ok": true,
+      "auth_class": "official-secret",
+      "itemCount": 2,
+      "retrievedAt": "2026-10-08T00:00:00.000Z",
+      "completeness": {
+        "status": "unknown",
+        "evidence": {
+          "basis": "authored-curated-frozen-fixture"
+        }
+      }
+    },
+    {
+      "channel": {
+        "query": "净化器 仅看风量的局限",
+        "providerId": "zhihu_search",
+        "capability": "search"
+      },
+      "ok": true,
+      "auth_class": "official-secret",
+      "itemCount": 2,
+      "retrievedAt": "2026-10-08T00:00:00.000Z",
+      "completeness": {
+        "status": "unknown",
+        "evidence": {
+          "basis": "authored-curated-frozen-fixture"
+        }
+      }
+    },
+    {
+      "channel": {
+        "query": "净化器 仅看风量的局限",
+        "providerId": "zhihu-open-platform",
+        "capability": "search"
+      },
+      "ok": true,
+      "auth_class": "official-secret",
+      "itemCount": 2,
+      "retrievedAt": "2026-10-08T00:00:00.000Z",
+      "completeness": {
+        "status": "unknown",
+        "evidence": {
+          "basis": "authored-curated-frozen-fixture"
+        }
+      }
+    },
+    {
+      "channel": {
+        "query": "卧室空气净化器",
+        "providerId": "zhihu_search",
+        "capability": "search"
+      },
+      "ok": true,
+      "auth_class": "official-secret",
+      "itemCount": 2,
+      "retrievedAt": "2026-10-08T00:00:00.000Z",
+      "completeness": {
+        "status": "unknown",
+        "evidence": {
+          "basis": "authored-curated-frozen-fixture"
+        }
+      }
+    },
+    {
+      "channel": {
+        "query": "卧室空气净化器",
+        "providerId": "zhihu-open-platform",
+        "capability": "search"
+      },
+      "ok": true,
+      "auth_class": "official-secret",
+      "itemCount": 2,
+      "retrievedAt": "2026-10-08T00:00:00.000Z",
+      "completeness": {
+        "status": "unknown",
+        "evidence": {
+          "basis": "authored-curated-frozen-fixture"
+        }
+      }
+    },
+    {
+      "channel": {
+        "query": "净化器 原始试验记录",
+        "providerId": "zhihu_search",
+        "capability": "search"
+      },
+      "ok": true,
+      "auth_class": "official-secret",
+      "itemCount": 2,
+      "retrievedAt": "2026-10-08T00:00:00.000Z",
+      "completeness": {
+        "status": "unknown",
+        "evidence": {
+          "basis": "authored-curated-frozen-fixture"
+        }
+      }
+    },
+    {
+      "channel": {
+        "query": "净化器 原始试验记录",
+        "providerId": "zhihu-open-platform",
+        "capability": "search"
+      },
+      "ok": true,
+      "auth_class": "official-secret",
+      "itemCount": 2,
+      "retrievedAt": "2026-10-08T00:00:00.000Z",
+      "completeness": {
+        "status": "unknown",
+        "evidence": {
+          "basis": "authored-curated-frozen-fixture"
+        }
+      }
+    }
+  ],
+  "candidates": [
+    {
+      "identity": {
+        "kind": "candidate",
+        "questionId": "3301"
+      },
+      "rrfScore": 0.03278688524590164,
+      "ranks": [
+        {
+          "channel": {
+            "query": "卧室净化器 风量选购",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        },
+        {
+          "channel": {
+            "query": "卧室净化器 风量选购",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        }
+      ],
+      "source_url": null,
+      "facts": {}
+    },
+    {
+      "identity": {
+        "kind": "candidate",
+        "questionId": "3303"
+      },
+      "rrfScore": 0.03278688524590164,
+      "ranks": [
+        {
+          "channel": {
+            "query": "净化器 原始试验记录",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        },
+        {
+          "channel": {
+            "query": "净化器 原始试验记录",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        }
+      ],
+      "source_url": null,
+      "facts": {}
+    },
+    {
+      "identity": {
+        "kind": "candidate",
+        "questionId": "3304"
+      },
+      "rrfScore": 0.03278688524590164,
+      "ranks": [
+        {
+          "channel": {
+            "query": "净化器 仅看风量的局限",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        },
+        {
+          "channel": {
+            "query": "净化器 仅看风量的局限",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        }
+      ],
+      "source_url": null,
+      "facts": {}
+    },
+    {
+      "identity": {
+        "kind": "candidate",
+        "questionId": "3302"
+      },
+      "rrfScore": 0.03225806451612903,
+      "ranks": [
+        {
+          "channel": {
+            "query": "卧室净化器 风量选购",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        },
+        {
+          "channel": {
+            "query": "卧室净化器 风量选购",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        }
+      ],
+      "source_url": null,
+      "facts": {}
+    }
+  ],
+  "rejected": [],
+  "criteria": {
+    "fusion": "rrf",
+    "scope": "multi-round-accumulated+targeted",
+    "retrievalRounds": 2
+  }
+}

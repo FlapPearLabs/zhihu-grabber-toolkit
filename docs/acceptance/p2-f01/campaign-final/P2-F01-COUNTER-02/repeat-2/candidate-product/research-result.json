@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "type": "p1-research-result",
+  "ok": true,
+  "topic": "在假设学校中，把课后统一练习改为学生可选练习是否适合全面推广？请说明支持理由、反向观点与适用边界。",
+  "mode": "p1-cross-question-deep-research",
+  "runId": "6208462f74d625ee97a9478011afde316c4ed188c2e4394b88fdf01b08aa453a",
+  "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+  "runtime": {
+    "runtimeId": "deepseek-api-tool-less",
+    "model": "deepseek-v4-pro"
+  },
+  "disclosure": {
+    "pipeline": "p1-cross-question-deep-research",
+    "stage": "FINAL_COVERAGE_RECONCILIATION",
+    "isFullCoverage": true,
+    "complete": true,
+    "analysisCoverage": {
+      "selectedCount": 4,
+      "mappedCount": 4,
+      "analyzedCount": 4
+    },
+    "retrieval": {
+      "retrievalRounds": 2,
+      "stopReason": "zero_new_candidates",
+      "fusedCandidateCount": 4,
+      "fusedGroupCount": 4,
+      "providerFailureCount": 0
+    },
+    "gap": null
+  },
+  "targetedResearchGaps": {
+    "schema": "p2a-targeted-research-gaps/v1",
+    "gapCount": 4,
+    "resolvedCount": 0,
+    "unresolvedCount": 4,
+    "exhaustedWithinBudgetCount": 0,
+    "lineageComplete": false,
+    "gaps": [
+      {
+        "gapId": "06edad540fd8e68610ff94da5fe86dbe1ef8db11da7e0cb87ad19cc530467fda:0",
+        "gapIdentityCore": "06edad540fd8e68610ff94da5fe86dbe1ef8db11da7e0cb87ad19cc530467fda",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "学生可选课后练习",
+            "resultArtifact": "targeted-requery-subphase/action-2aff60c6da56757a9ddd45482df21e8cd83ad1ce3536680a80f5bdda3fbc275e/retrieval-pool.json",
+            "targetedActionId": "2aff60c6da56757a9ddd45482df21e8cd83ad1ce3536680a80f5bdda3fbc275e"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "b28aa80e-0530-4d50-8a6d-1184e9decbf6",
+        "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+        "resolutionBasis": "DUPLICATE_ONLY",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "06edad540fd8e68610ff94da5fe86dbe1ef8db11da7e0cb87ad19cc530467fda:1",
+        "gapIdentityCore": "06edad540fd8e68610ff94da5fe86dbe1ef8db11da7e0cb87ad19cc530467fda",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "b28aa80e-0530-4d50-8a6d-1184e9decbf6",
+        "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "e16c237b3e4172486e18ed77cb0b1409fe5f0bcd7c4f525cf45bf51fc644cdbc:0",
+        "gapIdentityCore": "e16c237b3e4172486e18ed77cb0b1409fe5f0bcd7c4f525cf45bf51fc644cdbc",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "课后可选练习 反向论证",
+            "resultArtifact": "targeted-requery-subphase/action-8883a04b711b5e624bd66d083d3c0ac62104b635ca3abb010afb292a2221c568/retrieval-pool.json",
+            "targetedActionId": "8883a04b711b5e624bd66d083d3c0ac62104b635ca3abb010afb292a2221c568"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "b28aa80e-0530-4d50-8a6d-1184e9decbf6",
+        "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+        "resolutionBasis": "UNKNOWN_SIDE_NOT_DECLARED",
+        "resolutionEvidence": [
+          "2203",
+          "2204"
+        ],
+        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "e16c237b3e4172486e18ed77cb0b1409fe5f0bcd7c4f525cf45bf51fc644cdbc:1",
+        "gapIdentityCore": "e16c237b3e4172486e18ed77cb0b1409fe5f0bcd7c4f525cf45bf51fc644cdbc",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "b28aa80e-0530-4d50-8a6d-1184e9decbf6",
+        "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      }
+    ]
+  },
+  "verification": {
+    "valid": true,
+    "basis": {
+      "t14PreSynthesisGuard": "PASS",
+      "t15FinalReconciliation": "PASS",
+      "groupsVerified": "4/4",
+      "analysisCoverage": {
+        "selectedCount": 4,
+        "mappedCount": 4,
+        "analyzedCount": 4
+      }
+    }
+  },
+  "artifacts": {
+    "researchPlan": "research-plan.json",
+    "selectionDecision": "source-group-selection-decision.json",
+    "coverageState": "coverage-state.json",
+    "coverageFinal": "coverage-final.json",
+    "perGroupClaims": "per-group-claims.json",
+    "synthesis": "cross-source-synthesis.json",
+    "researchResult": "research-result.json"
+  }
+}

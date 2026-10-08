@@ -1,0 +1,56 @@
+{
+  "occurrenceId": "35c9fb97-0ae2-4911-a3f5-deba8bf1789f",
+  "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708",
+      "artifactRel": "targeted-requery-subphase/action-f6e16295783dac604c6c2944a2a2a44870a04871069fa06baa58e8d3595bbcde/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-f6e16295783dac604c6c2944a2a2a44870a04871069fa06baa58e8d3595bbcde/retrieval-pool.json",
+          "bindingHash": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708",
+          "bindingKey": "targeted-action:f6e16295783dac604c6c2944a2a2a44870a04871069fa06baa58e8d3595bbcde",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        }
+      ],
+      "bindingHash": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708",
+      "bindingKey": "targeted-action:f6e16295783dac604c6c2944a2a2a44870a04871069fa06baa58e8d3595bbcde",
+      "dedupeKey": "70f6afe3e21ed7401fdbf3715169590d9d24cf480e7e5db3cb62cc32d0e7ae93",
+      "gapId": "613c2cd265875a41d2edf7fd7cc5e43e68ad90004874ed6045fb57de8c003689:0",
+      "gapIdentityCore": "613c2cd265875a41d2edf7fd7cc5e43e68ad90004874ed6045fb57de8c003689",
+      "normalizedQuery": "卧室空气净化器",
+      "occurrenceId": "35c9fb97-0ae2-4911-a3f5-deba8bf1789f",
+      "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
+      "status": "COMMITTED",
+      "targetedActionId": "f6e16295783dac604c6c2944a2a2a44870a04871069fa06baa58e8d3595bbcde"
+    }
+  ]
+}

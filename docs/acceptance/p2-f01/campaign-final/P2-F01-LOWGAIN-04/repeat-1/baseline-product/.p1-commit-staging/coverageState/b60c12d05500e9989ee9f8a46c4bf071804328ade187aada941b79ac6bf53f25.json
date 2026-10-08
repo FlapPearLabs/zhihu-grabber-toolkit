@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+  "retrieval": {
+    "plannedQueryVariants": [
+      "村镇就医公交 增加班次"
+    ],
+    "plannedRoutes": [
+      {
+        "providerId": "zhihu_search",
+        "capability": "search"
+      },
+      {
+        "providerId": "zhihu-open-platform",
+        "capability": "search"
+      }
+    ],
+    "executedRoutes": [
+      {
+        "query": "村镇就医公交 增加班次",
+        "providerId": "zhihu_search",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "村镇就医公交 增加班次",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "村镇就医公交 增加班次",
+        "providerId": "zhihu_search",
+        "capability": "search",
+        "roundIndex": 2
+      },
+      {
+        "query": "村镇就医公交 增加班次",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 2
+      }
+    ],
+    "fusedCandidateCount": 2,
+    "fusedGroupCount": 2,
+    "providerFailures": [],
+    "retrievalRounds": 2,
+    "stopReason": "zero_new_candidates"
+  },
+  "sourceCompleteness": {
+    "perGroupStatus": {
+      "4401": {
+        "captured": true,
+        "verified": true,
+        "partial": false,
+        "failed": false,
+        "paginationStatus": "complete",
+        "evidenceRef": "zhihu/4401/answers.json",
+        "selectedCount": 1,
+        "verifiedCount": 1
+      },
+      "4402": {
+        "captured": true,
+        "verified": true,
+        "partial": false,
+        "failed": false,
+        "paginationStatus": "complete",
+        "evidenceRef": "zhihu/4402/answers.json",
+        "selectedCount": 1,
+        "verifiedCount": 1
+      }
+    },
+    "diagnostics": {
+      "capturedNotVerifiedCount": 0,
+      "totalSelectedCount": 2,
+      "totalVerifiedCount": 2
+    }
+  },
+  "analysisCoverage": {
+    "selectedCorpusSourceSet": [
+      "asrc-a0a97507aa95e942eead7bd6",
+      "asrc-c3e9adeed741be9d3412a278"
+    ],
+    "mappedSourceSet": [
+      "asrc-a0a97507aa95e942eead7bd6",
+      "asrc-c3e9adeed741be9d3412a278"
+    ],
+    "analyzedSourceSet": [
+      "asrc-a0a97507aa95e942eead7bd6",
+      "asrc-c3e9adeed741be9d3412a278"
+    ],
+    "perGroupMappedSourceSet": {
+      "4401": [
+        "asrc-a0a97507aa95e942eead7bd6"
+      ],
+      "4402": [
+        "asrc-c3e9adeed741be9d3412a278"
+      ]
+    },
+    "perGroupAnalyzedSourceSet": {
+      "4401": [
+        "asrc-a0a97507aa95e942eead7bd6"
+      ],
+      "4402": [
+        "asrc-c3e9adeed741be9d3412a278"
+      ]
+    },
+    "evidenceRefIssues": {
+      "missingRefs": [],
+      "duplicateRefs": [],
+      "staleRefs": [],
+      "invalidRefs": []
+    },
+    "is100PercentAnalysis": false
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "novelty_gain": 0,
+    "selected_source_group_count": 2,
+    "selected_content_by_group": {
+      "4401": 1,
+      "4402": 1
+    },
+    "largest_group_share": 0.5,
+    "selected_author_concentration": 0,
+    "selected_content_type_distribution": {},
+    "claim_source_diversity": 1,
+    "per_group_selection_coverage": {
+      "4401": 1,
+      "4402": 1
+    }
+  }
+}

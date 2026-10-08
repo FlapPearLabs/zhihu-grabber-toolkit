@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "type": "p1-final-coverage-integration",
+  "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+  "pipeline": "p1-cross-question-deep-research",
+  "stage": "FINAL_COVERAGE_RECONCILIATION",
+  "assertion": {
+    "is100PercentAnalysis": true,
+    "basis": "MECHANICAL_SET_EQUALITY"
+  },
+  "doubleDefense": {
+    "t14PreSynthesisGuard": {
+      "guardResult": "PASS",
+      "selectedVerifiedSourceSetIdentity": "sha256:49e72fb335f5922762351bfff6289353cd64d050fa710628e8e7a2892829695a",
+      "mappedAnalyzedSourceSetIdentity": "sha256:49e72fb335f5922762351bfff6289353cd64d050fa710628e8e7a2892829695a"
+    },
+    "t15FinalReconciliation": "PASS",
+    "synthesisContract": {
+      "seamVersion": 2,
+      "semanticContractVersion": 2,
+      "synthesisIdentity": "sha256:6f760c66643db22c17605bc7a439feb588255358f0ff29711377821eff816d52",
+      "familyCount": 3,
+      "unresolvedCount": 0,
+      "conflictingFamilyCount": 0,
+      "singleGroupFamilyCount": 3,
+      "multiGroupFamilyCount": 0
+    }
+  },
+  "coverage": {
+    "retrieval": {
+      "retrievalRounds": 2,
+      "stopReason": "zero_new_candidates",
+      "fusedCandidateCount": 3,
+      "fusedGroupCount": 3,
+      "providerFailureCount": 0
+    },
+    "analysisCoverage": {
+      "selectedCorpusSourceSet": [
+        "asrc-393cfa690975f924ff4063ce",
+        "asrc-a0a97507aa95e942eead7bd6",
+        "asrc-c3e9adeed741be9d3412a278"
+      ],
+      "mappedSourceSet": [
+        "asrc-393cfa690975f924ff4063ce",
+        "asrc-a0a97507aa95e942eead7bd6",
+        "asrc-c3e9adeed741be9d3412a278"
+      ],
+      "analyzedSourceSet": [
+        "asrc-393cfa690975f924ff4063ce",
+        "asrc-a0a97507aa95e942eead7bd6",
+        "asrc-c3e9adeed741be9d3412a278"
+      ],
+      "selectedCount": 3,
+      "mappedCount": 3,
+      "analyzedCount": 3,
+      "evidenceRefIssues": {
+        "missingRefs": [],
+        "duplicateRefs": [],
+        "staleRefs": [],
+        "invalidRefs": []
+      }
+    },
+    "sourceCompleteness": {
+      "totalSelectedCount": 3,
+      "totalVerifiedCount": 3,
+      "capturedNotVerifiedCount": 0
+    }
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "novelty_gain": 0,
+    "selected_source_group_count": 3,
+    "selected_content_by_group": {
+      "4401": 1,
+      "4402": 1,
+      "4404": 1
+    },
+    "largest_group_share": 0.3333333333333333,
+    "selected_author_concentration": 0,
+    "selected_content_type_distribution": {},
+    "claim_source_diversity": 1,
+    "per_group_selection_coverage": {
+      "4401": 1,
+      "4402": 1,
+      "4404": 1
+    }
+  },
+  "hookConvergenceOrder": [
+    "RETRIEVAL_ROUNDS",
+    "SOURCE_GROUP_SELECTION",
+    "GROUP_EXECUTION",
+    "CORPUS_SELECTION",
+    "PER_GROUP_ANALYSIS",
+    "CROSS_SOURCE_SYNTHESIS",
+    "FINAL_COVERAGE_RECONCILIATION"
+  ],
+  "runtime": {
+    "runtimeId": "deepseek-api-tool-less",
+    "model": "deepseek-v4-pro"
+  },
+  "artifacts": {
+    "coverageState": "coverage-state.json",
+    "finalCoverage": "coverage-final.json",
+    "synthesis": "cross-source-synthesis.json"
+  },
+  "targetedResearchGaps": {
+    "schema": "p2a-targeted-research-gaps/v1",
+    "gapCount": 4,
+    "resolvedCount": 0,
+    "unresolvedCount": 4,
+    "exhaustedWithinBudgetCount": 0,
+    "lineageComplete": false,
+    "gaps": [
+      {
+        "gapId": "648ee2157bbc8375b87812f4e4eac88f5f6b803ab09ecf41d7f7e028bd2bbc39:0",
+        "gapIdentityCore": "648ee2157bbc8375b87812f4e4eac88f5f6b803ab09ecf41d7f7e028bd2bbc39",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "增加公交班次 适用边界",
+            "resultArtifact": "targeted-requery-subphase/action-90c0c10548d8f9ba126af1f722d25c8021d760367b23b0f0000627e3547e616c/retrieval-pool.json",
+            "targetedActionId": "90c0c10548d8f9ba126af1f722d25c8021d760367b23b0f0000627e3547e616c"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "7354f863-e02a-4547-ab54-54120d7e98c4",
+        "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+        "resolutionBasis": "UNKNOWN_SIDE_NOT_DECLARED",
+        "resolutionEvidence": [
+          "4404"
+        ],
+        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "648ee2157bbc8375b87812f4e4eac88f5f6b803ab09ecf41d7f7e028bd2bbc39:1",
+        "gapIdentityCore": "648ee2157bbc8375b87812f4e4eac88f5f6b803ab09ecf41d7f7e028bd2bbc39",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "7354f863-e02a-4547-ab54-54120d7e98c4",
+        "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "a1413406e699173d896cbb0c6fb2f8c584b218b53db0a8b009799040d7936e09:0",
+        "gapIdentityCore": "a1413406e699173d896cbb0c6fb2f8c584b218b53db0a8b009799040d7936e09",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "村镇就医公交",
+            "resultArtifact": "targeted-requery-subphase/action-334ac05de37959c5d5b5a4ea0813790e6eafc40f83eac86a9194b8597f5ddf30/retrieval-pool.json",
+            "targetedActionId": "334ac05de37959c5d5b5a4ea0813790e6eafc40f83eac86a9194b8597f5ddf30"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "7354f863-e02a-4547-ab54-54120d7e98c4",
+        "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+        "resolutionBasis": "DUPLICATE_ONLY",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "a1413406e699173d896cbb0c6fb2f8c584b218b53db0a8b009799040d7936e09:1",
+        "gapIdentityCore": "a1413406e699173d896cbb0c6fb2f8c584b218b53db0a8b009799040d7936e09",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "7354f863-e02a-4547-ab54-54120d7e98c4",
+        "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      }
+    ]
+  }
+}

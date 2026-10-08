@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "type": "TargetedResolutionInput",
+  "targetedActionId": "62985309a199086c2eaa6cc9506ce99bc9d4e183d9e5cc83f17cdb0385f483d4",
+  "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+  "occurrenceId": "d33b8115-d973-489c-ad9c-0ec35257ced9",
+  "priorQuestionIds": [
+    "3301",
+    "3302"
+  ],
+  "declaredFraming": "净化器 仅看风量的局限",
+  "coveredFramings": []
+}

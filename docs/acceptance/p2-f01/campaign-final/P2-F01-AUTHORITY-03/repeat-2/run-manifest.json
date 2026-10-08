@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "repo_sha": "b6fb5265043da398b7a1e92a8fade55d64c59373",
+  "case_id": "P2-F01-AUTHORITY-03",
+  "benchmark_version": "p2-f01-authored-curated-v1",
+  "benchmark_hashes": {
+    "research-orchestration/evaluation/benchmark/benchmark.json": "533d0e7fa442ea1986b6edf6302b38ef9aecf8bc191be1b224bf6ed1cc09280b",
+    "research-orchestration/evaluation/benchmark/cases/P2-F01-AUTHORITY-03/product-input.json": "b9f105fb5d26a39e0db6f0d2ee86c104a9977a83b07d327c8a726637467bfa44",
+    "research-orchestration/evaluation/benchmark/cases/P2-F01-AUTHORITY-03/eval-case.json": "547e24fbbe1e95f435512b052a4bdeccdef51b49d4843565683ef57cc55fc50d"
+  },
+  "evaluator_version": "p2-f01-exact-supported-statements-v1",
+  "product_input_hash": "b9f105fb5d26a39e0db6f0d2ee86c104a9977a83b07d327c8a726637467bfa44",
+  "canonical_product_input_hash": "9d60ccc7a19498bd82fafdb4552e639bbd5fddd77950684a3534f2f31d1c7f71",
+  "time_scope": "假设一个持续使用周期；不引用现实产品、标准或测试结果",
+  "shared_product_config": {
+    "maxQueryBudget": 20
+  },
+  "runtime_identity": {
+    "implementation": "DETERMINISTIC_DOUBLE",
+    "node": "v26.10.0",
+    "contract_runtime_pin": "deepseek-api-tool-less",
+    "embedding": "existing mockVector768(7)"
+  },
+  "model_identity": {
+    "actual_model": "NONE",
+    "contract_model_pin": "deepseek-v4-pro",
+    "semantic_policy": "verbatim-fenced-content-v1"
+  },
+  "provider_identity": [
+    "zhihu_search:frozen-double",
+    "zhihu-open-platform:frozen-double",
+    "frozen-evaluation-capture"
+  ],
+  "timestamp": "2026-10-08T02:55:49.277Z",
+  "product_input_excludes": [
+    "hidden_targets",
+    "evaluation_notes",
+    "targets",
+    "gold_labels"
+  ],
+  "execution_order": [
+    "candidate",
+    "baseline"
+  ],
+  "worker_process_separate_from_evaluator": true,
+  "product_identities": {
+    "baseline": {
+      "run_id": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
+      "occurrence_id": "b84948e9-8bf9-4587-852d-28e59806d12a",
+      "plan_hash": "e3888a98b350df4e6a7ec8c9902f6117f1509baae8f4e5e22dd12aa52308ee40"
+    },
+    "candidate": {
+      "run_id": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
+      "occurrence_id": "d33b8115-d973-489c-ad9c-0ec35257ced9",
+      "plan_hash": "e3888a98b350df4e6a7ec8c9902f6117f1509baae8f4e5e22dd12aa52308ee40"
+    }
+  },
+  "product_configs": {
+    "baseline": {
+      "maxQueryBudget": 20,
+      "targeted_enabled": false,
+      "proposal_policy": "NONE",
+      "max_attempts_per_gap": 2,
+      "cache_state": "COLD_SEPARATE_DIRECTORY",
+      "planner": "PUBLIC_FROZEN_PLAN"
+    },
+    "candidate": {
+      "maxQueryBudget": 20,
+      "targeted_enabled": true,
+      "proposal_policy": "public-plan-first-reference-v1",
+      "max_attempts_per_gap": 2,
+      "cache_state": "COLD_SEPARATE_DIRECTORY",
+      "planner": "PUBLIC_FROZEN_PLAN"
+    }
+  },
+  "result_artifact_hashes": {
+    "docs/acceptance/p2-f01/campaign-final/P2-F01-AUTHORITY-03/repeat-2/eval-case.json": "547e24fbbe1e95f435512b052a4bdeccdef51b49d4843565683ef57cc55fc50d",
+    "docs/acceptance/p2-f01/campaign-final/P2-F01-AUTHORITY-03/repeat-2/baseline-result.json": "198ad3fe24ab1919586ca949a3ff26638b328ffaae8f772dc5c34f66c3cef564",
+    "docs/acceptance/p2-f01/campaign-final/P2-F01-AUTHORITY-03/repeat-2/candidate-result.json": "0dd9a2626727905997bbfe2d36d7374181c807f1df44163fbe35a86d3b10cfce",
+    "docs/acceptance/p2-f01/campaign-final/P2-F01-AUTHORITY-03/repeat-2/comparison.json": "bf34cfecb6ade85d7299edadae5344221ab98292dff4a64e5c89d566c06fa17a"
+  }
+}

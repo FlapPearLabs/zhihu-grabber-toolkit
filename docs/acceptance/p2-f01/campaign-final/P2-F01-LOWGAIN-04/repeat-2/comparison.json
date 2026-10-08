@@ -1,0 +1,79 @@
+{
+  "status": "VALID",
+  "metrics": {
+    "important_aspect_discovery": {
+      "baseline_hits": 1,
+      "candidate_hits": 1,
+      "total": 2,
+      "delta_hits": 0,
+      "delta_ratio": 0
+    },
+    "counterposition_discovery": {
+      "baseline_hits": 0,
+      "candidate_hits": 0,
+      "total": 1,
+      "delta_hits": 0,
+      "delta_ratio": 0
+    },
+    "key_evidence_discovery": {
+      "baseline_hits": 0,
+      "candidate_hits": 0,
+      "total": 1,
+      "delta_hits": 0,
+      "delta_ratio": 0
+    }
+  },
+  "incremental_cost": {
+    "retrieval_calls": 4,
+    "retrieval_attempts": 4,
+    "provider_calls": 5,
+    "external_provider_calls": 0,
+    "model_invocations": 0,
+    "semantic_adapter_invocations": 1,
+    "wall_clock_ms": 311.839958,
+    "token_cost": "UNKNOWN",
+    "money_cost": "UNKNOWN",
+    "selected_corpus_sources": 1,
+    "downstream_material_chars": 51
+  },
+  "quality_change": "NO_MEASURABLE_GAIN",
+  "scope": "CURATED_TARGETS != OPEN_WORLD_COMPLETENESS",
+  "identity": {
+    "repo_sha": "b6fb5265043da398b7a1e92a8fade55d64c59373",
+    "case_id": "P2-F01-LOWGAIN-04",
+    "benchmark_version": "p2-f01-authored-curated-v1",
+    "benchmark_hashes": {
+      "research-orchestration/evaluation/benchmark/benchmark.json": "533d0e7fa442ea1986b6edf6302b38ef9aecf8bc191be1b224bf6ed1cc09280b",
+      "research-orchestration/evaluation/benchmark/cases/P2-F01-LOWGAIN-04/product-input.json": "3c6b0330648e7605921c9534d1035958bba2cc977e24383aa397951abe1cdc6a",
+      "research-orchestration/evaluation/benchmark/cases/P2-F01-LOWGAIN-04/eval-case.json": "938b5cad903f2e0faccbfc9e8f2c5518f68ee68d2294ab10db40007c3a47c4b7"
+    },
+    "evaluator_version": "p2-f01-exact-supported-statements-v1",
+    "product_input_hash": "3c6b0330648e7605921c9534d1035958bba2cc977e24383aa397951abe1cdc6a",
+    "canonical_product_input_hash": "65dd37dae452de53d9450302303f94a18c864865020fa91ee7c9887bd10e789a",
+    "time_scope": "假设一个常规运营周期；不对应真实线路、地区或运营数据",
+    "shared_product_config": {
+      "maxQueryBudget": 20
+    },
+    "runtime_identity": {
+      "implementation": "DETERMINISTIC_DOUBLE",
+      "node": "v26.10.0",
+      "contract_runtime_pin": "deepseek-api-tool-less",
+      "embedding": "existing mockVector768(7)"
+    },
+    "model_identity": {
+      "actual_model": "NONE",
+      "contract_model_pin": "deepseek-v4-pro",
+      "semantic_policy": "verbatim-fenced-content-v1"
+    },
+    "provider_identity": [
+      "zhihu_search:frozen-double",
+      "zhihu-open-platform:frozen-double",
+      "frozen-evaluation-capture"
+    ]
+  },
+  "confound": [
+    "Synthetic curated corpus and exact verbatim semantic double; excludes live quality.",
+    "Fixed public planner output and injected proposal policy; default CLI targeted re-query remains disabled.",
+    "Shared host wall-clock latency varies; order alternates across identical reruns."
+  ]
+}

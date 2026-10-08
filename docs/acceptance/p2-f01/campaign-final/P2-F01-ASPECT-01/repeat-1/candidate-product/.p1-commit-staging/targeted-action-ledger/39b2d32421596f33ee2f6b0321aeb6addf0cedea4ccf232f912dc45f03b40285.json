@@ -1,0 +1,56 @@
+{
+  "occurrenceId": "77fade45-a66c-44e6-ad38-1781baadfebc",
+  "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": "24167e32dc5d2c26a902d10d27283f967660735e6716efa20d5227fcf4216f35",
+      "artifactRel": "targeted-requery-subphase/action-ba6aed81e604febfdf391d2cd9df7303634a915a5a05b52adc7e50e81ea10494/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-ba6aed81e604febfdf391d2cd9df7303634a915a5a05b52adc7e50e81ea10494/retrieval-pool.json",
+          "bindingHash": "24167e32dc5d2c26a902d10d27283f967660735e6716efa20d5227fcf4216f35",
+          "bindingKey": "targeted-action:ba6aed81e604febfdf391d2cd9df7303634a915a5a05b52adc7e50e81ea10494",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        }
+      ],
+      "bindingHash": "24167e32dc5d2c26a902d10d27283f967660735e6716efa20d5227fcf4216f35",
+      "bindingKey": "targeted-action:ba6aed81e604febfdf391d2cd9df7303634a915a5a05b52adc7e50e81ea10494",
+      "dedupeKey": "14579e1b4a30a10dfaf4b1133d6be1eb2890aa4b9ef71107806ccc35538c042e",
+      "gapId": "c1a648f604492d4400b03f7bda38f49b802bf774903d08bf31280c411b5947a1:0",
+      "gapIdentityCore": "c1a648f604492d4400b03f7bda38f49b802bf774903d08bf31280c411b5947a1",
+      "normalizedQuery": "老旧街区固定遮阴",
+      "occurrenceId": "77fade45-a66c-44e6-ad38-1781baadfebc",
+      "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "6c55752597c7f68afab93e0a0c67b9442aec0c02ed11e1eb1b6b28272bc548b1",
+      "status": "COMMITTED",
+      "targetedActionId": "ba6aed81e604febfdf391d2cd9df7303634a915a5a05b52adc7e50e81ea10494"
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "implementation": "DETERMINISTIC_DOUBLE",
+  "calls": [
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "村镇就医公交 增加班次",
+      "question_ids": [
+        "4401",
+        "4402"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "村镇就医公交 增加班次",
+      "question_ids": [
+        "4401",
+        "4402"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "增加公交班次 适用边界",
+      "question_ids": [
+        "4402",
+        "4404"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "增加公交班次 适用边界",
+      "question_ids": [
+        "4402",
+        "4404"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "村镇就医公交",
+      "question_ids": [
+        "4401",
+        "4402"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "村镇就医公交",
+      "question_ids": [
+        "4401",
+        "4402"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "村镇就医公交 增加班次",
+      "question_ids": [
+        "4401",
+        "4402"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "村镇就医公交 增加班次",
+      "question_ids": [
+        "4401",
+        "4402"
+      ]
+    },
+    {
+      "kind": "capture",
+      "question_id": "4401"
+    },
+    {
+      "kind": "capture",
+      "question_id": "4402"
+    },
+    {
+      "kind": "capture",
+      "question_id": "4404"
+    }
+  ],
+  "semantic_calls": [
+    "analyze",
+    "analyze",
+    "analyze",
+    "synthesize"
+  ],
+  "cost": {
+    "retrieval_calls": 8,
+    "retrieval_attempts": 8,
+    "provider_calls": 11,
+    "external_provider_calls": 0,
+    "model_invocations": 0,
+    "semantic_adapter_invocations": 4,
+    "wall_clock_ms": 667.715458,
+    "token_cost": "UNKNOWN",
+    "money_cost": "UNKNOWN"
+  }
+}

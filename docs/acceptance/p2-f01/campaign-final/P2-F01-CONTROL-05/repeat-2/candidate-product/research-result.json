@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "type": "p1-research-result",
+  "ok": true,
+  "topic": "在假设小院中，家用雨水收集桶是否适合用于日常浇灌？请结合储水安全、季节供水和用途边界作出建议。",
+  "mode": "p1-cross-question-deep-research",
+  "runId": "7fe8b9f5639702c975412a8efb937414d3b14677f22428f47b16379d0ea3f46c",
+  "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "runtime": {
+    "runtimeId": "deepseek-api-tool-less",
+    "model": "deepseek-v4-pro"
+  },
+  "disclosure": {
+    "pipeline": "p1-cross-question-deep-research",
+    "stage": "FINAL_COVERAGE_RECONCILIATION",
+    "isFullCoverage": true,
+    "complete": true,
+    "analysisCoverage": {
+      "selectedCount": 3,
+      "mappedCount": 3,
+      "analyzedCount": 3
+    },
+    "retrieval": {
+      "retrievalRounds": 2,
+      "stopReason": "zero_new_candidates",
+      "fusedCandidateCount": 3,
+      "fusedGroupCount": 3,
+      "providerFailureCount": 0
+    },
+    "gap": null
+  },
+  "targetedResearchGaps": {
+    "schema": "p2a-targeted-research-gaps/v1",
+    "gapCount": 4,
+    "resolvedCount": 0,
+    "unresolvedCount": 4,
+    "exhaustedWithinBudgetCount": 0,
+    "lineageComplete": false,
+    "gaps": [
+      {
+        "gapId": "33e06f11f0fd5a3c54be8da6e639cefdda855e59ae377f6f7a36e2072f7a89e1:0",
+        "gapIdentityCore": "33e06f11f0fd5a3c54be8da6e639cefdda855e59ae377f6f7a36e2072f7a89e1",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "雨水浇灌 替代供水的局限",
+            "resultArtifact": "targeted-requery-subphase/action-08838e898cef3d2b0c0889212d158389df8d218efb6699cf85251708f3387d0a/retrieval-pool.json",
+            "targetedActionId": "08838e898cef3d2b0c0889212d158389df8d218efb6699cf85251708f3387d0a"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "c52a0333-0d0d-48d4-a324-9c4216cfa9d2",
+        "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+        "resolutionBasis": "UNKNOWN_SIDE_NOT_DECLARED",
+        "resolutionEvidence": [
+          "5503"
+        ],
+        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "33e06f11f0fd5a3c54be8da6e639cefdda855e59ae377f6f7a36e2072f7a89e1:1",
+        "gapIdentityCore": "33e06f11f0fd5a3c54be8da6e639cefdda855e59ae377f6f7a36e2072f7a89e1",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "c52a0333-0d0d-48d4-a324-9c4216cfa9d2",
+        "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "e5c329942882860ee41431bfe62251d3cd012ceec6c4ecb5161e640b32d105f1:0",
+        "gapIdentityCore": "e5c329942882860ee41431bfe62251d3cd012ceec6c4ecb5161e640b32d105f1",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "家用雨水浇灌",
+            "resultArtifact": "targeted-requery-subphase/action-11d5b986763e1a1c441cd5f50c5347ba9da6c83989ffb84f21ac73d020372a35/retrieval-pool.json",
+            "targetedActionId": "11d5b986763e1a1c441cd5f50c5347ba9da6c83989ffb84f21ac73d020372a35"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "c52a0333-0d0d-48d4-a324-9c4216cfa9d2",
+        "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+        "resolutionBasis": "DUPLICATE_ONLY",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "e5c329942882860ee41431bfe62251d3cd012ceec6c4ecb5161e640b32d105f1:1",
+        "gapIdentityCore": "e5c329942882860ee41431bfe62251d3cd012ceec6c4ecb5161e640b32d105f1",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "c52a0333-0d0d-48d4-a324-9c4216cfa9d2",
+        "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      }
+    ]
+  },
+  "verification": {
+    "valid": true,
+    "basis": {
+      "t14PreSynthesisGuard": "PASS",
+      "t15FinalReconciliation": "PASS",
+      "groupsVerified": "3/3",
+      "analysisCoverage": {
+        "selectedCount": 3,
+        "mappedCount": 3,
+        "analyzedCount": 3
+      }
+    }
+  },
+  "artifacts": {
+    "researchPlan": "research-plan.json",
+    "selectionDecision": "source-group-selection-decision.json",
+    "coverageState": "coverage-state.json",
+    "coverageFinal": "coverage-final.json",
+    "perGroupClaims": "per-group-claims.json",
+    "synthesis": "cross-source-synthesis.json",
+    "researchResult": "research-result.json"
+  }
+}

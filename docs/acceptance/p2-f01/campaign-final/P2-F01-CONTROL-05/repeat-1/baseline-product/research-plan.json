@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "queryVariants": [
+    "雨水收集桶 小院浇灌条件"
+  ],
+  "aspects": [
+    "雨水收集桶 维护与供水"
+  ],
+  "entities": [
+    "家用雨水浇灌"
+  ],
+  "opposingFramings": [
+    "雨水浇灌 替代供水的局限"
+  ],
+  "terminologyVariants": [
+    {
+      "term": "家庭集雨桶 园艺使用",
+      "variants": [
+        "家庭集雨桶 园艺使用"
+      ]
+    }
+  ],
+  "sourceGroupIntents": []
+}

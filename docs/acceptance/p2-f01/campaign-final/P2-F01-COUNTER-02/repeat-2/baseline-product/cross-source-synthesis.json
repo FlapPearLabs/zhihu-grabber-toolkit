@@ -1,0 +1,154 @@
+{
+  "seam": "T14_TO_T15",
+  "seamVersion": 2,
+  "semanticContractVersion": 2,
+  "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+  "preSynthesisGuard": {
+    "guardResult": "PASS",
+    "selectedVerifiedSourceSetIdentity": "sha256:8e2ec3390d24d4e1197e07dd47a5fa18b8b7dded7f59519b78f5041a551c9cd1",
+    "mappedAnalyzedSourceSetIdentity": "sha256:8e2ec3390d24d4e1197e07dd47a5fa18b8b7dded7f59519b78f5041a551c9cd1"
+  },
+  "synthesis": {
+    "synthesisIdentity": "sha256:d7215b06b025c9d189dd33fa51306c6d4020cd0c4658315ec29913207e83f28c",
+    "families": [
+      {
+        "familyKey": "fam-9829593873b0f517",
+        "aspect": "独立材料观点",
+        "anchor": {
+          "sourceClaimId": "c-2202-001",
+          "statement": "模拟访谈中，自主安排能力较强的学生说，可选练习允许按薄弱点复习；记录支持自主安排的收益。"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-2202-001",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-2202-001",
+            "statement": "模拟访谈中，自主安排能力较强的学生说，可选练习允许按薄弱点复习；记录支持自主安排的收益。",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "asrc-da917a3f358b1876323d66ff",
+                "groupId": "2202",
+                "authorRef": "author-d658846a6dd32dd4"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-2202-001",
+            "sourceRef": "asrc-da917a3f358b1876323d66ff",
+            "groupId": "2202",
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": false
+      },
+      {
+        "familyKey": "fam-c9b2d3fb49b9a433",
+        "aspect": "独立材料观点",
+        "anchor": {
+          "sourceClaimId": "c-2201-001",
+          "statement": "在假设课程中，可选练习让已掌握内容的学生免于机械重复；支持者认为选择权能够减少重复负担。"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-2201-001",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-2201-001",
+            "statement": "在假设课程中，可选练习让已掌握内容的学生免于机械重复；支持者认为选择权能够减少重复负担。",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "asrc-418b91796334b172f0447c52",
+                "groupId": "2201",
+                "authorRef": "author-d658846a6dd32dd4"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-2201-001",
+            "sourceRef": "asrc-418b91796334b172f0447c52",
+            "groupId": "2201",
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": false
+      }
+    ],
+    "unresolved": [],
+    "groupDifferences": [
+      {
+        "groupId": "2201",
+        "uncoveredAspects": []
+      },
+      {
+        "groupId": "2202",
+        "uncoveredAspects": []
+      }
+    ],
+    "evidenceStrength": [
+      {
+        "familyKey": "fam-9829593873b0f517",
+        "expertEvidenceRichSupport": false,
+        "crossGroupSupport": false,
+        "supportSourceCount": 1,
+        "opposeSourceCount": 0
+      },
+      {
+        "familyKey": "fam-c9b2d3fb49b9a433",
+        "expertEvidenceRichSupport": false,
+        "crossGroupSupport": false,
+        "supportSourceCount": 1,
+        "opposeSourceCount": 0
+      }
+    ],
+    "discussionVolumeDifferences": {
+      "byGroup": {
+        "2201": 1,
+        "2202": 1
+      }
+    }
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "claim_source_diversity": 1
+  },
+  "legacyDerivedView": {
+    "derivedFrom": "canonical V2 families/unresolved (one-way presentation; never an input to relationStatus/supportBreadth)",
+    "families": [
+      {
+        "familyKey": "fam-9829593873b0f517",
+        "legacyCategory": "group-specific",
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP"
+      },
+      {
+        "familyKey": "fam-c9b2d3fb49b9a433",
+        "legacyCategory": "group-specific",
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP"
+      }
+    ],
+    "unresolved": []
+  }
+}

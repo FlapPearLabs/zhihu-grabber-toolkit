@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "type": "retrieval-pool",
+  "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+  "channels": [
+    {
+      "channel": {
+        "query": "街区固定遮阴 居民舒适",
+        "providerId": "zhihu_search",
+        "capability": "search"
+      },
+      "ok": true,
+      "auth_class": "official-secret",
+      "itemCount": 2,
+      "retrievedAt": "2026-10-08T00:00:00.000Z",
+      "completeness": {
+        "status": "unknown",
+        "evidence": {
+          "basis": "authored-curated-frozen-fixture"
+        }
+      }
+    },
+    {
+      "channel": {
+        "query": "街区固定遮阴 居民舒适",
+        "providerId": "zhihu-open-platform",
+        "capability": "search"
+      },
+      "ok": true,
+      "auth_class": "official-secret",
+      "itemCount": 2,
+      "retrievedAt": "2026-10-08T00:00:00.000Z",
+      "completeness": {
+        "status": "unknown",
+        "evidence": {
+          "basis": "authored-curated-frozen-fixture"
+        }
+      }
+    }
+  ],
+  "candidates": [
+    {
+      "identity": {
+        "kind": "candidate",
+        "questionId": "1101"
+      },
+      "rrfScore": 0.03278688524590164,
+      "ranks": [
+        {
+          "channel": {
+            "query": "街区固定遮阴 居民舒适",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        },
+        {
+          "channel": {
+            "query": "街区固定遮阴 居民舒适",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        }
+      ],
+      "source_url": null,
+      "facts": {}
+    },
+    {
+      "identity": {
+        "kind": "candidate",
+        "questionId": "1102"
+      },
+      "rrfScore": 0.03225806451612903,
+      "ranks": [
+        {
+          "channel": {
+            "query": "街区固定遮阴 居民舒适",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        },
+        {
+          "channel": {
+            "query": "街区固定遮阴 居民舒适",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        }
+      ],
+      "source_url": null,
+      "facts": {}
+    }
+  ],
+  "rejected": [],
+  "criteria": {
+    "fusion": "rrf",
+    "scope": "multi-round-accumulated",
+    "retrievalRounds": 2
+  }
+}

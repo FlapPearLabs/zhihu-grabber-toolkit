@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "queryVariants": [
+    "街区固定遮阴 居民舒适"
+  ],
+  "aspects": [
+    "街区固定遮阴 场地与运维适配"
+  ],
+  "entities": [
+    "老旧街区固定遮阴"
+  ],
+  "opposingFramings": [
+    "固定遮阴 可替代方案"
+  ],
+  "terminologyVariants": [
+    {
+      "term": "街道遮阳 居民舒适",
+      "variants": [
+        "街道遮阳 居民舒适"
+      ]
+    }
+  ],
+  "sourceGroupIntents": []
+}

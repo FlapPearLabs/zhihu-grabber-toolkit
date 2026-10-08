@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "repo_sha": "b6fb5265043da398b7a1e92a8fade55d64c59373",
+  "case_id": "P2-F01-ASPECT-01",
+  "benchmark_version": "p2-f01-authored-curated-v1",
+  "benchmark_hashes": {
+    "research-orchestration/evaluation/benchmark/benchmark.json": "533d0e7fa442ea1986b6edf6302b38ef9aecf8bc191be1b224bf6ed1cc09280b",
+    "research-orchestration/evaluation/benchmark/cases/P2-F01-ASPECT-01/product-input.json": "5e594797149da877ea71e3f9f8e1394b8fb551615cb12e41f61baaa185db9e7f",
+    "research-orchestration/evaluation/benchmark/cases/P2-F01-ASPECT-01/eval-case.json": "4ed7b3407f55a67f49b122691cc4ebda74d581153902e4417982b31521be4dd0"
+  },
+  "evaluator_version": "p2-f01-exact-supported-statements-v1",
+  "product_input_hash": "5e594797149da877ea71e3f9f8e1394b8fb551615cb12e41f61baaa185db9e7f",
+  "canonical_product_input_hash": "dd61928b553dc4359674a83c8e8c58281fc4f1e6d5cf2e7f16266fbc012e6533",
+  "time_scope": "假设未来一个完整使用年度，覆盖夏季与冬季；不对应现实日期",
+  "shared_product_config": {
+    "maxQueryBudget": 20
+  },
+  "runtime_identity": {
+    "implementation": "DETERMINISTIC_DOUBLE",
+    "node": "v26.10.0",
+    "contract_runtime_pin": "deepseek-api-tool-less",
+    "embedding": "existing mockVector768(7)"
+  },
+  "model_identity": {
+    "actual_model": "NONE",
+    "contract_model_pin": "deepseek-v4-pro",
+    "semantic_policy": "verbatim-fenced-content-v1"
+  },
+  "provider_identity": [
+    "zhihu_search:frozen-double",
+    "zhihu-open-platform:frozen-double",
+    "frozen-evaluation-capture"
+  ],
+  "timestamp": "2026-10-08T02:55:44.170Z",
+  "product_input_excludes": [
+    "hidden_targets",
+    "evaluation_notes",
+    "targets",
+    "gold_labels"
+  ],
+  "execution_order": [
+    "baseline",
+    "candidate"
+  ],
+  "worker_process_separate_from_evaluator": true,
+  "product_identities": {
+    "baseline": {
+      "run_id": "6c55752597c7f68afab93e0a0c67b9442aec0c02ed11e1eb1b6b28272bc548b1",
+      "occurrence_id": "37a37086-8854-4228-981a-bb98870ef6ac",
+      "plan_hash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16"
+    },
+    "candidate": {
+      "run_id": "6c55752597c7f68afab93e0a0c67b9442aec0c02ed11e1eb1b6b28272bc548b1",
+      "occurrence_id": "77fade45-a66c-44e6-ad38-1781baadfebc",
+      "plan_hash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16"
+    }
+  },
+  "product_configs": {
+    "baseline": {
+      "maxQueryBudget": 20,
+      "targeted_enabled": false,
+      "proposal_policy": "NONE",
+      "max_attempts_per_gap": 2,
+      "cache_state": "COLD_SEPARATE_DIRECTORY",
+      "planner": "PUBLIC_FROZEN_PLAN"
+    },
+    "candidate": {
+      "maxQueryBudget": 20,
+      "targeted_enabled": true,
+      "proposal_policy": "public-plan-first-reference-v1",
+      "max_attempts_per_gap": 2,
+      "cache_state": "COLD_SEPARATE_DIRECTORY",
+      "planner": "PUBLIC_FROZEN_PLAN"
+    }
+  },
+  "result_artifact_hashes": {
+    "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-1/eval-case.json": "4ed7b3407f55a67f49b122691cc4ebda74d581153902e4417982b31521be4dd0",
+    "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-1/baseline-result.json": "2b1902e60ee96482099c877f55d99d8d7b87ecb3d8b48b1a210ea4b808357266",
+    "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-1/candidate-result.json": "844b2711d4e9392491cc2556df1ece0c0c433e87358f248cd5f322b8705a84c5",
+    "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-1/comparison.json": "924feb2a39d0e186c78936a0f9ce8c0571ba12efc61c67b1a64549c8ad6e3ce9"
+  }
+}

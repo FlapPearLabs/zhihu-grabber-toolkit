@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "runId": "4df426b50f3e276a409b0f066719bda07351cfb0835c994c6bcdcf99fd03df23",
+  "occurrenceId": "d25a8b0b-59c7-45bc-806a-f96644593102",
+  "topic": "在假设偏远村镇中，增加公交班次是否足以改善居民就医出行？请评估便利性、服务限制和适用条件。",
+  "mode": "p1-cross-question-deep-research",
+  "percent": null,
+  "runtime": "deepseek-api-tool-less",
+  "configFingerprint": "7bb48764eaee68a197bc9ecc9ded5ea1102a8fe8173c2539c0419c01e5cd6306",
+  "forceQuestionId": null,
+  "stage": "COMPLETE",
+  "completedStages": [
+    "SEARCH",
+    "SELECT",
+    "CAPTURE",
+    "ANALYZE",
+    "RENDER"
+  ],
+  "selectedQuestionId": null,
+  "selection": null,
+  "artifacts": {
+    "researchPlan": "research-plan.json",
+    "selectionDecision": "source-group-selection-decision.json",
+    "coverageState": "coverage-state.json",
+    "coverageFinal": "coverage-final.json",
+    "perGroupClaims": "per-group-claims.json",
+    "synthesis": "cross-source-synthesis.json",
+    "researchResult": "research-result.json"
+  },
+  "hashes": {
+    "researchPlan": "ee9b22fc8b04ba9d3a68670c91de1179c21b4d2e37336231b4e3c1f02d33dc17",
+    "coverageState": "b63fd30c8388ebbc320b3f5ac63ba9f09e4173b6ad62eba23da0e008afb446d6",
+    "coverageFinal": "6de8f130481c264ec4ec33fb98088105f4124c699ab0964f2e1fdd4fa566332b",
+    "perGroupClaims": "f0205fdba5ceb254a0f8675bbab298ee06b9a39ffd8c1cc3a8bac0f9f22bb6d3",
+    "synthesis": "bb70915f9f1637ca653bb117a26a49e24434a09bf5104e17c25d9559e3340219",
+    "researchResult": "b3f6ed38bd4646f8422771d6ef3b8d6e2a4b9c6b4d95286aa91437b530ca5ed8",
+    "accumulatedPool": "db47b3edceee1bb93bc731fa4279b33b2c435931f15bed9abe9fcb6005ef7062",
+    "selectionDecision": "515608b50d7f1c00f17436b73bb41a2826ecf4ce222268615bb63bc8ce1e4300"
+  },
+  "verification": null,
+  "coverage": {
+    "is100PercentAnalysis": true,
+    "selectedCount": 2,
+    "analyzedCount": 2
+  },
+  "p1FinalCoveragePlanHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+  "updatedAt": "2026-10-08T02:55:49.687Z"
+}

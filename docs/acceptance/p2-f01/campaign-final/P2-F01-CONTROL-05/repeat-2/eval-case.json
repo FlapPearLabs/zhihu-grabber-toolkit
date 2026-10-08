@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "benchmark_version": "p2-f01-authored-curated-v1",
+  "case_id": "P2-F01-CONTROL-05",
+  "domain": "家庭园艺与节水",
+  "failure_family": "CONTROL",
+  "time_scope": "假设一个包含雨季和旱季的使用年度，不引用现实降雨数据",
+  "provenance": {
+    "kind": "synthetic authored-curated",
+    "author_role": "benchmark case drafter",
+    "language": "zh-CN",
+    "description": "以下研究任务与材料均为人工编写的假设情境，仅用于冻结语料评估。它们不是现实研究结果，不含真实人物、论文、机构、测量数值或引文。",
+    "source_identity": "questionId 是 canonical 数字字符串 fixture identity，不是真实知乎 ID；simulated-direct-record 仅表示合成情境中直接记录的材料角色，不表示现实权威。",
+    "materials": [
+      {
+        "question_id": "5501",
+        "role": "simulated-direct-record"
+      },
+      {
+        "question_id": "5502",
+        "role": "commentary"
+      },
+      {
+        "question_id": "5503",
+        "role": "commentary"
+      }
+    ]
+  },
+  "scope": "CURATED_TARGETS != OPEN_WORLD_COMPLETENESS",
+  "targets": {
+    "important_aspects": [
+      {
+        "target_id": "A1",
+        "label": "储水维护安全",
+        "support_any_of": [
+          {
+            "question_id": "5501",
+            "accepted_statements": [
+              "模拟小院记录显示，储水加盖能减少蚊虫进入；雨季可用于浇灌，旱季仍需补水，不能视为全年稳定供水。"
+            ]
+          }
+        ]
+      },
+      {
+        "target_id": "A2",
+        "label": "季节供水条件",
+        "support_any_of": [
+          {
+            "question_id": "5501",
+            "accepted_statements": [
+              "模拟小院记录显示，储水加盖能减少蚊虫进入；雨季可用于浇灌，旱季仍需补水，不能视为全年稳定供水。"
+            ]
+          }
+        ]
+      }
+    ],
+    "counterpositions": [
+      {
+        "target_id": "C1",
+        "label": "不应完全替代原供水",
+        "support_any_of": [
+          {
+            "question_id": "5502",
+            "accepted_statements": [
+              "这份假设评论建议只把集雨桶作为浇灌补充：旱季供水不可靠，不能完全替代原有供水，储水还应保持加盖。"
+            ]
+          }
+        ]
+      }
+    ],
+    "key_evidence": [
+      {
+        "target_id": "K1",
+        "label": "记录维护与季节使用边界的直接材料",
+        "question_id": "5501",
+        "expected_text": "模拟小院记录显示，储水加盖能减少蚊虫进入；雨季可用于浇灌，旱季仍需补水，不能视为全年稳定供水。"
+      }
+    ]
+  },
+  "hidden_targets": [
+    "A1",
+    "A2",
+    "C1",
+    "K1"
+  ],
+  "evaluation_notes": "初始路线已有全部 curated targets 的证据；须实际 verified/analyzed 才能报告完整命中。candidate 即使取得 5503 也不能因额外文档、重复术语或检索次数而产生 discovery gain。"
+}

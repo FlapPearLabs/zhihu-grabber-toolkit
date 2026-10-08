@@ -1,0 +1,10 @@
+{
+  "repo_sha": "d36209f7a5e40db98f4b4194869fb85442d569df",
+  "case_id": "P2-F01-AUTHORITY-03",
+  "arm": "baseline",
+  "campaign_status": "ABORTED",
+  "product_failure": "clarification_required",
+  "finding": "Harness aborted at a legitimate product clarification and omitted remaining case reports. Preserve product decisions and classify incomplete results INVALID with UNKNOWN quality, rather than changing case or selecting a source automatically.",
+  "repair_scope": "evaluator/orchestrator only; no benchmark, targets, routes, product policy or authority edits",
+  "evidence_ref": "docs/acceptance/p2-f01/initial-failure"
+}

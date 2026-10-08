@@ -1,0 +1,47 @@
+{
+  "diagnosedGaps": [
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 0,
+      "gapId": "c1a648f604492d4400b03f7bda38f49b802bf774903d08bf31280c411b5947a1:0",
+      "gapIdentityCore": "c1a648f604492d4400b03f7bda38f49b802bf774903d08bf31280c411b5947a1",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "77fade45-a66c-44e6-ad38-1781baadfebc",
+      "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+      "subjectKey": "aspect:街区固定遮阴 场地与运维适配"
+    },
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 1,
+      "gapId": "c1a648f604492d4400b03f7bda38f49b802bf774903d08bf31280c411b5947a1:1",
+      "gapIdentityCore": "c1a648f604492d4400b03f7bda38f49b802bf774903d08bf31280c411b5947a1",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "77fade45-a66c-44e6-ad38-1781baadfebc",
+      "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+      "subjectKey": "aspect:街区固定遮阴 场地与运维适配"
+    },
+    {
+      "declaredGapType": "CONTRADICTION_GAP",
+      "diagnosisRound": 0,
+      "gapId": "e0040064b746633be108cfc970a723465a8994d1a04ef1e0833a947f37460c66:0",
+      "gapIdentityCore": "e0040064b746633be108cfc970a723465a8994d1a04ef1e0833a947f37460c66",
+      "gapType": "CONTRADICTION_GAP",
+      "occurrenceId": "77fade45-a66c-44e6-ad38-1781baadfebc",
+      "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+      "subjectKey": "opposing:固定遮阴 可替代方案"
+    },
+    {
+      "declaredGapType": "CONTRADICTION_GAP",
+      "diagnosisRound": 1,
+      "gapId": "e0040064b746633be108cfc970a723465a8994d1a04ef1e0833a947f37460c66:1",
+      "gapIdentityCore": "e0040064b746633be108cfc970a723465a8994d1a04ef1e0833a947f37460c66",
+      "gapType": "CONTRADICTION_GAP",
+      "occurrenceId": "77fade45-a66c-44e6-ad38-1781baadfebc",
+      "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+      "subjectKey": "opposing:固定遮阴 可替代方案"
+    }
+  ],
+  "occurrenceId": "77fade45-a66c-44e6-ad38-1781baadfebc",
+  "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+  "schema": "p2-ari-targeted-requery-ledger/v1"
+}

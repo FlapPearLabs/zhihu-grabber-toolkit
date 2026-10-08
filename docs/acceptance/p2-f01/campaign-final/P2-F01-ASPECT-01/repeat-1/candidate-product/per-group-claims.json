@@ -1,0 +1,149 @@
+{
+  "seam": "T13_TO_T14",
+  "seamVersion": 1,
+  "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+  "selectedCorpusIdentityRef": "sha256:4696906252b35cf5b7aa35a43d5322d82e9576c17c38f1e0a95fe7f5531c2a6f",
+  "groupRepresentations": [
+    {
+      "groupId": "1101",
+      "canonicalGroupIdentity": {
+        "questionId": "1101",
+        "providerId": "zhihu",
+        "capability": "zhihu-answers"
+      },
+      "accounting": {
+        "selected": 1,
+        "verified": 1,
+        "mapped": 1,
+        "analyzed": 1
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-1101-001",
+            "statement": "在这条假设街道，连续遮阴让午后步行者少受直晒；增设设施的主要收益是热舒适。",
+            "sourceRefs": [
+              "asrc-a09e89a9a360c0243e706966"
+            ],
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 1
+      }
+    },
+    {
+      "groupId": "1102",
+      "canonicalGroupIdentity": {
+        "questionId": "1102",
+        "providerId": "zhihu",
+        "capability": "zhihu-answers"
+      },
+      "accounting": {
+        "selected": 1,
+        "verified": 1,
+        "mapped": 1,
+        "analyzed": 1
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-1102-001",
+            "statement": "模拟等候区记录显示，有遮阴的位置让老人更愿意停留；这一观察只支持夏季舒适，未检查全年适配。",
+            "sourceRefs": [
+              "asrc-efffa7d80c64168eda69d0a2"
+            ],
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 1
+      }
+    },
+    {
+      "groupId": "1103",
+      "canonicalGroupIdentity": {
+        "questionId": "1103",
+        "providerId": "zhihu",
+        "capability": "zhihu-answers"
+      },
+      "accounting": {
+        "selected": 1,
+        "verified": 1,
+        "mapped": 1,
+        "analyzed": 1
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-1103-001",
+            "statement": "模拟现场核查发现，固定立柱占用应急通道，全年顶棚遮挡冬季采光；设计需要同时保留通行空间和季节调整能力。",
+            "sourceRefs": [
+              "asrc-011d0d401a20d9219b2a661c"
+            ],
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 1
+      }
+    },
+    {
+      "groupId": "1104",
+      "canonicalGroupIdentity": {
+        "questionId": "1104",
+        "providerId": "zhihu",
+        "capability": "zhihu-answers"
+      },
+      "accounting": {
+        "selected": 1,
+        "verified": 1,
+        "mapped": 1,
+        "analyzed": 1
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-1104-001",
+            "statement": "在通道狭窄的假设路段，季节性可收回遮阴比统一固定顶棚更合适，因为能在非炎热季节恢复开放空间。",
+            "sourceRefs": [
+              "asrc-493bdd8cdaa06fe0148f6419"
+            ],
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 1
+      }
+    }
+  ],
+  "aggregateAnalyzedIdentity": {
+    "mappedAnalyzedSourceSetIdentity": "sha256:4696906252b35cf5b7aa35a43d5322d82e9576c17c38f1e0a95fe7f5531c2a6f",
+    "perGroup": {
+      "1101": "sha256:30c4ba7751a587930f082980c7964b531caf5a3cc8ddf5061de44516d172ed7e",
+      "1102": "sha256:6cbb4665839d9db7f9b176ee25a079d8f0a004d5aeba53671186e6af12bac7bf",
+      "1103": "sha256:ec083a8ad1b7d263ca4efa56d1e8ff620f20eb1373223808ee13897550ef0ae3",
+      "1104": "sha256:8ca324753fecd4bf5133f7db6aa0be81f6f63c408a5ae2ec6a855becfffc864c"
+    }
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "seam": "T13_TO_T14",
+  "seamVersion": 1,
+  "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+  "selectedCorpusIdentityRef": "sha256:8e2ec3390d24d4e1197e07dd47a5fa18b8b7dded7f59519b78f5041a551c9cd1",
+  "groupRepresentations": [
+    {
+      "groupId": "2201",
+      "canonicalGroupIdentity": {
+        "questionId": "2201",
+        "providerId": "zhihu",
+        "capability": "zhihu-answers"
+      },
+      "accounting": {
+        "selected": 1,
+        "verified": 1,
+        "mapped": 1,
+        "analyzed": 1
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-2201-001",
+            "statement": "在假设课程中，可选练习让已掌握内容的学生免于机械重复；支持者认为选择权能够减少重复负担。",
+            "sourceRefs": [
+              "asrc-418b91796334b172f0447c52"
+            ],
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 1
+      }
+    },
+    {
+      "groupId": "2202",
+      "canonicalGroupIdentity": {
+        "questionId": "2202",
+        "providerId": "zhihu",
+        "capability": "zhihu-answers"
+      },
+      "accounting": {
+        "selected": 1,
+        "verified": 1,
+        "mapped": 1,
+        "analyzed": 1
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-2202-001",
+            "statement": "模拟访谈中，自主安排能力较强的学生说，可选练习允许按薄弱点复习；记录支持自主安排的收益。",
+            "sourceRefs": [
+              "asrc-da917a3f358b1876323d66ff"
+            ],
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 1
+      }
+    }
+  ],
+  "aggregateAnalyzedIdentity": {
+    "mappedAnalyzedSourceSetIdentity": "sha256:8e2ec3390d24d4e1197e07dd47a5fa18b8b7dded7f59519b78f5041a551c9cd1",
+    "perGroup": {
+      "2201": "sha256:e22dd24f2400defe9a0929563843a458e1445c96746351e6eddd7eb8a4c3027f",
+      "2202": "sha256:88e3f4c28596d7e88d17ed9671216859ced4f5374c6daa3fe23a67c3081ae6ad"
+    }
+  }
+}

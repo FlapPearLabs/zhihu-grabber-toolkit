@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+  "retrieval": {
+    "plannedQueryVariants": [
+      "卧室净化器 风量选购"
+    ],
+    "plannedRoutes": [
+      {
+        "providerId": "zhihu_search",
+        "capability": "search"
+      },
+      {
+        "providerId": "zhihu-open-platform",
+        "capability": "search"
+      }
+    ],
+    "executedRoutes": [
+      {
+        "query": "卧室净化器 风量选购",
+        "providerId": "zhihu_search",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "卧室净化器 风量选购",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "卧室净化器 风量选购",
+        "providerId": "zhihu_search",
+        "capability": "search",
+        "roundIndex": 2
+      },
+      {
+        "query": "卧室净化器 风量选购",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 2
+      }
+    ],
+    "fusedCandidateCount": 2,
+    "fusedGroupCount": 0,
+    "providerFailures": [],
+    "retrievalRounds": 2,
+    "stopReason": "zero_new_candidates"
+  },
+  "sourceCompleteness": {
+    "perGroupStatus": {},
+    "diagnostics": {
+      "capturedNotVerifiedCount": 0,
+      "totalSelectedCount": 0,
+      "totalVerifiedCount": 0
+    }
+  },
+  "analysisCoverage": {
+    "selectedCorpusSourceSet": [],
+    "mappedSourceSet": [],
+    "analyzedSourceSet": [],
+    "perGroupMappedSourceSet": {},
+    "perGroupAnalyzedSourceSet": {},
+    "evidenceRefIssues": {
+      "missingRefs": [],
+      "duplicateRefs": [],
+      "staleRefs": [],
+      "invalidRefs": []
+    },
+    "is100PercentAnalysis": false
+  },
+  "diagnostics": {
+    "new_aspect_rate": 0,
+    "new_claim_rate": 0,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "novelty_gain": 0,
+    "selected_source_group_count": 0,
+    "selected_content_by_group": {},
+    "largest_group_share": 0,
+    "selected_author_concentration": 0,
+    "selected_content_type_distribution": {},
+    "claim_source_diversity": 0,
+    "per_group_selection_coverage": {}
+  }
+}

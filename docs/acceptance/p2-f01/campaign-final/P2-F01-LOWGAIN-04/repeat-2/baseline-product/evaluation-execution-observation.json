@@ -1,0 +1,65 @@
+{
+  "implementation": "DETERMINISTIC_DOUBLE",
+  "calls": [
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "村镇就医公交 增加班次",
+      "question_ids": [
+        "4401",
+        "4402"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "村镇就医公交 增加班次",
+      "question_ids": [
+        "4401",
+        "4402"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "村镇就医公交 增加班次",
+      "question_ids": [
+        "4401",
+        "4402"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "村镇就医公交 增加班次",
+      "question_ids": [
+        "4401",
+        "4402"
+      ]
+    },
+    {
+      "kind": "capture",
+      "question_id": "4401"
+    },
+    {
+      "kind": "capture",
+      "question_id": "4402"
+    }
+  ],
+  "semantic_calls": [
+    "analyze",
+    "analyze",
+    "synthesize"
+  ],
+  "cost": {
+    "retrieval_calls": 4,
+    "retrieval_attempts": 4,
+    "provider_calls": 6,
+    "external_provider_calls": 0,
+    "model_invocations": 0,
+    "semantic_adapter_invocations": 3,
+    "wall_clock_ms": 355.8755,
+    "token_cost": "UNKNOWN",
+    "money_cost": "UNKNOWN"
+  }
+}

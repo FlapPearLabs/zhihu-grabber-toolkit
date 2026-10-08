@@ -1,0 +1,251 @@
+{
+  "schema_version": 1,
+  "status": "VALID",
+  "product_failure": null,
+  "arm": "baseline",
+  "repetition": 2,
+  "identity": {
+    "repo_sha": "b6fb5265043da398b7a1e92a8fade55d64c59373",
+    "case_id": "P2-F01-ASPECT-01",
+    "benchmark_version": "p2-f01-authored-curated-v1",
+    "benchmark_hashes": {
+      "research-orchestration/evaluation/benchmark/benchmark.json": "533d0e7fa442ea1986b6edf6302b38ef9aecf8bc191be1b224bf6ed1cc09280b",
+      "research-orchestration/evaluation/benchmark/cases/P2-F01-ASPECT-01/product-input.json": "5e594797149da877ea71e3f9f8e1394b8fb551615cb12e41f61baaa185db9e7f",
+      "research-orchestration/evaluation/benchmark/cases/P2-F01-ASPECT-01/eval-case.json": "4ed7b3407f55a67f49b122691cc4ebda74d581153902e4417982b31521be4dd0"
+    },
+    "evaluator_version": "p2-f01-exact-supported-statements-v1",
+    "product_input_hash": "5e594797149da877ea71e3f9f8e1394b8fb551615cb12e41f61baaa185db9e7f",
+    "canonical_product_input_hash": "dd61928b553dc4359674a83c8e8c58281fc4f1e6d5cf2e7f16266fbc012e6533",
+    "time_scope": "假设未来一个完整使用年度，覆盖夏季与冬季；不对应现实日期",
+    "shared_product_config": {
+      "maxQueryBudget": 20
+    },
+    "runtime_identity": {
+      "implementation": "DETERMINISTIC_DOUBLE",
+      "node": "v26.10.0",
+      "contract_runtime_pin": "deepseek-api-tool-less",
+      "embedding": "existing mockVector768(7)"
+    },
+    "model_identity": {
+      "actual_model": "NONE",
+      "contract_model_pin": "deepseek-v4-pro",
+      "semantic_policy": "verbatim-fenced-content-v1"
+    },
+    "provider_identity": [
+      "zhihu_search:frozen-double",
+      "zhihu-open-platform:frozen-double",
+      "frozen-evaluation-capture"
+    ]
+  },
+  "product_config": {
+    "maxQueryBudget": 20,
+    "targeted_enabled": false,
+    "proposal_policy": "NONE",
+    "max_attempts_per_gap": 2,
+    "cache_state": "COLD_SEPARATE_DIRECTORY",
+    "planner": "PUBLIC_FROZEN_PLAN"
+  },
+  "timestamp": "2026-10-08T02:55:45.649Z",
+  "product_identity": {
+    "run_id": "6c55752597c7f68afab93e0a0c67b9442aec0c02ed11e1eb1b6b28272bc548b1",
+    "occurrence_id": "02853ad3-3c94-40d4-b055-a047c18e2e6b",
+    "plan_hash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16"
+  },
+  "artifact_hashes": [
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/.p1-commit-staging/coverageState/39c0704c127d6f06d4db5733beac10c5781decac74cf48b889e392e1bb4b8a90.json",
+      "sha256": "39c0704c127d6f06d4db5733beac10c5781decac74cf48b889e392e1bb4b8a90"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/.p1-commit-staging/coverageState/3c536e99ed9095e00d0b0d51a21eb88d325182cd28202a95ffd66dcf29232b1e.json",
+      "sha256": "3c536e99ed9095e00d0b0d51a21eb88d325182cd28202a95ffd66dcf29232b1e"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/.p1-commit-staging/coverageState/75224473cc746cd88eb2621e6171bc386b868cf6f114cf407c54aae610d51e61.json",
+      "sha256": "75224473cc746cd88eb2621e6171bc386b868cf6f114cf407c54aae610d51e61"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/.p1-commit-staging/coverageState/912d4f62d3485cd9d58626181bd8af820706c62601d6d03f1359d87708b001e7.json",
+      "sha256": "912d4f62d3485cd9d58626181bd8af820706c62601d6d03f1359d87708b001e7"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/.p1-commit-staging/coverageState/c2ca6d0900407d3b0cbd6e78b56973c31d20febb118ed7212780ac72ca0af24d.json",
+      "sha256": "c2ca6d0900407d3b0cbd6e78b56973c31d20febb118ed7212780ac72ca0af24d"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/.p1-commit-staging/coverageState/e2e709d0161f7ec9d4b320a69e07d0982d200cfba50948c94181b679f25ca7ab.json",
+      "sha256": "e2e709d0161f7ec9d4b320a69e07d0982d200cfba50948c94181b679f25ca7ab"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/coverage-final.json",
+      "sha256": "d71e5c0058bec467db5974add250dca990cc62639c8c0c54c794dc67ed619c3b"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/coverage-state.json",
+      "sha256": "f261985702767cf2b6c3316bccb235c3ff0b1fcf00dda93da8a6ad5a41dc6a9b"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/cross-source-synthesis.json",
+      "sha256": "da712d599cf1c737ef23f5aa112448f60697082bfa45535c5bbc9d97655ffdcd"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/evaluation-execution-observation.json",
+      "sha256": "333e0d68f87330a9d2de7e00ebee7e808c20f6e5390ee6dce4d83135c754553f"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/events.jsonl",
+      "sha256": "3c461db6b9c4f93cfa0cb058fe9c54e32fa0b0fda0aeaded0a4000cba677edba"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/multi-group-state.json",
+      "sha256": "e7fed6e0cf6583f17fb582c2fbbd8fb52ffe784f737e3d60762e21e03abbe889"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/orchestration-state.json",
+      "sha256": "109d1275a2b50f6257e83421ee84a4bf54b6ddbed734f538ebc5d0f297475a72"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/per-group-claims.json",
+      "sha256": "feca2ccf34d92f57baa2163951fc73d9b4bca61835e6817052972f84eccd30a4"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/research-plan.json",
+      "sha256": "38cee91a44dce8618f8c6d538e2768148145c2bffe41443ccebc96cd87389f30"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/research-result.json",
+      "sha256": "65d0800fd630845c380882c88d41342b7ce499cb41fd2472503e76cd47de7403"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/retrieval-rounds/accumulated-pool.json",
+      "sha256": "81623d7609ba68f20988fe3b8f61b54523740cbcf989d096ec5fd94f88996b7a"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/retrieval-rounds/round-1/retrieval-pool.json",
+      "sha256": "e8ffc2cdb88197ff8328866c799f4579651526f3ce839174b143fe43267e5210"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/retrieval-rounds/round-2/retrieval-pool.json",
+      "sha256": "e8ffc2cdb88197ff8328866c799f4579651526f3ce839174b143fe43267e5210"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/source-group-selection-decision.json",
+      "sha256": "895c936a20d95a4c507c0f2e912142f16c0b2ca0144f0eb388b57569a3c3af9c"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/zhihu/1101/.progress.json",
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/zhihu/1101/answers.json",
+      "sha256": "171d00a85cb4ca5aee839507d8c05352037f92e635dd135a73730ee96f70d42f"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/zhihu/1101/answers.md",
+      "sha256": "fc959781ebdd39ece0c1fc498fb52f9880819155dd595e552a0451c4f8fe4fb9"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/zhihu/1101/handoff.json",
+      "sha256": "a32c37220bfbdcab05d2105ef4c159b7d90af1cf151aad4330aa636e9dfc0fa0"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/zhihu/1102/.progress.json",
+      "sha256": "210804ad02cb5d2622f323521f3de104ed569f4d669c22d8def613d9c6ec9a46"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/zhihu/1102/answers.json",
+      "sha256": "6c1e9880790922fb3d26ae2433cd6218c764a9ac3a7e90a5c11393d9262d41af"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/zhihu/1102/answers.md",
+      "sha256": "59fdff31fa96e107a234b4de530e236e57354fbec4a5dee39527cd2455289670"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-final/P2-F01-ASPECT-01/repeat-2/baseline-product/zhihu/1102/handoff.json",
+      "sha256": "b355616019ee1326da66e7a9815c94b6b5201f0891ea3a3a2d21a9e169ca2830"
+    }
+  ],
+  "product_checkpoint_hashes": {
+    "researchPlan": "38cee91a44dce8618f8c6d538e2768148145c2bffe41443ccebc96cd87389f30",
+    "coverageState": "f261985702767cf2b6c3316bccb235c3ff0b1fcf00dda93da8a6ad5a41dc6a9b",
+    "coverageFinal": "d71e5c0058bec467db5974add250dca990cc62639c8c0c54c794dc67ed619c3b",
+    "perGroupClaims": "feca2ccf34d92f57baa2163951fc73d9b4bca61835e6817052972f84eccd30a4",
+    "synthesis": "da712d599cf1c737ef23f5aa112448f60697082bfa45535c5bbc9d97655ffdcd",
+    "researchResult": "65d0800fd630845c380882c88d41342b7ce499cb41fd2472503e76cd47de7403",
+    "accumulatedPool": "81623d7609ba68f20988fe3b8f61b54523740cbcf989d096ec5fd94f88996b7a",
+    "selectionDecision": "895c936a20d95a4c507c0f2e912142f16c0b2ca0144f0eb388b57569a3c3af9c"
+  },
+  "metrics": {
+    "important_aspect_discovery": {
+      "hits": 1,
+      "total": 3,
+      "ratio": 0.3333333333333333,
+      "targets": [
+        {
+          "target_id": "A1",
+          "hit": true,
+          "proof": {
+            "question_id": "1101",
+            "source_id": "asrc-a09e89a9a360c0243e706966",
+            "claim_id": "c-1101-001",
+            "statement": "在这条假设街道，连续遮阴让午后步行者少受直晒；增设设施的主要收益是热舒适。"
+          }
+        },
+        {
+          "target_id": "A2",
+          "hit": false,
+          "proof": null
+        },
+        {
+          "target_id": "A3",
+          "hit": false,
+          "proof": null
+        }
+      ]
+    },
+    "counterposition_discovery": {
+      "hits": 0,
+      "total": 1,
+      "ratio": 0,
+      "targets": [
+        {
+          "target_id": "C1",
+          "hit": false,
+          "proof": null
+        }
+      ]
+    },
+    "key_evidence_discovery": {
+      "hits": 0,
+      "total": 1,
+      "ratio": 0,
+      "targets": [
+        {
+          "target_id": "K1",
+          "hit": false,
+          "proof": null
+        }
+      ]
+    }
+  },
+  "cost": {
+    "retrieval_calls": 4,
+    "retrieval_attempts": 4,
+    "provider_calls": 6,
+    "external_provider_calls": 0,
+    "model_invocations": 0,
+    "semantic_adapter_invocations": 3,
+    "wall_clock_ms": 394.7485,
+    "token_cost": "UNKNOWN",
+    "money_cost": "UNKNOWN",
+    "selected_corpus_sources": 2,
+    "downstream_material_chars": 82
+  },
+  "supporting": {
+    "stop_reason": "zero_new_candidates",
+    "duplicate_ratio": 0.75,
+    "unresolved_gap_rate": "UNKNOWN",
+    "targeted_action_count": 0,
+    "new_materially_useful_sources_per_targeted_round": "UNKNOWN"
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "benchmark_version": "p2-f01-authored-curated-v1",
+  "case_id": "P2-F01-LOWGAIN-04",
+  "domain": "农村公共交通",
+  "failure_family": "FALSE SATURATION / LOW GAIN",
+  "time_scope": "假设一个常规运营周期；不对应真实线路、地区或运营数据",
+  "provenance": {
+    "kind": "synthetic authored-curated",
+    "author_role": "benchmark case drafter",
+    "language": "zh-CN",
+    "description": "以下研究任务与材料均为人工编写的假设情境，仅用于冻结语料评估。它们不是现实研究结果，不含真实人物、论文、机构、测量数值或引文。",
+    "source_identity": "questionId 是 canonical 数字字符串 fixture identity，不是真实知乎 ID；simulated-direct-record 仅表示合成情境中直接记录的材料角色，不表示现实权威。",
+    "materials": [
+      {
+        "question_id": "4401",
+        "role": "commentary"
+      },
+      {
+        "question_id": "4402",
+        "role": "commentary"
+      },
+      {
+        "question_id": "4403",
+        "role": "simulated-direct-record"
+      },
+      {
+        "question_id": "4404",
+        "role": "commentary"
+      }
+    ]
+  },
+  "scope": "CURATED_TARGETS != OPEN_WORLD_COMPLETENESS",
+  "targets": {
+    "important_aspects": [
+      {
+        "target_id": "A1",
+        "label": "候车便利",
+        "support_any_of": [
+          {
+            "question_id": "4401",
+            "accepted_statements": [
+              "在这份假设评论中，增加班次能缩短候车等待，给已能到达站点的居民更多出发选择。"
+            ]
+          },
+          {
+            "question_id": "4402",
+            "accepted_statements": [
+              "这份二手评论同样把候车等待视为就医出行的主要不便，支持更密的班次；未调查无法完成出发手续的人。"
+            ]
+          },
+          {
+            "question_id": "4404",
+            "accepted_statements": [
+              "这份假设解释继续强调更多班次会减少候车等待，讨论对象仍是已经能够乘车的人，没有增加其他服务限制的证据。"
+            ]
+          }
+        ]
+      },
+      {
+        "target_id": "A2",
+        "label": "预约手续的可及性",
+        "support_any_of": [
+          {
+            "question_id": "4403",
+            "accepted_statements": [
+              "模拟出行日志记录，线上预约门槛让不会操作的居民无法乘车；仅增班次不能解决这一限制，还需要线下预约渠道。"
+            ]
+          }
+        ]
+      }
+    ],
+    "counterpositions": [
+      {
+        "target_id": "C1",
+        "label": "班次不能单独解决无法乘车的限制",
+        "support_any_of": [
+          {
+            "question_id": "4403",
+            "accepted_statements": [
+              "模拟出行日志记录，线上预约门槛让不会操作的居民无法乘车；仅增班次不能解决这一限制，还需要线下预约渠道。"
+            ]
+          }
+        ]
+      }
+    ],
+    "key_evidence": [
+      {
+        "target_id": "K1",
+        "label": "记录实际无法乘车机制的日志",
+        "question_id": "4403",
+        "expected_text": "模拟出行日志记录，线上预约门槛让不会操作的居民无法乘车；仅增班次不能解决这一限制，还需要线下预约渠道。"
+      }
+    ]
+  },
+  "hidden_targets": [
+    "A1",
+    "A2",
+    "C1",
+    "K1"
+  ],
+  "evaluation_notes": "刻意保留失败：4403 在冻结 corpus 内但不在任何 public-plan route 中。现有计划的补查只能重复或取得同簇新文档，不能获 A2/C1/K1。新 source identity 不等于新 target hit。该人工语料结构不构成开放世界中 #109 已有 promotion evidence。"
+}

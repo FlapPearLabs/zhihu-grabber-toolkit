@@ -1,0 +1,114 @@
+{
+  "occurrenceId": "c52a0333-0d0d-48d4-a324-9c4216cfa9d2",
+  "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": "c29138bdcab25e73c5dd37252a6e23796d9c74467c1d1d0852740f5aae7b030d",
+      "artifactRel": "targeted-requery-subphase/action-08838e898cef3d2b0c0889212d158389df8d218efb6699cf85251708f3387d0a/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-08838e898cef3d2b0c0889212d158389df8d218efb6699cf85251708f3387d0a/retrieval-pool.json",
+          "bindingHash": "c29138bdcab25e73c5dd37252a6e23796d9c74467c1d1d0852740f5aae7b030d",
+          "bindingKey": "targeted-action:08838e898cef3d2b0c0889212d158389df8d218efb6699cf85251708f3387d0a",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "EVALUATE",
+          "from": "COMMITTED",
+          "reason": null,
+          "seq": 3,
+          "to": "EVALUATED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "CONCLUDE",
+          "from": "EVALUATED",
+          "reason": null,
+          "seq": 4,
+          "to": "UNRESOLVED"
+        }
+      ],
+      "bindingHash": "c29138bdcab25e73c5dd37252a6e23796d9c74467c1d1d0852740f5aae7b030d",
+      "bindingKey": "targeted-action:08838e898cef3d2b0c0889212d158389df8d218efb6699cf85251708f3387d0a",
+      "dedupeKey": "18d3c120bd58c3b9255ac988e80b490092b6372a6aba9aa35faaecbc8152ffde",
+      "gapId": "33e06f11f0fd5a3c54be8da6e639cefdda855e59ae377f6f7a36e2072f7a89e1:0",
+      "gapIdentityCore": "33e06f11f0fd5a3c54be8da6e639cefdda855e59ae377f6f7a36e2072f7a89e1",
+      "normalizedQuery": "雨水浇灌 替代供水的局限",
+      "occurrenceId": "c52a0333-0d0d-48d4-a324-9c4216cfa9d2",
+      "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "7fe8b9f5639702c975412a8efb937414d3b14677f22428f47b16379d0ea3f46c",
+      "status": "UNRESOLVED",
+      "targetedActionId": "08838e898cef3d2b0c0889212d158389df8d218efb6699cf85251708f3387d0a"
+    },
+    {
+      "artifactHash": null,
+      "artifactRel": null,
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        }
+      ],
+      "bindingHash": null,
+      "bindingKey": null,
+      "dedupeKey": "5cf5588f20af34dd8d978765a59cf67a97be34eaacfb523160388d86ea818bc6",
+      "gapId": "e5c329942882860ee41431bfe62251d3cd012ceec6c4ecb5161e640b32d105f1:0",
+      "gapIdentityCore": "e5c329942882860ee41431bfe62251d3cd012ceec6c4ecb5161e640b32d105f1",
+      "normalizedQuery": "家用雨水浇灌",
+      "occurrenceId": "c52a0333-0d0d-48d4-a324-9c4216cfa9d2",
+      "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "7fe8b9f5639702c975412a8efb937414d3b14677f22428f47b16379d0ea3f46c",
+      "status": "AUTHORIZED",
+      "targetedActionId": "11d5b986763e1a1c441cd5f50c5347ba9da6c83989ffb84f21ac73d020372a35"
+    }
+  ]
+}

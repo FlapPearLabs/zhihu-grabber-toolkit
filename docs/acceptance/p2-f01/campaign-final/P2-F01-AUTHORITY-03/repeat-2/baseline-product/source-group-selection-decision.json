@@ -1,0 +1,55 @@
+{
+  "verdict": "ambiguous",
+  "reason": "material_ambiguity",
+  "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+  "poolPlanHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+  "planHashMatch": true,
+  "selectorVersion": "p1-t08-source-group-selection/v1",
+  "schemaVersion": 1,
+  "type": "source-group-selection-decision",
+  "selectedGroups": [],
+  "selectedGroupCount": 0,
+  "candidates": [
+    {
+      "questionId": "3301",
+      "score": 0.03278688524590164,
+      "rrfScore": 0.03278688524590164,
+      "eligible": true,
+      "selected": false
+    },
+    {
+      "questionId": "3302",
+      "score": 0.03225806451612903,
+      "rrfScore": 0.03225806451612903,
+      "eligible": true,
+      "selected": false
+    }
+  ],
+  "clarification": {
+    "required": true,
+    "count": 1,
+    "options": [
+      {
+        "groupId": "3301",
+        "questionId": "3301",
+        "score": 0.03278688524590164,
+        "sourceUrl": null
+      },
+      {
+        "groupId": "3302",
+        "questionId": "3302",
+        "score": 0.03225806451612903,
+        "sourceUrl": null
+      }
+    ],
+    "message": "material ambiguity: the free-selection boundary of the source-group set is fuzzy (optional group 3301 score 0.03278688524590164 vs excluded optional group 3302 score 0.03225806451612903; gap < ambiguity margin 0.01) — auto-selecting would change the normalized research intent"
+  },
+  "clarificationCount": 0,
+  "intentCoverage": {
+    "total": 1,
+    "bound": 1,
+    "unmet": 0,
+    "shortfall": 0
+  },
+  "rationale": "material ambiguity: the free-selection boundary of the source-group set is fuzzy (optional group 3301 score 0.03278688524590164 vs excluded optional group 3302 score 0.03225806451612903; gap < ambiguity margin 0.01) — auto-selecting would change the normalized research intent"
+}

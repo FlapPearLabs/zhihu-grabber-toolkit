@@ -1,0 +1,46 @@
+{
+  "occurrenceId": "d33b8115-d973-489c-ad9c-0ec35257ced9",
+  "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": null,
+      "artifactRel": null,
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        }
+      ],
+      "bindingHash": null,
+      "bindingKey": null,
+      "dedupeKey": "5ff49da03d455ba02e7cc7dffa505befa8300782d37e4c928f564899a8015880",
+      "gapId": "03143b7446ee5e2e1d6168b2d20a940660c8be021e1bd6df77fd06760469d936:0",
+      "gapIdentityCore": "03143b7446ee5e2e1d6168b2d20a940660c8be021e1bd6df77fd06760469d936",
+      "normalizedQuery": "净化器 仅看风量的局限",
+      "occurrenceId": "d33b8115-d973-489c-ad9c-0ec35257ced9",
+      "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
+      "status": "AUTHORIZED",
+      "targetedActionId": "62985309a199086c2eaa6cc9506ce99bc9d4e183d9e5cc83f17cdb0385f483d4"
+    }
+  ]
+}

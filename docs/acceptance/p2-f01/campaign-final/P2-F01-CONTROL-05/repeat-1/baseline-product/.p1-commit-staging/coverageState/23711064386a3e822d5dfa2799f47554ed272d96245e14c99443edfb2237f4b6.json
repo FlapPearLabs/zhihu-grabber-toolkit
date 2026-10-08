@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "retrieval": {
+    "plannedQueryVariants": [
+      "雨水收集桶 小院浇灌条件"
+    ],
+    "plannedRoutes": [
+      {
+        "providerId": "zhihu_search",
+        "capability": "search"
+      },
+      {
+        "providerId": "zhihu-open-platform",
+        "capability": "search"
+      }
+    ],
+    "executedRoutes": [
+      {
+        "query": "雨水收集桶 小院浇灌条件",
+        "providerId": "zhihu_search",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "雨水收集桶 小院浇灌条件",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "雨水收集桶 小院浇灌条件",
+        "providerId": "zhihu_search",
+        "capability": "search",
+        "roundIndex": 2
+      },
+      {
+        "query": "雨水收集桶 小院浇灌条件",
+        "providerId": "zhihu-open-platform",
+        "capability": "search",
+        "roundIndex": 2
+      }
+    ],
+    "fusedCandidateCount": 2,
+    "fusedGroupCount": 2,
+    "providerFailures": [],
+    "retrievalRounds": 2,
+    "stopReason": "zero_new_candidates"
+  },
+  "sourceCompleteness": {
+    "perGroupStatus": {
+      "5501": {
+        "captured": true,
+        "verified": true,
+        "partial": false,
+        "failed": false,
+        "paginationStatus": "complete",
+        "evidenceRef": "zhihu/5501/answers.json",
+        "selectedCount": 1,
+        "verifiedCount": 1
+      },
+      "5502": {
+        "captured": true,
+        "verified": true,
+        "partial": false,
+        "failed": false,
+        "paginationStatus": "complete",
+        "evidenceRef": "zhihu/5502/answers.json",
+        "selectedCount": 1,
+        "verifiedCount": 1
+      }
+    },
+    "diagnostics": {
+      "capturedNotVerifiedCount": 0,
+      "totalSelectedCount": 2,
+      "totalVerifiedCount": 2
+    }
+  },
+  "analysisCoverage": {
+    "selectedCorpusSourceSet": [
+      "asrc-8ee250eabf5b8b162d5a3004",
+      "asrc-9f0b74ddf8f5535d56ea8b01"
+    ],
+    "mappedSourceSet": [
+      "asrc-8ee250eabf5b8b162d5a3004",
+      "asrc-9f0b74ddf8f5535d56ea8b01"
+    ],
+    "analyzedSourceSet": [
+      "asrc-8ee250eabf5b8b162d5a3004",
+      "asrc-9f0b74ddf8f5535d56ea8b01"
+    ],
+    "perGroupMappedSourceSet": {
+      "5501": [
+        "asrc-9f0b74ddf8f5535d56ea8b01"
+      ],
+      "5502": [
+        "asrc-8ee250eabf5b8b162d5a3004"
+      ]
+    },
+    "perGroupAnalyzedSourceSet": {
+      "5501": [
+        "asrc-9f0b74ddf8f5535d56ea8b01"
+      ],
+      "5502": [
+        "asrc-8ee250eabf5b8b162d5a3004"
+      ]
+    },
+    "evidenceRefIssues": {
+      "missingRefs": [],
+      "duplicateRefs": [],
+      "staleRefs": [],
+      "invalidRefs": []
+    },
+    "is100PercentAnalysis": false
+  },
+  "diagnostics": {
+    "new_aspect_rate": 0,
+    "new_claim_rate": 0,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "novelty_gain": 0,
+    "selected_source_group_count": 2,
+    "selected_content_by_group": {
+      "5501": 1,
+      "5502": 1
+    },
+    "largest_group_share": 0.5,
+    "selected_author_concentration": 0,
+    "selected_content_type_distribution": {},
+    "claim_source_diversity": 0,
+    "per_group_selection_coverage": {
+      "5501": 1,
+      "5502": 1
+    }
+  }
+}

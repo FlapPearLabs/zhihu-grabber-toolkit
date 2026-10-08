@@ -1,0 +1,79 @@
+{
+  "status": "VALID",
+  "metrics": {
+    "important_aspect_discovery": {
+      "baseline_hits": 2,
+      "candidate_hits": 2,
+      "total": 2,
+      "delta_hits": 0,
+      "delta_ratio": 0
+    },
+    "counterposition_discovery": {
+      "baseline_hits": 1,
+      "candidate_hits": 1,
+      "total": 1,
+      "delta_hits": 0,
+      "delta_ratio": 0
+    },
+    "key_evidence_discovery": {
+      "baseline_hits": 1,
+      "candidate_hits": 1,
+      "total": 1,
+      "delta_hits": 0,
+      "delta_ratio": 0
+    }
+  },
+  "incremental_cost": {
+    "retrieval_calls": 4,
+    "retrieval_attempts": 4,
+    "provider_calls": 5,
+    "external_provider_calls": 0,
+    "model_invocations": 0,
+    "semantic_adapter_invocations": 1,
+    "wall_clock_ms": 305.0724169999999,
+    "token_cost": "UNKNOWN",
+    "money_cost": "UNKNOWN",
+    "selected_corpus_sources": 1,
+    "downstream_material_chars": 43
+  },
+  "quality_change": "NO_MEASURABLE_GAIN",
+  "scope": "CURATED_TARGETS != OPEN_WORLD_COMPLETENESS",
+  "identity": {
+    "repo_sha": "b6fb5265043da398b7a1e92a8fade55d64c59373",
+    "case_id": "P2-F01-CONTROL-05",
+    "benchmark_version": "p2-f01-authored-curated-v1",
+    "benchmark_hashes": {
+      "research-orchestration/evaluation/benchmark/benchmark.json": "533d0e7fa442ea1986b6edf6302b38ef9aecf8bc191be1b224bf6ed1cc09280b",
+      "research-orchestration/evaluation/benchmark/cases/P2-F01-CONTROL-05/product-input.json": "ab7dc1ba5268bc3094a91a4e7d4bf1c217bfaa1eb2758f4616e7a4897ab7506e",
+      "research-orchestration/evaluation/benchmark/cases/P2-F01-CONTROL-05/eval-case.json": "eef967d50a6b00f499a115e48ca9b0aa915c2e8e6925db7d4132c3ebb125db35"
+    },
+    "evaluator_version": "p2-f01-exact-supported-statements-v1",
+    "product_input_hash": "ab7dc1ba5268bc3094a91a4e7d4bf1c217bfaa1eb2758f4616e7a4897ab7506e",
+    "canonical_product_input_hash": "d33471efee4cca025ebe72314870367ef93dd436a5326d75e268a1efa69729d4",
+    "time_scope": "假设一个包含雨季和旱季的使用年度，不引用现实降雨数据",
+    "shared_product_config": {
+      "maxQueryBudget": 20
+    },
+    "runtime_identity": {
+      "implementation": "DETERMINISTIC_DOUBLE",
+      "node": "v26.10.0",
+      "contract_runtime_pin": "deepseek-api-tool-less",
+      "embedding": "existing mockVector768(7)"
+    },
+    "model_identity": {
+      "actual_model": "NONE",
+      "contract_model_pin": "deepseek-v4-pro",
+      "semantic_policy": "verbatim-fenced-content-v1"
+    },
+    "provider_identity": [
+      "zhihu_search:frozen-double",
+      "zhihu-open-platform:frozen-double",
+      "frozen-evaluation-capture"
+    ]
+  },
+  "confound": [
+    "Synthetic curated corpus and exact verbatim semantic double; excludes live quality.",
+    "Fixed public planner output and injected proposal policy; default CLI targeted re-query remains disabled.",
+    "Shared host wall-clock latency varies; order alternates across identical reruns."
+  ]
+}

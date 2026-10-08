@@ -1,0 +1,100 @@
+{
+  "verdict": "auto",
+  "reason": "clear_best",
+  "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "poolPlanHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "planHashMatch": true,
+  "selectorVersion": "p1-t08-source-group-selection/v1",
+  "schemaVersion": 1,
+  "type": "source-group-selection-decision",
+  "selectedGroups": [
+    {
+      "groupId": "5501",
+      "questionId": "5501",
+      "rrfScore": 0.03278688524590164,
+      "score": 0.03278688524590164,
+      "sourceUrl": null,
+      "provenance": [
+        {
+          "channel": {
+            "query": "雨水收集桶 小院浇灌条件",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        },
+        {
+          "channel": {
+            "query": "雨水收集桶 小院浇灌条件",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        }
+      ],
+      "rationaleRef": null,
+      "selectionReason": "clear_best"
+    },
+    {
+      "groupId": "5502",
+      "questionId": "5502",
+      "rrfScore": 0.03225806451612903,
+      "score": 0.03225806451612903,
+      "sourceUrl": null,
+      "provenance": [
+        {
+          "channel": {
+            "query": "雨水收集桶 小院浇灌条件",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        },
+        {
+          "channel": {
+            "query": "雨水收集桶 小院浇灌条件",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        }
+      ],
+      "rationaleRef": null,
+      "selectionReason": "clear_best"
+    }
+  ],
+  "selectedGroupCount": 2,
+  "candidates": [
+    {
+      "questionId": "5501",
+      "score": 0.03278688524590164,
+      "rrfScore": 0.03278688524590164,
+      "eligible": true,
+      "selected": true
+    },
+    {
+      "questionId": "5502",
+      "score": 0.03225806451612903,
+      "rrfScore": 0.03225806451612903,
+      "eligible": true,
+      "selected": true
+    }
+  ],
+  "clarification": null,
+  "clarificationCount": 0,
+  "intentCoverage": {
+    "total": 0,
+    "bound": 0,
+    "unmet": 0,
+    "shortfall": 0
+  },
+  "rationale": "clear best group set: auto-selected 2 source group(s) (score desc; planHash 7de410e105c2…)"
+}
