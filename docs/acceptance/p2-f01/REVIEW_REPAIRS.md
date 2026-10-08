@@ -39,3 +39,8 @@ TDD：normalized collision原代码为Missing expected exception，修复后拒�
 ## 476db0d602c664d20af5609f78b8b9415cbade50 自动review终态
 
 Completed但有4条有效finding：discussion_r4214440774/775/779/784。stage环境PWD指向原checkout；HTML投影缺parse5/entities；stage复制currentworktree而非boundcommit；CLI缺out误取flag。不能称Completed为PASS。修复：platform最小env、stage复制已安装lock版本依赖并记录实际文件fingerprint、Git ls-tree/cat-file源码、option存在与值检查。HTML测试新增真实product.ok断言后原476失败（false != true），补依赖后通过。新增实际子进程无pointer/env injection，实际小Gitrepo boundsource与后来dirtytext隔离；focused17/17。需新SHA全20run/fresh/CI/fresh independent review。
+
+
+## 7f84919885c387427cbaba057f519085ebeb55c8 CI真实失败
+
+CI37749477059三个matrix jobs SUCCESS，research-classification失败，focused17为12pass/5fail；该job此前未安装既有parse5/entities，stage依赖检查正确拒绝缺依赖，不能按ENV_BLOCKED算PASS。修复仅在此既有job增加与matrix相同的现有lock npm ci步骤，无新依赖、live/paid研究或产品源码修改。最终需新head CI真正通过；34ff398b源码campaign不因CI安装配置变更而追溯换身份。

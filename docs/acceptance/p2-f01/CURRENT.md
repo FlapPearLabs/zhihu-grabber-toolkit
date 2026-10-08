@@ -19,8 +19,10 @@ focused17/17通过（廉价actual composition pair、实际incomplete-worker、c
 
 actual model=NONE，external provider calls=0，token/money=UNKNOWN。Tier2 credential preflight NOT_RUN、run_count=0、variance=UNKNOWN。两案target增益、两案NO_MEASURABLE_GAIN、一案INVALID；default CLI targeted disabled。无现实权威、通用quality/exhaustive研究或paid成本可接受声明。本票不替T15裁定#108价值。
 
-只改evaluation目录、新增focused测试及既有CI分类登记；没有新runtime依赖、生产实现、治理、Spec、project-memory修改。实际使用scanner/doc drafter、/implement、/tdd、CodeGraph、code-review方法和GitHub workflow。review按实际finding迭代，每次修复后fresh context审最新SHA；没有默认三角色quorum。
+只改evaluation目录、新增focused测试及既有CI分类登记/此job现有lock依赖安装；没有新runtime依赖、生产实现、治理、Spec、project-memory修改。实际使用scanner/doc drafter、/implement、/tdd、CodeGraph、code-review方法和GitHub workflow。review按实际finding迭代，每次修复后fresh context审最新SHA；没有默认三角色quorum。
 
 本次campaign-bound在46f8046c重新实际执行全部20次；metrics/status/failure/非时延cost与前次43817dd记录逐对完全一致。历史43817dd版campaign-bound保留在Git历史，当前目录为新实际产物，不追溯改旧commit。每arm执行stage不含hidden tree；实际owner身份匹配；新校验与存放边界见README/REVIEW_REPAIRS。路径由runner当次work归档引用转换为本repo-relative archive，随后重算manifest对应四项result bytes hash；原product artifacts字节未修改。该源码SHA以后只有归档/docs修订，最终候选SHA仍需fresh clone与独立review。
 
 34ff398b再次实际执行20次：四主指标与非时延成本仍与全部历史版本一致。每arm runtime_dependency_hash实际一致，绑定stage已装lock版本parse5/entities字节；源码来自Git对象而非worktree，子进程环境不传播checkout/注入指针。HTML完整产品ok的red/green、source并发dirty隔离与CLI缺值控制通过。前46f8046目录保留在Git历史，不作为新身份。
+
+最新7f候选的CI classification真实失败，不作为PASS：该job没有安装既有runtime依赖，已补现有lock npm ci步骤；无eval/product源码或case变化。最终收据以修后same-head CI/独立review/fresh rerun为准。

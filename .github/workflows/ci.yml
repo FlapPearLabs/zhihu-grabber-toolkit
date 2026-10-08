@@ -160,5 +160,11 @@ jobs:
           fi
           echo "historical Git object present: ${PINNED_SHA}"
 
+      # Evaluation's copied product tree includes the existing safe HTML projection dependency.
+      # Install the same committed package lock used by the matrix job; no live/paid research.
+      - name: Install existing product runtime dependencies
+        working-directory: zhihu-answer-grabber
+        run: npm ci --registry=https://registry.npmjs.org
+
       - name: research suite classification (full offline + historical; live/private NOT_RUN)
         run: node research-orchestration/scripts/run-classified-research-suites.mjs full-offline
