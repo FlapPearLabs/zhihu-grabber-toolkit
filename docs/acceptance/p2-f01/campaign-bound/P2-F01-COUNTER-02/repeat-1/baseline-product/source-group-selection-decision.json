@@ -1,0 +1,100 @@
+{
+  "verdict": "auto",
+  "reason": "clear_best",
+  "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+  "poolPlanHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+  "planHashMatch": true,
+  "selectorVersion": "p1-t08-source-group-selection/v1",
+  "schemaVersion": 1,
+  "type": "source-group-selection-decision",
+  "selectedGroups": [
+    {
+      "groupId": "2201",
+      "questionId": "2201",
+      "rrfScore": 0.03278688524590164,
+      "score": 0.03278688524590164,
+      "sourceUrl": null,
+      "provenance": [
+        {
+          "channel": {
+            "query": "课后可选练习 学习体验",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        },
+        {
+          "channel": {
+            "query": "课后可选练习 学习体验",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        }
+      ],
+      "rationaleRef": null,
+      "selectionReason": "clear_best"
+    },
+    {
+      "groupId": "2202",
+      "questionId": "2202",
+      "rrfScore": 0.03225806451612903,
+      "score": 0.03225806451612903,
+      "sourceUrl": null,
+      "provenance": [
+        {
+          "channel": {
+            "query": "课后可选练习 学习体验",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        },
+        {
+          "channel": {
+            "query": "课后可选练习 学习体验",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        }
+      ],
+      "rationaleRef": null,
+      "selectionReason": "clear_best"
+    }
+  ],
+  "selectedGroupCount": 2,
+  "candidates": [
+    {
+      "questionId": "2201",
+      "score": 0.03278688524590164,
+      "rrfScore": 0.03278688524590164,
+      "eligible": true,
+      "selected": true
+    },
+    {
+      "questionId": "2202",
+      "score": 0.03225806451612903,
+      "rrfScore": 0.03225806451612903,
+      "eligible": true,
+      "selected": true
+    }
+  ],
+  "clarification": null,
+  "clarificationCount": 0,
+  "intentCoverage": {
+    "total": 0,
+    "bound": 0,
+    "unmet": 0,
+    "shortfall": 0
+  },
+  "rationale": "clear best group set: auto-selected 2 source group(s) (score desc; planHash 6a6b70705592…)"
+}

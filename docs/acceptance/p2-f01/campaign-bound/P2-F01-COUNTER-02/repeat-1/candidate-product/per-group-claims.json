@@ -1,0 +1,149 @@
+{
+  "seam": "T13_TO_T14",
+  "seamVersion": 1,
+  "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+  "selectedCorpusIdentityRef": "sha256:68cb8aac59a1870c5300031f1eac9364ce0d3e568bbf8aa9c4acfd9aef7f49be",
+  "groupRepresentations": [
+    {
+      "groupId": "2201",
+      "canonicalGroupIdentity": {
+        "questionId": "2201",
+        "providerId": "zhihu",
+        "capability": "zhihu-answers"
+      },
+      "accounting": {
+        "selected": 1,
+        "verified": 1,
+        "mapped": 1,
+        "analyzed": 1
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-2201-001",
+            "statement": "在假设课程中，可选练习让已掌握内容的学生免于机械重复；支持者认为选择权能够减少重复负担。",
+            "sourceRefs": [
+              "asrc-418b91796334b172f0447c52"
+            ],
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 1
+      }
+    },
+    {
+      "groupId": "2202",
+      "canonicalGroupIdentity": {
+        "questionId": "2202",
+        "providerId": "zhihu",
+        "capability": "zhihu-answers"
+      },
+      "accounting": {
+        "selected": 1,
+        "verified": 1,
+        "mapped": 1,
+        "analyzed": 1
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-2202-001",
+            "statement": "模拟访谈中，自主安排能力较强的学生说，可选练习允许按薄弱点复习；记录支持自主安排的收益。",
+            "sourceRefs": [
+              "asrc-da917a3f358b1876323d66ff"
+            ],
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 1
+      }
+    },
+    {
+      "groupId": "2203",
+      "canonicalGroupIdentity": {
+        "questionId": "2203",
+        "providerId": "zhihu",
+        "capability": "zhihu-answers"
+      },
+      "accounting": {
+        "selected": 1,
+        "verified": 1,
+        "mapped": 1,
+        "analyzed": 1
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-2203-001",
+            "statement": "模拟观察中，依赖外部结构的学生在练习全可选后跳过复习；全面取消统一安排可能使这类学生缺少学习支架。",
+            "sourceRefs": [
+              "asrc-90dc19b6050e3fe653ff53e2"
+            ],
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 1
+      }
+    },
+    {
+      "groupId": "2204",
+      "canonicalGroupIdentity": {
+        "questionId": "2204",
+        "providerId": "zhihu",
+        "capability": "zhihu-answers"
+      },
+      "accounting": {
+        "selected": 1,
+        "verified": 1,
+        "mapped": 1,
+        "analyzed": 1
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-2204-001",
+            "statement": "这份假设方案保留基础练习并开放拓展选择，以分层支持回应学生差异；它反对把全可选作为统一规则。",
+            "sourceRefs": [
+              "asrc-3c16ab4c098ccef2e1a0d3e4"
+            ],
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 1
+      }
+    }
+  ],
+  "aggregateAnalyzedIdentity": {
+    "mappedAnalyzedSourceSetIdentity": "sha256:68cb8aac59a1870c5300031f1eac9364ce0d3e568bbf8aa9c4acfd9aef7f49be",
+    "perGroup": {
+      "2201": "sha256:e22dd24f2400defe9a0929563843a458e1445c96746351e6eddd7eb8a4c3027f",
+      "2202": "sha256:88e3f4c28596d7e88d17ed9671216859ced4f5374c6daa3fe23a67c3081ae6ad",
+      "2203": "sha256:1cc32afcc93e98e87346b792942b0302d17b63a6e61ee0f905a8d738e2eb0b86",
+      "2204": "sha256:94b948fc6c25a019126f463fa6a93b4a1917e790d6e917d44eff2bc6746bb561"
+    }
+  }
+}

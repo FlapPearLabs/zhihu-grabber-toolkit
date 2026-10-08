@@ -1,0 +1,111 @@
+{
+  "implementation": "DETERMINISTIC_DOUBLE",
+  "calls": [
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "街区固定遮阴 居民舒适",
+      "question_ids": [
+        "1101",
+        "1102"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "街区固定遮阴 居民舒适",
+      "question_ids": [
+        "1101",
+        "1102"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "老旧街区固定遮阴",
+      "question_ids": [
+        "1101",
+        "1102"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "老旧街区固定遮阴",
+      "question_ids": [
+        "1101",
+        "1102"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "固定遮阴 可替代方案",
+      "question_ids": [
+        "1104",
+        "1103"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "固定遮阴 可替代方案",
+      "question_ids": [
+        "1104",
+        "1103"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "街区固定遮阴 居民舒适",
+      "question_ids": [
+        "1101",
+        "1102"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "街区固定遮阴 居民舒适",
+      "question_ids": [
+        "1101",
+        "1102"
+      ]
+    },
+    {
+      "kind": "capture",
+      "question_id": "1101"
+    },
+    {
+      "kind": "capture",
+      "question_id": "1102"
+    },
+    {
+      "kind": "capture",
+      "question_id": "1103"
+    },
+    {
+      "kind": "capture",
+      "question_id": "1104"
+    }
+  ],
+  "semantic_calls": [
+    "analyze",
+    "analyze",
+    "analyze",
+    "analyze",
+    "synthesize"
+  ],
+  "cost": {
+    "retrieval_calls": 8,
+    "retrieval_attempts": 8,
+    "provider_calls": 12,
+    "external_provider_calls": 0,
+    "model_invocations": 0,
+    "semantic_adapter_invocations": 5,
+    "wall_clock_ms": 883.5912910000001,
+    "token_cost": "UNKNOWN",
+    "money_cost": "UNKNOWN"
+  }
+}

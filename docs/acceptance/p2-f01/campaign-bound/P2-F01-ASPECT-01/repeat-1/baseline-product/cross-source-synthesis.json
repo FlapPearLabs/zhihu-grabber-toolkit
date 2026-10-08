@@ -1,0 +1,154 @@
+{
+  "seam": "T14_TO_T15",
+  "seamVersion": 2,
+  "semanticContractVersion": 2,
+  "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+  "preSynthesisGuard": {
+    "guardResult": "PASS",
+    "selectedVerifiedSourceSetIdentity": "sha256:46738a8dcbe5fd279db826bbadcfab900b624e4a16415b893bb984ab7219ddf0",
+    "mappedAnalyzedSourceSetIdentity": "sha256:46738a8dcbe5fd279db826bbadcfab900b624e4a16415b893bb984ab7219ddf0"
+  },
+  "synthesis": {
+    "synthesisIdentity": "sha256:bfdbe04100ad7c85c6c19160b44dc98912fddc2b6f61280402ee30bfe7a0eccc",
+    "families": [
+      {
+        "familyKey": "fam-889008712e71483f",
+        "aspect": "独立材料观点",
+        "anchor": {
+          "sourceClaimId": "c-1102-001",
+          "statement": "模拟等候区记录显示，有遮阴的位置让老人更愿意停留；这一观察只支持夏季舒适，未检查全年适配。"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-1102-001",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-1102-001",
+            "statement": "模拟等候区记录显示，有遮阴的位置让老人更愿意停留；这一观察只支持夏季舒适，未检查全年适配。",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "asrc-efffa7d80c64168eda69d0a2",
+                "groupId": "1102",
+                "authorRef": "author-d658846a6dd32dd4"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-1102-001",
+            "sourceRef": "asrc-efffa7d80c64168eda69d0a2",
+            "groupId": "1102",
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": false
+      },
+      {
+        "familyKey": "fam-e9c254673ff3ebed",
+        "aspect": "独立材料观点",
+        "anchor": {
+          "sourceClaimId": "c-1101-001",
+          "statement": "在这条假设街道，连续遮阴让午后步行者少受直晒；增设设施的主要收益是热舒适。"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-1101-001",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-1101-001",
+            "statement": "在这条假设街道，连续遮阴让午后步行者少受直晒；增设设施的主要收益是热舒适。",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "asrc-a09e89a9a360c0243e706966",
+                "groupId": "1101",
+                "authorRef": "author-d658846a6dd32dd4"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-1101-001",
+            "sourceRef": "asrc-a09e89a9a360c0243e706966",
+            "groupId": "1101",
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": false
+      }
+    ],
+    "unresolved": [],
+    "groupDifferences": [
+      {
+        "groupId": "1101",
+        "uncoveredAspects": []
+      },
+      {
+        "groupId": "1102",
+        "uncoveredAspects": []
+      }
+    ],
+    "evidenceStrength": [
+      {
+        "familyKey": "fam-889008712e71483f",
+        "expertEvidenceRichSupport": false,
+        "crossGroupSupport": false,
+        "supportSourceCount": 1,
+        "opposeSourceCount": 0
+      },
+      {
+        "familyKey": "fam-e9c254673ff3ebed",
+        "expertEvidenceRichSupport": false,
+        "crossGroupSupport": false,
+        "supportSourceCount": 1,
+        "opposeSourceCount": 0
+      }
+    ],
+    "discussionVolumeDifferences": {
+      "byGroup": {
+        "1101": 1,
+        "1102": 1
+      }
+    }
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "claim_source_diversity": 1
+  },
+  "legacyDerivedView": {
+    "derivedFrom": "canonical V2 families/unresolved (one-way presentation; never an input to relationStatus/supportBreadth)",
+    "families": [
+      {
+        "familyKey": "fam-889008712e71483f",
+        "legacyCategory": "group-specific",
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP"
+      },
+      {
+        "familyKey": "fam-e9c254673ff3ebed",
+        "legacyCategory": "group-specific",
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP"
+      }
+    ],
+    "unresolved": []
+  }
+}

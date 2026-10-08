@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+  "retrieval": {
+    "plannedQueryVariants": [
+      "课后可选练习 学习体验"
+    ],
+    "plannedRoutes": [
+      {
+        "providerId": "zhihu_search",
+        "capability": "search"
+      },
+      {
+        "providerId": "zhihu-open-platform",
+        "capability": "search"
+      }
+    ],
+    "executedRoutes": [],
+    "fusedCandidateCount": 0,
+    "fusedGroupCount": 0,
+    "providerFailures": [],
+    "retrievalRounds": 0,
+    "stopReason": null
+  },
+  "sourceCompleteness": {
+    "perGroupStatus": {},
+    "diagnostics": {
+      "capturedNotVerifiedCount": 0,
+      "totalSelectedCount": 0,
+      "totalVerifiedCount": 0
+    }
+  },
+  "analysisCoverage": {
+    "selectedCorpusSourceSet": [],
+    "mappedSourceSet": [],
+    "analyzedSourceSet": [],
+    "perGroupMappedSourceSet": {},
+    "perGroupAnalyzedSourceSet": {},
+    "evidenceRefIssues": {
+      "missingRefs": [],
+      "duplicateRefs": [],
+      "staleRefs": [],
+      "invalidRefs": []
+    },
+    "is100PercentAnalysis": false
+  },
+  "diagnostics": {
+    "new_aspect_rate": 0,
+    "new_claim_rate": 0,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "novelty_gain": 0,
+    "selected_source_group_count": 0,
+    "selected_content_by_group": {},
+    "largest_group_share": 0,
+    "selected_author_concentration": 0,
+    "selected_content_type_distribution": {},
+    "claim_source_diversity": 0,
+    "per_group_selection_coverage": {}
+  }
+}

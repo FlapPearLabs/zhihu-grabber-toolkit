@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "benchmark_version": "p2-f01-authored-curated-v1",
+  "case_id": "P2-F01-AUTHORITY-03",
+  "domain": "家用设备与室内环境",
+  "failure_family": "AUTHORITY TARGET MISS",
+  "time_scope": "假设一个持续使用周期；不引用现实产品、标准或测试结果",
+  "provenance": {
+    "kind": "synthetic authored-curated",
+    "author_role": "benchmark case drafter",
+    "language": "zh-CN",
+    "description": "以下研究任务与材料均为人工编写的假设情境，仅用于冻结语料评估。它们不是现实研究结果，不含真实人物、论文、机构、测量数值或引文。",
+    "source_identity": "questionId 是 canonical 数字字符串 fixture identity，不是真实知乎 ID；simulated-direct-record 仅表示合成情境中直接记录的材料角色，不表示现实权威。",
+    "materials": [
+      {
+        "question_id": "3301",
+        "role": "commentary"
+      },
+      {
+        "question_id": "3302",
+        "role": "commentary"
+      },
+      {
+        "question_id": "3303",
+        "role": "simulated-direct-record"
+      },
+      {
+        "question_id": "3304",
+        "role": "commentary"
+      }
+    ]
+  },
+  "scope": "CURATED_TARGETS != OPEN_WORLD_COMPLETENESS",
+  "targets": {
+    "important_aspects": [
+      {
+        "target_id": "A1",
+        "label": "标示风量的初筛作用",
+        "support_any_of": [
+          {
+            "question_id": "3301",
+            "accepted_statements": [
+              "这份假设选购评论把较大标示风量视为快速净化的优势，建议优先比较风量；它没有给出日常使用档位的实验记录。"
+            ]
+          }
+        ]
+      },
+      {
+        "target_id": "A2",
+        "label": "维护与房间条件",
+        "support_any_of": [
+          {
+            "question_id": "3302",
+            "accepted_statements": [
+              "这份二手评论认为，滤芯维护和房间匹配会影响净化体验，但仍以标示风量作为初筛线索。"
+            ]
+          }
+        ]
+      },
+      {
+        "target_id": "A3",
+        "label": "可持续档位的有效送风",
+        "support_any_of": [
+          {
+            "question_id": "3303",
+            "accepted_statements": [
+              "合成实验记录区分最高档与日常档：最高档噪声妨碍持续运行，日常档的实际送风才应作为卧室选型依据。"
+            ]
+          }
+        ]
+      }
+    ],
+    "counterpositions": [
+      {
+        "target_id": "C1",
+        "label": "最高档标示优势不足以决定卧室选型",
+        "support_any_of": [
+          {
+            "question_id": "3304",
+            "accepted_statements": [
+              "在这个假设实验中，最高档优势若以无法持续使用为代价，就不能证明卧室表现更好；仅看标示风量不足以决定选型。"
+            ]
+          }
+        ]
+      }
+    ],
+    "key_evidence": [
+      {
+        "target_id": "K1",
+        "label": "区分最高档与日常档的直接实验材料",
+        "question_id": "3303",
+        "expected_text": "合成实验记录区分最高档与日常档：最高档噪声妨碍持续运行，日常档的实际送风才应作为卧室选型依据。"
+      }
+    ]
+  },
+  "hidden_targets": [
+    "A1",
+    "A2",
+    "A3",
+    "C1",
+    "K1"
+  ],
+  "evaluation_notes": "权威目标仅表示 fixture 内的关键直接材料，不宣称真实权威。可沿普通使用条件路线取得解释，却未必取得实验记录；authority hit 必须核对实际 source identity。public sourceGroupIntents.groupKey 为 null，避免传入 hidden target ID。"
+}

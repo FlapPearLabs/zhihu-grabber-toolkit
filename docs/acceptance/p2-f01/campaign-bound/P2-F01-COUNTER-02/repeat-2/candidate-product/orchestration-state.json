@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "runId": "6208462f74d625ee97a9478011afde316c4ed188c2e4394b88fdf01b08aa453a",
+  "occurrenceId": "4c112ddb-8e09-4fcd-8e0c-36ea8fb80d87",
+  "topic": "在假设学校中，把课后统一练习改为学生可选练习是否适合全面推广？请说明支持理由、反向观点与适用边界。",
+  "mode": "p1-cross-question-deep-research",
+  "percent": null,
+  "runtime": "deepseek-api-tool-less",
+  "configFingerprint": "7bb48764eaee68a197bc9ecc9ded5ea1102a8fe8173c2539c0419c01e5cd6306",
+  "forceQuestionId": null,
+  "stage": "COMPLETE",
+  "completedStages": [
+    "SEARCH",
+    "SELECT",
+    "CAPTURE",
+    "ANALYZE",
+    "RENDER"
+  ],
+  "selectedQuestionId": null,
+  "selection": null,
+  "artifacts": {
+    "researchPlan": "research-plan.json",
+    "selectionDecision": "source-group-selection-decision.json",
+    "coverageState": "coverage-state.json",
+    "coverageFinal": "coverage-final.json",
+    "perGroupClaims": "per-group-claims.json",
+    "synthesis": "cross-source-synthesis.json",
+    "researchResult": "research-result.json"
+  },
+  "hashes": {
+    "targeted-resolution-input:51b14608cc5b6447f67e5aa618dac50d134157d5c99384f79bdde817dcea9cfe": "f73a68fbb819918918ecda89071ae6f0a9f94f6b8241e7697b95722b0b2e31b7",
+    "targeted-action:51b14608cc5b6447f67e5aa618dac50d134157d5c99384f79bdde817dcea9cfe": "6d82b86d1a2c3af53e44f645a799971cf21f89438af33f84bd45e63e0309d707",
+    "targeted-resolution-input:1bf980dc5a6c05eac805816211c3e69946c83a9034ac394555c9c8ce64a11e93": "177855f3fb08c7b29eb327dc84c149c6531f0672dead826cb398c275f9111dff",
+    "targeted-action:1bf980dc5a6c05eac805816211c3e69946c83a9034ac394555c9c8ce64a11e93": "9909face207d41759e997320a9b2f71fbe85b489649927a2fa9166d547f49220",
+    "targeted-action-ledger": "d9a9d1082f090352677f5b91b5a2446041a8992ed99f7de5a151b40f09d28bb5",
+    "researchPlan": "86d3ea6163f88f523fe3fbbe11a6bc067ea2c269d03b9b363b0d2811895d9139",
+    "coverageState": "6c92da0efa6f4814aa03bee67369da8cbd760dce88166b2d1c9b24bf3b577f29",
+    "coverageFinal": "4aa2df6c1ecf5ea78ce9a9c9320b3ced95c7e2109ffa4e938c442bf4f0e79c6b",
+    "perGroupClaims": "94881f63e2f388c1422382ce0e559c2adbf23b1a2d9c1a954485bfc149c46592",
+    "synthesis": "8ccbad4b8976d24bd895ead5590c90028fa48dc52d03761fee3a8ceff769c43e",
+    "researchResult": "5ae1a195d1c567c3b5f8a8b8d0f87ce1526b8a11abf4ca8db7fcb2012def417f",
+    "accumulatedPool": "e5d89f3288a8b413221cd9fbe09ae59b8960a4a96e1ca3b7edd844efaeda28dc",
+    "selectionDecision": "077882ad3551bbd22cb1046a6b5ec08b1799910d42ff591ae838d9cb2be98eed"
+  },
+  "verification": null,
+  "coverage": {
+    "is100PercentAnalysis": true,
+    "selectedCount": 4,
+    "analyzedCount": 4
+  },
+  "p1FinalCoveragePlanHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+  "updatedAt": "2026-10-08T03:18:06.316Z"
+}

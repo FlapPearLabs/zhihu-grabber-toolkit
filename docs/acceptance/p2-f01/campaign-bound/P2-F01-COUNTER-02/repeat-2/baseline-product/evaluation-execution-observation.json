@@ -1,0 +1,65 @@
+{
+  "implementation": "DETERMINISTIC_DOUBLE",
+  "calls": [
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "课后可选练习 学习体验",
+      "question_ids": [
+        "2201",
+        "2202"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "课后可选练习 学习体验",
+      "question_ids": [
+        "2201",
+        "2202"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "课后可选练习 学习体验",
+      "question_ids": [
+        "2201",
+        "2202"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "课后可选练习 学习体验",
+      "question_ids": [
+        "2201",
+        "2202"
+      ]
+    },
+    {
+      "kind": "capture",
+      "question_id": "2201"
+    },
+    {
+      "kind": "capture",
+      "question_id": "2202"
+    }
+  ],
+  "semantic_calls": [
+    "analyze",
+    "analyze",
+    "synthesize"
+  ],
+  "cost": {
+    "retrieval_calls": 4,
+    "retrieval_attempts": 4,
+    "provider_calls": 6,
+    "external_provider_calls": 0,
+    "model_invocations": 0,
+    "semantic_adapter_invocations": 3,
+    "wall_clock_ms": 383.06,
+    "token_cost": "UNKNOWN",
+    "money_cost": "UNKNOWN"
+  }
+}

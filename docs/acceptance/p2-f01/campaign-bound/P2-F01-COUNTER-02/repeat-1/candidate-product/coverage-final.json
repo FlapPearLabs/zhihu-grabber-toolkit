@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 1,
+  "type": "p1-final-coverage-integration",
+  "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+  "pipeline": "p1-cross-question-deep-research",
+  "stage": "FINAL_COVERAGE_RECONCILIATION",
+  "assertion": {
+    "is100PercentAnalysis": true,
+    "basis": "MECHANICAL_SET_EQUALITY"
+  },
+  "doubleDefense": {
+    "t14PreSynthesisGuard": {
+      "guardResult": "PASS",
+      "selectedVerifiedSourceSetIdentity": "sha256:68cb8aac59a1870c5300031f1eac9364ce0d3e568bbf8aa9c4acfd9aef7f49be",
+      "mappedAnalyzedSourceSetIdentity": "sha256:68cb8aac59a1870c5300031f1eac9364ce0d3e568bbf8aa9c4acfd9aef7f49be"
+    },
+    "t15FinalReconciliation": "PASS",
+    "synthesisContract": {
+      "seamVersion": 2,
+      "semanticContractVersion": 2,
+      "synthesisIdentity": "sha256:3e4f99f0e16316cc4da4a3e6680a84cf56068dc0b7c9f41ba1046be8e5c677f7",
+      "familyCount": 4,
+      "unresolvedCount": 0,
+      "conflictingFamilyCount": 0,
+      "singleGroupFamilyCount": 4,
+      "multiGroupFamilyCount": 0
+    }
+  },
+  "coverage": {
+    "retrieval": {
+      "retrievalRounds": 2,
+      "stopReason": "zero_new_candidates",
+      "fusedCandidateCount": 4,
+      "fusedGroupCount": 4,
+      "providerFailureCount": 0
+    },
+    "analysisCoverage": {
+      "selectedCorpusSourceSet": [
+        "asrc-3c16ab4c098ccef2e1a0d3e4",
+        "asrc-418b91796334b172f0447c52",
+        "asrc-90dc19b6050e3fe653ff53e2",
+        "asrc-da917a3f358b1876323d66ff"
+      ],
+      "mappedSourceSet": [
+        "asrc-3c16ab4c098ccef2e1a0d3e4",
+        "asrc-418b91796334b172f0447c52",
+        "asrc-90dc19b6050e3fe653ff53e2",
+        "asrc-da917a3f358b1876323d66ff"
+      ],
+      "analyzedSourceSet": [
+        "asrc-3c16ab4c098ccef2e1a0d3e4",
+        "asrc-418b91796334b172f0447c52",
+        "asrc-90dc19b6050e3fe653ff53e2",
+        "asrc-da917a3f358b1876323d66ff"
+      ],
+      "selectedCount": 4,
+      "mappedCount": 4,
+      "analyzedCount": 4,
+      "evidenceRefIssues": {
+        "missingRefs": [],
+        "duplicateRefs": [],
+        "staleRefs": [],
+        "invalidRefs": []
+      }
+    },
+    "sourceCompleteness": {
+      "totalSelectedCount": 4,
+      "totalVerifiedCount": 4,
+      "capturedNotVerifiedCount": 0
+    }
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "novelty_gain": 0,
+    "selected_source_group_count": 4,
+    "selected_content_by_group": {
+      "2201": 1,
+      "2202": 1,
+      "2203": 1,
+      "2204": 1
+    },
+    "largest_group_share": 0.25,
+    "selected_author_concentration": 0,
+    "selected_content_type_distribution": {},
+    "claim_source_diversity": 1,
+    "per_group_selection_coverage": {
+      "2201": 1,
+      "2202": 1,
+      "2203": 1,
+      "2204": 1
+    }
+  },
+  "hookConvergenceOrder": [
+    "RETRIEVAL_ROUNDS",
+    "SOURCE_GROUP_SELECTION",
+    "GROUP_EXECUTION",
+    "CORPUS_SELECTION",
+    "PER_GROUP_ANALYSIS",
+    "CROSS_SOURCE_SYNTHESIS",
+    "FINAL_COVERAGE_RECONCILIATION"
+  ],
+  "runtime": {
+    "runtimeId": "deepseek-api-tool-less",
+    "model": "deepseek-v4-pro"
+  },
+  "artifacts": {
+    "coverageState": "coverage-state.json",
+    "finalCoverage": "coverage-final.json",
+    "synthesis": "cross-source-synthesis.json"
+  },
+  "targetedResearchGaps": {
+    "schema": "p2a-targeted-research-gaps/v1",
+    "gapCount": 4,
+    "resolvedCount": 0,
+    "unresolvedCount": 4,
+    "exhaustedWithinBudgetCount": 0,
+    "lineageComplete": false,
+    "gaps": [
+      {
+        "gapId": "9717e2daea29f43ebf711ca49e63c092191c475d4ed137793f52389d9c17de36:0",
+        "gapIdentityCore": "9717e2daea29f43ebf711ca49e63c092191c475d4ed137793f52389d9c17de36",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "课后可选练习 反向论证",
+            "resultArtifact": "targeted-requery-subphase/action-2be918d974aa33dec10ec923ebe85ea7bf0d004e2679cd6f5dce5411d7fca8fe/retrieval-pool.json",
+            "targetedActionId": "2be918d974aa33dec10ec923ebe85ea7bf0d004e2679cd6f5dce5411d7fca8fe"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "7dcd45b6-b233-4443-abb2-48fda59a040b",
+        "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+        "resolutionBasis": "UNKNOWN_SIDE_NOT_DECLARED",
+        "resolutionEvidence": [
+          "2203",
+          "2204"
+        ],
+        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "9717e2daea29f43ebf711ca49e63c092191c475d4ed137793f52389d9c17de36:1",
+        "gapIdentityCore": "9717e2daea29f43ebf711ca49e63c092191c475d4ed137793f52389d9c17de36",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "7dcd45b6-b233-4443-abb2-48fda59a040b",
+        "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "a95826489b59b982e9410c914dee3cafedbd38d1acedbf06b4d787b048b471c3:0",
+        "gapIdentityCore": "a95826489b59b982e9410c914dee3cafedbd38d1acedbf06b4d787b048b471c3",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "学生可选课后练习",
+            "resultArtifact": "targeted-requery-subphase/action-00f038022f9568d86eaff159e0a73f41a3d6d65575988012f4c85d2d6c19d1b9/retrieval-pool.json",
+            "targetedActionId": "00f038022f9568d86eaff159e0a73f41a3d6d65575988012f4c85d2d6c19d1b9"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "7dcd45b6-b233-4443-abb2-48fda59a040b",
+        "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+        "resolutionBasis": "DUPLICATE_ONLY",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "a95826489b59b982e9410c914dee3cafedbd38d1acedbf06b4d787b048b471c3:1",
+        "gapIdentityCore": "a95826489b59b982e9410c914dee3cafedbd38d1acedbf06b4d787b048b471c3",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "7dcd45b6-b233-4443-abb2-48fda59a040b",
+        "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      }
+    ]
+  }
+}

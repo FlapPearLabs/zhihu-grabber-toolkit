@@ -1,0 +1,176 @@
+{
+  "verdict": "auto",
+  "reason": "clear_best",
+  "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+  "poolPlanHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+  "planHashMatch": true,
+  "selectorVersion": "p1-t08-source-group-selection/v1",
+  "schemaVersion": 1,
+  "type": "source-group-selection-decision",
+  "selectedGroups": [
+    {
+      "groupId": "1101",
+      "questionId": "1101",
+      "rrfScore": 0.03278688524590164,
+      "score": 0.03278688524590164,
+      "sourceUrl": null,
+      "provenance": [
+        {
+          "channel": {
+            "query": "街区固定遮阴 居民舒适",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        },
+        {
+          "channel": {
+            "query": "街区固定遮阴 居民舒适",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        }
+      ],
+      "rationaleRef": null,
+      "selectionReason": "clear_best"
+    },
+    {
+      "groupId": "1104",
+      "questionId": "1104",
+      "rrfScore": 0.03278688524590164,
+      "score": 0.03278688524590164,
+      "sourceUrl": null,
+      "provenance": [
+        {
+          "channel": {
+            "query": "固定遮阴 可替代方案",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        },
+        {
+          "channel": {
+            "query": "固定遮阴 可替代方案",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        }
+      ],
+      "rationaleRef": null,
+      "selectionReason": "clear_best"
+    },
+    {
+      "groupId": "1102",
+      "questionId": "1102",
+      "rrfScore": 0.03225806451612903,
+      "score": 0.03225806451612903,
+      "sourceUrl": null,
+      "provenance": [
+        {
+          "channel": {
+            "query": "街区固定遮阴 居民舒适",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        },
+        {
+          "channel": {
+            "query": "街区固定遮阴 居民舒适",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        }
+      ],
+      "rationaleRef": null,
+      "selectionReason": "clear_best"
+    },
+    {
+      "groupId": "1103",
+      "questionId": "1103",
+      "rrfScore": 0.03225806451612903,
+      "score": 0.03225806451612903,
+      "sourceUrl": null,
+      "provenance": [
+        {
+          "channel": {
+            "query": "固定遮阴 可替代方案",
+            "providerId": "zhihu-open-platform",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        },
+        {
+          "channel": {
+            "query": "固定遮阴 可替代方案",
+            "providerId": "zhihu_search",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "frozen-evaluation"
+        }
+      ],
+      "rationaleRef": null,
+      "selectionReason": "clear_best"
+    }
+  ],
+  "selectedGroupCount": 4,
+  "candidates": [
+    {
+      "questionId": "1101",
+      "score": 0.03278688524590164,
+      "rrfScore": 0.03278688524590164,
+      "eligible": true,
+      "selected": true
+    },
+    {
+      "questionId": "1104",
+      "score": 0.03278688524590164,
+      "rrfScore": 0.03278688524590164,
+      "eligible": true,
+      "selected": true
+    },
+    {
+      "questionId": "1102",
+      "score": 0.03225806451612903,
+      "rrfScore": 0.03225806451612903,
+      "eligible": true,
+      "selected": true
+    },
+    {
+      "questionId": "1103",
+      "score": 0.03225806451612903,
+      "rrfScore": 0.03225806451612903,
+      "eligible": true,
+      "selected": true
+    }
+  ],
+  "clarification": null,
+  "clarificationCount": 0,
+  "intentCoverage": {
+    "total": 0,
+    "bound": 0,
+    "unmet": 0,
+    "shortfall": 0
+  },
+  "rationale": "clear best group set: auto-selected 4 source group(s) (score desc; planHash a6f09af9926f…)"
+}

@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "benchmark_version": "p2-f01-authored-curated-v1",
+  "case_id": "P2-F01-COUNTER-02",
+  "domain": "基础教育",
+  "failure_family": "COUNTERPOSITION MISS",
+  "time_scope": "假设一个教学单元的实施期，不对应真实学校或学期",
+  "provenance": {
+    "kind": "synthetic authored-curated",
+    "author_role": "benchmark case drafter",
+    "language": "zh-CN",
+    "description": "以下研究任务与材料均为人工编写的假设情境，仅用于冻结语料评估。它们不是现实研究结果，不含真实人物、论文、机构、测量数值或引文。",
+    "source_identity": "questionId 是 canonical 数字字符串 fixture identity，不是真实知乎 ID；simulated-direct-record 仅表示合成情境中直接记录的材料角色，不表示现实权威。",
+    "materials": [
+      {
+        "question_id": "2201",
+        "role": "commentary"
+      },
+      {
+        "question_id": "2202",
+        "role": "simulated-direct-record"
+      },
+      {
+        "question_id": "2203",
+        "role": "simulated-direct-record"
+      },
+      {
+        "question_id": "2204",
+        "role": "commentary"
+      }
+    ]
+  },
+  "scope": "CURATED_TARGETS != OPEN_WORLD_COMPLETENESS",
+  "targets": {
+    "important_aspects": [
+      {
+        "target_id": "A1",
+        "label": "减少不必要重复",
+        "support_any_of": [
+          {
+            "question_id": "2201",
+            "accepted_statements": [
+              "在假设课程中，可选练习让已掌握内容的学生免于机械重复；支持者认为选择权能够减少重复负担。"
+            ]
+          }
+        ]
+      },
+      {
+        "target_id": "A2",
+        "label": "自主安排条件",
+        "support_any_of": [
+          {
+            "question_id": "2202",
+            "accepted_statements": [
+              "模拟访谈中，自主安排能力较强的学生说，可选练习允许按薄弱点复习；记录支持自主安排的收益。"
+            ]
+          }
+        ]
+      },
+      {
+        "target_id": "A3",
+        "label": "保留差异化支撑",
+        "support_any_of": [
+          {
+            "question_id": "2204",
+            "accepted_statements": [
+              "这份假设方案保留基础练习并开放拓展选择，以分层支持回应学生差异；它反对把全可选作为统一规则。"
+            ]
+          }
+        ]
+      }
+    ],
+    "counterpositions": [
+      {
+        "target_id": "C1",
+        "label": "全可选会使依赖结构者失去练习",
+        "support_any_of": [
+          {
+            "question_id": "2203",
+            "accepted_statements": [
+              "模拟观察中，依赖外部结构的学生在练习全可选后跳过复习；全面取消统一安排可能使这类学生缺少学习支架。"
+            ]
+          }
+        ]
+      },
+      {
+        "target_id": "C2",
+        "label": "不宜统一采用全可选",
+        "support_any_of": [
+          {
+            "question_id": "2204",
+            "accepted_statements": [
+              "这份假设方案保留基础练习并开放拓展选择，以分层支持回应学生差异；它反对把全可选作为统一规则。"
+            ]
+          }
+        ]
+      }
+    ],
+    "key_evidence": [
+      {
+        "target_id": "K1",
+        "label": "记录练习遗漏机制的观察材料",
+        "question_id": "2203",
+        "expected_text": "模拟观察中，依赖外部结构的学生在练习全可选后跳过复习；全面取消统一安排可能使这类学生缺少学习支架。"
+      }
+    ]
+  },
+  "hidden_targets": [
+    "A1",
+    "A2",
+    "A3",
+    "C1",
+    "C2",
+    "K1"
+  ],
+  "evaluation_notes": "初始材料支持可选练习且明确局部条件。反向路线给出有条件的反对，不能把查询反向论证本身算成发现，也不能把任意异议都当成已定义 counterposition。"
+}

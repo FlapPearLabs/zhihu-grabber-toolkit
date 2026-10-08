@@ -1,0 +1,212 @@
+{
+  "seam": "T14_TO_T15",
+  "seamVersion": 2,
+  "semanticContractVersion": 2,
+  "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "preSynthesisGuard": {
+    "guardResult": "PASS",
+    "selectedVerifiedSourceSetIdentity": "sha256:47214123f221d67b4c871bd8594ccbba9d971db5cb745b4b056d895b7dfa4284",
+    "mappedAnalyzedSourceSetIdentity": "sha256:47214123f221d67b4c871bd8594ccbba9d971db5cb745b4b056d895b7dfa4284"
+  },
+  "synthesis": {
+    "synthesisIdentity": "sha256:16dc8fd17411c2f490e35a4c8b49dda9df2d82d6d9e5660f7330a666c763993b",
+    "families": [
+      {
+        "familyKey": "fam-1a72af0aa5e627eb",
+        "aspect": "独立材料观点",
+        "anchor": {
+          "sourceClaimId": "c-5503-001",
+          "statement": "这份假设维护说明重复储水加盖和旱季仍需补水两点；它未提供超出已有小院记录的新决策依据。"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-5503-001",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-5503-001",
+            "statement": "这份假设维护说明重复储水加盖和旱季仍需补水两点；它未提供超出已有小院记录的新决策依据。",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "asrc-10b395e1b4a46b5ea107d4e3",
+                "groupId": "5503",
+                "authorRef": "author-d658846a6dd32dd4"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-5503-001",
+            "sourceRef": "asrc-10b395e1b4a46b5ea107d4e3",
+            "groupId": "5503",
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": false
+      },
+      {
+        "familyKey": "fam-2be9997b4aa249ba",
+        "aspect": "独立材料观点",
+        "anchor": {
+          "sourceClaimId": "c-5501-001",
+          "statement": "模拟小院记录显示，储水加盖能减少蚊虫进入；雨季可用于浇灌，旱季仍需补水，不能视为全年稳定供水。"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-5501-001",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-5501-001",
+            "statement": "模拟小院记录显示，储水加盖能减少蚊虫进入；雨季可用于浇灌，旱季仍需补水，不能视为全年稳定供水。",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "asrc-9f0b74ddf8f5535d56ea8b01",
+                "groupId": "5501",
+                "authorRef": "author-d658846a6dd32dd4"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-5501-001",
+            "sourceRef": "asrc-9f0b74ddf8f5535d56ea8b01",
+            "groupId": "5501",
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": false
+      },
+      {
+        "familyKey": "fam-cb43698d413817e1",
+        "aspect": "独立材料观点",
+        "anchor": {
+          "sourceClaimId": "c-5502-001",
+          "statement": "这份假设评论建议只把集雨桶作为浇灌补充：旱季供水不可靠，不能完全替代原有供水，储水还应保持加盖。"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-5502-001",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-5502-001",
+            "statement": "这份假设评论建议只把集雨桶作为浇灌补充：旱季供水不可靠，不能完全替代原有供水，储水还应保持加盖。",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "asrc-8ee250eabf5b8b162d5a3004",
+                "groupId": "5502",
+                "authorRef": "author-d658846a6dd32dd4"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-5502-001",
+            "sourceRef": "asrc-8ee250eabf5b8b162d5a3004",
+            "groupId": "5502",
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": false
+      }
+    ],
+    "unresolved": [],
+    "groupDifferences": [
+      {
+        "groupId": "5501",
+        "uncoveredAspects": []
+      },
+      {
+        "groupId": "5502",
+        "uncoveredAspects": []
+      },
+      {
+        "groupId": "5503",
+        "uncoveredAspects": []
+      }
+    ],
+    "evidenceStrength": [
+      {
+        "familyKey": "fam-1a72af0aa5e627eb",
+        "expertEvidenceRichSupport": false,
+        "crossGroupSupport": false,
+        "supportSourceCount": 1,
+        "opposeSourceCount": 0
+      },
+      {
+        "familyKey": "fam-2be9997b4aa249ba",
+        "expertEvidenceRichSupport": false,
+        "crossGroupSupport": false,
+        "supportSourceCount": 1,
+        "opposeSourceCount": 0
+      },
+      {
+        "familyKey": "fam-cb43698d413817e1",
+        "expertEvidenceRichSupport": false,
+        "crossGroupSupport": false,
+        "supportSourceCount": 1,
+        "opposeSourceCount": 0
+      }
+    ],
+    "discussionVolumeDifferences": {
+      "byGroup": {
+        "5501": 1,
+        "5502": 1,
+        "5503": 1
+      }
+    }
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "claim_source_diversity": 1
+  },
+  "legacyDerivedView": {
+    "derivedFrom": "canonical V2 families/unresolved (one-way presentation; never an input to relationStatus/supportBreadth)",
+    "families": [
+      {
+        "familyKey": "fam-1a72af0aa5e627eb",
+        "legacyCategory": "group-specific",
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP"
+      },
+      {
+        "familyKey": "fam-2be9997b4aa249ba",
+        "legacyCategory": "group-specific",
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP"
+      },
+      {
+        "familyKey": "fam-cb43698d413817e1",
+        "legacyCategory": "group-specific",
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP"
+      }
+    ],
+    "unresolved": []
+  }
+}

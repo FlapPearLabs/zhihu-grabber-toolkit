@@ -1,0 +1,46 @@
+{
+  "occurrenceId": "4c112ddb-8e09-4fcd-8e0c-36ea8fb80d87",
+  "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": null,
+      "artifactRel": null,
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        }
+      ],
+      "bindingHash": null,
+      "bindingKey": null,
+      "dedupeKey": "3f4dd17ab4860fd5688f7977d853fbb03618df1334d580ff51a74ab909f148d7",
+      "gapId": "4750db49ccd895071f0baa8e43b999af3a855432664e770a01b64d8fb6979caf:0",
+      "gapIdentityCore": "4750db49ccd895071f0baa8e43b999af3a855432664e770a01b64d8fb6979caf",
+      "normalizedQuery": "课后可选练习 反向论证",
+      "occurrenceId": "4c112ddb-8e09-4fcd-8e0c-36ea8fb80d87",
+      "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "6208462f74d625ee97a9478011afde316c4ed188c2e4394b88fdf01b08aa453a",
+      "status": "AUTHORIZED",
+      "targetedActionId": "51b14608cc5b6447f67e5aa618dac50d134157d5c99384f79bdde817dcea9cfe"
+    }
+  ]
+}

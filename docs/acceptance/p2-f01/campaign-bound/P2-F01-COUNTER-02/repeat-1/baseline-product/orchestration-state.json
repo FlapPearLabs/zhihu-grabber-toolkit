@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "runId": "6208462f74d625ee97a9478011afde316c4ed188c2e4394b88fdf01b08aa453a",
+  "occurrenceId": "a10aa103-3f99-4345-b0df-3fdb4dc64380",
+  "topic": "在假设学校中，把课后统一练习改为学生可选练习是否适合全面推广？请说明支持理由、反向观点与适用边界。",
+  "mode": "p1-cross-question-deep-research",
+  "percent": null,
+  "runtime": "deepseek-api-tool-less",
+  "configFingerprint": "7bb48764eaee68a197bc9ecc9ded5ea1102a8fe8173c2539c0419c01e5cd6306",
+  "forceQuestionId": null,
+  "stage": "COMPLETE",
+  "completedStages": [
+    "SEARCH",
+    "SELECT",
+    "CAPTURE",
+    "ANALYZE",
+    "RENDER"
+  ],
+  "selectedQuestionId": null,
+  "selection": null,
+  "artifacts": {
+    "researchPlan": "research-plan.json",
+    "selectionDecision": "source-group-selection-decision.json",
+    "coverageState": "coverage-state.json",
+    "coverageFinal": "coverage-final.json",
+    "perGroupClaims": "per-group-claims.json",
+    "synthesis": "cross-source-synthesis.json",
+    "researchResult": "research-result.json"
+  },
+  "hashes": {
+    "researchPlan": "86d3ea6163f88f523fe3fbbe11a6bc067ea2c269d03b9b363b0d2811895d9139",
+    "coverageState": "5f8660d945f4a3a755e73d2f4394485a0b876b46c66acab9d462894480558f60",
+    "coverageFinal": "ba927e1d419592ccf4279e37ade962173d606764d08dca44ff3bfa8b6796b28d",
+    "perGroupClaims": "0fa1e70c8186c0b90ff7bef047e76269d7e71e7a4fdd22334426a0a8ef868b7c",
+    "synthesis": "104de557e287eaa3bdf6a97bd1838fce34b4b1ab6d57c94c40c6153ae1907c5d",
+    "researchResult": "aca398e464c269fe162ace3023bf307e10294a26ebd92390cb6b0e9a559f090e",
+    "accumulatedPool": "583b2e5e922ed7adb275bd8245084f15567429e4dfc88e550fc679aa802259a5",
+    "selectionDecision": "e2ea1afc1bb07af7b9e349843df893ed5becd839afa935ae82071e57a4be3fc8"
+  },
+  "verification": null,
+  "coverage": {
+    "is100PercentAnalysis": true,
+    "selectedCount": 2,
+    "analyzedCount": 2
+  },
+  "p1FinalCoveragePlanHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+  "updatedAt": "2026-10-08T03:18:04.552Z"
+}

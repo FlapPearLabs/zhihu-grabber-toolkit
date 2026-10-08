@@ -1,0 +1,212 @@
+{
+  "seam": "T14_TO_T15",
+  "seamVersion": 2,
+  "semanticContractVersion": 2,
+  "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+  "preSynthesisGuard": {
+    "guardResult": "PASS",
+    "selectedVerifiedSourceSetIdentity": "sha256:49e72fb335f5922762351bfff6289353cd64d050fa710628e8e7a2892829695a",
+    "mappedAnalyzedSourceSetIdentity": "sha256:49e72fb335f5922762351bfff6289353cd64d050fa710628e8e7a2892829695a"
+  },
+  "synthesis": {
+    "synthesisIdentity": "sha256:6f760c66643db22c17605bc7a439feb588255358f0ff29711377821eff816d52",
+    "families": [
+      {
+        "familyKey": "fam-1d94c59b957715e4",
+        "aspect": "独立材料观点",
+        "anchor": {
+          "sourceClaimId": "c-4402-001",
+          "statement": "这份二手评论同样把候车等待视为就医出行的主要不便，支持更密的班次；未调查无法完成出发手续的人。"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-4402-001",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-4402-001",
+            "statement": "这份二手评论同样把候车等待视为就医出行的主要不便，支持更密的班次；未调查无法完成出发手续的人。",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "asrc-c3e9adeed741be9d3412a278",
+                "groupId": "4402",
+                "authorRef": "author-d658846a6dd32dd4"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-4402-001",
+            "sourceRef": "asrc-c3e9adeed741be9d3412a278",
+            "groupId": "4402",
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": false
+      },
+      {
+        "familyKey": "fam-49d1fb3fb2abf874",
+        "aspect": "独立材料观点",
+        "anchor": {
+          "sourceClaimId": "c-4401-001",
+          "statement": "在这份假设评论中，增加班次能缩短候车等待，给已能到达站点的居民更多出发选择。"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-4401-001",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-4401-001",
+            "statement": "在这份假设评论中，增加班次能缩短候车等待，给已能到达站点的居民更多出发选择。",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "asrc-a0a97507aa95e942eead7bd6",
+                "groupId": "4401",
+                "authorRef": "author-d658846a6dd32dd4"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-4401-001",
+            "sourceRef": "asrc-a0a97507aa95e942eead7bd6",
+            "groupId": "4401",
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": false
+      },
+      {
+        "familyKey": "fam-c380d1aee5f2ca9f",
+        "aspect": "独立材料观点",
+        "anchor": {
+          "sourceClaimId": "c-4404-001",
+          "statement": "这份假设解释继续强调更多班次会减少候车等待，讨论对象仍是已经能够乘车的人，没有增加其他服务限制的证据。"
+        },
+        "relationships": [
+          {
+            "sourceClaimId": "c-4404-001",
+            "stance": "ASSERTS"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "c-4404-001",
+            "statement": "这份假设解释继续强调更多班次会减少候车等待，讨论对象仍是已经能够乘车的人，没有增加其他服务限制的证据。",
+            "kind": "main",
+            "sourceRefs": [
+              {
+                "sourceRef": "asrc-393cfa690975f924ff4063ce",
+                "groupId": "4404",
+                "authorRef": "author-d658846a6dd32dd4"
+              }
+            ]
+          }
+        ],
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP",
+        "support": [
+          {
+            "sourceClaimId": "c-4404-001",
+            "sourceRef": "asrc-393cfa690975f924ff4063ce",
+            "groupId": "4404",
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "oppose": [],
+        "expertEvidenceRichSupport": false
+      }
+    ],
+    "unresolved": [],
+    "groupDifferences": [
+      {
+        "groupId": "4401",
+        "uncoveredAspects": []
+      },
+      {
+        "groupId": "4402",
+        "uncoveredAspects": []
+      },
+      {
+        "groupId": "4404",
+        "uncoveredAspects": []
+      }
+    ],
+    "evidenceStrength": [
+      {
+        "familyKey": "fam-1d94c59b957715e4",
+        "expertEvidenceRichSupport": false,
+        "crossGroupSupport": false,
+        "supportSourceCount": 1,
+        "opposeSourceCount": 0
+      },
+      {
+        "familyKey": "fam-49d1fb3fb2abf874",
+        "expertEvidenceRichSupport": false,
+        "crossGroupSupport": false,
+        "supportSourceCount": 1,
+        "opposeSourceCount": 0
+      },
+      {
+        "familyKey": "fam-c380d1aee5f2ca9f",
+        "expertEvidenceRichSupport": false,
+        "crossGroupSupport": false,
+        "supportSourceCount": 1,
+        "opposeSourceCount": 0
+      }
+    ],
+    "discussionVolumeDifferences": {
+      "byGroup": {
+        "4401": 1,
+        "4402": 1,
+        "4404": 1
+      }
+    }
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 0,
+    "new_contradiction_rate": 0,
+    "claim_source_diversity": 1
+  },
+  "legacyDerivedView": {
+    "derivedFrom": "canonical V2 families/unresolved (one-way presentation; never an input to relationStatus/supportBreadth)",
+    "families": [
+      {
+        "familyKey": "fam-1d94c59b957715e4",
+        "legacyCategory": "group-specific",
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP"
+      },
+      {
+        "familyKey": "fam-49d1fb3fb2abf874",
+        "legacyCategory": "group-specific",
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP"
+      },
+      {
+        "familyKey": "fam-c380d1aee5f2ca9f",
+        "legacyCategory": "group-specific",
+        "relationStatus": "SUPPORT_ONLY",
+        "supportBreadth": "SINGLE_GROUP"
+      }
+    ],
+    "unresolved": []
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "runId": "7fe8b9f5639702c975412a8efb937414d3b14677f22428f47b16379d0ea3f46c",
+  "occurrenceId": "b853200e-6d94-4d07-8193-f9204ab5484d",
+  "topic": "在假设小院中，家用雨水收集桶是否适合用于日常浇灌？请结合储水安全、季节供水和用途边界作出建议。",
+  "mode": "p1-cross-question-deep-research",
+  "percent": null,
+  "runtime": "deepseek-api-tool-less",
+  "configFingerprint": "7bb48764eaee68a197bc9ecc9ded5ea1102a8fe8173c2539c0419c01e5cd6306",
+  "forceQuestionId": null,
+  "stage": "COMPLETE",
+  "completedStages": [
+    "SEARCH",
+    "SELECT",
+    "CAPTURE",
+    "ANALYZE",
+    "RENDER"
+  ],
+  "selectedQuestionId": null,
+  "selection": null,
+  "artifacts": {
+    "researchPlan": "research-plan.json",
+    "selectionDecision": "source-group-selection-decision.json",
+    "coverageState": "coverage-state.json",
+    "coverageFinal": "coverage-final.json",
+    "perGroupClaims": "per-group-claims.json",
+    "synthesis": "cross-source-synthesis.json",
+    "researchResult": "research-result.json"
+  },
+  "hashes": {
+    "targeted-resolution-input:4fa482d99b98d3cf0922ebbaee778a92c93cd68f767b84f41abc5cbf85f356d9": "a18197a214b3ab13e45d2f74a3e3cf89eae65e40300a8e977796634559e14793",
+    "targeted-action:4fa482d99b98d3cf0922ebbaee778a92c93cd68f767b84f41abc5cbf85f356d9": "b2024344e050423f0d9ab672dad80853fd56f492a5e5de9cf6afc23562102e53",
+    "targeted-resolution-input:b291c74a4338cbe333fb1b860684c5ef28b892d6eb29d651ea6461fdf5eacd7a": "5bf91a72794488fea11c207722db293d5e1ad2972ac5fe5534cc755a12ebec2a",
+    "targeted-action:b291c74a4338cbe333fb1b860684c5ef28b892d6eb29d651ea6461fdf5eacd7a": "c29138bdcab25e73c5dd37252a6e23796d9c74467c1d1d0852740f5aae7b030d",
+    "targeted-action-ledger": "5448f00f1a4db61db1088c47a81dfc07688a75d25e991bb475cd6a1d47838093",
+    "researchPlan": "09e1105d8c8d39cd925810c205ba3c94ac7a3b8c5ca00be26ac0dd94d3212a7a",
+    "coverageState": "0dcd17f67fcbd610a5747b67f803ca04a68506b27fa2cc7dadf9f9c169688cad",
+    "coverageFinal": "82349c99d29609d3ce5f4f901d2043c97474ec4da054734f16a80614a9ed3bec",
+    "perGroupClaims": "9bf9cbe7695bcc98479d38568c6772c9f8315f85c5bf0483c324d43291f68da8",
+    "synthesis": "d6e42255400ff67321b9907090d2963812773c38d8800f71a29f67e04ee01ba5",
+    "researchResult": "3106c5e53c26d87012cb6134f4a8ae1c075b9a5e2006970aeacdd26ecf0aa4af",
+    "accumulatedPool": "a418bea2b55b7ec02110b7e17d547d556b4cc11e402f1f7f67cdcae8da74f170",
+    "selectionDecision": "b0084f5fab54876c820b6dd2935abe3d67ee8c118a4455e3dd955bc972448530"
+  },
+  "verification": null,
+  "coverage": {
+    "is100PercentAnalysis": true,
+    "selectedCount": 3,
+    "analyzedCount": 3
+  },
+  "p1FinalCoveragePlanHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "updatedAt": "2026-10-08T03:18:11.215Z"
+}

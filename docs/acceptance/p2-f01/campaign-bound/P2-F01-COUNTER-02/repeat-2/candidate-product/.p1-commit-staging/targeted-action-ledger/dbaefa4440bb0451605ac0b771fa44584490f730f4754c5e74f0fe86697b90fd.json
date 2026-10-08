@@ -1,0 +1,114 @@
+{
+  "occurrenceId": "4c112ddb-8e09-4fcd-8e0c-36ea8fb80d87",
+  "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": null,
+      "artifactRel": null,
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        }
+      ],
+      "bindingHash": null,
+      "bindingKey": null,
+      "dedupeKey": "90bfbd242b7967405760371357cd6ea1b7727327d8187cd1d4a9006ae00a7f70",
+      "gapId": "913d661fabae19e18a37a2797d031cdd6d303bfb3dff3da9a7c5dbc58a4df973:0",
+      "gapIdentityCore": "913d661fabae19e18a37a2797d031cdd6d303bfb3dff3da9a7c5dbc58a4df973",
+      "normalizedQuery": "学生可选课后练习",
+      "occurrenceId": "4c112ddb-8e09-4fcd-8e0c-36ea8fb80d87",
+      "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "6208462f74d625ee97a9478011afde316c4ed188c2e4394b88fdf01b08aa453a",
+      "status": "AUTHORIZED",
+      "targetedActionId": "1bf980dc5a6c05eac805816211c3e69946c83a9034ac394555c9c8ce64a11e93"
+    },
+    {
+      "artifactHash": "6d82b86d1a2c3af53e44f645a799971cf21f89438af33f84bd45e63e0309d707",
+      "artifactRel": "targeted-requery-subphase/action-51b14608cc5b6447f67e5aa618dac50d134157d5c99384f79bdde817dcea9cfe/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-51b14608cc5b6447f67e5aa618dac50d134157d5c99384f79bdde817dcea9cfe/retrieval-pool.json",
+          "bindingHash": "6d82b86d1a2c3af53e44f645a799971cf21f89438af33f84bd45e63e0309d707",
+          "bindingKey": "targeted-action:51b14608cc5b6447f67e5aa618dac50d134157d5c99384f79bdde817dcea9cfe",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "EVALUATE",
+          "from": "COMMITTED",
+          "reason": null,
+          "seq": 3,
+          "to": "EVALUATED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "CONCLUDE",
+          "from": "EVALUATED",
+          "reason": null,
+          "seq": 4,
+          "to": "UNRESOLVED"
+        }
+      ],
+      "bindingHash": "6d82b86d1a2c3af53e44f645a799971cf21f89438af33f84bd45e63e0309d707",
+      "bindingKey": "targeted-action:51b14608cc5b6447f67e5aa618dac50d134157d5c99384f79bdde817dcea9cfe",
+      "dedupeKey": "3f4dd17ab4860fd5688f7977d853fbb03618df1334d580ff51a74ab909f148d7",
+      "gapId": "4750db49ccd895071f0baa8e43b999af3a855432664e770a01b64d8fb6979caf:0",
+      "gapIdentityCore": "4750db49ccd895071f0baa8e43b999af3a855432664e770a01b64d8fb6979caf",
+      "normalizedQuery": "课后可选练习 反向论证",
+      "occurrenceId": "4c112ddb-8e09-4fcd-8e0c-36ea8fb80d87",
+      "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "6208462f74d625ee97a9478011afde316c4ed188c2e4394b88fdf01b08aa453a",
+      "status": "UNRESOLVED",
+      "targetedActionId": "51b14608cc5b6447f67e5aa618dac50d134157d5c99384f79bdde817dcea9cfe"
+    }
+  ]
+}

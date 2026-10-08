@@ -1,0 +1,47 @@
+{
+  "diagnosedGaps": [
+    {
+      "declaredGapType": "CONTRADICTION_GAP",
+      "diagnosisRound": 0,
+      "gapId": "a2dba4f93d49f4a8f29cc6efaea3fdf758f34ce98e95b43a072e65b6c75c0938:0",
+      "gapIdentityCore": "a2dba4f93d49f4a8f29cc6efaea3fdf758f34ce98e95b43a072e65b6c75c0938",
+      "gapType": "CONTRADICTION_GAP",
+      "occurrenceId": "211ec1ca-8fad-4a1f-9a48-2e3e7e81cf9d",
+      "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+      "subjectKey": "opposing:增加公交班次 适用边界"
+    },
+    {
+      "declaredGapType": "CONTRADICTION_GAP",
+      "diagnosisRound": 1,
+      "gapId": "a2dba4f93d49f4a8f29cc6efaea3fdf758f34ce98e95b43a072e65b6c75c0938:1",
+      "gapIdentityCore": "a2dba4f93d49f4a8f29cc6efaea3fdf758f34ce98e95b43a072e65b6c75c0938",
+      "gapType": "CONTRADICTION_GAP",
+      "occurrenceId": "211ec1ca-8fad-4a1f-9a48-2e3e7e81cf9d",
+      "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+      "subjectKey": "opposing:增加公交班次 适用边界"
+    },
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 0,
+      "gapId": "fb145504d270c3fc44c1c52ce161f129a2bbc42fa218a25b590269ac150284fe:0",
+      "gapIdentityCore": "fb145504d270c3fc44c1c52ce161f129a2bbc42fa218a25b590269ac150284fe",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "211ec1ca-8fad-4a1f-9a48-2e3e7e81cf9d",
+      "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+      "subjectKey": "aspect:村镇就医公交 服务限制"
+    },
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 1,
+      "gapId": "fb145504d270c3fc44c1c52ce161f129a2bbc42fa218a25b590269ac150284fe:1",
+      "gapIdentityCore": "fb145504d270c3fc44c1c52ce161f129a2bbc42fa218a25b590269ac150284fe",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "211ec1ca-8fad-4a1f-9a48-2e3e7e81cf9d",
+      "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+      "subjectKey": "aspect:村镇就医公交 服务限制"
+    }
+  ],
+  "occurrenceId": "211ec1ca-8fad-4a1f-9a48-2e3e7e81cf9d",
+  "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+  "schema": "p2-ari-targeted-requery-ledger/v1"
+}

@@ -1,0 +1,56 @@
+{
+  "occurrenceId": "1ab71621-2b92-4e84-8c8b-967083e881de",
+  "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": "c29138bdcab25e73c5dd37252a6e23796d9c74467c1d1d0852740f5aae7b030d",
+      "artifactRel": "targeted-requery-subphase/action-a62559834aef467296326bb0ac2dc20a981ff5bb87e4759b7950ce63ce4b33d4/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-a62559834aef467296326bb0ac2dc20a981ff5bb87e4759b7950ce63ce4b33d4/retrieval-pool.json",
+          "bindingHash": "c29138bdcab25e73c5dd37252a6e23796d9c74467c1d1d0852740f5aae7b030d",
+          "bindingKey": "targeted-action:a62559834aef467296326bb0ac2dc20a981ff5bb87e4759b7950ce63ce4b33d4",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        }
+      ],
+      "bindingHash": "c29138bdcab25e73c5dd37252a6e23796d9c74467c1d1d0852740f5aae7b030d",
+      "bindingKey": "targeted-action:a62559834aef467296326bb0ac2dc20a981ff5bb87e4759b7950ce63ce4b33d4",
+      "dedupeKey": "75eab952e808dbd9482d834eeea4adde44650d6eccdde410b3a195d8109b73f0",
+      "gapId": "7d268096e5c6f792cdcb2454e2965e3673197991d8919a79fcfaf2d3966a9509:0",
+      "gapIdentityCore": "7d268096e5c6f792cdcb2454e2965e3673197991d8919a79fcfaf2d3966a9509",
+      "normalizedQuery": "雨水浇灌 替代供水的局限",
+      "occurrenceId": "1ab71621-2b92-4e84-8c8b-967083e881de",
+      "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "7fe8b9f5639702c975412a8efb937414d3b14677f22428f47b16379d0ea3f46c",
+      "status": "COMMITTED",
+      "targetedActionId": "a62559834aef467296326bb0ac2dc20a981ff5bb87e4759b7950ce63ce4b33d4"
+    }
+  ]
+}

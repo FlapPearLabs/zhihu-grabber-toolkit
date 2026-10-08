@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "repo_sha": "43817dd085e5c816eea0b639908c849781db8ce3",
+  "benchmark_version": "p2-f01-authored-curated-v1",
+  "evaluator_version": "p2-f01-exact-supported-statements-v1",
+  "case_count": 5,
+  "repeats": 2,
+  "tier": "DETERMINISTIC_REPLAYABLE",
+  "pairs": [
+    {
+      "case_id": "P2-F01-ASPECT-01",
+      "repetition": 1,
+      "comparison": "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/repeat-1/comparison.json"
+    },
+    {
+      "case_id": "P2-F01-ASPECT-01",
+      "repetition": 2,
+      "comparison": "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/repeat-2/comparison.json"
+    },
+    {
+      "case_id": "P2-F01-COUNTER-02",
+      "repetition": 1,
+      "comparison": "docs/acceptance/p2-f01/campaign-bound/P2-F01-COUNTER-02/repeat-1/comparison.json"
+    },
+    {
+      "case_id": "P2-F01-COUNTER-02",
+      "repetition": 2,
+      "comparison": "docs/acceptance/p2-f01/campaign-bound/P2-F01-COUNTER-02/repeat-2/comparison.json"
+    },
+    {
+      "case_id": "P2-F01-AUTHORITY-03",
+      "repetition": 1,
+      "comparison": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/comparison.json"
+    },
+    {
+      "case_id": "P2-F01-AUTHORITY-03",
+      "repetition": 2,
+      "comparison": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-2/comparison.json"
+    },
+    {
+      "case_id": "P2-F01-LOWGAIN-04",
+      "repetition": 1,
+      "comparison": "docs/acceptance/p2-f01/campaign-bound/P2-F01-LOWGAIN-04/repeat-1/comparison.json"
+    },
+    {
+      "case_id": "P2-F01-LOWGAIN-04",
+      "repetition": 2,
+      "comparison": "docs/acceptance/p2-f01/campaign-bound/P2-F01-LOWGAIN-04/repeat-2/comparison.json"
+    },
+    {
+      "case_id": "P2-F01-CONTROL-05",
+      "repetition": 1,
+      "comparison": "docs/acceptance/p2-f01/campaign-bound/P2-F01-CONTROL-05/repeat-1/comparison.json"
+    },
+    {
+      "case_id": "P2-F01-CONTROL-05",
+      "repetition": 2,
+      "comparison": "docs/acceptance/p2-f01/campaign-bound/P2-F01-CONTROL-05/repeat-2/comparison.json"
+    }
+  ],
+  "documented_nondeterminism": [
+    "wall_clock_ms",
+    "timestamp",
+    "product occurrence_id",
+    "artifact hashes containing occurrence/timestamp"
+  ],
+  "dogfood": {
+    "semantic_credential_usable": false,
+    "capture_cookie_usable": false,
+    "search_secret_usable": false,
+    "status": "NOT_RUN",
+    "reason": "CANONICAL_CREDENTIAL_PREFLIGHT_NOT_USABLE",
+    "run_count": 0,
+    "variance": "UNKNOWN",
+    "research_quality": "UNKNOWN"
+  },
+  "controls": {
+    "leakage": {
+      "status": "PASS",
+      "invalid_run": {
+        "ok": false,
+        "code": "BENCHMARK_CONTAMINATION_OR_INVALID_INPUT"
+      },
+      "product_io_started": false
+    },
+    "degraded_candidate": {
+      "status": "PASS",
+      "removed_question_id": "1103",
+      "result": "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/controls/degraded-comparison.json"
+    }
+  },
+  "stability": "PASS_METRICS_AND_NON_LATENCY_COST",
+  "known_weak_baseline": true,
+  "candidate_runs": 10,
+  "baseline_runs": 10
+}

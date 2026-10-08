@@ -1,0 +1,81 @@
+{
+  "seam": "T13_TO_T14",
+  "seamVersion": 1,
+  "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+  "selectedCorpusIdentityRef": "sha256:271de9bd51f2ee97149bba27fb1cd76c4b5ac7bfb6497310c1f776369de369b5",
+  "groupRepresentations": [
+    {
+      "groupId": "4401",
+      "canonicalGroupIdentity": {
+        "questionId": "4401",
+        "providerId": "zhihu",
+        "capability": "zhihu-answers"
+      },
+      "accounting": {
+        "selected": 1,
+        "verified": 1,
+        "mapped": 1,
+        "analyzed": 1
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-4401-001",
+            "statement": "在这份假设评论中，增加班次能缩短候车等待，给已能到达站点的居民更多出发选择。",
+            "sourceRefs": [
+              "asrc-a0a97507aa95e942eead7bd6"
+            ],
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 1
+      }
+    },
+    {
+      "groupId": "4402",
+      "canonicalGroupIdentity": {
+        "questionId": "4402",
+        "providerId": "zhihu",
+        "capability": "zhihu-answers"
+      },
+      "accounting": {
+        "selected": 1,
+        "verified": 1,
+        "mapped": 1,
+        "analyzed": 1
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-4402-001",
+            "statement": "这份二手评论同样把候车等待视为就医出行的主要不便，支持更密的班次；未调查无法完成出发手续的人。",
+            "sourceRefs": [
+              "asrc-c3e9adeed741be9d3412a278"
+            ],
+            "authorRef": "author-d658846a6dd32dd4"
+          }
+        ],
+        "minority": [],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 1
+      }
+    }
+  ],
+  "aggregateAnalyzedIdentity": {
+    "mappedAnalyzedSourceSetIdentity": "sha256:271de9bd51f2ee97149bba27fb1cd76c4b5ac7bfb6497310c1f776369de369b5",
+    "perGroup": {
+      "4401": "sha256:ec38f97010a88bfdbc06029bb18fe44b38f6bace3dc286ecd9202a2f706b3144",
+      "4402": "sha256:aa944232eee44ac07f32e1445283e4a584ded89b6889b874c55ee18b8b98d07e"
+    }
+  }
+}

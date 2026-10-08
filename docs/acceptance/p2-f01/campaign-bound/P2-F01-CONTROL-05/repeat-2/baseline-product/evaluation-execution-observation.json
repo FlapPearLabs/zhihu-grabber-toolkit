@@ -1,0 +1,65 @@
+{
+  "implementation": "DETERMINISTIC_DOUBLE",
+  "calls": [
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "雨水收集桶 小院浇灌条件",
+      "question_ids": [
+        "5501",
+        "5502"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "雨水收集桶 小院浇灌条件",
+      "question_ids": [
+        "5501",
+        "5502"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "雨水收集桶 小院浇灌条件",
+      "question_ids": [
+        "5501",
+        "5502"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "雨水收集桶 小院浇灌条件",
+      "question_ids": [
+        "5501",
+        "5502"
+      ]
+    },
+    {
+      "kind": "capture",
+      "question_id": "5501"
+    },
+    {
+      "kind": "capture",
+      "question_id": "5502"
+    }
+  ],
+  "semantic_calls": [
+    "analyze",
+    "analyze",
+    "synthesize"
+  ],
+  "cost": {
+    "retrieval_calls": 4,
+    "retrieval_attempts": 4,
+    "provider_calls": 6,
+    "external_provider_calls": 0,
+    "model_invocations": 0,
+    "semantic_adapter_invocations": 3,
+    "wall_clock_ms": 369.545833,
+    "token_cost": "UNKNOWN",
+    "money_cost": "UNKNOWN"
+  }
+}
