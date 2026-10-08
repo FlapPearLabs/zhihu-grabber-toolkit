@@ -8,7 +8,7 @@ import { configFingerprint, sha256, sha256File } from '../lib/state.mjs';
 import { canonicalJson } from '../lib/cross-group-aggregation.mjs';
 import { json, writeJson } from '../scripts/p2a-t14/fixtures.mjs';
 import { validateProductInput } from './input.mjs';
-import { observeProduct, measureTargets, compareResults, inventory, EVALUATOR_VERSION } from './evaluator.mjs';
+import { observeProduct, measureTargets, compareResults, EVALUATOR_VERSION } from './evaluator.mjs';
 import { EXPERIMENT_CONFIG, PROPOSAL_POLICY_VERSION } from './product-worker.mjs';
 
 export function executeProductWorker({ repo, file, workDir, arm, inputHash }) {
@@ -80,14 +80,7 @@ export function runBenchmark({ repo, out, productRoot, repoSha, repeats = 2 }) {
         if (!result.ok && !fs.existsSync(path.join(workDir, 'evaluation-execution-observation.json'))) {
           throw new Error(`EVALUATION_WORKER_FAILED:${descriptor.case_id}:${arm}:${result.code}`);
         }
-        if (result.ok) observations[arm] = observeProduct(workDir, configFingerprint(EXPERIMENT_CONFIG));
-        else {
-          const state = json(path.join(workDir, 'orchestration-state.json'));
-          observations[arm] = { valid: false, product_failure: result.code, run_id: state.runId,
-            occurrence_id: state.occurrenceId, plan_hash: sha256(canonicalJson(publicInput.plan)),
-            artifact_hashes: inventory(workDir), product_checkpoint_hashes: state.hashes,
-            sources: [], claims: [], selected: [], analyzed: [], stop_reason: result.code };
-        }
+        observations[arm] = observeProduct(workDir, configFingerprint(EXPERIMENT_CONFIG), result);
         executions[arm] = json(path.join(workDir, 'evaluation-execution-observation.json'));
         const copy = path.join(pairDir, `${arm}-product`);
         fs.cpSync(workDir, copy, { recursive: true });
@@ -136,7 +129,8 @@ export function runBenchmark({ repo, out, productRoot, repoSha, repeats = 2 }) {
           supporting: { stop_reason: observation.stop_reason,
             duplicate_ratio: returnedIds.length ? 1 - new Set(returnedIds).size / returnedIds.length : 'UNKNOWN',
             unresolved_gap_rate: gaps.length ? gaps.filter(gap => gap.status !== 'RESOLVED').length / gaps.length : 'UNKNOWN',
-            targeted_action_count: new Set(gaps.flatMap(gap => gap.lineage.map(link => link.targetedActionId))).size,
+            targeted_action_count: observation.valid
+              ? new Set(gaps.flatMap(gap => gap.lineage.map(link => link.targetedActionId))).size : observation.targeted_action_count,
             new_materially_useful_sources_per_targeted_round: 'UNKNOWN' } };
         writeJson(path.join(pairDir, `${arm}-result.json`), results[arm]);
       }

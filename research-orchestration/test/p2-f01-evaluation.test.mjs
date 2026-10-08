@@ -9,6 +9,7 @@ import { measureTargets, compareResults, observeProduct, inventory } from '../ev
 import { executeProductWorker } from '../evaluation/run.mjs';
 import { configFingerprint, sha256File } from '../lib/state.mjs';
 import { EXPERIMENT_CONFIG } from '../evaluation/product-worker.mjs';
+import { loadPlan } from '../lib/plan-contract.mjs';
 
 const publicInput = () => ({
   schema_version: 1, case_id: 'probe', task: '评估隔离', time_scope: 'frozen',
@@ -114,4 +115,23 @@ test('product boundary rejects evaluator data even when nested in public fields'
     change(input);
     assert.throws(() => validateProductInput(input), /BENCHMARK_CONTAMINATION/);
   }
+});
+
+test('actual incomplete worker retains owner plan identity and unknown final lineage without rewriting product', () => {
+  const repo = fileURLToPath(new URL('../../', import.meta.url));
+  const file = path.join(repo, 'research-orchestration/evaluation/benchmark/cases/P2-F01-AUTHORITY-03/product-input.json');
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'p2-f01-incomplete-'));
+  const workDir = path.join(temp, 'candidate');
+  try {
+    const execution = executeProductWorker({ repo, file, workDir, arm: 'candidate', inputHash: sha256File(file) });
+    assert.equal(execution.ok, false);
+    assert.equal(execution.code, 'clarification_required');
+    assert.equal(JSON.parse(fs.readFileSync(path.join(workDir, 'targeted-requery-actions.json'))).targetedActions.length, 3);
+    const before = inventory(workDir);
+    const actual = observeProduct(workDir, configFingerprint(EXPERIMENT_CONFIG), execution);
+    assert.equal(actual.valid, false);
+    assert.equal(actual.plan_hash, loadPlan(workDir).planHash);
+    assert.equal(actual.targeted_action_count, 'UNKNOWN');
+    assert.deepEqual(inventory(workDir), before);
+  } finally { fs.rmSync(temp, { recursive: true, force: true }); }
 });

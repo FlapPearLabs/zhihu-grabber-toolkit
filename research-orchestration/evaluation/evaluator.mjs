@@ -5,6 +5,7 @@ import { sha256File } from '../lib/state.mjs';
 import { canonicalJson } from '../lib/cross-group-aggregation.mjs';
 import { validateCompleteReuseClosure } from '../lib/p1-reuse-closure.mjs';
 import { deriveCanonicalSourceId } from '../lib/rce-input-adapter.mjs';
+import { loadPlan } from '../lib/plan-contract.mjs';
 import { json } from '../scripts/p2a-t14/fixtures.mjs';
 
 export const EVALUATOR_VERSION = 'p2-f01-exact-supported-statements-v1';
@@ -20,9 +21,19 @@ export function inventory(dir, prefix = '') {
 }
 
 /** Reads completed artifacts only. The existing closure authority grants integrity. */
-export function observeProduct(workDir, config) {
+export function observeProduct(workDir, config, execution = { ok: true }) {
   const before = inventory(workDir);
   const state = json(path.join(workDir, 'orchestration-state.json'));
+  if (!execution.ok) {
+    const persistedPlan = loadPlan(workDir);
+    if (!persistedPlan.ok) throw new Error('EVALUATION_PLAN_INVALID');
+    if (canonicalJson(before) !== canonicalJson(inventory(workDir))) throw new Error('EVALUATOR_MUTATED_PRODUCT');
+    return { valid: false, product_failure: execution.code, run_id: state.runId,
+      occurrence_id: state.occurrenceId, plan_hash: persistedPlan.planHash,
+      artifact_hashes: before, product_checkpoint_hashes: state.hashes,
+      sources: [], claims: [], selected: [], analyzed: [], stop_reason: execution.code,
+      targeted_action_count: 'UNKNOWN' };
+  }
   const closure = validateCompleteReuseClosure({ workDir, state,
     boundPlanHash: state?.p1FinalCoveragePlanHash, currentConfigFingerprint: config });
   if (!closure.valid) throw new Error('EVALUATION_PRODUCT_CLOSURE_INVALID');
