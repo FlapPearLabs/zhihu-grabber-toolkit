@@ -1,6 +1,6 @@
 # #107 当前候选收据
 
-EVIDENCE_CODE_SHA = f75b0b123398252b14628c59ee5d175e35df6183
+EVIDENCE_CODE_SHA = 416a153b5976c326a0656ce8f592c063a3029614
 BASE_SHA = 880862566478f9885b9a3c5bf25581529edd2a28
 BENCHMARK_VERSION = p2-f01-authored-curated-v1
 EVALUATOR_VERSION = p2-f01-exact-supported-statements-v1
@@ -13,7 +13,7 @@ PRODUCTION_MUTATION = NONE
 
 所有result planHash复用production loadPlan owner；非法计划拒绝。INVALID最终lineage计数UNKNOWN，raw candidate的3个动作、检索4→10仍留存。隐藏输入在worker前只绑定Git blob元数据；两worker完成后首次读取hidden单一buffer、校验blob、校验closed schema/target-corpus/time_scope，再评分与保存同bytes hash。该过程不向product提供gold，不改任何canonical product artifact/决策。
 
-focused19/19通过（廉价actual composition pair、实际incomplete-worker、curator错误和hidden文件变化控制），静态node --check/git diff --check通过。既有广回归结果见历史收据，当前head CI执行完整套件；最终fresh clone复跑全部20次后再核验metrics/status/failure/supporting/非latency cost与raw hashes。
+focused22/22通过（廉价actual composition pair、实际incomplete-worker、curator错误和hidden文件变化控制），静态node --check/git diff --check通过。既有广回归结果见历史收据，当前head CI执行完整套件；最终fresh clone复跑全部20次后再核验metrics/status/failure/supporting/非latency cost与raw hashes。
 
 跨平台字节门禁：在 core.autocrlf=true 的实际独立clone中，原checkout换行转换导致blob不匹配。仅在benchmark目录加入JSON -text属性，保证平台checkout保留冻结字节；不修改任何case内容或指标定义。修复后用另一份相同设置clone重新核验。
 
@@ -28,3 +28,5 @@ actual model=NONE，external provider calls=0，token/money=UNKNOWN。Tier2 cred
 最新7f候选的CI classification真实失败，不作为PASS：该job没有安装既有runtime依赖，已补现有lock npm ci步骤；无eval/product源码或case变化。最终收据以修后same-head CI/独立review/fresh rerun为准。
 
 f75b0b123再次实跑20次，完整冻结identity、质量与非时延成本重复稳定；与34ff归档逐对metrics/status/failure/supporting/非时延cost相同，678产品hash、40结果hash、16有效closure独立机械核验。当前campaign-bound来自f75的新执行，34ff版保留于Git历史。完整pair identity先于INVALID产品状态比较，重复执行identity变化拒绝；两项真实RED后GREEN19/19。最终exact candidate fresh review/CI/fresh clone仍由PR/#107保存。
+
+416a153b5976c326a0656ce8f592c063a3029614再次实跑20次，当前campaign-bound绑定此源码；冻结case/四primary完全不变，与f75逐对质量/失败/支持/非时延cost一致，678产品hash、40结果hash、16closure核验。新增三项schema RED/GREEN22/22：task超产品2000trim后字符限、合成provenance标签、contamination-control目录保留。原f75版归档保留于Git历史。最终same-head review/CI/fresh clone仍以PR/#107收据为准。

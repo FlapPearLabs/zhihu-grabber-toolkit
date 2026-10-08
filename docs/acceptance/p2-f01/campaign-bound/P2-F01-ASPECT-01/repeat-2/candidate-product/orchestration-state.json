@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "runId": "6c55752597c7f68afab93e0a0c67b9442aec0c02ed11e1eb1b6b28272bc548b1",
-  "occurrenceId": "ddba3ba1-4ff0-4fd2-aa04-247ce963fb6a",
+  "occurrenceId": "deaf26c8-4d17-4fec-90c6-afd88c9cde37",
   "topic": "在假设老旧街区中，是否应优先增设固定遮阴设施？请结合居民舒适、场地适配与长期使用条件给出有证据支持的建议。",
   "mode": "p1-cross-question-deep-research",
   "percent": null,
@@ -28,17 +28,17 @@
     "researchResult": "research-result.json"
   },
   "hashes": {
-    "targeted-resolution-input:12ce9e538f50b92356a148f0ea1da23b3059a19a102a803c3a31a165740476d2": "b21bded2f81e977d70a03e3ca3e15894f97c3a5cc9b1492c9274be70ca9fccc3",
-    "targeted-action:12ce9e538f50b92356a148f0ea1da23b3059a19a102a803c3a31a165740476d2": "e5afca53115f05eeedeaa029224c559802bc710feeaceb6a8a1b0f8ddddae608",
-    "targeted-resolution-input:a4270a9ab127e26ce7bca42049633694a8c4db9709909c24244ad94b688b5304": "e02b11ca29515c3f671b4f41f1f2b11a0143eb607b8ff8b744fa4d2e8e952b1f",
-    "targeted-action:a4270a9ab127e26ce7bca42049633694a8c4db9709909c24244ad94b688b5304": "24167e32dc5d2c26a902d10d27283f967660735e6716efa20d5227fcf4216f35",
-    "targeted-action-ledger": "ded3e578cf6167bb985ac296556ba01181d7c61833b830bf18612cf69fbc3b4e",
+    "targeted-resolution-input:dcc9c4361b0224ca255d3770ef5b16161d6c1250432579a9a801141009c23922": "3d7407c5b8c1b09deafe1a2febd5bab0a433d280911fda8d106d9f613170e679",
+    "targeted-action:dcc9c4361b0224ca255d3770ef5b16161d6c1250432579a9a801141009c23922": "e5afca53115f05eeedeaa029224c559802bc710feeaceb6a8a1b0f8ddddae608",
+    "targeted-resolution-input:51e032be5eb1baf359a9ac8aba2fe7b4e15097ca161b4d5506ee4f109b10eb9b": "ffcccf1b20d49944c145aa7dce98a9b6181150c3a2f9cc343ad9e76961d25904",
+    "targeted-action:51e032be5eb1baf359a9ac8aba2fe7b4e15097ca161b4d5506ee4f109b10eb9b": "24167e32dc5d2c26a902d10d27283f967660735e6716efa20d5227fcf4216f35",
+    "targeted-action-ledger": "198e6354dfa75c3f2bb0a33fb53fdc02a98c16260268fe7579247038d6f7e9eb",
     "researchPlan": "38cee91a44dce8618f8c6d538e2768148145c2bffe41443ccebc96cd87389f30",
     "coverageState": "47fa52305d718eee330828dea84372ae174f38b0e76c05aae97a4408cd00d26f",
-    "coverageFinal": "4e247307542c6ed64640b31cab9af3b9c57e5594e6af271c63a14b799dc8b535",
+    "coverageFinal": "634913029aa492e9276afd119622591708a6f009447ba41df8d10f29f114245f",
     "perGroupClaims": "ce0d1f59c292ba270340d8472cd147725c867b5c0dc1cbddc12429b757fb0940",
     "synthesis": "0adb702ce12dd2317a2d679a98ca7729a20cf7714b685f437e85fce530652358",
-    "researchResult": "fbf766294d653e92f9583e02ace065e1cec80e97d3dc93a26db102612fb8ad01",
+    "researchResult": "4de84a16ac5831c3dcca461e0df049d60f47744aeeef2dea0d83e50de833e81f",
     "accumulatedPool": "a278a7d2deaee167e2660a947bd4dc3311a00b3ca543baf2ebb8d1e585af64c1",
     "selectionDecision": "92bd4e542d21bd1221a2cbc62bdfab1d74c4943b636b19a977c3a04ed7411cea"
   },
@@ -49,5 +49,5 @@
     "analyzedCount": 4
   },
   "p1FinalCoveragePlanHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
-  "updatedAt": "2026-10-08T08:44:10.238Z"
+  "updatedAt": "2026-10-08T09:50:11.534Z"
 }

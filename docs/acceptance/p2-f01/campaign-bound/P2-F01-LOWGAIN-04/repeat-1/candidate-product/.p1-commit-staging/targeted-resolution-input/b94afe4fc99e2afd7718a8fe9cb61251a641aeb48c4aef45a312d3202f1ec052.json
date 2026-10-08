@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "type": "TargetedResolutionInput",
+  "targetedActionId": "e0bc6ffa86f4f4203b1a67ddec74c7de1a7437bd6f0414eb7081367e244ae7c7",
+  "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+  "occurrenceId": "470d950a-a4b4-4001-9c55-63ef470375ab",
+  "priorQuestionIds": [
+    "4401",
+    "4402"
+  ],
+  "declaredFraming": "增加公交班次 适用边界",
+  "coveredFramings": []
+}

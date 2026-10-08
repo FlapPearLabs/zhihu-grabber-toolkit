@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "type": "TargetedResolutionInput",
+  "targetedActionId": "39b09b6c7c84bd482a63766fc2d2b095bad8e0cb5031cd5e9b29ef09e6a3c349",
+  "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "occurrenceId": "e0f7ff28-d8e1-4b11-bcde-fdf2d87eac02",
+  "priorQuestionIds": [
+    "5501",
+    "5502"
+  ],
+  "declaredFraming": "雨水浇灌 替代供水的局限",
+  "coveredFramings": []
+}

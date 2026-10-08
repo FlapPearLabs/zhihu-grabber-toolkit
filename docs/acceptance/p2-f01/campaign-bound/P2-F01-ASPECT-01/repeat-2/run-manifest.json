@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "repo_sha": "f75b0b123398252b14628c59ee5d175e35df6183",
+  "repo_sha": "416a153b5976c326a0656ce8f592c063a3029614",
   "case_id": "P2-F01-ASPECT-01",
   "benchmark_version": "p2-f01-authored-curated-v1",
   "benchmark_hashes": {
@@ -33,7 +33,7 @@
     "zhihu-open-platform:frozen-double",
     "frozen-evaluation-capture"
   ],
-  "timestamp": "2026-10-08T08:44:10.837Z",
+  "timestamp": "2026-10-08T09:50:12.109Z",
   "product_input_excludes": [
     "hidden_targets",
     "evaluation_notes",
@@ -50,12 +50,12 @@
   "product_identities": {
     "baseline": {
       "run_id": "6c55752597c7f68afab93e0a0c67b9442aec0c02ed11e1eb1b6b28272bc548b1",
-      "occurrence_id": "cf1edaad-0dc3-4c4f-8c37-1ce334ac8242",
+      "occurrence_id": "b9031407-406c-4ee8-8273-42c56d148e54",
       "plan_hash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16"
     },
     "candidate": {
       "run_id": "6c55752597c7f68afab93e0a0c67b9442aec0c02ed11e1eb1b6b28272bc548b1",
-      "occurrence_id": "ddba3ba1-4ff0-4fd2-aa04-247ce963fb6a",
+      "occurrence_id": "deaf26c8-4d17-4fec-90c6-afd88c9cde37",
       "plan_hash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16"
     }
   },
@@ -79,8 +79,8 @@
   },
   "result_artifact_hashes": {
     "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/repeat-2/eval-case.json": "4ed7b3407f55a67f49b122691cc4ebda74d581153902e4417982b31521be4dd0",
-    "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/repeat-2/baseline-result.json": "eb77e861d1edafcff630dabfc058365de09ae32ac7011095a23a45050bd90140",
-    "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/repeat-2/candidate-result.json": "4639cfde9394f13931e75e8cbbece19f740de87d59f8b345a9b3e6dafe8e89f6",
-    "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/repeat-2/comparison.json": "65797732cb41d821c6633a0c51277fc53fb15a92ff3035e1f0fa4b052ede7ed9"
+    "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/repeat-2/baseline-result.json": "68388ca28ebed0dbf65ae71b90a4d544c17c36cb7e3f54b317bf65014b26288e",
+    "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/repeat-2/candidate-result.json": "1730c67601f609b131cfe35eaa39aa2ae4e0f7cd3efef9dddf3475b19efe14e8",
+    "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/repeat-2/comparison.json": "3244eee8c28e550b91e95f7330a144ad45d428ec58581376cb54af9c2a01b8ee"
   }
 }

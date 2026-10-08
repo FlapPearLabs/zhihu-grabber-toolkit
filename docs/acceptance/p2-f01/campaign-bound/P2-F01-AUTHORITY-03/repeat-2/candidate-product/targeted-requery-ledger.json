@@ -3,65 +3,65 @@
     {
       "declaredGapType": "AUTHORITY_GAP",
       "diagnosisRound": 0,
-      "gapId": "5c8ae0593b051505eb4e3ff828767cafd3e939803836028c46802a668aec9e66:0",
-      "gapIdentityCore": "5c8ae0593b051505eb4e3ff828767cafd3e939803836028c46802a668aec9e66",
+      "gapId": "351e82299dd012dd93a07a676e00a8c88eefb8ca49be4119c9605719b0417837:0",
+      "gapIdentityCore": "351e82299dd012dd93a07a676e00a8c88eefb8ca49be4119c9605719b0417837",
       "gapType": "AUTHORITY_GAP",
-      "occurrenceId": "af7cce98-0ea1-4fe5-af07-4fb1200f1e79",
+      "occurrenceId": "97ae4a40-6bed-4a9a-9ab5-2c1356e2cdcb",
       "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
       "subjectKey": "intent:净化器 原始试验记录"
     },
     {
       "declaredGapType": "AUTHORITY_GAP",
       "diagnosisRound": 1,
-      "gapId": "5c8ae0593b051505eb4e3ff828767cafd3e939803836028c46802a668aec9e66:1",
-      "gapIdentityCore": "5c8ae0593b051505eb4e3ff828767cafd3e939803836028c46802a668aec9e66",
+      "gapId": "351e82299dd012dd93a07a676e00a8c88eefb8ca49be4119c9605719b0417837:1",
+      "gapIdentityCore": "351e82299dd012dd93a07a676e00a8c88eefb8ca49be4119c9605719b0417837",
       "gapType": "AUTHORITY_GAP",
-      "occurrenceId": "af7cce98-0ea1-4fe5-af07-4fb1200f1e79",
+      "occurrenceId": "97ae4a40-6bed-4a9a-9ab5-2c1356e2cdcb",
       "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
       "subjectKey": "intent:净化器 原始试验记录"
     },
     {
-      "declaredGapType": "CONTRADICTION_GAP",
-      "diagnosisRound": 0,
-      "gapId": "abc5137ebe587924e57e1edb6cb6297db664773f712b6355ae8aebd7ee2a9994:0",
-      "gapIdentityCore": "abc5137ebe587924e57e1edb6cb6297db664773f712b6355ae8aebd7ee2a9994",
-      "gapType": "CONTRADICTION_GAP",
-      "occurrenceId": "af7cce98-0ea1-4fe5-af07-4fb1200f1e79",
-      "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
-      "subjectKey": "opposing:净化器 仅看风量的局限"
-    },
-    {
-      "declaredGapType": "CONTRADICTION_GAP",
-      "diagnosisRound": 1,
-      "gapId": "abc5137ebe587924e57e1edb6cb6297db664773f712b6355ae8aebd7ee2a9994:1",
-      "gapIdentityCore": "abc5137ebe587924e57e1edb6cb6297db664773f712b6355ae8aebd7ee2a9994",
-      "gapType": "CONTRADICTION_GAP",
-      "occurrenceId": "af7cce98-0ea1-4fe5-af07-4fb1200f1e79",
-      "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
-      "subjectKey": "opposing:净化器 仅看风量的局限"
-    },
-    {
       "declaredGapType": "ASPECT_GAP",
       "diagnosisRound": 0,
-      "gapId": "b3082f702eb55c592162a1f5a8264c2c2957605221065910d9741e5b553a18c3:0",
-      "gapIdentityCore": "b3082f702eb55c592162a1f5a8264c2c2957605221065910d9741e5b553a18c3",
+      "gapId": "38a0988a8d037cf61fe041b33aae40660cac2640325384a9b3d50ce32a849117:0",
+      "gapIdentityCore": "38a0988a8d037cf61fe041b33aae40660cac2640325384a9b3d50ce32a849117",
       "gapType": "ASPECT_GAP",
-      "occurrenceId": "af7cce98-0ea1-4fe5-af07-4fb1200f1e79",
+      "occurrenceId": "97ae4a40-6bed-4a9a-9ab5-2c1356e2cdcb",
       "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
       "subjectKey": "aspect:卧室净化器 长期使用条件"
     },
     {
       "declaredGapType": "ASPECT_GAP",
       "diagnosisRound": 1,
-      "gapId": "b3082f702eb55c592162a1f5a8264c2c2957605221065910d9741e5b553a18c3:1",
-      "gapIdentityCore": "b3082f702eb55c592162a1f5a8264c2c2957605221065910d9741e5b553a18c3",
+      "gapId": "38a0988a8d037cf61fe041b33aae40660cac2640325384a9b3d50ce32a849117:1",
+      "gapIdentityCore": "38a0988a8d037cf61fe041b33aae40660cac2640325384a9b3d50ce32a849117",
       "gapType": "ASPECT_GAP",
-      "occurrenceId": "af7cce98-0ea1-4fe5-af07-4fb1200f1e79",
+      "occurrenceId": "97ae4a40-6bed-4a9a-9ab5-2c1356e2cdcb",
       "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
       "subjectKey": "aspect:卧室净化器 长期使用条件"
+    },
+    {
+      "declaredGapType": "CONTRADICTION_GAP",
+      "diagnosisRound": 0,
+      "gapId": "4a840fcbcf44774b963044ccd95ffa2583b6741e631aa83edb50a06935ad5042:0",
+      "gapIdentityCore": "4a840fcbcf44774b963044ccd95ffa2583b6741e631aa83edb50a06935ad5042",
+      "gapType": "CONTRADICTION_GAP",
+      "occurrenceId": "97ae4a40-6bed-4a9a-9ab5-2c1356e2cdcb",
+      "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+      "subjectKey": "opposing:净化器 仅看风量的局限"
+    },
+    {
+      "declaredGapType": "CONTRADICTION_GAP",
+      "diagnosisRound": 1,
+      "gapId": "4a840fcbcf44774b963044ccd95ffa2583b6741e631aa83edb50a06935ad5042:1",
+      "gapIdentityCore": "4a840fcbcf44774b963044ccd95ffa2583b6741e631aa83edb50a06935ad5042",
+      "gapType": "CONTRADICTION_GAP",
+      "occurrenceId": "97ae4a40-6bed-4a9a-9ab5-2c1356e2cdcb",
+      "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+      "subjectKey": "opposing:净化器 仅看风量的局限"
     }
   ],
-  "occurrenceId": "af7cce98-0ea1-4fe5-af07-4fb1200f1e79",
+  "occurrenceId": "97ae4a40-6bed-4a9a-9ab5-2c1356e2cdcb",
   "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
   "schema": "p2-ari-targeted-requery-ledger/v1"
 }

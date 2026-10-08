@@ -1,0 +1,144 @@
+{
+  "occurrenceId": "470d950a-a4b4-4001-9c55-63ef470375ab",
+  "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": "7b6c81e513bc30364fa6e354c3a1977be28d7eb32d1131cc48255ae9f6d09666",
+      "artifactRel": "targeted-requery-subphase/action-08d80e4e7985ed88a03226366107921122b538fe166005f6ca5c8ba615bff4ee/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-08d80e4e7985ed88a03226366107921122b538fe166005f6ca5c8ba615bff4ee/retrieval-pool.json",
+          "bindingHash": "7b6c81e513bc30364fa6e354c3a1977be28d7eb32d1131cc48255ae9f6d09666",
+          "bindingKey": "targeted-action:08d80e4e7985ed88a03226366107921122b538fe166005f6ca5c8ba615bff4ee",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "EVALUATE",
+          "from": "COMMITTED",
+          "reason": null,
+          "seq": 3,
+          "to": "EVALUATED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "CONCLUDE",
+          "from": "EVALUATED",
+          "reason": null,
+          "seq": 4,
+          "to": "UNRESOLVED"
+        }
+      ],
+      "bindingHash": "7b6c81e513bc30364fa6e354c3a1977be28d7eb32d1131cc48255ae9f6d09666",
+      "bindingKey": "targeted-action:08d80e4e7985ed88a03226366107921122b538fe166005f6ca5c8ba615bff4ee",
+      "dedupeKey": "f9ca7a7593d3248094f460c223cee4738c588c79d8174af58c465f13e0c3c9a1",
+      "gapId": "8627787874dba83bddceea6aeb450d3ac42a691eb5cbe2d32e560d4ef64d453d:0",
+      "gapIdentityCore": "8627787874dba83bddceea6aeb450d3ac42a691eb5cbe2d32e560d4ef64d453d",
+      "normalizedQuery": "村镇就医公交",
+      "occurrenceId": "470d950a-a4b4-4001-9c55-63ef470375ab",
+      "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "4df426b50f3e276a409b0f066719bda07351cfb0835c994c6bcdcf99fd03df23",
+      "status": "UNRESOLVED",
+      "targetedActionId": "08d80e4e7985ed88a03226366107921122b538fe166005f6ca5c8ba615bff4ee"
+    },
+    {
+      "artifactHash": "c0e7f9f271422e4f65105a2b2ff2449480d9eab030a1f15485963466b173fbd9",
+      "artifactRel": "targeted-requery-subphase/action-e0bc6ffa86f4f4203b1a67ddec74c7de1a7437bd6f0414eb7081367e244ae7c7/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-e0bc6ffa86f4f4203b1a67ddec74c7de1a7437bd6f0414eb7081367e244ae7c7/retrieval-pool.json",
+          "bindingHash": "c0e7f9f271422e4f65105a2b2ff2449480d9eab030a1f15485963466b173fbd9",
+          "bindingKey": "targeted-action:e0bc6ffa86f4f4203b1a67ddec74c7de1a7437bd6f0414eb7081367e244ae7c7",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "EVALUATE",
+          "from": "COMMITTED",
+          "reason": null,
+          "seq": 3,
+          "to": "EVALUATED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "CONCLUDE",
+          "from": "EVALUATED",
+          "reason": null,
+          "seq": 4,
+          "to": "UNRESOLVED"
+        }
+      ],
+      "bindingHash": "c0e7f9f271422e4f65105a2b2ff2449480d9eab030a1f15485963466b173fbd9",
+      "bindingKey": "targeted-action:e0bc6ffa86f4f4203b1a67ddec74c7de1a7437bd6f0414eb7081367e244ae7c7",
+      "dedupeKey": "35298f570c14cea05619ae42e49e4a30c7dd741300740e1b2ffb9113daced7ee",
+      "gapId": "82a9ad685b7b7bb6c1f828fdd0e9a29874b04fddbe90a45202bef77246013666:0",
+      "gapIdentityCore": "82a9ad685b7b7bb6c1f828fdd0e9a29874b04fddbe90a45202bef77246013666",
+      "normalizedQuery": "增加公交班次 适用边界",
+      "occurrenceId": "470d950a-a4b4-4001-9c55-63ef470375ab",
+      "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "4df426b50f3e276a409b0f066719bda07351cfb0835c994c6bcdcf99fd03df23",
+      "status": "UNRESOLVED",
+      "targetedActionId": "e0bc6ffa86f4f4203b1a67ddec74c7de1a7437bd6f0414eb7081367e244ae7c7"
+    }
+  ]
+}

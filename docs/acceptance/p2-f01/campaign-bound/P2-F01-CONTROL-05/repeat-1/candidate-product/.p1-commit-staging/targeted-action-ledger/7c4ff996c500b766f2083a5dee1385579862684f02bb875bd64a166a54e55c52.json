@@ -1,0 +1,124 @@
+{
+  "occurrenceId": "f9e2f360-be19-4b42-a7f9-bf2cb0d260b3",
+  "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": "c29138bdcab25e73c5dd37252a6e23796d9c74467c1d1d0852740f5aae7b030d",
+      "artifactRel": "targeted-requery-subphase/action-6179efaf521ebdc43855e367042051ef64e0911671442ddea5aa163f9bb12c65/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-6179efaf521ebdc43855e367042051ef64e0911671442ddea5aa163f9bb12c65/retrieval-pool.json",
+          "bindingHash": "c29138bdcab25e73c5dd37252a6e23796d9c74467c1d1d0852740f5aae7b030d",
+          "bindingKey": "targeted-action:6179efaf521ebdc43855e367042051ef64e0911671442ddea5aa163f9bb12c65",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        }
+      ],
+      "bindingHash": "c29138bdcab25e73c5dd37252a6e23796d9c74467c1d1d0852740f5aae7b030d",
+      "bindingKey": "targeted-action:6179efaf521ebdc43855e367042051ef64e0911671442ddea5aa163f9bb12c65",
+      "dedupeKey": "8cbe52bf1bb3ea212e85c7780eceeb6bc9f5692bb2c7f183f9d4dd42c29ea7f1",
+      "gapId": "cecedb8bf6d71b5043433cc60f4d934061d26797ac46cbe403b60db31cca755a:0",
+      "gapIdentityCore": "cecedb8bf6d71b5043433cc60f4d934061d26797ac46cbe403b60db31cca755a",
+      "normalizedQuery": "雨水浇灌 替代供水的局限",
+      "occurrenceId": "f9e2f360-be19-4b42-a7f9-bf2cb0d260b3",
+      "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "7fe8b9f5639702c975412a8efb937414d3b14677f22428f47b16379d0ea3f46c",
+      "status": "COMMITTED",
+      "targetedActionId": "6179efaf521ebdc43855e367042051ef64e0911671442ddea5aa163f9bb12c65"
+    },
+    {
+      "artifactHash": "b2024344e050423f0d9ab672dad80853fd56f492a5e5de9cf6afc23562102e53",
+      "artifactRel": "targeted-requery-subphase/action-89425c2ba3ca8cf3b2508cc63af5407af55ca04e7c36d9a61e477ba6bdfdde1c/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-89425c2ba3ca8cf3b2508cc63af5407af55ca04e7c36d9a61e477ba6bdfdde1c/retrieval-pool.json",
+          "bindingHash": "b2024344e050423f0d9ab672dad80853fd56f492a5e5de9cf6afc23562102e53",
+          "bindingKey": "targeted-action:89425c2ba3ca8cf3b2508cc63af5407af55ca04e7c36d9a61e477ba6bdfdde1c",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "EVALUATE",
+          "from": "COMMITTED",
+          "reason": null,
+          "seq": 3,
+          "to": "EVALUATED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "CONCLUDE",
+          "from": "EVALUATED",
+          "reason": null,
+          "seq": 4,
+          "to": "UNRESOLVED"
+        }
+      ],
+      "bindingHash": "b2024344e050423f0d9ab672dad80853fd56f492a5e5de9cf6afc23562102e53",
+      "bindingKey": "targeted-action:89425c2ba3ca8cf3b2508cc63af5407af55ca04e7c36d9a61e477ba6bdfdde1c",
+      "dedupeKey": "432d864a64a67881e9a401f3611b97901c2cbfa32797114856c240bfbf358d59",
+      "gapId": "5dc851a21d567126f804042dda7dd5edebf9fded42567ab030dadef6b40e0f86:0",
+      "gapIdentityCore": "5dc851a21d567126f804042dda7dd5edebf9fded42567ab030dadef6b40e0f86",
+      "normalizedQuery": "家用雨水浇灌",
+      "occurrenceId": "f9e2f360-be19-4b42-a7f9-bf2cb0d260b3",
+      "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "7fe8b9f5639702c975412a8efb937414d3b14677f22428f47b16379d0ea3f46c",
+      "status": "UNRESOLVED",
+      "targetedActionId": "89425c2ba3ca8cf3b2508cc63af5407af55ca04e7c36d9a61e477ba6bdfdde1c"
+    }
+  ]
+}

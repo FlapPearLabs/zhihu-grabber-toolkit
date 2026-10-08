@@ -38,8 +38,8 @@
     "lineageComplete": false,
     "gaps": [
       {
-        "gapId": "b9d2c9792dca53d1627240ed19d4b61da523750e92467376ce756a3c190d669e:0",
-        "gapIdentityCore": "b9d2c9792dca53d1627240ed19d4b61da523750e92467376ce756a3c190d669e",
+        "gapId": "bc1a53a94140ccf8bcbe613bc29e394a353b08b4bb4419fac0361b21277908ea:0",
+        "gapIdentityCore": "bc1a53a94140ccf8bcbe613bc29e394a353b08b4bb4419fac0361b21277908ea",
         "lineage": [
           {
             "actionStatus": "UNRESOLVED",
@@ -55,13 +55,13 @@
               }
             ],
             "query": "固定遮阴 可替代方案",
-            "resultArtifact": "targeted-requery-subphase/action-12ce9e538f50b92356a148f0ea1da23b3059a19a102a803c3a31a165740476d2/retrieval-pool.json",
-            "targetedActionId": "12ce9e538f50b92356a148f0ea1da23b3059a19a102a803c3a31a165740476d2"
+            "resultArtifact": "targeted-requery-subphase/action-dcc9c4361b0224ca255d3770ef5b16161d6c1250432579a9a801141009c23922/retrieval-pool.json",
+            "targetedActionId": "dcc9c4361b0224ca255d3770ef5b16161d6c1250432579a9a801141009c23922"
           }
         ],
         "lineageComplete": true,
         "missingActionIds": [],
-        "occurrenceId": "ddba3ba1-4ff0-4fd2-aa04-247ce963fb6a",
+        "occurrenceId": "deaf26c8-4d17-4fec-90c6-afd88c9cde37",
         "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
         "resolutionBasis": "UNKNOWN_SIDE_NOT_DECLARED",
         "resolutionEvidence": [
@@ -72,12 +72,12 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "b9d2c9792dca53d1627240ed19d4b61da523750e92467376ce756a3c190d669e:1",
-        "gapIdentityCore": "b9d2c9792dca53d1627240ed19d4b61da523750e92467376ce756a3c190d669e",
+        "gapId": "bc1a53a94140ccf8bcbe613bc29e394a353b08b4bb4419fac0361b21277908ea:1",
+        "gapIdentityCore": "bc1a53a94140ccf8bcbe613bc29e394a353b08b4bb4419fac0361b21277908ea",
         "lineage": [],
         "lineageComplete": false,
         "missingActionIds": [],
-        "occurrenceId": "ddba3ba1-4ff0-4fd2-aa04-247ce963fb6a",
+        "occurrenceId": "deaf26c8-4d17-4fec-90c6-afd88c9cde37",
         "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
         "resolutionBasis": "NEVER_AUTHORIZED",
         "resolutionEvidence": [],
@@ -85,8 +85,8 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "d9f08040d87e613111488746531a2919323a7d5dea484fe3b9e31c244e8bdec2:0",
-        "gapIdentityCore": "d9f08040d87e613111488746531a2919323a7d5dea484fe3b9e31c244e8bdec2",
+        "gapId": "ebd0f2a9ab3cb96990a1ce36cf2157125dcbb813bf0a51d157cef9f675deb779:0",
+        "gapIdentityCore": "ebd0f2a9ab3cb96990a1ce36cf2157125dcbb813bf0a51d157cef9f675deb779",
         "lineage": [
           {
             "actionStatus": "UNRESOLVED",
@@ -102,13 +102,13 @@
               }
             ],
             "query": "老旧街区固定遮阴",
-            "resultArtifact": "targeted-requery-subphase/action-a4270a9ab127e26ce7bca42049633694a8c4db9709909c24244ad94b688b5304/retrieval-pool.json",
-            "targetedActionId": "a4270a9ab127e26ce7bca42049633694a8c4db9709909c24244ad94b688b5304"
+            "resultArtifact": "targeted-requery-subphase/action-51e032be5eb1baf359a9ac8aba2fe7b4e15097ca161b4d5506ee4f109b10eb9b/retrieval-pool.json",
+            "targetedActionId": "51e032be5eb1baf359a9ac8aba2fe7b4e15097ca161b4d5506ee4f109b10eb9b"
           }
         ],
         "lineageComplete": true,
         "missingActionIds": [],
-        "occurrenceId": "ddba3ba1-4ff0-4fd2-aa04-247ce963fb6a",
+        "occurrenceId": "deaf26c8-4d17-4fec-90c6-afd88c9cde37",
         "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
         "resolutionBasis": "DUPLICATE_ONLY",
         "resolutionEvidence": [],
@@ -116,12 +116,12 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "d9f08040d87e613111488746531a2919323a7d5dea484fe3b9e31c244e8bdec2:1",
-        "gapIdentityCore": "d9f08040d87e613111488746531a2919323a7d5dea484fe3b9e31c244e8bdec2",
+        "gapId": "ebd0f2a9ab3cb96990a1ce36cf2157125dcbb813bf0a51d157cef9f675deb779:1",
+        "gapIdentityCore": "ebd0f2a9ab3cb96990a1ce36cf2157125dcbb813bf0a51d157cef9f675deb779",
         "lineage": [],
         "lineageComplete": false,
         "missingActionIds": [],
-        "occurrenceId": "ddba3ba1-4ff0-4fd2-aa04-247ce963fb6a",
+        "occurrenceId": "deaf26c8-4d17-4fec-90c6-afd88c9cde37",
         "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
         "resolutionBasis": "NEVER_AUTHORIZED",
         "resolutionEvidence": [],

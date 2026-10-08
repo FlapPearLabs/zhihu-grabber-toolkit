@@ -1,47 +1,47 @@
 {
   "diagnosedGaps": [
     {
-      "declaredGapType": "ASPECT_GAP",
-      "diagnosisRound": 0,
-      "gapId": "125541e0bfacdb632128deba29fecca04230c508d8269ed2728d26602d299cb0:0",
-      "gapIdentityCore": "125541e0bfacdb632128deba29fecca04230c508d8269ed2728d26602d299cb0",
-      "gapType": "ASPECT_GAP",
-      "occurrenceId": "166c9791-8504-45de-9b5a-16d1d4581c9c",
-      "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
-      "subjectKey": "aspect:街区固定遮阴 场地与运维适配"
-    },
-    {
-      "declaredGapType": "ASPECT_GAP",
-      "diagnosisRound": 1,
-      "gapId": "125541e0bfacdb632128deba29fecca04230c508d8269ed2728d26602d299cb0:1",
-      "gapIdentityCore": "125541e0bfacdb632128deba29fecca04230c508d8269ed2728d26602d299cb0",
-      "gapType": "ASPECT_GAP",
-      "occurrenceId": "166c9791-8504-45de-9b5a-16d1d4581c9c",
-      "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
-      "subjectKey": "aspect:街区固定遮阴 场地与运维适配"
-    },
-    {
       "declaredGapType": "CONTRADICTION_GAP",
       "diagnosisRound": 0,
-      "gapId": "eb15f20a3ba22edc5d1704cdb65b7b748a61e338372faf06bfb6aec5820fe6c5:0",
-      "gapIdentityCore": "eb15f20a3ba22edc5d1704cdb65b7b748a61e338372faf06bfb6aec5820fe6c5",
+      "gapId": "085b3078d54e156029fa9ad072a67d1cefb4408f841f56fc47bcbdc0ab326dad:0",
+      "gapIdentityCore": "085b3078d54e156029fa9ad072a67d1cefb4408f841f56fc47bcbdc0ab326dad",
       "gapType": "CONTRADICTION_GAP",
-      "occurrenceId": "166c9791-8504-45de-9b5a-16d1d4581c9c",
+      "occurrenceId": "3f38794b-b79f-4ea7-b2f4-c3ad32b6eccc",
       "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
       "subjectKey": "opposing:固定遮阴 可替代方案"
     },
     {
       "declaredGapType": "CONTRADICTION_GAP",
       "diagnosisRound": 1,
-      "gapId": "eb15f20a3ba22edc5d1704cdb65b7b748a61e338372faf06bfb6aec5820fe6c5:1",
-      "gapIdentityCore": "eb15f20a3ba22edc5d1704cdb65b7b748a61e338372faf06bfb6aec5820fe6c5",
+      "gapId": "085b3078d54e156029fa9ad072a67d1cefb4408f841f56fc47bcbdc0ab326dad:1",
+      "gapIdentityCore": "085b3078d54e156029fa9ad072a67d1cefb4408f841f56fc47bcbdc0ab326dad",
       "gapType": "CONTRADICTION_GAP",
-      "occurrenceId": "166c9791-8504-45de-9b5a-16d1d4581c9c",
+      "occurrenceId": "3f38794b-b79f-4ea7-b2f4-c3ad32b6eccc",
       "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
       "subjectKey": "opposing:固定遮阴 可替代方案"
+    },
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 0,
+      "gapId": "2a5ee19b99324426aece4879c1ecd8e8f3d886b6d06d83daa563b60b4544751b:0",
+      "gapIdentityCore": "2a5ee19b99324426aece4879c1ecd8e8f3d886b6d06d83daa563b60b4544751b",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "3f38794b-b79f-4ea7-b2f4-c3ad32b6eccc",
+      "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+      "subjectKey": "aspect:街区固定遮阴 场地与运维适配"
+    },
+    {
+      "declaredGapType": "ASPECT_GAP",
+      "diagnosisRound": 1,
+      "gapId": "2a5ee19b99324426aece4879c1ecd8e8f3d886b6d06d83daa563b60b4544751b:1",
+      "gapIdentityCore": "2a5ee19b99324426aece4879c1ecd8e8f3d886b6d06d83daa563b60b4544751b",
+      "gapType": "ASPECT_GAP",
+      "occurrenceId": "3f38794b-b79f-4ea7-b2f4-c3ad32b6eccc",
+      "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
+      "subjectKey": "aspect:街区固定遮阴 场地与运维适配"
     }
   ],
-  "occurrenceId": "166c9791-8504-45de-9b5a-16d1d4581c9c",
+  "occurrenceId": "3f38794b-b79f-4ea7-b2f4-c3ad32b6eccc",
   "planHash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16",
   "schema": "p2-ari-targeted-requery-ledger/v1"
 }

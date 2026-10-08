@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "runId": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
-  "occurrenceId": "14d1c6d5-0f0f-488f-957a-c11bc3aa0ce3",
+  "occurrenceId": "5407a38f-0f0b-4ada-a8b5-3076ddb705c7",
   "topic": "在假设卧室使用情境中，是否能仅凭净化器标示风量选型？请比较二手选购观点与直接实验材料，并说明长期运行条件。",
   "mode": "p1-cross-question-deep-research",
   "percent": null,
@@ -20,5 +20,5 @@
   "verification": null,
   "coverage": null,
   "p1FinalCoveragePlanHash": null,
-  "updatedAt": "2026-10-08T08:44:14.205Z"
+  "updatedAt": "2026-10-08T09:50:15.181Z"
 }

@@ -1,6 +1,6 @@
 # #107 冻结语料评估
 
-REPO_SHA = f75b0b123398252b14628c59ee5d175e35df6183
+REPO_SHA = 416a153b5976c326a0656ce8f592c063a3029614
 BENCHMARK_VERSION = p2-f01-authored-curated-v1
 
 5 个 authored-curated 合成案例；两个 arm 各 10 次独立冷运行。

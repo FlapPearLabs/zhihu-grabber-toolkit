@@ -5,7 +5,7 @@
   "arm": "baseline",
   "repetition": 2,
   "identity": {
-    "repo_sha": "f75b0b123398252b14628c59ee5d175e35df6183",
+    "repo_sha": "416a153b5976c326a0656ce8f592c063a3029614",
     "case_id": "P2-F01-AUTHORITY-03",
     "benchmark_version": "p2-f01-authored-curated-v1",
     "benchmark_hashes": {
@@ -47,10 +47,10 @@
     "cache_state": "COLD_SEPARATE_DIRECTORY",
     "planner": "PUBLIC_FROZEN_PLAN"
   },
-  "timestamp": "2026-10-08T08:44:15.136Z",
+  "timestamp": "2026-10-08T09:50:16.146Z",
   "product_identity": {
     "run_id": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
-    "occurrence_id": "b87eac8f-c805-4678-978a-83b1bcd65ea8",
+    "occurrence_id": "5da2c49d-f0d9-4991-9449-30cef0539b5c",
     "plan_hash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b"
   },
   "artifact_hashes": [
@@ -68,15 +68,15 @@
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-2/baseline-product/evaluation-execution-observation.json",
-      "sha256": "9afaed369ebaf6d1661490481f78c7b9fc6f32ae6a709b19dd137b26c707e769"
+      "sha256": "78678473abc91aa0b28111ff108519a18b6d029b241621deeb10fae475caef9f"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-2/baseline-product/events.jsonl",
-      "sha256": "f9d07b1f586d9616f0e24b836f6e802c3477746870f5b65ab51638d974c53264"
+      "sha256": "a72b3a8c01a25cada8b10bdf80f800f2d4eb6dfd41748d76e4a5be9a38d6be83"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-2/baseline-product/orchestration-state.json",
-      "sha256": "3cac9ffb55d91fc549943da7c9bafade096ec349e6573f75c05b98c2d459e93d"
+      "sha256": "4cae11d251ace23e515fda5d3e76612daaafff9f24800e455f1673d169f2e9af"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-2/baseline-product/research-plan.json",
@@ -158,7 +158,7 @@
     "external_provider_calls": 0,
     "model_invocations": 0,
     "semantic_adapter_invocations": 0,
-    "wall_clock_ms": 36.36516700000001,
+    "wall_clock_ms": 34.10975,
     "token_cost": "UNKNOWN",
     "money_cost": "UNKNOWN",
     "selected_corpus_sources": 0,

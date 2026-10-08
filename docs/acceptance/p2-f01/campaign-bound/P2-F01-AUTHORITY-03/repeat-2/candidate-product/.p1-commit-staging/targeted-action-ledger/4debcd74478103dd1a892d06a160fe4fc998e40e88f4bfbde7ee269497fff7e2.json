@@ -1,0 +1,192 @@
+{
+  "occurrenceId": "97ae4a40-6bed-4a9a-9ab5-2c1356e2cdcb",
+  "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": "51b9871f04e9602e07f5aa7be01f7d9c9d939f155a70ff86667e6d8b1dca5566",
+      "artifactRel": "targeted-requery-subphase/action-879eb81ee913761819e0efccb29b6f1c918bbd535106f879b29afe30dc4de9fd/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-879eb81ee913761819e0efccb29b6f1c918bbd535106f879b29afe30dc4de9fd/retrieval-pool.json",
+          "bindingHash": "51b9871f04e9602e07f5aa7be01f7d9c9d939f155a70ff86667e6d8b1dca5566",
+          "bindingKey": "targeted-action:879eb81ee913761819e0efccb29b6f1c918bbd535106f879b29afe30dc4de9fd",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        }
+      ],
+      "bindingHash": "51b9871f04e9602e07f5aa7be01f7d9c9d939f155a70ff86667e6d8b1dca5566",
+      "bindingKey": "targeted-action:879eb81ee913761819e0efccb29b6f1c918bbd535106f879b29afe30dc4de9fd",
+      "dedupeKey": "79b3e621b5a16e9f316594ed8b88d6d890e29335b97ae22de9c15bb7d3930a04",
+      "gapId": "4a840fcbcf44774b963044ccd95ffa2583b6741e631aa83edb50a06935ad5042:0",
+      "gapIdentityCore": "4a840fcbcf44774b963044ccd95ffa2583b6741e631aa83edb50a06935ad5042",
+      "normalizedQuery": "净化器 仅看风量的局限",
+      "occurrenceId": "97ae4a40-6bed-4a9a-9ab5-2c1356e2cdcb",
+      "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
+      "status": "COMMITTED",
+      "targetedActionId": "879eb81ee913761819e0efccb29b6f1c918bbd535106f879b29afe30dc4de9fd"
+    },
+    {
+      "artifactHash": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708",
+      "artifactRel": "targeted-requery-subphase/action-ce450227c45698cb1a2a838834331b334b8aedc8c894ce2f9172b4ff4df8af13/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-ce450227c45698cb1a2a838834331b334b8aedc8c894ce2f9172b4ff4df8af13/retrieval-pool.json",
+          "bindingHash": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708",
+          "bindingKey": "targeted-action:ce450227c45698cb1a2a838834331b334b8aedc8c894ce2f9172b4ff4df8af13",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "EVALUATE",
+          "from": "COMMITTED",
+          "reason": null,
+          "seq": 3,
+          "to": "EVALUATED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "CONCLUDE",
+          "from": "EVALUATED",
+          "reason": null,
+          "seq": 4,
+          "to": "UNRESOLVED"
+        }
+      ],
+      "bindingHash": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708",
+      "bindingKey": "targeted-action:ce450227c45698cb1a2a838834331b334b8aedc8c894ce2f9172b4ff4df8af13",
+      "dedupeKey": "dcf0579955701ea8fb9d6bd6e66ec6cd3e0ea87daf077fde9ff380e1598f091a",
+      "gapId": "38a0988a8d037cf61fe041b33aae40660cac2640325384a9b3d50ce32a849117:0",
+      "gapIdentityCore": "38a0988a8d037cf61fe041b33aae40660cac2640325384a9b3d50ce32a849117",
+      "normalizedQuery": "卧室空气净化器",
+      "occurrenceId": "97ae4a40-6bed-4a9a-9ab5-2c1356e2cdcb",
+      "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
+      "status": "UNRESOLVED",
+      "targetedActionId": "ce450227c45698cb1a2a838834331b334b8aedc8c894ce2f9172b4ff4df8af13"
+    },
+    {
+      "artifactHash": "3d1285488617a3f136cb9af9f554bcab3b13a14f01a8827fbafe0242abe14c19",
+      "artifactRel": "targeted-requery-subphase/action-d4c516a3f982ef2dd9c4e66f795e422d2a670375e437622f55f6006c8fd20f5c/retrieval-pool.json",
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        },
+        {
+          "artifactRel": "targeted-requery-subphase/action-d4c516a3f982ef2dd9c4e66f795e422d2a670375e437622f55f6006c8fd20f5c/retrieval-pool.json",
+          "bindingHash": "3d1285488617a3f136cb9af9f554bcab3b13a14f01a8827fbafe0242abe14c19",
+          "bindingKey": "targeted-action:d4c516a3f982ef2dd9c4e66f795e422d2a670375e437622f55f6006c8fd20f5c",
+          "event": "COMMIT",
+          "from": "AUTHORIZED",
+          "reason": null,
+          "seq": 2,
+          "to": "COMMITTED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "EVALUATE",
+          "from": "COMMITTED",
+          "reason": null,
+          "seq": 3,
+          "to": "EVALUATED"
+        },
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "CONCLUDE",
+          "from": "EVALUATED",
+          "reason": null,
+          "seq": 4,
+          "to": "UNRESOLVED"
+        }
+      ],
+      "bindingHash": "3d1285488617a3f136cb9af9f554bcab3b13a14f01a8827fbafe0242abe14c19",
+      "bindingKey": "targeted-action:d4c516a3f982ef2dd9c4e66f795e422d2a670375e437622f55f6006c8fd20f5c",
+      "dedupeKey": "a10b312baddd1898b9a3a13ead3a36993642317e5a2c6e0e94bd93291c739d64",
+      "gapId": "351e82299dd012dd93a07a676e00a8c88eefb8ca49be4119c9605719b0417837:0",
+      "gapIdentityCore": "351e82299dd012dd93a07a676e00a8c88eefb8ca49be4119c9605719b0417837",
+      "normalizedQuery": "净化器 原始试验记录",
+      "occurrenceId": "97ae4a40-6bed-4a9a-9ab5-2c1356e2cdcb",
+      "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
+      "status": "UNRESOLVED",
+      "targetedActionId": "d4c516a3f982ef2dd9c4e66f795e422d2a670375e437622f55f6006c8fd20f5c"
+    }
+  ]
+}

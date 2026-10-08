@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "repo_sha": "f75b0b123398252b14628c59ee5d175e35df6183",
+  "repo_sha": "416a153b5976c326a0656ce8f592c063a3029614",
   "case_id": "P2-F01-LOWGAIN-04",
   "benchmark_version": "p2-f01-authored-curated-v1",
   "benchmark_hashes": {
@@ -33,7 +33,7 @@
     "zhihu-open-platform:frozen-double",
     "frozen-evaluation-capture"
   ],
-  "timestamp": "2026-10-08T08:44:16.543Z",
+  "timestamp": "2026-10-08T09:50:17.476Z",
   "product_input_excludes": [
     "hidden_targets",
     "evaluation_notes",
@@ -50,12 +50,12 @@
   "product_identities": {
     "baseline": {
       "run_id": "4df426b50f3e276a409b0f066719bda07351cfb0835c994c6bcdcf99fd03df23",
-      "occurrence_id": "0d084d75-ff9f-4dbe-939d-7add02df7bb5",
+      "occurrence_id": "88da8152-b979-4858-86ed-b6128bf804c8",
       "plan_hash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228"
     },
     "candidate": {
       "run_id": "4df426b50f3e276a409b0f066719bda07351cfb0835c994c6bcdcf99fd03df23",
-      "occurrence_id": "c66e9380-901e-4db3-9c88-2b5de3aa2fac",
+      "occurrence_id": "470d950a-a4b4-4001-9c55-63ef470375ab",
       "plan_hash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228"
     }
   },
@@ -79,8 +79,8 @@
   },
   "result_artifact_hashes": {
     "docs/acceptance/p2-f01/campaign-bound/P2-F01-LOWGAIN-04/repeat-1/eval-case.json": "938b5cad903f2e0faccbfc9e8f2c5518f68ee68d2294ab10db40007c3a47c4b7",
-    "docs/acceptance/p2-f01/campaign-bound/P2-F01-LOWGAIN-04/repeat-1/baseline-result.json": "878fed82e37849358e57b2223c46b689b216babaa99f1c48eec6de74c1fcc313",
-    "docs/acceptance/p2-f01/campaign-bound/P2-F01-LOWGAIN-04/repeat-1/candidate-result.json": "d9cf8e3e78df85d34340f8e6cd1e0671641b19450ee4857edb186e026614fd6e",
-    "docs/acceptance/p2-f01/campaign-bound/P2-F01-LOWGAIN-04/repeat-1/comparison.json": "d194c49e099f2d010110c52c02337d839862c27b355c067a1052a9f79d92a716"
+    "docs/acceptance/p2-f01/campaign-bound/P2-F01-LOWGAIN-04/repeat-1/baseline-result.json": "6a64b1d3805e1d8db5caa373660729dec6fb5beea7c30632c5300fed852a8db2",
+    "docs/acceptance/p2-f01/campaign-bound/P2-F01-LOWGAIN-04/repeat-1/candidate-result.json": "accbfe4f5301e12e1f6b97c1a958422b1a0c9a7c8df7f5b50086e0fb3b68c405",
+    "docs/acceptance/p2-f01/campaign-bound/P2-F01-LOWGAIN-04/repeat-1/comparison.json": "05ea4c956ecb4844140c51590edd19694aa1b06ede6e60b53b015163b0a7d757"
   }
 }

@@ -115,8 +115,8 @@
     "lineageComplete": false,
     "gaps": [
       {
-        "gapId": "5d9f8abe70cff287694e2df46bcc901dfa7049e0224ef283df91bf45a7b9593d:0",
-        "gapIdentityCore": "5d9f8abe70cff287694e2df46bcc901dfa7049e0224ef283df91bf45a7b9593d",
+        "gapId": "5dc851a21d567126f804042dda7dd5edebf9fded42567ab030dadef6b40e0f86:0",
+        "gapIdentityCore": "5dc851a21d567126f804042dda7dd5edebf9fded42567ab030dadef6b40e0f86",
         "lineage": [
           {
             "actionStatus": "UNRESOLVED",
@@ -132,13 +132,13 @@
               }
             ],
             "query": "家用雨水浇灌",
-            "resultArtifact": "targeted-requery-subphase/action-c876fe642da3fa620a90fdaaa2c986420617763bb9f1e5949d9f018c982a3a6f/retrieval-pool.json",
-            "targetedActionId": "c876fe642da3fa620a90fdaaa2c986420617763bb9f1e5949d9f018c982a3a6f"
+            "resultArtifact": "targeted-requery-subphase/action-89425c2ba3ca8cf3b2508cc63af5407af55ca04e7c36d9a61e477ba6bdfdde1c/retrieval-pool.json",
+            "targetedActionId": "89425c2ba3ca8cf3b2508cc63af5407af55ca04e7c36d9a61e477ba6bdfdde1c"
           }
         ],
         "lineageComplete": true,
         "missingActionIds": [],
-        "occurrenceId": "1e943884-9713-42cc-bead-d11e8b6d89ea",
+        "occurrenceId": "f9e2f360-be19-4b42-a7f9-bf2cb0d260b3",
         "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
         "resolutionBasis": "DUPLICATE_ONLY",
         "resolutionEvidence": [],
@@ -146,12 +146,12 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "5d9f8abe70cff287694e2df46bcc901dfa7049e0224ef283df91bf45a7b9593d:1",
-        "gapIdentityCore": "5d9f8abe70cff287694e2df46bcc901dfa7049e0224ef283df91bf45a7b9593d",
+        "gapId": "5dc851a21d567126f804042dda7dd5edebf9fded42567ab030dadef6b40e0f86:1",
+        "gapIdentityCore": "5dc851a21d567126f804042dda7dd5edebf9fded42567ab030dadef6b40e0f86",
         "lineage": [],
         "lineageComplete": false,
         "missingActionIds": [],
-        "occurrenceId": "1e943884-9713-42cc-bead-d11e8b6d89ea",
+        "occurrenceId": "f9e2f360-be19-4b42-a7f9-bf2cb0d260b3",
         "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
         "resolutionBasis": "NEVER_AUTHORIZED",
         "resolutionEvidence": [],
@@ -159,8 +159,8 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "f5fbe914d00a9f38cc63bf4198513872e288362333bacdb7be1f2c5b29c816d7:0",
-        "gapIdentityCore": "f5fbe914d00a9f38cc63bf4198513872e288362333bacdb7be1f2c5b29c816d7",
+        "gapId": "cecedb8bf6d71b5043433cc60f4d934061d26797ac46cbe403b60db31cca755a:0",
+        "gapIdentityCore": "cecedb8bf6d71b5043433cc60f4d934061d26797ac46cbe403b60db31cca755a",
         "lineage": [
           {
             "actionStatus": "UNRESOLVED",
@@ -176,13 +176,13 @@
               }
             ],
             "query": "雨水浇灌 替代供水的局限",
-            "resultArtifact": "targeted-requery-subphase/action-a2aa3e2395b642e2dffc259e5800de3254e2f1dde30746b5c7cc5db721ce1caa/retrieval-pool.json",
-            "targetedActionId": "a2aa3e2395b642e2dffc259e5800de3254e2f1dde30746b5c7cc5db721ce1caa"
+            "resultArtifact": "targeted-requery-subphase/action-6179efaf521ebdc43855e367042051ef64e0911671442ddea5aa163f9bb12c65/retrieval-pool.json",
+            "targetedActionId": "6179efaf521ebdc43855e367042051ef64e0911671442ddea5aa163f9bb12c65"
           }
         ],
         "lineageComplete": true,
         "missingActionIds": [],
-        "occurrenceId": "1e943884-9713-42cc-bead-d11e8b6d89ea",
+        "occurrenceId": "f9e2f360-be19-4b42-a7f9-bf2cb0d260b3",
         "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
         "resolutionBasis": "UNKNOWN_SIDE_NOT_DECLARED",
         "resolutionEvidence": [
@@ -192,12 +192,12 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "f5fbe914d00a9f38cc63bf4198513872e288362333bacdb7be1f2c5b29c816d7:1",
-        "gapIdentityCore": "f5fbe914d00a9f38cc63bf4198513872e288362333bacdb7be1f2c5b29c816d7",
+        "gapId": "cecedb8bf6d71b5043433cc60f4d934061d26797ac46cbe403b60db31cca755a:1",
+        "gapIdentityCore": "cecedb8bf6d71b5043433cc60f4d934061d26797ac46cbe403b60db31cca755a",
         "lineage": [],
         "lineageComplete": false,
         "missingActionIds": [],
-        "occurrenceId": "1e943884-9713-42cc-bead-d11e8b6d89ea",
+        "occurrenceId": "f9e2f360-be19-4b42-a7f9-bf2cb0d260b3",
         "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
         "resolutionBasis": "NEVER_AUTHORIZED",
         "resolutionEvidence": [],

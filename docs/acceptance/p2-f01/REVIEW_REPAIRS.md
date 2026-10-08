@@ -55,3 +55,10 @@ CI37749477059三个matrix jobs SUCCESS，research-classification失败，focused
 discussion_r4216781535不适用：意见引用0405db4 squash snapshot，而真实远端候选fab的parent=7f84919、7f的parent=34ff398；merge-base --is-ancestor 34ff fab返回0，实际fresh clone包含全部Git对象。未执行squash或历史重写，不改真实历史迎合错误引用。
 
 discussion_r4216781555记录为本轮非blocker边界：历史readiness audit建议live-gated suite；用户本轮§3闭合MVP、§9两层优先、§17 CI和Issue107 MVP约束以5案/4度量/确定性subset为当前交付范围。Tier2没有live executor且未运行，明确NOT_RUN/UNKNOWN；不得宣称凭据齐全就能用本runner跑现实质量，也不得把合成假设qid提交live provider。现实价值不足保留在T15，后续须冻结真实来源并复用canonical runtime取得证据。独立review适用性判定不替代实际Tier2证据。
+
+
+## 692950a2f308dc27db0bc41e8ded09c6d0a7eab9 自动review终态
+
+Completed新增3项有效P2输入边界（discussion_r4216939126/9132/9141）：合法case ID可碰撞负控制目录；任意非空provenance.kind可被无条件误标合成；超2000字符task在产品状态/plan产生前失败却被接受。三项独立RED实际fail3，修后GREEN22/22；仅schema拒绝边界，task遵循原composeP1Research topic.trim().length <=2000，不改产品限制或指标。source416a153实跑20次结果/成本不变。
+
+新ancestry意见discussion_r4216939113再引用dc2b80d squash snapshot，而真实692的parent=f75，f75的parent=fab；merge-base --is-ancestor f75 692返回0，远端fresh clone及独立clone确实读取全部source Git对象。该具体引用不能改写真实Git历史；原comment保留，须fresh reviewer核验并分类。旧692没有独立最终PASS，不集成。
