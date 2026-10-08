@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { validateProductInput } from '../evaluation/input.mjs';
 import { measureTargets, compareResults, observeProduct, inventory, validateEvaluationCase } from '../evaluation/evaluator.mjs';
-import { executeProductWorker, stageProductTree, productWorkerEnvironment, optionValue, validateBenchmark, validateObservedPair, degradeKnownHit, bindEvaluationFile, readBoundEvaluationFile } from '../evaluation/run.mjs';
+import { executeProductWorker, stageProductTree, productWorkerEnvironment, optionValue, validateBenchmark, validateObservedPair, validateRepeatedResults, degradeKnownHit, bindEvaluationFile, readBoundEvaluationFile } from '../evaluation/run.mjs';
 import { configFingerprint, sha256File } from '../lib/state.mjs';
 import { EXPERIMENT_CONFIG } from '../evaluation/product-worker.mjs';
 import { loadPlan } from '../lib/plan-contract.mjs';
@@ -60,6 +60,26 @@ test('a product clarification or failed run is INVALID, never zero gain or a qua
   const incomplete = { ...valid, status: 'INVALID', product_failure: 'clarification_required' };
   assert.equal(compareResults(valid, incomplete).status, 'INVALID');
   assert.equal(compareResults(incomplete, incomplete).status, 'INVALID');
+});
+
+test('incomplete pairs still reject a confounded runtime identity before reporting product failure', () => {
+  const baseline = { status: 'INVALID', identity: { runtime_dependency_hash: 'original' },
+    product_failure: 'clarification_required', cost: { retrieval_calls: 4 } };
+  const candidate = { ...baseline, identity: { runtime_dependency_hash: 'changed' } };
+  assert.equal(compareResults(baseline, candidate).reason, 'PAIR_CONFOUND_IDENTITY_MISMATCH');
+  assert.equal(compareResults(baseline, baseline).reason, 'PRODUCT_RUN_INCOMPLETE');
+});
+
+test('equal quality and costs across repetitions do not hide changed executable dependency bytes', () => {
+  const result = { status: 'VALID', identity: { runtime_dependency_hash: 'original' },
+    metrics: measureTargets(observation(), targets), cost: { retrieval_calls: 4, wall_clock_ms: 10 } };
+  const first = { baseline: result, candidate: structuredClone(result) };
+  const second = structuredClone(first);
+  second.baseline.cost.wall_clock_ms = 20;
+  assert.doesNotThrow(() => validateRepeatedResults([first, second]));
+  for (const arm of ['baseline', 'candidate']) second[arm].identity.runtime_dependency_hash = 'changed';
+  assert.equal(compareResults(second.baseline, second.candidate).status, 'VALID');
+  assert.throws(() => validateRepeatedResults([first, second]), /EVALUATION_RUNTIME_IDENTITY_DRIFT/);
 });
 
 test('empty target support and a different document with the same identity cannot manufacture hits', () => {

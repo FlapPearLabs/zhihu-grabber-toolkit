@@ -155,6 +155,9 @@ export function measureTargets(observation, targets) {
 
 /** No weights, aggregate quality score, or value verdict. */
 export function compareResults(baseline, candidate) {
+  if (canonicalJson(baseline.identity) !== canonicalJson(candidate.identity)) {
+    return { status: 'INVALID', reason: 'PAIR_CONFOUND_IDENTITY_MISMATCH' };
+  }
   const costDeltas = Object.fromEntries(Object.keys(baseline.cost).map(key => [key,
     typeof baseline.cost[key] === 'number' && typeof candidate.cost[key] === 'number'
       ? candidate.cost[key] - baseline.cost[key] : 'UNKNOWN']));
@@ -162,9 +165,6 @@ export function compareResults(baseline, candidate) {
     return { status: 'INVALID', reason: 'PRODUCT_RUN_INCOMPLETE',
       incremental_cost: costDeltas, quality_change: 'UNKNOWN',
       product_failures: { baseline: baseline.product_failure ?? null, candidate: candidate.product_failure ?? null } };
-  }
-  if (canonicalJson(baseline.identity) !== canonicalJson(candidate.identity)) {
-    return { status: 'INVALID', reason: 'PAIR_CONFOUND_IDENTITY_MISMATCH' };
   }
   const metricDeltas = Object.fromEntries(Object.keys(baseline.metrics).map(key => {
     const a = baseline.metrics[key]; const b = candidate.metrics[key];

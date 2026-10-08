@@ -130,6 +130,18 @@ export function degradeKnownHit(observation, targets) {
 const relative = (repo, file) => path.relative(repo, file).split(path.sep).join('/');
 const stableCost = cost => Object.fromEntries(Object.entries(cost).filter(([key]) => key !== 'wall_clock_ms'));
 
+export function validateRepeatedResults(pairs) {
+  if (!pairs.every(pair => ['baseline', 'candidate'].every(arm =>
+    canonicalJson(pair[arm].identity) === canonicalJson(pairs[0][arm].identity)))) {
+    throw new Error('EVALUATION_RUNTIME_IDENTITY_DRIFT');
+  }
+  const stable = pairs.every(pair => ['baseline', 'candidate'].every(arm =>
+    canonicalJson(pair[arm].metrics) === canonicalJson(pairs[0][arm].metrics)
+      && pair[arm].status === pairs[0][arm].status && pair[arm].product_failure === pairs[0][arm].product_failure
+      && canonicalJson(stableCost(pair[arm].cost)) === canonicalJson(stableCost(pairs[0][arm].cost))));
+  if (!stable) throw new Error('EVALUATION_UNEXPLAINED_METRIC_DRIFT');
+}
+
 // Reads Git metadata only; hidden evaluator bytes are first read after both workers.
 export function bindEvaluationFile(repo, repoSha, ref) {
   return execFileSync('git', ['rev-parse', `${repoSha}:${ref}`], { cwd: repo, encoding: 'utf8' }).trim();
@@ -298,14 +310,10 @@ export function runBenchmark({ repo, out, productRoot, repoSha, repeats = 2 }) {
           degraded_candidate: { status: 'PASS', removed_question_id: degradation.removed_question_id, result: relative(repo, path.join(controls, 'degraded-comparison.json')) } };
       }
     }
-    const stable = pairs.every(pair => ['baseline', 'candidate'].every(arm =>
-      canonicalJson(pair[arm].metrics) === canonicalJson(pairs[0][arm].metrics)
-        && pair[arm].status === pairs[0][arm].status && pair[arm].product_failure === pairs[0][arm].product_failure
-        && canonicalJson(stableCost(pair[arm].cost)) === canonicalJson(stableCost(pairs[0][arm].cost))));
-    if (!stable) throw new Error('EVALUATION_UNEXPLAINED_METRIC_DRIFT');
+    validateRepeatedResults(pairs);
   }
   if (!campaign.controls) throw new Error('EVALUATION_REGRESSION_CONTROL_NO_KNOWN_HIT');
-  campaign.stability = 'PASS_METRICS_AND_NON_LATENCY_COST';
+  campaign.stability = 'PASS_IDENTITY_METRICS_AND_NON_LATENCY_COST';
   campaign.known_weak_baseline = campaign.pairs.some(pair => {
     const comparison = json(path.join(repo, pair.comparison));
     return comparison.status === 'VALID' && Object.values(comparison.metrics).some(metric => metric.baseline_hits < metric.total);
