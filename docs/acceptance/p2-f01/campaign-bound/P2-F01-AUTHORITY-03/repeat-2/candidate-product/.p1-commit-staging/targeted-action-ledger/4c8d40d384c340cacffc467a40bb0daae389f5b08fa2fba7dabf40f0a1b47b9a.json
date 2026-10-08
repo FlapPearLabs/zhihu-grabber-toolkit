@@ -1,0 +1,46 @@
+{
+  "occurrenceId": "52dfbbe4-9799-4580-8c91-9b7e718363a8",
+  "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": null,
+      "artifactRel": null,
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        }
+      ],
+      "bindingHash": null,
+      "bindingKey": null,
+      "dedupeKey": "492726792f7ce53cb52594d1c278983a31cc96ed1a9795404154206fa16ce72e",
+      "gapId": "21d56f2f6768899d8b2edc422bca2db48591e8b9d3c7ed7873da3bc14d6c5fc7:0",
+      "gapIdentityCore": "21d56f2f6768899d8b2edc422bca2db48591e8b9d3c7ed7873da3bc14d6c5fc7",
+      "normalizedQuery": "净化器 原始试验记录",
+      "occurrenceId": "52dfbbe4-9799-4580-8c91-9b7e718363a8",
+      "planHash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
+      "status": "AUTHORIZED",
+      "targetedActionId": "99ea8aafc532e1a3d417441bd8876f41d02890f259160a375f2ae3b055088f6f"
+    }
+  ]
+}

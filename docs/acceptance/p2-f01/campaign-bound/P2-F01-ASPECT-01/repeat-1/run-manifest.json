@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "repo_sha": "43817dd085e5c816eea0b639908c849781db8ce3",
+  "repo_sha": "46f8046c2ff983c500e3f1f90e15e46c4ea9df1d",
   "case_id": "P2-F01-ASPECT-01",
   "benchmark_version": "p2-f01-authored-curated-v1",
   "benchmark_hashes": {
@@ -32,7 +32,7 @@
     "zhihu-open-platform:frozen-double",
     "frozen-evaluation-capture"
   ],
-  "timestamp": "2026-10-08T03:18:02.674Z",
+  "timestamp": "2026-10-08T03:49:19.507Z",
   "product_input_excludes": [
     "hidden_targets",
     "evaluation_notes",
@@ -44,15 +44,17 @@
     "candidate"
   ],
   "worker_process_separate_from_evaluator": true,
+  "product_execution_root": "COPIED_CODE_AND_PUBLIC_INPUT_ONLY",
+  "hidden_files_in_execution_tree": false,
   "product_identities": {
     "baseline": {
       "run_id": "6c55752597c7f68afab93e0a0c67b9442aec0c02ed11e1eb1b6b28272bc548b1",
-      "occurrence_id": "3d76946a-ff67-43d1-b13a-825ffd403fe2",
+      "occurrence_id": "303cbb71-dfed-4654-9e6d-aad56ee4b15d",
       "plan_hash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16"
     },
     "candidate": {
       "run_id": "6c55752597c7f68afab93e0a0c67b9442aec0c02ed11e1eb1b6b28272bc548b1",
-      "occurrence_id": "33d20619-bdde-4c3a-bb7d-4646ea54bb9b",
+      "occurrence_id": "60b4dad0-f051-4ec0-8700-2314fc6436ca",
       "plan_hash": "a6f09af9926f8ef53b8de89195d46b0b556f1c6275dfb7aadbef0ea4aae27f16"
     }
   },
@@ -76,8 +78,8 @@
   },
   "result_artifact_hashes": {
     "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/repeat-1/eval-case.json": "4ed7b3407f55a67f49b122691cc4ebda74d581153902e4417982b31521be4dd0",
-    "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/repeat-1/baseline-result.json": "4e4fba5662b0e27eb6e167c6b3ad1958a99b5620169b668044b5c8a5355369f0",
-    "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/repeat-1/candidate-result.json": "74d7cab56118f58d6a3e49174972dbfda60d74c267c7c7fcaa93e0a1b498f14d",
-    "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/repeat-1/comparison.json": "cc8771e38a781779c941e3ddaf14424ef5bee8e094e1c19a1a3844e6df87022e"
+    "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/repeat-1/baseline-result.json": "3173d9ad0af414dbab3d97c6ab491d5779a062297e752698a480bb1c0c509591",
+    "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/repeat-1/candidate-result.json": "ff5e1384151186fbde2d277872b131f19229e5cfb967b0379b17634625bcbf13",
+    "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/repeat-1/comparison.json": "dbe721e6aa0a1e2861b45a104265fc18e17c77f64fbaaf3ad7b5cb707b51f612"
   }
 }

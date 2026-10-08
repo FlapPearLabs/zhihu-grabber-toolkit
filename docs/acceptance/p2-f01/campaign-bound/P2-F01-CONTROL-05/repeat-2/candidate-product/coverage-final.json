@@ -115,8 +115,8 @@
     "lineageComplete": false,
     "gaps": [
       {
-        "gapId": "7d268096e5c6f792cdcb2454e2965e3673197991d8919a79fcfaf2d3966a9509:0",
-        "gapIdentityCore": "7d268096e5c6f792cdcb2454e2965e3673197991d8919a79fcfaf2d3966a9509",
+        "gapId": "8c3002840d4457f2ec88955fb33703eb6f89fde2388e7d9c9faec57414f23f4f:0",
+        "gapIdentityCore": "8c3002840d4457f2ec88955fb33703eb6f89fde2388e7d9c9faec57414f23f4f",
         "lineage": [
           {
             "actionStatus": "UNRESOLVED",
@@ -132,13 +132,13 @@
               }
             ],
             "query": "雨水浇灌 替代供水的局限",
-            "resultArtifact": "targeted-requery-subphase/action-a62559834aef467296326bb0ac2dc20a981ff5bb87e4759b7950ce63ce4b33d4/retrieval-pool.json",
-            "targetedActionId": "a62559834aef467296326bb0ac2dc20a981ff5bb87e4759b7950ce63ce4b33d4"
+            "resultArtifact": "targeted-requery-subphase/action-28860406771d309b817168b24b0a7276199c9d2518a2c3e09b0e7c345bd0ab5e/retrieval-pool.json",
+            "targetedActionId": "28860406771d309b817168b24b0a7276199c9d2518a2c3e09b0e7c345bd0ab5e"
           }
         ],
         "lineageComplete": true,
         "missingActionIds": [],
-        "occurrenceId": "1ab71621-2b92-4e84-8c8b-967083e881de",
+        "occurrenceId": "ce516b48-5e8f-4be4-99ac-e0840461f5a5",
         "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
         "resolutionBasis": "UNKNOWN_SIDE_NOT_DECLARED",
         "resolutionEvidence": [
@@ -148,12 +148,12 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "7d268096e5c6f792cdcb2454e2965e3673197991d8919a79fcfaf2d3966a9509:1",
-        "gapIdentityCore": "7d268096e5c6f792cdcb2454e2965e3673197991d8919a79fcfaf2d3966a9509",
+        "gapId": "8c3002840d4457f2ec88955fb33703eb6f89fde2388e7d9c9faec57414f23f4f:1",
+        "gapIdentityCore": "8c3002840d4457f2ec88955fb33703eb6f89fde2388e7d9c9faec57414f23f4f",
         "lineage": [],
         "lineageComplete": false,
         "missingActionIds": [],
-        "occurrenceId": "1ab71621-2b92-4e84-8c8b-967083e881de",
+        "occurrenceId": "ce516b48-5e8f-4be4-99ac-e0840461f5a5",
         "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
         "resolutionBasis": "NEVER_AUTHORIZED",
         "resolutionEvidence": [],
@@ -161,8 +161,8 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "de750484bd6ef42b7220bf64cf25cc9edf57a210eda3a577aa7583c6f1d4109b:0",
-        "gapIdentityCore": "de750484bd6ef42b7220bf64cf25cc9edf57a210eda3a577aa7583c6f1d4109b",
+        "gapId": "ee34127ab59731eef05d614e18ef4a131ea46d989ecfac81cf00794cd5703af1:0",
+        "gapIdentityCore": "ee34127ab59731eef05d614e18ef4a131ea46d989ecfac81cf00794cd5703af1",
         "lineage": [
           {
             "actionStatus": "UNRESOLVED",
@@ -178,13 +178,13 @@
               }
             ],
             "query": "家用雨水浇灌",
-            "resultArtifact": "targeted-requery-subphase/action-3da94ca38b30da594d584d31745a8c8bd086c567541e5df04d949e8055814850/retrieval-pool.json",
-            "targetedActionId": "3da94ca38b30da594d584d31745a8c8bd086c567541e5df04d949e8055814850"
+            "resultArtifact": "targeted-requery-subphase/action-12b96968cf6bbec786405289663c133e35c7ba4f68d61d7a80b4efbedef23929/retrieval-pool.json",
+            "targetedActionId": "12b96968cf6bbec786405289663c133e35c7ba4f68d61d7a80b4efbedef23929"
           }
         ],
         "lineageComplete": true,
         "missingActionIds": [],
-        "occurrenceId": "1ab71621-2b92-4e84-8c8b-967083e881de",
+        "occurrenceId": "ce516b48-5e8f-4be4-99ac-e0840461f5a5",
         "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
         "resolutionBasis": "DUPLICATE_ONLY",
         "resolutionEvidence": [],
@@ -192,12 +192,12 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "de750484bd6ef42b7220bf64cf25cc9edf57a210eda3a577aa7583c6f1d4109b:1",
-        "gapIdentityCore": "de750484bd6ef42b7220bf64cf25cc9edf57a210eda3a577aa7583c6f1d4109b",
+        "gapId": "ee34127ab59731eef05d614e18ef4a131ea46d989ecfac81cf00794cd5703af1:1",
+        "gapIdentityCore": "ee34127ab59731eef05d614e18ef4a131ea46d989ecfac81cf00794cd5703af1",
         "lineage": [],
         "lineageComplete": false,
         "missingActionIds": [],
-        "occurrenceId": "1ab71621-2b92-4e84-8c8b-967083e881de",
+        "occurrenceId": "ce516b48-5e8f-4be4-99ac-e0840461f5a5",
         "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
         "resolutionBasis": "NEVER_AUTHORIZED",
         "resolutionEvidence": [],

@@ -22,24 +22,6 @@
     {
       "kind": "retrieval",
       "provider_id": "zhihu_search",
-      "query": "净化器 仅看风量的局限",
-      "question_ids": [
-        "3304",
-        "3302"
-      ]
-    },
-    {
-      "kind": "retrieval",
-      "provider_id": "zhihu-open-platform",
-      "query": "净化器 仅看风量的局限",
-      "question_ids": [
-        "3304",
-        "3302"
-      ]
-    },
-    {
-      "kind": "retrieval",
-      "provider_id": "zhihu_search",
       "query": "卧室空气净化器",
       "question_ids": [
         "3301",
@@ -71,6 +53,24 @@
       "question_ids": [
         "3303",
         "3304"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu_search",
+      "query": "净化器 仅看风量的局限",
+      "question_ids": [
+        "3304",
+        "3302"
+      ]
+    },
+    {
+      "kind": "retrieval",
+      "provider_id": "zhihu-open-platform",
+      "query": "净化器 仅看风量的局限",
+      "question_ids": [
+        "3304",
+        "3302"
       ]
     },
     {
@@ -100,7 +100,7 @@
     "external_provider_calls": 0,
     "model_invocations": 0,
     "semantic_adapter_invocations": 0,
-    "wall_clock_ms": 241.78104199999999,
+    "wall_clock_ms": 195.896791,
     "token_cost": "UNKNOWN",
     "money_cost": "UNKNOWN"
   }

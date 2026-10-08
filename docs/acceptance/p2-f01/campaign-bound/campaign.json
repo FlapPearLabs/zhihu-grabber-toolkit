@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "repo_sha": "43817dd085e5c816eea0b639908c849781db8ce3",
+  "repo_sha": "46f8046c2ff983c500e3f1f90e15e46c4ea9df1d",
   "benchmark_version": "p2-f01-authored-curated-v1",
   "evaluator_version": "p2-f01-exact-supported-statements-v1",
   "case_count": 5,
@@ -85,7 +85,7 @@
     },
     "degraded_candidate": {
       "status": "PASS",
-      "removed_question_id": "1103",
+      "removed_question_id": "1101",
       "result": "docs/acceptance/p2-f01/campaign-bound/P2-F01-ASPECT-01/controls/degraded-comparison.json"
     }
   },

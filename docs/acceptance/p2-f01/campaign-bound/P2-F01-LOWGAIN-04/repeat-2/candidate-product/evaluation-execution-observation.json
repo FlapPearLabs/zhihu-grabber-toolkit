@@ -22,37 +22,37 @@
     {
       "kind": "retrieval",
       "provider_id": "zhihu_search",
-      "query": "村镇就医公交",
+      "query": "增加公交班次 适用边界",
       "question_ids": [
-        "4401",
-        "4402"
+        "4402",
+        "4404"
       ]
     },
     {
       "kind": "retrieval",
       "provider_id": "zhihu-open-platform",
-      "query": "村镇就医公交",
+      "query": "增加公交班次 适用边界",
       "question_ids": [
-        "4401",
-        "4402"
+        "4402",
+        "4404"
       ]
     },
     {
       "kind": "retrieval",
       "provider_id": "zhihu_search",
-      "query": "增加公交班次 适用边界",
+      "query": "村镇就医公交",
       "question_ids": [
-        "4402",
-        "4404"
+        "4401",
+        "4402"
       ]
     },
     {
       "kind": "retrieval",
       "provider_id": "zhihu-open-platform",
-      "query": "增加公交班次 适用边界",
+      "query": "村镇就医公交",
       "question_ids": [
-        "4402",
-        "4404"
+        "4401",
+        "4402"
       ]
     },
     {
@@ -99,7 +99,7 @@
     "external_provider_calls": 0,
     "model_invocations": 0,
     "semantic_adapter_invocations": 4,
-    "wall_clock_ms": 667.418958,
+    "wall_clock_ms": 671.901958,
     "token_cost": "UNKNOWN",
     "money_cost": "UNKNOWN"
   }

@@ -39,40 +39,6 @@
     },
     {
       "channel": {
-        "query": "净化器 仅看风量的局限",
-        "providerId": "zhihu_search",
-        "capability": "search"
-      },
-      "ok": true,
-      "auth_class": "official-secret",
-      "itemCount": 2,
-      "retrievedAt": "2026-10-08T00:00:00.000Z",
-      "completeness": {
-        "status": "unknown",
-        "evidence": {
-          "basis": "authored-curated-frozen-fixture"
-        }
-      }
-    },
-    {
-      "channel": {
-        "query": "净化器 仅看风量的局限",
-        "providerId": "zhihu-open-platform",
-        "capability": "search"
-      },
-      "ok": true,
-      "auth_class": "official-secret",
-      "itemCount": 2,
-      "retrievedAt": "2026-10-08T00:00:00.000Z",
-      "completeness": {
-        "status": "unknown",
-        "evidence": {
-          "basis": "authored-curated-frozen-fixture"
-        }
-      }
-    },
-    {
-      "channel": {
         "query": "卧室空气净化器",
         "providerId": "zhihu_search",
         "capability": "search"
@@ -125,6 +91,40 @@
     {
       "channel": {
         "query": "净化器 原始试验记录",
+        "providerId": "zhihu-open-platform",
+        "capability": "search"
+      },
+      "ok": true,
+      "auth_class": "official-secret",
+      "itemCount": 2,
+      "retrievedAt": "2026-10-08T00:00:00.000Z",
+      "completeness": {
+        "status": "unknown",
+        "evidence": {
+          "basis": "authored-curated-frozen-fixture"
+        }
+      }
+    },
+    {
+      "channel": {
+        "query": "净化器 仅看风量的局限",
+        "providerId": "zhihu_search",
+        "capability": "search"
+      },
+      "ok": true,
+      "auth_class": "official-secret",
+      "itemCount": 2,
+      "retrievedAt": "2026-10-08T00:00:00.000Z",
+      "completeness": {
+        "status": "unknown",
+        "evidence": {
+          "basis": "authored-curated-frozen-fixture"
+        }
+      }
+    },
+    {
+      "channel": {
+        "query": "净化器 仅看风量的局限",
         "providerId": "zhihu-open-platform",
         "capability": "search"
       },

@@ -5,7 +5,7 @@
   "arm": "baseline",
   "repetition": 2,
   "identity": {
-    "repo_sha": "43817dd085e5c816eea0b639908c849781db8ce3",
+    "repo_sha": "46f8046c2ff983c500e3f1f90e15e46c4ea9df1d",
     "case_id": "P2-F01-CONTROL-05",
     "benchmark_version": "p2-f01-authored-curated-v1",
     "benchmark_hashes": {
@@ -46,10 +46,10 @@
     "cache_state": "COLD_SEPARATE_DIRECTORY",
     "planner": "PUBLIC_FROZEN_PLAN"
   },
-  "timestamp": "2026-10-08T03:18:12.484Z",
+  "timestamp": "2026-10-08T03:49:29.378Z",
   "product_identity": {
     "run_id": "7fe8b9f5639702c975412a8efb937414d3b14677f22428f47b16379d0ea3f46c",
-    "occurrence_id": "35dd876d-2300-41f6-b246-99420123d6e3",
+    "occurrence_id": "8647e332-fd52-497b-829d-d46afe317b8e",
     "plan_hash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7"
   },
   "artifact_hashes": [
@@ -91,11 +91,11 @@
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-CONTROL-05/repeat-2/baseline-product/evaluation-execution-observation.json",
-      "sha256": "02039b851cda7d8e574d8693444a266d1df73f3aa148daa65e68eb8f24553899"
+      "sha256": "90d8ec396d686056471acf5679e955068a79aad491703f407b19548b346e65ee"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-CONTROL-05/repeat-2/baseline-product/events.jsonl",
-      "sha256": "e27a66b18434aa051b24eb08f0b327316f97587bed3bbf2a705829d137514b8f"
+      "sha256": "2daf5c52580fb01e5ad4ad702463ea48c61a2abbcee3bb22b8df9e18ffd34fb2"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-CONTROL-05/repeat-2/baseline-product/multi-group-state.json",
@@ -103,7 +103,7 @@
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-CONTROL-05/repeat-2/baseline-product/orchestration-state.json",
-      "sha256": "eea6d820faba64cfa4318003cbf80f762a32631376d2f95938e7a7f377baabd3"
+      "sha256": "92712deccb30ae7a5d59d041f6c23601b8db35eb30f3735559953affdad8fa24"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-CONTROL-05/repeat-2/baseline-product/per-group-claims.json",
@@ -245,7 +245,7 @@
     "external_provider_calls": 0,
     "model_invocations": 0,
     "semantic_adapter_invocations": 3,
-    "wall_clock_ms": 369.545833,
+    "wall_clock_ms": 360.619708,
     "token_cost": "UNKNOWN",
     "money_cost": "UNKNOWN",
     "selected_corpus_sources": 2,

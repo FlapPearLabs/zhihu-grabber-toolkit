@@ -1,0 +1,46 @@
+{
+  "occurrenceId": "ce516b48-5e8f-4be4-99ac-e0840461f5a5",
+  "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": null,
+      "artifactRel": null,
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        }
+      ],
+      "bindingHash": null,
+      "bindingKey": null,
+      "dedupeKey": "ebe255bc5e7c0a69ed1e7220f320b6350671a010e147ce8ca350d9bf619e3fdf",
+      "gapId": "8c3002840d4457f2ec88955fb33703eb6f89fde2388e7d9c9faec57414f23f4f:0",
+      "gapIdentityCore": "8c3002840d4457f2ec88955fb33703eb6f89fde2388e7d9c9faec57414f23f4f",
+      "normalizedQuery": "雨水浇灌 替代供水的局限",
+      "occurrenceId": "ce516b48-5e8f-4be4-99ac-e0840461f5a5",
+      "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "7fe8b9f5639702c975412a8efb937414d3b14677f22428f47b16379d0ea3f46c",
+      "status": "AUTHORIZED",
+      "targetedActionId": "28860406771d309b817168b24b0a7276199c9d2518a2c3e09b0e7c345bd0ab5e"
+    }
+  ]
+}

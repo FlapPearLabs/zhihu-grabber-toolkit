@@ -5,7 +5,7 @@
   "arm": "candidate",
   "repetition": 1,
   "identity": {
-    "repo_sha": "43817dd085e5c816eea0b639908c849781db8ce3",
+    "repo_sha": "46f8046c2ff983c500e3f1f90e15e46c4ea9df1d",
     "case_id": "P2-F01-AUTHORITY-03",
     "benchmark_version": "p2-f01-authored-curated-v1",
     "benchmark_hashes": {
@@ -46,10 +46,10 @@
     "cache_state": "COLD_SEPARATE_DIRECTORY",
     "planner": "PUBLIC_FROZEN_PLAN"
   },
-  "timestamp": "2026-10-08T03:18:07.223Z",
+  "timestamp": "2026-10-08T03:49:24.003Z",
   "product_identity": {
     "run_id": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
-    "occurrence_id": "84071d6e-637b-4b59-91a4-df4271c60adc",
+    "occurrence_id": "39f64a94-508d-478a-baa4-ed43b46015bf",
     "plan_hash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b"
   },
   "artifact_hashes": [
@@ -62,48 +62,48 @@
       "sha256": "81b2dd73f1dbb1ffbc4a4ea8d73588825444f5ef3cf50da36e609923ec428475"
     },
     {
-      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/00919b04bfda1f9d98996a19b5ee6cb8997871d6ff1fce368a94d24e7151db94.json",
-      "sha256": "00919b04bfda1f9d98996a19b5ee6cb8997871d6ff1fce368a94d24e7151db94"
+      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/07d2754cb309ee648abaa3aac004baad5c665221a0dbb469298f728cdac89d63.json",
+      "sha256": "07d2754cb309ee648abaa3aac004baad5c665221a0dbb469298f728cdac89d63"
     },
     {
-      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/0e2d26178e13570024fc41dc6ef6f9cd3066a948cc6cded76818208160f9d5e5.json",
-      "sha256": "0e2d26178e13570024fc41dc6ef6f9cd3066a948cc6cded76818208160f9d5e5"
+      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/4243d981d1cd3a463e6764181f11946c440fcc69785d35b5d2d55d68b45e53bf.json",
+      "sha256": "4243d981d1cd3a463e6764181f11946c440fcc69785d35b5d2d55d68b45e53bf"
     },
     {
-      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/358fb5c4ce82d23ff966de4c866411b30d89ef808f0eb525183cb6652a5e3b45.json",
-      "sha256": "358fb5c4ce82d23ff966de4c866411b30d89ef808f0eb525183cb6652a5e3b45"
+      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/4439dac4e7cfc76caea8d410d441506949f8f257e29f1e045c6b263c5f6c5793.json",
+      "sha256": "4439dac4e7cfc76caea8d410d441506949f8f257e29f1e045c6b263c5f6c5793"
     },
     {
-      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/6a12bdfda33cfa42523b26d33a6f0a22bd9cf637e93498a8dee49b0d158b684d.json",
-      "sha256": "6a12bdfda33cfa42523b26d33a6f0a22bd9cf637e93498a8dee49b0d158b684d"
+      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/5836ecfb5cb2a74cea764556ddfb313c43d3e66f3188883856bf8e8d14198b78.json",
+      "sha256": "5836ecfb5cb2a74cea764556ddfb313c43d3e66f3188883856bf8e8d14198b78"
     },
     {
-      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/d98e2795d9d615d4a90a29948f987c10c6afe6142cc3fdf81e80e605ad4eeb01.json",
-      "sha256": "d98e2795d9d615d4a90a29948f987c10c6afe6142cc3fdf81e80e605ad4eeb01"
+      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/87fa74f14ae54066388e38ec74d85267b0801cfd91eb037b550936960d6f9073.json",
+      "sha256": "87fa74f14ae54066388e38ec74d85267b0801cfd91eb037b550936960d6f9073"
     },
     {
-      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/dfc0fee9a085472212086e7bd148b56c1977351d8f2bf527b6b4a69f3433466c.json",
-      "sha256": "dfc0fee9a085472212086e7bd148b56c1977351d8f2bf527b6b4a69f3433466c"
+      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/8c966fbec6f520eb29148bf881b5936ee2f4810c2b9ded70bbf9203fa54be870.json",
+      "sha256": "8c966fbec6f520eb29148bf881b5936ee2f4810c2b9ded70bbf9203fa54be870"
     },
     {
-      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/eede689b0054e17d28bfd19456b7d73edc5f8b6f827e730548b3498d304bfef3.json",
-      "sha256": "eede689b0054e17d28bfd19456b7d73edc5f8b6f827e730548b3498d304bfef3"
+      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/b0c0eef83e574c72272a57c34b60c3feecbdea13b2549f09b6a786c990395663.json",
+      "sha256": "b0c0eef83e574c72272a57c34b60c3feecbdea13b2549f09b6a786c990395663"
     },
     {
-      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/f0b86e03cefabcba4bd5b3bba4f1f40268e372d60a97ac70be4d4b21c639953b.json",
-      "sha256": "f0b86e03cefabcba4bd5b3bba4f1f40268e372d60a97ac70be4d4b21c639953b"
+      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-action-ledger/df28f7fcf15c41833878b4e43ae2a201c3c82f8e8ad1f36ee9bb166b2efe1064.json",
+      "sha256": "df28f7fcf15c41833878b4e43ae2a201c3c82f8e8ad1f36ee9bb166b2efe1064"
     },
     {
-      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-resolution-input/cd449d073bc909fd714da5fee3721429ae249f21e185427d452720e742edf950.json",
-      "sha256": "cd449d073bc909fd714da5fee3721429ae249f21e185427d452720e742edf950"
+      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-resolution-input/7f1e4936e093fdf9640c4179a4c285616fd0784d5ed737a35473c62de652e5da.json",
+      "sha256": "7f1e4936e093fdf9640c4179a4c285616fd0784d5ed737a35473c62de652e5da"
     },
     {
-      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-resolution-input/d9df2c194e4cc89084bac97adf0b34bb1eb55b1fb2cb6755dc5ee79407536e66.json",
-      "sha256": "d9df2c194e4cc89084bac97adf0b34bb1eb55b1fb2cb6755dc5ee79407536e66"
+      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-resolution-input/92eb7d893285590f09efa6095cd78382af7099faa61b13933c2d7b596c9e5911.json",
+      "sha256": "92eb7d893285590f09efa6095cd78382af7099faa61b13933c2d7b596c9e5911"
     },
     {
-      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-resolution-input/dbce99f5bac53c8fa9429f94520587e77d4ddc05f80c0cb99d29873f431b01ca.json",
-      "sha256": "dbce99f5bac53c8fa9429f94520587e77d4ddc05f80c0cb99d29873f431b01ca"
+      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/.p1-commit-staging/targeted-resolution-input/eb16e8cb7bab40186f184e547a43186bdc7e7d58d04a2850a88b6382353bac9c.json",
+      "sha256": "eb16e8cb7bab40186f184e547a43186bdc7e7d58d04a2850a88b6382353bac9c"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/coverage-state.json",
@@ -111,15 +111,15 @@
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/evaluation-execution-observation.json",
-      "sha256": "ad6409b1e63f41e794cee107da54ed9a6d99bb28393d985888c4dbe5c27a2184"
+      "sha256": "4db10315d2e8036ff704d4706035f3f4d2a99c83948b66834b13c2206c4c50af"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/events.jsonl",
-      "sha256": "a1667466baf8caba9fd5d1efc428740772c3fd310e0a80d8dc227ff0b8571782"
+      "sha256": "108b64c0afe6c362837ee916e871292b8dc9dfeb33e52b39cb6559573c5953fe"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/orchestration-state.json",
-      "sha256": "6ef36f2a5f25f9aa81c7570fbc34a6fd6a547fc7f0005cdf31c796e1327ad97c"
+      "sha256": "16a80c8ab57b8e0bff473c0b5a0c637682b0b47f193a41a7869b56c150e8a959"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/research-plan.json",
@@ -127,7 +127,7 @@
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/retrieval-rounds/accumulated-pool.json",
-      "sha256": "dd854ce8aa8bba72bb393ddf70e341d410eec6e1b3f7330f97ef142f86f6d01d"
+      "sha256": "35f28ad0c694a43bcf35042033a278018416e8ccc10d0ccc087eb5ca88a67319"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/retrieval-rounds/round-1/retrieval-pool.json",
@@ -143,39 +143,39 @@
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/targeted-requery-actions.json",
-      "sha256": "6a12bdfda33cfa42523b26d33a6f0a22bd9cf637e93498a8dee49b0d158b684d"
+      "sha256": "8c966fbec6f520eb29148bf881b5936ee2f4810c2b9ded70bbf9203fa54be870"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/targeted-requery-ledger.json",
-      "sha256": "ea35e87e1ef81d351161fdae6df258406d9bc07c2a39be058529dffd23110626"
+      "sha256": "93ce57cabf70df099a8703814bac6aa80286c30c626cac1450bcdf67178e3a0e"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/targeted-requery-resolution.json",
-      "sha256": "833bd3e3f732fe1277d07a8a0e4a9eaef979d740b00a89fe60c63b116c1547dd"
+      "sha256": "475c6d9bb52ec2e13118220a4b05e1dce90e726827c5b61b13e058425ba74e6f"
     },
     {
-      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/targeted-requery-subphase/action-8eb99d6952c8d11b2411891d86d1f2f228a7ddaaf2d5f9ba7b9e8500bb4cf853/retrieval-pool.json",
-      "sha256": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708"
-    },
-    {
-      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/targeted-requery-subphase/action-9447c0bc729162b6543e98e5bd1a68a6093ff722d00d39afe7807f81b8715123/retrieval-pool.json",
+      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/targeted-requery-subphase/action-7513f7f84ba8bb0c906097e75ff004ad4ced146846a82f9e98c0be9b428cc37f/retrieval-pool.json",
       "sha256": "51b9871f04e9602e07f5aa7be01f7d9c9d939f155a70ff86667e6d8b1dca5566"
     },
     {
-      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/targeted-requery-subphase/action-ae05e894c1a7077d2b2c37731ea69e716888aa473ee5c3b09ab08933fde22a0d/retrieval-pool.json",
+      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/targeted-requery-subphase/action-d906907f12c1e94f2895b741cdcf219a4ad0cdac9735507f30a9b10fe59dbe4d/retrieval-pool.json",
       "sha256": "3d1285488617a3f136cb9af9f554bcab3b13a14f01a8827fbafe0242abe14c19"
+    },
+    {
+      "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-1/candidate-product/targeted-requery-subphase/action-e29595586333f111fe6f1e89945a003d005f83ccdf1924e43e3c551dc9dcf074/retrieval-pool.json",
+      "sha256": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708"
     }
   ],
   "product_checkpoint_hashes": {
     "coverageState": "81b2dd73f1dbb1ffbc4a4ea8d73588825444f5ef3cf50da36e609923ec428475",
-    "targeted-resolution-input:9447c0bc729162b6543e98e5bd1a68a6093ff722d00d39afe7807f81b8715123": "d9df2c194e4cc89084bac97adf0b34bb1eb55b1fb2cb6755dc5ee79407536e66",
-    "targeted-action-ledger": "6a12bdfda33cfa42523b26d33a6f0a22bd9cf637e93498a8dee49b0d158b684d",
-    "targeted-action:9447c0bc729162b6543e98e5bd1a68a6093ff722d00d39afe7807f81b8715123": "51b9871f04e9602e07f5aa7be01f7d9c9d939f155a70ff86667e6d8b1dca5566",
-    "targeted-resolution-input:8eb99d6952c8d11b2411891d86d1f2f228a7ddaaf2d5f9ba7b9e8500bb4cf853": "dbce99f5bac53c8fa9429f94520587e77d4ddc05f80c0cb99d29873f431b01ca",
-    "targeted-action:8eb99d6952c8d11b2411891d86d1f2f228a7ddaaf2d5f9ba7b9e8500bb4cf853": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708",
-    "targeted-resolution-input:ae05e894c1a7077d2b2c37731ea69e716888aa473ee5c3b09ab08933fde22a0d": "cd449d073bc909fd714da5fee3721429ae249f21e185427d452720e742edf950",
-    "targeted-action:ae05e894c1a7077d2b2c37731ea69e716888aa473ee5c3b09ab08933fde22a0d": "3d1285488617a3f136cb9af9f554bcab3b13a14f01a8827fbafe0242abe14c19",
-    "accumulatedPool": "dd854ce8aa8bba72bb393ddf70e341d410eec6e1b3f7330f97ef142f86f6d01d"
+    "targeted-resolution-input:e29595586333f111fe6f1e89945a003d005f83ccdf1924e43e3c551dc9dcf074": "92eb7d893285590f09efa6095cd78382af7099faa61b13933c2d7b596c9e5911",
+    "targeted-action-ledger": "8c966fbec6f520eb29148bf881b5936ee2f4810c2b9ded70bbf9203fa54be870",
+    "targeted-action:e29595586333f111fe6f1e89945a003d005f83ccdf1924e43e3c551dc9dcf074": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708",
+    "targeted-resolution-input:d906907f12c1e94f2895b741cdcf219a4ad0cdac9735507f30a9b10fe59dbe4d": "eb16e8cb7bab40186f184e547a43186bdc7e7d58d04a2850a88b6382353bac9c",
+    "targeted-action:d906907f12c1e94f2895b741cdcf219a4ad0cdac9735507f30a9b10fe59dbe4d": "3d1285488617a3f136cb9af9f554bcab3b13a14f01a8827fbafe0242abe14c19",
+    "targeted-resolution-input:7513f7f84ba8bb0c906097e75ff004ad4ced146846a82f9e98c0be9b428cc37f": "7f1e4936e093fdf9640c4179a4c285616fd0784d5ed737a35473c62de652e5da",
+    "targeted-action:7513f7f84ba8bb0c906097e75ff004ad4ced146846a82f9e98c0be9b428cc37f": "51b9871f04e9602e07f5aa7be01f7d9c9d939f155a70ff86667e6d8b1dca5566",
+    "accumulatedPool": "35f28ad0c694a43bcf35042033a278018416e8ccc10d0ccc087eb5ca88a67319"
   },
   "metrics": {
     "important_aspect_discovery": {
@@ -232,7 +232,7 @@
     "external_provider_calls": 0,
     "model_invocations": 0,
     "semantic_adapter_invocations": 0,
-    "wall_clock_ms": 241.78104199999999,
+    "wall_clock_ms": 195.896791,
     "token_cost": "UNKNOWN",
     "money_cost": "UNKNOWN",
     "selected_corpus_sources": 0,
