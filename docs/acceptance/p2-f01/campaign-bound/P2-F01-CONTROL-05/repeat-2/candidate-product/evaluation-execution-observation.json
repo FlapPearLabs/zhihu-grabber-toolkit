@@ -22,37 +22,37 @@
     {
       "kind": "retrieval",
       "provider_id": "zhihu_search",
-      "query": "雨水浇灌 替代供水的局限",
+      "query": "家用雨水浇灌",
       "question_ids": [
-        "5502",
-        "5503"
+        "5501",
+        "5502"
       ]
     },
     {
       "kind": "retrieval",
       "provider_id": "zhihu-open-platform",
-      "query": "雨水浇灌 替代供水的局限",
+      "query": "家用雨水浇灌",
       "question_ids": [
-        "5502",
-        "5503"
+        "5501",
+        "5502"
       ]
     },
     {
       "kind": "retrieval",
       "provider_id": "zhihu_search",
-      "query": "家用雨水浇灌",
+      "query": "雨水浇灌 替代供水的局限",
       "question_ids": [
-        "5501",
-        "5502"
+        "5502",
+        "5503"
       ]
     },
     {
       "kind": "retrieval",
       "provider_id": "zhihu-open-platform",
-      "query": "家用雨水浇灌",
+      "query": "雨水浇灌 替代供水的局限",
       "question_ids": [
-        "5501",
-        "5502"
+        "5502",
+        "5503"
       ]
     },
     {
@@ -99,7 +99,7 @@
     "external_provider_calls": 0,
     "model_invocations": 0,
     "semantic_adapter_invocations": 4,
-    "wall_clock_ms": 651.692333,
+    "wall_clock_ms": 679.071167,
     "token_cost": "UNKNOWN",
     "money_cost": "UNKNOWN"
   }

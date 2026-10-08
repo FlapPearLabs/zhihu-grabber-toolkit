@@ -3,45 +3,45 @@
     {
       "declaredGapType": "CONTRADICTION_GAP",
       "diagnosisRound": 0,
-      "gapId": "3c87ff0c504e81254f3a0330047909903ad930297335402a6acb324173bc0155:0",
-      "gapIdentityCore": "3c87ff0c504e81254f3a0330047909903ad930297335402a6acb324173bc0155",
+      "gapId": "3303f89080453a1e878e2cdebea716bbbdead1f30eae2ac89d66c19b49c84e02:0",
+      "gapIdentityCore": "3303f89080453a1e878e2cdebea716bbbdead1f30eae2ac89d66c19b49c84e02",
       "gapType": "CONTRADICTION_GAP",
-      "occurrenceId": "7dd5907e-654a-43fa-98bb-a8f546cc9daf",
+      "occurrenceId": "53407983-51c1-464c-b8a7-123538de2457",
       "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
       "subjectKey": "opposing:课后可选练习 反向论证"
     },
     {
       "declaredGapType": "CONTRADICTION_GAP",
       "diagnosisRound": 1,
-      "gapId": "3c87ff0c504e81254f3a0330047909903ad930297335402a6acb324173bc0155:1",
-      "gapIdentityCore": "3c87ff0c504e81254f3a0330047909903ad930297335402a6acb324173bc0155",
+      "gapId": "3303f89080453a1e878e2cdebea716bbbdead1f30eae2ac89d66c19b49c84e02:1",
+      "gapIdentityCore": "3303f89080453a1e878e2cdebea716bbbdead1f30eae2ac89d66c19b49c84e02",
       "gapType": "CONTRADICTION_GAP",
-      "occurrenceId": "7dd5907e-654a-43fa-98bb-a8f546cc9daf",
+      "occurrenceId": "53407983-51c1-464c-b8a7-123538de2457",
       "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
       "subjectKey": "opposing:课后可选练习 反向论证"
     },
     {
       "declaredGapType": "ASPECT_GAP",
       "diagnosisRound": 0,
-      "gapId": "b5ca6c2367cd937d2801206f1e544baeecb0fdebdd367a32a139a20ec804ecdf:0",
-      "gapIdentityCore": "b5ca6c2367cd937d2801206f1e544baeecb0fdebdd367a32a139a20ec804ecdf",
+      "gapId": "d4ca0caae8bf85a19ac9250325d8d0fdf968486c352b0c7f99f98fe0983de697:0",
+      "gapIdentityCore": "d4ca0caae8bf85a19ac9250325d8d0fdf968486c352b0c7f99f98fe0983de697",
       "gapType": "ASPECT_GAP",
-      "occurrenceId": "7dd5907e-654a-43fa-98bb-a8f546cc9daf",
+      "occurrenceId": "53407983-51c1-464c-b8a7-123538de2457",
       "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
       "subjectKey": "aspect:课后可选练习 学生差异"
     },
     {
       "declaredGapType": "ASPECT_GAP",
       "diagnosisRound": 1,
-      "gapId": "b5ca6c2367cd937d2801206f1e544baeecb0fdebdd367a32a139a20ec804ecdf:1",
-      "gapIdentityCore": "b5ca6c2367cd937d2801206f1e544baeecb0fdebdd367a32a139a20ec804ecdf",
+      "gapId": "d4ca0caae8bf85a19ac9250325d8d0fdf968486c352b0c7f99f98fe0983de697:1",
+      "gapIdentityCore": "d4ca0caae8bf85a19ac9250325d8d0fdf968486c352b0c7f99f98fe0983de697",
       "gapType": "ASPECT_GAP",
-      "occurrenceId": "7dd5907e-654a-43fa-98bb-a8f546cc9daf",
+      "occurrenceId": "53407983-51c1-464c-b8a7-123538de2457",
       "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
       "subjectKey": "aspect:课后可选练习 学生差异"
     }
   ],
-  "occurrenceId": "7dd5907e-654a-43fa-98bb-a8f546cc9daf",
+  "occurrenceId": "53407983-51c1-464c-b8a7-123538de2457",
   "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
   "schema": "p2-ari-targeted-requery-ledger/v1"
 }

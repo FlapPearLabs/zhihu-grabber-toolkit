@@ -30,7 +30,7 @@
     "external_provider_calls": 0,
     "model_invocations": 0,
     "semantic_adapter_invocations": 1,
-    "wall_clock_ms": 270.93216700000005,
+    "wall_clock_ms": 312.872292,
     "token_cost": "UNKNOWN",
     "money_cost": "UNKNOWN",
     "selected_corpus_sources": 1,
@@ -39,7 +39,7 @@
   "quality_change": "NO_MEASURABLE_GAIN",
   "scope": "CURATED_TARGETS != OPEN_WORLD_COMPLETENESS",
   "identity": {
-    "repo_sha": "46f8046c2ff983c500e3f1f90e15e46c4ea9df1d",
+    "repo_sha": "34ff398bafd781788055d1d2c30680b89d8e1f80",
     "case_id": "P2-F01-LOWGAIN-04",
     "benchmark_version": "p2-f01-authored-curated-v1",
     "benchmark_hashes": {
@@ -58,6 +58,7 @@
     "runtime_identity": {
       "implementation": "DETERMINISTIC_DOUBLE",
       "node": "v26.10.0",
+      "runtime_dependency_hash": "4d401db3d5e3f269d4b559ddc020ece6705f0d6c1cf878d0e1a4736a0d73e3bc",
       "contract_runtime_pin": "deepseek-api-tool-less",
       "embedding": "existing mockVector768(7)"
     },

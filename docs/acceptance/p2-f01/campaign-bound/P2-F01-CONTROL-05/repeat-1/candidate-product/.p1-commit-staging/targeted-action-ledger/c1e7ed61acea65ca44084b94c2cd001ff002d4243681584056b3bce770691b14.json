@@ -1,0 +1,46 @@
+{
+  "occurrenceId": "b158a92f-f104-4e1c-965c-6ed6076f56c6",
+  "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+  "rejected": [],
+  "schema": "p2-ari-targeted-requery-actions/v1",
+  "targetedActions": [
+    {
+      "artifactHash": null,
+      "artifactRel": null,
+      "attempt": 1,
+      "audit": [
+        {
+          "artifactRel": null,
+          "bindingHash": null,
+          "bindingKey": null,
+          "event": "REGISTER_AUTHORIZED",
+          "from": null,
+          "reason": null,
+          "seq": 1,
+          "to": "AUTHORIZED"
+        }
+      ],
+      "bindingHash": null,
+      "bindingKey": null,
+      "dedupeKey": "15e55f842917e4037d8fdc7919d01246a3d998743755451c517ca82c7e4660c1",
+      "gapId": "3bd96cf475505da457991095cd857676d422631f22b11fb1c46d849fc8aef239:0",
+      "gapIdentityCore": "3bd96cf475505da457991095cd857676d422631f22b11fb1c46d849fc8aef239",
+      "normalizedQuery": "家用雨水浇灌",
+      "occurrenceId": "b158a92f-f104-4e1c-965c-6ed6076f56c6",
+      "planHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
+      "providerScope": [
+        {
+          "capability": "search",
+          "providerId": "zhihu-open-platform"
+        },
+        {
+          "capability": "search",
+          "providerId": "zhihu_search"
+        }
+      ],
+      "runId": "7fe8b9f5639702c975412a8efb937414d3b14677f22428f47b16379d0ea3f46c",
+      "status": "AUTHORIZED",
+      "targetedActionId": "48d171548785db5883bb6e3058895354ad898b775218b9015e5eb958b18e72ed"
+    }
+  ]
+}

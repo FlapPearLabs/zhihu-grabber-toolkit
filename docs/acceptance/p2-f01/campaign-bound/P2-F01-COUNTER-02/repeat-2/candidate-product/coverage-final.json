@@ -120,8 +120,8 @@
     "lineageComplete": false,
     "gaps": [
       {
-        "gapId": "3c87ff0c504e81254f3a0330047909903ad930297335402a6acb324173bc0155:0",
-        "gapIdentityCore": "3c87ff0c504e81254f3a0330047909903ad930297335402a6acb324173bc0155",
+        "gapId": "3303f89080453a1e878e2cdebea716bbbdead1f30eae2ac89d66c19b49c84e02:0",
+        "gapIdentityCore": "3303f89080453a1e878e2cdebea716bbbdead1f30eae2ac89d66c19b49c84e02",
         "lineage": [
           {
             "actionStatus": "UNRESOLVED",
@@ -137,13 +137,13 @@
               }
             ],
             "query": "课后可选练习 反向论证",
-            "resultArtifact": "targeted-requery-subphase/action-13e33b1ad0c413a555db6d8432796f86a5c037276ccf426ec793f3359539171d/retrieval-pool.json",
-            "targetedActionId": "13e33b1ad0c413a555db6d8432796f86a5c037276ccf426ec793f3359539171d"
+            "resultArtifact": "targeted-requery-subphase/action-241a3cc2ebbca3c03269c0af0621b9a9453001a799ec5773202cbcf3cc8c841d/retrieval-pool.json",
+            "targetedActionId": "241a3cc2ebbca3c03269c0af0621b9a9453001a799ec5773202cbcf3cc8c841d"
           }
         ],
         "lineageComplete": true,
         "missingActionIds": [],
-        "occurrenceId": "7dd5907e-654a-43fa-98bb-a8f546cc9daf",
+        "occurrenceId": "53407983-51c1-464c-b8a7-123538de2457",
         "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
         "resolutionBasis": "UNKNOWN_SIDE_NOT_DECLARED",
         "resolutionEvidence": [
@@ -154,12 +154,12 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "3c87ff0c504e81254f3a0330047909903ad930297335402a6acb324173bc0155:1",
-        "gapIdentityCore": "3c87ff0c504e81254f3a0330047909903ad930297335402a6acb324173bc0155",
+        "gapId": "3303f89080453a1e878e2cdebea716bbbdead1f30eae2ac89d66c19b49c84e02:1",
+        "gapIdentityCore": "3303f89080453a1e878e2cdebea716bbbdead1f30eae2ac89d66c19b49c84e02",
         "lineage": [],
         "lineageComplete": false,
         "missingActionIds": [],
-        "occurrenceId": "7dd5907e-654a-43fa-98bb-a8f546cc9daf",
+        "occurrenceId": "53407983-51c1-464c-b8a7-123538de2457",
         "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
         "resolutionBasis": "NEVER_AUTHORIZED",
         "resolutionEvidence": [],
@@ -167,8 +167,8 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "b5ca6c2367cd937d2801206f1e544baeecb0fdebdd367a32a139a20ec804ecdf:0",
-        "gapIdentityCore": "b5ca6c2367cd937d2801206f1e544baeecb0fdebdd367a32a139a20ec804ecdf",
+        "gapId": "d4ca0caae8bf85a19ac9250325d8d0fdf968486c352b0c7f99f98fe0983de697:0",
+        "gapIdentityCore": "d4ca0caae8bf85a19ac9250325d8d0fdf968486c352b0c7f99f98fe0983de697",
         "lineage": [
           {
             "actionStatus": "UNRESOLVED",
@@ -184,13 +184,13 @@
               }
             ],
             "query": "学生可选课后练习",
-            "resultArtifact": "targeted-requery-subphase/action-5f997006fbe996f5ea9b8b4f59d1e7328b76ac6e3160af8aa4181dbcaaa5a614/retrieval-pool.json",
-            "targetedActionId": "5f997006fbe996f5ea9b8b4f59d1e7328b76ac6e3160af8aa4181dbcaaa5a614"
+            "resultArtifact": "targeted-requery-subphase/action-84c12330b3ec68567c1d3fa9226846ececb35ac3b52b2f5c37c0e1c65631e40b/retrieval-pool.json",
+            "targetedActionId": "84c12330b3ec68567c1d3fa9226846ececb35ac3b52b2f5c37c0e1c65631e40b"
           }
         ],
         "lineageComplete": true,
         "missingActionIds": [],
-        "occurrenceId": "7dd5907e-654a-43fa-98bb-a8f546cc9daf",
+        "occurrenceId": "53407983-51c1-464c-b8a7-123538de2457",
         "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
         "resolutionBasis": "DUPLICATE_ONLY",
         "resolutionEvidence": [],
@@ -198,12 +198,12 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "b5ca6c2367cd937d2801206f1e544baeecb0fdebdd367a32a139a20ec804ecdf:1",
-        "gapIdentityCore": "b5ca6c2367cd937d2801206f1e544baeecb0fdebdd367a32a139a20ec804ecdf",
+        "gapId": "d4ca0caae8bf85a19ac9250325d8d0fdf968486c352b0c7f99f98fe0983de697:1",
+        "gapIdentityCore": "d4ca0caae8bf85a19ac9250325d8d0fdf968486c352b0c7f99f98fe0983de697",
         "lineage": [],
         "lineageComplete": false,
         "missingActionIds": [],
-        "occurrenceId": "7dd5907e-654a-43fa-98bb-a8f546cc9daf",
+        "occurrenceId": "53407983-51c1-464c-b8a7-123538de2457",
         "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
         "resolutionBasis": "NEVER_AUTHORIZED",
         "resolutionEvidence": [],

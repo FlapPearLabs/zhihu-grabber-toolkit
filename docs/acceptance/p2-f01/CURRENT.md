@@ -1,6 +1,6 @@
 # #107 当前候选收据
 
-EVIDENCE_CODE_SHA = 46f8046c2ff983c500e3f1f90e15e46c4ea9df1d
+EVIDENCE_CODE_SHA = 34ff398bafd781788055d1d2c30680b89d8e1f80
 BASE_SHA = 880862566478f9885b9a3c5bf25581529edd2a28
 BENCHMARK_VERSION = p2-f01-authored-curated-v1
 EVALUATOR_VERSION = p2-f01-exact-supported-statements-v1
@@ -13,7 +13,7 @@ PRODUCTION_MUTATION = NONE
 
 所有result planHash复用production loadPlan owner；非法计划拒绝。INVALID最终lineage计数UNKNOWN，raw candidate的3个动作、检索4→10仍留存。隐藏输入在worker前只绑定Git blob元数据；两worker完成后首次读取hidden单一buffer、校验blob、校验closed schema/target-corpus/time_scope，再评分与保存同bytes hash。该过程不向product提供gold，不改任何canonical product artifact/决策。
 
-focused15/15通过（廉价actual composition pair、实际incomplete-worker、curator错误和hidden文件变化控制），静态node --check/git diff --check通过。既有广回归结果见历史收据，当前head CI执行完整套件；最终fresh clone复跑全部20次后再核验metrics/status/failure/supporting/非latency cost与raw hashes。
+focused17/17通过（廉价actual composition pair、实际incomplete-worker、curator错误和hidden文件变化控制），静态node --check/git diff --check通过。既有广回归结果见历史收据，当前head CI执行完整套件；最终fresh clone复跑全部20次后再核验metrics/status/failure/supporting/非latency cost与raw hashes。
 
 跨平台字节门禁：在 core.autocrlf=true 的实际独立clone中，原checkout换行转换导致blob不匹配。仅在benchmark目录加入JSON -text属性，保证平台checkout保留冻结字节；不修改任何case内容或指标定义。修复后用另一份相同设置clone重新核验。
 
@@ -22,3 +22,5 @@ actual model=NONE，external provider calls=0，token/money=UNKNOWN。Tier2 cred
 只改evaluation目录、新增focused测试及既有CI分类登记；没有新runtime依赖、生产实现、治理、Spec、project-memory修改。实际使用scanner/doc drafter、/implement、/tdd、CodeGraph、code-review方法和GitHub workflow。review按实际finding迭代，每次修复后fresh context审最新SHA；没有默认三角色quorum。
 
 本次campaign-bound在46f8046c重新实际执行全部20次；metrics/status/failure/非时延cost与前次43817dd记录逐对完全一致。历史43817dd版campaign-bound保留在Git历史，当前目录为新实际产物，不追溯改旧commit。每arm执行stage不含hidden tree；实际owner身份匹配；新校验与存放边界见README/REVIEW_REPAIRS。路径由runner当次work归档引用转换为本repo-relative archive，随后重算manifest对应四项result bytes hash；原product artifacts字节未修改。该源码SHA以后只有归档/docs修订，最终候选SHA仍需fresh clone与独立review。
+
+34ff398b再次实际执行20次：四主指标与非时延成本仍与全部历史版本一致。每arm runtime_dependency_hash实际一致，绑定stage已装lock版本parse5/entities字节；源码来自Git对象而非worktree，子进程环境不传播checkout/注入指针。HTML完整产品ok的red/green、source并发dirty隔离与CLI缺值控制通过。前46f8046目录保留在Git历史，不作为新身份。

@@ -115,52 +115,8 @@
     "lineageComplete": false,
     "gaps": [
       {
-        "gapId": "168ce229f75ac19bf657135967c3aef4e7daa55e6aa4e055f2e62f1879c19e36:0",
-        "gapIdentityCore": "168ce229f75ac19bf657135967c3aef4e7daa55e6aa4e055f2e62f1879c19e36",
-        "lineage": [
-          {
-            "actionStatus": "UNRESOLVED",
-            "attempt": 1,
-            "providerScope": [
-              {
-                "capability": "search",
-                "providerId": "zhihu-open-platform"
-              },
-              {
-                "capability": "search",
-                "providerId": "zhihu_search"
-              }
-            ],
-            "query": "村镇就医公交",
-            "resultArtifact": "targeted-requery-subphase/action-ea17e8fbefa3ff1a1db98ee3abf7020e7a0942c7d62f81fe6fee7f11234dc387/retrieval-pool.json",
-            "targetedActionId": "ea17e8fbefa3ff1a1db98ee3abf7020e7a0942c7d62f81fe6fee7f11234dc387"
-          }
-        ],
-        "lineageComplete": true,
-        "missingActionIds": [],
-        "occurrenceId": "aca682ad-26e9-48d8-bda7-6df65c3bdd3d",
-        "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
-        "resolutionBasis": "DUPLICATE_ONLY",
-        "resolutionEvidence": [],
-        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
-        "status": "UNRESOLVED"
-      },
-      {
-        "gapId": "168ce229f75ac19bf657135967c3aef4e7daa55e6aa4e055f2e62f1879c19e36:1",
-        "gapIdentityCore": "168ce229f75ac19bf657135967c3aef4e7daa55e6aa4e055f2e62f1879c19e36",
-        "lineage": [],
-        "lineageComplete": false,
-        "missingActionIds": [],
-        "occurrenceId": "aca682ad-26e9-48d8-bda7-6df65c3bdd3d",
-        "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
-        "resolutionBasis": "NEVER_AUTHORIZED",
-        "resolutionEvidence": [],
-        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
-        "status": "UNRESOLVED"
-      },
-      {
-        "gapId": "68e17d8ec2ab560df61f7f46454b4406ab6ebe39795188238df71701afa18300:0",
-        "gapIdentityCore": "68e17d8ec2ab560df61f7f46454b4406ab6ebe39795188238df71701afa18300",
+        "gapId": "4a98c424f5ba6a3c9b12f518c854af70a95c37437c4838ce1a4326c2fef2e92a:0",
+        "gapIdentityCore": "4a98c424f5ba6a3c9b12f518c854af70a95c37437c4838ce1a4326c2fef2e92a",
         "lineage": [
           {
             "actionStatus": "UNRESOLVED",
@@ -176,13 +132,13 @@
               }
             ],
             "query": "增加公交班次 适用边界",
-            "resultArtifact": "targeted-requery-subphase/action-7228dc6f41374392f6bf585965e1c084c8fc33dc3677464be354599e469917f6/retrieval-pool.json",
-            "targetedActionId": "7228dc6f41374392f6bf585965e1c084c8fc33dc3677464be354599e469917f6"
+            "resultArtifact": "targeted-requery-subphase/action-fd00e19f8abe4f5fd31b0101847b140a46cddf46aa6d0e46767602f112164192/retrieval-pool.json",
+            "targetedActionId": "fd00e19f8abe4f5fd31b0101847b140a46cddf46aa6d0e46767602f112164192"
           }
         ],
         "lineageComplete": true,
         "missingActionIds": [],
-        "occurrenceId": "aca682ad-26e9-48d8-bda7-6df65c3bdd3d",
+        "occurrenceId": "d2d4cfec-2f4b-4251-9e65-ebd47405bc15",
         "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
         "resolutionBasis": "UNKNOWN_SIDE_NOT_DECLARED",
         "resolutionEvidence": [
@@ -192,16 +148,60 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "68e17d8ec2ab560df61f7f46454b4406ab6ebe39795188238df71701afa18300:1",
-        "gapIdentityCore": "68e17d8ec2ab560df61f7f46454b4406ab6ebe39795188238df71701afa18300",
+        "gapId": "4a98c424f5ba6a3c9b12f518c854af70a95c37437c4838ce1a4326c2fef2e92a:1",
+        "gapIdentityCore": "4a98c424f5ba6a3c9b12f518c854af70a95c37437c4838ce1a4326c2fef2e92a",
         "lineage": [],
         "lineageComplete": false,
         "missingActionIds": [],
-        "occurrenceId": "aca682ad-26e9-48d8-bda7-6df65c3bdd3d",
+        "occurrenceId": "d2d4cfec-2f4b-4251-9e65-ebd47405bc15",
         "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
         "resolutionBasis": "NEVER_AUTHORIZED",
         "resolutionEvidence": [],
         "resolutionPredicateRef": "OPPOSING_SIDE_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "e884f5927fd3ffbd868f1c2461bbe70fc65958e092eb4790d0eba3a4def669aa:0",
+        "gapIdentityCore": "e884f5927fd3ffbd868f1c2461bbe70fc65958e092eb4790d0eba3a4def669aa",
+        "lineage": [
+          {
+            "actionStatus": "UNRESOLVED",
+            "attempt": 1,
+            "providerScope": [
+              {
+                "capability": "search",
+                "providerId": "zhihu-open-platform"
+              },
+              {
+                "capability": "search",
+                "providerId": "zhihu_search"
+              }
+            ],
+            "query": "村镇就医公交",
+            "resultArtifact": "targeted-requery-subphase/action-358de5e41abb4b1431d6257f7e12ff4891c412a9f0295b67d97468259ea93758/retrieval-pool.json",
+            "targetedActionId": "358de5e41abb4b1431d6257f7e12ff4891c412a9f0295b67d97468259ea93758"
+          }
+        ],
+        "lineageComplete": true,
+        "missingActionIds": [],
+        "occurrenceId": "d2d4cfec-2f4b-4251-9e65-ebd47405bc15",
+        "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+        "resolutionBasis": "DUPLICATE_ONLY",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
+        "status": "UNRESOLVED"
+      },
+      {
+        "gapId": "e884f5927fd3ffbd868f1c2461bbe70fc65958e092eb4790d0eba3a4def669aa:1",
+        "gapIdentityCore": "e884f5927fd3ffbd868f1c2461bbe70fc65958e092eb4790d0eba3a4def669aa",
+        "lineage": [],
+        "lineageComplete": false,
+        "missingActionIds": [],
+        "occurrenceId": "d2d4cfec-2f4b-4251-9e65-ebd47405bc15",
+        "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
+        "resolutionBasis": "NEVER_AUTHORIZED",
+        "resolutionEvidence": [],
+        "resolutionPredicateRef": "ASPECT_MIN_NEW_SOURCES_V1",
         "status": "UNRESOLVED"
       }
     ]

@@ -5,7 +5,7 @@
   "arm": "baseline",
   "repetition": 2,
   "identity": {
-    "repo_sha": "46f8046c2ff983c500e3f1f90e15e46c4ea9df1d",
+    "repo_sha": "34ff398bafd781788055d1d2c30680b89d8e1f80",
     "case_id": "P2-F01-CONTROL-05",
     "benchmark_version": "p2-f01-authored-curated-v1",
     "benchmark_hashes": {
@@ -24,6 +24,7 @@
     "runtime_identity": {
       "implementation": "DETERMINISTIC_DOUBLE",
       "node": "v26.10.0",
+      "runtime_dependency_hash": "4d401db3d5e3f269d4b559ddc020ece6705f0d6c1cf878d0e1a4736a0d73e3bc",
       "contract_runtime_pin": "deepseek-api-tool-less",
       "embedding": "existing mockVector768(7)"
     },
@@ -46,10 +47,10 @@
     "cache_state": "COLD_SEPARATE_DIRECTORY",
     "planner": "PUBLIC_FROZEN_PLAN"
   },
-  "timestamp": "2026-10-08T03:49:29.378Z",
+  "timestamp": "2026-10-08T08:22:09.864Z",
   "product_identity": {
     "run_id": "7fe8b9f5639702c975412a8efb937414d3b14677f22428f47b16379d0ea3f46c",
-    "occurrence_id": "8647e332-fd52-497b-829d-d46afe317b8e",
+    "occurrence_id": "ca08e9ad-5d32-4c37-a02c-febadfdca2f4",
     "plan_hash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7"
   },
   "artifact_hashes": [
@@ -91,11 +92,11 @@
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-CONTROL-05/repeat-2/baseline-product/evaluation-execution-observation.json",
-      "sha256": "90d8ec396d686056471acf5679e955068a79aad491703f407b19548b346e65ee"
+      "sha256": "401f38c67a723dd62bf03b1ee650e616bf043791799353eb74ffd572c869e93b"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-CONTROL-05/repeat-2/baseline-product/events.jsonl",
-      "sha256": "2daf5c52580fb01e5ad4ad702463ea48c61a2abbcee3bb22b8df9e18ffd34fb2"
+      "sha256": "cc59573cc9331cb06131528caea9c01d25388f4f9337c25ea868c57b00447692"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-CONTROL-05/repeat-2/baseline-product/multi-group-state.json",
@@ -103,7 +104,7 @@
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-CONTROL-05/repeat-2/baseline-product/orchestration-state.json",
-      "sha256": "92712deccb30ae7a5d59d041f6c23601b8db35eb30f3735559953affdad8fa24"
+      "sha256": "194b43083525fe0d5e82c4f111ee652d2e8c41222bb44c7fcee3fb319819e60c"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-CONTROL-05/repeat-2/baseline-product/per-group-claims.json",
@@ -245,7 +246,7 @@
     "external_provider_calls": 0,
     "model_invocations": 0,
     "semantic_adapter_invocations": 3,
-    "wall_clock_ms": 360.619708,
+    "wall_clock_ms": 390.034958,
     "token_cost": "UNKNOWN",
     "money_cost": "UNKNOWN",
     "selected_corpus_sources": 2,

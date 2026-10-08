@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "repo_sha": "46f8046c2ff983c500e3f1f90e15e46c4ea9df1d",
+  "repo_sha": "34ff398bafd781788055d1d2c30680b89d8e1f80",
   "benchmark_version": "p2-f01-authored-curated-v1",
   "evaluator_version": "p2-f01-exact-supported-statements-v1",
   "case_count": 5,
@@ -79,7 +79,8 @@
       "status": "PASS",
       "invalid_run": {
         "ok": false,
-        "code": "BENCHMARK_CONTAMINATION_OR_INVALID_INPUT"
+        "code": "BENCHMARK_CONTAMINATION_OR_INVALID_INPUT",
+        "runtime_dependency_hash": "4d401db3d5e3f269d4b559ddc020ece6705f0d6c1cf878d0e1a4736a0d73e3bc"
       },
       "product_io_started": false
     },

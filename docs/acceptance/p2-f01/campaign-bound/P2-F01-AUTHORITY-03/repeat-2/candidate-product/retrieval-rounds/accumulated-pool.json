@@ -73,7 +73,7 @@
     },
     {
       "channel": {
-        "query": "卧室空气净化器",
+        "query": "净化器 仅看风量的局限",
         "providerId": "zhihu_search",
         "capability": "search"
       },
@@ -90,7 +90,7 @@
     },
     {
       "channel": {
-        "query": "卧室空气净化器",
+        "query": "净化器 仅看风量的局限",
         "providerId": "zhihu-open-platform",
         "capability": "search"
       },
@@ -107,7 +107,7 @@
     },
     {
       "channel": {
-        "query": "净化器 仅看风量的局限",
+        "query": "卧室空气净化器",
         "providerId": "zhihu_search",
         "capability": "search"
       },
@@ -124,7 +124,7 @@
     },
     {
       "channel": {
-        "query": "净化器 仅看风量的局限",
+        "query": "卧室空气净化器",
         "providerId": "zhihu-open-platform",
         "capability": "search"
       },

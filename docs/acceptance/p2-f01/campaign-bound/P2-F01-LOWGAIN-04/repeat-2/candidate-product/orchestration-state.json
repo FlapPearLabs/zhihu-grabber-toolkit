@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "runId": "4df426b50f3e276a409b0f066719bda07351cfb0835c994c6bcdcf99fd03df23",
-  "occurrenceId": "8344d845-d247-43a1-9c5c-65104e3c5685",
+  "occurrenceId": "6bc1cc4e-9aa5-4570-9d7b-db0822c8b4c9",
   "topic": "在假设偏远村镇中，增加公交班次是否足以改善居民就医出行？请评估便利性、服务限制和适用条件。",
   "mode": "p1-cross-question-deep-research",
   "percent": null,
@@ -28,17 +28,17 @@
     "researchResult": "research-result.json"
   },
   "hashes": {
-    "targeted-resolution-input:8e6716d102f0d627b5e00df55df8d137e17cd2f8cdcc3b59b8e677775da42897": "b163d6fcf6897914f4db0ec3fb77e32754282f549352f40b1fa4ab7c8788fa03",
-    "targeted-action:8e6716d102f0d627b5e00df55df8d137e17cd2f8cdcc3b59b8e677775da42897": "c0e7f9f271422e4f65105a2b2ff2449480d9eab030a1f15485963466b173fbd9",
-    "targeted-resolution-input:56596e82240f52fa0fa6be84dd3c05dc650c2893420c04bf07b8af7b0573904c": "59eb577faf12c4a6c20563e4699f7ac5cfc068287d554246fae4c3f94e9b2353",
-    "targeted-action:56596e82240f52fa0fa6be84dd3c05dc650c2893420c04bf07b8af7b0573904c": "7b6c81e513bc30364fa6e354c3a1977be28d7eb32d1131cc48255ae9f6d09666",
-    "targeted-action-ledger": "61dbf9b3c8dfcad37534f39ac3bfb5fd26caeb14be645f7d100c84304fbd5a72",
+    "targeted-resolution-input:9a468add80da8b78f4312eec2573bc100375a3cb1f5164e88b829631731d504c": "4bfeb4f964135a917e1d3e4e9768fc8394878cc6d71316367e658e7ed679e21f",
+    "targeted-action:9a468add80da8b78f4312eec2573bc100375a3cb1f5164e88b829631731d504c": "c0e7f9f271422e4f65105a2b2ff2449480d9eab030a1f15485963466b173fbd9",
+    "targeted-resolution-input:bf55a10f6f414711963feb5cc236944df9cf1bb38ff4dd963d809e8471edb2ed": "409ad300904ca503b979e1008de2952cdb3dbf7ea343bae687875c5abc646716",
+    "targeted-action:bf55a10f6f414711963feb5cc236944df9cf1bb38ff4dd963d809e8471edb2ed": "7b6c81e513bc30364fa6e354c3a1977be28d7eb32d1131cc48255ae9f6d09666",
+    "targeted-action-ledger": "7a41869f0c23ada884b32b877e81ae4b2ec7638e421e746515e49c4c7053208d",
     "researchPlan": "ee9b22fc8b04ba9d3a68670c91de1179c21b4d2e37336231b4e3c1f02d33dc17",
     "coverageState": "449a6647da1fc01dddb5e206cff04c4d394fc0ac35c5f340802898225d10eeb1",
-    "coverageFinal": "d6436f56e7e214594929843acca797dbd4ab8ad913118abff004be6c5d168c4c",
+    "coverageFinal": "6892b7c30c0c5c694f67e058f81e1a2e2879123c7db66945e6b131eca6073326",
     "perGroupClaims": "38c2e35c5a4a9f39473d6ac3149d871ee3073911a91774f0a66f886d2455e622",
     "synthesis": "b61d41faaa0db6fca852e61298c459a27b883abb647ee84cbe1dac1b7547e902",
-    "researchResult": "964bf5b61c0f7e5e4786c4c95957c0528514a947cd0dc57ec0cc574337ef185a",
+    "researchResult": "38a36e48bfc3a14f54e694e239c2728013e72c99ff54f8a2f920e21a5437296f",
     "accumulatedPool": "8e0d1be28e3cb7dde7d64b0e67334d43e69bc67bd098a0d11fba63f5cd38f52b",
     "selectionDecision": "5efd8c18afb7bdf9045510a92e5f58143e82df7756d5878d63a71b4374cafc86"
   },
@@ -49,5 +49,5 @@
     "analyzedCount": 3
   },
   "p1FinalCoveragePlanHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
-  "updatedAt": "2026-10-08T03:49:26.501Z"
+  "updatedAt": "2026-10-08T08:22:06.551Z"
 }

@@ -115,8 +115,8 @@
     "lineageComplete": false,
     "gaps": [
       {
-        "gapId": "5440ebb03f9be2ec95661799514dcdcffc015e8710ad8ec19917287956652917:0",
-        "gapIdentityCore": "5440ebb03f9be2ec95661799514dcdcffc015e8710ad8ec19917287956652917",
+        "gapId": "1e333ee924d94612fa431a2643274e7cc7316db52fe778aa8f1352587eb82d5a:0",
+        "gapIdentityCore": "1e333ee924d94612fa431a2643274e7cc7316db52fe778aa8f1352587eb82d5a",
         "lineage": [
           {
             "actionStatus": "UNRESOLVED",
@@ -132,13 +132,13 @@
               }
             ],
             "query": "增加公交班次 适用边界",
-            "resultArtifact": "targeted-requery-subphase/action-8e6716d102f0d627b5e00df55df8d137e17cd2f8cdcc3b59b8e677775da42897/retrieval-pool.json",
-            "targetedActionId": "8e6716d102f0d627b5e00df55df8d137e17cd2f8cdcc3b59b8e677775da42897"
+            "resultArtifact": "targeted-requery-subphase/action-9a468add80da8b78f4312eec2573bc100375a3cb1f5164e88b829631731d504c/retrieval-pool.json",
+            "targetedActionId": "9a468add80da8b78f4312eec2573bc100375a3cb1f5164e88b829631731d504c"
           }
         ],
         "lineageComplete": true,
         "missingActionIds": [],
-        "occurrenceId": "8344d845-d247-43a1-9c5c-65104e3c5685",
+        "occurrenceId": "6bc1cc4e-9aa5-4570-9d7b-db0822c8b4c9",
         "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
         "resolutionBasis": "UNKNOWN_SIDE_NOT_DECLARED",
         "resolutionEvidence": [
@@ -148,12 +148,12 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "5440ebb03f9be2ec95661799514dcdcffc015e8710ad8ec19917287956652917:1",
-        "gapIdentityCore": "5440ebb03f9be2ec95661799514dcdcffc015e8710ad8ec19917287956652917",
+        "gapId": "1e333ee924d94612fa431a2643274e7cc7316db52fe778aa8f1352587eb82d5a:1",
+        "gapIdentityCore": "1e333ee924d94612fa431a2643274e7cc7316db52fe778aa8f1352587eb82d5a",
         "lineage": [],
         "lineageComplete": false,
         "missingActionIds": [],
-        "occurrenceId": "8344d845-d247-43a1-9c5c-65104e3c5685",
+        "occurrenceId": "6bc1cc4e-9aa5-4570-9d7b-db0822c8b4c9",
         "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
         "resolutionBasis": "NEVER_AUTHORIZED",
         "resolutionEvidence": [],
@@ -161,8 +161,8 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "9edce642797462c8a8cd166041ccc0b65538bcf46d1ca9c24da1904c39941e9f:0",
-        "gapIdentityCore": "9edce642797462c8a8cd166041ccc0b65538bcf46d1ca9c24da1904c39941e9f",
+        "gapId": "3d781763136836388f5b3193c8cbe727cd2779831f1c086d72920f13d1e4c418:0",
+        "gapIdentityCore": "3d781763136836388f5b3193c8cbe727cd2779831f1c086d72920f13d1e4c418",
         "lineage": [
           {
             "actionStatus": "UNRESOLVED",
@@ -178,13 +178,13 @@
               }
             ],
             "query": "村镇就医公交",
-            "resultArtifact": "targeted-requery-subphase/action-56596e82240f52fa0fa6be84dd3c05dc650c2893420c04bf07b8af7b0573904c/retrieval-pool.json",
-            "targetedActionId": "56596e82240f52fa0fa6be84dd3c05dc650c2893420c04bf07b8af7b0573904c"
+            "resultArtifact": "targeted-requery-subphase/action-bf55a10f6f414711963feb5cc236944df9cf1bb38ff4dd963d809e8471edb2ed/retrieval-pool.json",
+            "targetedActionId": "bf55a10f6f414711963feb5cc236944df9cf1bb38ff4dd963d809e8471edb2ed"
           }
         ],
         "lineageComplete": true,
         "missingActionIds": [],
-        "occurrenceId": "8344d845-d247-43a1-9c5c-65104e3c5685",
+        "occurrenceId": "6bc1cc4e-9aa5-4570-9d7b-db0822c8b4c9",
         "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
         "resolutionBasis": "DUPLICATE_ONLY",
         "resolutionEvidence": [],
@@ -192,12 +192,12 @@
         "status": "UNRESOLVED"
       },
       {
-        "gapId": "9edce642797462c8a8cd166041ccc0b65538bcf46d1ca9c24da1904c39941e9f:1",
-        "gapIdentityCore": "9edce642797462c8a8cd166041ccc0b65538bcf46d1ca9c24da1904c39941e9f",
+        "gapId": "3d781763136836388f5b3193c8cbe727cd2779831f1c086d72920f13d1e4c418:1",
+        "gapIdentityCore": "3d781763136836388f5b3193c8cbe727cd2779831f1c086d72920f13d1e4c418",
         "lineage": [],
         "lineageComplete": false,
         "missingActionIds": [],
-        "occurrenceId": "8344d845-d247-43a1-9c5c-65104e3c5685",
+        "occurrenceId": "6bc1cc4e-9aa5-4570-9d7b-db0822c8b4c9",
         "planHash": "7e349a52d312f8d7ac2b48238557ae35ec4dcb79801f7cff6a6b39e4fbfe1228",
         "resolutionBasis": "NEVER_AUTHORIZED",
         "resolutionEvidence": [],

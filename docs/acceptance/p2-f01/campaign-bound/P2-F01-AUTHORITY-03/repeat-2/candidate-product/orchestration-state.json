@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "runId": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
-  "occurrenceId": "52dfbbe4-9799-4580-8c91-9b7e718363a8",
+  "occurrenceId": "f2da2fa6-c369-467f-ad5b-7b5b1e71dffe",
   "topic": "在假设卧室使用情境中，是否能仅凭净化器标示风量选型？请比较二手选购观点与直接实验材料，并说明长期运行条件。",
   "mode": "p1-cross-question-deep-research",
   "percent": null,
@@ -15,17 +15,17 @@
   "artifacts": {},
   "hashes": {
     "coverageState": "81b2dd73f1dbb1ffbc4a4ea8d73588825444f5ef3cf50da36e609923ec428475",
-    "targeted-resolution-input:99ea8aafc532e1a3d417441bd8876f41d02890f259160a375f2ae3b055088f6f": "1a53831842f226329e92a8618f11589e261a7752980793f9fef520d6ceaadb78",
-    "targeted-action-ledger": "8e6966fd430aa5f7aadcde2cfd845a3da97520fe70f677896c6fef81c9f9adc2",
-    "targeted-action:99ea8aafc532e1a3d417441bd8876f41d02890f259160a375f2ae3b055088f6f": "3d1285488617a3f136cb9af9f554bcab3b13a14f01a8827fbafe0242abe14c19",
-    "targeted-resolution-input:322ab9b57f1465c8d5df97b756f7a682ebeddbea479b15b8ea213ab805104587": "4d7e0e7e2ba1b769e0a499e61f7d750c1625f424194ca5b4dc87785d7a1c70ba",
-    "targeted-action:322ab9b57f1465c8d5df97b756f7a682ebeddbea479b15b8ea213ab805104587": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708",
-    "targeted-resolution-input:9399b41137a0b09419dc9137051dd83b3ffa4a7a54db3d10e1a948e2ecd41404": "ab9cf42c43131f54b8ad91c0e308ad2e3914435ee2330ae6eb7061401611eb0b",
-    "targeted-action:9399b41137a0b09419dc9137051dd83b3ffa4a7a54db3d10e1a948e2ecd41404": "51b9871f04e9602e07f5aa7be01f7d9c9d939f155a70ff86667e6d8b1dca5566",
-    "accumulatedPool": "fb81ddc9c66ba3f237ecf649fe76cf80bcbbd3cc6ee303c94ce493061a88d61d"
+    "targeted-resolution-input:8be45f8278ce4d5894a811c780d63ccf97ce15f29ae532ff8b75f42fdecb6207": "6cd3748477163b3cc3ff45b5684b866c3fee90b4595eeaceb32e3f8cc30ca4a0",
+    "targeted-action-ledger": "45e9c036b8ddd9e57b1dbf81259960865d36f309a4a55079dad096dd3cdf78a4",
+    "targeted-action:8be45f8278ce4d5894a811c780d63ccf97ce15f29ae532ff8b75f42fdecb6207": "3d1285488617a3f136cb9af9f554bcab3b13a14f01a8827fbafe0242abe14c19",
+    "targeted-resolution-input:feb5f31f791965b4bb0803539ac136312fb3a78b1c4a960554b31f42f5356867": "feb9626761193bec05691754e81e75589da6955415499ecb761af00e0a885c31",
+    "targeted-action:feb5f31f791965b4bb0803539ac136312fb3a78b1c4a960554b31f42f5356867": "51b9871f04e9602e07f5aa7be01f7d9c9d939f155a70ff86667e6d8b1dca5566",
+    "targeted-resolution-input:6e6516e4eca662d1126134991e853f9aca937f19196e2f3cb316300c0c2c20c2": "f97fe4deb230a827d6f7ce6f31e87b5396db8ca1a0e4b67c527abf0252bf1ef6",
+    "targeted-action:6e6516e4eca662d1126134991e853f9aca937f19196e2f3cb316300c0c2c20c2": "a7545e879c435718ed5ae81bae8a302cd9c4ba99a3cc50c48e3a37ac6377f708",
+    "accumulatedPool": "75a6dc1f6cc2772ce4cc7e1ccf721aa3a6507354e73522edf42f2545a5025ca4"
   },
   "verification": null,
   "coverage": null,
   "p1FinalCoveragePlanHash": null,
-  "updatedAt": "2026-10-08T03:49:24.318Z"
+  "updatedAt": "2026-10-08T08:22:04.140Z"
 }

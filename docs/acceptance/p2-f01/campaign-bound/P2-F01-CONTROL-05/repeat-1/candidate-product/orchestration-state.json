@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "runId": "7fe8b9f5639702c975412a8efb937414d3b14677f22428f47b16379d0ea3f46c",
-  "occurrenceId": "847dde1c-8207-4c41-834b-f4c99139c900",
+  "occurrenceId": "b158a92f-f104-4e1c-965c-6ed6076f56c6",
   "topic": "在假设小院中，家用雨水收集桶是否适合用于日常浇灌？请结合储水安全、季节供水和用途边界作出建议。",
   "mode": "p1-cross-question-deep-research",
   "percent": null,
@@ -28,17 +28,17 @@
     "researchResult": "research-result.json"
   },
   "hashes": {
-    "targeted-resolution-input:ff5f8f06cf19c6d3e2fef6bd30a7e0de2ff701b22220cacaee146a25833a3187": "a674f88a5e458265d21c1520582343b870708b437c3ffd788f3bb7231546acbc",
-    "targeted-action:ff5f8f06cf19c6d3e2fef6bd30a7e0de2ff701b22220cacaee146a25833a3187": "b2024344e050423f0d9ab672dad80853fd56f492a5e5de9cf6afc23562102e53",
-    "targeted-resolution-input:4ebc7b2d58661b38c50c1a3f9063fadf8b89659818fe8d1cf67464159d952c55": "c47b5a1e62dcc09e3374c79c5b1b6b07bac63e1aff392414e30ed7bc3dafa0c3",
-    "targeted-action:4ebc7b2d58661b38c50c1a3f9063fadf8b89659818fe8d1cf67464159d952c55": "c29138bdcab25e73c5dd37252a6e23796d9c74467c1d1d0852740f5aae7b030d",
-    "targeted-action-ledger": "e40386216eeb9d61ae3d2bfe31d6229f01b8fbf673d224059afa1c1017887bd7",
+    "targeted-resolution-input:48d171548785db5883bb6e3058895354ad898b775218b9015e5eb958b18e72ed": "45387f0d8aa8078de0f8982c834f7b7f3632464844b6c6a544a54e8c78400914",
+    "targeted-action:48d171548785db5883bb6e3058895354ad898b775218b9015e5eb958b18e72ed": "b2024344e050423f0d9ab672dad80853fd56f492a5e5de9cf6afc23562102e53",
+    "targeted-resolution-input:4c49d41cae989906631d2f7aba3d917c7b6a0c3e450ae3f14ffd55a31b740420": "63039bc6add7f8ad071e34aa2978e4d86142fb0251877425872e72cafd001b65",
+    "targeted-action:4c49d41cae989906631d2f7aba3d917c7b6a0c3e450ae3f14ffd55a31b740420": "c29138bdcab25e73c5dd37252a6e23796d9c74467c1d1d0852740f5aae7b030d",
+    "targeted-action-ledger": "286aaea7d5bbf39d85f5e1ddfcf77f3cf8569fe225f4541086508697960b39b7",
     "researchPlan": "09e1105d8c8d39cd925810c205ba3c94ac7a3b8c5ca00be26ac0dd94d3212a7a",
     "coverageState": "0dcd17f67fcbd610a5747b67f803ca04a68506b27fa2cc7dadf9f9c169688cad",
-    "coverageFinal": "ce44ff93a3581cff7364d1cfff17411380a63da20ee757696f78f043b273f270",
+    "coverageFinal": "e48755e502c2006a74e189a9e9ae9a42145bb82a71a8e52086d9e70d8317f01a",
     "perGroupClaims": "9bf9cbe7695bcc98479d38568c6772c9f8315f85c5bf0483c324d43291f68da8",
     "synthesis": "d6e42255400ff67321b9907090d2963812773c38d8800f71a29f67e04ee01ba5",
-    "researchResult": "20b095ed23dc306dd8ff83f5346e12abcb5e50694c177f31832443e9b46113dc",
+    "researchResult": "f841693535f13b49679c124005b9e1b829fea9ac334046063ca96a58c750b45a",
     "accumulatedPool": "a418bea2b55b7ec02110b7e17d547d556b4cc11e402f1f7f67cdcae8da74f170",
     "selectionDecision": "b0084f5fab54876c820b6dd2935abe3d67ee8c118a4455e3dd955bc972448530"
   },
@@ -49,5 +49,5 @@
     "analyzedCount": 3
   },
   "p1FinalCoveragePlanHash": "7de410e105c2a6960fc5f226724c939d2b7e090ceaa934e1e33907a026b96ee7",
-  "updatedAt": "2026-10-08T03:49:28.137Z"
+  "updatedAt": "2026-10-08T08:22:08.481Z"
 }

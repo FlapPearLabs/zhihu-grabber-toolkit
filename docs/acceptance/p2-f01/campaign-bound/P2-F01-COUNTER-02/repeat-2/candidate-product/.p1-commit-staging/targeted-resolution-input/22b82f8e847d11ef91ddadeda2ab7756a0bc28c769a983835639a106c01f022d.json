@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "type": "TargetedResolutionInput",
+  "targetedActionId": "241a3cc2ebbca3c03269c0af0621b9a9453001a799ec5773202cbcf3cc8c841d",
+  "planHash": "6a6b7070559235581db03ea1aae8de849d5be397e730d1b4d72d232c1a6b3a94",
+  "occurrenceId": "53407983-51c1-464c-b8a7-123538de2457",
+  "priorQuestionIds": [
+    "2201",
+    "2202"
+  ],
+  "declaredFraming": "课后可选练习 反向论证",
+  "coveredFramings": []
+}

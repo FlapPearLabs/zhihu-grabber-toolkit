@@ -5,7 +5,7 @@
   "arm": "baseline",
   "repetition": 2,
   "identity": {
-    "repo_sha": "46f8046c2ff983c500e3f1f90e15e46c4ea9df1d",
+    "repo_sha": "34ff398bafd781788055d1d2c30680b89d8e1f80",
     "case_id": "P2-F01-AUTHORITY-03",
     "benchmark_version": "p2-f01-authored-curated-v1",
     "benchmark_hashes": {
@@ -24,6 +24,7 @@
     "runtime_identity": {
       "implementation": "DETERMINISTIC_DOUBLE",
       "node": "v26.10.0",
+      "runtime_dependency_hash": "4d401db3d5e3f269d4b559ddc020ece6705f0d6c1cf878d0e1a4736a0d73e3bc",
       "contract_runtime_pin": "deepseek-api-tool-less",
       "embedding": "existing mockVector768(7)"
     },
@@ -46,10 +47,10 @@
     "cache_state": "COLD_SEPARATE_DIRECTORY",
     "planner": "PUBLIC_FROZEN_PLAN"
   },
-  "timestamp": "2026-10-08T03:49:24.488Z",
+  "timestamp": "2026-10-08T08:22:04.366Z",
   "product_identity": {
     "run_id": "9882d7d46a21be4ea9d141e69cc63a85b41d0995aba73e0c899acc380581a0d6",
-    "occurrence_id": "b6b06a52-2c68-4270-ac59-6df60af78667",
+    "occurrence_id": "f732b712-4b99-4226-89d0-e941e18b906b",
     "plan_hash": "a5608bb428aeea195c046926e8d67c3818d91b9e569a8078766db6470b6b6a3b"
   },
   "artifact_hashes": [
@@ -67,15 +68,15 @@
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-2/baseline-product/evaluation-execution-observation.json",
-      "sha256": "eadc8e0285f170abafacb4291b208d14f91024fa9c4c9a9359e3dd6bb02f9c92"
+      "sha256": "7d97d198743c16436a769b9f7a5de54c8521a84b14638a964ff9fdaacba2e0e9"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-2/baseline-product/events.jsonl",
-      "sha256": "c358281ec54ef7e8cb6ec0e4844118b7b2155e936056e877c48828142154d895"
+      "sha256": "5e96333a8f7f211d91c023db8e6946339e50d6871cbab12466bdacf4c2532939"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-2/baseline-product/orchestration-state.json",
-      "sha256": "f0f47e88b23f04a2d3315f886c55dd81b385cf06fdd7f2c6300406629c86d834"
+      "sha256": "84e5bc13b48cc2b15a4276f98ee385849b3a1ba5ac82d883d9db28982463624b"
     },
     {
       "path": "docs/acceptance/p2-f01/campaign-bound/P2-F01-AUTHORITY-03/repeat-2/baseline-product/research-plan.json",
@@ -157,7 +158,7 @@
     "external_provider_calls": 0,
     "model_invocations": 0,
     "semantic_adapter_invocations": 0,
-    "wall_clock_ms": 42.631542,
+    "wall_clock_ms": 39.23524999999999,
     "token_cost": "UNKNOWN",
     "money_cost": "UNKNOWN",
     "selected_corpus_sources": 0,
