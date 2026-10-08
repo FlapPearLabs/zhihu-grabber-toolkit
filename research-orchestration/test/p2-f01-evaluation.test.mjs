@@ -5,8 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateProductInput } from '../evaluation/input.mjs';
-import { measureTargets, compareResults, observeProduct, inventory } from '../evaluation/evaluator.mjs';
-import { executeProductWorker } from '../evaluation/run.mjs';
+import { measureTargets, compareResults, observeProduct, inventory, validateEvaluationCase } from '../evaluation/evaluator.mjs';
+import { executeProductWorker, bindEvaluationFile, readBoundEvaluationFile } from '../evaluation/run.mjs';
 import { configFingerprint, sha256File } from '../lib/state.mjs';
 import { EXPERIMENT_CONFIG } from '../evaluation/product-worker.mjs';
 import { loadPlan } from '../lib/plan-contract.mjs';
@@ -133,5 +133,33 @@ test('actual incomplete worker retains owner plan identity and unknown final lin
     assert.equal(actual.plan_hash, loadPlan(workDir).planHash);
     assert.equal(actual.targeted_action_count, 'UNKNOWN');
     assert.deepEqual(inventory(workDir), before);
+  } finally { fs.rmSync(temp, { recursive: true, force: true }); }
+});
+
+test('curator typos, stale time scope and unknown fields cannot manufacture a weak baseline', () => {
+  const repo = fileURLToPath(new URL('../../', import.meta.url));
+  const dir = path.join(repo, 'research-orchestration/evaluation/benchmark/cases/P2-F01-ASPECT-01');
+  const input = JSON.parse(fs.readFileSync(path.join(dir, 'product-input.json')));
+  const gold = JSON.parse(fs.readFileSync(path.join(dir, 'eval-case.json')));
+  assert.doesNotThrow(() => validateEvaluationCase(gold, input, gold.benchmark_version));
+  for (const change of [
+    c => { c.time_scope = 'different time'; },
+    c => { c.targets.key_evidence[0].question_id = '999999'; },
+    c => { c.targets.important_aspects[0].support_any_of[0].accepted_statements = ['not in this source']; },
+    c => { c.targets.counterpositions[0].extra = 'unknown'; },
+    c => { c.targets.key_evidence[0].expected_text = 'changed document'; },
+  ]) { const bad = structuredClone(gold);change(bad);assert.throws(() => validateEvaluationCase(bad, input, gold.benchmark_version), /EVALUATION_CASE_INVALID/); }
+});
+
+test('hidden-file binding uses committed metadata and refuses a changed file before post-run scoring', () => {
+  const repo = fileURLToPath(new URL('../../', import.meta.url));
+  const ref = 'research-orchestration/evaluation/benchmark/cases/P2-F01-ASPECT-01/eval-case.json';
+  const bound = bindEvaluationFile(repo, 'HEAD', ref);
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'p2-f01-bound-'));
+  try {
+    const file = path.join(temp, 'eval-case.json');fs.copyFileSync(path.join(repo, ref), file);
+    assert.equal(readBoundEvaluationFile(repo, file, bound).value.case_id, 'P2-F01-ASPECT-01');
+    fs.appendFileSync(file, '\n');
+    assert.throws(() => readBoundEvaluationFile(repo, file, bound), /EVALUATION_CASE_CHANGED_DURING_RUN/);
   } finally { fs.rmSync(temp, { recursive: true, force: true }); }
 });

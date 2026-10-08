@@ -66,6 +66,11 @@ worker 收到且校验的只有 public input 文件及其真实 byte hash。
 原 provider double 的 controller 可以读取冻结 corpus/route table；semantic double 只消费实际选中来源的安全围栏投影。
 目标定义、gold labels、expected authority target、evaluation notes 从不送入产品 worker。
 evaluator 在两个产品进程完成后才首次打开该案 evaluator-only 文件；产品不能调用 evaluator。
+运行前只从冻结 repo SHA 读取 evaluator 文件的 Git blob OID 元数据，不读取隐藏内容。
+两个 worker 完成后先核验读取字节的 blob OID，再 parse gold；字节不一致即拒绝该 campaign。
+benchmark/public input 同样绑定已提交字节，hash 来自同一份已验证的快照，不在评分后重读文件冒充身份。
+evaluator-only v1 schema 拒绝未知字段，强制相同 case/version/time scope；target、support statement、
+expected document、hidden ID 与 provenance materials 必须实际对应 public frozen corpus，否则 INVALID，不能成为普通 miss。
 worker 的字段白名单和父进程传入的 expected input hash 均 fail closed。
 负控制把真实 hidden_targets 加入 candidate 输入，即使重新计算文件 hash，仍必须在任何产品 I/O 前拒绝。
 

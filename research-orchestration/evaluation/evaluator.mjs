@@ -10,6 +10,49 @@ import { json } from '../scripts/p2a-t14/fixtures.mjs';
 
 export const EVALUATOR_VERSION = 'p2-f01-exact-supported-statements-v1';
 
+/** Curator data must describe the same frozen corpus, never impossible targets. */
+export function validateEvaluationCase(value, input, benchmarkVersion) {
+  const reject = () => { throw new Error('EVALUATION_CASE_INVALID'); };
+  const text = item => typeof item === 'string' && item.trim().length > 0;
+  const keys = (item, expected) => item && typeof item === 'object' && !Array.isArray(item)
+    && canonicalJson(Object.keys(item).sort()) === canonicalJson([...expected].sort());
+  if (!keys(value, ['schema_version', 'benchmark_version', 'case_id', 'domain', 'failure_family',
+    'time_scope', 'provenance', 'scope', 'targets', 'hidden_targets', 'evaluation_notes'])
+      || value.schema_version !== 1 || value.case_id !== input.case_id
+      || value.benchmark_version !== benchmarkVersion || value.time_scope !== input.time_scope
+      || value.scope !== 'CURATED_TARGETS != OPEN_WORLD_COMPLETENESS'
+      || ![value.domain, value.failure_family, value.evaluation_notes].every(text)
+      || !keys(value.targets, ['important_aspects', 'counterpositions', 'key_evidence'])) reject();
+  const corpus = new Map(input.corpus.map(source => [source.question_id, source.text]));
+  const ids = new Set();
+  for (const [family, targets] of Object.entries(value.targets)) {
+    if (!Array.isArray(targets)) reject();
+    for (const target of targets) {
+      const fields = family === 'key_evidence' ? ['target_id', 'label', 'question_id', 'expected_text']
+        : ['target_id', 'label', 'support_any_of'];
+      if (!keys(target, fields) || !text(target.target_id) || ids.has(target.target_id) || !text(target.label)) reject();
+      ids.add(target.target_id);
+      if (family === 'key_evidence') {
+        if (!corpus.has(target.question_id) || !text(target.expected_text)
+          || corpus.get(target.question_id) !== target.expected_text) reject();
+      } else if (!Array.isArray(target.support_any_of) || !target.support_any_of.length
+          || target.support_any_of.some(support => !keys(support, ['question_id', 'accepted_statements'])
+            || !corpus.has(support.question_id) || !Array.isArray(support.accepted_statements)
+            || !support.accepted_statements.length || support.accepted_statements.some(statement =>
+              !text(statement) || !corpus.get(support.question_id).includes(statement)))) reject();
+    }
+  }
+  if (!Array.isArray(value.hidden_targets) || new Set(value.hidden_targets).size !== value.hidden_targets.length
+      || value.hidden_targets.some(id => !ids.has(id))) reject();
+  const provenance = value.provenance;
+  if (!keys(provenance, ['kind', 'author_role', 'language', 'description', 'source_identity', 'materials'])
+      || !['kind', 'author_role', 'language', 'description', 'source_identity'].every(key => text(provenance[key]))
+      || !Array.isArray(provenance.materials)
+      || provenance.materials.some(item => !keys(item, ['question_id', 'role']) || !corpus.has(item.question_id) || !text(item.role))
+      || canonicalJson(provenance.materials.map(item => item.question_id).sort()) !== canonicalJson([...corpus.keys()].sort())) reject();
+  return value;
+}
+
 export function inventory(dir, prefix = '') {
   return fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))
     .flatMap(entry => {

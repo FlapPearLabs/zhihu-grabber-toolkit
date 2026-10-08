@@ -8,7 +8,7 @@ import { configFingerprint, sha256, sha256File } from '../lib/state.mjs';
 import { canonicalJson } from '../lib/cross-group-aggregation.mjs';
 import { json, writeJson } from '../scripts/p2a-t14/fixtures.mjs';
 import { validateProductInput } from './input.mjs';
-import { observeProduct, measureTargets, compareResults, EVALUATOR_VERSION } from './evaluator.mjs';
+import { observeProduct, measureTargets, compareResults, validateEvaluationCase, EVALUATOR_VERSION } from './evaluator.mjs';
 import { EXPERIMENT_CONFIG, PROPOSAL_POLICY_VERSION } from './product-worker.mjs';
 
 export function executeProductWorker({ repo, file, workDir, arm, inputHash }) {
@@ -24,6 +24,19 @@ export function executeProductWorker({ repo, file, workDir, arm, inputHash }) {
 
 const relative = (repo, file) => path.relative(repo, file).split(path.sep).join('/');
 const stableCost = cost => Object.fromEntries(Object.entries(cost).filter(([key]) => key !== 'wall_clock_ms'));
+
+// Reads Git metadata only; hidden evaluator bytes are first read after both workers.
+export function bindEvaluationFile(repo, repoSha, ref) {
+  return execFileSync('git', ['rev-parse', `${repoSha}:${ref}`], { cwd: repo, encoding: 'utf8' }).trim();
+}
+
+export function readBoundEvaluationFile(repo, file, committedBlob) {
+  const bytes = fs.readFileSync(file);
+  const actualBlob = execFileSync('git', ['hash-object', '--stdin', '--no-filters'],
+    { cwd: repo, input: bytes, encoding: 'utf8' }).trim();
+  if (actualBlob !== committedBlob) throw new Error('EVALUATION_CASE_CHANGED_DURING_RUN');
+  return { value: JSON.parse(bytes.toString('utf8')), sha256: sha256(bytes) };
+}
 
 function preflight(repo) {
   const read = script => {
@@ -52,7 +65,9 @@ function summarize(caseId, comparison) {
 export function runBenchmark({ repo, out, productRoot, repoSha, repeats = 2 }) {
   if (fs.existsSync(out) || fs.existsSync(productRoot)) throw new Error('EVALUATION_FRESH_DIRECTORIES_REQUIRED');
   const benchmarkFile = path.join(repo, 'research-orchestration/evaluation/benchmark/benchmark.json');
-  const benchmark = json(benchmarkFile);
+  const benchmarkRead = readBoundEvaluationFile(repo, benchmarkFile,
+    bindEvaluationFile(repo, repoSha, relative(repo, benchmarkFile)));
+  const benchmark = benchmarkRead.value;
   if (benchmark.schema_version !== 1 || benchmark.cases.length < 5 || benchmark.cases.length > 8) throw new Error('EVALUATION_BENCHMARK_INVALID');
   fs.mkdirSync(out, { recursive: true });
   const campaign = { schema_version: 1, repo_sha: repoSha, benchmark_version: benchmark.benchmark_version,
@@ -62,8 +77,11 @@ export function runBenchmark({ repo, out, productRoot, repoSha, repeats = 2 }) {
     dogfood: preflight(repo) };
   for (const descriptor of benchmark.cases) {
     const file = path.join(repo, descriptor.product_input);
-    const publicInput = validateProductInput(json(file));
-    const inputHash = sha256File(file);
+    const inputRead = readBoundEvaluationFile(repo, file, bindEvaluationFile(repo, repoSha, descriptor.product_input));
+    const publicInput = validateProductInput(inputRead.value);
+    const inputHash = inputRead.sha256;
+    const evaluationFile = path.join(repo, descriptor.evaluation_case);
+    const evaluatorBlob = bindEvaluationFile(repo, repoSha, descriptor.evaluation_case);
     const canonicalInputHash = sha256(canonicalJson(publicInput));
     const caseOut = path.join(out, descriptor.case_id);
     fs.mkdirSync(caseOut);
@@ -90,12 +108,12 @@ export function runBenchmark({ repo, out, productRoot, repoSha, repeats = 2 }) {
           evidence_ref: relative(repo, path.join(copy, source.evidence_ref)) }));
       }
       // No hidden fields, evaluator notes or labels have been read before this point.
-      const evaluationCase = json(path.join(repo, descriptor.evaluation_case));
-      if (evaluationCase.schema_version !== 1 || evaluationCase.case_id !== publicInput.case_id
-          || evaluationCase.benchmark_version !== benchmark.benchmark_version) throw new Error('EVALUATION_CASE_IDENTITY_MISMATCH');
+      if (sha256File(file) !== inputHash) throw new Error('EVALUATION_PRODUCT_INPUT_CHANGED_DURING_RUN');
+      const evaluationRead = readBoundEvaluationFile(repo, evaluationFile, evaluatorBlob);
+      const evaluationCase = validateEvaluationCase(evaluationRead.value, publicInput, benchmark.benchmark_version);
       writeJson(path.join(pairDir, 'eval-case.json'), evaluationCase);
-      const benchmarkHashes = Object.fromEntries([benchmarkFile, file, path.join(repo, descriptor.evaluation_case)]
-        .map(target => [relative(repo, target), sha256File(target)]));
+      const benchmarkHashes = { [relative(repo, benchmarkFile)]: benchmarkRead.sha256,
+        [descriptor.product_input]: inputRead.sha256, [descriptor.evaluation_case]: evaluationRead.sha256 };
       const results = {};
       for (const arm of ['baseline', 'candidate']) {
         const observation = observations[arm];
@@ -106,7 +124,7 @@ export function runBenchmark({ repo, out, productRoot, repoSha, repeats = 2 }) {
         results[arm] = { schema_version: 1, status: observation.valid ? 'VALID' : 'INVALID',
           product_failure: observation.product_failure ?? null, arm, repetition,
           identity: { repo_sha: repoSha, case_id: descriptor.case_id, benchmark_version: benchmark.benchmark_version,
-            benchmark_hashes: benchmarkHashes, evaluator_version: EVALUATOR_VERSION,
+            benchmark_hashes: benchmarkHashes, evaluator_case_git_blob: evaluatorBlob, evaluator_version: EVALUATOR_VERSION,
             product_input_hash: inputHash, canonical_product_input_hash: canonicalInputHash,
             time_scope: publicInput.time_scope, shared_product_config: EXPERIMENT_CONFIG,
             runtime_identity: { implementation: 'DETERMINISTIC_DOUBLE', node: process.version,
