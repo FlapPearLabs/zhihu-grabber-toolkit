@@ -1,0 +1,110 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { validateProductInput } from '../evaluation/input.mjs';
+import { measureTargets, compareResults, observeProduct, inventory } from '../evaluation/evaluator.mjs';
+import { executeProductWorker } from '../evaluation/run.mjs';
+import { configFingerprint, sha256File } from '../lib/state.mjs';
+import { EXPERIMENT_CONFIG } from '../evaluation/product-worker.mjs';
+
+const publicInput = () => ({
+  schema_version: 1, case_id: 'probe', task: '评估隔离', time_scope: 'frozen',
+  plan: { schemaVersion: 1, queryVariants: ['资料'], aspects: ['资料'], entities: [],
+    opposingFramings: [], terminologyVariants: [], sourceGroupIntents: [] },
+  corpus: [{ question_id: '100', title: '模拟资料', text: '独立证据支持观点。' }],
+  routes: { 资料: ['100'] },
+});
+
+const observation = () => ({
+  valid: true,
+  sources: [{ question_id: '100', source_id: 'source-a', text: '夜间照明是安全条件。' }],
+  selected: ['source-a'], analyzed: ['source-a'],
+  claims: [{ claim_id: 'claim-a', statement: '夜间照明是安全条件。', source_refs: ['source-a'] }],
+});
+const targets = {
+  important_aspects: [{ target_id: 'lighting', support_any_of: [{ question_id: '100', accepted_statements: ['夜间照明是安全条件。'] }] }],
+  counterpositions: [], key_evidence: [{ target_id: 'record', question_id: '100', expected_text: '夜间照明是安全条件。' }],
+};
+
+test('discovery requires verified selected evidence and a supported final claim, not query or aspect names', () => {
+  assert.equal(measureTargets(observation(), targets).important_aspect_discovery.hits, 1);
+  const unsupported = observation();
+  unsupported.claims[0].statement = '查询过夜间照明。';
+  assert.equal(measureTargets(unsupported, targets).important_aspect_discovery.hits, 0);
+  unsupported.claims[0].statement = '夜间照明不是安全条件。';
+  assert.equal(measureTargets(unsupported, targets).important_aspect_discovery.hits, 0);
+  unsupported.claims[0].statement = '夜间照明是安全条件。';
+  unsupported.analyzed = [];
+  assert.equal(measureTargets(unsupported, targets).important_aspect_discovery.hits, 0);
+  unsupported.sources = [];
+  assert.equal(measureTargets(unsupported, targets).key_evidence_discovery.hits, 0);
+  assert.equal(measureTargets(observation(), targets).counterposition_discovery.ratio, 'UNKNOWN');
+});
+
+test('a deliberately degraded candidate is a regression and an unequal model is invalid', () => {
+  const baseline = { identity: { pair: 'same' }, metrics: measureTargets(observation(), targets), cost: { retrieval_calls: 2 } };
+  const degraded = structuredClone(baseline);
+  degraded.metrics = measureTargets({ ...observation(), sources: [], claims: [] }, targets);
+  assert.equal(compareResults(baseline, degraded).quality_change, 'REGRESSION');
+  degraded.identity.pair = 'stronger-model';
+  assert.equal(compareResults(baseline, degraded).status, 'INVALID');
+});
+
+test('empty target support and a different document with the same identity cannot manufacture hits', () => {
+  const empty = structuredClone(targets);
+  empty.important_aspects[0].support_any_of = [];
+  assert.throws(() => measureTargets(observation(), empty), /EVALUATION_TARGET_INVALID/);
+  const wrongDocument = observation();
+  wrongDocument.sources[0].text = '另一份不相干材料。';
+  assert.equal(measureTargets(wrongDocument, targets).key_evidence_discovery.hits, 0);
+});
+
+test('separate product processes expose a real weak baseline and evaluator leaves both artifact trees unchanged', () => {
+  const repo = fileURLToPath(new URL('../../', import.meta.url));
+  const file = path.join(repo, 'research-orchestration/evaluation/benchmark/cases/P2-F01-ASPECT-01/product-input.json');
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'p2-f01-ci-'));
+  try {
+    const results = {};
+    for (const arm of ['baseline', 'candidate']) {
+      const workDir = path.join(temp, arm);
+      assert.equal(executeProductWorker({ repo, file, workDir, arm, inputHash: sha256File(file) }).ok, true);
+      const before = inventory(workDir);
+      const actual = observeProduct(workDir, configFingerprint(EXPERIMENT_CONFIG));
+      const hidden = JSON.parse(fs.readFileSync(path.join(path.dirname(file), 'eval-case.json')));
+      results[arm] = measureTargets(actual, hidden.targets);
+      assert.deepEqual(inventory(workDir), before);
+    }
+    assert.equal(results.baseline.important_aspect_discovery.hits, 1);
+    assert.equal(results.candidate.important_aspect_discovery.hits, 3);
+    const contaminated = JSON.parse(fs.readFileSync(file));
+    contaminated.hidden_targets = ['leaked'];
+    const leakedFile = path.join(temp, 'leaked.json');
+    fs.writeFileSync(leakedFile, JSON.stringify(contaminated));
+    const leakedWork = path.join(temp, 'contaminated-product');
+    const control = executeProductWorker({ repo, file: leakedFile, workDir: leakedWork, arm: 'candidate', inputHash: sha256File(leakedFile) });
+    assert.equal(control.ok, false);
+    assert.match(control.code, /BENCHMARK_CONTAMINATION/);
+    assert.equal(fs.existsSync(leakedWork), false);
+    const hashControl = executeProductWorker({ repo, file: leakedFile, workDir: leakedWork, arm: 'candidate', inputHash: sha256File(file) });
+    assert.equal(hashControl.code, 'BENCHMARK_CONTAMINATION_INPUT_HASH');
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test('product boundary rejects evaluator data even when nested in public fields', () => {
+  assert.doesNotThrow(() => validateProductInput(publicInput()));
+  for (const change of [
+    input => { input.hidden_targets = ['secret']; },
+    input => { input.plan.evaluation_notes = 'secret'; },
+    input => { input.corpus[0].expected_authority_target = true; },
+    input => { input.routes.资料 = { hidden_targets: ['secret'] }; },
+  ]) {
+    const input = publicInput();
+    change(input);
+    assert.throws(() => validateProductInput(input), /BENCHMARK_CONTAMINATION/);
+  }
+});

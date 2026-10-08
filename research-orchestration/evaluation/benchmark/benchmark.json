@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "benchmark_version": "p2-f01-authored-curated-v1",
+  "scope": "CURATED_TARGETS != OPEN_WORLD_COMPLETENESS",
+  "cases": [
+    {
+      "case_id": "P2-F01-ASPECT-01",
+      "product_input": "research-orchestration/evaluation/benchmark/cases/P2-F01-ASPECT-01/product-input.json",
+      "evaluation_case": "research-orchestration/evaluation/benchmark/cases/P2-F01-ASPECT-01/eval-case.json"
+    },
+    {
+      "case_id": "P2-F01-COUNTER-02",
+      "product_input": "research-orchestration/evaluation/benchmark/cases/P2-F01-COUNTER-02/product-input.json",
+      "evaluation_case": "research-orchestration/evaluation/benchmark/cases/P2-F01-COUNTER-02/eval-case.json"
+    },
+    {
+      "case_id": "P2-F01-AUTHORITY-03",
+      "product_input": "research-orchestration/evaluation/benchmark/cases/P2-F01-AUTHORITY-03/product-input.json",
+      "evaluation_case": "research-orchestration/evaluation/benchmark/cases/P2-F01-AUTHORITY-03/eval-case.json"
+    },
+    {
+      "case_id": "P2-F01-LOWGAIN-04",
+      "product_input": "research-orchestration/evaluation/benchmark/cases/P2-F01-LOWGAIN-04/product-input.json",
+      "evaluation_case": "research-orchestration/evaluation/benchmark/cases/P2-F01-LOWGAIN-04/eval-case.json"
+    },
+    {
+      "case_id": "P2-F01-CONTROL-05",
+      "product_input": "research-orchestration/evaluation/benchmark/cases/P2-F01-CONTROL-05/product-input.json",
+      "evaluation_case": "research-orchestration/evaluation/benchmark/cases/P2-F01-CONTROL-05/eval-case.json"
+    }
+  ]
+}
