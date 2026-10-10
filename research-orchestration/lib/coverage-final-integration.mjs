@@ -504,9 +504,10 @@ export function applySourceGroupSelection({
   if (minScore !== undefined) opts.minScore = minScore;
   if (clarification != null) opts.clarification = clarification;
   const decision = selectSourceGroups(pool, plan, opts);
-  persistSelectionDecision(workDir, decision, {
+  const persisted = persistSelectionDecision(workDir, decision, {
     trustedPlanStrings: new Set(Array.isArray(plan?.queryVariants) ? plan.queryVariants : []),
   });
+  if (!persisted.ok) return { ok: false, code: persisted.reason, coverageState };
 
   if (decision.verdict === SELECT_VERDICT_AUTO) {
     let next = applySelectionToCoverageState(coverageState, decision);

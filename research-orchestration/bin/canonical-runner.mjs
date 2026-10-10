@@ -41,10 +41,11 @@
  * Execution boundary: the ACTUAL canonical P1 path — the dedicated P1
  * composition entrypoint (bin/research-p1.mjs; the runtime composition owner
  * wired by the T15 post-merge repair) invoked with --runtime resolved from the
- * declaration (never hardcoded here), ALWAYS with --restart so canonical
- * evidence can never ride on a checkpoint produced by an earlier, possibly
- * noncanonical run; the stale result artifact is removed before the run for
- * the same reason. Research stdout/stderr are captured to log files in the
+ * declaration (never hardcoded here), with --restart for a fresh invocation.
+ * Explicit --clarification instead resumes the checkpoint-bound P1 request;
+ * product admission rejects stale or unrelated answers before any work.
+ * The stale result artifact is removed only for a fresh invocation.
+ * Research stdout/stderr are captured to log files in the
  * work dir (env is never serialized — no credential leakage).
  */
 
@@ -64,13 +65,17 @@ const DEFAULT_WORK_REL = 'work/canonical-research';
 export function parseRunnerArgs(argv) {
   const words = [];
   let work = null;
+  let clarification = null;
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === '--work') { work = argv[++i] ?? null; continue; }
+    if (a === '--clarification') { clarification = argv[++i];
+      if (!clarification || clarification.startsWith('--')) return { usageError: 'missing clarification response file' };
+      continue; }
     if (a.startsWith('--')) return { usageError: `unknown option: ${a}` };
     words.push(a);
   }
-  return { topic: words.join(' ').trim(), work };
+  return { topic: words.join(' ').trim(), work, ...(clarification ? { clarification } : {}) };
 }
 
 function workRelative(repoRoot, abs) {
@@ -113,7 +118,7 @@ export function runCanonicalGate({
   const resultPath = join(workDir, 'research-result.json');
   // No silent checkpoint fallback: the canonical run always starts fresh and
   // the stale result artifact can never be mistaken for this run's output.
-  rmSync(resultPath, { force: true });
+  if (!parsed.clarification) rmSync(resultPath, { force: true });
 
   const spawn = spawnImpl ?? ((file, args, opts) => spawnSync(file, args, opts));
   const nodeBin = env[authority.env.nodeBin] || process.execPath || 'node';
@@ -121,7 +126,8 @@ export function runCanonicalGate({
   const startedAt = new Date().toISOString();
   const r = spawn(
     nodeBin,
-    [researchEntry, '--json', '--restart', '--runtime', authority.canonical.runtimeId, '--work', workDir, parsed.topic],
+    [researchEntry, '--json', ...(parsed.clarification ? ['--clarification', parsed.clarification] : ['--restart']),
+      '--runtime', authority.canonical.runtimeId, '--work', workDir, parsed.topic],
     { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env },
   );
   const finishedAt = new Date().toISOString();
@@ -138,6 +144,12 @@ export function runCanonicalGate({
     logs.stderr = 'canonical-runner-stderr.log';
   } catch { /* log capture must never mask the gate result */ }
   if (r.error || (r.status ?? 1) !== 0) {
+    if (r.status === 3) {
+      let request;
+      try { request = JSON.parse(r.stdout).clarificationRequest; } catch { /* no unbound request */ }
+      return { ...fail('CLARIFICATION_REQUIRED', 'source-group selection requires explicit user clarification', 3),
+        clarificationRequest: request };
+    }
     const tail = String(r.stderr ?? r.error?.message ?? '').slice(-500);
     return fail('CANONICAL_RESEARCH_FAILED', `research entrypoint did not complete (exit ${r.status ?? 'n/a'})${tail ? `: ${tail}` : ''}`);
   }
@@ -208,6 +220,7 @@ if (isMainModule()) {
     console.log(JSON.stringify(r.evidence, null, 2));
     process.exit(0);
   }
-  console.log(JSON.stringify({ schema: 'canonical-runner-evidence/1', verdict: 'FAILED', code: r.code, detail: r.detail ?? null }, null, 2));
+  console.log(JSON.stringify({ schema: 'canonical-runner-evidence/1', verdict: 'FAILED', code: r.code,
+    detail: r.detail ?? null, ...(r.clarificationRequest ? { clarificationRequest: r.clarificationRequest } : {}) }, null, 2));
   process.exit(r.exitCode ?? 1);
 }

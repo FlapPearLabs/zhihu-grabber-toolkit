@@ -117,6 +117,9 @@ jobs:
       - name: P1-R06 complete-reuse dependency closure acceptance
         run: node --test research-orchestration/test/p1-r06-complete-reuse-closure.test.mjs
 
+      - name: P1 explicit clarification recovery acceptance
+        run: node --test research-orchestration/test/p1-clarification-recovery.test.mjs
+
       # P1-R01 (#89): research suite classification / omission guard.
       # 该步骤在每次 PR / master push 的三个平台上执行。它校验提交的
       # suite-classification.json 覆盖了 research-orchestration/test/ 下发现的每一个

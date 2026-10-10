@@ -10,6 +10,7 @@
     "private-canonical"
   ],
   "suites": [
+    { "file": "p1-clarification-recovery.test.mjs", "category": "fast-deterministic", "note": "P1 explicit user clarification recovery: real composition, frozen checkpoint bindings, same selector, zero paid retrieval replay, legal downstream completion, malformed/stale/unknown input, idempotence and dedicated/canonical CLI. Offline test doubles only." },
     { "file": "p2-f01-evaluation.test.mjs", "category": "full-offline", "note": "#107 MVP: cheap deterministic evaluator integrity, product-input contamination controls, degraded candidate, fair identity pairing, and one real cold composition pair. No live provider/model calls; proves HARNESS_INTEGRITY only." },
     { "file": "planner.test.mjs", "category": "fast-deterministic" },
     { "file": "integration-preflight.test.mjs", "category": "fast-deterministic" },

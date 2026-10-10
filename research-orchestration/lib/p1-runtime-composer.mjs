@@ -86,6 +86,10 @@ import {
   loadSelectionDecision,
   selectionDecisionStatus,
   applySelectionToCoverageState,
+  selectSourceGroups,
+  intendedGroupCount,
+  DEFAULT_MIN_GROUP_SCORE,
+  DEFAULT_AMBIGUITY_MARGIN,
 } from './source-group-selection.mjs';
 import { loadCoverageState, validateCoverageState } from './coverage-state.mjs';
 import { MULTI_GROUP_STATE_FILENAME } from './multi-group-execution.mjs';
@@ -155,6 +159,82 @@ const CFC_SYNTHESIS_FAILED = 'synthesis_failed';
 const CFC_INCOMPLETE_ANALYSIS = 'incomplete_analysis';
 const CFC_ABORTED = 'p1_compose_aborted';
 const CFC_CLARIFICATION_REQUIRED = 'clarification_required';
+const CLARIFICATION_KEY = 'source-group-clarification';
+const CLARIFICATION_REQUEST_FILE = 'source-group-clarification-request.json';
+
+function clarificationBinding(state, planHash, decisionHash, selectorVersion, targetedEnabled) {
+  return { runId: state.runId, occurrenceId: state.occurrenceId, planHash,
+    poolHash: state.hashes[CHECKPOINT_BINDING_ACCUMULATED_POOL],
+    coverageHash: state.hashes[CHECKPOINT_BINDING_COVERAGE_STATE], pendingDecisionHash: decisionHash,
+    configFingerprint: state.configFingerprint ?? null, selectorVersion,
+    selectorMinScore: DEFAULT_MIN_GROUP_SCORE, selectorAmbiguityMargin: DEFAULT_AMBIGUITY_MARGIN,
+    targetedSubphaseEnabled: targetedEnabled };
+}
+
+function boundClarificationRequest(workDir, state) {
+  const inspected = inspectCommittedArtifact({ workDir, key: CLARIFICATION_KEY,
+    canonicalRel: CLARIFICATION_REQUEST_FILE, expectedHash: state?.hashes?.[CLARIFICATION_KEY] });
+  if (!inspected.absPath) return null;
+  try {
+    const request = JSON.parse(readFileSync(inspected.absPath, 'utf8'));
+    const pending = inspectCommittedArtifact({ workDir, key: CHECKPOINT_BINDING_SELECTION_DECISION,
+      canonicalRel: SELECTION_DECISION_FILENAME, expectedHash: request.binding.pendingDecisionHash });
+    if (!pending.absPath) return null;
+    const decision = JSON.parse(readFileSync(pending.absPath, 'utf8'));
+    if (request.schemaVersion !== 1 || request.type !== 'p1-source-group-clarification-request'
+      || decision.verdict !== 'ambiguous' || decision.selectorVersion !== request.binding.selectorVersion) return null;
+    return request;
+  } catch { return null; }
+}
+
+// Read-only input admission, BEFORE COMPLETE reuse, planner fallback or any write.
+// The checkpoint is still the sole authority; the response cannot grant reuse.
+function admitClarification({ workDir, state, runId, response, config, targetedEnabled }) {
+  const refused = code => ({ ok: false, code });
+  try {
+    if (!isPlainObject(response) || Object.keys(response).sort().join(',') !== 'binding,clarification,schemaVersion'
+      || response.schemaVersion !== 1 || !isPlainObject(response.binding)
+      || !isPlainObject(response.clarification)
+      || Object.keys(response.clarification).join(',') !== 'forceGroupIds') return refused('clarification_invalid');
+    // Pin caller-owned getters/arrays; the selector remains the identity/selection validator.
+    const input = JSON.parse(JSON.stringify(response));
+    if (input.schemaVersion !== 1 || Object.keys(input).sort().join(',') !== 'binding,clarification,schemaVersion'
+      || !isPlainObject(input.binding) || !isPlainObject(input.clarification)
+      || Object.keys(input.clarification).join(',') !== 'forceGroupIds') return refused('clarification_invalid');
+    const request = boundClarificationRequest(workDir, state);
+    const loaded = loadPlan(workDir);
+    if (!request || !loaded.ok || !state || state.runId !== runId || state.stage === STAGE_FAILED
+      || request.binding.runId !== state.runId || request.binding.occurrenceId !== state.occurrenceId
+      || request.binding.planHash !== loaded.planHash
+      || request.binding.configFingerprint !== (configFingerprint(config) ?? null)
+      || request.binding.targetedSubphaseEnabled !== targetedEnabled
+      || request.binding.selectorMinScore !== DEFAULT_MIN_GROUP_SCORE
+      || request.binding.selectorAmbiguityMargin !== DEFAULT_AMBIGUITY_MARGIN
+      || Object.keys(input.binding).length !== Object.keys(request.binding).length
+      || !Object.keys(request.binding).every(key => input.binding[key] === request.binding[key])) return refused('clarification_stale');
+    const reentry = planResumeReentry({ workDir, priorState: state,
+      planHash: loaded.planHash, currentConfigFingerprint: configFingerprint(config) });
+    if (!reentry.ok || state.hashes[CHECKPOINT_BINDING_ACCUMULATED_POOL] !== request.binding.poolHash)
+      return refused('clarification_stale');
+    if (reentry.decision) {
+      const ids = reentry.decision.clarification?.forcedGroupIds;
+      const force = input.clarification.forceGroupIds;
+      if (reentry.decision.clarificationCount !== 1 || !Array.isArray(force) || !Array.isArray(ids)
+        || force.some(id => typeof id !== 'string') || new Set(force).size !== force.length
+        || JSON.stringify([...force].sort()) !== JSON.stringify([...ids].sort())) return refused('clarification_already_resolved');
+    } else {
+      if (state.stage !== STAGE_SELECT || state.hashes[CHECKPOINT_BINDING_COVERAGE_STATE] !== request.binding.coverageHash
+        || state.hashes[CHECKPOINT_BINDING_SELECTION_DECISION] !== request.binding.pendingDecisionHash)
+        return refused('clarification_stale');
+      const decision = selectSourceGroups(reentry.pool, loaded.plan, { clarification: input.clarification });
+      if (decision.verdict !== 'auto') return { ok: false, code: decision.reason,
+        clarificationRequired: true, clarificationRequest: request,
+        options: request.clarification.options.map(o => o.questionId) };
+      if (decision.selectorVersion !== request.binding.selectorVersion) return refused('clarification_stale');
+    }
+    return { ok: true, input, request };
+  } catch { return refused('clarification_invalid'); }
+}
 
 /**
  * P1-R02 (#90, Issue #90): derived-state occurrence isolation.
@@ -891,6 +971,7 @@ export async function composeP1Research({
   planner = null,
   crashPoint = null,
   targetedSubphase = null,
+  clarificationResponse = null,
 } = {}) {
   const fail = (code, details = null, extra = {}) => ({ ok: false, code, details: details ? sanitizeMessage(details) : null, ...extra });
   // P1-R02 (#90): planner is injected for tests; production uses the frozen
@@ -926,11 +1007,31 @@ export async function composeP1Research({
 
   // 1. State bootstrap / resume classification (checkpoint identity validated —
   //    FILE EXISTS != VALID CACHE). restart discards any prior checkpoint and
-  //    starts a NEW occurrence (the canonical runner always passes --restart so
-  //    canonical evidence can never ride on a checkpoint from an earlier, possibly
-  //    noncanonical run). A new occurrence always proposes a fresh plan and never
+  //    starts a NEW occurrence (the canonical runner passes --restart for fresh
+  //    calls; explicit clarification instead uses the bound request below).
+  //    A new occurrence always proposes a fresh plan and never
   //    silently reuses a prior occurrence's plan/derived state.
   const existing = restart ? null : readState(workDir);
+  if (clarificationResponse !== null && injectedPlan !== null) return fail('clarification_invalid');
+  const clarificationAdmission = clarificationResponse === null ? null
+    : restart ? { ok: false, code: 'clarification_stale' }
+      : admitClarification({ workDir, state: existing, runId, response: clarificationResponse,
+        config, targetedEnabled: targetedSubphase !== null });
+  if (clarificationAdmission && !clarificationAdmission.ok) return clarificationAdmission;
+  if (clarificationResponse === null && existing?.stage === STAGE_SELECT && existing.hashes?.[CLARIFICATION_KEY]) {
+    const request = boundClarificationRequest(workDir, existing);
+    const loaded = loadPlan(workDir);
+    const proof = loaded.ok ? planResumeReentry({ workDir, priorState: existing,
+      planHash: loaded.planHash, currentConfigFingerprint: configFingerprint(config) }) : null;
+    if (!request || !proof?.ok || existing.runId !== runId
+      || request.binding.occurrenceId !== existing.occurrenceId || request.binding.planHash !== loaded.planHash
+      || request.binding.poolHash !== existing.hashes[CHECKPOINT_BINDING_ACCUMULATED_POOL]
+      || request.binding.coverageHash !== existing.hashes[CHECKPOINT_BINDING_COVERAGE_STATE]
+      || request.binding.pendingDecisionHash !== existing.hashes[CHECKPOINT_BINDING_SELECTION_DECISION]
+      || request.binding.targetedSubphaseEnabled !== (targetedSubphase !== null)) return fail('clarification_stale');
+    return fail(CFC_CLARIFICATION_REQUIRED, null, { clarificationRequired: true,
+      clarificationRequest: request, options: request.clarification.options.map(o => o.questionId) });
+  }
   if (existing) {
     if (existing.runId !== runId) {
       return fail(CFC_RUN_IDENTITY_CONFLICT, 'existing state belongs to a different run identity (topic/mode/runtime)');
@@ -1178,6 +1279,7 @@ export async function composeP1Research({
     // re-entry proof (`planResumeReentry`) and are never inherited by assumption.
     if (isResumingOccurrence) {
       Object.assign(state.hashes, targetedBindingsOf(existing?.hashes));
+      if (existing.hashes?.[CLARIFICATION_KEY]) state.hashes[CLARIFICATION_KEY] = existing.hashes[CLARIFICATION_KEY];
     }
 
     let coverageState;
@@ -1447,8 +1549,26 @@ export async function composeP1Research({
     }
 
     if (selection === null) {
-      selection = applySourceGroupSelection({ coverageState, pool, plan, workDir, journal });
+      selection = applySourceGroupSelection({ coverageState, pool, plan, workDir, journal,
+        clarification: clarificationAdmission?.input.clarification ?? null });
       if (selection.clarificationRequired) {
+        let request;
+        try {
+          const decisionBytes = readFileSync(path.join(workDir, SELECTION_DECISION_FILENAME));
+          const decisionStage = stageArtifactBytes(workDir, CHECKPOINT_BINDING_SELECTION_DECISION, decisionBytes);
+          const requiredGroupIds = [...new Set(plan.sourceGroupIntents.map(i => i.groupKey).filter(Boolean))];
+          request = { schemaVersion: 1, type: 'p1-source-group-clarification-request',
+            binding: clarificationBinding(state, expectedPlanHash, decisionStage.sha,
+              selection.decision.selectorVersion, targetedSubphase !== null),
+            clarification: selection.decision.clarification, requiredGroupIds,
+            remainingSlots: Math.max(0, intendedGroupCount(plan) - requiredGroupIds.length) };
+          const requestBytes = Buffer.from(`${JSON.stringify(request, null, 2)}\n`);
+          const requestStage = stageArtifactBytes(workDir, CLARIFICATION_KEY, requestBytes);
+          state.hashes[CHECKPOINT_BINDING_SELECTION_DECISION] = decisionStage.sha;
+          state.hashes[CLARIFICATION_KEY] = requestStage.sha;
+          writeState(workDir, state);
+          materializeStagedArtifact(workDir, getStagingPath(workDir, CLARIFICATION_KEY, requestStage.sha), CLARIFICATION_REQUEST_FILE);
+        } catch { return fail('clarification_persistence_failed', 'clarification request could not be committed'); }
         appendEvent(workDir, {
           event: 'clarification_required', stage: STAGE_SELECT,
           options: (selection.decision?.clarification?.options ?? []).map((o) => o.questionId),
@@ -1456,6 +1576,7 @@ export async function composeP1Research({
         appendEvent(workDir, { event: 'stop', reason: 'clarification_required' });
         return fail(CFC_CLARIFICATION_REQUIRED, null, {
           clarificationRequired: true,
+          clarificationRequest: request,
           options: (selection.decision?.clarification?.options ?? []).map((o) => o.questionId),
         });
       }
@@ -1473,6 +1594,8 @@ export async function composeP1Research({
       crashAt('after_selection_precommit');
     }
     coverageState = selection.coverageState;
+    if (clarificationAdmission) appendEvent(workDir, { event: 'clarification_supplied', occurrenceId,
+      requestHash: state.hashes[CLARIFICATION_KEY], selectionResumed: true });
     // Crash-consistency seam (round-3 review P1): the T08 selection call has
     // returned with the decision durably persisted; a kill here — before the
     // composer's selectionDecision binding — is the decision binding-lag
@@ -1665,6 +1788,7 @@ export async function composeP1Research({
     // above exists to prevent.
     state.hashes = {
       ...targetedBindingsOf(state.hashes),
+      ...(state.hashes[CLARIFICATION_KEY] ? { [CLARIFICATION_KEY]: state.hashes[CLARIFICATION_KEY] } : {}),
       researchPlan: sha256File(path.join(workDir, PLAN_ARTIFACT_FILENAME)),
       coverageState: sha256File(path.join(workDir, COVERAGE_STATE_FILENAME)),
       coverageFinal: sha256File(path.join(workDir, FINAL_COVERAGE_FILENAME)),

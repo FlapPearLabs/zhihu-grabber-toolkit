@@ -35,6 +35,7 @@
  */
 
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import { composeP1Research } from '../lib/p1-runtime-composer.mjs';
 import { P1_PIPELINE_IDENTITY } from '../lib/coverage-final-integration.mjs';
 
@@ -47,6 +48,7 @@ const HELP = `research-p1 — P1 cross-question deep research composition entryp
   --work <dir>        运行工作目录（默认 ./work/research-p1）
   --json              在 stdout 输出单一机器可读 JSON 结果
   --restart           丢弃既有 checkpoint 重新开始
+  --clarification <file>  从绑定同一 occurrence 的 JSON 用户回应恢复；不能与 --restart 同用
   --runtime <id>      必须恰好是 deepseek-api-tool-less（其余一律 invalid_input，无回退）
   -h, --help          本帮助
 
@@ -67,6 +69,9 @@ function parseArgs(argv) {
     if (a === '-h' || a === '--help') { opts.help = true; continue; }
     if (a === '--json') { opts.json = true; continue; }
     if (a === '--restart') { opts.restart = true; continue; }
+    if (a === '--clarification') { opts.clarificationFile = argv[++i];
+      if (!opts.clarificationFile || opts.clarificationFile.startsWith('--')) opts.usageError = 'missing clarification response file';
+      continue; }
     if (a === '--work') { opts.workDir = path.resolve(process.cwd(), argv[++i] ?? ''); continue; }
     if (a === '--runtime') { opts.runtime = String(argv[++i] ?? ''); continue; }
     if (a.startsWith('--')) { opts.usageError = `unknown option: ${a}`; break; }
@@ -94,6 +99,13 @@ async function main() {
   }
   if (opts.usageError) usageError(opts.usageError, opts.json);
   if (!opts.topic) usageError('missing research topic', opts.json);
+  if (opts.clarificationFile && opts.restart) usageError('clarification recovery cannot restart the occurrence', opts.json);
+  let clarificationResponse = null;
+  if (opts.clarificationFile) {
+    try { clarificationResponse = JSON.parse(readFileSync(opts.clarificationFile, 'utf8'));
+      if (clarificationResponse === null) throw new Error('null response'); }
+    catch { usageError('clarification response must be readable JSON', opts.json); }
+  }
   // The pinned composition chain accepts ONLY the approved public-Zhihu
   // semantic runtime; anything else is invalid input, never a fallback.
   if (opts.runtime !== APPROVED_P1_RUNTIME) {
@@ -107,6 +119,7 @@ async function main() {
     restart: opts.restart,
     fetchImpl: fetch,
     usageSink: usage,
+    clarificationResponse,
   });
 
   if (out.ok) {
@@ -126,9 +139,11 @@ async function main() {
         command: 'research-p1',
         error: { type: 'clarification_required', message: 'material ambiguity — multiple source-group interpretations' },
         options: out.options ?? [],
+        clarificationRequest: out.clarificationRequest,
       }, null, 2));
     } else {
       console.error('[research-p1] 需要澄清：存在多个实质不同的研究解释（候选组：' + (out.options ?? []).join(', ') + '）');
+      console.error('请求已保存在 source-group-clarification-request.json；用 --clarification <file> 提交绑定的用户回应。');
     }
     process.exit(3);
   }
