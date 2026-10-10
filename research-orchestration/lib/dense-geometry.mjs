@@ -151,7 +151,14 @@ export function cosineSimilarity(a, b) {
   }
   const denom = Math.sqrt(na) * Math.sqrt(nb);
   if (denom < 1e-12) return 0;
-  return dot / denom;
+  const similarity = dot / denom;
+  // Cauchy-Schwarz bounds cosine to [-1,1]. Correct only one outward
+  // representable step at either endpoint; leave larger/nonfinite errors
+  // untouched so the strict consumer can reject them. Interior values and
+  // the separate ranking/tie epsilon are unchanged.
+  if (similarity > 1 && similarity - 1 <= Number.EPSILON) return 1;
+  if (similarity < -1 && -1 - similarity <= Number.EPSILON) return -1;
+  return similarity;
 }
 
 /**

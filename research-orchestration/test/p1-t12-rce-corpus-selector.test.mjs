@@ -773,3 +773,15 @@ test('dense numeric roundoff reaches the strict production corpus selector', () 
     assert.equal(signal.novelty, 0);
   }
 });
+
+for (const value of [1.000000001, -0.000000001, NaN, Infinity, -Infinity, 1 + 2 * Number.EPSILON]) {
+  for (const field of ['novelty', 'redundancy']) {
+    test(`strict dense validator rejects ${field}=${value}`, () => {
+      const manifest = buildManifest([manifestGroup('101')]);
+      assert.throws(() => selectResearchCorpus({ manifest,
+        sourcesByGroup: { '101': [source('101', 1)] },
+        denseSignals: {'101-a-1': {relevance: 0.6, novelty: 0.5, redundancy: 0.5, [field]: value}},
+      }), e => e.code === 'RCE_DENSE_SIGNAL_INVALID');
+    });
+  }
+}

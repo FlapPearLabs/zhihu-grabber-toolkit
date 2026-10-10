@@ -294,3 +294,15 @@ test('P1-T11: geometry result exposes the consumed accepted profile verbatim', (
   assert.deepEqual(res.profile, { ...REQUIRED_EMBEDDING_IDENTITY });
   assert.equal(res.vectorDimension, 768);
 });
+
+test('one-ULP cosine endpoints normalize, interior values remain exact', () => {
+  const duplicate = mockVector768(0);
+  assert.equal(cosineSimilarity(duplicate, duplicate), 1);
+  assert.equal(cosineSimilarity(duplicate, duplicate.map(x => -x)), -1);
+  assert.equal(cosineSimilarity([1, 0], [0, 1]), 0);
+  assert.equal(cosineSimilarity([1, 0], [1, 0]), 1);
+  assert.equal(cosineSimilarity([1, 0], [0.6, 0.8]), 0.6);
+  assert.equal(cosineSimilarity([1, 0], [-0.6, 0.8]), -0.6);
+  const signals = [{id: 'c', relevance: 0.2}, {id: 'a', relevance: 0.8}, {id: 'b', relevance: 0.5}];
+  assert.deepEqual(signals.sort(compareByRelevance).map(x => x.id), ['a', 'b', 'c']);
+});
