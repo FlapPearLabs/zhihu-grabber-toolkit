@@ -1300,7 +1300,13 @@ export async function composeP1Research({
           // owned by the reuse-closure module and may grow, and the failure it prevents
           // is silent and permanent (every later resume fails closed) rather than loud.
           // G3 pins the real property: no cleanup may remove bytes the checkpoint anchors.
-          if (!anchoredStagingKeys.has(item.key)) cleanupStaging(item.stagedPath);
+          // The request still depends on the original pending bytes after the
+          // canonical decision is replaced by a successful resolution.
+          const pendingClarificationBytes = clarificationAdmission
+            && item.key === CHECKPOINT_BINDING_SELECTION_DECISION
+            && item.stagedPath === getStagingPath(workDir, item.key,
+              clarificationAdmission.request.binding.pendingDecisionHash);
+          if (!anchoredStagingKeys.has(item.key) && !pendingClarificationBytes) cleanupStaging(item.stagedPath);
         }
       }
       // Continue the PERSISTED ledger: it is already validated and plan-bound by

@@ -172,6 +172,10 @@ test('request/pending staging can recover missing canonical views only through t
   fs.rmSync(path.join(f.workDir, 'source-group-selection-decision.json'));
   const out = await composeP1Research({ ...f.common, clarificationResponse: response(pending.clarificationRequest) });
   assert.equal(out.ok, true); assert.equal(f.calls.search, before);
+  const calls = { ...f.calls };
+  const retry = await composeP1Research({ ...f.common, clarificationResponse: response(pending.clarificationRequest) });
+  assert.equal(retry.ok, true, 'original pending bytes must survive canonical-view recovery for idempotence');
+  assert.equal(retry.reused, true); assert.deepEqual(f.calls, calls);
 });
 test('targeted enablement stays bound to the same request; recovery preserves existing #108 artifacts', async t => {
   const f = fixture(t);
