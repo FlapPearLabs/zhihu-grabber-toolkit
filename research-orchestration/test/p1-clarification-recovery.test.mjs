@@ -7,6 +7,7 @@ import { composeP1Research, getStagingPath } from '../lib/p1-runtime-composer.mj
 import { createProviderSeam } from '../lib/provider-seam.mjs';
 import { readState, writeState } from '../lib/state.mjs';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { runCanonicalGate, parseRunnerArgs } from '../bin/canonical-runner.mjs';
 import { loadRuntimeAuthority } from '../bin/runtime-authority.mjs';
 import { mockVector768 } from './helpers/test-embedding-provider.mjs';
@@ -194,7 +195,7 @@ test('selection persistence failure cannot be surfaced as a usable clarification
   assert.equal(f.calls.capture, 0); assert.equal(f.calls.analyze, 0);
 });
 test('product CLI rejects unreadable input and restart+clarification without a live call', () => {
-  const cli = new URL('../bin/research-p1.mjs', import.meta.url).pathname;
+  const cli = fileURLToPath(new URL('../bin/research-p1.mjs', import.meta.url));
   for (const flags of [['--clarification', '/no-such-response-file'], ['--restart', '--clarification', 'response.json']]) {
     const out = spawnSync(process.execPath, [cli, '--json', ...flags, 'public question'], { encoding: 'utf8' });
     assert.equal(out.status, 2); assert.equal(JSON.parse(out.stdout).error.type, 'invalid_input');
@@ -207,7 +208,7 @@ test('actual P1 CLI parses a bound user response and reaches selector rejection,
   answer.clarification.forceGroupIds = ['999'];
   const input = path.join(f.workDir, 'response.json'); fs.writeFileSync(input, JSON.stringify(answer));
   const before = snapshot(f.workDir);
-  const cli = new URL('../bin/research-p1.mjs', import.meta.url).pathname;
+  const cli = fileURLToPath(new URL('../bin/research-p1.mjs', import.meta.url));
   const out = spawnSync(process.execPath, [cli, f.common.topic, '--json', '--work', f.workDir, '--clarification', input], { encoding: 'utf8' });
   assert.equal(out.status, 3);
   assert.deepEqual(JSON.parse(out.stdout).clarificationRequest, pending.clarificationRequest);
