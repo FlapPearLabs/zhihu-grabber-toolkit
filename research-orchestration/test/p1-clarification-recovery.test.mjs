@@ -151,6 +151,21 @@ test('ordinary clear selection retains the existing full pipeline and creates no
   assert.equal(readState(f.workDir).hashes['source-group-clarification'], undefined);
   assert.equal(fs.existsSync(path.join(f.workDir, 'source-group-clarification-request.json')), false);
 });
+test('clarification recovery preserves pending decision authority across the SELECT checkpoint crash window', async t => {
+  const f = fixture(t), pending = await f.start(), answer = response(pending.clarificationRequest);
+  let killed;
+  await composeP1Research({ ...f.common, clarificationResponse: answer, crashPoint(name) {
+    if (name === 'after_select_checkpoint') { killed = readState(f.workDir); throw new Error('offline crash point'); }
+  } });
+  assert.equal(killed.stage, 'SELECT');
+  assert.equal(killed.hashes.selectionDecision, answer.binding.pendingDecisionHash,
+    'the first resumed checkpoint must not downgrade pending authority');
+  // A real SIGKILL has no catch-path FAILED write; restore that captured kill shape.
+  writeState(f.workDir, killed);
+  const search = f.calls.search;
+  const resumed = await composeP1Research({ ...f.common, clarificationResponse: answer });
+  assert.equal(resumed.ok, true); assert.equal(f.calls.search, search);
+});
 test('request/pending staging can recover missing canonical views only through the checkpoint binding', async t => {
   const f = fixture(t), pending = await f.start(), before = f.calls.search;
   fs.rmSync(path.join(f.workDir, 'source-group-clarification-request.json'));
@@ -209,4 +224,13 @@ test('canonical caller exposes request with exit 3 and forwards explicit recover
   assert.equal(second.ok, false); assert.equal(second.exitCode, 3);
   assert.ok(calls[1].includes('--clarification')); assert.equal(calls[1].includes('--restart'), false);
   assert.ok(parseRunnerArgs(['--clarification']).usageError);
+  const success = runCanonicalGate({ authority, env, repoRoot,
+    argv: ['--work', 'work/test', '--clarification', 'response.json', 'public question'],
+    spawnImpl() {
+      fs.writeFileSync(path.join(repoRoot, 'work/test/orchestration-state.json'), JSON.stringify({ runId: 'offline-run', runtime: authority.canonical.runtimeId }));
+      fs.writeFileSync(path.join(repoRoot, 'work/test/research-result.json'), JSON.stringify({ schemaVersion: 1 }));
+      return { status: 0, stdout: '{}', stderr: '' };
+    } });
+  assert.equal(success.ok, true);
+  assert.equal(success.evidence.evidence.restarted, false, 'explicit recovery is never reported as a restart');
 });

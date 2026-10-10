@@ -116,8 +116,8 @@ export function runCanonicalGate({
 
   const workDir = pathResolve(repoRoot, parsed.work || DEFAULT_WORK_REL); // empty --work falls back to the default (never silently targets the repo root)
   const resultPath = join(workDir, 'research-result.json');
-  // No silent checkpoint fallback: the canonical run always starts fresh and
-  // the stale result artifact can never be mistaken for this run's output.
+  // Fresh calls remove stale output; explicit recovery is admitted by the
+  // product's checkpoint-bound clarification contract before reuse or work.
   if (!parsed.clarification) rmSync(resultPath, { force: true });
 
   const spawn = spawnImpl ?? ((file, args, opts) => spawnSync(file, args, opts));
@@ -191,7 +191,7 @@ export function runCanonicalGate({
       run: { topic: runState.topic ?? null, mode: runState.mode ?? null, percent: runState.percent ?? null, runtime: runState.runtime },
       runId: runState.runId,
       researchExitCode: r.status,
-      restarted: true,
+      restarted: !parsed.clarification,
       startedAt,
       finishedAt,
       artifacts: {

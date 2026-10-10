@@ -1497,7 +1497,9 @@ export async function composeP1Research({
       // proof, and never stale. No checkpoint write may downgrade evidence.
       ...(reentry.decision
         ? { [CHECKPOINT_BINDING_SELECTION_DECISION]: sha256File(path.join(workDir, SELECTION_DECISION_FILENAME)) }
-        : {}),
+        : clarificationAdmission
+          ? { [CHECKPOINT_BINDING_SELECTION_DECISION]: clarificationAdmission.request.binding.pendingDecisionHash }
+          : {}),
     };
     state.stage = STAGE_SELECT;
     recordLedgerBinding(state, workDir);
