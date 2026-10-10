@@ -1306,7 +1306,9 @@ export async function composeP1Research({
             && item.key === CHECKPOINT_BINDING_SELECTION_DECISION
             && item.stagedPath === getStagingPath(workDir, item.key,
               clarificationAdmission.request.binding.pendingDecisionHash);
-          if (!anchoredStagingKeys.has(item.key) && !pendingClarificationBytes) cleanupStaging(item.stagedPath);
+          if (!pendingClarificationBytes) {
+            if (!anchoredStagingKeys.has(item.key)) cleanupStaging(item.stagedPath);
+          }
         }
       }
       // Continue the PERSISTED ledger: it is already validated and plan-bound by
