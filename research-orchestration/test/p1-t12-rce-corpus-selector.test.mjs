@@ -23,6 +23,8 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import { mockVector768 } from './helpers/test-embedding-provider.mjs';
+import { computeDenseGeometry, REQUIRED_EMBEDDING_IDENTITY } from '../lib/dense-geometry.mjs';
 
 import {
   selectResearchCorpus,
@@ -752,4 +754,22 @@ describe('P1-T12 SEAM B output shape', () => {
     }
     assert.deepEqual(t, { eligible, selected, verified, exclusionReasonCategories: cats });
   });
+});
+
+// Valid duplicate unit vectors previously produced redundancy=1+EPSILON, novelty=-EPSILON.
+test('dense numeric roundoff reaches the strict production corpus selector', () => {
+  const emb = (seed) => ({ vector: mockVector768(seed), identity: { ...REQUIRED_EMBEDDING_IDENTITY } });
+  const geometry = computeDenseGeometry({ target: emb(1), items: [
+    { id: '101-a-1', ...emb(0) }, { id: '101-a-2', ...emb(0) },
+  ] });
+  const manifest = buildManifest([manifestGroup('101', { captured: 2, reported: 2 })]);
+  const corpus = selectResearchCorpus({ manifest,
+    sourcesByGroup: { '101': [source('101', 1), source('101', 2)] },
+    denseSignals: Object.fromEntries(geometry.signals.map(s => [s.id, s])),
+  });
+  assert.ok(corpus);
+  for (const signal of geometry.signals) {
+    assert.equal(signal.redundancy, 1);
+    assert.equal(signal.novelty, 0);
+  }
 });
