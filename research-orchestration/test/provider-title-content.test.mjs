@@ -106,6 +106,15 @@ test('canonical network titles still reject actual private context and credentia
   }
 });
 
+test('native dot-segment aliases of the actual private home remain fail closed', () => {
+  const home = os.homedir().replaceAll('\\', '/');
+  const parent = path.dirname(home).replaceAll('\\', '/');
+  const user = path.basename(home);
+  for (const title of [`${parent}/./${user}/.ssh/id_ed25519`,
+    `${parent}/synthetic-sibling/../${user}/.ssh/id_ed25519`,
+    `${parent}//./${user}/.ssh/id_ed25519`]) denied(officialTitle(title));
+});
+
 test('existing checkpoint hash binds the exact restored bytes; ordinary roundtrip grants nothing', () => {
   const fused = fuse(officialTitle(EXTERNAL_TITLE));
   const pool = { candidates: fused.candidates, channels: [], planHash: 'a'.repeat(64) };

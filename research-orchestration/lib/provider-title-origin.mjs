@@ -89,14 +89,25 @@ export function containsPrivateTitleContext(value) {
   let inspected = value;
   for (let layer = 0; layer < 4; layer++) {
     const normalized = normalize(inspected);
+    // Inspect native lexical aliases without treating the title as an IO path.
+    // The raw view remains checked too, and the persisted title is unchanged.
+    const segments = [];
+    for (const segment of normalized.split('/')) {
+      if (segment === '.') continue;
+      if (segment === '..' && segments.length > 1) segments.pop();
+      else segments.push(segment);
+    }
+    const views = [normalized, segments.join('/')];
     if (anchors.some(anchor => {
-      let at = normalized.indexOf(anchor);
-      while (at !== -1) {
-        const next = normalized.slice(at + anchor.length, at + anchor.length + 1);
-        if (next === '' || !/[\p{L}\p{N}\p{M}_.~-]/u.test(next)) return true;
-        at = normalized.indexOf(anchor, at + 1);
-      }
-      return false;
+      return views.some(view => {
+        let at = view.indexOf(anchor);
+        while (at !== -1) {
+          const next = view.slice(at + anchor.length, at + anchor.length + 1);
+          if (next === '' || !/[\p{L}\p{N}\p{M}_.~-]/u.test(next)) return true;
+          at = view.indexOf(anchor, at + 1);
+        }
+        return false;
+      });
     })) return true;
     try {
       const decoded = decodeURIComponent(inspected);
