@@ -170,6 +170,16 @@ test('URL userinfo cannot hide behind parser whitespace or punctuation in inert 
   assert.equal(assertArtifactSafe(fused).ok, true);
 });
 
+test('actual private home URL aliases retain privacy guards after parser whitespace removal', () => {
+  const home = os.homedir().replaceAll('\\', '/');
+  const at = Math.floor(home.length / 2);
+  const urlPath = text => text.startsWith('/') ? text : '/' + text;
+  for (const separator of ['\t', '\n', '\r', '%09', '%0A', '%0D']) {
+    const alias = home.slice(0, at) + separator + home.slice(at);
+    denied(officialTitle(`研究 /etc/hosts 与 https://example.com${urlPath(alias)}/.ssh/id_ed25519`));
+  }
+});
+
 test('existing checkpoint hash binds the exact restored bytes; ordinary roundtrip grants nothing', () => {
   const fused = fuse(officialTitle(EXTERNAL_TITLE));
   const pool = { candidates: fused.candidates, channels: [], planHash: 'a'.repeat(64) };

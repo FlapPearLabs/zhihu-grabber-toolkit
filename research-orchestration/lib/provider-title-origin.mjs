@@ -83,7 +83,7 @@ export function containsPrivateTitleContext(value) {
   try {
     for (const root of [...roots]) if (existsSync(root)) roots.push(realpathSync(root));
   } catch { return true; }
-  const normalize = text => text.replaceAll('\\', '/').replace(/\/+/g, '/')
+  const normalize = text => text.replace(/[\t\r\n]/g, '').replaceAll('\\', '/').replace(/\/+/g, '/')
     .replaceAll('/private/var/', '/var/').replaceAll('/private/tmp/', '/tmp/').toLowerCase();
   const anchors = roots.map(root => normalize(path.resolve(root)).replace(/\/$/, '')).filter(root => root.length > 1);
   let inspected = value;
