@@ -11,6 +11,7 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { recordCanonicalSearchResponse } from './provider-title-origin.mjs';
 
 const REPO = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const ZHIHU_SCRIPTS = path.join(REPO, 'zhihu-answer-grabber', 'scripts');
@@ -48,8 +49,11 @@ export function defaultRunner() {
    */
   return function runPrimitive(name, args, opts = {}) {
     switch (name) {
-      case 'zhihu-search':
-        return run(ZHIHU_CLI, ['search', ...args], opts);
+      case 'zhihu-search': {
+        const result = run(ZHIHU_CLI, ['search', ...args], opts);
+        return result.status === 0
+          ? recordCanonicalSearchResponse(result, 'zhihu-official-search', 'stdout') : result;
+      }
       case 'zhihu-grab':
         return run(ZHIHU_CLI, ['grab', ...args], opts);
       case 'zhihu-verify':

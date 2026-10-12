@@ -7,7 +7,9 @@ import { composeP1Research, getStagingPath } from '../lib/p1-runtime-composer.mj
 import { createProviderSeam } from '../lib/provider-seam.mjs';
 import { readState, writeState } from '../lib/state.mjs';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { defaultRunner } from '../lib/runner.mjs';
+import { createOfficialSearchAdapter } from '../lib/official-search-provider.mjs';
 import { runCanonicalGate, parseRunnerArgs } from '../bin/canonical-runner.mjs';
 import { loadRuntimeAuthority } from '../bin/runtime-authority.mjs';
 import { mockVector768 } from './helpers/test-embedding-provider.mjs';
@@ -61,6 +63,33 @@ function fixture(t, ids = ['100', '200']) {
   return { workDir, calls, common, async start() { return composeP1Research({ ...common, plan: PLAN }); } };
 }
 const response = request => ({ schemaVersion: 1, binding: request.binding, clarification: { forceGroupIds: ['100'] } });
+test('canonical inert title survives real bound clarification reentry with zero retrieval replay', async t => {
+  const f = fixture(t), title = '研究 /etc/hosts 与 ../foo 的限制';
+  const preload = path.join(f.workDir, 'offline-network.mjs');
+  const body = { Code: 0, Data: { Items: ['100', '200'].map(id => ({
+    Url: 'https://www.zhihu.com/question/' + id, Title: title, ContentType: 'question',
+  })) } };
+  fs.writeFileSync(preload, `globalThis.fetch = async url => {
+    if(new URL(url).pathname !== '/api/v1/content/zhihu_search') throw new Error('offline IO refused');
+    return new Response(${JSON.stringify(JSON.stringify(body))}, {status:200});
+  };`);
+  const run = defaultRunner();
+  const adapter = createOfficialSearchAdapter({ runner(name, args) {
+    f.calls.search++;
+    return run(name, args, { cwd: f.workDir, env: { ZHIHU_SECRET: 'synthetic-test-only', ZHIHU_COOKIE: '',
+      ZAG_CONFIG_DIR: f.workDir, ZHIHU_CLI_CONFIG: path.join(f.workDir, 'absent.json'),
+      ZHIHU_CREATOR_CONFIG: path.join(f.workDir, 'absent.json'), NODE_OPTIONS: '--import=' + pathToFileURL(preload).href } });
+  } });
+  f.common.seam = createProviderSeam({ adapters: [adapter] });
+  const pending = await f.start(), before = f.calls.search;
+  assert.equal(pending.clarificationRequired, true);
+  const out = await composeP1Research({ ...f.common, clarificationResponse: response(pending.clarificationRequest) });
+  assert.equal(out.ok, true);
+  assert.equal(f.calls.search, before);
+  assert.equal(readState(f.workDir).stage, 'COMPLETE');
+  const pool = JSON.parse(fs.readFileSync(path.join(f.workDir, 'retrieval-rounds', 'accumulated-pool.json')));
+  assert.ok(pool.candidates.every(candidate => candidate.facts.title === title));
+});
 test('RED A: ambiguity surfaces a durable bound request and never runs downstream', async t => {
   const f = fixture(t), out = await f.start();
   assert.equal(out.clarificationRequired, true);

@@ -32,6 +32,7 @@
  */
 
 import { classifyUrl } from '../../zhihu-answer-grabber/src/markdown-security.js';
+import { bindCanonicalProviderTitle } from './provider-title-origin.mjs';
 import {
   CAPABILITY_SEARCH,
   AUTH_CLASS_OFFICIAL_SECRET,
@@ -274,6 +275,7 @@ export function createOfficialSearchAdapter({ runner, now = defaultNow } = {}) {
         for (const key of ['title', 'contentType', 'answerCount']) {
           if (Object.hasOwn(candidate, key)) item.facts[key] = candidate[key];
         }
+        bindCanonicalProviderTitle(item, res, PROVIDER_ZHIHU_OFFICIAL_SEARCH);
         return item;
       });
 

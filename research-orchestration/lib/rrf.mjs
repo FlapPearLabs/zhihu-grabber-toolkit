@@ -101,6 +101,7 @@ import { CAPABILITY_SEARCH } from './provider-seam.mjs';
 // must apply the same query-string contract as plan validation instead of
 // reclassifying valid plan content with the broader provider-content lens.
 import { isPlanBoundarySafeString } from './plan-contract.mjs';
+import { hasExternalTitle, candidateHasExternalTitle, copyExternalTitleBinding, externalTitlePrivacySafe } from './provider-title-origin.mjs';
 
 /** Standard RRF constant (k = 60). */
 export const RRF_K = 60;
@@ -506,7 +507,24 @@ export function projectSafeJson(value, { maxDepth = 8 } = {}) {
   }
 }
 
-function projectSafeJsonInner(value, depth, maxDepth, ancestors) {
+// Only a source-bound title gets the inert-content lens. Generic strings,
+// metadata, plan/query and every real control sink retain their own validators.
+function isInertTitleString(value) {
+  return typeof value === 'string' && value.length <= BOUNDARY_MAX_STRING_LENGTH &&
+    !CREDENTIAL_SHAPE.test(value) && (!URL_SHAPE.test(value) || isBoundarySafeUrlString(value));
+}
+
+function projectProviderFacts(item, channel) {
+  const facts = item.facts ?? {};
+  if (!hasExternalTitle(facts, item.identity.questionId, channel.providerId, item.provenance.route)) return projectSafeJson(facts);
+  try {
+    const result = projectSafeJsonInner(facts, 0, 8, new Set(), facts);
+    if (result.ok) copyExternalTitleBinding(facts, result.value, item.identity.questionId, channel.providerId, item.provenance.route);
+    return result;
+  } catch { return { ok: false }; }
+}
+
+function projectSafeJsonInner(value, depth, maxDepth, ancestors, externalFacts = null) {
   if (depth > maxDepth) return { ok: false };
   if (value === null) return { ok: true, value: null };
   const type = typeof value;
@@ -541,7 +559,9 @@ function projectSafeJsonInner(value, depth, maxDepth, ancestors) {
       ancestors.delete(value);
       return { ok: false };
     }
-    const safe = projectSafeJsonInner(entry, depth + 1, maxDepth, ancestors);
+    const safe = value === externalFacts && key === 'title'
+      ? { ok: externalTitlePrivacySafe(value, entry) && isInertTitleString(entry), value: entry }
+      : projectSafeJsonInner(entry, depth + 1, maxDepth, ancestors);
     if (!safe.ok) {
       ancestors.delete(value);
       return { ok: false };
@@ -658,7 +678,7 @@ export function assertArtifactSafe(value, { trustedPlanStrings = null } = {}) {
   }
 }
 
-function assertArtifactSafeInner(value, depth, ancestors, trustedPlanStrings) {
+function assertArtifactSafeInner(value, depth, ancestors, trustedPlanStrings, externalFacts = null) {
   if (depth > MAX_ARTIFACT_DEPTH) return { ok: false, reason: 'depth_exceeded' };
   if (value === null) return { ok: true };
   const type = typeof value;
@@ -708,7 +728,10 @@ function assertArtifactSafeInner(value, depth, ancestors, trustedPlanStrings) {
       ancestors.delete(value);
       return { ok: false, reason: 'unsafe_key' };
     }
-    const verdict = assertArtifactSafeInner(entry, depth + 1, ancestors, trustedPlanStrings);
+    const verdict = value === externalFacts && key === 'title'
+      ? (externalTitlePrivacySafe(value, entry) && isInertTitleString(entry) ? { ok: true } : { ok: false, reason: 'unsafe_string' })
+      : assertArtifactSafeInner(entry, depth + 1, ancestors, trustedPlanStrings,
+        key === 'facts' && candidateHasExternalTitle(value) ? entry : null);
     if (!verdict.ok) {
       ancestors.delete(value);
       return verdict;
@@ -979,7 +1002,7 @@ export function rrfFusion(rankings) {
       if (!projectedRoute.ok) throwUnsafeProviderData('route');
       const projectedSourceUrl = projectSourceUrlRecord(item.source_url);
       if (!projectedSourceUrl.ok) throwUnsafeProviderData('source_url');
-      const projectedFacts = projectSafeJson(item.facts ?? {});
+      const projectedFacts = projectProviderFacts(item, channel);
       if (!projectedFacts.ok) throwUnsafeProviderData('facts');
 
       let bucket = channelItems.get(questionId);

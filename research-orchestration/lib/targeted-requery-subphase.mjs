@@ -62,6 +62,7 @@
 
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
+import { parseBoundProviderPool } from './provider-title-origin.mjs';
 import path from 'node:path';
 
 import { isValidPlanHashFormat } from './plan-contract.mjs';
@@ -1057,7 +1058,7 @@ function readBoundTargetedPool(workDir, artifactRel, expectedHash) {
   const abs = path.join(workDir, artifactRel);
   if (!fs.existsSync(abs)) return null;
   try {
-    const parsed = JSON.parse(fs.readFileSync(abs, 'utf8'));
+    const parsed = parseBoundProviderPool(fs.readFileSync(abs), expectedHash);
     if (!isPlainObject(parsed) || !Array.isArray(parsed.candidates) || !Array.isArray(parsed.channels)) return null;
     return parsed;
   } catch {

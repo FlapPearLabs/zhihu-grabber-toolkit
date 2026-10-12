@@ -10,6 +10,7 @@
     "private-canonical"
   ],
   "suites": [
+    { "file": "provider-title-content.test.mjs", "category": "full-offline", "note": "Owner-authorized facts.title inert content contract: fixed producer/adapter/RRF preservation, non-forgeable source receipts, private-context and credential negatives, hash-bound reload and no control authority. Synthetic external IO only; isolated config and no real credential reads." },
     { "file": "p1-clarification-recovery.test.mjs", "category": "fast-deterministic", "note": "P1 explicit user clarification recovery: real composition, frozen checkpoint bindings, same selector, zero paid retrieval replay, legal downstream completion, malformed/stale/unknown input, idempotence and dedicated/canonical CLI. Offline test doubles only." },
     { "file": "p2-f01-evaluation.test.mjs", "category": "full-offline", "note": "#107 MVP: cheap deterministic evaluator integrity, product-input contamination controls, degraded candidate, fair identity pairing, and one real cold composition pair. No live provider/model calls; proves HARNESS_INTEGRITY only." },
     { "file": "planner.test.mjs", "category": "fast-deterministic" },

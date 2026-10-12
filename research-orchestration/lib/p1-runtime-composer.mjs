@@ -120,6 +120,7 @@ import { createEmbeddingProvider } from './embedding-provider.mjs';
 import { REQUIRED_EMBEDDING_IDENTITY } from './dense-geometry.mjs';
 import { deriveCanonicalSourceId } from './rce-input-adapter.mjs';
 import { assertArtifactSafe } from './rrf.mjs';
+import { recordCanonicalSearchResponse, parseBoundProviderPool, registerPrivateTitleRoot } from './provider-title-origin.mjs';
 import { buildDeepSeekResearchRuntime } from './deepseek-research-runtime.mjs';
 import { validateCompleteReuseClosure, CHECKPOINT_BINDING_ACCUMULATED_POOL, CHECKPOINT_BINDING_SELECTION_DECISION, CHECKPOINT_BINDING_COVERAGE_STATE } from './p1-reuse-closure.mjs';
 
@@ -629,7 +630,7 @@ function planResumeReentry({ workDir, priorState, planHash: expectedPlanHash, cu
 
   let pool;
   try {
-    pool = JSON.parse(readFileSync(poolInspect.absPath, 'utf8'));
+    pool = parseBoundProviderPool(readFileSync(poolInspect.absPath), recorded[CHECKPOINT_BINDING_ACCUMULATED_POOL]);
   } catch {
     return { ok: false, reason: 'accumulated_pool_unparseable' };
   }
@@ -817,7 +818,8 @@ export function createSyncGlobalSearchTransport({ timeoutMs = 30_000 } = {}) {
     if (typeof out?.status !== 'number' || typeof out?.body !== 'string') {
       throw new Error('global_search transport returned a malformed bridge payload');
     }
-    return out;
+    return !process.env.ZHIHU_GLOBAL_SEARCH_BRIDGE_CHILD_URL && out.status >= 200 && out.status < 300
+      ? recordCanonicalSearchResponse(out, 'zhihu-open-platform', 'body') : out;
   };
 }
 
@@ -993,6 +995,7 @@ export async function composeP1Research({
   if (!isNonEmptyString(workDir)) {
     return fail(CFC_ABORTED, 'workDir is required');
   }
+  registerPrivateTitleRoot(path.resolve(workDir));
   const normalizedTopic = topic.trim();
 
   // Runtime pin: the composition chain (planner/T13/T14) accepts ONLY the

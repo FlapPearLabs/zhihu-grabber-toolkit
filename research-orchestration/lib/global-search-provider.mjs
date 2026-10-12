@@ -180,6 +180,7 @@
  */
 
 import { classifyUrl } from '../../zhihu-answer-grabber/src/markdown-security.js';
+import { bindCanonicalProviderTitle } from './provider-title-origin.mjs';
 import { extractQuestionId } from '../../zhihu-answer-grabber/src/official.js';
 import {
   CAPABILITY_SEARCH,
@@ -510,7 +511,11 @@ export function createGlobalSearchAdapter({ transport, now = defaultNow } = {}) 
         });
       }
 
-      const items = data.Items.map((rawItem, index) => toItem(rawItem, index + 1));
+      const items = data.Items.map((rawItem, index) => {
+        const item = toItem(rawItem, index + 1);
+        if (!item.failure) bindCanonicalProviderTitle(item, response, PROVIDER_ZHIHU_OPEN_PLATFORM);
+        return item;
+      });
 
       return {
         ok: true,
