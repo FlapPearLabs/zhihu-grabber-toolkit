@@ -510,10 +510,17 @@ export function projectSafeJson(value, { maxDepth = 8 } = {}) {
 // Only a source-bound title gets the inert-content lens. Generic strings,
 // metadata, plan/query and every real control sink retain their own validators.
 function isInertTitleString(value) {
-  return typeof value === 'string' && value.length <= BOUNDARY_MAX_STRING_LENGTH &&
-    !CREDENTIAL_SHAPE.test(value) &&
-    (!ENCODED_BYTE_REMAINS.test(value) || inspectDecodedLayers(value) !== null) &&
-    (!URL_SHAPE.test(value) || isBoundarySafeUrlString(value));
+  if (typeof value !== 'string' || value.length > BOUNDARY_MAX_STRING_LENGTH || CREDENTIAL_SHAPE.test(value)) return false;
+  const layers = ENCODED_BYTE_REMAINS.test(value) ? inspectDecodedLayers(value) : [value];
+  if (layers === null) return false;
+  // Inspect URL fragments as content, including HTTP parser aliases, without
+  // turning them into link/query/tool authority. Persist the original text.
+  for (const layer of layers) {
+    for (const match of layer.matchAll(/(?:[a-zA-Z][a-zA-Z0-9+.-]*:[\\/]{2}|https?:)[^\s<>"`]+/gi)) {
+      if (!isBoundarySafeUrlString(match[0])) return false;
+    }
+  }
+  return !URL_SHAPE.test(value) || isBoundarySafeUrlString(value);
 }
 
 function projectProviderFacts(item, channel) {

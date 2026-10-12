@@ -144,6 +144,21 @@ test('supported relative configuration paths retain the same private identity', 
   }
 });
 
+test('URL fragments in inert prose keep URL credential guards across decoded layers', () => {
+  for (const url of ['https://synthetic-user:synthetic-test-only@example.com/guide',
+    'https://synthetic-user%3Asynthetic-test-only%40example.com/guide',
+    'https%3A%2F%2Fsynthetic-user%3Asynthetic-test-only%40example.com/guide',
+    'https:\\\\synthetic-user:synthetic-test-only@example.com/guide',
+    'https:/synthetic-user:synthetic-test-only@example.com/guide',
+    'https:synthetic-user:synthetic-test-only@example.com/guide']) {
+    denied(officialTitle(`研究 /etc/hosts 与 ${url}`));
+  }
+  const title = '研究 /etc/hosts、https://example.com/guide 与公开文本';
+  const fused = fuse(officialTitle(title));
+  assert.equal(fused.candidates[0].facts.title, title);
+  assert.equal(assertArtifactSafe(fused).ok, true);
+});
+
 test('existing checkpoint hash binds the exact restored bytes; ordinary roundtrip grants nothing', () => {
   const fused = fuse(officialTitle(EXTERNAL_TITLE));
   const pool = { candidates: fused.candidates, channels: [], planHash: 'a'.repeat(64) };
