@@ -76,7 +76,7 @@ export function containsPrivateTitleContext(value) {
   const roots = [os.homedir(), os.tmpdir(), process.cwd(), ...privateRoots];
   if (roots.some(root => typeof root !== 'string' || !path.isAbsolute(root))) return true;
   for (const name of ['ZAG_CONFIG_DIR', 'ZHIHU_CLI_CONFIG', 'ZHIHU_CREATOR_CONFIG', 'P1_T10_ONNX_MODEL_DIR']) {
-    if (typeof process.env[name] === 'string' && path.isAbsolute(process.env[name])) roots.push(process.env[name]);
+    if (typeof process.env[name] === 'string' && process.env[name] !== '') roots.push(path.resolve(process.env[name]));
   }
   // Directory/file identity only, including supported symlink aliases. An
   // existing but unresolvable private context is UNKNOWN and fails closed.

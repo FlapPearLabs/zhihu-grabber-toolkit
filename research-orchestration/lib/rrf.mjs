@@ -511,7 +511,9 @@ export function projectSafeJson(value, { maxDepth = 8 } = {}) {
 // metadata, plan/query and every real control sink retain their own validators.
 function isInertTitleString(value) {
   return typeof value === 'string' && value.length <= BOUNDARY_MAX_STRING_LENGTH &&
-    !CREDENTIAL_SHAPE.test(value) && (!URL_SHAPE.test(value) || isBoundarySafeUrlString(value));
+    !CREDENTIAL_SHAPE.test(value) &&
+    (!ENCODED_BYTE_REMAINS.test(value) || inspectDecodedLayers(value) !== null) &&
+    (!URL_SHAPE.test(value) || isBoundarySafeUrlString(value));
 }
 
 function projectProviderFacts(item, channel) {

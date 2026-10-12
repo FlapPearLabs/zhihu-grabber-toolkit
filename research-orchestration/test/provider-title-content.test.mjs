@@ -115,6 +115,35 @@ test('native dot-segment aliases of the actual private home remain fail closed',
     `${parent}//./${user}/.ssh/id_ed25519`]) denied(officialTitle(title));
 });
 
+test('encoded credential shapes in inert prose remain fail closed at RRF', () => {
+  for (const title of ['研究 /etc/hosts 与 token%3Dsynthetic-test-only',
+    '研究 /etc/hosts 与 https://example.com/?token%3Dsynthetic-test-only',
+    '研究 /etc/hosts 与 token%253Dsynthetic-test-only',
+    '研究 /etc/hosts 与 token%25253Dsynthetic-test-only']) denied(officialTitle(title));
+  for (const title of ['研究 /etc/hosts 与收益 100%', '研究 %2Fetc%2Fhosts 与公开文本']) {
+    const fused = fuse(officialTitle(title));
+    assert.equal(fused.candidates[0].facts.title, title);
+    assert.equal(assertArtifactSafe(fused).ok, true);
+  }
+});
+
+test('supported relative configuration paths retain the same private identity', () => {
+  const root = path.join(path.parse(process.cwd()).root, 'synthetic-private-title-context');
+  for (const name of ['ZAG_CONFIG_DIR', 'ZHIHU_CLI_CONFIG', 'ZHIHU_CREATOR_CONFIG', 'P1_T10_ONNX_MODEL_DIR']) {
+    const previous = process.env[name]; // Path configuration only; no credential values.
+    try {
+      for (const configured of [root, path.relative(process.cwd(), root)]) {
+        assert.equal(path.resolve(configured), root);
+        process.env[name] = configured;
+        denied(officialTitle(`研究 ${path.join(root, 'private-state.json')}`));
+      }
+    } finally {
+      if (previous === undefined) delete process.env[name];
+      else process.env[name] = previous;
+    }
+  }
+});
+
 test('existing checkpoint hash binds the exact restored bytes; ordinary roundtrip grants nothing', () => {
   const fused = fuse(officialTitle(EXTERNAL_TITLE));
   const pool = { candidates: fused.candidates, channels: [], planHash: 'a'.repeat(64) };
