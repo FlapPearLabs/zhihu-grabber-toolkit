@@ -159,6 +159,17 @@ test('URL fragments in inert prose keep URL credential guards across decoded lay
   assert.equal(assertArtifactSafe(fused).ok, true);
 });
 
+test('URL userinfo cannot hide behind parser whitespace or punctuation in inert prose', () => {
+  for (const separator of ['\t', '\n', '\r', ' ', '"', '<', '`', '%09', '%0A', '%0D']) {
+    denied(officialTitle(`研究 /etc/hosts 与 https://synthetic-user:123${separator}@example.com/guide`));
+  }
+  denied(officialTitle('研究 /etc/hosts 与 ht\ntps://synthetic-user:123@example.com/guide'));
+  const title = '研究 /etc/hosts 与 https://example.com/guide\n公开研究文本';
+  const fused = fuse(officialTitle(title));
+  assert.equal(fused.candidates[0].facts.title, title);
+  assert.equal(assertArtifactSafe(fused).ok, true);
+});
+
 test('existing checkpoint hash binds the exact restored bytes; ordinary roundtrip grants nothing', () => {
   const fused = fuse(officialTitle(EXTERNAL_TITLE));
   const pool = { candidates: fused.candidates, channels: [], planHash: 'a'.repeat(64) };

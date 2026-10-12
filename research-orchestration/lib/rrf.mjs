@@ -516,7 +516,14 @@ function isInertTitleString(value) {
   // Inspect URL fragments as content, including HTTP parser aliases, without
   // turning them into link/query/tool authority. Persist the original text.
   for (const layer of layers) {
-    for (const match of layer.matchAll(/(?:[a-zA-Z][a-zA-Z0-9+.-]*:[\\/]{2}|https?:)[^\s<>"`]+/gi)) {
+    const inspected = layer.replace(/[\t\r\n]/g, ''); // WHATWG parser removes these characters.
+    for (const prefix of inspected.matchAll(/(?:[a-zA-Z][a-zA-Z0-9+.-]*:[\\/]{2}|https?:)/gi)) {
+      const authority = inspected.slice(prefix.index + prefix[0].length).replace(/^[\\/]+/, '').split(/[\\/?#]/, 1)[0];
+      // Whitespace/quotes can be encoded inside URL userinfo by the parser;
+      // a prose token boundary cannot prove that the authority is credential-free.
+      if (authority.includes('@')) return false;
+    }
+    for (const match of inspected.matchAll(/(?:[a-zA-Z][a-zA-Z0-9+.-]*:[\\/]{2}|https?:)[^\s<>"`]+/gi)) {
       if (!isBoundarySafeUrlString(match[0])) return false;
     }
   }
