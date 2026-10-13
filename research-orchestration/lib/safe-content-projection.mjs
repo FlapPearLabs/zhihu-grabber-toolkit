@@ -58,7 +58,7 @@ import {
 import { escapeUntrustedMarkdownText } from '../../zhihu-answer-grabber/src/markdown-security.js';
 
 /** Projection identity carried on every projection for downstream versioning (R06 handoff). */
-export const SAFE_PROJECTION_VERSION = 'p1-r04-safe-projection/1';
+export const SAFE_PROJECTION_VERSION = 'p1-r04-safe-projection/2';
 
 /** Coded fail-closed error (module-level identity; T13 maps it onto the SEAM C group fail-closed path). */
 export class SafeProjectionError extends Error {
@@ -230,7 +230,8 @@ export function projectSourceForSemanticRequest(content, opts = {}) {
 
   // Ref neutralization (URL/protocol/path/percent/control chars) then fence
   // forgery neutralization, then the mechanical leak assertions.
-  const neutralized = neutralizeForgedFences(sanitizeProjectionText(structured));
+  const escapedMarkupNeutralized = structured.replace(/\\</gu, '＜');
+  const neutralized = neutralizeForgedFences(sanitizeProjectionText(escapedMarkupNeutralized));
   const text = neutralized.trim();
   assertProjectedTextIsSafe(text);
 
