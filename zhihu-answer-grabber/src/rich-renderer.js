@@ -194,6 +194,9 @@ function renderBlockChildren(nodes, ctx) {
 
 function renderBlock(node, ctx) {
   const tag = node.tagName.toLowerCase();
+  if (tag === 'code' && (ctx.inlineCodeBodyMode === 'metadata' || ctx.inlineCodeBodyMode === 'omit')) {
+    return renderInlineCode(node, ctx);
+  }
   switch (tag) {
     case 'p':
     case 'div':
@@ -270,6 +273,7 @@ function renderBlockquote(node, ctx) {
 
 /** §12.3 fenced code 安全：fence 长度自适应；language 白名单 */
 function renderPre(node, ctx) {
+  if (ctx.inlineCodeBodyMode === 'omit') return '';
   let codeEl = null;
   for (const c of node.childNodes ?? []) {
     if (c.tagName && c.tagName.toLowerCase() === 'code') {
@@ -385,6 +389,7 @@ function renderSup(node, ctx) {
 function renderAnchor(node, ctx) {
   const href = getAttr(node, 'href');
   const anchorText = renderInlineChildren(node, ctx).trim();
+  if (ctx.inlineCodeBodyMode === 'omit') return anchorText;
   const cls = href ? classifyUrl(href) : null;
   const parts = [];
   if (anchorText.length > 0) {
@@ -398,6 +403,7 @@ function renderAnchor(node, ctx) {
 
 /** §19 Phase 1 图片：inert 占位，不自动加载、不透传、不产生任意远程 href */
 function renderImage(node, ctx) {
+  if (ctx.inlineCodeBodyMode === 'omit') return '';
   const alt = getAttr(node, 'alt');
   if (alt != null && alt.trim().length > 0) {
     return `[图片：${escapeUntrustedMarkdownText(alt.trim())}]`;
@@ -502,7 +508,8 @@ function renderLiContent(li, ctx) {
  *   headingOffset：正文 heading 相对文档顶层的偏移（answer body 默认 2 → h1 变 H3）
  *   answerId：回答 ID（数字字符串），用于生成文档内全局唯一的脚注内部 ID
  *     （§13.1：a<answerId>-r<index>）；缺失/非法时脚注 fail closed 为可见文本。
- *   inlineCodeBodyMode：仅 Agent 调用启用 metadata；omit 表示仅供证据存在性判定的无正文表示。
+ *   inlineCodeBodyMode：仅 Agent 调用启用 metadata；omit 表示仅供正文存在性判定的辅助表示，
+ *     不含代码、生成的 asset metadata 或空结构装饰，不作为模型输入。
  *     默认保持 Human View 的完整行内代码渲染。
  * @returns {string}
  */

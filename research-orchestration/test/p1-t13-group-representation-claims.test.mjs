@@ -169,9 +169,30 @@ describe('escaped less-than at the T13 projection boundary', () => {
       '<p>[CODE_INLINE omitted_by_policy]</p>',
       '<p>实际证据 <code>INLINE_ONLY_CANARY</code></p>',
       '<h1>实际证据<code>INLINE_ONLY_CANARY</code></h1>',
-      '<ul><li>实际证据<code>INLINE_ONLY_CANARY</code></li></ul>',
-      '<p><code>INLINE_ONLY_CANARY</code></p><pre><code>BLOCK_BODY_CANARY</code></pre>']) {
+      '<ul><li>实际证据<code>INLINE_ONLY_CANARY</code></li></ul>']) {
       assert.equal(projectSourceForSemanticRequest(canonical, { renderer }).metadataOnly, false);
+    }
+  });
+
+  test('inline-code omission does not turn asset metadata into evidence', async () => {
+    const renderer = await loadAgentProjectionRenderer();
+    for (const canonical of ['<code>INLINE_ONLY_CANARY &lt;</code><img src="https://example.com/a.png">',
+      '<code>INLINE_ONLY_CANARY</code><img alt="图片描述" src="https://example.com/a.png">',
+      '<a href="https://example.com"><code>INLINE_ONLY_CANARY &lt;</code></a>',
+      '<code>INLINE_ONLY_CANARY</code><pre><code>BLOCK_BODY_CANARY</code></pre>',
+      '<figure><code>INLINE_ONLY_CANARY &lt;</code></figure>',
+      '<ul><code>INLINE_ONLY_CANARY &lt;</code></ul>']) {
+      const projected = projectSourceForSemanticRequest(canonical, { renderer });
+      assert.equal(projected.metadataOnly, true);
+      assert.equal(projected.inlineCodeOnly, true);
+      assert.ok(!projected.text.includes('CANARY'));
+    }
+    for (const canonical of ['<a href="https://example.com">实际锚文本<code>CANARY</code></a>',
+      '<figure><img src="https://example.com/a.png"><figcaption>实际 caption<code>CANARY</code></figcaption></figure>',
+      '<p>[图片] [CODE_BLOCK language=unknown lines=1 omitted_by_policy]<code>CANARY</code></p>']) {
+      const projected = projectSourceForSemanticRequest(canonical, { renderer });
+      assert.equal(projected.metadataOnly, false);
+      assert.ok(!projected.text.includes('CANARY'));
     }
   });
 

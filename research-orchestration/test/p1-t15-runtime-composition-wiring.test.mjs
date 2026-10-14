@@ -1088,7 +1088,7 @@ describe('P1-R04 safe projection — untrusted corpus → semantic request bound
   test('R04-inline: mixed evidence and inline-only metadata complete ordinary composition without changing canonical bytes', async () => {
     const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
     const answersDoc = answersJsonFor('100', ['<p>正常正文证据。<code>INLINE_BODY_CANARY &lt; /etc/hosts</code>补充证据。</p>',
-      '<p><strong><code>INLINE_ONLY_CANARY</code></strong></p>']);
+      '<p><strong><code>INLINE_ONLY_CANARY</code></strong><img src="https://example.com/a.png"></p>']);
     const originalBytes = JSON.stringify(answersDoc, null, 2);
     const workDir = tmpWork('p1-inline-positive-');
     const calls = [];
@@ -1126,7 +1126,8 @@ describe('P1-R04 safe projection — untrusted corpus → semantic request bound
 
   test('R04-inline: all inline-code-only sources are analyzed with zero claims and still reject synthesis', async () => {
     const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
-    const answersDoc = answersJsonFor('100', ['<code>INLINE_ONLY_CANARY &lt;</code>', '<p><em><code>SECOND_CANARY</code></em></p>']);
+    const answersDoc = answersJsonFor('100', ['<a href="https://example.com"><code>INLINE_ONLY_CANARY &lt;</code></a>',
+      '<p><em><code>SECOND_CANARY</code></em><img src="https://example.com/a.png"></p>']);
     const workDir = tmpWork('p1-all-inline-only-');
     const calls = [];
     const runtime = await makeRecordingRuntime({ claimsPayload: { main: [], minority: [], contradictory: [], expertEvidenceRichTokens: [] },
@@ -1149,32 +1150,38 @@ describe('P1-R04 safe projection — untrusted corpus → semantic request bound
 
   test('R04-inline: omitted inline-only source enters real analysis and cannot support claims or expertise', async () => {
     const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
-    for (const field of ['main', 'minority', 'contradictory', 'expertEvidenceRichTokens']) {
-      const answersDoc = answersJsonFor('100', ['正常正文证据。', '<p><strong><code>INLINE_BODY_CANARY &lt; /etc/hosts</code></strong></p>']);
-      const workDir = tmpWork('p1-inline-claim-refusal-');
-      const calls = [];
-      const runtime = await makeRecordingRuntime({
-        claimsPayload: user => {
-          const sections = String(user).split('[BEGIN UNTRUSTED_DATA token=').slice(1);
-          assert.equal(sections.length, 2);
-          assert.ok(!user.includes('INLINE_BODY_CANARY'));
-          assert.ok(!user.includes('/etc/hosts'));
-          const metadata = sections.find(s => s.includes('[METADATA_ONLY no_extractable_text omitted_by_policy]'));
-          const tokenRef = /^(\d+)\]/.exec(metadata ?? '')?.[1];
-          assert.ok(tokenRef);
-          const payload = { main: [], minority: [], contradictory: [], expertEvidenceRichTokens: [] };
-          payload[field] = field === 'expertEvidenceRichTokens' ? [tokenRef] : [{ tokenRef, statement: '不可从已省略代码编造的观点' }];
-          return payload;
-        }, synthesisPayload: { families: [], unresolvedClaimIds: [] }, calls,
-      });
-      const out = await composeP1Research({ topic: 'AI 编程工具会取代程序员吗', workDir, plan: PLAN,
-        runtime, seam: rankingSeam(['100']), captureAdapter: captureAdapterFor({ 100: answersDoc }),
-        runner: groupRunnerFor(), embeddingProvider: testEmbeddingProvider() });
-      assert.equal(out.ok, false);
-      assert.match(out.details, /inline-code-only source cannot/);
-      assert.equal(calls.filter(b => (b.messages?.[0]?.content ?? '').includes(CLAIMS_SYSTEM_MARKER)).length, 1);
-      assert.equal(calls.filter(b => (b.messages?.[0]?.content ?? '').includes(SYNTHESIS_SYSTEM_MARKER)).length, 0);
-      assert.equal(fs.existsSync(path.join(workDir, 'per-group-claims.json')), false);
+    for (const inlineOnly of ['<p><strong><code>INLINE_BODY_CANARY &lt; /etc/hosts</code></strong></p>',
+      '<code>INLINE_BODY_CANARY &lt;</code><img src="https://example.com/a.png">',
+      '<a href="https://example.com"><code>INLINE_BODY_CANARY &lt;</code></a>',
+      '<code>INLINE_BODY_CANARY &lt;</code><pre><code>BLOCK_BODY_CANARY</code></pre>',
+      '<figure><code>INLINE_BODY_CANARY &lt;</code></figure>', '<ul><code>INLINE_BODY_CANARY &lt;</code></ul>']) {
+      for (const field of ['main', 'minority', 'contradictory', 'expertEvidenceRichTokens']) {
+        const answersDoc = answersJsonFor('100', ['正常正文证据。', inlineOnly]);
+        const workDir = tmpWork('p1-inline-claim-refusal-');
+        const calls = [];
+        const runtime = await makeRecordingRuntime({
+          claimsPayload: user => {
+            const sections = String(user).split('[BEGIN UNTRUSTED_DATA token=').slice(1);
+            assert.equal(sections.length, 2);
+            assert.ok(!user.includes('INLINE_BODY_CANARY'));
+            assert.ok(!user.includes('/etc/hosts'));
+            const metadata = sections.find(s => s.includes('[METADATA_ONLY no_extractable_text omitted_by_policy]'));
+            const tokenRef = /^(\d+)\]/.exec(metadata ?? '')?.[1];
+            assert.ok(tokenRef);
+            const payload = { main: [], minority: [], contradictory: [], expertEvidenceRichTokens: [] };
+            payload[field] = field === 'expertEvidenceRichTokens' ? [tokenRef] : [{ tokenRef, statement: '不可从已省略代码编造的观点' }];
+            return payload;
+          }, synthesisPayload: { families: [], unresolvedClaimIds: [] }, calls,
+        });
+        const out = await composeP1Research({ topic: 'AI 编程工具会取代程序员吗', workDir, plan: PLAN,
+          runtime, seam: rankingSeam(['100']), captureAdapter: captureAdapterFor({ 100: answersDoc }),
+          runner: groupRunnerFor(), embeddingProvider: testEmbeddingProvider() });
+        assert.equal(out.ok, false);
+        assert.match(out.details, /inline-code-only source cannot/);
+        assert.equal(calls.filter(b => (b.messages?.[0]?.content ?? '').includes(CLAIMS_SYSTEM_MARKER)).length, 1);
+        assert.equal(calls.filter(b => (b.messages?.[0]?.content ?? '').includes(SYNTHESIS_SYSTEM_MARKER)).length, 0);
+        assert.equal(fs.existsSync(path.join(workDir, 'per-group-claims.json')), false);
+      }
     }
   });
 

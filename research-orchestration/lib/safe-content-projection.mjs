@@ -29,6 +29,7 @@
  *     placeholders, display hosts).
  *   - OMIT by default: code block bodies → deterministic marker
  *     `[CODE_BLOCK language=... lines=N omitted_by_policy]` (V2 §9.2.4).
+ *     Inline code bodies → `[CODE_INLINE omitted_by_policy]`.
  *     Code bodies are never silently enabled for semantic use.
  *   - NEUTRALIZE: URLs / protocols / paths / backslashes / percent-encoding /
  *     control chars (sanitizeProjectionText) plus T13 fence-forgery tokens
@@ -81,7 +82,7 @@ let rendererPromise = null;
 
 /**
  * Load the reviewed parse5 whitelist renderer once. Resolves to
- * { richHtmlToMarkdown } or null when the dependency is unavailable in this
+ * { richHtmlToMarkdown, withoutInlineCode } or null when the dependency is unavailable in this
  * environment (bare checkout). A null renderer NEVER degrades safety: markup
  * content simply fails closed (see projectSourceForSemanticRequest).
  */
@@ -238,8 +239,8 @@ export function projectSourceForSemanticRequest(content, opts = {}) {
   const text = neutralized.trim();
   assertProjectedTextIsSafe(text);
 
-  // Classify evidence from the same whitelist structure with inline bodies
-  // absent. Never infer evidence from a marker-shaped untrusted text fragment.
+  // Classify evidence from the same whitelist structure without code bodies
+  // or generated asset metadata. Never delete marker-shaped source text.
   let inlineCodeOnly = false;
   if (structured.includes('[CODE_INLINE omitted_by_policy]') && typeof opts.renderer?.withoutInlineCode === 'function') {
     let evidenceMarkdown;
