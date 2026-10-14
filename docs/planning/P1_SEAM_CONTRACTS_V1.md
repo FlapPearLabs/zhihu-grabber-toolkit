@@ -409,6 +409,16 @@ NO_EXTRACTABLE_CLAIM 或现行等价合法结果后才进入 mapped/analyzed acc
 禁止 skip→analyzed、发明 claim 或第二写入者。全部 sources 零 claim 时 T14 仍拒绝 synthesis。
 这只澄清 P1-T13 accounting，不修改 legacy digest/map、identity encoding 或 C major version。
 
+2026-10-14 的 owner 授权 additive amendment 按同一 [P1 Spec §8.1](../specs/p1-cross-question-deep-research.md)
+新增明确 `content === ''` 的 canonical 来源准入：仅接受由既有 verified/hash-verified
+artifacts 派生并绑定 selected source ID、artifact ref、contentHash 的内部证明，不接受普通
+空字符串或可伪造 descriptor。missing/null/nonstring/whitespace、错误 binding/hash、读取
+与投影失败继续 fail closed。真实标记为 `upstream_explicit_empty_content`；该 token 的
+任何 claim/expert 引用均拒绝。来源实际经过 semantic analysis 并获得合法零 claim 后才
+计 mapped/analyzed；全部零 claim 时 T14 仍拒绝。canonical bytes、identity/ownership/shape、
+验证与 STOP authority 不变，C 仍 V1；不推广到 legacy digest/map。该 delta 与 Spec 的
+同 exact HEAD 五条件同步生效，不由 fixture 或实现先行激活。
+
 ### VALID_SUCCESS
 
 aggregate identity 与 `selectedCorpusIdentityRef` 机械相等（guard 等分支可放行）、

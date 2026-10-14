@@ -632,6 +632,25 @@ Seam C 现有 accounting、各 kind 的 claims 数组与 aggregate identity 能�
 无 required shape/identity 变化、无 major bump。全体 selected sources 最终无合法 claim，
 仍按 §10.2 fail closed。此条只适用于 P1-T13，不扩展为 legacy digest/map 行为修改。
 
+**明确空 canonical 正文准入（2026-10-14 owner 授权的最小 additive amendment）**：
+仅当既有 controller 从已验收、hash-verified 的 canonical entry 确认 `content === ''`，
+并将该事实绑定到 selected source 的 canonicalSourceId、verifiedArtifactRef、contentHash，
+才允许它作为 metadata-only 输入进入真实 T13 semantic analysis。该输入仍为
+UNTRUSTED_INERT_CONTENT；准入证明是既有 verified artifacts 的内部派生，不是第二套
+canonical、verification、checkpoint 或 identity authority。普通调用方传入的空字符串、
+可复制/伪造的描述对象不构成准入证明；缺字段、null、非 string、仅 whitespace、
+source/ref/hash/lineage 不匹配与无法读取仍 fail closed。
+
+该类来源使用含义真实的 `upstream_explicit_empty_content` metadata-only 标记，不能称
+`omitted_by_policy`；不回写 canonical，不用 excerpt/comments/title 补造正文，不 drop/skip。
+模型输出若将该 token 引用为任一 claim 或 expert/evidence-rich ref，整组 fail closed；
+只有真实 semantic request 成功且得到合法零 claim 结果后，才进入 T13 mapped/analyzed
+accounting。全体 selected sources 无合法 claim 仍拒绝 synthesis。现有非空输入的投影、
+隐私与真实敏感 sink validator 保留；不扩大 filesystem/query/tool/plan/command/checkpoint/
+STOP authority，不改变 selector、#108、Seam C identity/ownership/shape 或 legacy digest/map。
+本 delta 依 header 的同 exact HEAD Contract + Consistency 审查、合法 ancestry、ff-only
+集成及 fresh remote verify 五条件生效；owner 授权本身不替代这些门禁。
+
 ### 8.2 Claim / Aspect → Proposition Family → Claim Stance（S1）
 
 Aspect 是讨论维度，不是带方向与适用范围的 proposition；claim 是从某来源抽出的具体断言实例，

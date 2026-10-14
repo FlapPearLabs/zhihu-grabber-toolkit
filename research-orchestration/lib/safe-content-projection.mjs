@@ -58,7 +58,7 @@ import {
 import { escapeUntrustedMarkdownText } from '../../zhihu-answer-grabber/src/markdown-security.js';
 
 /** Projection identity carried on every projection for downstream versioning (R06 handoff). */
-export const SAFE_PROJECTION_VERSION = 'p1-r04-safe-projection/2';
+export const SAFE_PROJECTION_VERSION = 'p1-r04-safe-projection/3';
 
 /** Coded fail-closed error (module-level identity; T13 maps it onto the SEAM C group fail-closed path). */
 export class SafeProjectionError extends Error {

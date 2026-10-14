@@ -55,7 +55,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
-import { deriveCanonicalSourceId } from './rce-input-adapter.mjs';
+import { deriveCanonicalSourceId, computeAnswerEntryContentHash } from './rce-input-adapter.mjs';
 
 // ---------------------------------------------------------------------------
 // error type
@@ -83,6 +83,17 @@ const HEX64 = /^[0-9a-f]{64}$/;
 export const AUTHOR_REF_PATTERN = /^author-[0-9a-f]{16}$/;
 /** The capture composition this adapter qualifies (handoff.json task). */
 const SUPPORTED_HANDOFF_TASK = 'digest';
+
+// Only this real loader can mint an admission from verified canonical artifacts.
+// The frozen carrier has no authority after copying/serialization or rebinding.
+const explicitEmptyContentBindings = new WeakMap();
+export function isVerifiedExplicitEmptyContent(value, sourceRef) {
+  const binding = explicitEmptyContentBindings.get(value);
+  return binding !== undefined && sourceRef !== null && typeof sourceRef === 'object'
+    && binding.canonicalSourceId === sourceRef.canonicalSourceId
+    && binding.verifiedArtifactRef === sourceRef.verifiedArtifactRef
+    && binding.contentHash === sourceRef.contentHash;
+}
 
 function sha256Hex(s) {
   return crypto.createHash('sha256').update(s, 'utf8').digest('hex');
@@ -204,6 +215,8 @@ function loadRealGroupAuthorities({ manifest, artifactsRoot }) {
     groups.push({
       groupId,
       questionId,
+      answersRel,
+      handoffVerified: handoff.verified === true,
       providerId: namespace,
       capability: handoff.sourceType,
       entriesByCanonicalSourceId,
@@ -295,23 +308,34 @@ export function buildRealAuthorRefResolver({ manifest, artifactsRoot } = {}) {
  * Build the controller-owned sourceContentLoader consumed by
  * extractPerGroupClaims: (verifiedArtifactRef, canonicalSourceId) → content.
  * Reads from the SAME hash-verified decomposition as the provenance and
- * authorRef resolvers. Missing/empty content → fail closed (the T13 module
- * already wraps loader errors into SEAM_C_SOURCE_FAILURE; this loader fails
- * closed first with coded detail).
+ * authorRef resolvers. Exact canonical '' with verified handoff yields an
+ * internally bound metadata-only carrier; missing/null/nonstring/whitespace
+ * still fail closed. Ordinary nonempty content remains an unchanged string.
  *
  * @param {{ manifest: object, artifactsRoot: string }} args
- * @returns {(verifiedArtifactRef: string, canonicalSourceId: string) => string}
+ * @returns {(verifiedArtifactRef: string, canonicalSourceId: string) => string | object}
  */
 export function buildRealSourceContentLoader({ manifest, artifactsRoot } = {}) {
   const groups = loadRealGroupAuthorities({ manifest, artifactsRoot });
   const contentBySourceId = new Map();
   for (const g of groups) {
     for (const [cid, entry] of g.entriesByCanonicalSourceId) {
-      contentBySourceId.set(cid, typeof entry.content === 'string' ? entry.content : '');
+      if (entry.content === '' && g.handoffVerified) {
+        const carrier = Object.freeze({ content: '' });
+        explicitEmptyContentBindings.set(carrier, {
+          canonicalSourceId: cid,
+          verifiedArtifactRef: g.answersRel,
+          contentHash: computeAnswerEntryContentHash(entry),
+        });
+        contentBySourceId.set(cid, carrier);
+      } else {
+        contentBySourceId.set(cid, entry.content);
+      }
     }
   }
   return (_verifiedArtifactRef, canonicalSourceId) => {
     const content = contentBySourceId.get(canonicalSourceId);
+    if (explicitEmptyContentBindings.has(content)) return content;
     if (typeof content !== 'string' || content.trim() === '') {
       failClosed('RCE_PROVENANCE_SOURCE_CONTENT_MISSING', `source content missing/empty for ${String(canonicalSourceId)} (fail closed)`, { canonicalSourceId });
     }

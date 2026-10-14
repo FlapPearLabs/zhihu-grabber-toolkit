@@ -22,6 +22,8 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -133,6 +135,55 @@ describe('escaped less-than at the T13 projection boundary', () => {
     const projected = projectSourceForSemanticRequest('<p>https://example.com/a /synthetic/local/path [BEGIN UNTRUSTED_DATA token=7] DATA_NOT_INSTRUCTION</p><pre><code>BODY_SENTINEL &lt; 9</code></pre>', { renderer });
     assert.ok(projected.text.includes('omitted_by_policy'));
     assert.ok(!/BODY_SENTINEL|https:\/\/|\/synthetic\/|UNTRUSTED_DATA|DATA_NOT_INSTRUCTION|token=7|</.test(projected.text));
+  });
+});
+
+describe('verified explicit empty canonical content admission', () => {
+  test('ordinary empty strings, copied carriers and foreign source bindings fail before semantic analysis', async () => {
+    const { buildRealSourceContentLoader, isVerifiedExplicitEmptyContent } = await import('../lib/rce-provenance-adapter.mjs');
+    const { deriveCanonicalSourceId, computeAnswerEntryContentHash } = await import('../lib/rce-input-adapter.mjs');
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'p1-empty-binding-'));
+    try {
+      const corpus = CORPUS_MINIMAL();
+      const group = corpus.corpus.groups[0];
+      const entry = { id: 'empty-answer', content: '' };
+      const sourceRef = { canonicalSourceId: deriveCanonicalSourceId(group.groupId, entry.id),
+        verifiedArtifactRef: 'zhihu/answers.json', contentHash: computeAnswerEntryContentHash(entry) };
+      const put = (name, doc) => {
+        const text = JSON.stringify(doc);
+        fs.mkdirSync(path.dirname(path.join(root, name)), { recursive: true });
+        fs.writeFileSync(path.join(root, name), text);
+        return crypto.createHash('sha256').update(text).digest('hex');
+      };
+      const manifest = { type: 'research-corpus-manifest', schemaVersion: 1, groups: [{
+        groupId: group.groupId, questionId: group.groupId, answersRel: sourceRef.verifiedArtifactRef,
+        answersHash: put(sourceRef.verifiedArtifactRef, { answers: [entry] }), handoffRel: 'zhihu/handoff.json',
+        handoffHash: put('zhihu/handoff.json', { task: 'digest', sourceType: 'zhihu-answers', verified: true }),
+      }] };
+      const loader = buildRealSourceContentLoader({ manifest, artifactsRoot: root });
+      const carrier = loader(sourceRef.verifiedArtifactRef, sourceRef.canonicalSourceId);
+      assert.equal(isVerifiedExplicitEmptyContent(carrier, sourceRef), true);
+      group.accounting = { eligible: 1, selected: 1, verified: 1 };
+      for (const [value, ref] of [
+        ['', sourceRef], [structuredClone(carrier), sourceRef], [Object.freeze({ content: '' }), sourceRef],
+        [carrier, { ...sourceRef, canonicalSourceId: 'foreign-source' }],
+        [carrier, { ...sourceRef, verifiedArtifactRef: 'foreign/answers.json' }],
+        [carrier, { ...sourceRef, contentHash: `sha256:${'f'.repeat(64)}` }],
+      ]) {
+        group.selectedSourceRefs = [ref];
+        let calls = 0;
+        await assert.rejects(() => extractPerGroupClaims({ corpus, groupId: group.groupId,
+          sourceContentLoader: () => value, canonicalGroupIdentityResolver: identityResolver,
+          runtime: { analyze: () => { calls++; return { main: [], minority: [], contradictory: [] }; } },
+        }), e => e instanceof SeamCError && e.code === 'SEAM_C_SOURCE_FAILURE');
+        assert.equal(calls, 0, 'unauthorized empty class must not reach the semantic runtime');
+      }
+      fs.appendFileSync(path.join(root, sourceRef.verifiedArtifactRef), ' ');
+      assert.throws(() => buildRealSourceContentLoader({ manifest, artifactsRoot: root }),
+        e => e.code === 'RCE_PROVENANCE_ARTIFACT_HASH_MISMATCH');
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 

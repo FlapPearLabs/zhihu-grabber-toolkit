@@ -265,7 +265,7 @@ function groupRunnerFor() {
     if (name === 'zhihu-handoff') {
       const dir = args[0];
       const doc = JSON.parse(fs.readFileSync(path.join(dir, 'answers.json'), 'utf8'));
-      fs.writeFileSync(path.join(dir, 'handoff.json'), `${JSON.stringify({ questionId: String(doc.questionId), task: 'digest', sourceType: 'session-capture', generatedBy: 'fixture' }, null, 2)}\n`);
+      fs.writeFileSync(path.join(dir, 'handoff.json'), `${JSON.stringify({ questionId: String(doc.questionId), task: 'digest', sourceType: 'session-capture', verified: true, generatedBy: 'fixture' }, null, 2)}\n`);
       return { status: 0, stdout: '' };
     }
     if (name === 'corpus-verify-handoff') {
@@ -1085,10 +1085,136 @@ describe('P1-R04 safe projection — untrusted corpus → semantic request bound
     assert.equal(fs.existsSync(path.join(workDir, 'cross-source-synthesis.json')), true);
   });
 
+  test('R04-empty: verified explicit empty canonical source is analyzed without a fabricated claim', async () => {
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const answersDoc = answersJsonFor('100', ['正常回答正文：该方法有效。', '']);
+    answersDoc.answers[1].excerpt = 'EXCERPT_MUST_NOT_BECOME_EMPTY_SOURCE_BODY';
+    const workDir = tmpWork('p1-explicit-empty-');
+    const calls = [];
+    const runtime = await makeRecordingRuntime({
+      claimsPayload: (user) => {
+        const sections = String(user).split('[BEGIN UNTRUSTED_DATA token=').slice(1);
+        const section = sections.find(s => !s.includes('[METADATA_ONLY'));
+        const tokenRef = /^(\d+)\]/.exec(section ?? '')?.[1];
+        assert.ok(tokenRef, 'a nonempty source remains claim-bearing');
+        return { main: [{ tokenRef, statement: '该方法有效' }], minority: [], contradictory: [], expertEvidenceRichTokens: [] };
+      },
+      synthesisPayload: {
+        families: [{ aspect: '有效性', anchorClaimId: 'c-100-001', members: [{ claimId: 'c-100-001', stance: 'ASSERTS' }] }],
+        unresolvedClaimIds: [],
+      },
+      calls,
+    });
+    const out = await composeP1Research({ topic: 'AI 编程工具会取代程序员吗', workDir, plan: PLAN,
+      runtime, seam: rankingSeam(['100']), captureAdapter: captureAdapterFor({ 100: answersDoc }),
+      runner: groupRunnerFor(), embeddingProvider: testEmbeddingProvider() });
+    assert.equal(out.ok, true, `compose failed: ${JSON.stringify(out)}`);
+    const analyzeCalls = calls.filter(b => (b.messages?.[0]?.content ?? '').includes(CLAIMS_SYSTEM_MARKER));
+    assert.equal(analyzeCalls.length, 1, 'real T13 request must contain both sources');
+    const requestBody = JSON.stringify(analyzeCalls[0]);
+    const userProjection = analyzeCalls[0].messages.find(m => m.role === 'user').content;
+    assert.match(userProjection, /\[METADATA_ONLY no_extractable_text upstream_explicit_empty_content\]/);
+    assert.doesNotMatch(requestBody, /EXCERPT_MUST_NOT_BECOME_EMPTY_SOURCE_BODY/);
+    assert.equal((userProjection.match(/BEGIN UNTRUSTED_DATA token=\d+/g) ?? []).length, 2);
+    const seamC = JSON.parse(fs.readFileSync(path.join(workDir, 'per-group-claims.json'), 'utf8'));
+    const rep = seamC.groupRepresentations[0];
+    assert.equal(rep.accounting.selected, 2);
+    assert.equal(rep.accounting.analyzed, 2);
+    const { deriveCanonicalSourceId } = await import('../lib/rce-input-adapter.mjs');
+    const emptyId = deriveCanonicalSourceId(rep.groupId, '100-a-2');
+    assert.ok(![...rep.claims.main, ...rep.claims.minority, ...rep.claims.contradictory]
+      .some(c => c.sourceRefs.includes(emptyId)), 'the empty source produces no claim');
+    const manifest = JSON.parse(fs.readFileSync(path.join(workDir, 'multi-group-state.json'), 'utf8')).manifest;
+    const expected = crypto.createHash('sha256').update(`${JSON.stringify(answersDoc, null, 2)}\n`).digest('hex');
+    assert.equal(sha256File(path.join(workDir, manifest.groups[0].answersRel)), expected, 'canonical bytes remain unchanged');
+  });
+
+  test('R04-empty: retained invalid canonical types and unverified empty content fail before semantic fetch', async () => {
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    for (const value of [undefined, null, false, 0, {}, [], ' \n ', 'UNVERIFIED_EMPTY']) {
+      const unverified = value === 'UNVERIFIED_EMPTY';
+      const answersDoc = answersJsonFor('100', ['正常回答正文。', unverified ? '' : value]);
+      const workDir = tmpWork('p1-invalid-empty-');
+      const calls = [];
+      const runtime = await makeRecordingRuntime({ claimsPayload: { main: [], minority: [], contradictory: [], expertEvidenceRichTokens: [] },
+        synthesisPayload: { families: [], unresolvedClaimIds: [] }, calls });
+      const baseRunner = groupRunnerFor();
+      const runner = (name, args) => {
+        const result = baseRunner(name, args);
+        if (unverified && name === 'zhihu-handoff') {
+          const file = path.join(args[0], 'handoff.json');
+          const handoff = JSON.parse(fs.readFileSync(file, 'utf8'));
+          handoff.verified = false;
+          fs.writeFileSync(file, `${JSON.stringify(handoff, null, 2)}\n`);
+        }
+        return result;
+      };
+      const out = await composeP1Research({ topic: 'AI 编程工具会取代程序员吗', workDir, plan: PLAN,
+        runtime, seam: rankingSeam(['100']), captureAdapter: captureAdapterFor({ 100: answersDoc }),
+        runner, embeddingProvider: testEmbeddingProvider() });
+      assert.equal(out.ok, false, 'retained invalid content must fail closed');
+      assert.match(out.details, /read failed/, 'the real loader must reject the source');
+      assert.equal(calls.length, 0, 'invalid content cannot reach any semantic fetch');
+      assert.equal(fs.existsSync(path.join(workDir, 'per-group-claims.json')), false);
+    }
+  });
+
+  test('R04-empty: claim and evidence-rich references to explicit-empty tokens fail after real analysis', async () => {
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    for (const field of ['main', 'minority', 'contradictory', 'expertEvidenceRichTokens']) {
+      const answersDoc = answersJsonFor('100', ['正常回答正文。', '']);
+      const workDir = tmpWork('p1-empty-claim-refusal-');
+      const calls = [];
+      const runtime = await makeRecordingRuntime({
+        claimsPayload: (user) => {
+          const section = String(user).split('[BEGIN UNTRUSTED_DATA token=').slice(1)
+            .find(s => s.includes('[METADATA_ONLY no_extractable_text upstream_explicit_empty_content]'));
+          const tokenRef = /^(\d+)\]/.exec(section ?? '')?.[1];
+          assert.ok(tokenRef, 'the admitted empty source must actually be in the request');
+          const payload = { main: [], minority: [], contradictory: [], expertEvidenceRichTokens: [] };
+          payload[field] = field === 'expertEvidenceRichTokens' ? [tokenRef] : [{ tokenRef, statement: '不应从空正文产生的观点' }];
+          return payload;
+        },
+        synthesisPayload: { families: [], unresolvedClaimIds: [] }, calls,
+      });
+      const out = await composeP1Research({ topic: 'AI 编程工具会取代程序员吗', workDir, plan: PLAN,
+        runtime, seam: rankingSeam(['100']), captureAdapter: captureAdapterFor({ 100: answersDoc }),
+        runner: groupRunnerFor(), embeddingProvider: testEmbeddingProvider() });
+      assert.equal(out.ok, false);
+      assert.match(out.details, /explicit empty canonical source cannot/);
+      assert.equal(calls.filter(b => (b.messages?.[0]?.content ?? '').includes(CLAIMS_SYSTEM_MARKER)).length, 1,
+        'the negative control must reach the real analysis output validator');
+      assert.equal(calls.filter(b => (b.messages?.[0]?.content ?? '').includes(SYNTHESIS_SYSTEM_MARKER)).length, 0);
+      assert.equal(fs.existsSync(path.join(workDir, 'per-group-claims.json')), false);
+    }
+  });
+
+  test('R04-empty: all explicitly empty sources are analyzed but zero claims still reject synthesis', async () => {
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const answersDoc = answersJsonFor('100', ['', '']);
+    const workDir = tmpWork('p1-all-explicit-empty-');
+    const calls = [];
+    const runtime = await makeRecordingRuntime({ claimsPayload: { main: [], minority: [], contradictory: [], expertEvidenceRichTokens: [] },
+      synthesisPayload: { families: [], unresolvedClaimIds: [] }, calls });
+    const out = await composeP1Research({ topic: 'AI 编程工具会取代程序员吗', workDir, plan: PLAN,
+      runtime, seam: rankingSeam(['100']), captureAdapter: captureAdapterFor({ 100: answersDoc }),
+      runner: groupRunnerFor(), embeddingProvider: testEmbeddingProvider() });
+    assert.equal(out.ok, false);
+    assert.match(JSON.stringify(out), /T14_EMPTY_VERIFIED_INPUT/);
+    const analyzeCalls = calls.filter(b => (b.messages?.[0]?.content ?? '').includes(CLAIMS_SYSTEM_MARKER));
+    assert.equal(analyzeCalls.length, 1);
+    const user = analyzeCalls[0].messages.find(m => m.role === 'user').content;
+    assert.equal((user.match(/upstream_explicit_empty_content/g) ?? []).length, 2);
+    const artifact = JSON.parse(fs.readFileSync(path.join(workDir, 'per-group-claims.json'), 'utf8'));
+    assert.equal(artifact.groupRepresentations[0].accounting.analyzed, 2);
+    assert.equal(calls.filter(b => (b.messages?.[0]?.content ?? '').includes(SYNTHESIS_SYSTEM_MARKER)).length, 0);
+    assert.equal(fs.existsSync(path.join(workDir, 'cross-source-synthesis.json')), false);
+  });
+
   test('R04-3: source content failure fails closed BEFORE any semantic fetch (zero transport calls)', async () => {
     const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
 
-    const answersDoc = answersJsonFor('100', ['正常回答正文。', '']); // empty canonical content → loader fails closed
+    const answersDoc = answersJsonFor('100', ['正常回答正文。', null]); // null remains unreadable; exact '' is separately admitted
     const workDir = tmpWork('p1-r04-zerofetch-');
 
     const calls = [];
