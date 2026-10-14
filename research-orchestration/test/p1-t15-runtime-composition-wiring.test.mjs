@@ -1085,6 +1085,99 @@ describe('P1-R04 safe projection — untrusted corpus → semantic request bound
     assert.equal(fs.existsSync(path.join(workDir, 'cross-source-synthesis.json')), true);
   });
 
+  test('R04-inline: mixed evidence and inline-only metadata complete ordinary composition without changing canonical bytes', async () => {
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const answersDoc = answersJsonFor('100', ['<p>正常正文证据。<code>INLINE_BODY_CANARY &lt; /etc/hosts</code>补充证据。</p>',
+      '<p><strong><code>INLINE_ONLY_CANARY</code></strong></p>']);
+    const originalBytes = JSON.stringify(answersDoc, null, 2);
+    const workDir = tmpWork('p1-inline-positive-');
+    const calls = [];
+    const runtime = await makeRecordingRuntime({
+      claimsPayload: user => {
+        const sections = String(user).split('[BEGIN UNTRUSTED_DATA token=').slice(1);
+        assert.equal(sections.length, 2);
+        assert.ok(user.includes('正常正文证据'));
+        assert.ok(user.includes('补充证据'));
+        assert.ok(user.includes('[CODE_INLINE omitted_by_policy]'));
+        assert.ok(user.includes('[METADATA_ONLY no_extractable_text omitted_by_policy]'));
+        for (const canary of ['INLINE_BODY_CANARY', 'INLINE_ONLY_CANARY', '/etc/hosts', '<']) assert.ok(!user.includes(canary));
+        const tokenRef = /^(\d+)\]/.exec(sections.find(s => s.includes('正常正文证据')))?.[1];
+        assert.ok(tokenRef);
+        return { main: [{ tokenRef, statement: '正常正文证据支持的观点' }], minority: [], contradictory: [], expertEvidenceRichTokens: [] };
+      },
+      synthesisPayload: { families: [{ aspect: '总体有效性', anchorClaimId: 'c-100-001', members: [{ claimId: 'c-100-001', stance: 'ASSERTS' }] }],
+        unresolvedClaimIds: [] }, calls,
+    });
+    const out = await composeP1Research({ topic: 'AI 编程工具会取代程序员吗', workDir, plan: PLAN,
+      runtime, seam: rankingSeam(['100']), captureAdapter: captureAdapterFor({ 100: answersDoc }),
+      runner: groupRunnerFor(), embeddingProvider: testEmbeddingProvider() });
+    assert.equal(out.ok, true, JSON.stringify(out));
+    assert.equal(calls.filter(b => (b.messages?.[0]?.content ?? '').includes(CLAIMS_SYSTEM_MARKER)).length, 1);
+    const artifact = JSON.parse(fs.readFileSync(path.join(workDir, 'per-group-claims.json'), 'utf8'));
+    assert.equal(artifact.groupRepresentations[0].accounting.selected, 2);
+    assert.equal(artifact.groupRepresentations[0].accounting.analyzed, 2);
+    assert.equal(artifact.groupRepresentations[0].claims.main.length, 1);
+    assert.equal(fs.existsSync(path.join(workDir, 'cross-source-synthesis.json')), true);
+    assert.equal(JSON.stringify(answersDoc, null, 2), originalBytes);
+    const manifest = JSON.parse(fs.readFileSync(path.join(workDir, 'multi-group-state.json'), 'utf8')).manifest;
+    const expected = crypto.createHash('sha256').update(`${originalBytes}\n`).digest('hex');
+    assert.equal(sha256File(path.join(workDir, manifest.groups[0].answersRel)), expected);
+  });
+
+  test('R04-inline: all inline-code-only sources are analyzed with zero claims and still reject synthesis', async () => {
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    const answersDoc = answersJsonFor('100', ['<code>INLINE_ONLY_CANARY &lt;</code>', '<p><em><code>SECOND_CANARY</code></em></p>']);
+    const workDir = tmpWork('p1-all-inline-only-');
+    const calls = [];
+    const runtime = await makeRecordingRuntime({ claimsPayload: { main: [], minority: [], contradictory: [], expertEvidenceRichTokens: [] },
+      synthesisPayload: { families: [], unresolvedClaimIds: [] }, calls });
+    const out = await composeP1Research({ topic: 'AI 编程工具会取代程序员吗', workDir, plan: PLAN,
+      runtime, seam: rankingSeam(['100']), captureAdapter: captureAdapterFor({ 100: answersDoc }),
+      runner: groupRunnerFor(), embeddingProvider: testEmbeddingProvider() });
+    assert.equal(out.ok, false);
+    assert.match(JSON.stringify(out), /T14_EMPTY_VERIFIED_INPUT/);
+    const analysis = calls.filter(b => (b.messages?.[0]?.content ?? '').includes(CLAIMS_SYSTEM_MARKER));
+    assert.equal(analysis.length, 1);
+    const user = analysis[0].messages.find(m => m.role === 'user').content;
+    assert.equal((user.match(/\[METADATA_ONLY no_extractable_text omitted_by_policy\]/g) ?? []).length, 2);
+    assert.ok(!user.includes('CANARY'));
+    const artifact = JSON.parse(fs.readFileSync(path.join(workDir, 'per-group-claims.json'), 'utf8'));
+    assert.equal(artifact.groupRepresentations[0].accounting.analyzed, 2);
+    assert.equal(calls.filter(b => (b.messages?.[0]?.content ?? '').includes(SYNTHESIS_SYSTEM_MARKER)).length, 0);
+    assert.equal(fs.existsSync(path.join(workDir, 'cross-source-synthesis.json')), false);
+  });
+
+  test('R04-inline: omitted inline-only source enters real analysis and cannot support claims or expertise', async () => {
+    const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+    for (const field of ['main', 'minority', 'contradictory', 'expertEvidenceRichTokens']) {
+      const answersDoc = answersJsonFor('100', ['正常正文证据。', '<p><strong><code>INLINE_BODY_CANARY &lt; /etc/hosts</code></strong></p>']);
+      const workDir = tmpWork('p1-inline-claim-refusal-');
+      const calls = [];
+      const runtime = await makeRecordingRuntime({
+        claimsPayload: user => {
+          const sections = String(user).split('[BEGIN UNTRUSTED_DATA token=').slice(1);
+          assert.equal(sections.length, 2);
+          assert.ok(!user.includes('INLINE_BODY_CANARY'));
+          assert.ok(!user.includes('/etc/hosts'));
+          const metadata = sections.find(s => s.includes('[METADATA_ONLY no_extractable_text omitted_by_policy]'));
+          const tokenRef = /^(\d+)\]/.exec(metadata ?? '')?.[1];
+          assert.ok(tokenRef);
+          const payload = { main: [], minority: [], contradictory: [], expertEvidenceRichTokens: [] };
+          payload[field] = field === 'expertEvidenceRichTokens' ? [tokenRef] : [{ tokenRef, statement: '不可从已省略代码编造的观点' }];
+          return payload;
+        }, synthesisPayload: { families: [], unresolvedClaimIds: [] }, calls,
+      });
+      const out = await composeP1Research({ topic: 'AI 编程工具会取代程序员吗', workDir, plan: PLAN,
+        runtime, seam: rankingSeam(['100']), captureAdapter: captureAdapterFor({ 100: answersDoc }),
+        runner: groupRunnerFor(), embeddingProvider: testEmbeddingProvider() });
+      assert.equal(out.ok, false);
+      assert.match(out.details, /inline-code-only source cannot/);
+      assert.equal(calls.filter(b => (b.messages?.[0]?.content ?? '').includes(CLAIMS_SYSTEM_MARKER)).length, 1);
+      assert.equal(calls.filter(b => (b.messages?.[0]?.content ?? '').includes(SYNTHESIS_SYSTEM_MARKER)).length, 0);
+      assert.equal(fs.existsSync(path.join(workDir, 'per-group-claims.json')), false);
+    }
+  });
+
   test('R04-empty: verified explicit empty canonical source is analyzed without a fabricated claim', async () => {
     const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
     const answersDoc = answersJsonFor('100', ['正常回答正文：该方法有效。', '']);

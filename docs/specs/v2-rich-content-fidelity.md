@@ -438,6 +438,11 @@ Agent projection 必须保留有用的语义结构:
 不要求特定实现函数；允许独立的确定性安全 projection renderer，前提是满足本 Agent View 合同。
 ```
 
+2026-10-14 owner 授权的窄澄清（在同 exact HEAD 的规定独立审查、ff-only 集成与 remote verification 后生效）：
+上述代码正文 `DEFAULT OMIT` 也包含行内 `<code>` body；仅 Agent View 使用 bounded inert omission metadata，Human View 与 canonical bytes 不变。
+省略后仅余行内代码元数据的来源必须以 metadata-only 进入实际语义分析，不跳过来源；不得据此编造 claim/expert evidence，合法零 claim 结果后才计 analyzed，全零 claim 的 synthesis 拒绝不变。
+该澄清不授权执行、自动访问或提升 code 内容为 control/path/query/tool/plan 指令，真实 raw-markup/renderer/type/hash/coverage/identity/checkpoint/STOP 门禁保持。
+
 **9.2.5 Asset projection**
 
 ```text

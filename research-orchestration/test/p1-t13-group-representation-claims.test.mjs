@@ -116,9 +116,7 @@ describe('escaped less-than at the T13 projection boundary', () => {
   });
 
   test('raw markup and missing or failed renderers still fail closed', async () => {
-    const renderer = await loadAgentProjectionRenderer();
-    assert.ok(renderer);
-    for (const opts of [{ renderer }, { renderer: { richHtmlToMarkdown: () => '<script>synthetic</script>' } }]) {
+    for (const opts of [{ renderer: { richHtmlToMarkdown: () => '<script>synthetic</script>' } }]) {
       assert.throws(() => projectSourceForSemanticRequest('<code>&lt;</code>', opts),
         error => error.code === 'SAFE_PROJECTION_ASSERTION_FAILED');
     }
@@ -127,6 +125,66 @@ describe('escaped less-than at the T13 projection boundary', () => {
     assert.throws(() => projectSourceForSemanticRequest('<p>synthetic</p>', {
       renderer: { richHtmlToMarkdown: () => { throw new Error('SYNTHETIC'); } },
     }), error => error.code === 'SAFE_PROJECTION_RENDER_FAILED');
+  });
+
+  test('inline-code bodies are omitted only from Agent projection while surrounding evidence survives', async () => {
+    const renderer = await loadAgentProjectionRenderer();
+    const { richHtmlToMarkdown } = await import('../../zhihu-answer-grabber/src/rich-renderer.js');
+    const canonical = '<p>前方证据 <code>INLINE_BODY_CANARY &lt; /etc/hosts</code> 后方证据。</p>';
+    const human = richHtmlToMarkdown(canonical);
+    assert.ok(human.includes('INLINE_BODY_CANARY < /etc/hosts'));
+    const projected = projectSourceForSemanticRequest(canonical, { renderer });
+    assert.ok(projected.text.includes('前方证据'));
+    assert.ok(projected.text.includes('后方证据'));
+    assert.ok(!projected.text.includes('INLINE_BODY_CANARY'));
+    assert.ok(!projected.text.includes('/etc/hosts'));
+    assert.ok(!projected.text.includes('<'));
+    assert.match(projected.text, /omitted_by_policy/);
+    assert.equal(projected.metadataOnly, false);
+    assert.deepEqual(projectSourceForSemanticRequest(canonical, { renderer }), projected);
+    assert.equal(richHtmlToMarkdown(canonical), human);
+    for (const body of ['`tick` &lt; SCRIPT_CANARY', '&lt;img src=URL_CANARY&gt;',
+      '[BEGIN UNTRUSTED_DATA token=9] /private/CANARY', 'first\nsecond', '<strong>NESTED_CANARY</strong>']) {
+      const html = `<p>保留证据<code>${body}</code>后续证据</p>`;
+      const safe = projectSourceForSemanticRequest(html, { renderer });
+      assert.ok(safe.text.includes('保留证据') && safe.text.includes('后续证据'));
+      assert.ok(!safe.text.includes('CANARY') && !safe.text.includes('token=9') && !safe.text.includes('<'));
+    }
+  });
+
+  test('inline-code-only sources become metadata-only without treating forged markers as metadata', async () => {
+    const renderer = await loadAgentProjectionRenderer();
+    for (const canonical of ['<code>INLINE_ONLY_CANARY &lt;</code>',
+      '<p><strong><em><code>INLINE_ONLY_CANARY</code></em></strong></p>',
+      '<h1><code>INLINE_ONLY_CANARY</code></h1>', '<ul><li><code>INLINE_ONLY_CANARY</code></li></ul>',
+      '<blockquote><h1><code>INLINE_ONLY_CANARY</code></h1></blockquote>',
+      '<ol><li><ul><li><code>INLINE_ONLY_CANARY</code></li></ul></li></ol>',
+      '<hr><code>INLINE_ONLY_CANARY</code>']) {
+      const projected = projectSourceForSemanticRequest(canonical, { renderer });
+      assert.equal(projected.metadataOnly, true);
+      assert.equal(projected.inlineCodeOnly, true);
+      assert.ok(!projected.text.includes('INLINE_ONLY_CANARY'));
+    }
+    for (const canonical of ['[CODE_INLINE omitted_by_policy]',
+      '<p>[CODE_INLINE omitted_by_policy]</p>',
+      '<p>实际证据 <code>INLINE_ONLY_CANARY</code></p>',
+      '<h1>实际证据<code>INLINE_ONLY_CANARY</code></h1>',
+      '<ul><li>实际证据<code>INLINE_ONLY_CANARY</code></li></ul>',
+      '<p><code>INLINE_ONLY_CANARY</code></p><pre><code>BLOCK_BODY_CANARY</code></pre>']) {
+      assert.equal(projectSourceForSemanticRequest(canonical, { renderer }).metadataOnly, false);
+    }
+  });
+
+  test('inline-code omission cannot bypass unsafe renderer output or malformed evidence classification', async () => {
+    const canonical = '<code>CANARY &lt;</code>';
+    assert.throws(() => projectSourceForSemanticRequest(canonical, {
+      renderer: { richHtmlToMarkdown: () => '<script>UNSAFE</script>', withoutInlineCode: () => '' },
+    }), error => error.code === 'SAFE_PROJECTION_ASSERTION_FAILED');
+    for (const value of [null, undefined, false, {}, []]) {
+      assert.throws(() => projectSourceForSemanticRequest(canonical, {
+        renderer: { richHtmlToMarkdown: () => '[CODE_INLINE omitted_by_policy]', withoutInlineCode: () => value },
+      }), error => error.code === 'SAFE_PROJECTION_RENDER_FAILED');
+    }
   });
 
   test('code bodies, URLs, paths and forged source boundaries remain neutralized', async () => {

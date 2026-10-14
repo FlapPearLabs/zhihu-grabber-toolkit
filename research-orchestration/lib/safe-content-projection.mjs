@@ -58,7 +58,7 @@ import {
 import { escapeUntrustedMarkdownText } from '../../zhihu-answer-grabber/src/markdown-security.js';
 
 /** Projection identity carried on every projection for downstream versioning (R06 handoff). */
-export const SAFE_PROJECTION_VERSION = 'p1-r04-safe-projection/3';
+export const SAFE_PROJECTION_VERSION = 'p1-r04-safe-projection/4';
 
 /** Coded fail-closed error (module-level identity; T13 maps it onto the SEAM C group fail-closed path). */
 export class SafeProjectionError extends Error {
@@ -89,7 +89,10 @@ export function loadAgentProjectionRenderer() {
   if (rendererPromise === null) {
     rendererPromise = import('../../zhihu-answer-grabber/src/rich-renderer.js')
       .then((mod) => (typeof mod?.richHtmlToMarkdown === 'function'
-        ? { richHtmlToMarkdown: mod.richHtmlToMarkdown }
+        ? {
+          richHtmlToMarkdown: content => mod.richHtmlToMarkdown(content, { inlineCodeBodyMode: 'metadata' }),
+          withoutInlineCode: content => mod.richHtmlToMarkdown(content, { inlineCodeBodyMode: 'omit' }),
+        }
         : null))
       .catch(() => null);
   }
@@ -187,11 +190,11 @@ function assertProjectedTextIsSafe(text) {
  *
  * @param {string} content canonical raw content (unchanged semantics; the
  *   canonical bytes/hash are never rewritten by this module)
- * @param {{ renderer?: { richHtmlToMarkdown: Function } | null }} [opts]
+ * @param {{ renderer?: { richHtmlToMarkdown: Function, withoutInlineCode?: Function } | null }} [opts]
  *   renderer: preloaded via loadAgentProjectionRenderer(); null only in
  *   environments without the parse5 dependency, where markup content fails
  *   closed and plain text still gets the deterministic escape+sanitize path.
- * @returns {{ text: string, metadataOnly: boolean }}
+ * @returns {{ text: string, metadataOnly: boolean, inlineCodeOnly?: boolean }}
  *   text: the safe inner projection text (the caller fences it as
  *   UNTRUSTED_DATA under a controller-issued opaque token).
  *   metadataOnly: true when nothing extractable remains after the policy —
@@ -235,8 +238,25 @@ export function projectSourceForSemanticRequest(content, opts = {}) {
   const text = neutralized.trim();
   assertProjectedTextIsSafe(text);
 
+  // Classify evidence from the same whitelist structure with inline bodies
+  // absent. Never infer evidence from a marker-shaped untrusted text fragment.
+  let inlineCodeOnly = false;
+  if (structured.includes('[CODE_INLINE omitted_by_policy]') && typeof opts.renderer?.withoutInlineCode === 'function') {
+    let evidenceMarkdown;
+    try {
+      evidenceMarkdown = opts.renderer.withoutInlineCode(content);
+      if (typeof evidenceMarkdown !== 'string') {
+        throw new SafeProjectionError(ERR_RENDER_FAILED, 'inline-code evidence projection must be a string');
+      }
+    } catch (error) {
+      throw new SafeProjectionError(ERR_RENDER_FAILED, `inline-code evidence projection failed (${error?.code ?? error?.name ?? 'error'})`);
+    }
+    inlineCodeOnly = !hasExtractableContent(omitCodeBodies(evidenceMarkdown));
+  }
+
   return {
     text,
-    metadataOnly: !hasExtractableContent(text),
+    metadataOnly: inlineCodeOnly || !hasExtractableContent(text),
+    ...(inlineCodeOnly ? { inlineCodeOnly: true } : {}),
   };
 }

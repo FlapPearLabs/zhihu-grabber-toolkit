@@ -214,7 +214,7 @@ function renderBlock(node, ctx) {
     case 'pre':
       return renderPre(node, ctx);
     case 'hr':
-      return '---';
+      return ctx.inlineCodeBodyMode === 'omit' ? '' : '---';
     case 'figure':
       return renderFigure(node, ctx);
     case 'script':
@@ -255,6 +255,7 @@ function renderHeading(node, ctx) {
   const offset = Number.isInteger(ctx.headingOffset) ? ctx.headingOffset : 2;
   const level = Math.min(src + offset, 6);
   const text = renderBlockChildren(node.childNodes ?? [], ctx);
+  if (ctx.inlineCodeBodyMode === 'omit' && text.trim().length === 0) return '';
   return `${'#'.repeat(level)} ${text}`;
 }
 
@@ -303,6 +304,9 @@ export function extractLanguage(codeEl) {
 
 /** inline code：内容中的 backtick 不能造成 Markdown escape */
 function renderInlineCode(node, ctx) {
+  if (ctx.inlineCodeBodyMode === 'metadata' || ctx.inlineCodeBodyMode === 'omit') {
+    return ctx.inlineCodeBodyMode === 'metadata' ? '[CODE_INLINE omitted_by_policy]' : '';
+  }
   const text = nodeText(node);
   const run = longestBacktickRun(text);
   const delim = '`'.repeat(run + 1); // run=0 → 1 个 backtick，run≥1 → 更长 delimiter
@@ -440,6 +444,10 @@ function renderList(node, ctx, ordered) {
     }
     const marker = ordered ? `${start + n - 1}.` : '-';
     const content = renderLiContent(child, ctx);
+    if (ctx.inlineCodeBodyMode === 'omit' && content.trim().length === 0) {
+      n += 1;
+      continue;
+    }
     const cLines = content.split('\n');
     lines.push(`${marker} ${cLines[0]}`);
     const contPad = ' '.repeat(marker.length + 1);
@@ -490,10 +498,12 @@ function renderLiContent(li, ctx) {
  * 跨调用状态泄漏（G9 determinism）。同一 HTML + 同一 ctx → 同一输出。
  *
  * @param {unknown} html
- * @param {{ headingOffset?: number, answerId?: string|number }} [ctx]
+ * @param {{ headingOffset?: number, answerId?: string|number, inlineCodeBodyMode?: 'metadata'|'omit' }} [ctx]
  *   headingOffset：正文 heading 相对文档顶层的偏移（answer body 默认 2 → h1 变 H3）
  *   answerId：回答 ID（数字字符串），用于生成文档内全局唯一的脚注内部 ID
  *     （§13.1：a<answerId>-r<index>）；缺失/非法时脚注 fail closed 为可见文本。
+ *   inlineCodeBodyMode：仅 Agent 调用启用 metadata；omit 表示仅供证据存在性判定的无正文表示。
+ *     默认保持 Human View 的完整行内代码渲染。
  * @returns {string}
  */
 export function richHtmlToMarkdown(html, ctx = {}) {
@@ -502,6 +512,7 @@ export function richHtmlToMarkdown(html, ctx = {}) {
   const merged = {
     headingOffset: Number.isInteger(ctx.headingOffset) ? ctx.headingOffset : 2,
     answerId: ctx.answerId ?? null,
+    inlineCodeBodyMode: ctx.inlineCodeBodyMode,
     footnoteIndex: 0, // 每次调用独立，保证无跨调用状态泄漏
     footnotes: [], // 本回答内脚注定义表（按出现顺序）
   };

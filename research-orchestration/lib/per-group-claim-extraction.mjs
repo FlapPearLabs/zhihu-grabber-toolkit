@@ -168,6 +168,10 @@ export function issueSourceTokens(corpusGroup) {
  *   (loadAgentProjectionRenderer()); required for markup content.
  */
 export function buildUntrustedProjection({ token, text, renderer = null }) {
+  return buildSourceProjection({ token, text, renderer }).projection;
+}
+
+function buildSourceProjection({ token, text, renderer }) {
   if (!isNonEmptyString(token) || !/^[A-Za-z0-9]{1,16}$/.test(token)) {
     throw new SeamCError(SEAM_C_REPRESENTATION_CONFLICT, 'buildUntrustedProjection: opaque token required');
   }
@@ -194,7 +198,7 @@ export function buildUntrustedProjection({ token, text, renderer = null }) {
   const inner = projected.metadataOnly
     ? '[METADATA_ONLY no_extractable_text omitted_by_policy]'
     : projected.text;
-  return fenceProjectedSource(token, inner);
+  return { projection: fenceProjectedSource(token, inner), inlineCodeOnly: projected.inlineCodeOnly === true };
 }
 
 // Framing stays controller-owned; the explicit-empty path supplies only a
@@ -318,6 +322,7 @@ export async function extractPerGroupClaims({
   // group with ZERO runtime transport calls (fail-closed ordering, Issue #92).
   const sections = [];
   const explicitEmptySourceIds = new Set();
+  const inlineCodeOnlySourceIds = new Set();
   for (const ref of group.selectedSourceRefs) {
     let content;
     try {
@@ -331,10 +336,12 @@ export async function extractPerGroupClaims({
     }
     const explicitEmpty = isVerifiedExplicitEmptyContent(content, ref);
     const token = tokenById.get(ref.canonicalSourceId);
-    const projection = explicitEmpty
-      ? fenceProjectedSource(token, '[METADATA_ONLY no_extractable_text upstream_explicit_empty_content]')
-      : buildUntrustedProjection({ token, text: content, renderer });
+    const built = explicitEmpty
+      ? { projection: fenceProjectedSource(token, '[METADATA_ONLY no_extractable_text upstream_explicit_empty_content]'), inlineCodeOnly: false }
+      : buildSourceProjection({ token, text: content, renderer });
+    const { projection } = built;
     if (explicitEmpty) explicitEmptySourceIds.add(ref.canonicalSourceId);
+    if (built.inlineCodeOnly) inlineCodeOnlySourceIds.add(ref.canonicalSourceId);
     assertProjectionIsolation(projection, { forbidden: canonicalIds });
     sections.push(projection);
   }
@@ -365,6 +372,9 @@ export async function extractPerGroupClaims({
       if (explicitEmptySourceIds.has(canonicalSourceId)) {
         throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, 'explicit empty canonical source cannot support a claim — fail closed');
       }
+      if (inlineCodeOnlySourceIds.has(canonicalSourceId)) {
+        throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, 'inline-code-only source cannot support a claim — fail closed');
+      }
       claimSeq += 1;
       return {
         claimId: `c-${groupId}-${String(claimSeq).padStart(3, '0')}`,
@@ -388,6 +398,9 @@ export async function extractPerGroupClaims({
     const canonicalSourceId = idByToken.get(tokenRef);
     if (explicitEmptySourceIds.has(canonicalSourceId)) {
       throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, 'explicit empty canonical source cannot be evidence-rich — fail closed');
+    }
+    if (inlineCodeOnlySourceIds.has(canonicalSourceId)) {
+      throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, 'inline-code-only source cannot be evidence-rich — fail closed');
     }
     return canonicalSourceId;
   });
