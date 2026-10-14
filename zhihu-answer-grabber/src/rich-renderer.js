@@ -94,6 +94,7 @@ function textPipeline(text, ctx) {
   let out = '';
   for (const span of spans) {
     if (span.type === 'url') {
+      if (ctx.inlineCodeBodyMode === 'omit') continue;
       const cls = classifyUrl(span.url);
       if (cls !== null && cls.clickable) {
         out += `[打开外部链接 · ${cls.displayHost}](${safeMarkdownDestination(cls.canonicalUrl)})`;

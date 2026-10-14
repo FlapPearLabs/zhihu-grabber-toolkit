@@ -179,6 +179,7 @@ describe('escaped less-than at the T13 projection boundary', () => {
     for (const canonical of ['<code>INLINE_ONLY_CANARY &lt;</code><img src="https://example.com/a.png">',
       '<code>INLINE_ONLY_CANARY</code><img alt="图片描述" src="https://example.com/a.png">',
       '<a href="https://example.com"><code>INLINE_ONLY_CANARY &lt;</code></a>',
+      '<code>INLINE_ONLY_CANARY</code><p>https://example.com/a</p>',
       '<code>INLINE_ONLY_CANARY</code><pre><code>BLOCK_BODY_CANARY</code></pre>',
       '<figure><code>INLINE_ONLY_CANARY &lt;</code></figure>',
       '<ul><code>INLINE_ONLY_CANARY &lt;</code></ul>']) {
@@ -189,6 +190,7 @@ describe('escaped less-than at the T13 projection boundary', () => {
     }
     for (const canonical of ['<a href="https://example.com">实际锚文本<code>CANARY</code></a>',
       '<figure><img src="https://example.com/a.png"><figcaption>实际 caption<code>CANARY</code></figcaption></figure>',
+      '<p>前方实际证据 https://example.com/a 后方实际证据<code>CANARY</code></p>',
       '<p>[图片] [CODE_BLOCK language=unknown lines=1 omitted_by_policy]<code>CANARY</code></p>']) {
       const projected = projectSourceForSemanticRequest(canonical, { renderer });
       assert.equal(projected.metadataOnly, false);

@@ -1153,6 +1153,7 @@ describe('P1-R04 safe projection — untrusted corpus → semantic request bound
     for (const inlineOnly of ['<p><strong><code>INLINE_BODY_CANARY &lt; /etc/hosts</code></strong></p>',
       '<code>INLINE_BODY_CANARY &lt;</code><img src="https://example.com/a.png">',
       '<a href="https://example.com"><code>INLINE_BODY_CANARY &lt;</code></a>',
+      '<code>INLINE_BODY_CANARY &lt;</code><p>https://example.com/a</p>',
       '<code>INLINE_BODY_CANARY &lt;</code><pre><code>BLOCK_BODY_CANARY</code></pre>',
       '<figure><code>INLINE_BODY_CANARY &lt;</code></figure>', '<ul><code>INLINE_BODY_CANARY &lt;</code></ul>']) {
       for (const field of ['main', 'minority', 'contradictory', 'expertEvidenceRichTokens']) {
