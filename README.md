@@ -218,10 +218,9 @@ node scripts/preflight.mjs --json
 
 cd ../research-orchestration
 npm ci --registry=https://registry.npmjs.org
-
-cd ../corpus-anthology
-npm ci --registry=https://registry.npmjs.org
 ```
+
+`corpus-anthology` 没有第三方依赖，无需安装。
 
 ### 2. 先让 Agent 检查当前环境
 
@@ -346,7 +345,9 @@ node research-orchestration/bin/research.mjs "人工智能会如何影响教育�
 node research-orchestration/bin/research-p1.mjs "AI 编程工具会取代程序员吗"
 ```
 
-机器可读输出：
+完成后，工作目录（默认 `./work/research-p1`）里会有一份可读的 `report.md`：按议题列出支持和反对的观点、各问题组的观点、覆盖说明，每条观点都附有原回答链接。命令行会打印议题摘要和报告路径。`report.md` 由研究结果派生，权威数据仍是同目录的 JSON 文件。
+
+机器可读输出（JSON 中的 `report` 字段给出报告文件名）：
 
 ```bash
 node research-orchestration/bin/research-p1.mjs "AI 编程工具会取代程序员吗" --json
