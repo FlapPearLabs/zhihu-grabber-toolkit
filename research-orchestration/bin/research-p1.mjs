@@ -27,6 +27,9 @@
  *   --runtime <id>  must be exactly deepseek-api-tool-less (fail-closed otherwise)
  *   -h, --help
  *
+ * On success a human-readable report.md is rendered into the work directory
+ * (derived view; see lib/report.mjs).
+ *
  * Exit codes (v0.3 CLI contract vocabulary):
  *   0  COMPLETE (or a valid completed checkpoint was reused)
  *   1  failure (fail-closed; --json gives the structured error identity)
@@ -38,6 +41,7 @@ import path from 'node:path';
 import { readFileSync } from 'node:fs';
 import { composeP1Research } from '../lib/p1-runtime-composer.mjs';
 import { P1_PIPELINE_IDENTITY } from '../lib/coverage-final-integration.mjs';
+import { writeReport, summarizeReport, REPORT_FILENAME } from '../lib/report.mjs';
 
 const HELP = `research-p1 — P1 cross-question deep research composition entrypoint
 
@@ -51,6 +55,8 @@ const HELP = `research-p1 — P1 cross-question deep research composition entryp
   --clarification <file>  从绑定同一 occurrence 的 JSON 用户回应恢复；不能与 --restart 同用
   --runtime <id>      必须恰好是 deepseek-api-tool-less（其余一律 invalid_input，无回退）
   -h, --help          本帮助
+
+成功后会在工作目录写出可读报告 report.md。
 
 退出码:
   0  COMPLETE（或合法复用已完成 checkpoint）
@@ -123,10 +129,22 @@ async function main() {
   });
 
   if (out.ok) {
+    // report.md is a derived, human-readable view. Failing to render it never
+    // changes the run outcome: the canonical artifacts are already written.
+    let report = null;
+    try {
+      report = writeReport(opts.workDir);
+    } catch (err) {
+      console.error(`[research-p1] 警告：未能生成 ${REPORT_FILENAME}（${err?.code ?? 'error'}）: ${err?.message ?? String(err)}`);
+    }
     if (opts.json) {
-      console.log(JSON.stringify({ ...out.result, reused: out.reused === true }, null, 2));
+      console.log(JSON.stringify({ ...out.result, reused: out.reused === true, report: report ? REPORT_FILENAME : null }, null, 2));
     } else {
       console.log(`[research-p1] 完成（P1 ${P1_PIPELINE_IDENTITY}；100% 分析覆盖=${out.result.disclosure.isFullCoverage}）`);
+      if (report) {
+        for (const line of summarizeReport(report.model)) console.log(line);
+        console.log(`报告：${report.reportPath}`);
+      }
     }
     process.exit(0);
   }
