@@ -121,18 +121,13 @@ import { REQUIRED_EMBEDDING_IDENTITY } from './dense-geometry.mjs';
 import { deriveCanonicalSourceId } from './rce-input-adapter.mjs';
 import { assertArtifactSafe } from './rrf.mjs';
 import { recordCanonicalSearchResponse, parseBoundProviderPool, registerPrivateTitleRoot } from './provider-title-origin.mjs';
-import { buildDeepSeekResearchRuntime } from './deepseek-research-runtime.mjs';
+import { createModelRuntime, isResearchRuntimeIdentity, isDefaultRuntimeIdentity } from './model-runtime.mjs';
 import { validateCompleteReuseClosure, CHECKPOINT_BINDING_ACCUMULATED_POOL, CHECKPOINT_BINDING_SELECTION_DECISION, CHECKPOINT_BINDING_COVERAGE_STATE } from './p1-reuse-closure.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const RO_ROOT = path.resolve(HERE, '..');
 const REPO_ROOT = path.resolve(RO_ROOT, '..');
 
-/** Pinned canonical composition identity (planner-pinned twin; T14 accepts exactly this). */
-const CANONICAL_RUNTIME_ID = 'deepseek-api-tool-less';
-// OWNER RULING 2026-09-10: authorized request model id (served naming is
-// observability only — never an equality gate).
-const CANONICAL_MODEL = 'deepseek-v4-pro';
 
 /** T03-documented first-party global_search endpoint (read-only search). */
 const GLOBAL_SEARCH_ENDPOINT = 'https://developer.zhihu.com/api/v1/content/global_search';
@@ -967,6 +962,8 @@ export async function composeP1Research({
   runner = null,
   embeddingProvider = null,
   fetchImpl = fetch,
+  model = null,
+  modelBaseUrl = null,
   config = undefined,
   usageSink = null,
   restart = false,
@@ -998,15 +995,33 @@ export async function composeP1Research({
   registerPrivateTitleRoot(path.resolve(workDir));
   const normalizedTopic = topic.trim();
 
-  // Runtime pin: the composition chain (planner/T13/T14) accepts ONLY the
-  // approved canonical runtime identity — anything else fails closed.
-  const effectiveRuntime = runtime ?? buildDeepSeekResearchRuntime({ fetchImpl });
-  if (effectiveRuntime.runtimeId !== CANONICAL_RUNTIME_ID || effectiveRuntime.model !== CANONICAL_MODEL) {
-    return fail(CFC_RUNTIME_NOT_SUPPORTED, `P1 composition accepts only ${CANONICAL_RUNTIME_ID}/${CANONICAL_MODEL} — refusing ${String(effectiveRuntime.runtimeId ?? 'unknown')}`);
+  // Runtime: one model for the whole chain (planner/T13/T14), chosen by the
+  // caller (default deepseek/deepseek-v4-pro). A malformed or unavailable
+  // runtime fails closed — there is no fallback model.
+  let effectiveRuntime = runtime;
+  if (effectiveRuntime === null || effectiveRuntime === undefined) {
+    try {
+      effectiveRuntime = await createModelRuntime({
+        ...(model ? { spec: model } : {}),
+        baseUrl: modelBaseUrl,
+        fetchImpl,
+        usageSink,
+      });
+    } catch (error) {
+      return fail(CFC_RUNTIME_NOT_SUPPORTED, error?.message ?? String(error));
+    }
+  }
+  if (!isResearchRuntimeIdentity(effectiveRuntime)) {
+    return fail(CFC_RUNTIME_NOT_SUPPORTED, `runtime identity is malformed — refusing ${String(effectiveRuntime?.runtimeId ?? 'unknown')}`);
   }
 
   const mode = P1_PIPELINE_IDENTITY;
-  const runId = runIdentityHash({ topic: normalizedTopic, mode, percent: null, runtime: effectiveRuntime.runtimeId });
+  // The default model keeps the historical run identity; any other model is
+  // part of the run identity, so switching models never reuses a checkpoint.
+  const runtimeKey = isDefaultRuntimeIdentity(effectiveRuntime)
+    ? effectiveRuntime.runtimeId
+    : `${effectiveRuntime.runtimeId}:${effectiveRuntime.model}`;
+  const runId = runIdentityHash({ topic: normalizedTopic, mode, percent: null, runtime: runtimeKey });
 
   // 1. State bootstrap / resume classification (checkpoint identity validated —
   //    FILE EXISTS != VALID CACHE). restart discards any prior checkpoint and
@@ -1208,7 +1223,7 @@ export async function composeP1Research({
         expectedPlanHash = loaded.planHash;
         appendEvent(workDir, { event: 'plan_reused', planHash: expectedPlanHash, occurrenceId });
       } else {
-        const proposed = await propose({ userRequest: normalizedTopic, workDir, fetchImpl, usageSink });
+        const proposed = await propose({ userRequest: normalizedTopic, workDir, runtime: effectiveRuntime });
         if (!proposed.ok) {
           return persistFailure(CFC_PLANNER_FAILED, proposed.details ?? proposed.reason, { plannerReason: proposed.reason ?? null });
         }
@@ -1225,7 +1240,7 @@ export async function composeP1Research({
         appendEvent(workDir, { event: 'plan_proposed', planHash: expectedPlanHash, occurrenceId });
       }
     } else {
-      const proposed = await propose({ userRequest: normalizedTopic, workDir, fetchImpl, usageSink });
+      const proposed = await propose({ userRequest: normalizedTopic, workDir, runtime: effectiveRuntime });
       if (!proposed.ok) {
         return persistFailure(CFC_PLANNER_FAILED, proposed.details ?? proposed.reason, { plannerReason: proposed.reason ?? null });
       }
