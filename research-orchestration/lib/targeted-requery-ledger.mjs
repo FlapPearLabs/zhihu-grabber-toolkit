@@ -7,8 +7,8 @@
  * Authority (FROZEN; this module must not reinterpret, generalize or "improve" it):
  *   - docs/specs/p2-ari-f02-targeted-requery.md      §5 D1, §6, §10, §12   (APPROVED)
  *   - docs/architecture/key-decisions.md             D12-1, D12-8
- *   - docs/planning/..._SEAM_CONTRACT_V1.md          E.1 / E.2 / E.3 / E.8
- *   - docs/planning/..._SEAM_MAP_V1.md               S1 (output) / S4 (state face)
+ *   - docs/archive/planning/..._SEAM_CONTRACT_V1.md          E.1 / E.2 / E.3 / E.8
+ *   - docs/archive/planning/..._SEAM_MAP_V1.md               S1 (output) / S4 (state face)
  *
  * Ownership boundary (Ticket Graph V1 §4 — ONE_ACTIVE_WRITER_PER_BRANCH):
  *   T01 OWNS  : closed gapType enum, subjectKey construction, gapIdentityCore /

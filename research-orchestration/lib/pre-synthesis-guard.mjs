@@ -11,7 +11,7 @@
  *       selected_verified_source_set_identity == mapped_analyzed_source_set_identity
  *       equal   → synthesis allowed;
  *       unequal → FAIL_CLOSED + NO SYNTHESIS ARTIFACT (not even partial).
- *   - docs/planning/P1_SEAM_CONTRACTS_V1.md §SEAM C (input contract),
+ *   - docs/archive/planning/P1_SEAM_CONTRACTS_V1.md §SEAM C (input contract),
  *     §SEAM D (preSynthesisGuard evidence block).
  *
  * Ownership:

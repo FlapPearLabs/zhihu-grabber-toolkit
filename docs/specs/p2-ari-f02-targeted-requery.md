@@ -17,11 +17,11 @@ TICKET_AUTHORIZATION = TICKET_DECOMPOSITION_ONLY
 READY_TO_DECOMPOSE_TICKETS = YES
 NEXT_AUTHORIZED_STAGE = TICKET_DECOMPOSITION
 VERSION_ASSIGNMENT = UNASSIGNED
-LOCATION_NOTE = 本文已按仓库既有约定从 docs/planning/ 提升至 docs/specs/
+LOCATION_NOTE = 本文已按仓库既有约定从 docs/archive/planning/ 提升至 docs/specs/
                 （Applicable Approved Specs 的位置）。CANDIDATE 时期"不得与 docs/specs/
                 同处以免被误读为已批准权威"的限制已随批准解除。
                 seam map / seam contract / grilling record 按仓库既有约定
-                （参照 P1_SEAM_CONTRACTS_V1）继续留在 docs/planning/，
+                （参照 P1_SEAM_CONTRACTS_V1）继续留在 docs/archive/planning/，
                 语义唯一权威是本文。
 BASE_SHA      = 7915e84a20b62086c53d045549329111098ca11e
 REVIEWED_CANDIDATE_SHA = 2e40724b6405d50e80737aa9a07a76f1b92fe601

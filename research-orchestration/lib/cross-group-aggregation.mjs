@@ -14,7 +14,7 @@
  *   - docs/specs/p1-cross-question-deep-research.md (2026-09-19 repair
  *     amendment, effective S1): proposition families + claim-level stance +
  *     orthogonal relationStatus/supportBreadth + independent unresolved.
- *   - docs/planning/P1_SEAM_CONTRACTS_V1.md §SEAM C (input) / §SEAM D V2
+ *   - docs/archive/planning/P1_SEAM_CONTRACTS_V1.md §SEAM C (input) / §SEAM D V2
  *     (output).
  *
  * What this module does (deterministic, no runtime, no thresholds):

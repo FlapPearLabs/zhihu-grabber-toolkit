@@ -143,5 +143,5 @@ partial                 != complete            （partial 可报告可恢复，�
 
 - [P1 Spec](./docs/specs/p1-cross-question-deep-research.md) — 全部术语的 canonical 权威
 - [Key Engineering Decisions](./docs/architecture/key-decisions.md) — D01–D11 决策记录
-- [P1 Seam Contracts V1](./docs/planning/P1_SEAM_CONTRACTS_V1.md) — 模块间可观察 seam 合同
-- [P1 Ticket Graph V1](./docs/planning/P1_TICKET_GRAPH_V1.md) — 依赖 DAG 与集成顺序
+- [P1 Seam Contracts V1](./docs/archive/planning/P1_SEAM_CONTRACTS_V1.md) — 模块间可观察 seam 合同
+- [P1 Ticket Graph V1](./docs/archive/planning/P1_TICKET_GRAPH_V1.md) — 依赖 DAG 与集成顺序

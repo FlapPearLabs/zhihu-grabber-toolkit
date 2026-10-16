@@ -62,7 +62,7 @@ Date: 2026-08-28
 | 1 | `docs/specs/v2-rich-content-fidelity.md` | canonical / Agent projection / capability-isolation / trust boundary baseline |
 | 1 | `docs/specs/v0.3-product-scope.md` | sampled/full identity、hierarchical digest、runtime qualification amendments |
 | 1 | `docs/specs/research-orchestration-scope.md` | **Applicable Approved Spec**：selection、full coverage、public-Zhihu semantic runtime、resume、failure semantics |
-| 1 | `docs/product-behavior-contract.md` | 已实现行为的归一化视图；不得覆盖 Approved Specs；本 Spec 不得被写成 current behavior |
+| 1 | `docs/archive/product-behavior-contract.md` | 已实现行为的归一化视图；不得覆盖 Approved Specs；本 Spec 不得被写成 current behavior |
 | 1 | `docs/architecture/runtime-strategy.md` | accepted controller/runtime boundary；不得覆盖 Approved Specs |
 | 1 | 本文件 | P1 additive architecture（对明确 amendment targets 覆盖 research-orchestration-scope 对应条款；其余继续有效） |
 
@@ -144,15 +144,15 @@ Owner 冻结、正式 authority 生效、实现授权、实现验收是四个不
 | CD-D1 | P1 §7 | 一次成功 resolution、冻结 pending 与幂等重试 | 计数/恢复语义澄清，待双审/生效 |
 | CD-F1 | documentation fact alignment | NO_PRODUCT_AUTHORITY_CHANGE | none；NON_BLOCKING_FOR_CORE_REPAIR |
 
-[Seam 合同](../planning/P1_SEAM_CONTRACTS_V1.md)沿用同一文件、各 seam 独立版本：
+[Seam 合同](../archive/planning/P1_SEAM_CONTRACTS_V1.md)沿用同一文件、各 seam 独立版本：
 A/B/C 仍 V1，D 候选 V2。新增 required observable semantics 是 §0 所定义的 major change；
 整数 `VERSION = 1` 的直接 major successor 为 `2`。D 的 `semanticContractVersion = 2`
 与该 major 同步绑定，不另开产品版本线；本文 `VERSION_ASSIGNMENT = UNASSIGNED` 的产品版本含义不变。
 
-本次生效后，[T14 extraction](../planning/P1_T14_CONTRACT_EXTRACTION.md) 的旧类别优先级、
+本次生效后，[T14 extraction](../archive/planning/P1_T14_CONTRACT_EXTRACTION.md) 的旧类别优先级、
 kind→opposition、category-based contradiction、仅 claimIds 派生 identity 等描述只作 V1 历史证据，
 不能覆盖 §8/§9.4 或 Seam D V2。其未冲突的 guard、lineage、所有权与 fail-closed 合同继续继承。
-[T13 extraction](../planning/P1_T13_CONTRACT_EXTRACTION.md) 的 ownership / identity 保持；
+[T13 extraction](../archive/planning/P1_T13_CONTRACT_EXTRACTION.md) 的 ownership / identity 保持；
 C1 由 §8.1 明确，不将旧 empty-content 实现描述当成跳过 P1 分析的授权。
 T15 的最终集合对账与独立 100% assertion 保持（[Issue #47](https://github.com/FlapPearLabs/zhihu-grabber-toolkit/issues/47)），不重算 T13 identity 或建立第二套 T14 关系。
 

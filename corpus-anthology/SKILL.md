@@ -80,7 +80,7 @@ node scripts/map.mjs --work work/ --hierarchy  # 可选（T10）：自适应中�
 
    前置可用性验证（fail closed）：`node scripts/qualify-lmstudio-runtime.mjs` 必须 exit 0（`valid:true` / `allSafe:true`）才允许执行 map；任一来源请求失败 → 该 chunk 不写 map 并整体 fail closed（`capability_isolation_unavailable`），禁止 prompt-only 降级或静默跳过。空正文来源由 controller 确定性合成"来源正文为空"条目（不调用模型），保持全覆盖。**未获 `CAPABILITY_ISOLATION_AVAILABLE=YES` 的 runtime（如 llama.cpp / Codex-ChatGPT / 未具名 YAML host）不得用于 map 步骤。** 输出结构化 JSON：`chunkId / chunkHash / sourceIds / summary / claims（含 evidenceSourceIds 与 confidence）/ themes / uncertainties`。**禁止**输出无法追溯来源的自由文本。
 
-   **`--hierarchy`（T10 #16，合同 `docs/t9-hierarchical-digest-contract.md`）：** L1 maps 后若超限（节点数/投影字节超有效 profile 参数）→ controller 左到右贪婪分组 → 每组合成 1 个聚合节点（投影=子节点 claims+union+meta，仍经 T6 控制器 tool-less/json_schema，MODEL_VISIBLE_TOOL_COUNT=0）→ 递归至收敛（nodeCount==1 终止；无 single-child；严格递减）。产物 `work/hierarchy/nodes/*.json` + `manifest.json`（internal execution structure）。**flat digest 行为不变；hierarchy 显式启用、不自动路由**；缺失 lineage/覆盖/hash → fail closed（verify `hierarchyIssues` 门）。
+   **`--hierarchy`（T10 #16，合同 `docs/archive/t9-hierarchical-digest-contract.md`）：** L1 maps 后若超限（节点数/投影字节超有效 profile 参数）→ controller 左到右贪婪分组 → 每组合成 1 个聚合节点（投影=子节点 claims+union+meta，仍经 T6 控制器 tool-less/json_schema，MODEL_VISIBLE_TOOL_COUNT=0）→ 递归至收敛（nodeCount==1 终止；无 single-child；严格递减）。产物 `work/hierarchy/nodes/*.json` + `manifest.json`（internal execution structure）。**flat digest 行为不变；hierarchy 显式启用、不自动路由**；缺失 lineage/覆盖/hash → fail closed（verify `hierarchyIssues` 门）。
 
 3. **验证覆盖率**（确定性脚本）：
 
@@ -133,7 +133,7 @@ node scripts/verify.mjs --work work/ --final work/final/final.json
 
 ## top-percent-analysis 工作流（前 X% 高赞采样分析，有界成本）
 
-**这是采样分析，不是 full-coverage digest。** 合同见 `docs/t7-top-percent-contract-decision.md`（T7 #13 批准）：按 canonical `voteupCount` 降序 + canonical decimal `answerId` 升序取前 `K = max(1, ceil(X/100 × N))` 条（strict count，无 tie 扩展），使用**完整正文**（非 popular-sample 截断），仅对选中来源调用模型。
+**这是采样分析，不是 full-coverage digest。** 合同见 `docs/archive/t7-top-percent-contract-decision.md`（T7 #13 批准）：按 canonical `voteupCount` 降序 + canonical decimal `answerId` 升序取前 `K = max(1, ceil(X/100 × N))` 条（strict count，无 tie 扩展），使用**完整正文**（非 popular-sample 截断），仅对选中来源调用模型。
 
 ```
 verified canonical answers

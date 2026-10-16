@@ -6,8 +6,8 @@
  * Authority (semantics are FROZEN; this suite must not reinterpret them):
  *   - docs/specs/p2-ari-f02-targeted-requery.md      §5 D3, §10            (STATUS = APPROVED)
  *   - docs/architecture/key-decisions.md             D12-3
- *   - docs/planning/..._SEAM_CONTRACT_V1.md          E.4 / E.5(1)(2)(3)(9) / F.3
- *   - docs/planning/..._SEAM_MAP_V1.md               S2
+ *   - docs/archive/planning/..._SEAM_CONTRACT_V1.md          E.4 / E.5(1)(2)(3)(9) / F.3
+ *   - docs/archive/planning/..._SEAM_MAP_V1.md               S2
  *   - Issue #116 GOAL / ACCEPTANCE_CRITERIA 1–6 / REQUIRED_TESTS / COUNTEREXAMPLES C2, C3
  *
  * Anti-tautology discipline: the expected verdicts below are hand-written. The

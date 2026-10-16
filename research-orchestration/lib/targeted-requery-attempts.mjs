@@ -6,8 +6,8 @@
  *
  * Authority (FROZEN; this module must not reinterpret, generalize or "improve" it):
  *   - docs/specs/p2-ari-f02-targeted-requery.md      §5 D4, D6, §11, §13      (APPROVED)
- *   - docs/planning/..._SEAM_CONTRACT_V1.md          F.6, F.6.1, H.1 (H-1…H-5)
- *   - docs/planning/..._SEAM_MAP_V1.md               S11
+ *   - docs/archive/planning/..._SEAM_CONTRACT_V1.md          F.6, F.6.1, H.1 (H-1…H-5)
+ *   - docs/archive/planning/..._SEAM_MAP_V1.md               S11
  *   - docs/architecture/key-decisions.md             D12-4, D12-6
  *
  * Ownership boundary (Ticket Graph V1 §4 — ONE_ACTIVE_WRITER_PER_BRANCH):

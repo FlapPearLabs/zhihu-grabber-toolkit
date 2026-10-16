@@ -57,7 +57,7 @@
  *     PROVIDER_REPORTED_FAILURE with the OBSERVED code preserved verbatim as
  *     `provider_error_type` — no cause inference. The provider-controlled
  *     `Message` is UNTRUSTED provider content and is NEVER returned (T10
- *     default-deny posture, docs/project-memory.md): the failure detail is a
+ *     default-deny posture, docs/archive/project-memory.md): the failure detail is a
  *     fixed neutral withholding notice. Envelope- and transport-level
  *     violations carry their own machine-readable codes (below); NO failure
  *     path echoes a provider-controlled response body or diagnostic string.

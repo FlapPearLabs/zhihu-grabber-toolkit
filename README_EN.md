@@ -287,7 +287,7 @@ The project does not claim to eliminate every natural-language prompt-injection 
 - [`zhihu-answer-grabber/references/`](./zhihu-answer-grabber/references/)
 - [`corpus-anthology/SKILL.md`](./corpus-anthology/SKILL.md)
 - [`research-orchestration/`](./research-orchestration)
-- [`docs/project-memory/decision-boundary-matrix.md`](./docs/project-memory/decision-boundary-matrix.md)
+- [`docs/archive/project-memory/decision-boundary-matrix.md`](./docs/archive/project-memory/decision-boundary-matrix.md)
 - [`AGENTS.md`](./AGENTS.md) / [`RULES.md`](./RULES.md)
 
 ## License

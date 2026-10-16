@@ -43,7 +43,7 @@ THIS DOES NOT AUTOMATICALLY CREATE V0.4  // 不自动创建 V0.4 / 不启动新 
 >    覆盖其**明确的 Research Orchestration scope**。
 > 3. Applicable Approved Specs（V2 / V0.3 / 本 Spec）按**明确的 scope / amendment 关系共同解析**；
 >    **不存在**「既有 / 更旧的 Approved Spec 自动压过本 Approved Spec」的规则。
-> 4. `docs/product-behavior-contract.md` 是已批准产品行为的**归一化视图**，
+> 4. `docs/archive/product-behavior-contract.md` 是已批准产品行为的**归一化视图**，
 >    **不得覆盖** Applicable Approved Specs。
 > 5. 若真实 authority 冲突无法按明确 scope / amendment 关系解决 → **STOP：`CONTRACT_CONFLICT`**
 >    （`SPEC_CONFLICT` / `GOVERNANCE_CONFLICT` 仅作 finding / reason category，不得静默选方便一方）。
@@ -312,7 +312,7 @@ PUBLIC ZHIHU cloud egress approval != PRIVATE / SENSITIVE CORPUS cloud egress ap
 - 敏感 corpus；
 - 未经授权的第三方数据。
 
-（runtime-strategy §5 / #28 STOP conditions / `docs/project-memory.md` V0.3 Runtime Closeout：V0.3 T11 公开知乎语料云出网批准不得推广到私密 / 敏感语料。）
+（runtime-strategy §5 / #28 STOP conditions / `docs/archive/project-memory.md` V0.3 Runtime Closeout：V0.3 T11 公开知乎语料云出网批准不得推广到私密 / 敏感语料。）
 
 ---
 
@@ -548,8 +548,8 @@ PRODUCT_STAGE: NEXT_STAGE / RESEARCH_ORCHESTRATION
 - **不修改** existing Approved Specs（V2 / V0.3）；
 - **不修改** RULES.md / AGENTS.md（现有通用治理已足够，本轮 NO CHANGE）；
 - **不修改** product behavior implementation / runtime code / source / tests（历史执行事实：本批准归一化 candidate 本身不含 production code——**The approval-normalization candidate itself contained no production code; implementation proceeds through a separate implementation ticket**）。
-- **不修改** `docs/project-memory.md`（如有 durable 知识沉淀，走 post-gate memory follow-up 独立 review，不混入本 candidate commit）。
+- **不修改** `docs/archive/project-memory.md`（如有 durable 知识沉淀，走 post-gate memory follow-up 独立 review，不混入本 candidate commit）。
 
-产品行为合同（`docs/product-behavior-contract.md`）当前只记录**已实现行为**；本 Spec 的 Research Orchestration 能力
+产品行为合同（`docs/archive/product-behavior-contract.md`）当前只记录**已实现行为**；本 Spec 的 Research Orchestration 能力
 仍为 NOT_IMPLEMENTED，**不得**被写成 current product behavior。实现落地并通过验收后，再按既有流程评估是否需要
 product-behavior-contract 同步。

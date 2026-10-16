@@ -22,7 +22,7 @@
  *     signal, so status stays `unknown` with explicit evidence. It is never guessed
  *     as `complete` (Spec §5.1: completeness 不得猜测);
  *   - diagnostics (T10 default-deny, P1 final cheap cleanup; durable invariant in
- *     docs/project-memory.md, same posture as the T17 global_search adapter):
+ *     docs/archive/project-memory.md, same posture as the T17 global_search adapter):
  *     the subprocess boundary is untrusted — CLI/provider error messages and any
  *     raw stdout/stderr content NEVER enter any serialized failure field. Details
  *     are fixed neutral withholding notices (or bounded mechanical facts);
@@ -63,7 +63,7 @@ function failureResult({ providerId, capability, authClass, retrievedAt, code, f
 }
 
 // ---------------------------------------------------------------------------
-// T10 default-deny posture (docs/project-memory.md; P1 final cheap cleanup,
+// T10 default-deny posture (docs/archive/project-memory.md; P1 final cheap cleanup,
 // same-class repair following the T17 global_search adapter precedent):
 // the subprocess boundary is UNTRUSTED. CLI/provider error messages and any
 // raw stdout/stderr content are an open-ended leak surface (server response

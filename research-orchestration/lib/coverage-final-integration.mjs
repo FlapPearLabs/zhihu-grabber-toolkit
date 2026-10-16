@@ -3,7 +3,7 @@
  * research-orchestration/lib/coverage-final-integration.mjs
  *
  * P1-T15 — Final coverage integration owner (Issue #47; Spec §1 / §9.3 / §15,
- * SEAM D consumer, docs/planning/P1_SEAM_CONTRACTS_V1.md SEAM D invariant 6).
+ * SEAM D consumer, docs/archive/planning/P1_SEAM_CONTRACTS_V1.md SEAM D invariant 6).
  *
  * This module is the ONLY runtime composition owner of the complete P1
  * Cross-Question Deep Research path:

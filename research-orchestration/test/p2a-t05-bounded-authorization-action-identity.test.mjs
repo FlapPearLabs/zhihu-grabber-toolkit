@@ -6,8 +6,8 @@
  * Authority (semantics are FROZEN; this suite must not reinterpret them):
  *   - docs/specs/p2-ari-f02-targeted-requery.md      §5 D2/D3/D6, §6, §7, §10, §11, §13
  *   - docs/architecture/key-decisions.md             D12-2 / D12-3 / D12-6 / D12-8
- *   - docs/planning/..._SEAM_CONTRACT_V1.md          E.5(4)(5)(6)(7)(8) / E.6 / E.7 / E.8 / F.1 / F.2 / F.4
- *   - docs/planning/..._SEAM_MAP_V1.md               S3
+ *   - docs/archive/planning/..._SEAM_CONTRACT_V1.md          E.5(4)(5)(6)(7)(8) / E.6 / E.7 / E.8 / F.1 / F.2 / F.4
+ *   - docs/archive/planning/..._SEAM_MAP_V1.md               S3
  *   - Ticket Decomposition §P2A-T05; Issue #117 GOAL / ACCEPTANCE_CRITERIA 1–7 /
  *     REQUIRED_TESTS / COUNTEREXAMPLES C1, C2, C12
  *

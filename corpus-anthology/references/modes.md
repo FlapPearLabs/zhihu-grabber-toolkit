@@ -28,7 +28,7 @@ chunk.mjs（manifest + 分块）
 
 ## top-percent-analysis — 前 X% 高赞采样分析（有界成本）
 
-**这是采样分析，不是 full-coverage digest。** 合同见 `docs/t7-top-percent-contract-decision.md`（T7 #13 批准，D2.1–D2.8 + OPEN-D6 OPTION C）。
+**这是采样分析，不是 full-coverage digest。** 合同见 `docs/archive/t7-top-percent-contract-decision.md`（T7 #13 批准，D2.1–D2.8 + OPEN-D6 OPTION C）。
 
 - 选择算法：`K = max(1, ceil(X/100 × N))`；排序 `(voteupCount DESC, canonical decimal answerId ASC)`；**strict count** 恰好取前 K（无 tie 扩展，成本有界）。X 必须为显式整数 ∈ [1,100]（无默认值；0/小数/负数/>100 → `invalid_input`）。
 - 与 popular-sample 不同：使用**完整正文**（不截断），保持语义与可被 evidence 引用。

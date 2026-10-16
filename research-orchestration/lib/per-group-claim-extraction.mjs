@@ -38,7 +38,7 @@
  * Ratified (SEAM C V1 error taxonomy amendment, product owner via P1 WAVE 01
  * integration gate, 2026-09-05): these module-level codes — together with
  * SEAM_C_ANALYZED_SET_FOREIGN_MEMBER / SEAM_C_MAPPED_SET_FOREIGN_MEMBER — are
- * now part of the V1 error contract (docs/planning/P1_SEAM_CONTRACTS_V1.md §SEAM C).
+ * now part of the V1 error contract (docs/archive/planning/P1_SEAM_CONTRACTS_V1.md §SEAM C).
  */
 
 import {

@@ -17,8 +17,8 @@
  *   - docs/specs/p1-cross-question-deep-research.md §8.2 / §8.3 / §9.4 / §10.1 / §10.2
  *     + the 2026-09-19 repair amendment (effective S1, Cases A–F).
  *   - Issue #46 (IN_SCOPE / AC / REQUIRED_TESTS / fail-closed STOP conditions)
- *   - docs/planning/P1_SEAM_CONTRACTS_V1.md §SEAM C (input) / §SEAM D V2 (output)
- *   - docs/planning/P1_PARALLEL_EXECUTION_CONTRACT_V1.md §E3 (T14 packet)
+ *   - docs/archive/planning/P1_SEAM_CONTRACTS_V1.md §SEAM C (input) / §SEAM D V2 (output)
+ *   - docs/archive/planning/P1_PARALLEL_EXECUTION_CONTRACT_V1.md §E3 (T14 packet)
  *
  * Discipline:
  *   - counterexample-first;

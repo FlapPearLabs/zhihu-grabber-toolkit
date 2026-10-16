@@ -689,7 +689,7 @@ test('C1-C12 matrix gate — each counterexample runs a real production path, fa
   }
 
   // ---- C11b — targeted attempts cannot MANUFACTURE a saturation ------------
-  // ref: docs/planning/P2_ARI_108_TICKET_DECOMPOSITION_V1.md:673 ("targeted 既不能
+  // ref: docs/archive/planning/P2_ARI_108_TICKET_DECOMPOSITION_V1.md:673 ("targeted 既不能
   //      制造也不能阻止 SATURATED"), :690-691 (FAIL_CLOSED merge gate), :851 (H-5).
   //
   // C11 above pins only the BLOCKING direction. This is the converse.
@@ -754,7 +754,7 @@ test('C1-C12 matrix gate — each counterexample runs a real production path, fa
   }
 
   // ---- C11c — `targeted.failed` must not manufacture saturation either -----
-  // ref: docs/planning/P2_ARI_108_TICKET_DECOMPOSITION_V1.md:673 ("targeted 既不能
+  // ref: docs/archive/planning/P2_ARI_108_TICKET_DECOMPOSITION_V1.md:673 ("targeted 既不能
   //      制造也不能阻止 SATURATED"), :690-691 (FAIL_CLOSED merge gate), :851 (H-5).
   //
   // THE GAP C11b LEAVES OPEN. C11b fixes `targetedAttempts: { executed: 3, failed: 0 }`,
