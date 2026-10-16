@@ -26,6 +26,8 @@
  *   --model <p/id>      model as <provider>/<model-id> (default deepseek/deepseek-v4-pro)
  *   --base-url <url>    OpenAI-compatible endpoint for --model (any provider label)
  *   --runtime <id>      legacy; only deepseek-api-tool-less (= the default model)
+ *   --max-group-answers <n>  groups whose reported answer count exceeds n are not
+ *                       selected (default off; see docs/default-off.md)
  *   -h, --help
  *
  * On success a human-readable report.md is rendered into the work directory
@@ -60,6 +62,8 @@ const HELP = `research-p1 — P1 cross-question deep research composition entryp
   --base-url <url>    OpenAI 兼容接口地址；此时 provider 可任取名字
                       例：--model antigravity/claude-sonnet-4-6 --base-url http://127.0.0.1:8045/v1
   --runtime <id>      旧参数，只接受 deepseek-api-tool-less（等同默认模型）
+  --max-group-answers <n>  回答数（检索结果报告的）超过 n 条的问题不参与选择；默认不限
+                      一个问题组的全部回答目前在一次模型调用里分析，太大的组装不下
   -h, --help          本帮助
 
 API key：RESEARCH_MODEL_API_KEY 环境变量，或 0600 权限的 .model_api_key 文件；
@@ -92,6 +96,13 @@ function parseArgs(argv) {
     if (a === '--runtime') { opts.runtime = String(argv[++i] ?? ''); continue; }
     if (a === '--model') { opts.model = String(argv[++i] ?? ''); continue; }
     if (a === '--base-url') { opts.baseUrl = String(argv[++i] ?? ''); continue; }
+    if (a === '--max-group-answers') {
+      const raw = argv[++i];
+      const n = /^\d+$/.test(String(raw ?? '')) ? Number(raw) : NaN;
+      if (!Number.isInteger(n) || n <= 0) { opts.usageError = '--max-group-answers requires a positive integer'; break; }
+      opts.maxGroupAnswers = n;
+      continue;
+    }
     if (a.startsWith('--')) { opts.usageError = `unknown option: ${a}`; break; }
     positional.push(a);
   }
@@ -144,6 +155,7 @@ async function main() {
     fetchImpl: fetch,
     model: opts.model ?? null,
     modelBaseUrl: opts.baseUrl ?? null,
+    maxGroupAnswers: opts.maxGroupAnswers ?? null,
     usageSink: usage,
     clarificationResponse,
   });

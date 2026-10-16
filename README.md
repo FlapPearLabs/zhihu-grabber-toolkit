@@ -355,6 +355,23 @@ node research-orchestration/bin/research-p1.mjs "AI 编程工具会取代程序�
 
 如果存在实质歧义，P1 会返回结构化 clarification，而不是自行猜测用户意图。
 
+一个问题组的全部回答目前在一次模型调用里分析，回答数上千的热门问题可能装不下。可以用 `--max-group-answers <n>` 让回答数超过 n 的问题不参与选择（以检索结果报告的回答数为准；没有报告回答数的问题照常参与）。被排除的问题会写进 report.md。这个参数默认不启用，是 P4 分析层改造前的临时手段（见 [`docs/default-off.md`](./docs/default-off.md)）。
+
+### 评估一次运行
+
+```bash
+# 自动指标：引用覆盖率、观点数、多来源观点、模型用量、耗时
+node research-orchestration/evaluation/score-run.mjs work/research-p1
+
+# 对照黄金集生成人工评分表；填完后用 --sheet 计分
+node research-orchestration/evaluation/score-run.mjs work/research-p1 --gold research-orchestration/evaluation/goldset/t1-ai-programmers.json
+
+# 检索台账：每个候选问题的去向，以及预期来源丢在了哪一步
+node research-orchestration/evaluation/retrieval-ledger.mjs work/research-p1
+```
+
+这三个命令都只读取已有的运行文件，不会重新运行。详见 [`research-orchestration/evaluation/README.md`](./research-orchestration/evaluation/README.md)。
+
 ### 选择模型
 
 规划、观点抽取、跨问题综合用同一个模型，默认 `deepseek/deepseek-v4-pro`。模型接入基于 [pi-ai](https://www.npmjs.com/package/@earendil-works/pi-ai)，用 `--model <provider>/<model-id>` 切换：

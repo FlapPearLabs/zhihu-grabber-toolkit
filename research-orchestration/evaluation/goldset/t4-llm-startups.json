@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "type": "p1-goldset",
+  "id": "t4-llm-startups",
+  "topic": "大模型创业公司还有机会吗",
+  "status": "draft",
+  "note": "草稿：观点按领域常识独立撰写，没有参考系统输出；stance 相对题目命题。请审阅后把 status 改为 reviewed。",
+  "viewpoints": [
+    {
+      "id": "v01",
+      "statement": "基础模型赛道被巨头主导，算力、数据和资金壁垒极高，创业公司难以正面竞争，行业正在洗牌",
+      "stance": "opposes",
+      "weight": 3
+    },
+    {
+      "id": "v02",
+      "statement": "机会主要在应用层：垂直行业场景、AI 原生应用、Agent 和工作流",
+      "stance": "supports",
+      "weight": 3
+    },
+    {
+      "id": "v03",
+      "statement": "套壳类应用护城河薄，容易被基础模型能力升级或大厂产品覆盖",
+      "stance": "opposes",
+      "weight": 2
+    },
+    {
+      "id": "v04",
+      "statement": "真正的护城河来自行业数据、场景理解、客户关系和产品体验，而不是模型本身",
+      "stance": "conditional",
+      "weight": 2
+    },
+    {
+      "id": "v05",
+      "statement": "商业化困难：推理和训练成本高，API 价格战压缩利润，收入难以覆盖投入",
+      "stance": "opposes",
+      "weight": 2
+    },
+    {
+      "id": "v06",
+      "statement": "开源模型降低了门槛，小团队也能做出有竞争力的产品",
+      "stance": "supports",
+      "weight": 2
+    },
+    {
+      "id": "v07",
+      "statement": "国内大厂竞争激烈，独立大模型公司分化、收缩或转型",
+      "stance": "opposes",
+      "weight": 2
+    },
+    {
+      "id": "v08",
+      "statement": "新的机会在 Agent、端侧和硬件、AI 基础设施与工具链（推理优化、评测、数据）",
+      "stance": "supports",
+      "weight": 1
+    },
+    {
+      "id": "v09",
+      "statement": "资本趋于理性，更看重收入和落地，而不是参数规模和融资故事",
+      "stance": "conditional",
+      "weight": 1
+    },
+    {
+      "id": "v10",
+      "statement": "技术路线仍不确定（规模定律是否放缓），押错方向的风险很高",
+      "stance": "conditional",
+      "weight": 1
+    }
+  ],
+  "expectedSources": []
+}
