@@ -822,7 +822,24 @@ export function createSyncGlobalSearchTransport({ timeoutMs = 30_000 } = {}) {
 // embedding computation (T11 dense geometry; exact seam-B recipe contract)
 // ---------------------------------------------------------------------------
 
-async function computeEmbeddings({ manifest, workDir, provider, fail }) {
+/**
+ * questionId → the question's title as the retrieval pool recorded it (search
+ * result facts), with Zhihu's " - 知乎" page suffix removed. Used only as the
+ * dense-geometry target text when the capture lost the title.
+ */
+function searchTitlesFromPool(pool) {
+  const titles = new Map();
+  for (const c of pool?.candidates ?? []) {
+    const qid = c?.identity?.questionId;
+    const raw = c?.facts?.title;
+    if (typeof qid !== 'string' || typeof raw !== 'string') continue;
+    const title = raw.replace(/\s*-\s*知乎\s*$/u, '').trim();
+    if (title) titles.set(qid, title);
+  }
+  return titles;
+}
+
+async function computeEmbeddings({ manifest, workDir, provider, fail, searchTitles = new Map(), onTitleFallback = () => {} }) {
   const texts = [];
   const slots = []; // { kind: 'source' | 'target', key } — parallel to texts
   for (const g of manifest.groups) {
@@ -840,7 +857,13 @@ async function computeEmbeddings({ manifest, workDir, provider, fail }) {
       slots.push({ kind: 'source', key: deriveCanonicalSourceId(g.groupId, entry.id) });
       texts.push(String(entry.excerpt ?? ''));
     }
-    const targetText = String(parsed.questionTitle ?? '');
+    // The capture degrades to an empty title when Zhihu's question-info request
+    // fails; the same question's search-result title is then the target text.
+    let targetText = String(parsed.questionTitle ?? '');
+    if (targetText.length === 0 && searchTitles.has(String(parsed.questionId ?? g.groupId))) {
+      targetText = searchTitles.get(String(parsed.questionId ?? g.groupId));
+      onTitleFallback(g.groupId);
+    }
     if (targetText.length === 0) fail(CFC_GROUP_EXECUTION_FAILED, `no questionTitle for group ${g.groupId}`);
     slots.push({ kind: 'target', key: g.groupId });
     texts.push(targetText);
@@ -1671,6 +1694,8 @@ export async function composeP1Research({
         modelDir: process.env.P1_T10_ONNX_MODEL_DIR ?? path.join(RO_ROOT, 'models-bge-base-zh-v1.5'),
       }),
       fail: (code, details) => { throw new CoverageIntegrationError(code, details ?? code); },
+      searchTitles: searchTitlesFromPool(pool),
+      onTitleFallback: (groupId) => appendEvent(workDir, { event: 'group_title_fallback', groupId, source: 'search_result' }),
     });
 
     const corpus = selectResearchCorpusWithCoverage({
