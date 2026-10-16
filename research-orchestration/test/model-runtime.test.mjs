@@ -15,6 +15,8 @@
  *   M8  provider error text (which may echo the key) never surfaces
  *   M9  analyze/synthesize send the T13/T14 prompts; usage is recorded per call
  *   M10 unknown provider/model fails closed with model_not_found
+ *   M11 retries back off (5s, 30s); a provider "Wait Ns" hint is honoured,
+ *       capped at 120s; bad output retries after 1s; hint text never surfaces
  *
  * Offline: the fake SSE transport in test/helpers/fake-model-transport.mjs.
  */
@@ -175,6 +177,34 @@ test('M7: failure classes — what is retried and what is not', async () => {
   const { runtime: guarded, calls: none } = await fakeModelRuntime('{}');
   await assert.rejects(() => guarded.analyze({ projection: '   ' }), (e) => e.kind === 'empty_input');
   assert.equal(none.length, 0);
+});
+
+test('M11: retries back off; a provider "Wait Ns" hint is honoured and capped; the hint text never surfaces', async () => {
+  const LIMITED = 'Token error: All accounts limited. Wait 27s.';
+  const cases = [
+    { name: 'rate limit with wait hint', reply: { status: 503, body: LIMITED }, kind: 'http_503', delays: [28000, 28000] },
+    { name: '429 without hint', reply: { status: 429 }, kind: 'http_429', delays: [5000, 30000] },
+    { name: 'huge hint is capped', reply: { status: 429, body: 'quota. Wait 900s.' }, kind: 'http_429', delays: [120000, 120000] },
+    { name: 'network error', reply: { reject: new Error('ECONNRESET') }, kind: 'transport', delays: [5000, 30000] },
+    { name: 'invalid json retries quickly', reply: 'not json', kind: 'invalid_json', delays: [1000, 1000] },
+    { name: 'no retry, no wait', reply: { status: 401, body: 'Wait 5s' }, kind: 'http_401', delays: [] },
+  ];
+  for (const c of cases) {
+    const { runtime, calls, delays } = await fakeModelRuntime(c.reply, { maxAttempts: 3 });
+    await assert.rejects(
+      () => runtime.completeJson({ system: 's', user: 'u', label: 'probe' }),
+      (e) => e.kind === c.kind && !/wait|limited|quota/i.test(e.message),
+      c.name,
+    );
+    assert.deepEqual(delays, c.delays, c.name);
+    assert.equal(calls.length, c.delays.length + 1, c.name);
+  }
+
+  // Recovery after one rate-limited attempt waits once, as the proxy asked.
+  const { runtime, delays } = await fakeModelRuntime(
+    (_b, { call }) => (call === 1 ? { status: 503, body: LIMITED } : '{"ok":1}'), { maxAttempts: 3 });
+  assert.deepEqual(await runtime.completeJson({ system: 's', user: 'u' }), { ok: 1 });
+  assert.deepEqual(delays, [28000]);
 });
 
 test('M7b: a stream that sends headers and then nothing ends as a timeout, not a hang', async () => {

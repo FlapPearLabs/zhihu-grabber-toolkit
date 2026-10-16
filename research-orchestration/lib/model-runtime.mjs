@@ -46,6 +46,12 @@ export const DEFAULT_MAX_TOKENS = 8192;
 export const DEFAULT_IDLE_TIMEOUT_MS = 180_000;
 export const DEFAULT_TOTAL_TIMEOUT_MS = 900_000;
 export const DEFAULT_MAX_ATTEMPTS = 3;
+/** Wait before retry n (1-based) when the provider gives no hint. */
+export const RETRY_BACKOFF_MS = Object.freeze([5_000, 30_000, 60_000]);
+/** Upper bound for any single wait, including a provider's "Wait Ns" hint. */
+export const MAX_RETRY_DELAY_MS = 120_000;
+/** Bad model output (unparseable/empty) is retried after a short pause. */
+export const QUICK_RETRY_MS = 1_000;
 export const CUSTOM_CONTEXT_WINDOW = 200_000;
 export const CUSTOM_MAX_TOKENS = 32_768;
 
@@ -241,6 +247,16 @@ function requestTuning({ provider, custom }) {
   return {};
 }
 
+/**
+ * A provider's own retry hint ("Wait 27s", "Retry-After: 30"), in ms. Only the
+ * number is used; the provider text itself is never surfaced.
+ */
+function waitHintMs(text) {
+  const s = String(text ?? '');
+  const m = /\bwait\s+(\d{1,5})\s*s(?:ec(?:onds?)?)?\b/i.exec(s) ?? /\bretry[- ]after[:\s]+(\d{1,5})\b/i.exec(s);
+  return m ? Number(m[1]) * 1000 : null;
+}
+
 /** Classify a failed pi-ai message. Provider error text is never surfaced. */
 function classifyFailure(msg) {
   if (msg.stopReason === 'aborted') return { kind: 'timeout', retry: true };
@@ -250,10 +266,19 @@ function classifyFailure(msg) {
   if (status) {
     const code = Number(status);
     const retry = code === 408 || code === 429 || code >= 500;
-    return { kind: `http_${code}`, retry };
+    return { kind: `http_${code}`, retry, hintMs: waitHintMs(msg.errorMessage) };
   }
   return { kind: 'transport', retry: true };
 }
+
+/** How long to wait before the next attempt (attempt is the one that just failed). */
+function retryDelayMs(attempt, outcome) {
+  if (outcome.kind === 'invalid_json' || outcome.kind === 'empty') return QUICK_RETRY_MS;
+  if (Number.isFinite(outcome.hintMs)) return Math.min(outcome.hintMs + 1_000, MAX_RETRY_DELAY_MS);
+  return RETRY_BACKOFF_MS[Math.min(attempt, RETRY_BACKOFF_MS.length) - 1];
+}
+
+const realSleep = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
 
 /**
  * Build the research runtime.
@@ -265,6 +290,8 @@ function classifyFailure(msg) {
  * @param {Function} [options.fetchImpl]    HTTP transport passed to pi-ai (tests inject fakes)
  * @param {object} [options.models]         pre-built pi-ai Models collection (tests)
  * @param {Array}  [options.usageSink]      receives one non-sensitive usage record per call
+ * @param {number} [options.maxAttempts]    attempts per call; retryable failures back off between them
+ * @param {Function} [options.sleep]        waits between attempts (tests inject a recorder)
  */
 export async function createModelRuntime({
   spec = DEFAULT_MODEL_SPEC,
@@ -278,6 +305,7 @@ export async function createModelRuntime({
   idleTimeoutMs = DEFAULT_IDLE_TIMEOUT_MS,
   totalTimeoutMs = DEFAULT_TOTAL_TIMEOUT_MS,
   maxAttempts = DEFAULT_MAX_ATTEMPTS,
+  sleep = realSleep,
 } = {}) {
   const { provider, modelId } = parseModelSpec(spec);
   const custom = baseUrl !== null && baseUrl !== undefined && baseUrl !== '';
@@ -362,7 +390,8 @@ export async function createModelRuntime({
         outcome = { kind: 'transport', retry: true };
       }
       last = outcome.kind;
-      if (!outcome.retry) break;
+      if (!outcome.retry || attempt === maxAttempts) break;
+      await sleep(retryDelayMs(attempt, outcome));
     }
     throw new ModelRuntimeError('runtime_unavailable',
       `${label} via ${provider}/${modelId} failed (${last})`, { kind: last });

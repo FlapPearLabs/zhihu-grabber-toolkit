@@ -44,9 +44,11 @@ export function fakeModelFetch(reply) {
     const spec = typeof r === 'string' ? { text: r } : r;
     if (spec.reject) throw spec.reject;
     if (spec.status) {
-      return new Response(JSON.stringify(spec.body ?? { error: { message: 'fake error' } }), {
+      // A string body is sent as plain text (local proxies answer like that).
+      const text = typeof spec.body === 'string';
+      return new Response(text ? spec.body : JSON.stringify(spec.body ?? { error: { message: 'fake error' } }), {
         status: spec.status,
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': text ? 'text/plain; charset=utf-8' : 'application/json' },
       });
     }
     if (spec.hang) {
@@ -70,7 +72,10 @@ export function fakeModelFetch(reply) {
   return fetchImpl;
 }
 
-/** A real model runtime over the fake transport. Retries default to 1 attempt. */
+/**
+ * A real model runtime over the fake transport. Retries default to 1 attempt,
+ * and retry backoff never really waits: delays are recorded in `delays`.
+ */
 export async function fakeModelRuntime(reply, {
   spec = DEFAULT_MODEL_SPEC,
   baseUrl = null,
@@ -80,8 +85,10 @@ export async function fakeModelRuntime(reply, {
   idleTimeoutMs = 2000,
 } = {}) {
   const fetchImpl = fakeModelFetch(reply);
-  const runtime = await createModelRuntime({ spec, baseUrl, apiKey, fetchImpl, usageSink, maxAttempts, idleTimeoutMs });
-  return { runtime, calls: fetchImpl.calls };
+  const delays = [];
+  const sleep = async (ms) => { delays.push(ms); };
+  const runtime = await createModelRuntime({ spec, baseUrl, apiKey, fetchImpl, usageSink, maxAttempts, idleTimeoutMs, sleep });
+  return { runtime, calls: fetchImpl.calls, delays };
 }
 
 /** The system and user text of a captured chat request. */
