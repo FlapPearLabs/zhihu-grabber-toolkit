@@ -493,7 +493,7 @@ export function runRetrievalFeedbackLoop({
  *   - none      → fail-closed outcome { ok:false, code }.
  */
 export function applySourceGroupSelection({
-  coverageState, pool, plan, workDir, journal, clarification = null, minScore = undefined,
+  coverageState, pool, plan, workDir, journal, clarification = null, minScore = undefined, maxGroupAnswers = null,
 } = {}) {
   if (!isPlainObject(pool) || !Array.isArray(pool.candidates)) {
     failClosed(CFI_ERROR_INVALID_INPUT, 'applySourceGroupSelection requires the accumulated retrieval pool');
@@ -503,6 +503,7 @@ export function applySourceGroupSelection({
   const opts = {};
   if (minScore !== undefined) opts.minScore = minScore;
   if (clarification != null) opts.clarification = clarification;
+  if (maxGroupAnswers !== null && maxGroupAnswers !== undefined) opts.maxGroupAnswers = maxGroupAnswers;
   const decision = selectSourceGroups(pool, plan, opts);
   const persisted = persistSelectionDecision(workDir, decision, {
     trustedPlanStrings: new Set(Array.isArray(plan?.queryVariants) ? plan.queryVariants : []),

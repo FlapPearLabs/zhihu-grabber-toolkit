@@ -355,6 +355,8 @@ node research-orchestration/bin/research-p1.mjs "AI 编程工具会取代程序�
 
 如果存在实质歧义，P1 会返回结构化 clarification，而不是自行猜测用户意图。
 
+一个问题组的全部回答目前在一次模型调用里分析，回答数上千的热门问题可能装不下。可以用 `--max-group-answers <n>` 让回答数超过 n 的问题不参与选择（以检索结果报告的回答数为准；没有报告回答数的问题照常参与）。被排除的问题会写进 report.md。这个参数默认不启用，是 P4 分析层改造前的临时手段（见 [`docs/default-off.md`](./docs/default-off.md)）。
+
 ### 评估一次运行
 
 ```bash

@@ -103,6 +103,10 @@ export function buildRetrievalLedger({ pool, decision = null, groupState = null,
   if (!pool || !Array.isArray(pool.candidates)) throw new LedgerError('LEDGER_INPUT_INVALID', 'retrieval pool has no candidate list');
   const channels = channelTable(pool);
   const decisions = new Map((decision?.candidates ?? []).map((c) => [String(c.questionId), c]));
+  // --max-group-answers: groups excluded before selection are not in the decision's candidate list.
+  for (const e of decision?.excludedByAnswerLimit ?? []) {
+    decisions.set(String(e.questionId), { questionId: String(e.questionId), eligible: false, selected: false, score: null, ineligibleReason: 'answer_count_over_limit', answerCount: e.answerCount ?? null });
+  }
   const groups = new Map(Object.values(groupState?.groups ?? {}).map((g) => [String(g.questionId ?? g.groupId), g]));
   const analysis = analysisByGroup(claimsArtifact);
   const pending = decision?.verdict === 'ambiguous' || decision?.clarification?.required === true;
@@ -129,7 +133,12 @@ export function buildRetrievalLedger({ pool, decision = null, groupState = null,
       channels: (c?.ranks ?? [])
         .map((r) => ({ query: r?.channel?.query ?? null, providerId: r?.channel?.providerId ?? null, rank: Number.isFinite(r?.rank) ? r.rank : null }))
         .sort((x, y) => String(x.query).localeCompare(String(y.query)) || String(x.providerId).localeCompare(String(y.providerId))),
-      selection: d ? { eligible: d.eligible ?? null, selected: d.selected ?? null, score: Number.isFinite(d.score) ? d.score : null } : null,
+      selection: d ? {
+        eligible: d.eligible ?? null,
+        selected: d.selected ?? null,
+        score: Number.isFinite(d.score) ? d.score : null,
+        ...(d.ineligibleReason ? { ineligibleReason: d.ineligibleReason, answerCount: d.answerCount } : {}),
+      } : null,
       capture,
       analysis: an,
       terminal: terminalOf({ decision: d, pending, capture, analysis: an, analysisKnown: false }),

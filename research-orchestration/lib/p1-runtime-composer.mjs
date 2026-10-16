@@ -185,7 +185,7 @@ function boundClarificationRequest(workDir, state) {
 
 // Read-only input admission, BEFORE COMPLETE reuse, planner fallback or any write.
 // The checkpoint is still the sole authority; the response cannot grant reuse.
-function admitClarification({ workDir, state, runId, response, config, targetedEnabled }) {
+function admitClarification({ workDir, state, runId, response, config, targetedEnabled, maxGroupAnswers = null }) {
   const refused = code => ({ ok: false, code });
   try {
     if (!isPlainObject(response) || Object.keys(response).sort().join(',') !== 'binding,clarification,schemaVersion'
@@ -222,7 +222,7 @@ function admitClarification({ workDir, state, runId, response, config, targetedE
       if (state.stage !== STAGE_SELECT || state.hashes[CHECKPOINT_BINDING_COVERAGE_STATE] !== request.binding.coverageHash
         || state.hashes[CHECKPOINT_BINDING_SELECTION_DECISION] !== request.binding.pendingDecisionHash)
         return refused('clarification_stale');
-      const decision = selectSourceGroups(reentry.pool, loaded.plan, { clarification: input.clarification });
+      const decision = selectSourceGroups(reentry.pool, loaded.plan, { clarification: input.clarification, maxGroupAnswers });
       if (decision.verdict !== 'auto') return { ok: false, code: decision.reason,
         clarificationRequired: true, clarificationRequest: request,
         options: request.clarification.options.map(o => o.questionId) };
@@ -988,6 +988,7 @@ export async function composeP1Research({
   model = null,
   modelBaseUrl = null,
   config = undefined,
+  maxGroupAnswers = null,
   usageSink = null,
   restart = false,
   planner = null,
@@ -1045,6 +1046,12 @@ export async function composeP1Research({
     ? effectiveRuntime.runtimeId
     : `${effectiveRuntime.runtimeId}:${effectiveRuntime.model}`;
   const runId = runIdentityHash({ topic: normalizedTopic, mode, percent: null, runtime: runtimeKey });
+  // The answer-count limit changes which groups a run may select, so it is part
+  // of the configuration identity seen by every checkpoint / reuse gate, while
+  // `config` itself stays the retrieval round-controller configuration.
+  const identityConfig = maxGroupAnswers === null || maxGroupAnswers === undefined
+    ? config
+    : { ...(config ?? {}), sourceGroupSelection: { maxGroupAnswers } };
 
   // 1. State bootstrap / resume classification (checkpoint identity validated —
   //    FILE EXISTS != VALID CACHE). restart discards any prior checkpoint and
@@ -1057,13 +1064,13 @@ export async function composeP1Research({
   const clarificationAdmission = clarificationResponse === null ? null
     : restart ? { ok: false, code: 'clarification_stale' }
       : admitClarification({ workDir, state: existing, runId, response: clarificationResponse,
-        config, targetedEnabled: targetedSubphase !== null });
+        config: identityConfig, targetedEnabled: targetedSubphase !== null, maxGroupAnswers });
   if (clarificationAdmission && !clarificationAdmission.ok) return clarificationAdmission;
   if (clarificationResponse === null && existing?.stage === STAGE_SELECT && existing.hashes?.[CLARIFICATION_KEY]) {
     const request = boundClarificationRequest(workDir, existing);
     const loaded = loadPlan(workDir);
     const proof = loaded.ok ? planResumeReentry({ workDir, priorState: existing,
-      planHash: loaded.planHash, currentConfigFingerprint: configFingerprint(config) }) : null;
+      planHash: loaded.planHash, currentConfigFingerprint: configFingerprint(identityConfig) }) : null;
     if (!request || !proof?.ok || existing.runId !== runId
       || request.binding.occurrenceId !== existing.occurrenceId || request.binding.planHash !== loaded.planHash
       || request.binding.poolHash !== existing.hashes[CHECKPOINT_BINDING_ACCUMULATED_POOL]
@@ -1101,7 +1108,7 @@ export async function composeP1Research({
           workDir,
           state: existing,
           boundPlanHash: existing.p1FinalCoveragePlanHash,
-          currentConfigFingerprint: configFingerprint(config),
+          currentConfigFingerprint: configFingerprint(identityConfig),
         });
       } catch (error) {
         closure = {
@@ -1189,7 +1196,7 @@ export async function composeP1Research({
     archivePriorOccurrenceDerivedState(workDir, occurrenceId);
   }
 
-  const state = makeState({ workDir, topic: normalizedTopic, mode, percent: null, runtime: effectiveRuntime.runtimeId, occurrenceId, config });
+  const state = makeState({ workDir, topic: normalizedTopic, mode, percent: null, runtime: effectiveRuntime.runtimeId, occurrenceId, config: identityConfig });
   state.stage = STAGE_SEARCH;
   // P1-R06 repair (independent-review P1-2): a resuming occurrence must NOT
   // replace the durable checkpoint before the re-entry proof has decided what
@@ -1301,7 +1308,7 @@ export async function composeP1Research({
         workDir,
         priorState: existing,
         planHash: expectedPlanHash,
-        currentConfigFingerprint: configFingerprint(config),
+        currentConfigFingerprint: configFingerprint(identityConfig),
       })
       : { ok: false, reason: 'not_resuming' };
     // The re-entry proof has now been made (or was never applicable). From here
@@ -1600,7 +1607,7 @@ export async function composeP1Research({
     }
 
     if (selection === null) {
-      selection = applySourceGroupSelection({ coverageState, pool, plan, workDir, journal,
+      selection = applySourceGroupSelection({ coverageState, pool, plan, workDir, journal, maxGroupAnswers,
         clarification: clarificationAdmission?.input.clarification ?? null });
       if (selection.clarificationRequired) {
         let request;

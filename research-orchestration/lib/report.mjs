@@ -29,6 +29,7 @@ const RESULT_FILENAME = 'research-result.json';
 const SYNTHESIS_FILENAME = 'cross-source-synthesis.json';
 const CLAIMS_FILENAME = 'per-group-claims.json';
 const GROUP_STATE_FILENAME = 'multi-group-state.json';
+const SELECTION_DECISION_FILENAME = 'source-group-selection-decision.json';
 
 const CLAIM_KINDS = [['main', '主流观点'], ['minority', '少数观点'], ['contradictory', '反对观点']];
 const NUMERIC_ID = /^\d+$/;
@@ -139,7 +140,17 @@ function sourceRefIds(refs) {
 /**
  * Build the report model from loaded artifacts. Pure; no IO.
  */
-export function buildReportModel({ result, synthesisArtifact, claimsArtifact, index }) {
+/** The --max-group-answers disclosure recorded in the selection decision, or null. */
+function answerLimitOf(decision) {
+  const max = decision?.maxGroupAnswers;
+  if (!Number.isInteger(max) || max <= 0) return null;
+  const excluded = (Array.isArray(decision.excludedByAnswerLimit) ? decision.excludedByAnswerLimit : [])
+    .filter((e) => /^\d+$/.test(String(e?.questionId)) && Number.isInteger(e?.answerCount))
+    .map((e) => ({ questionId: String(e.questionId), answerCount: e.answerCount }));
+  return { max, excluded };
+}
+
+export function buildReportModel({ result, synthesisArtifact, claimsArtifact, index, selectionDecision = null }) {
   if (result?.ok !== true) {
     throw new ReportError('REPORT_RUN_NOT_COMPLETE', 'research-result.json does not describe a completed run');
   }
@@ -215,6 +226,7 @@ export function buildReportModel({ result, synthesisArtifact, claimsArtifact, in
       stopReason: retrieval.stopReason ?? null,
       isFullCoverage: result.disclosure?.isFullCoverage === true,
     },
+    answerLimit: answerLimitOf(selectionDecision),
     families,
     unresolved,
     groups,
@@ -266,6 +278,12 @@ export function renderReportMarkdown(model) {
   lines.push(`| 议题 | ${o.familyCount}（跨问题 ${o.crossGroupCount}，存在分歧 ${o.conflictingCount}） |`);
   lines.push(`| 模型 | ${md([model.runtime.runtimeId, model.runtime.model].filter(Boolean).join(' / ') || '—')} |`);
   lines.push(`| 检索 | ${o.retrievalRounds ?? '—'} 轮，停止原因 ${md(o.stopReason ?? '—')} |`, '');
+  if (model.answerLimit) {
+    const { max, excluded } = model.answerLimit;
+    lines.push(excluded.length
+      ? `> 回答数超过 ${max} 条的问题没有纳入分析（一次模型调用装不下）：${excluded.map((e) => `[问题 ${e.questionId}](${questionUrl(e.questionId)})（${e.answerCount} 条回答）`).join('、')}。`
+      : `> 回答数上限 ${max} 条，没有问题因此被排除。`, '');
+  }
 
   lines.push('## 议题', '');
   if (model.families.length === 0) lines.push('没有形成可归类的议题。', '');
@@ -341,7 +359,9 @@ export function loadReportModel(workDir) {
   const claimsArtifact = readJson(workDir, CLAIMS_FILENAME);
   const groupState = readJson(workDir, GROUP_STATE_FILENAME);
   const index = buildSourceIndex(workDir, groupState);
-  const model = buildReportModel({ result, synthesisArtifact, claimsArtifact, index });
+  let selectionDecision = null;
+  try { selectionDecision = JSON.parse(fs.readFileSync(path.join(workDir, SELECTION_DECISION_FILENAME), 'utf8')); } catch { selectionDecision = null; }
+  const model = buildReportModel({ result, synthesisArtifact, claimsArtifact, index, selectionDecision });
   return { model, index, result, claimsArtifact, groupState };
 }
 

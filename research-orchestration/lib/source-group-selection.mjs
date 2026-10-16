@@ -138,6 +138,8 @@ export const SELECTION_FAILURE_UNSAFE_DECISION = 'selection_decision_unsafe';
  * the absolute workDir path and is NEVER surfaced (T06 path-redaction rule,
  * same-point pattern as retrieval.mjs). */
 export const SELECTION_FAILURE_WRITE_FAILED = 'selection_decision_write_failed';
+/** --max-group-answers was given but is not a positive integer. */
+export const SELECTION_FAILURE_CONFIG_INVALID = 'selection_config_invalid';
 
 /** D-5 delegated defaults (implementation-validation bounds; overridden per call). */
 export const DEFAULT_MIN_GROUP_SCORE = 0;
@@ -531,7 +533,44 @@ function groupKeyUnsatisfiedRationale(unsatisfiedCount) {
  *                                        (at most one clarification; never re-asks)
  * @returns {object} selection decision (see SELECT_VERDICT_* + SelectedSourceGroups[])
  */
+/**
+ * Provider-reported answer counts by questionId (pool candidate facts). Counts
+ * that are missing or not a non-negative integer stay unknown; an unreadable
+ * pool field leaves the count unknown rather than failing selection.
+ */
+function readAnswerCounts(pool) {
+  const counts = new Map();
+  try {
+    for (const c of pool.candidates) {
+      const qid = c?.identity?.questionId;
+      const facts = c?.facts;
+      const n = isPlainObject(facts) ? facts.answerCount : undefined;
+      if (typeof qid === 'string' && Number.isInteger(n) && n >= 0) counts.set(qid, n);
+    }
+  } catch { /* counts stay unknown */ }
+  return counts;
+}
+
+/**
+ * Select source groups. Optional `opts.maxGroupAnswers` (positive integer,
+ * default off): a group whose provider-reported answer count exceeds it is not
+ * eligible — one model call per group cannot hold thousands of answers. Groups
+ * with an unknown count stay eligible. With a limit the decision additionally
+ * records `maxGroupAnswers` and `excludedByAnswerLimit`; without one it is
+ * unchanged. A malformed limit fails closed.
+ */
 export function selectSourceGroups(pool, plan, opts = {}) {
+  const limit = opts?.maxGroupAnswers ?? null;
+  if (limit !== null && !(Number.isInteger(limit) && limit > 0)) {
+    return failureVerdict(SELECTION_FAILURE_CONFIG_INVALID, { rationale: 'maxGroupAnswers must be a positive integer (fail-closed)' });
+  }
+  const excluded = [];
+  const decision = selectSourceGroupsWithin(pool, plan, opts, limit, excluded);
+  if (limit === null) return decision;
+  return { ...decision, maxGroupAnswers: limit, excludedByAnswerLimit: excluded };
+}
+
+function selectSourceGroupsWithin(pool, plan, opts, limit, excluded) {
   const minScore = typeof opts.minScore === 'number' ? opts.minScore : DEFAULT_MIN_GROUP_SCORE;
   const ambiguityMargin = typeof opts.ambiguityMargin === 'number' ? opts.ambiguityMargin : DEFAULT_AMBIGUITY_MARGIN;
 
@@ -621,9 +660,13 @@ export function selectSourceGroups(pool, plan, opts = {}) {
   // 4. Eligible candidate groups (minimum validity gate; D-5 bound).
   // A group is eligible only if its rrfScore is finite (valid) AND it clears
   // the minScore bound. Invalid groups are never selectable (fail-closed).
-  const eligible = built.groups
-    .map((g, idx) => ({ ...g, rankIndex: idx }))
-    .filter((g) => g.eligible && g.score >= minScore);
+  const counts = limit === null ? null : readAnswerCounts(pool);
+  const eligible = [];
+  for (const g of built.groups.map((x, idx) => ({ ...x, rankIndex: idx })).filter((x) => x.eligible && x.score >= minScore)) {
+    const n = counts?.get(g.questionId);
+    if (limit !== null && Number.isInteger(n) && n > limit) excluded.push({ questionId: g.questionId, answerCount: n });
+    else eligible.push(g);
+  }
 
   // 4b. Reform F1 groupKey hard gate (after eligible computation, BEFORE the
   // clarification branch): every intent with a non-empty groupKey must be
