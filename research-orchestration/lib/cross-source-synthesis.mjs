@@ -86,6 +86,7 @@ import {
   SYNTHESIS_SEMANTIC_CONTRACT_VERSION,
 } from './cross-group-aggregation.mjs';
 import { isBoundarySafeString } from './rrf.mjs';
+import { isResearchRuntimeIdentity } from './model-runtime.mjs';
 import { sanitizeProjectionText } from '../../corpus-anthology/lib/lmstudio-projection.mjs';
 import {
   createInitialCoverageState,
@@ -93,9 +94,9 @@ import {
   OWNER_T14_SYNTHESIS,
 } from './coverage-state.mjs';
 
-/** Approved synthesis runtime identity (Spec §5.2 policy — planner-pinned twin).
- * OWNER RULING 2026-09-10: request model = deepseek-v4-pro; served naming is
- * observability only (never an equality gate). */
+/** Default synthesis runtime identity (the default model of lib/model-runtime.mjs).
+ * Kept as named constants for callers and test doubles; T14 accepts any
+ * well-formed research runtime identity (see assertSynthesisRuntime). */
 export const T14_SYNTHESIS_RUNTIME_ID = 'deepseek-api-tool-less';
 export const T14_SYNTHESIS_MODEL = 'deepseek-v4-pro';
 
@@ -206,14 +207,14 @@ function normalizeForHash(value) {
 }
 
 /**
- * Runtime identity exact-match pin (planner.mjs discipline). The synthesis
- * accepts ONLY the approved runtime; anything else fails closed with
+ * Runtime admission: any well-formed research runtime identity
+ * (`<provider>-api-tool-less` + model id, lib/model-runtime.mjs) with a
+ * synthesize face. A missing or malformed runtime fails closed with
  * NO_SILENT_RUNTIME_FALLBACK — never re-route, never degrade.
  */
 function assertSynthesisRuntime(runtime) {
   return isPlainObject(runtime)
-    && runtime.runtimeId === T14_SYNTHESIS_RUNTIME_ID
-    && runtime.model === T14_SYNTHESIS_MODEL
+    && isResearchRuntimeIdentity(runtime)
     && typeof runtime.synthesize === 'function';
 }
 

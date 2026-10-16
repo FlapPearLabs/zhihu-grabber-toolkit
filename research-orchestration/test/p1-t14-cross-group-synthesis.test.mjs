@@ -562,15 +562,24 @@ describe('P1-T14 failure semantics (fail-closed, no silent fallback / degradatio
     assert.equal(result.artifact, undefined);
   });
 
-  test('runtime identity drift (wrong runtimeId/model) → fail closed, NO_SILENT_RUNTIME_FALLBACK', async () => {
-    const rogue = { ...defaultRuntime(), runtimeId: 'some-other-runtime' };
-    const result = await produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: rogue });
-    assert.equal(result.ok, false);
-    assert.equal(result.code, 'T14_RUNTIME_UNAVAILABLE');
-    const rogueModel = { ...defaultRuntime(), model: 'not-the-approved-model' };
-    const result2 = await produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: rogueModel });
-    assert.equal(result2.ok, false);
-    assert.equal(result2.artifact, undefined);
+  test('malformed runtime identity → fail closed, NO_SILENT_RUNTIME_FALLBACK', async () => {
+    for (const rogue of [
+      { ...defaultRuntime(), runtimeId: 'some-other-runtime' },
+      { ...defaultRuntime(), runtimeId: 'lmstudio-local-tool-less' },
+      { ...defaultRuntime(), model: '' },
+      { ...defaultRuntime(), model: 'has space' },
+    ]) {
+      const result = await produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: rogue });
+      assert.equal(result.ok, false, JSON.stringify(rogue.runtimeId));
+      assert.equal(result.code, 'T14_RUNTIME_UNAVAILABLE');
+      assert.equal(result.artifact, undefined);
+    }
+  });
+
+  test('any well-formed model identity is admitted (the user chooses the model)', async () => {
+    const other = { ...defaultRuntime(), runtimeId: 'antigravity-api-tool-less', model: 'claude-sonnet-4-6' };
+    const result = await produceCrossSourceSynthesis({ seamCArtifact: seamCMultiGroup(), runtime: other });
+    assert.equal(result.ok, true, JSON.stringify(result));
   });
 
   test('runtime throws (transport failure) → fail closed, no artifact', async () => {

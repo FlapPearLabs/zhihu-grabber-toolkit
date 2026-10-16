@@ -355,6 +355,27 @@ node research-orchestration/bin/research-p1.mjs "AI 编程工具会取代程序�
 
 如果存在实质歧义，P1 会返回结构化 clarification，而不是自行猜测用户意图。
 
+### 选择模型
+
+规划、观点抽取、跨问题综合用同一个模型，默认 `deepseek/deepseek-v4-pro`。模型接入基于 [pi-ai](https://www.npmjs.com/package/@earendil-works/pi-ai)，用 `--model <provider>/<model-id>` 切换：
+
+```bash
+# pi-ai 内置的任意 provider（Kimi、智谱、通义、OpenAI、Anthropic、Gemini、OpenRouter 等）
+node research-orchestration/bin/research-p1.mjs "主题" --model moonshotai-cn/kimi-k2.6
+
+# 任意 OpenAI 兼容接口（本机代理、Ollama、LM Studio、vLLM 等），provider 名字可任取
+node research-orchestration/bin/research-p1.mjs "主题" \
+  --model antigravity/claude-sonnet-4-6 --base-url http://127.0.0.1:8045/v1
+```
+
+API key 只从本机读取，不会出现在提示词、产物、日志或错误信息里：
+
+- `RESEARCH_MODEL_API_KEY` 环境变量，或 0600 权限的 `.model_api_key` 文件（当前目录或仓库根目录）；
+- DeepSeek 仍可用 `DEEPSEEK_API_KEY` / `.deepseek_api_key`；
+- 其他内置 provider 也认各自的标准环境变量，如 `OPENAI_API_KEY`、`MOONSHOT_API_KEY`。
+
+`--base-url` 只允许 https，或本机地址上的 http。换模型就是换一次研究：不同模型的运行不会复用彼此的 checkpoint。模型不可用时直接失败，不会悄悄换成别的模型。
+
 ---
 
 ## 与知乎社区生态的契合点
@@ -424,7 +445,7 @@ Controller 负责：
 
 ### Tool-less semantic runtime
 
-当前 P1 canonical composition 使用经过资格验证的 **tool-less semantic runtime**。语义 worker 不通过研究内容获得工具权限，也不掌握 source identity / coverage 的最终裁决权。
+P1 的语义调用都是 **tool-less** 的：无论用户选择哪个模型，请求里都不带任何工具；模型回复里出现工具调用即判失败。语义 worker 不通过研究内容获得工具权限，也不掌握 source identity / coverage 的最终裁决权。
 
 ### Credential isolation
 
@@ -492,7 +513,7 @@ flowchart TD
 | Research Decision Ledger | 记录来源为何进入 / 未进入研究集，让选择过程可审计 |
 | Pre-synthesis guard | selected / mapped / analyzed 集合不一致时禁止综合 |
 | Retrieval / Source / Analysis Coverage 分离 | “找得广、抓得完整、分析得完整”是三件不同的事 |
-| Runtime qualification | provider / model / profile 必须经过明确资格验证，接口兼容不等于产品支持 |
+| 模型由用户选择，身份如实记录 | 任何 pi-ai 支持的模型或 OpenAI 兼容接口都可用；结果里记录实际使用的 provider / model，质量用评估集衡量而不是靠事先"资格认证" |
 | No silent fallback | runtime、coverage 或 verification 失败时不能偷偷改变研究身份 |
 | External content = data, not instruction | 把 Prompt Injection / Context Pollution 限制在不具 authority 的数据层 |
 | Simple / Mechanical / Verifiable first | 能机械证明的事实，不交给模型凭感觉判断 |

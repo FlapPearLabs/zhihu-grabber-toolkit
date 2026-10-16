@@ -349,6 +349,24 @@ test('CE7b: the P1 entrypoint fails closed on a non-declared runtime (usage erro
   assert.equal(parsed.error?.type, 'invalid_input');
 });
 
+test('CE7d: the P1 entrypoint validates --model / --base-url before any work (usage error, no fallback)', () => {
+  const entryPath = path.join(RO_ROOT, 'bin', 'research-p1.mjs');
+  const cases = [
+    { args: ['--model', 'not-a-spec'], match: /model_spec_invalid/ },
+    { args: ['--model', 'Deep Seek/x'], match: /model_spec_invalid/ },
+    { args: ['--base-url', 'http://127.0.0.1:8045/v1'], match: /--base-url requires --model/ },
+    { args: ['--model', 'antigravity/claude-sonnet-4-6', '--base-url', 'http://example.com/v1'], match: /base_url_invalid/ },
+    { args: ['--model', 'x/y', '--base-url', 'https://user:pw@api.example.com/v1'], match: /base_url_invalid/ },
+  ];
+  for (const c of cases) {
+    const res = spawnSync(process.execPath, [entryPath, '测试主题', '--json', ...c.args], { encoding: 'utf8', timeout: 30_000 });
+    assert.equal(res.status, 2, `${c.args.join(' ')} must exit 2, got ${res.status}: ${res.stdout} ${res.stderr}`);
+    const parsed = JSON.parse(res.stdout);
+    assert.equal(parsed.error?.type, 'invalid_input');
+    assert.match(parsed.error.message, c.match);
+  }
+});
+
 // ---------------------------------------------------------------------------
 // behavioral counterexamples (offline; composer + runtime adapter via dynamic import)
 // ---------------------------------------------------------------------------
@@ -554,55 +572,66 @@ test('CE8: P1 composition failure is structured and final — clarification outc
   }
 });
 
-test('CE7: the production research runtime adapter sends the OWNER-authorized request model (deepseek-v4-pro) and treats the provider-side served model string as observability only', async () => {
-  const { buildDeepSeekResearchRuntime } = await import('../lib/deepseek-research-runtime.mjs');
-  // OWNER RULING 2026-09-10: request model = deepseek-v4-pro (currently served
-  // as the provider's Flash generation — accepted as-is); the response.model
-  // marketing/generation label is NON-BLOCKING observability, never an
-  // equality gate. All OTHER envelope guarantees remain fail-closed.
-  const envelopeFor = (content, model = 'deepseek-flash') => ({
-    object: 'chat.completion',
-    model,
-    choices: [{ message: { role: 'assistant', content }, finish_reason: 'stop' }],
-  });
-  const goodEnvelope = envelopeFor(JSON.stringify({
+test('CE7: the production model runtime sends the default model (deepseek-v4-pro) tool-less, and treats the served model string as observability only', async () => {
+  const { fakeModelRuntime } = await import('./helpers/fake-model-transport.mjs');
+  const good = JSON.stringify({
     main: [{ tokenRef: '1', statement: '主流观点：有效' }],
     minority: [],
     contradictory: [],
     expertEvidenceRichTokens: ['1'],
-  }));
-  let calls = 0;
-  let lastBody = null;
-  const rt = buildDeepSeekResearchRuntime({
-    credential: { usable: true, key: 'test-key' },
-    fetchImpl: async (_url, opts) => {
-      calls += 1;
-      lastBody = JSON.parse(opts.body);
-      return { ok: true, json: async () => goodEnvelope };
-    },
   });
+  // The provider may report another generation label; it is never an identity gate.
+  const { runtime: rt, calls } = await fakeModelRuntime({ text: good, model: 'deepseek-flash' });
   assert.equal(rt.runtimeId, 'deepseek-api-tool-less');
-  assert.equal(rt.model, 'deepseek-v4-pro', 'request model pin = the OWNER-authorized route');
-  assert.equal(rt.model, T14_SYNTHESIS_MODEL, 'adapter pin and T14 pin must agree on the authorized request model');
+  assert.equal(rt.model, 'deepseek-v4-pro', 'default model = the historical request route');
+  assert.equal(rt.model, T14_SYNTHESIS_MODEL, 'default runtime and the T14 default constant agree');
   const out = await rt.analyze({ projection: '[BEGIN UNTRUSTED_DATA token=1] data [END]' });
-  assert.equal(calls, 1);
-  assert.equal(lastBody.model, 'deepseek-v4-pro', 'the request carries the authorized model id');
-  assert.deepEqual(lastBody.tools, undefined, 'tool-less: no tools may be sent');
-  assert.equal(lastBody.thinking?.type, 'disabled');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].body.model, 'deepseek-v4-pro', 'the request carries the selected model id');
+  assert.equal(calls[0].body.tools, undefined, 'tool-less: no tools may be sent');
+  assert.equal(calls[0].body.thinking?.type, 'disabled');
   assert.equal(out.main?.[0]?.tokenRef, '1');
 
-  // envelope SHAPE failures still fail closed (served-model naming is the ONLY
-  // relaxed assumption): malformed envelope / non-clean finish are failures.
-  const shapeBroken = buildDeepSeekResearchRuntime({
-    credential: { usable: true, key: 'test-key' },
-    fetchImpl: async () => ({ ok: true, json: async () => ({ object: 'chat.completion', model: 'deepseek-flash', choices: [] }) }),
+  // Channel failures still fail closed: an empty reply and a truncated reply both reject.
+  const { runtime: empty } = await fakeModelRuntime('   ');
+  await assert.rejects(() => empty.analyze({ projection: 'x' }), (e) => /runtime_unavailable/.test(String(e?.message)));
+  const { runtime: truncated } = await fakeModelRuntime({ text: '{"main":[]}', finish: 'length' });
+  await assert.rejects(() => truncated.analyze({ projection: 'x' }), (e) => /truncated/.test(String(e?.message)));
+});
+
+test('CE7c: the composer accepts any well-formed model identity and refuses a malformed one', async () => {
+  const { composeP1Research } = await import('../lib/p1-runtime-composer.mjs');
+  const other = { ...pinnedMockRuntime(), runtimeId: 'antigravity-api-tool-less', model: 'claude-sonnet-4-6' };
+  const okDir = tmpWork('p1-compose-other-model-');
+  const ok = await composeP1Research({
+    topic: 'AI 编程工具会取代程序员吗', workDir: okDir, plan: PLAN, runtime: other,
+    seam: rankingSeam(['100', '200']),
+    captureAdapter: captureAdapterFor({ 100: answersJsonFor('100', GROUP_100_TEXTS), 200: answersJsonFor('200', GROUP_200_TEXTS) }),
+    runner: groupRunnerFor(), embeddingProvider: testEmbeddingProvider(),
   });
-  await assert.rejects(() => shapeBroken.analyze({ projection: 'x' }), (e) => String(e?.message ?? '').length > 0);
-  const truncated = buildDeepSeekResearchRuntime({
-    credential: { usable: true, key: 'test-key' },
-    fetchImpl: async () => ({ ok: true, json: async () => ({ object: 'chat.completion', model: 'deepseek-flash', choices: [{ message: { role: 'assistant', content: '{"main":[]}' }, finish_reason: 'length' }] }) }),
+  assert.equal(ok.ok, true, JSON.stringify(ok));
+  assert.deepEqual(ok.result.runtime, { runtimeId: 'antigravity-api-tool-less', model: 'claude-sonnet-4-6' });
+
+  // A different model is a different run identity: never a reuse of the default run.
+  const defDir = tmpWork('p1-compose-default-model-');
+  const def = await composeP1Research({
+    topic: 'AI 编程工具会取代程序员吗', workDir: defDir, plan: PLAN, runtime: pinnedMockRuntime(),
+    seam: rankingSeam(['100', '200']),
+    captureAdapter: captureAdapterFor({ 100: answersJsonFor('100', GROUP_100_TEXTS), 200: answersJsonFor('200', GROUP_200_TEXTS) }),
+    runner: groupRunnerFor(), embeddingProvider: testEmbeddingProvider(),
   });
-  await assert.rejects(() => truncated.analyze({ projection: 'x' }), (e) => String(e?.message ?? '').length > 0);
+  assert.equal(def.ok, true);
+  assert.notEqual(ok.runId, def.runId);
+
+  for (const bad of [
+    { ...pinnedMockRuntime(), runtimeId: 'lmstudio-local-tool-less' },
+    { ...pinnedMockRuntime(), model: '' },
+    { ...pinnedMockRuntime(), model: 'has space' },
+  ]) {
+    const out = await composeP1Research({ topic: 'AI 编程工具会取代程序员吗', workDir: tmpWork('p1-compose-bad-rt-'), plan: PLAN, runtime: bad });
+    assert.equal(out.ok, false);
+    assert.equal(out.code, 'runtime_not_supported');
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -855,8 +884,8 @@ test('D3-CE5: the bridge never emits the access secret — writes are {status, b
 // These cases drive the REAL production chain end-to-end:
 //   real canonical loader (buildRealSourceContentLoader wired by
 //   analyzeSelectedCorpus) → T13 projection → T13 extraction → production
-//   DeepSeek runtime adapter (buildDeepSeekResearchRuntime) → controlled fake
-//   transport → inspect the ACTUAL request body.
+//   model runtime (lib/model-runtime.mjs) → controlled fake transport →
+//   inspect the ACTUAL request body.
 //
 // Unsafe canaries (raw HTML / code body / full external image URL / file URI /
 // encoded path / CJK-adjacent path / forged source-framing fence) are planted
@@ -882,25 +911,17 @@ describe('P1-R04 safe projection — untrusted corpus → semantic request bound
    * content) and synthesis calls with `synthesisPayload`.
    */
   async function makeRecordingRuntime({ claimsPayload, synthesisPayload, calls }) {
-    const { buildDeepSeekResearchRuntime } = await import('../lib/deepseek-research-runtime.mjs');
-    const envelope = (content) => ({
-      object: 'chat.completion',
-      model: 'deepseek-flash', // provider-side served naming = observability only
-      choices: [{ message: { role: 'assistant', content }, finish_reason: 'stop' }],
+    const { fakeModelRuntime, messagesOf } = await import('./helpers/fake-model-transport.mjs');
+    const { runtime } = await fakeModelRuntime((body) => {
+      calls.push(body);
+      const { system, user } = messagesOf(body);
+      const payload = system.includes(SYNTHESIS_SYSTEM_MARKER)
+        ? synthesisPayload
+        : (typeof claimsPayload === 'function' ? claimsPayload(user) : claimsPayload);
+      // provider-side served naming = observability only
+      return { text: JSON.stringify(payload), model: 'deepseek-flash' };
     });
-    return buildDeepSeekResearchRuntime({
-      credential: { usable: true, key: 'test-key' },
-      fetchImpl: async (_url, opts) => {
-        const body = JSON.parse(opts.body);
-        calls.push(body);
-        const system = body.messages?.[0]?.content ?? '';
-        const user = body.messages?.[1]?.content ?? '';
-        const payload = system.includes(SYNTHESIS_SYSTEM_MARKER)
-          ? synthesisPayload
-          : (typeof claimsPayload === 'function' ? claimsPayload(user) : claimsPayload);
-        return { ok: true, json: async () => envelope(JSON.stringify(payload)) };
-      },
-    });
+    return runtime;
   }
 
   /** Concatenated user-visible content of every recorded request body. */

@@ -3,8 +3,8 @@
  *
  * P1-T18 — Research Planner Semantic Proposal orchestration (Issue #50).
  *
- * Pipeline (ticket GOAL): USER_REQUEST → approved deepseek-api-tool-less
- * SemanticRuntime → semantic plan proposal → EXISTING T04 structured validation
+ * Pipeline (ticket GOAL): USER_REQUEST → research SemanticRuntime (any
+ * provider, lib/model-runtime.mjs) → semantic plan proposal → EXISTING T04 structured validation
  * (research-orchestration/lib/plan-contract.mjs, UNCHANGED) → persisted Research
  * Plan / planHash.
  *
@@ -20,11 +20,10 @@
  *   run identity stays normalized user request + stable configuration identity
  *   (state.mjs runIdentityHash — untouched here; plan-reuse policy is
  *   controller-owned downstream wiring, not planner policy).
- * - §5.2 semantic runtime policy: public-Zhihu default approved runtime is
- *   `deepseek-api-tool-less` (runtime-scoped qualification; R5; not reopened).
- *   NO_SILENT_RUNTIME_FALLBACK: this module pins EXACTLY that runtime — any
- *   other runtime id, or any runtime/channel failure, fails closed. It never
- *   re-routes to another runtime, never downgrades to prompt-only heuristics.
+ * - §5.2 semantic runtime policy: the user selects the model (default
+ *   deepseek/deepseek-v4-pro). NO_SILENT_RUNTIME_FALLBACK: any runtime/channel
+ *   failure fails closed; the planner never re-routes to another runtime and
+ *   never downgrades to prompt-only heuristics.
  * - §10.1 input classes: USER_REQUEST gets normal deterministic input validation
  *   (length / encoding / identity boundaries); it is NOT UNTRUSTED_CORPUS, so the
  *   corpus projection sanitization (sanitizeProjectionText / source-tag grammar)
@@ -48,42 +47,26 @@
  *                             constraint semantics under plan schemaVersion 1,
  *                             D4 repair, Issue #50); model-quality failure
  *
- * 既有隔离实现 reuse (ticket IN_SCOPE "经既有 tool-less runtime 通道 / 沿用既有
- * 隔离实现"): this module follows the exact channel discipline of the reviewed
- * corpus-anthology tool-less runtimes (T5-LM / T6 / T11-R2) without modifying
- * them — controller-owned HTTPS transport (redirect:error, timeout), runtime
- * identity exact-match pin (same field set as deepseek-tool-less
- * buildDeepSeekChatRequest), response_format json_object + thinking explicitly
- * disabled + NO tools, strict fail-closed response envelope (single assistant
- * message, non-empty text, finish_reason === 'stop', no model-visible
- * tool_calls), and the shared credential resolution contract
- * (resolveDeepSeekCredential; the key is used only for the Authorization header
- * and is never logged, hashed, persisted, or placed in any prompt/state).
- * Planner-specific parts (system prompt + plan schema task) exist because the
- * map channel's three-key output contract is a different structured-output task.
+ * Transport: the planner owns no HTTP code. It calls `runtime.completeText`
+ * on the research runtime built by lib/model-runtime.mjs (any provider via
+ * pi-ai; tool-less; bounded retries; typed runtime_unavailable failures). The
+ * runtime returns raw text; plan validity is decided here, exclusively by the
+ * existing T04 contract plus the planner-profile gate.
  *
  * Security / privacy boundary (ticket SECURITY_GATE + RULES §1/§11):
- * - credential resolution and key handling stay inside this module boundary and
- *   the existing resolver; the key never enters the prompt, the plan, results,
- *   events, or state; determinstic shape guards (same CREDENTIAL_SHAPE /
+ * - credentials live in the model layer; the key never enters the prompt, the
+ *   plan, results, events, or state; deterministic shape guards (same CREDENTIAL_SHAPE /
  *   PRIVATE_PATH_SHAPE as plan-contract.mjs) reject credential-shaped or
  *   machine-private-path USER_REQUEST text fail-closed BEFORE any egress.
- * - usage evidence (§10, non-sensitive): optional usageSink collects
- *   model/token/timing only when the API reports usage.
+ * - usage evidence (§10, non-sensitive) is recorded by the model layer.
  */
 
-import {
-  DEEPSEEK_RUNTIME,
-  resolveDeepSeekCredential,
-} from '../../corpus-anthology/lib/deepseek-tool-less.mjs';
+import { extractJsonText, isResearchRuntimeIdentity } from './model-runtime.mjs';
 import {
   PLAN_FAILURE_PLANNER_INVALID,
   validatePlanJson,
   persistPlan,
 } from './plan-contract.mjs';
-
-/** Approved planner runtime identity (Spec §5.2; ticket pins deepseek-api-tool-less). */
-export const PLANNER_RUNTIME_ID = 'deepseek-api-tool-less';
 
 /** Machine-readable failure identities (Spec §10.2; distinct, fail-closed). */
 export const PLANNER_FAILURE_USER_REQUEST_INVALID = 'user_request_invalid';
@@ -102,9 +85,6 @@ export const PLANNER_MAX_REQUEST_CHARS = 2000;
 /** Plan JSON can be much larger than the map output; bounded completion budget. */
 export const PLANNER_MAX_TOKENS = 8192;
 
-/** Default transport timeout, mirroring the reviewed deepseek channel. */
-export const PLANNER_TIMEOUT_MS = 120_000;
-
 /**
  * Deterministic shape guards — EXACT copies of plan-contract.mjs CREDENTIAL_SHAPE /
  * PRIVATE_PATH_SHAPE (T04-reviewed semantics; keep in sync deliberately).
@@ -119,35 +99,13 @@ const PRIVATE_PATH_SHAPE =
 /** Encoding hygiene: C0 controls (except \t \n \r), DEL/C1, and Cf/Cs invisibles. */
 const ENCODING_SHAPE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]|[\p{Cf}\p{Cs}]/u;
 
-function fail(message) {
-  throw new Error(`capability_isolation_unavailable: ${message}`);
-}
-
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-/**
- * Runtime identity exact-match pin — same discipline and field set as
- * corpus-anthology/lib/deepseek-tool-less.mjs buildDeepSeekChatRequest. The
- * planner accepts ONLY the approved deepseek-api-tool-less runtime; anything
- * else fails closed (NO_SILENT_RUNTIME_FALLBACK — never re-route).
- */
-function assertPlannerRuntime(runtime = DEEPSEEK_RUNTIME) {
-  if (!isPlainObject(runtime)
-    || runtime.runtimeId !== 'deepseek-api-tool-less'
-    || runtime.model !== 'deepseek-v4-pro'
-    || runtime.thinking !== 'disabled'
-    || runtime.endpoint !== 'https://api.deepseek.com/chat/completions'
-    || runtime.jsonMode !== 'json_object'
-    || runtime.tools !== 'none') {
-    fail('planner runtime does not exactly match the approved deepseek-api-tool-less runtime');
-  }
-}
-
 /** Faithful, non-sensitive runtime identity for results/state (no credential). */
-export function plannerRuntimeIdentity(runtime = DEEPSEEK_RUNTIME) {
-  return { runtimeId: runtime.runtimeId, model: runtime.model };
+function plannerRuntimeIdentity(runtime) {
+  return isPlainObject(runtime) ? { runtimeId: runtime.runtimeId ?? null, model: runtime.model ?? null } : null;
 }
 
 /**
@@ -219,71 +177,9 @@ export function buildPlannerUserContent(request) {
 }
 
 /**
- * Build the DeepSeek chat request body with the planner task — same minimal
- * visible surface as the reviewed channel: pinned model, no tools, thinking
- * explicitly disabled, json_object response format, non-streaming.
- */
-export function buildPlannerChatRequest({ request, runtime = DEEPSEEK_RUNTIME }) {
-  assertPlannerRuntime(runtime);
-  if (typeof request !== 'string' || request.trim() === '') {
-    fail('planner request must be non-empty validated text');
-  }
-  return {
-    model: runtime.model,
-    messages: [
-      { role: 'system', content: buildPlannerSystemPrompt() },
-      { role: 'user', content: buildPlannerUserContent(request) },
-    ],
-    response_format: { type: 'json_object' },
-    thinking: { type: 'disabled' },
-    stream: false,
-    max_tokens: PLANNER_MAX_TOKENS,
-  };
-}
-
-/**
- * Response envelope validation — mirrors the reviewed deepseek channel contract
- * (validateDeepSeekResponse) up to the structured-output step: envelope identity
- * pinned to the runtime, single assistant message with non-empty text, clean
- * finish, no model-visible tool calls. Returns the raw assistant TEXT; plan
- * validity is decided EXCLUSIVELY by the existing T04 contract downstream, so
- * unparseable/invalid plan content classifies as planner_invalid (plan quality),
- * not as a channel failure.
- */
-export function validatePlannerResponseEnvelope(response, { runtime = DEEPSEEK_RUNTIME } = {}) {
-  assertPlannerRuntime(runtime);
-  // Served-model naming is OBSERVABILITY ONLY (owner ruling 2026-09-10): the
-  // provider may report a different generation label than the request id —
-  // never an identity gate. All other envelope guarantees stay fail-closed.
-  if (!isPlainObject(response)
-    || response.object !== 'chat.completion'
-    || !Array.isArray(response.choices)
-    || response.choices.length !== 1) {
-    fail('response runtime identity or envelope is invalid');
-  }
-  const choice = response.choices[0];
-  const message = isPlainObject(choice) ? choice.message : null;
-  if (!isPlainObject(message)
-    || message.role !== 'assistant'
-    || typeof message.content !== 'string'
-    || message.content.trim() === '') {
-    fail('response has no single completed assistant text output');
-  }
-  if (choice.finish_reason !== 'stop') {
-    fail(`completion did not finish cleanly (finish_reason=${choice.finish_reason})`);
-  }
-  if (message.tool_calls !== undefined && message.tool_calls !== null) {
-    if (!Array.isArray(message.tool_calls) || message.tool_calls.length !== 0) {
-      fail('response exposes a model-visible tool call');
-    }
-  }
-  return message.content;
-}
-
-/**
- * Propose a research plan: USER_REQUEST → approved deepseek-api-tool-less
- * SemanticRuntime → semantic plan proposal → EXISTING T04 validation →
- * persisted Research Plan / planHash.
+ * Propose a research plan: USER_REQUEST → research SemanticRuntime →
+ * semantic plan proposal → EXISTING T04 validation → persisted Research
+ * Plan / planHash.
  *
  * Never throws for expected failure modes; returns machine-readable results:
  * - { ok: true, plan, planHash, file, runtime }
@@ -295,93 +191,34 @@ export function validatePlannerResponseEnvelope(response, { runtime = DEEPSEEK_R
  * @param {object} param0
  *   - userRequest: raw user request text (validated here, Spec §10.1)
  *   - workDir: work directory for the persisted plan artifact
- *   - runtime: must be exactly the approved deepseek-api-tool-less runtime
- *   - fetchImpl: injectable transport (tests); defaults to global fetch
- *   - credential: injectable resolved credential (tests); defaults to
- *     resolveDeepSeekCredential() (env / 0600 file; never logged)
- *   - timeoutMs / usageSink: transport timeout and §10 usage evidence sink
+ *   - runtime: research runtime from lib/model-runtime.mjs (needs completeText)
  */
-export async function proposeResearchPlan({
-  userRequest,
-  workDir,
-  runtime = DEEPSEEK_RUNTIME,
-  fetchImpl = fetch,
-  credential = null,
-  timeoutMs = PLANNER_TIMEOUT_MS,
-  usageSink = null,
-} = {}) {
+export async function proposeResearchPlan({ userRequest, workDir, runtime = null } = {}) {
   // 1. USER_REQUEST validation (§10.1) — before any egress.
   const req = validateUserRequest(userRequest);
   if (!req.ok) {
     return { ok: false, reason: req.reason, issues: req.issues };
   }
 
-  // 2. Runtime pin (§5.2) — only the approved deepseek-api-tool-less runtime;
-  //    anything else fails closed with NO_SILENT_RUNTIME_FALLBACK.
-  try {
-    assertPlannerRuntime(runtime);
-  } catch (err) {
-    return {
-      ok: false,
-      reason: PLANNER_FAILURE_RUNTIME_UNAVAILABLE,
-      details: err.message,
-      runtime: isPlainObject(runtime) ? plannerRuntimeIdentity({ ...runtime, runtimeId: runtime.runtimeId ?? null, model: runtime.model ?? null }) : null,
-    };
-  }
+  // 2. Runtime presence + identity (§5.2) — no runtime, no fallback.
   const identity = plannerRuntimeIdentity(runtime);
-
-  // 3. Credential (existing resolution contract; usable flag only — never logged).
-  const cred = credential ?? resolveDeepSeekCredential();
-  if (!cred || cred.usable !== true || typeof cred.key !== 'string' || cred.key.trim() === '') {
-    return {
-      ok: false,
-      reason: PLANNER_FAILURE_RUNTIME_UNAVAILABLE,
-      details: 'planner runtime credential is not configured or not usable',
-      runtime: identity,
-    };
+  if (!isResearchRuntimeIdentity(runtime) || typeof runtime.completeText !== 'function') {
+    return { ok: false, reason: PLANNER_FAILURE_RUNTIME_UNAVAILABLE, details: 'planner runtime is not available', runtime: identity };
   }
 
-  // 4. Controller-owned transport (既有隔离实现 discipline: redirect:error, timeout, JSON body).
-  const request = buildPlannerChatRequest({ request: req.request, runtime });
-  if (typeof fetchImpl !== 'function') {
-    return { ok: false, reason: PLANNER_FAILURE_RUNTIME_UNAVAILABLE, details: 'controller has no HTTP transport', runtime: identity };
-  }
-  const startedAt = Date.now();
-  let response;
-  try {
-    response = await fetchImpl(runtime.endpoint, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        authorization: `Bearer ${cred.key.trim()}`,
-      },
-      redirect: 'error',
-      body: JSON.stringify(request),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-  } catch (error) {
-    const name = error?.name ?? '';
-    const details = (name === 'TimeoutError' || /timeout/i.test(String(error?.message ?? '')))
-      ? `planner runtime request timed out after ${timeoutMs}ms`
-      : `planner runtime request transport failed: ${error instanceof Error ? error.name : String(error)}`;
-    return { ok: false, reason: PLANNER_FAILURE_RUNTIME_UNAVAILABLE, details, runtime: identity };
-  }
-  if (!response || response.ok !== true) {
-    return { ok: false, reason: PLANNER_FAILURE_RUNTIME_UNAVAILABLE, details: `planner runtime request failed with HTTP ${response?.status ?? 'unknown'}`, runtime: identity };
-  }
-  let payload;
-  try {
-    payload = await response.json();
-  } catch {
-    return { ok: false, reason: PLANNER_FAILURE_RUNTIME_UNAVAILABLE, details: 'planner runtime returned non-JSON data', runtime: identity };
-  }
-
-  // 5. Envelope validation (channel contract; isolation violations live here).
+  // 3-5. Model call through the shared model layer (transport, auth, retries,
+  //      tool-less discipline and clean-finish checks live there).
   let content;
   try {
-    content = validatePlannerResponseEnvelope(payload, { runtime });
+    const text = await runtime.completeText({
+      system: buildPlannerSystemPrompt(),
+      user: buildPlannerUserContent(req.request),
+      maxTokens: PLANNER_MAX_TOKENS,
+      label: 'planner',
+    });
+    content = extractJsonText(text);
   } catch (err) {
-    return { ok: false, reason: PLANNER_FAILURE_RUNTIME_UNAVAILABLE, details: err.message, runtime: identity };
+    return { ok: false, reason: PLANNER_FAILURE_RUNTIME_UNAVAILABLE, details: String(err?.message ?? err), runtime: identity };
   }
 
   // 6. EXISTING T04 structured validation gate (Spec §4.2 — no bypass, no coercion).
@@ -436,17 +273,6 @@ export async function proposeResearchPlan({
   if (!persisted.ok) {
     // Unreachable in practice (v.plan already validated); kept fail-closed.
     return { ok: false, reason: persisted.reason, issues: persisted.issues, runtime: identity };
-  }
-
-  // §10 non-sensitive usage evidence (API-reported usage only; contract unchanged).
-  if (usageSink && Array.isArray(usageSink) && payload && typeof payload.usage === 'object' && payload.usage !== null) {
-    usageSink.push({
-      model: payload.model ?? runtime.model,
-      promptTokens: payload.usage.prompt_tokens ?? null,
-      completionTokens: payload.usage.completion_tokens ?? null,
-      totalTokens: payload.usage.total_tokens ?? null,
-      ms: Date.now() - startedAt,
-    });
   }
 
   return { ok: true, plan: v.plan, planHash: persisted.planHash, file: persisted.file, runtime: identity };

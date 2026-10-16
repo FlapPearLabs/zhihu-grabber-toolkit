@@ -12,19 +12,20 @@
  * synthesis → final coverage reconciliation → render binding + result.
  *
  * This is NOT the generic/v0.3 single-question CLI, which keeps its own
- * behavior unchanged. The P1 composition chain pins the
- * approved public-Zhihu semantic runtime (deepseek-api-tool-less /
- * deepseek-v4-pro request route); any other --runtime value fails closed as invalid
- * input (NO_SILENT_RUNTIME_FALLBACK — there is no fallback path here).
+ * behavior unchanged. One model serves the whole chain; it is chosen with
+ * --model (default deepseek/deepseek-v4-pro, see lib/model-runtime.mjs). A
+ * model that cannot be used fails closed — there is no fallback model.
  *
  * Usage:
  *   node bin/research-p1.mjs <topic> [options]
  *
- * Options (the canonical runner passes exactly these):
- *   --work <dir>    run work directory (default ./work/research-p1)
- *   --json          single machine-readable JSON object on stdout
- *   --restart       discard any prior checkpoint and start fresh
- *   --runtime <id>  must be exactly deepseek-api-tool-less (fail-closed otherwise)
+ * Options:
+ *   --work <dir>        run work directory (default ./work/research-p1)
+ *   --json              single machine-readable JSON object on stdout
+ *   --restart           discard any prior checkpoint and start fresh
+ *   --model <p/id>      model as <provider>/<model-id> (default deepseek/deepseek-v4-pro)
+ *   --base-url <url>    OpenAI-compatible endpoint for --model (any provider label)
+ *   --runtime <id>      legacy; only deepseek-api-tool-less (= the default model)
  *   -h, --help
  *
  * On success a human-readable report.md is rendered into the work directory
@@ -42,6 +43,7 @@ import { readFileSync } from 'node:fs';
 import { composeP1Research } from '../lib/p1-runtime-composer.mjs';
 import { P1_PIPELINE_IDENTITY } from '../lib/coverage-final-integration.mjs';
 import { writeReport, summarizeReport, REPORT_FILENAME } from '../lib/report.mjs';
+import { parseModelSpec, validateBaseUrl } from '../lib/model-runtime.mjs';
 
 const HELP = `research-p1 — P1 cross-question deep research composition entrypoint
 
@@ -53,8 +55,16 @@ const HELP = `research-p1 — P1 cross-question deep research composition entryp
   --json              在 stdout 输出单一机器可读 JSON 结果
   --restart           丢弃既有 checkpoint 重新开始
   --clarification <file>  从绑定同一 occurrence 的 JSON 用户回应恢复；不能与 --restart 同用
-  --runtime <id>      必须恰好是 deepseek-api-tool-less（其余一律 invalid_input，无回退）
+  --model <p/id>      模型，格式 <provider>/<model-id>（默认 deepseek/deepseek-v4-pro）
+                      例：moonshotai-cn/kimi-k2.6、openrouter/anthropic/claude-sonnet-4.5
+  --base-url <url>    OpenAI 兼容接口地址；此时 provider 可任取名字
+                      例：--model antigravity/claude-sonnet-4-6 --base-url http://127.0.0.1:8045/v1
+  --runtime <id>      旧参数，只接受 deepseek-api-tool-less（等同默认模型）
   -h, --help          本帮助
+
+API key：RESEARCH_MODEL_API_KEY 环境变量，或 0600 权限的 .model_api_key 文件；
+DeepSeek 仍可用 DEEPSEEK_API_KEY / .deepseek_api_key；其他内置 provider 也认各自的
+标准环境变量（如 OPENAI_API_KEY、MOONSHOT_API_KEY）。模型不可用时直接失败，不换模型。
 
 成功后会在工作目录写出可读报告 report.md。
 
@@ -65,10 +75,10 @@ const HELP = `research-p1 — P1 cross-question deep research composition entryp
   3  CLARIFICATION_REQUIRED（实质歧义；--json 给出候选组选项）
 `;
 
-const APPROVED_P1_RUNTIME = 'deepseek-api-tool-less';
+const LEGACY_RUNTIME = 'deepseek-api-tool-less';
 
 function parseArgs(argv) {
-  const opts = { workDir: path.join(process.cwd(), 'work', 'research-p1'), json: false, restart: false, runtime: APPROVED_P1_RUNTIME };
+  const opts = { workDir: path.join(process.cwd(), 'work', 'research-p1'), json: false, restart: false, runtime: LEGACY_RUNTIME };
   const positional = [];
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
@@ -80,6 +90,8 @@ function parseArgs(argv) {
       continue; }
     if (a === '--work') { opts.workDir = path.resolve(process.cwd(), argv[++i] ?? ''); continue; }
     if (a === '--runtime') { opts.runtime = String(argv[++i] ?? ''); continue; }
+    if (a === '--model') { opts.model = String(argv[++i] ?? ''); continue; }
+    if (a === '--base-url') { opts.baseUrl = String(argv[++i] ?? ''); continue; }
     if (a.startsWith('--')) { opts.usageError = `unknown option: ${a}`; break; }
     positional.push(a);
   }
@@ -112,10 +124,16 @@ async function main() {
       if (clarificationResponse === null) throw new Error('null response'); }
     catch { usageError('clarification response must be readable JSON', opts.json); }
   }
-  // The pinned composition chain accepts ONLY the approved public-Zhihu
-  // semantic runtime; anything else is invalid input, never a fallback.
-  if (opts.runtime !== APPROVED_P1_RUNTIME) {
-    usageError(`P1 composition accepts only ${APPROVED_P1_RUNTIME} (got ${JSON.stringify(opts.runtime)}); NO_SILENT_RUNTIME_FALLBACK`, opts.json);
+  // Legacy --runtime: only the default model's identity is accepted.
+  if (opts.runtime !== LEGACY_RUNTIME) {
+    usageError(`--runtime accepts only ${LEGACY_RUNTIME}; use --model <provider>/<model-id> (got ${JSON.stringify(opts.runtime)}); NO_SILENT_RUNTIME_FALLBACK`, opts.json);
+  }
+  if (opts.model !== undefined) {
+    try { parseModelSpec(opts.model); } catch (err) { usageError(err.message, opts.json); }
+  }
+  if (opts.baseUrl !== undefined) {
+    if (opts.model === undefined) usageError('--base-url requires --model <provider>/<model-id>', opts.json);
+    try { validateBaseUrl(opts.baseUrl); } catch (err) { usageError(err.message, opts.json); }
   }
 
   const usage = [];
@@ -124,6 +142,8 @@ async function main() {
     workDir: opts.workDir,
     restart: opts.restart,
     fetchImpl: fetch,
+    model: opts.model ?? null,
+    modelBaseUrl: opts.baseUrl ?? null,
     usageSink: usage,
     clarificationResponse,
   });

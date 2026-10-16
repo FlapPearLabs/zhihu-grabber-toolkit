@@ -44,6 +44,12 @@ jobs:
         working-directory: zhihu-answer-grabber
         run: npm ci --registry=https://registry.npmjs.org
 
+      # research-orchestration 的模型接入层（lib/model-runtime.mjs）依赖 pi-ai；
+      # 规划器 / 模型层 / 组合链测试会实际加载它（离线 fake 传输，不联网）。
+      - name: Install research-orchestration dependencies
+        working-directory: research-orchestration
+        run: npm ci --registry=https://registry.npmjs.org
+
       - name: zhihu-answer-grabber tests
         working-directory: zhihu-answer-grabber
         run: node --test
@@ -123,6 +129,9 @@ jobs:
       - name: P1 report.md rendering
         run: node --test research-orchestration/test/p1-report.test.mjs
 
+      - name: Model access layer (pi-ai, any provider)
+        run: node --test research-orchestration/test/model-runtime.test.mjs
+
       # P1-R01 (#89): research suite classification / omission guard.
       # 该步骤在每次 PR / master push 的三个平台上执行。它校验提交的
       # suite-classification.json 覆盖了 research-orchestration/test/ 下发现的每一个
@@ -170,6 +179,10 @@ jobs:
       # Install the same committed package lock used by the matrix job; no live/paid research.
       - name: Install existing product runtime dependencies
         working-directory: zhihu-answer-grabber
+        run: npm ci --registry=https://registry.npmjs.org
+
+      - name: Install research-orchestration dependencies
+        working-directory: research-orchestration
         run: npm ci --registry=https://registry.npmjs.org
 
       - name: research suite classification (full offline + historical; live/private NOT_RUN)
