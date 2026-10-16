@@ -41,7 +41,7 @@
   - PR 描述或 Issue 里写摘要和关键数字；
   - 需要长期保存的，作为 Issue 附件或 Release asset。
 - 例外：测试需要的最小合成数据，放在对应包的 `test/fixtures/`。
-- 2026-10-16 之前的历史验收证据，保存在 tag `archive/evidence-2026-10-16` 的 `docs/acceptance/` 里。
+- 2026-10-16 之前的历史验收证据，保存在只读归档分支 `archive/evidence-2026-10-16` 的 `docs/acceptance/` 里。不要删除这个分支，也不要往里提交。
 
 ## 4. 默认关闭的代码要有期限
 

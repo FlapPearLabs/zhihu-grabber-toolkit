@@ -58,4 +58,4 @@
   - V0.3 dogfood 报告。
 
   这些只作背景参考，不是现行规则。资格审计结论只适用于当时评估的那个 provider、模型或配置，不能推广成全局结论。
-- 2026-10-16 之前的验收证据（原 `docs/acceptance/`）保存在 tag [`archive/evidence-2026-10-16`](https://github.com/FlapPearLabs/zhihu-grabber-toolkit/tree/archive/evidence-2026-10-16/docs/acceptance)。
+- 2026-10-16 之前的验收证据（原 `docs/acceptance/`）保存在只读归档分支 [`archive/evidence-2026-10-16`](https://github.com/FlapPearLabs/zhihu-grabber-toolkit/tree/archive/evidence-2026-10-16/docs/acceptance)。
