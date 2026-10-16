@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "type": "p1-goldset",
+  "id": "t2-civil-service",
+  "topic": "年轻人现在该不该考公",
+  "status": "draft",
+  "note": "草稿：观点按领域常识独立撰写，没有参考系统输出；stance 相对题目命题。请审阅后把 status 改为 reviewed。",
+  "viewpoints": [
+    {
+      "id": "v01",
+      "statement": "经济下行、就业形势差时，体制内的稳定性、社保公积金和福利保障很有吸引力",
+      "stance": "supports",
+      "weight": 3
+    },
+    {
+      "id": "v02",
+      "statement": "竞争激烈、录取率低，多年备考的时间和机会成本很高",
+      "stance": "opposes",
+      "weight": 3
+    },
+    {
+      "id": "v03",
+      "statement": "是否考公因人而异：取决于性格、家庭条件、所在地区、专业和职业规划",
+      "stance": "conditional",
+      "weight": 3
+    },
+    {
+      "id": "v04",
+      "statement": "基层薪资不高，部分地区财政紧张导致降薪、绩效缩水甚至欠薪",
+      "stance": "opposes",
+      "weight": 2
+    },
+    {
+      "id": "v05",
+      "statement": "体制内存在形式主义、加班和基层压力，工作内容可能与想象不符",
+      "stance": "opposes",
+      "weight": 2
+    },
+    {
+      "id": "v06",
+      "statement": "体制内的技能可迁移性弱，一旦进入再转行较难",
+      "stance": "opposes",
+      "weight": 2
+    },
+    {
+      "id": "v07",
+      "statement": "地区和岗位差异很大：发达地区与欠发达地区、中央与基层、热门与冷门岗位差别明显",
+      "stance": "conditional",
+      "weight": 2
+    },
+    {
+      "id": "v08",
+      "statement": "私企和互联网行业裁员、35 岁危机等不稳定因素，抬高了体制内的相对吸引力",
+      "stance": "supports",
+      "weight": 2
+    },
+    {
+      "id": "v09",
+      "statement": "社会认可、家庭期望和婚恋市场普遍偏好体制内工作",
+      "stance": "supports",
+      "weight": 1
+    },
+    {
+      "id": "v10",
+      "statement": "考公宜作为保底选项与求职并行，应届生身份很宝贵，不宜孤注一掷",
+      "stance": "conditional",
+      "weight": 2
+    }
+  ],
+  "expectedSources": []
+}

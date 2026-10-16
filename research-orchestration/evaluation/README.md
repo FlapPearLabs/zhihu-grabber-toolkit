@@ -1,4 +1,107 @@
-# #107 Research Evaluation Harness MVP
+# 评估
+
+这里有两套评估工具：
+
+- **真实运行评估**（P3）：给一次已完成的 P1 运行打分，用来建立基线、比较分析层改造前后的效果；
+- **#107 合成基准**：见下文第二部分。
+
+## 一、真实运行评估
+
+两个脚本都只读取运行已经写出的文件。它们不重新运行、不重新搜索、不调用模型，所以不会改变运行结果。
+
+### 自动指标
+
+```bash
+node research-orchestration/evaluation/score-run.mjs <运行目录>
+```
+
+结果写到 `<运行目录>/evaluation/metrics.json`，包括：
+
+- **引用覆盖率**：结论里实际引用的回答数，除以分析过的回答数；
+- **观点数和多来源观点**：观点按主流、少数、反对分别计数；多来源观点指至少引用 2 个不同回答的观点；
+- **议题数**：包括有分歧的议题、跨问题的议题；
+- **模型调用次数和 token 用量**：按 planner、analyze、synthesize 分别统计。没有记录用量时显示「未记录」，不当成 0；
+- **运行耗时**。
+
+### 人工评分
+
+1. 生成评分表：
+
+   ```bash
+   node research-orchestration/evaluation/score-run.mjs <运行目录> --gold research-orchestration/evaluation/goldset/<话题>.json
+   ```
+
+   评分表写到 `evaluation/scoring-sheet.json`（填写用）和 `scoring-sheet.md`（阅读用），共三部分：
+
+   - **黄金观点**：逐条判断报告是否覆盖，填 `full`、`partial` 或 `none`。表里附了字面相似的系统观点作参考；
+   - **引用抽查**：按运行 ID 确定性抽取 10 条观点，附上引用回答的摘录和链接，判断回答是否支持这条观点，填 `supported`、`partial` 或 `unsupported`；
+   - **整体评分**：覆盖、准确、平衡、可用四项，每项 1–5 分。
+
+   已有评分表时不会覆盖，除非加 `--force`。
+
+2. 填完后计分：
+
+   ```bash
+   node research-orchestration/evaluation/score-run.mjs <运行目录> --sheet <运行目录>/evaluation/scoring-sheet.json
+   ```
+
+   结果写到 `evaluation/human-scores.json`，包括三项：
+
+   - **黄金观点召回**：按权重计算，full 记 1 分，partial 记 0.5 分；
+   - **引用忠实度**；
+   - **整体评分均值**。
+
+   评分表必须属于这次运行，填写不完整或超出取值范围都会被拒绝。
+
+### 黄金集
+
+`goldset/` 下每个话题一个文件。每条观点包含：
+
+- 一句话陈述；
+- 立场：`supports`、`opposes` 或 `conditional`，相对题目的命题而言；
+- 权重：1–3。
+
+观点要独立于系统输出来写，否则评分会变成循环论证。`status` 写 `draft` 表示还没审阅。
+
+可选字段 `expectedSources` 列出你认为必须覆盖的知乎问题 ID，供检索台账做归因。
+
+### 检索台账（#142）
+
+```bash
+node research-orchestration/evaluation/retrieval-ledger.mjs <运行目录> [--gold <黄金集>]
+```
+
+结果写到 `evaluation/retrieval-ledger.json`。未完成的运行也能用，只要检索已经结束。台账包括：
+
+- **每个候选问题**：被哪些查询和检索源返回、排第几、融合后排第几、选择器的决定、抓取结果、分析和引用数量；
+- **终态**：
+  - 被引用；
+  - 已分析未引用；
+  - 抓取失败；
+  - 已选未分析；
+  - 待人工选择；
+  - 未选中；
+  - 不合格；
+  - 未知；
+- **每个检索通道**：返回了多少问题、多少是独有的、多少被选中，以及有多少条目没有进入候选池（文章、外链等）；
+- **预期来源的归因**：
+
+  | 归因 | 含义 |
+  |---|---|
+  | `PROVIDER_RECALL_MISS` | 所有成功的检索通道都没返回它 |
+  | `SELECTION_MISS` | 返回了但没被选中 |
+  | `CAPTURE_FAILURE` | 选中了但抓取失败 |
+  | `ANALYZED_NOT_CITED` | 分析了但没被引用 |
+  | `FOUND` | 被引用了 |
+  | `UNKNOWN` | 证据不足，不猜测 |
+
+### 证据放哪
+
+运行目录在 `work/` 下（已 gitignore），评估结果也写在运行目录里。基线数字写进 PR 或 Issue，不提交到仓库（见 `AGENTS.md` 第 3 节）。
+
+---
+
+## 二、#107 合成基准（Research Evaluation Harness MVP）
 
 只有四个主度量：重要方面发现、反方观点保存、关键证据目标发现、增量成本。
 benchmark 为 `p2-f01-authored-curated-v1`，evaluator 为

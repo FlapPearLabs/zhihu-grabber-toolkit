@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "type": "p1-goldset",
+  "id": "t3-ev",
+  "topic": "新能源车现在值得买吗",
+  "status": "draft",
+  "note": "草稿：观点按领域常识独立撰写，没有参考系统输出；stance 相对题目命题。请审阅后把 status 改为 reviewed。",
+  "viewpoints": [
+    {
+      "id": "v01",
+      "statement": "使用成本低：电费远低于油费、保养少，适合有家充、以通勤为主的人",
+      "stance": "supports",
+      "weight": 3
+    },
+    {
+      "id": "v02",
+      "statement": "补能焦虑：长途和节假日高速充电排队，冬季续航明显打折",
+      "stance": "opposes",
+      "weight": 3
+    },
+    {
+      "id": "v03",
+      "statement": "是否值得买取决于使用场景和充电条件，有固定车位和家充是关键前提",
+      "stance": "conditional",
+      "weight": 3
+    },
+    {
+      "id": "v04",
+      "statement": "保值率低、二手残值下降快，技术迭代快导致买了就落后",
+      "stance": "opposes",
+      "weight": 2
+    },
+    {
+      "id": "v05",
+      "statement": "电池衰减、更换成本和长期可靠性存在不确定性",
+      "stance": "opposes",
+      "weight": 2
+    },
+    {
+      "id": "v06",
+      "statement": "智能化体验（辅助驾驶、智能座舱）和驾驶平顺性、加速表现有优势",
+      "stance": "supports",
+      "weight": 2
+    },
+    {
+      "id": "v07",
+      "statement": "插混和增程是折中方案，兼顾低油耗和无补能焦虑",
+      "stance": "conditional",
+      "weight": 2
+    },
+    {
+      "id": "v08",
+      "statement": "价格战频繁导致刚买就降价，部分车企经营风险可能影响售后",
+      "stance": "opposes",
+      "weight": 1
+    },
+    {
+      "id": "v09",
+      "statement": "购置税优惠和限牌城市的新能源牌照等政策带来额外好处",
+      "stance": "supports",
+      "weight": 1
+    },
+    {
+      "id": "v10",
+      "statement": "保险费和维修成本偏高，小事故也可能修车贵",
+      "stance": "opposes",
+      "weight": 1
+    }
+  ],
+  "expectedSources": []
+}

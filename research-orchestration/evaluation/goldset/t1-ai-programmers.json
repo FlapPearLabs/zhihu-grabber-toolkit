@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "type": "p1-goldset",
+  "id": "t1-ai-programmers",
+  "topic": "AI 编程工具会取代程序员吗",
+  "status": "draft",
+  "note": "草稿：观点按领域常识独立撰写，没有参考系统输出；stance 相对题目命题。请审阅后把 status 改为 reviewed。",
+  "viewpoints": [
+    {
+      "id": "v01",
+      "statement": "AI 主要替代重复性、模板化的编码工作（增删改查、样板代码、简单脚本），而不是整个程序员职业",
+      "stance": "opposes",
+      "weight": 3
+    },
+    {
+      "id": "v02",
+      "statement": "初级和入门岗位受冲击最大：招聘减少，新人积累经验的路径变窄",
+      "stance": "supports",
+      "weight": 3
+    },
+    {
+      "id": "v03",
+      "statement": "软件工作的核心是理解需求、系统设计、权衡取舍和沟通协作，这些 AI 目前难以替代",
+      "stance": "opposes",
+      "weight": 3
+    },
+    {
+      "id": "v04",
+      "statement": "AI 生成的代码有质量、安全和可维护性问题，需要人来审查和兜底",
+      "stance": "opposes",
+      "weight": 2
+    },
+    {
+      "id": "v05",
+      "statement": "生产力提升后，同样的工作需要更少的人，团队规模会收缩",
+      "stance": "supports",
+      "weight": 2
+    },
+    {
+      "id": "v06",
+      "statement": "编程门槛降低会带来更多软件需求，对开发者的总需求未必下降",
+      "stance": "opposes",
+      "weight": 2
+    },
+    {
+      "id": "v07",
+      "statement": "不是 AI 取代程序员，而是会用 AI 的程序员取代不会用的",
+      "stance": "conditional",
+      "weight": 2
+    },
+    {
+      "id": "v08",
+      "statement": "程序员的角色会转向拆解任务、指挥和审查 AI、做集成与验证",
+      "stance": "conditional",
+      "weight": 2
+    },
+    {
+      "id": "v09",
+      "statement": "非程序员借助 AI 能自己做简单应用，但复杂系统仍需专业开发",
+      "stance": "conditional",
+      "weight": 1
+    },
+    {
+      "id": "v10",
+      "statement": "当前就业困难更多来自经济周期和行业饱和，不能全部归因于 AI",
+      "stance": "opposes",
+      "weight": 1
+    },
+    {
+      "id": "v11",
+      "statement": "短期替代有限，长期（如果出现更强的通用 AI）不确定性很大",
+      "stance": "conditional",
+      "weight": 1
+    }
+  ],
+  "expectedSources": []
+}

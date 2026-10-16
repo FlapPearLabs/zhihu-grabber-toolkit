@@ -115,6 +115,9 @@ jobs:
       - name: P1 report.md rendering
         run: node --test research-orchestration/test/p1-report.test.mjs
 
+      - name: P3 run scoring and retrieval ledger (offline)
+        run: node --test research-orchestration/test/p3-run-scoring.test.mjs research-orchestration/test/p3-retrieval-ledger.test.mjs
+
       - name: Model access layer (pi-ai, any provider)
         run: node --test research-orchestration/test/model-runtime.test.mjs
 

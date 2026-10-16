@@ -331,13 +331,22 @@ export function summarizeReport(model, { maxFamilies = 3 } = {}) {
  * Render and write `report.md` for a completed run directory.
  * Returns { reportPath, model }.
  */
-export function writeReport(workDir) {
+/**
+ * Read a COMPLETE run's artifacts and build the report model (also used by
+ * evaluation/score-run.mjs, so report.md and run metrics never disagree).
+ */
+export function loadReportModel(workDir) {
   const result = readJson(workDir, RESULT_FILENAME);
   const synthesisArtifact = readJson(workDir, SYNTHESIS_FILENAME);
   const claimsArtifact = readJson(workDir, CLAIMS_FILENAME);
   const groupState = readJson(workDir, GROUP_STATE_FILENAME);
   const index = buildSourceIndex(workDir, groupState);
   const model = buildReportModel({ result, synthesisArtifact, claimsArtifact, index });
+  return { model, index, result, claimsArtifact, groupState };
+}
+
+export function writeReport(workDir) {
+  const { model } = loadReportModel(workDir);
   const reportPath = path.join(workDir, REPORT_FILENAME);
   fs.writeFileSync(reportPath, renderReportMarkdown(model));
   return { reportPath, model };
