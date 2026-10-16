@@ -3,7 +3,7 @@
  *
  * P1 Seam Contract validators (SEAM A–D, V1).
  *
- * Authority: docs/planning/P1_SEAM_CONTRACTS_V1.md (NON_AUTHORITATIVE_CANDIDATE
+ * Authority: docs/archive/planning/P1_SEAM_CONTRACTS_V1.md (NON_AUTHORITATIVE_CANDIDATE
  * until external audit PASS + integration). Semantic fields trace to
  * docs/specs/p1-cross-question-deep-research.md and Issues #41/#44/#45/#46/#47.
  *
@@ -500,7 +500,7 @@ export const validateSynthesisOutput = validateSynthesisOutputV1Historical;
  *
  * Authority transcribed (fixtures implement authority; they never BECOME
  * authority):
- *   - docs/planning/P1_SEAM_CONTRACTS_V1.md §SEAM D (V2 major candidate):
+ *   - docs/archive/planning/P1_SEAM_CONTRACTS_V1.md §SEAM D (V2 major candidate):
  *     OUTPUT_OBSERVABLE_SHAPE, SourceClaim expansion, IDENTITY_FIELDS,
  *     REQUIRED_INVARIANTS 1–9, VALID_SUCCESS, FAIL_CLOSED, VERSIONING_RULE.
  *   - docs/specs/p1-cross-question-deep-research.md §8.2/§8.3/§8.4/§9.4

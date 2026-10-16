@@ -3,8 +3,8 @@
  *
  * P1 Seam Contract tests (SEAM A–C V1; SEAM D V1-historical + V2 TYPE_A).
  *
- * Authority: docs/planning/P1_SEAM_CONTRACTS_V1.md +
- *            docs/planning/P1_PARALLEL_EXECUTION_CONTRACT_V1.md
+ * Authority: docs/archive/planning/P1_SEAM_CONTRACTS_V1.md +
+ *            docs/archive/planning/P1_PARALLEL_EXECUTION_CONTRACT_V1.md
  *            (both NON_AUTHORITATIVE_CANDIDATE until external audit + merge);
  *            SEAM D V2 additionally transcribes the 2026-09-19 repair
  *            amendment (docs/specs/p1-cross-question-deep-research.md §8/§9.4,

@@ -2,7 +2,7 @@
 /**
  * top-percent-selector — T7 批准合同的确定性选择器（T8, Issue #14）。
  *
- * 批准合同（docs/t7-top-percent-contract-decision.md，MODIFY + APPROVE 2026-08-23）:
+ * 批准合同（docs/archive/t7-top-percent-contract-decision.md，MODIFY + APPROVE 2026-08-23）:
  *   D2.1  K = max(1, ceil(X/100 * N))（ceil，非 floor/round）
  *   D2.2  minimum = 1（N >= 1 且 X >= 1 时）
  *   D2.3  X 必须是显式 safe integer ∈ [1,100]；0/小数/负数/>100 → invalid_input

@@ -17,7 +17,7 @@
  *     (ASSERTS/OPPOSES/UNRESOLVED), ORTHOGONAL relationStatus +
  *     supportBreadth, independent unresolved records, complete input
  *     partition, complete original claim lineage.
- *   - docs/planning/P1_SEAM_CONTRACTS_V1.md §SEAM C (input) / §SEAM D V2
+ *   - docs/archive/planning/P1_SEAM_CONTRACTS_V1.md §SEAM C (input) / §SEAM D V2
  *     (output observable shape — this module is the canonical producer of that
  *     shape; re-validated by the FROZEN V2 validator in the test suite).
  *   - Issue #46: PRE-SYNTHESIS guard is the FIRST gate; unequal identities →

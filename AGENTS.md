@@ -1,846 +1,94 @@
-# AGENTS.md — Agent 工作流程（Repository Governance）
-
-> **状态说明**：本文件最初于 2026-08-09 由历史任务契约、多轮独立审查决策、仓库既有 `SKILL.md` / `references/security.md` / `references/verification.md` / Approved Specs 中已执行并验证的治理实践重建；2026-08-23 进一步归一化为 **repository-driven continuous goal execution + independent Subagent review**；2026-08-30 增加 **repository-first prompt compression / reviewer routing / minimal handoff** 合同，减少跨 Agent 重复粘贴稳定规则与过长成功日志。本文件定义执行、分支、审查、合并、恢复与长任务工作流；不得覆盖 `RULES.md` 的硬约束或 Applicable Approved Specs 的产品合同。
-
-## 1. Authority 与状态源
-
-本仓库的长期连续性属于 **GitHub repository**，不属于某个 Agent、某个聊天窗口或某个 runtime memory。
-
-职责划分：
-
-- `RULES.md` —— **hard project / safety invariants**：凭据安全、canonical data、验证权威、scope / git 红线、Spec authority 等不可违反约束。
-- Applicable Approved Specs —— **approved product requirements / contracts**。当前至少包括：
-  - `docs/specs/v2-rich-content-fidelity.md`：baseline Approved Spec；
-  - `docs/specs/v0.3-product-scope.md`：Approved additive amendment；对其明确 amendment targets 覆盖 V2 对应条款，其余 V2 合同继续有效。
-- `docs/product-behavior-contract.md` —— 已批准产品合同与 CURRENT / TARGET 行为的可执行归一化视图；不得覆盖 Approved Specs。
-- `docs/project-memory.md` —— **durable project memory**；不是运行状态、不是 changelog。
-- GitHub Tracker + child Issues —— **durable execution state / dependency graph / current authorized ticket**。
-- Git history + remote refs —— 已发生事实、exact-SHA review / merge identity 的权威记录。
-- 本文件 —— **execution / branch / review / merge / recovery workflow**。
-- `.workbuddy/memory/`、Codex thread、MiniMax context、其他 Agent 私有 memory —— runtime / working memory，**non-authoritative**。
-
-裁决原则：
-
-1. `RULES.md` 硬约束不得被流程性文字覆盖。
-2. Applicable Approved Specs 的产品合同优先于本文件、Tracker、Issue 中的便利性描述。
-3. V0.3 对明确 amendment targets 覆盖 V2；未明确 amendment 的 V2 合同继续有效。
-4. 当前 ticket 只能授权自己的 scope，不能修改更高层 authority。
-5. repo authority 内部出现无法按上述关系解决的真实冲突 → **STOP：`CONTRACT_CONFLICT`**，不得静默选方便的一方；`GOVERNANCE_CONFLICT` / `SPEC_CONFLICT` 只能作为 finding / reason category 随该 STOP 报告，不能替代规范 STOP 状态。
-6. 对 Approved Spec / governance authority 的修改必须经过规定的独立 review quorum。
-
-## 2. Bootstrap 与状态恢复
-
-任何实现、审计、文档或治理任务开始前，Agent 必须读取或核验：
-
-- [x] `AGENTS.md`
-- [x] `RULES.md`
-- [x] `docs/project-memory.md`
-- [x] relevant Applicable Approved Specs
-- [x] `docs/product-behavior-contract.md`（若任务涉及产品行为）
-- [x] Tracker / execution graph（若当前版本使用 Tracker）
-- [x] 当前 / 下一 child Issue
-- [x] latest remote `master`
-- [x] 当前 branch / reviewed HEAD / merge ancestry（如适用）
-
-若 `AGENTS.md` 或 `RULES.md` 缺失 → **STOP：`GOVERNANCE_FILES_MISSING`**。
-若 `docs/project-memory.md` 缺失 → **STOP：`PROJECT_MEMORY_MISSING`**。
-
-每个 execution cycle 必须从 repo 重新推导，而不是依赖聊天记忆：
-
-```text
-CURRENT_MASTER
-CURRENT_ACTIVE_TICKET
-CURRENT_TICKET_STATUS
-CURRENT_BRANCH
-CURRENT_HEAD
-DEPENDENCIES
-START_GATE
-REVIEW_STATUS
-NEXT_LEGAL_ACTION
-```
-
-`remote truth > local assumption > conversation memory`。
-
-一个全新的 Codex / MiniMax / Claude Code / 其他 Agent 会话，应能仅凭 repo + GitHub state 恢复到正确下一步；如果做不到，说明 durable execution state 不完整，应先修状态而不是依赖旧聊天。
-
-### 2.1 Repository-First Prompt Compression / Rule Distribution
-
-本节解决一个独立的工程问题：**稳定治理已经存在于 repo 时，不得继续靠每轮超长 prompt / handoff 重复分发同一规则**。
-
-#### 2.1.1 Remote governance freshness
-
-- 每个新会话先 fetch / read **current remote master** 上的 `AGENTS.md`、`RULES.md` 与当前 Issue / Tracker；本地 stale copy、旧聊天、旧 handoff 不得覆盖 remote governance。
-- 如果本地 `AGENTS.md` 与 current remote master 不一致，先判断这是当前授权 branch 的治理改动还是本地 stale state；不得静默用旧版本继续执行。
-- 已进入 exact-SHA review 的 candidate 仍按其 reviewed authority/base 判断；不得因为 master 后续前进而偷偷改变 reviewed candidate 的规则解释。
-
-#### 2.1.2 Stable rules are inherited by reference
-
-当 Agent 能访问 repo / GitHub 时，task prompt 默认**继承**本文件、`RULES.md`、Applicable Specs、当前 Issue / START_GATE 中的稳定合同；prompt 只传递**本次任务特有的 delta**。
-
-默认不要重复粘贴：
-
-- 完整 `AGENTS.md` / `RULES.md`；
-- 完整 Approved Spec；
-- 完整 Ticket Graph / Issue body；
-- 通用 exact-SHA / no-amend / no-force / ff-only / remote-verify 流程；
-- 通用 test / evidence / memory / scope 规则。
-
-这些内容应通过 **path / Issue number / exact SHA / section anchor** 引用。只有执行环境无法读取该 remote authority 时，才内联完成任务所需的最小条款。
-
-一个普通 executor prompt 通常只需要：
-
-```text
-REPOSITORY
-TICKET / ISSUE
-AUTHORIZED_BASE 或 PREVIOUS_REVIEWED_HEAD（如适用）
-ROLE / REVIEWER_ROUTE
-TASK-SPECIFIC OBJECTIVE OR REVIEW FINDINGS
-EXPLICIT EXCEPTIONS / HARD STOPS（仅本票新增部分）
-```
-
-若 Issue 已精确定义 scope / acceptance / tests，prompt 应写“按 Issue 执行”，而不是再次完整复制 Issue。
-
-#### 2.1.3 Reviewer routing is explicit
-
-独立 review 的**角色 quorum**由 §5 决定；实际 reviewer route 按以下优先级确定：
-
-```text
-explicit Issue / START_GATE / product-owner instruction
-> milestone-level reviewer route
-> repository default
-```
-
-执行任务必须能够回答：
-
-```text
-REVIEWER_ROUTE = INTERNAL_SUBAGENT | EXTERNAL_CHATGPT | OTHER_EXPLICIT_REVIEWER
-```
-
-- 若 route 明确为 external reviewer（如 `EXTERNAL_CHATGPT`），Executor 不得自行执行最终独立审查、亦不得 spawn 内部 reviewer 冒充指定 reviewer。但 push candidate 绝不等于可立即 STOP：在进入外部 handoff 前，Executor 必须先完成适用的 PRE-EXTERNAL TERMINAL BARRIER（`REMOTE_HEAD_STABLE && STATIC_GATES_COMPLETE && DYNAMIC_GATES_COMPLETE && CI_TERMINAL && CONFIGURED_AUTOMATED_REVIEW_STATE_KNOWN && CURRENT_HEAD_FINDINGS_RECONCILED`，见 §18.5 与 §18.7）；仅在上述条件全部满足后，方可输出最小 handoff 并为指定的外部独立审查进入 STOP。
-- 若 route 明确为 internal Subagent，仍必须保持 Executor / Reviewer context 隔离；self-review 不算 independent review。
-- reviewer route 只决定“谁审”，不改变 exact-SHA / quorum / PASS contract。
-
-#### 2.1.4 Remote artifact handoff by reference
-
-当 candidate 已 push 且 reviewer 能访问 GitHub：
-
-- **remote branch / exact HEAD / repo paths 是 review source of truth**；
-- 不要求用户重新下载、整理、上传已经存在于 remote 的 repo 文件；
-- 不把完整源码、证据 JSON、Spec 正文复制进聊天 handoff；
-- Executor summary 只作导航，Reviewer 必须从 exact remote HEAD 独立读取事实。
-
-只有 remote 不可访问、权限失败、或存在未进入 repo 的外部 artifact 时，才要求最小必要文件 handoff。
-
-#### 2.1.5 Minimal standard packets
-
-成功路径默认使用最小结构化 packet；详细 command transcript / stdout / step-by-step narration 留在 repo、CI、Issue comment 或本地日志中，除非出现异常需要诊断。
-
-**Candidate / Executor handoff**：
-
-```text
-ISSUE
-BRANCH
-BASE_SHA
-HEAD
-REMOTE_TIP
-FILES_CHANGED
-TESTS_OR_EVIDENCE
-KNOWN_CAVEATS_OR_EXCEPTIONS
-PROJECT_MEMORY_UPDATE_REQUIRED
-REQUIRED_REVIEWER_ROUTE
-```
-
-**Review verdict**：
-
-```text
-REVIEWED_HEAD
-VERDICT
-FINDINGS
-POST_GATE_MEMORY_UPDATE_REQUIRED
-```
-
-**Repair handoff**：
-
-```text
-PREVIOUS_REVIEWED_HEAD
-NEW_HEAD
-REMOTE_TIP
-FINDINGS_CLOSED
-TESTS_OR_EVIDENCE
-GIT_DIFF_CHECK
-```
-
-**Integration handoff**：
-
-```text
-REVIEWED_HEAD
-REMOTE_MASTER_BEFORE
-REMOTE_MASTER_AFTER
-FF_ONLY
-REMOTE_VERIFY
-ISSUE_TRACKER_STATE
-CONDITIONAL_GATE_CHANGES
-NEXT_LEGAL_ACTION
-```
-
-Ticket-specific evidence fields只在确有 contract 需要时追加；不得为了“看起来完整”复制整份执行过程。
-
-#### 2.1.6 Output verbosity contract
-
-正常成功路径：
-
-- 不逐条叙述“现在读取 X / 现在运行 Y / 现在 push Z”；
-- 不回显无异常的完整命令输出；
-- 不重复用户已经知道的 Spec / Issue 正文；
-- 最终只报告 material result、exact identity、tests/evidence summary、异常 / caveat、next legal action。
-
-出现 hard stop、evidence drift、security incident、contract conflict、unexpected test failure 时，可以扩展输出到足以诊断，但仍优先给出精确事实而不是流水账。
-
-#### 2.1.7 Executor model recommendation metadata
-
-当任务需要交给 WorkBuddy / Codex / 其他外部 executor 时，handoff 应附带简短的：
-
-```text
-MODEL_RECOMMENDATION
-REASON
-WORK_TYPE
-```
-
-这是**executor routing metadata**，不是产品 runtime / SemanticRuntime / EmbeddingProvider 决策；不得把临时可用模型名单硬编码成产品合同。具体推荐随 ticket risk、上下文长度、成本与工具能力决定。
-
-#### 2.1.8 Promote recurring rules instead of copy-pasting forever
-
-若一个稳定 workflow instruction 在多个 ticket / 多个 Agent 会话中反复需要人工补充，应判断它是否属于：
-
-- workflow governance → 提议进入 `AGENTS.md`；
-- hard safety/project invariant → 提议进入 `RULES.md`；
-- product behavior → 进入 Applicable Spec / product contract；
-- durable learned fact → 进入 `docs/project-memory.md`；
-- transient execution state → 留在 Issue / Tracker / Git history。
-
-不得把同一事实同时机械复制到 chat、memory、Issue、Tracker、docs 多处形成 competing truth。任何 governance amendment 仍须走 §5 的独立 review quorum；“需要减少 prompt”不授权绕过 review。
-
-## 3. Continuous Goal Execution
-
-当用户授权某版本 / milestone（例如 V0.3）进行连续施工时，默认采用 **CONTINUOUS GOAL MODE**：
-
-```text
-OBSERVE
-→ READ AUTHORITY
-→ DERIVE NEXT LEGAL TICKET
-→ CHECK START_GATE
-→ EXECUTE
-→ STATIC / MECHANICAL VERIFY
-→ DYNAMIC TESTS VERIFY
-→ MODEL SELF-REVIEW
-→ COMMIT / PUSH
-→ REMOTE CI / AUTOMATED REVIEW
-→ INDEPENDENT REVIEW（INTERNAL_SUBAGENT 自主执行；若为 EXTERNAL_CHATGPT 且满足 PRE-EXTERNAL TERMINAL BARRIER 则输出 handoff 后等待外部裁决）
-→ REPAIR / FRESH RE-REVIEW（如需要）
-→ EXACT-SHA PASS
-→ FF-ONLY MERGE
-→ REMOTE VERIFY
-→ CLOSE / TRACKER UPDATE
-→ RE-OBSERVE
-→ NEXT TICKET
-```
-
-不得因为以下普通事件停止：
-
-- 一个子步骤完成；
-- tests green；
-- 一个 commit 完成；
-- 一个 Issue 更新完成；
-- reviewer 提出可修复 findings；
-- 一个 ticket PASS / merge 完成；
-- 刚完成 push 但尚未达到 PRE-EXTERNAL TERMINAL BARRIER（见 §18.5）；
-- 存在未决的 CI 状态或未分类的 automated review 状态。
-
-除非当前 ticket / Spec 明确要求人工 gate，否则连续执行到真正 hard stop。
-
-允许的人类停止状态：
-
-```text
-USER_DECISION_REQUIRED
-CONTRACT_CONFLICT
-BLOCKED_BY_EXTERNAL_EVIDENCE
-CAPABILITY_ISOLATION_UNAVAILABLE   # 仅当当前 Spec/Issue 将其定义为 hard gate
-PERMISSION_OR_TOOL_FAILURE
-AWAITING_EXTERNAL_REVIEW           # 仅当指定外部审查且已达 PRE-EXTERNAL TERMINAL BARRIER
-V0_3_EXECUTION_COMPLETE            # 或当前 milestone 的等价最终状态
-```
-
-不得自动进入当前 Approved Scope 明确排除的 NEXT_STAGE。
-
-### 3.1 已有 capability STOP 后的受限资格审计
-
-已有 runtime 得到 `NO` / `UNKNOWN` 而触发 hard capability STOP 后，常规实现不得继续。只有 product-owner **明确授权**、范围严格限定为新增具名 runtime 的 evidence / qualification audit 的 ticket，才可作为 next legal action；它不解除任何既有 `NO` / `UNKNOWN` runtime 的 STOP，也不得实现或启用被阻断的代码、设计 workaround，或以 prompt-only fallback 代替 capability isolation。
-
-该资格审计仍须对其 exact candidate HEAD 完成要求的独立 review；只有该新增 runtime 获得 exact independently reviewed `YES`，后续实现才可按 Applicable Approved Specs 与对应 ticket 重新判断是否解锁。审计为 `NO`、`UNKNOWN` 或证据不足时，保持 STOP。
-
-## 4. Agent Roles
-
-连续模式包含四个逻辑职责；可由一个 Orchestrator 调度多个 Subagent，但 final review 必须职责隔离。
-
-### 4.1 Orchestrator
-
-负责：
-
-- 从 GitHub 重建 current state；
-- 选择 next legal ticket；
-- 调度 Executor / Reviewer；
-- 处理 reviewer findings；
-- exact-SHA / ancestry / ff-only merge gate；
-- close Issue / update Tracker；
-- 自动进入下一合法 ticket；
-- 遇到真正 human stop 时生成最小充分决策包。
-
-Orchestrator **不能以自己的 self-review 替代独立 reviewer PASS**。
-
-### 4.2 Executor
-
-可以：
-
-- 读取 authority；
-- 修改当前 ticket 授权文件（遵守 §8.1 单分支至多一个活跃写者）；
-- 运行静态检查、测试与 evidence collection（遵守 §18.4 规范执行顺序）；
-- self-review（可使用 `/code-review` 技能，但明确 `SELF_REVIEW != INDEPENDENT_REVIEW`）；
-- 修复自己发现的同 scope 缺陷；
-- commit / push 并核验 remote CI 与 automated reviewer 状态；
-- 当指定外部审查时，在满足 PRE-EXTERNAL TERMINAL BARRIER 后输出 handoff。
-
-不能：
-
-- 为自己的 candidate HEAD 产生最终 independent `PASS`；
-- 在未满足 review quorum 前 merge；
-- 将未来 ticket 可见需求当作当前授权；
-- 在另一写者尚未交接时并发写入已有活跃写者的分支。
-
-### 4.3 Reviewer Subagent
-
-Reviewer 必须使用**独立 review context**重新构建结论。Executor summary 只能作为导航，不能作为事实证据。
-
-Reviewer 默认是 review-only：
-
-- 可读取 repo / Issue / Tracker / Spec / diff；
-- 可运行测试、检查源码、搜索证据；
-- 不得修改 reviewed branch；
-- 不得 commit / amend / rebase / merge；
-- 不得 close Issue / 标记 Tracker DONE。
-
-Reviewer 必须明确：
-
-```text
-REVIEW_VERDICT: PASS | CHANGES_REQUESTED
-REVIEWED_HEAD: <exact SHA>
-FINDINGS: <P0/P1/P2 as applicable>
-POST_GATE_MEMORY_UPDATE_REQUIRED: YES | NO
-```
-
-`SELF_REVIEW != INDEPENDENT_REVIEW`。
-
-### 4.4 Integrator
-
-仅在 required reviewer quorum 对**同一个 exact HEAD** PASS 后执行：
-
-- pre-merge remote identity / drift check；
-- ff-only merge；
-- push；
-- remote verify；
-- close / Tracker update；
-- branch cleanup（若 policy 允许）。
-
-remote master 的集成是**串行**的：任一时刻**至多一个 Integrator** 更新 remote master。多个互不冲突的 feature branch 可并行施工，但其 master 集成必须逐个串行；后到者在 merge 前必须重新 fetch + 核验 remote master 未 drift（见 §7），不得在旧 PASS 或旧 master 基础上直接 push 覆盖。
-
-## 5. Review Quorum 与 PASS Contract
-
-### 5.1 Reviewer 类型
-
-按 ticket TYPE 选择最低 quorum：
-
-| Ticket 类型 | Required reviewer quorum |
-|---|---|
-| 普通 CODE | 1 × `CODE_REVIEWER` |
-| DOCUMENT | 1 × `CONTRACT_REVIEWER` |
-| DISCOVERY / EVIDENCE | 1 × `EVIDENCE_REVIEWER` |
-| DOGFOOD | 1 × `ACCEPTANCE_EVIDENCE_REVIEWER` |
-| SECURITY / capability isolation | 1 × `SECURITY_REVIEWER` + 1 × `CODE_OR_CONTRACT_REVIEWER`，同 exact HEAD |
-| Approved Spec / governance authority change | 1 × `CONTRACT_REVIEWER` + 1 × `CONSISTENCY_REVIEWER`，同 exact HEAD |
-
-若一个 reviewer PASS、另一个 `CHANGES_REQUESTED`，overall verdict = `CHANGES_REQUESTED`。
-
-默认不要过度 spawn reviewer；普通票 1 个 reviewer 足够。安全 / Spec / governance 才要求双 reviewer。
-
-### 5.2 Universal PASS Contract
-
-Reviewer 只有在所有 applicable 条件满足时才能 PASS：
-
-**Identity**
-- Issue / task 正确；
-- BASE / HEAD exact；
-- remote branch 指向被审 HEAD；
-- review scope 无歧义。
-
-**Scope**
-- changed files 在 ticket 授权内；
-- 无 unrelated refactor / cleanup；
-- 无 future-ticket implementation；
-- 无 credential / schema / Spec scope 偷扩。
-
-**Requirements / Contract**
-- Goal / Acceptance / Required Evidence 满足；
-- STOP_CONDITIONS 未违反；
-- Applicable Approved Specs / Product Behavior Contract 保持；
-- `UNKNOWN != PASS`；
-- `captured != verified`；
-- sampled evidence 不得升级成 global claim；
-- sampled analysis 不得冒充 full coverage；
-- prompt-only guard 不得冒充 capability isolation。
-
-**Correctness / Failure semantics**
-- happy path 与相关 failure path 均检查；
-- valid / fail-closed / warning semantics 未被偷改；
-- backward compatibility / canonical data / schema 约束保持。
-
-**Tests / Evidence**
-- required tests 真正覆盖目标合同，不是 tautology；
-- evidence 支持所声明范围；
-- pre-existing failure 必须有 base 对照证据，不能只靠口头声明。
-
-**Docs / Memory**
-- current-state docs 与实现一致；
-- historical / current / candidate 状态不混写；
-- `PROJECT_MEMORY_UPDATE_REQUIRED` 判断合理；
-- memory 无 transient SHA / branch / machine-private 信息。
-
-**Security / Privacy**
-- 无凭据 / secrets / 本机隐私路径泄漏；
-- 无未经批准能力扩张；
-- untrusted content boundary 保持。
-
-**Findings**
-- 无 unresolved P0；
-- 无 unresolved P1；
-- 无 meaningful correctness / contract P2 blocker。
-
-纯 cosmetic / style note 可标 `NON_BLOCKING`，但 reviewer 必须清楚说明不影响 contract / correctness。
-
-## 6. Review → Repair → Fresh Review Loop
-
-Candidate HEAD push 后，Orchestrator 启动 required Reviewer Subagent。
-
-若：
-
-```text
-REVIEW_VERDICT: CHANGES_REQUESTED
-```
-
-则：
-
-1. 把 findings 交给 Executor；
-2. 只修 reviewer 指出的 blocker，以及同 scope 明确发现的真实缺陷；
-3. **追加 repair commit**；
-4. 禁止 amend reviewed commit；
-5. 禁止 rebase reviewed history；
-6. 禁止 force push；
-7. push 新 exact HEAD；
-8. 启动 **fresh Reviewer Subagent** 重新审查新 HEAD；
-9. 重复直到 quorum PASS。
-
-普通 review findings 不需要停下来找用户。
-
-## 7. Exact-SHA Review 与 Merge
-
-PASS 只绑定：
-
-```text
-REVIEWED_HEAD = exact commit SHA
-```
-
-PASS 不自动转移给：
-
-- amend 后 SHA；
-- rebase 后 SHA；
-- repair child commit；
-- force-pushed branch；
-- “看起来等价”的新 commit。
-
-merge 前必须（**每次 merge 前都重新执行，不得沿用上次结论**）：
-
-1. fetch remote；
-2. `origin/<feature-branch> == REVIEWED_HEAD`；
-3. 核验 current remote master / merge-base；
-4. 若 master drift 导致 candidate 不再可合法 ff-only merge，旧 PASS 不得静默转移；**不得 force-push / 改写已 reviewed history**；从 latest remote master 重新形成 candidate 并 fresh review；
-5. 使用 ff-only merge；
-6. push；
-7. remote verify；
-8. 只有 remote verify 后才能 close Issue / Tracker DONE。
-
-**`MASTER_DRIFT != CONTENT_CONFLICT`**：`MASTER_DRIFT` 是 master 已前进导致 candidate 不再可 ff-only 的机械/时序条件，处理方式是 re-form candidate + fresh review，**不触发** product-owner 契约裁决，也**不解除** exact-SHA / ff-only 要求；`CONTENT_CONFLICT`（`CONTRACT_CONFLICT` / `SPEC_CONFLICT` / `GOVERNANCE_CONFLICT`）才是需 product-owner 裁决的契约冲突，见 §15。
-
-禁止 squash / merge commit / rebase-after-review（除非某 Approved workflow 明确另有要求并经过同等级 review）。
-
-## 8. Branch Workflow
-
-- 所有开发 / document / audit / governance change 在独立 feature branch 进行。
-- branch 基于最新 remote master。
-- 禁止直接在 master 上施工。
-- 一个 ticket = 一个 branch = scope-clean commits（除明确 follow-up governance / memory ticket 外）。
-- `master...HEAD` 或明确 `BASE..HEAD` Compare 应只包含该 ticket 范围。
-- reviewer 开始后 reviewed history 不改写。
-- branch cleanup 仅发生在 exact-SHA PASS + verified merge 后。
-
-**并发模型**：允许多个**互不冲突**的 feature branch 并行施工（independent feature-branch concurrency）。remote master 的集成仍**串行**：任一时刻至多一个 Integrator 更新 remote master（见 §4.4）。各并行 branch 在 merge 前独立 fetch + 核验 master；出现 drift 时各自 re-form + fresh review，不互相阻塞，也不得 force-push 覆盖他人已合入的 master。
-
-### 8.1 单分支单活跃写者规则（ONE_ACTIVE_WRITER_PER_BRANCH）
-
-- **单分支至多一个活跃写者**：对任一 feature / repair / governance branch，同一时刻至多允许 ONE active Executor 进行写操作或 push；其他会话仅可只读审查或读取。严禁两个或多个 Agent / 会话并发修改同一分支。
-- **跨分支独立并行完全允许**：并行施工仅限于跨不同分支（例如：Session A 施工 T07 分支、Session B 施工 T10 分支、Session C 施工 governance 分支是合法的；但 Session A 与 Session B 同时写入 T07 分支是严厉禁止的）。
-- **写者交接（Writer Takeover）纪律**：若发生写者交接，必须依次满足：
-  1. 前一写者明确停止写入；
-  2. fresh fetch remote；
-  3. 核验当前 remote branch tip；
-  4. 从 remote 事实重新推导并重建当前状态；
-  5. 显式从该 exact tip 继续施工。
-- **无多余协调设施**：本规则为纯治理所有权规则，严禁虚构分布式锁、协调服务或多余协调基础设施。
-
-## 9. Tracker / Issue Execution Ledger
-
-GitHub Tracker + child Issues 是 durable execution ledger，不是 reviewer 本身。
-
-在每个 meaningful gate，状态必须足够让 fresh Agent 回答：
-
-- 什么已完成？
-- 当前合法 ticket 是什么？
-- dependency 是否满足？
-- 哪个 exact HEAD 正在 review / 已 PASS？
-- 下一 gate 是什么？
-
-Issue STATUS 不能单独作为事实；必须与 remote refs / Git history / Tracker / dependencies 交叉核验。
-
-票序有 sequential policy 时，不得并行施工后续 ticket。独立的、互不冲突的 feature branch 可并行施工（见 §8 并发模型与 §8.1 单分支单活跃写者规则：可跨分支并行施工，单分支至多一个活跃写者，remote master 集成严格串行）；同一 ticket 或同一依赖链内，能并行的仅限不会造成 scope / branch 冲突的内部读取、测试分析或证据搜集。
-
-## 10. Project Memory Lifecycle
-
-### 10.1 两种 memory
-
-- `.workbuddy/memory/` 或其他 Agent runtime memory：non-authoritative、可丢失、不得覆盖 repo truth。
-- `docs/project-memory.md`：Git tracked durable project knowledge。
-
-### 10.2 Pre-gate decision
-
-每个可能产生长期知识的 task 在 independent review 前必须报告：
-
-```text
-PROJECT_MEMORY_UPDATE_REQUIRED: YES | NO
-```
-
-YES：在同一 task branch 中做最小 durable update，随 candidate HEAD 一起 review。
-NO：不得为了“保持新鲜”机械修改。
-
-适合进入 memory：
-
-- approved architecture / product decisions；
-- stable API / schema / compatibility contracts；
-- durable security invariants；
-- repeatable real smoke / runtime evidence；
-- important failure modes / non-goals；
-- 后续 Agent 不知道会重复踩坑的长期事实。
-
-不得进入 memory：
-
-- current HEAD / temporary branch / review progress；
-- machine path / username / backup path；
-- credentials / secrets；
-- scratch reasoning；
-- 临时测试失败；
-- conversation transcript / changelog。
-
-### 10.3 Post-gate knowledge
-
-Reviewer 必须报告：
-
-```text
-POST_GATE_MEMORY_UPDATE_REQUIRED: YES | NO
-```
-
-Reviewer 不得为了写 memory 修改正在审查的 HEAD。
-
-若 YES：
-
-1. 正常 merge reviewed task；
-2. 从最新 master 建最小 `docs/memory` follow-up branch；
-3. 只修改 durable memory 所需内容；
-4. 按 DOCUMENT reviewer gate 独立 review；
-5. PASS 后 ff-only merge。
-
-纯 PASS / SHA / merge 状态由 Git history 保存，不机械写进 memory。
-
-## 11. Scope Control
-
-- 严格按当前 ticket / Applicable Specs 的 scope 实现。
-- 未授权不新增 runtime dependency。
-- “顺手修”无关文件 = scope violation。
-- audit / discovery ticket 不得偷变 implementation；document ticket 不得偷改 runtime behavior。
-- future requirement visible ≠ current requirement authorized。
-
-### 11.1 MODEL / RUNTIME SELECTION（模型 / 运行时选择）
-
-当产品验证需要模型执行时，按以下顺序选择运行时：
-
-1. 首选能力足以验证目标产品行为的运行时（capable-runtime first）；
-2. 在真实负载上度量质量 / 可靠性 / 时延 / token 用量 / 成本；
-3. 仅当存在已批准或实测的约束（隐私 / 数据出网、离线运行、实测 API 成本、实测时延、
-   可用性 / 部署约束）时，才将本地推理作为阻断性要求。
-
-运行时专属模型参数（thinking / temperature / top_p / top_k / max_tokens / 模型版本等）
-是 qualification / profile 证据，不是产品语义；除非 Applicable Approved Spec 显式提升为产品需求。
-
-持久原则：
-
-```text
-UNKNOWN != PASS
-CAPABILITY_ISOLATION_RUNTIME_SCOPED（一个 runtime/provider PASS 不得推广为任意兼容 provider PASS）
-MODEL_QUALITY != RUNTIME_SECURITY（模型质量限制不否定能力隔离）
-```
-
-本规则不硬编码任何未来首选 provider；不强推 cloud，也不把本地推理设为默认阻断条件。
-
-## 12. 测试与 Baseline Failure 规则
-
-代码改动必须遵守 §18.4 定义的规范执行顺序（`STATIC / MECHANICAL → DYNAMIC TESTS → MODEL SELF-REVIEW → PUSH → REMOTE CI / AUTOMATED REVIEW → INDEPENDENT REVIEW`）。在运行动态测试前，必须先清除适用的静态机械检查，不得以动态测试作为静态工具可发现问题的首要检测器。
-
-代码改动应运行 ticket 要求的 focused tests + relevant regression；通常也应运行现有主要 suites：
+# AGENTS.md — 在这个仓库里怎么干活
+
+先读 `README.md`（产品和用法）和 `RULES.md`（硬约束，不可违反）。改产品行为前，再读 `docs/specs/` 里对应的 Spec 和当前 Issue。
+
+`docs/archive/` 是历史流程文档和决策记录，只作背景参考，不是现行规则。
+
+## 1. 工作流
+
+1. 从最新 `master` 拉分支：一个改动对应一个分支、一个 PR。不要直接在 `master` 上改。
+2. 涉及正确性的改动先写测试：解析、状态、合同、安全边界、fail-closed 语义都算。先看到测试失败，再改到通过。
+3. 提交前跑相关测试；改了共享代码就跑全量（命令见第 6 节）。默认目标是 `fail = 0`。
+4. push 后开 PR，描述里写清四件事：
+   - 改了什么，为什么改；
+   - 怎么验证的：测试结果，或者真实运行的摘要和关键数字；
+   - 已知限制；
+   - 用户能看到的行为变化。
+5. 合并由 product owner（仓库所有者）决定。
+6. 分支已经有人在 review 时，不要 force push；修复一律追加 commit。
+
+提交信息用 Conventional Commits：`feat:` / `fix:` / `docs:` / `test:` / `refactor:` / `chore:`。
+
+## 2. Review 轮数预算
+
+- 每个 PR 最多两轮「review → 修复」。
+- 第二轮之后还有未决意见，由 product owner 三选一：
+  - 合并，同时开 follow-up Issue；
+  - 缩小范围后合并；
+  - 关闭 PR。
+
+  不开第三轮。
+- 只有两类意见阻塞合并：
+  - **P0**：凭据泄露、数据损坏、错误结论被当作正确输出；
+  - **P1**：违反 `RULES.md` 或 Spec 合同、正确性缺陷。
+- 其他意见（风格、命名、可选重构）不阻塞，作者自行决定是否处理。
+- 自审不算 review。review 由 product owner 或其指定的人或 Agent 完成，不设法定人数。
+
+## 3. 证据不进主树
+
+- 不提交到仓库：运行产物、验收包、review 记录、日志、截图。
+  - 本地运行放在 `work/`（已 gitignore）；
+  - PR 描述或 Issue 里写摘要和关键数字；
+  - 需要长期保存的，作为 Issue 附件或 Release asset。
+- 例外：测试需要的最小合成数据，放在对应包的 `test/fixtures/`。
+- 2026-10-16 之前的历史验收证据，保存在 tag `archive/evidence-2026-10-16` 的 `docs/acceptance/` 里。
+
+## 4. 默认关闭的代码要有期限
+
+- 所有默认关闭的代码都必须登记在 `docs/default-off.md`，写明四项：是什么、开关在哪、负责的 Issue、决定日期。包括：
+  - 有开关但默认不启用的；
+  - 已实现但没接入主流程的；
+  - 只被测试或资格脚本使用的。
+- 决定日期最多在登记后 8 周。
+- 到期时二选一：
+  - 有评估证据支持，就默认启用；
+  - 否则删除。
+- 延期需要 product owner 在 Issue 里写明理由和新日期，最多延期一次。
+- 新增这类代码的 PR 必须同时更新登记表，否则不合并。
+
+## 5. 模型与运行时
+
+- 所有模型调用只走 `research-orchestration/lib/model-runtime.mjs`（基于 pi-ai）。不要在别处直接调模型 API。
+- 默认模型是 `deepseek/deepseek-v4-pro`，用户可以用 `--model` 选任意厂商或 OpenAI 兼容接口。
+- 模型层三条约束：
+  - tool-less；
+  - fail-closed；
+  - 不在模型之间自动 fallback。
+
+  运行身份必须如实记录。
+- 模型输出一律当作不可信输入：先校验，再进入下游。
+
+## 6. 测试命令
+
+在仓库根目录执行：
 
 ```bash
-cd zhihu-answer-grabber && npm test
-cd ../corpus-anthology && node --test
-cd .. && node --test test/agent-pipeline.test.mjs
+(cd zhihu-answer-grabber && npm ci && npm test)
+(cd corpus-anthology && node --test)
+node --test test/agent-pipeline.test.mjs
+(cd research-orchestration && npm ci)
+node research-orchestration/scripts/run-classified-research-suites.mjs guard
+node research-orchestration/scripts/run-classified-research-suites.mjs full-offline
+git diff --check
 ```
 
-默认目标：`fail = 0`。
+- 新增 research-orchestration 测试文件时，要在 `research-orchestration/suite-classification.json` 登记，否则 guard 会失败。
+- 需要真实网络、凭据或模型的测试归为 live/private，不进 CI。这类测试的结果写进 PR 描述。
 
-若 suite 不能达到 `fail = 0`，不得简单写“pre-existing”后 PASS，必须：
+## 7. 文档
 
-1. 在 clean BASE / master 对照重现；
-2. 记录 base 与 candidate 的 pass / fail / skip 差异；
-3. 证明 candidate 没有新增相关 failure；
-4. 区分 dependency / environment / platform incident 与代码回归；
-5. focused required tests 必须满足 ticket contract；
-6. Reviewer 明确判断 residual baseline failures 是否阻塞。
-
-禁止通过新增 skip、删除 assertion、缩小测试范围来伪造绿灯，除非 ticket 明确授权且 reviewer 接受。
-
-其他要求：
-
-- 新行为必须有对应反例 / contract tests；
-- skip 仅允许已知平台限制，新 skip 必须解释；
-- `git diff --check` 必须 clean；
-- test 必须真正触达目标 behavior，避免 tautological assertion。
-
-## 13. Commit / Push
-
-- Conventional Commits：`feat:` / `fix:` / `chore:` / `docs:` / `test:` / `refactor:`。
-- 仅提交当前 scope；凭据 / 临时产物 / runtime memory 不提交。
-- 普通 push；禁止 force push（除用户明确批准的特殊恢复场景且不破坏 reviewed history）。
-- 不得使用破坏性 `reset --hard` / `clean -fd` 绕过异常。
-
-## 14. Handoff / Verification Authority
-
-- Skill → corpus-anthology 的产物交接只能走确定性 `make-handoff.mjs`，并按现有 verifier / schema 校验。
-- 禁止手工构造 verified handoff。
-- `verified` 只能由 verify-output authority 授予。
-- `captured != verified`。
-
-## 15. SPEC / GOVERNANCE CONFLICT
-
-发现实现或治理 authority 与 Applicable Approved Specs 冲突：
-
-- STOP 当前实现扩张；
-- 定位 exact conflicting clauses；
-- 若可通过明确 authority hierarchy 解决，按 hierarchy 执行并记录；
-- 若无法解决 → **STOP：`CONTRACT_CONFLICT`**，并将 `SPEC_CONFLICT` 或 `GOVERNANCE_CONFLICT` 作为 finding / reason category，请求 product-owner 裁决；
-- 不得擅自修改 Approved Spec 迁就实现。
-
-Approved Spec / governance authority change 属高风险文档 gate，要求 `CONTRACT_REVIEWER + CONSISTENCY_REVIEWER` 同 exact HEAD PASS。
-
-## 16. Human Fallback / External Handoff
-
-Subagent review 是默认 internal gate；**不再要求用户为每个普通 ticket 手工复制 `NEXT_REVIEW_PROMPT` / `NEXT_AGENT_PROMPT`**。
-
-只有以下情况需要 external human / ChatGPT handoff：
-
-- runtime 没有可用的独立 Subagent review 能力；
-- 用户明确要求 external review；
-- `USER_DECISION_REQUIRED`；
-- authority conflict；
-- external evidence / permission blocker；
-- 当前 Issue / Spec 明确要求人工 reviewer。
-
-若进入 external handoff，必须先满足 §18.5 定义的 PRE-EXTERNAL TERMINAL BARRIER（`REMOTE_HEAD_STABLE && STATIC_GATES_COMPLETE && DYNAMIC_GATES_COMPLETE && CI_TERMINAL && CONFIGURED_AUTOMATED_REVIEW_STATE_KNOWN && CURRENT_HEAD_FINDINGS_RECONCILED`），然后提供可复制 review packet / verdict packet，至少包含：repository、Issue、BASE、HEAD、Compare、authority、objective、scope、tests/evidence、known caveats、acceptance、要求的 verdict schema。
-
-若 external reviewer 可访问 repo / GitHub，则上述 `authority / objective / scope / acceptance / tests/evidence` **优先通过 Issue、repo path、exact SHA 引用满足**，不复制全文；remote branch / exact HEAD 是事实源。只有 reviewer 无法访问 remote authority / artifact 时，才内联最小必要正文或请求最小必要文件。具体 packet 压缩规则见 §2.1。
-
-## 17. Ticket Completion 与停止条件
-
-Implementation complete ≠ accepted。
-
-票内完成流程：
-
-```text
-IMPLEMENTED
-→ REVIEWED
-→ required quorum PASS on exact SHA
-→ ff-only MERGED
-→ remote verified
-→ Issue CLOSED / Tracker DONE
-```
-
-只有完成上述序列，当前 ticket 才是 DONE。
-
-外部审查路由下的 push 或 PR 创建绝不是 terminal 状态，必须完成 PRE-EXTERNAL TERMINAL BARRIER（见 §18.5）；最终完成仍以 exact-SHA PASS、ff-only merge 及 remote verify 为准。
-
-连续 Goal Mode 下，ticket DONE 后自动 re-observe 并进入 next legal ticket；不得停下来问“是否继续”。
-
-真正允许停止的状态见 §3。最终 milestone 完成后只报告已授权 milestone 的完成，不自动进入明确排除的下一阶段。
-
-## 18. Contract-Driven Code Execution
-
-### 18.1 MANDATORY IMPLEMENTATION SKILL ENTRYPOINT & RESPONSIBILITY BOUNDARIES
-For CODE tickets with substantive implementation:
-`MANDATORY_ENGINEERING_ENTRYPOINT = /implement`
-
-Executor must invoke/read the installed `/implement` skill before substantive implementation.
-
-Where the Ticket contains correctness-bearing behavior, state transitions, contracts, parsers, security boundaries, persistence, identity, or fail-closed semantics:
-`/tdd` is mandatory unless the behavior is objectively non-testable.
-"where practical" is NOT sufficient for these CODE contracts.
-
-If `/tdd` is skipped:
-the Executor must state the exact objective reason.
-
-**Skill Responsibility Boundaries**:
-- `/implement`: Mandatory engineering entrypoint for substantive CODE implementation; establishes implementation strategy, scope discipline, and execution plan.
-- `/tdd`: Governs correctness-first RED → GREEN execution; derives test obligations prior to code modification.
-- `/simplify-code`: Occurs only AFTER correctness is established and tests are green; performs proportionate cleanup and simplification; MUST NOT change behavior, alter contracts, or broaden architecture. (Canonical installed invocation name; verified against the local `SKILL.md` frontmatter `name` field. A skill's slash name is whatever its own `SKILL.md` declares — not what this document assumes.)
-- `/code-review`: Adversarial self-review tool for Executor prior to push/handoff; does NOT satisfy independent review quorum (`SELF_REVIEW != INDEPENDENT_REVIEW`).
-
-AGENTS.md routes to skills and establishes responsibility boundaries; it does not copy or reproduce whole skill manuals.
-
-### 18.2 CONTRACT-DRIVEN TDD
-Before implementation, derive hard test obligations from:
-- Acceptance Criteria
-- MUST / MUST NOT
-- STOP conditions
-- fail-closed requirements
-- ownership boundaries
-- `UNKNOWN != PASS`
-- exact accepted upstream decisions
-
-Each applicable hard invariant should have:
-positive + boundary + negative/counterexample
-
-Tests must be observed RED before implementation satisfying that invariant, then GREEN after the minimal repair.
-Green tests alone do not prove Ticket compliance.
-Self-review must actively search for a counterexample that passes current tests while violating authority.
-
-### 18.3 FROZEN AUTHORITY IS MECHANICALLY CONSUMED
-An accepted upstream decision must not be:
-- reinterpreted
-- generalized
-- improved
-- normalized differently
-- substituted
-- silently wrapped in new semantics
-
-If an implementation would require inventing missing semantics:
-STOP: `CONTRACT_GAP`
-
-### 18.4 STATIC-FIRST EXECUTION & CANONICAL ORDER
-Canonical implementation order:
-`STATIC / MECHANICAL → DYNAMIC TESTS → MODEL SELF-REVIEW → PUSH → REMOTE CI / AUTOMATED REVIEW → INDEPENDENT REVIEW`
-
-After each substantive edit:
-previous evidence for affected gates is invalidated.
-
-Static gates include only applicable configured tooling:
-- syntax/import resolution
-- LSP diagnostics
-- typecheck
-- lint
-- dependency/lockfile policy
-- encoding/static safety
-- `git diff --check`
-
-Do NOT require fictitious lint/typecheck tools that the repository does not configure.
-Report:
-`PASS`, `NOT_APPLICABLE`, or `FAIL` based on actual evidence.
-
-Dynamic tests must not be used as the first detector for failures deterministic static tooling can catch.
-
-### 18.5 CURRENT-HEAD TERMINAL BARRIER
-External final reviewer does NOT mean:
-push candidate → immediate STOP
-
-Before external handoff, the current REMOTE exact HEAD must satisfy the PRE-EXTERNAL TERMINAL BARRIER:
-`REMOTE_HEAD_STABLE && STATIC_GATES_COMPLETE && DYNAMIC_GATES_COMPLETE && CI_TERMINAL && CONFIGURED_AUTOMATED_REVIEW_STATE_KNOWN && CURRENT_HEAD_FINDINGS_RECONCILED`
-
-PR creation or push is not a terminal condition.
-Any new edit invalidates previous static/dynamic/review evidence for the old SHA.
-
-### 18.6 AUTOMATED REVIEWER STATE CLASSIFICATION & FALLBACK
-Absence of a new automated review MUST NOT automatically be classified PENDING.
-
-Inspect applicable:
-- review submissions
-- PR review comments
-- issue comments
-- check/status results
-- bot failure/error messages
-
-Classify explicitly as one of:
-- `AUTOMATED_REVIEW_PENDING`
-- `AUTOMATED_REVIEW_COMPLETE`
-- `AUTOMATED_REVIEW_QUOTA_EXHAUSTED`
-- `AUTOMATED_REVIEW_TRIGGER_FAILED`
-- `AUTOMATED_REVIEW_UNAVAILABLE`
-
-A quota/error response is NOT PENDING.
-
-Fallback discipline:
-If a configured automated reviewer is unavailable (e.g. quota exhausted, trigger failed, or service unavailable):
-- do NOT wait indefinitely;
-- do NOT silently waive required independent review quorum;
-- route according to the explicitly permitted reviewer route / quorum (e.g. designated independent subagent or external reviewer per §5 and §2.1.3).
-
-### 18.7 EXTERNAL REVIEW HANDOFF
-When the explicit reviewer route is `EXTERNAL_CHATGPT`:
-Executor must finish:
-static gates + dynamic gates + remote push verification + CI terminal classification + known automated-review classification + current HEAD findings reconciled (PRE-EXTERNAL TERMINAL BARRIER)
-before handoff.
-
-Only then:
-minimal handoff → STOP for designated external independent review.
-
-External reviewer remains independent.
-Executor self-review never counts as independent review.
-
-### 18.8 SKILL USAGE REPORTING & EVIDENCE INVARIANT
-An Executor must not claim:
-`IMPLEMENT_SKILL_USED = YES`
-`TDD_SKILL_USED = YES`
-`SIMPLIFY_SKILL_USED = YES`
-`CODE_REVIEW_SKILL_USED = YES`
-merely from memory or because equivalent-looking work occurred.
-
-`YES` requires execution evidence that the relevant installed skill was actually invoked/read/entered according to the runtime's skill mechanism.
-
-Otherwise report:
-`NO`
-or, when the runtime cannot prove either state:
-`UNVERIFIED`
-
-Do not confuse:
-"tests were written" with "/tdd skill was used", or "self-review occurred" with "/code-review skill was used".
-
-Skill invocation evidence is workflow evidence, not product evidence and not durable project memory (must not be recorded into `docs/project-memory.md`).
+- 文档写现状，不写过程。
+  - 决定写进对应的 Spec 或 README；
+  - 讨论和过程留在 PR 和 Issue 里。
+- 改了用户可见的行为，就在同一个 PR 里更新 `README.md`。
+- 不新增流程类文档。如果确实需要一条新规则，直接改本文件，并保持它短于 8000 字符：WorkBuddy 等工具会把它整份注入首轮上下文，超出部分会被截断。

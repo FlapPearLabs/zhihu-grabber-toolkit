@@ -146,8 +146,8 @@ PLAN
 
 仓库保留了可复核、已脱敏的 canonical acceptance evidence：
 
-- [`P1_T16_CANONICAL_ACCEPTANCE_EVIDENCE.md`](./docs/planning/P1_T16_CANONICAL_ACCEPTANCE_EVIDENCE.md)
-- [`P1_T16_CANONICAL_ACCEPTANCE_EVIDENCE.json`](./docs/planning/P1_T16_CANONICAL_ACCEPTANCE_EVIDENCE.json)
+- [`P1_T16_CANONICAL_ACCEPTANCE_EVIDENCE.md`](./docs/archive/planning/P1_T16_CANONICAL_ACCEPTANCE_EVIDENCE.md)
+- [`P1_T16_CANONICAL_ACCEPTANCE_EVIDENCE.json`](./docs/archive/planning/P1_T16_CANONICAL_ACCEPTANCE_EVIDENCE.json)
 
 固定研究主题：
 
@@ -529,15 +529,15 @@ zhihu-grabber-toolkit/
 ├── zhihu-answer-grabber/       # 搜索、抓取、rich content、验证
 ├── corpus-anthology/           # 大语料 chunk / map / reduce / verification
 ├── research-orchestration/     # 单问题研究 + P1 跨问题深度研究
-├── discovery/                  # provider / embedding qualification evidence
+├── discovery/                  # embedding 模型下载脚本与 provider 资格审计
 ├── docs/
 │   ├── architecture/           # 架构与关键设计决策
-│   ├── planning/               # P1 execution / acceptance evidence
 │   ├── product-design/         # 产品演进与设计说明
-│   └── specs/                  # 冻结 Spec / behavior contract
+│   ├── specs/                  # 产品合同（Spec）
+│   └── archive/                # 历史流程文档与决策记录（仅作背景）
 ├── references/                 # 跨模块 handoff schema
-├── AGENTS.md                   # Agent 工程规则
-└── RULES.md                    # 仓库治理规则
+├── AGENTS.md                   # 怎么在这个仓库里干活
+└── RULES.md                    # 不可违反的硬约束
 ```
 
 ---
@@ -551,10 +551,9 @@ zhihu-grabber-toolkit/
 | [`Architecture Overview`](./docs/architecture/overview.md) | 模块、数据流与 authority boundary |
 | [`Key Engineering Decisions`](./docs/architecture/key-decisions.md) | 关键取舍、alternatives 与 trade-off |
 | [`Product Design & Evolution`](./docs/product-design/zhihu-grabber-toolkit-product-design.md) | 从抓取器到研究系统的产品演进 |
-| [`Product Behavior Contract`](./docs/product-behavior-contract.md) | 当前产品行为归一化视图 |
 | [`Research Orchestration Spec`](./docs/specs/research-orchestration-scope.md) | 单问题 research orchestration 合同 |
 | [`P1 Cross-Question Deep Research`](./docs/specs/p1-cross-question-deep-research.md) | 跨问题深度研究 Spec |
-| [`P1 Canonical Acceptance Evidence`](./docs/planning/P1_T16_CANONICAL_ACCEPTANCE_EVIDENCE.md) | P1 canonical dogfood / acceptance evidence |
+| [`P1 Canonical Acceptance Evidence`](./docs/archive/planning/P1_T16_CANONICAL_ACCEPTANCE_EVIDENCE.md) | P1 canonical dogfood / acceptance evidence |
 | [`Runtime Strategy`](./docs/architecture/runtime-strategy.md) | local / remote runtime 与 qualification 策略 |
 | [`Security`](./zhihu-answer-grabber/references/security.md) | Credential isolation、host boundary、401/403 诊断 |
 
@@ -562,27 +561,11 @@ zhihu-grabber-toolkit/
 
 ## Development
 
-这个仓库本身也采用 repository-driven Agent engineering。
+- 工作流、review 轮数预算、证据规则：[`AGENTS.md`](./AGENTS.md)
+- 硬约束：[`RULES.md`](./RULES.md)
+- 默认关闭的代码和它们的决定日期：[`docs/default-off.md`](./docs/default-off.md)
 
-```text
-/implement
-→ contract-driven TDD
-→ static / mechanical verification
-→ dynamic tests
-→ adversarial self-review
-→ independent exact-SHA review
-```
-
-核心原则：
-
-- `tests green != task complete`；
-- `self-review != independent review`；
-- reviewer PASS 只绑定 exact reviewed SHA；
-- 同一 branch 同时只允许一个 active writer；
-- 能由 LSP / typecheck / lint / static checks 发现的问题优先机械解决；
-- 工程状态从 repo / GitHub authority 恢复，不依赖聊天上下文。
-
-治理入口：[`AGENTS.md`](./AGENTS.md) · [`RULES.md`](./RULES.md)
+一个改动一个 PR。正确性相关的改动先写测试。运行产物和验收证据不进主树：放在 `work/`，摘要写进 PR。
 
 ---
 

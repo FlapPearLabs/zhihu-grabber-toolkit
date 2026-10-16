@@ -5,8 +5,8 @@
  * extraction (Issue #45; Spec §8.1, §5.2, §10.1; SEAM C = T13_TO_T14 V1).
  *
  * Authority:
- *   - docs/planning/P1_SEAM_CONTRACTS_V1.md §SEAM B (input) / §SEAM C (output)
- *   - docs/planning/P1_PARALLEL_EXECUTION_CONTRACT_V1.md §E3 (T13 packet)
+ *   - docs/archive/planning/P1_SEAM_CONTRACTS_V1.md §SEAM B (input) / §SEAM C (output)
+ *   - docs/archive/planning/P1_PARALLEL_EXECUTION_CONTRACT_V1.md §E3 (T13 packet)
  *   - Issue #45 body (single owner: ANALYZED_SOURCE_SET_IDENTITY_OWNER = P1-T13)
  *   - Frozen oracle: test/p1-seam-contracts.test.mjs + test/helpers/p1-seam-contracts.mjs
  *     (validators imported READ-ONLY; existing fixtures never modified)

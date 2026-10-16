@@ -6,8 +6,8 @@
  * Authority (semantics are FROZEN; this suite must not reinterpret them):
  *   - docs/specs/p2-ari-f02-targeted-requery.md      §5 D5, §12, §14
  *   - docs/architecture/key-decisions.md             D12-5
- *   - docs/planning/..._SEAM_CONTRACT_V1.md          F.1, F.5
- *   - docs/planning/..._SEAM_MAP_V1.md               S4
+ *   - docs/archive/planning/..._SEAM_CONTRACT_V1.md          F.1, F.5
+ *   - docs/archive/planning/..._SEAM_MAP_V1.md               S4
  *   - Ticket Decomposition §P2A-T06; Issue #118 GOAL / IN_SCOPE / OUT_OF_SCOPE /
  *     ACCEPTANCE_CRITERIA 1–6 / REQUIRED_TESTS / COUNTEREXAMPLES C4, C5, C12
  *   - P1-R06 (#94) frozen conclusion: checkpoint is the ONLY trust root; an

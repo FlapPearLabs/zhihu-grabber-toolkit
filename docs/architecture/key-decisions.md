@@ -411,7 +411,7 @@ contract 把两者拆开后，AGENTS.md §8 本就允许的跨分支并行施工
 > `REVIEWED_CANDIDATE_BRANCH = spec/p2-ari-f02-targeted-requery`
 > `PROMOTION_BRANCH = spec/p2-ari-f02-spec-approval`
 > `SPEC_AUTHORITY = docs/specs/p2-ari-f02-targeted-requery.md`（语义唯一权威）
-> `SEAM_AUTHORITY = docs/planning/P2_ARI_108_TARGETED_REQUERY_SEAM_{MAP,CONTRACT}_V1.md`
+> `SEAM_AUTHORITY = docs/archive/planning/P2_ARI_108_TARGETED_REQUERY_SEAM_{MAP,CONTRACT}_V1.md`
 > `EVALUATION_DEPENDENCY = #107 / P2-F01 Research Evaluation Harness`（OPEN；架构批准 ≠ 价值证明 ≠ 实现授权）
 > `APPROVAL_PROVENANCE = CODEX PASS / CLAUDE PASS on 2e40724（OPEN_BLOCKERS = NONE）；promotion delta 另经独立审查`
 > `DECISION_RECORD_MECHANISM = SUFFICIENT_EXISTING_MECHANISM`（本节即记录车辆；不新建 `docs/adr/`）
@@ -655,7 +655,7 @@ LEDGER_ANCHORED_IN_CHECKPOINT =
 既让 F.5 的 REUSE 分支第一次真正可达，又不给「未锚定第二凭据」留下任何位置。
 
 **状态**：`STATUS = CANDIDATE`（修正案待独立 architecture/contract 审查），
-推导全文见 `docs/planning/P2_ARI_108_F5_CHECKPOINT_ANCHORED_LEDGER_AMENDMENT_V1.md`。
+推导全文见 `docs/archive/planning/P2_ARI_108_F5_CHECKPOINT_ANCHORED_LEDGER_AMENDMENT_V1.md`。
 ```
 
 ---

@@ -7,8 +7,8 @@
  * Authority (FROZEN; this module must not reinterpret, generalize or "improve" it):
  *   - docs/specs/p2-ari-f02-targeted-requery.md      §5 D5, §12, §14        (APPROVED)
  *   - docs/architecture/key-decisions.md             D12-5
- *   - docs/planning/..._SEAM_CONTRACT_V1.md          F.1, F.5
- *   - docs/planning/..._SEAM_MAP_V1.md               S4
+ *   - docs/archive/planning/..._SEAM_CONTRACT_V1.md          F.1, F.5
+ *   - docs/archive/planning/..._SEAM_MAP_V1.md               S4
  *   - P1-R06 (#94) frozen conclusion: checkpoint is the ONLY trust root; an
  *     an unanchored second credential (a sidecar completion claim of any kind) is a
  *     P0 unanchored trust source.

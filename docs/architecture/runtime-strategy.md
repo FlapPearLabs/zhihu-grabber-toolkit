@@ -189,9 +189,9 @@ The durable lessons are:
 Use the repository layers consistently:
 
 - Applicable Approved Specs: product requirements and amendments;
-- `docs/product-behavior-contract.md`: current approved product behavior;
+- `docs/archive/product-behavior-contract.md`: current approved product behavior;
 - this architecture record: cross-cutting design rationale and durable engineering strategy;
-- `docs/project-memory.md`: concise accepted long-lived project facts/lessons;
+- `docs/archive/project-memory.md`: concise accepted long-lived project facts/lessons;
 - qualification/dogfood evidence: provider/model/profile-specific measurements and observed limitations;
 - Tracker / Issues / Git history: execution state and exact reviewed/merged identity.
 

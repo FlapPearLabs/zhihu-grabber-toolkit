@@ -4,7 +4,7 @@
  * P1-T09 — Multi-group Execution State + Per-group Capture/Verify/Handoff composition.
  *
  * Counterexample-first focused tests (deterministic, no network).
- * CE IDs map to docs/planning/P1_T09_MULTI_GROUP_EXECUTION_CONTRACT.md.
+ * CE IDs map to docs/archive/planning/P1_T09_MULTI_GROUP_EXECUTION_CONTRACT.md.
  *
  * Core invariants under test:
  *   I1  CAPTURED != VERIFIED (per group)
@@ -891,7 +891,7 @@ test('I4+I8 guard: ref hashes bind to exact artifact bytes at composition time',
 // ---------------------------------------------------------------------------
 // CE-20/21/22 — identity binding + persisted-state shape validation
 // (retroactive grounding round: contract defects identified before fresh review;
-//  each maps to docs/planning/P1_T09_MULTI_GROUP_EXECUTION_CONTRACT.md register)
+//  each maps to docs/archive/planning/P1_T09_MULTI_GROUP_EXECUTION_CONTRACT.md register)
 // ---------------------------------------------------------------------------
 
 test('CE-20 PLAN_IDENTITY_BINDING: decision composed under another plan/pool identity is rejected at the T09 boundary', () => {

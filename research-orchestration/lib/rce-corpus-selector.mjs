@@ -66,7 +66,7 @@
  *
  * D-4/D-5 provisional defaults (OPEN decisions delegated to T12 implementation
  * validation — P1_TICKET_GRAPH_V1; numbers are exported, documented tunables,
- * NOT silent inline constants; see docs/planning/P1_T12_CONTRACT_EXTRACTION.md):
+ * NOT silent inline constants; see docs/archive/planning/P1_T12_CONTRACT_EXTRACTION.md):
  *   DEFAULT_RELEVANCE_FLOOR = 0      (natural boundary: non-negative semantic
  *                                    relevance required; not an invented value)
  *   DEFAULT_NOVELTY_WEIGHT  = 0.25   (D-4 provisional; implementation validation)

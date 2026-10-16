@@ -2,7 +2,7 @@
 /**
  * hierarchy — T9 批准合同的 hierarchical full digest engine（T10, Issue #16）。
  *
- * 批准合同（docs/t9-hierarchical-digest-contract.md，MODIFY + APPROVE 2026-08-23）:
+ * 批准合同（docs/archive/t9-hierarchical-digest-contract.md，MODIFY + APPROVE 2026-08-23）:
  *   - OPTION A additive explicit（flat digest 行为不变；hierarchy 显式启用；V0.3 不自动路由）
  *   - ADAPTIVE 深度：if nodeCount==1 terminate；每个非终止聚合节点
  *     2 <= childCount <= MAX_CHILDREN_PER_NODE；禁止 single-child；

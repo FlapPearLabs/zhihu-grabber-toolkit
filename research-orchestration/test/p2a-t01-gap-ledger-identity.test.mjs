@@ -6,8 +6,8 @@
  * Authority (semantics are FROZEN; this suite must not reinterpret them):
  *   - docs/specs/p2-ari-f02-targeted-requery.md  §5 D1, §6, §10   (STATUS = APPROVED)
  *   - docs/architecture/key-decisions.md         D12-1, D12-8
- *   - docs/planning/..._SEAM_CONTRACT_V1.md      E.1 / E.2 / E.3 / E.8
- *   - docs/planning/..._SEAM_MAP_V1.md           S1 / S4
+ *   - docs/archive/planning/..._SEAM_CONTRACT_V1.md      E.1 / E.2 / E.3 / E.8
+ *   - docs/archive/planning/..._SEAM_MAP_V1.md           S1 / S4
  *   - Issue #113 ACCEPTANCE_CRITERIA 1–6 + REQUIRED_TESTS
  *
  * Anti-tautology discipline: every expected identity/hash value below is derived

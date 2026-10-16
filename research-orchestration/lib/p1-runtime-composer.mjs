@@ -36,7 +36,7 @@
  *     successful full-coverage compose.
  *   - state.p1FinalCoveragePlanHash is written ONLY by this composer, ONLY on
  *     success, and ONLY to the exact planHash of the executed plan (run-bound
- *     render seam contract, docs/project-memory.md).
+ *     render seam contract, docs/archive/project-memory.md).
  *   - The global_search transport is a SYNC IO bridge (T05 seam synchrony —
  *     async HTTP bridging is the composition layer's concern, per the adapter
  *     header contract). The bridge child process resolves the access secret

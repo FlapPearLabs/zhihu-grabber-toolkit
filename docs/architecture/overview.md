@@ -1,6 +1,6 @@
 # Architecture Overview
 
-> Zhihu Grabber Toolkit 的系统设计总览。本文用于解释主要模块、数据流和职责边界；产品合同仍以 Applicable Approved Specs 与 `docs/product-behavior-contract.md` 为准。
+> Zhihu Grabber Toolkit 的系统设计总览。本文用于解释主要模块、数据流和职责边界；产品合同仍以 Applicable Approved Specs 与 `docs/archive/product-behavior-contract.md` 为准。
 
 ## 1. 一句话架构
 

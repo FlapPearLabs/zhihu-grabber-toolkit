@@ -13,9 +13,9 @@
  *
  * Authority:
  *   - docs/specs/p1-cross-question-deep-research.md §8.1–8.4 / §9.4 / §10.2 / §11
- *   - docs/planning/P1_SEAM_CONTRACTS_V1.md §SEAM D V2 (OUTPUT_OBSERVABLE_SHAPE,
+ *   - docs/archive/planning/P1_SEAM_CONTRACTS_V1.md §SEAM D V2 (OUTPUT_OBSERVABLE_SHAPE,
  *     IDENTITY_FIELDS, REQUIRED_INVARIANTS 1–9, FAIL_CLOSED, VERSIONING_RULE)
- *   - docs/planning/P1_REPAIR_TICKET_DECOMPOSITION_V1.md §5 (Cases A–F matrix)
+ *   - docs/archive/planning/P1_REPAIR_TICKET_DECOMPOSITION_V1.md §5 (Cases A–F matrix)
  *   - R03 (#91) executable contract: validateSynthesisOutputV2 is the ONLY V2
  *     acceptance boundary; V1 is explicitly historical-only.
  *

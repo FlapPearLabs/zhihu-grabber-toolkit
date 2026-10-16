@@ -4,7 +4,7 @@
  *
  * Generic integration harness for the execution workflow (round 2, F8
  * canonical runtime authority). NOT a framework. Encodes
- * the project execution-workflow document (docs/planning/).
+ * the project execution-workflow document (docs/archive/planning/).
  *
  * EXECUTION MODE TAXONOMY (F8):
  *   offline  — FINAL_DRY_RUN. Never acceptance-eligible.

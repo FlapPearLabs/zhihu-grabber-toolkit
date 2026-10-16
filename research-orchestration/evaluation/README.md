@@ -18,7 +18,7 @@ benchmark 为 `p2-f01-authored-curated-v1`，evaluator 为
 ```sh
 node research-orchestration/evaluation/run.mjs \
   --expected-head <exact-40-character-code-SHA> \
-  --out docs/acceptance/p2-f01/<fresh-campaign-directory>
+  --out work/p2-f01/<fresh-campaign-directory>
 ```
 
 普通命令只运行 Tier 1；无需模型、网络或 research-orchestration 的模型依赖。

@@ -704,7 +704,7 @@ Controller must prove.
 - [`Architecture Overview`](../architecture/overview.md)
 - [`Key Engineering Decisions`](../architecture/key-decisions.md)
 - [`Runtime Strategy`](../architecture/runtime-strategy.md)
-- [`Product Behavior Contract`](../product-behavior-contract.md)
+- [`Product Behavior Contract`](../archive/product-behavior-contract.md)
 - [`Research Orchestration Spec`](../specs/research-orchestration-scope.md)
 - [`P1 Cross-Question Deep Research`](../specs/p1-cross-question-deep-research.md)
 - [`AGENTS.md`](../../AGENTS.md)

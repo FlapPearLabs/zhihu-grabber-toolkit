@@ -1192,7 +1192,7 @@ test('OPTIN-2 — a real full-chain run is byte-equivalent with the parameter ab
 });
 
 // ---------------------------------------------------------------------------
-// F.5 amendment acceptance gates G1–G6 (docs/planning/
+// F.5 amendment acceptance gates G1–G6 (docs/archive/planning/
 // P2_ARI_108_F5_CHECKPOINT_ANCHORED_LEDGER_AMENDMENT_V1.md §5).
 //
 // These are the gates the owner made binding on this repair. G1/G2 are
