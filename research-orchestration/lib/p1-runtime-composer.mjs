@@ -117,6 +117,7 @@ import {
   STAGE_FAILED,
 } from './state.mjs';
 import { createEmbeddingProvider } from './embedding-provider.mjs';
+import { ANALYSIS_MODES, normalizeAnalysisOptions } from './per-group-claim-extraction.mjs';
 import { REQUIRED_EMBEDDING_IDENTITY } from './dense-geometry.mjs';
 import { deriveCanonicalSourceId } from './rce-input-adapter.mjs';
 import { assertArtifactSafe } from './rrf.mjs';
@@ -154,6 +155,7 @@ const CFC_ANALYSIS_FAILED = 'analysis_failed';
 const CFC_SYNTHESIS_FAILED = 'synthesis_failed';
 const CFC_INCOMPLETE_ANALYSIS = 'incomplete_analysis';
 const CFC_ABORTED = 'p1_compose_aborted';
+const CFC_ANALYSIS_INVALID = 'analysis_config_invalid';
 const CFC_CLARIFICATION_REQUIRED = 'clarification_required';
 const CLARIFICATION_KEY = 'source-group-clarification';
 const CLARIFICATION_REQUEST_FILE = 'source-group-clarification-request.json';
@@ -989,6 +991,8 @@ export async function composeP1Research({
   modelBaseUrl = null,
   config = undefined,
   maxGroupAnswers = null,
+  analysisMode = 'single',
+  analysisOptions = null,
   usageSink = null,
   restart = false,
   planner = null,
@@ -1015,6 +1019,20 @@ export async function composeP1Research({
   }
   if (!isNonEmptyString(workDir)) {
     return fail(CFC_ABORTED, 'workDir is required');
+  }
+  if (!ANALYSIS_MODES.includes(analysisMode)) {
+    return fail(CFC_ANALYSIS_INVALID, `analysis mode must be one of ${ANALYSIS_MODES.join('/')}`);
+  }
+  if (analysisMode === 'single' && analysisOptions !== null && analysisOptions !== undefined) {
+    return fail(CFC_ANALYSIS_INVALID, 'analysis options apply only to the chunked analysis mode');
+  }
+  let effectiveAnalysisOptions = null;
+  if (analysisMode === 'chunked') {
+    try {
+      effectiveAnalysisOptions = normalizeAnalysisOptions(analysisOptions ?? {});
+    } catch (error) {
+      return fail(CFC_ANALYSIS_INVALID, `analysis mode chunked: ${error.message}`);
+    }
   }
   registerPrivateTitleRoot(path.resolve(workDir));
   const normalizedTopic = topic.trim();
@@ -1049,9 +1067,16 @@ export async function composeP1Research({
   // The answer-count limit changes which groups a run may select, so it is part
   // of the configuration identity seen by every checkpoint / reuse gate, while
   // `config` itself stays the retrieval round-controller configuration.
-  const identityConfig = maxGroupAnswers === null || maxGroupAnswers === undefined
+  // The chunked analysis mode (with its batch budgets) changes the claims a run
+  // produces, so it joins the configuration identity the same way; the default
+  // single-call mode adds nothing, keeping existing runs reusable.
+  const identityExtras = {
+    ...(maxGroupAnswers === null || maxGroupAnswers === undefined ? {} : { sourceGroupSelection: { maxGroupAnswers } }),
+    ...(analysisMode === 'single' ? {} : { analysis: { mode: analysisMode, ...effectiveAnalysisOptions } }),
+  };
+  const identityConfig = Object.keys(identityExtras).length === 0
     ? config
-    : { ...(config ?? {}), sourceGroupSelection: { maxGroupAnswers } };
+    : { ...(config ?? {}), ...identityExtras };
 
   // 1. State bootstrap / resume classification (checkpoint identity validated —
   //    FILE EXISTS != VALID CACHE). restart discards any prior checkpoint and
@@ -1728,6 +1753,7 @@ export async function composeP1Research({
     const analysis = await analyzeSelectedCorpus({
       coverageState, corpusArtifact: corpus.corpusArtifact, manifest: execution.manifest,
       planHash: expectedPlanHash, runtime: effectiveRuntime, workDir, journal,
+      analysisMode, analysisOptions: effectiveAnalysisOptions ?? {},
     });
     coverageState = analysis.coverageState;
     writeArtifact(workDir, PER_GROUP_CLAIMS_FILENAME, analysis.seamCArtifact);

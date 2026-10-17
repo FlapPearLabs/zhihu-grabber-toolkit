@@ -121,6 +121,8 @@ const T14_DIAGNOSTIC_KEYS = [
 
 const ERROR_RUNTIME_UNAVAILABLE = 'T14_RUNTIME_UNAVAILABLE';
 const ERROR_RUNTIME_OUTPUT_INVALID = 'T14_RUNTIME_OUTPUT_INVALID';
+/** Calls allowed per synthesis: one re-ask after a contract-violating output. */
+export const SYNTHESIS_MAX_ATTEMPTS = 2;
 const ERROR_DEGRADED_REPRESENTATION = 'T14_DEGRADED_REPRESENTATION';
 const ERROR_EMPTY_VERIFIED_INPUT = 'T14_EMPTY_VERIFIED_INPUT';
 const ERROR_INPUT_INVALID = 'T14_INPUT_INVALID';
@@ -236,58 +238,59 @@ function assertSynthesisRuntime(runtime) {
  *     semantic version is never defaulted).
  */
 function validateRuntimeProposalV2(runtimeResult, recordsByClaimId) {
-  if (!isPlainObject(runtimeResult)) return { ok: false };
+  const bad = (reason) => ({ ok: false, reason });
+  if (!isPlainObject(runtimeResult)) return bad('output is not an object');
   // V1 masquerade guard: the legacy aspect-partition shape carries no stance
   // and no semantic version. It is HISTORICAL_ONLY and is never laundered.
-  if (Array.isArray(runtimeResult.aspects)) return { ok: false };
-  if (!Array.isArray(runtimeResult.families)) return { ok: false };
-  if (!Array.isArray(runtimeResult.unresolvedClaimIds)) return { ok: false };
+  if (Array.isArray(runtimeResult.aspects)) return bad('V1 aspects shape');
+  if (!Array.isArray(runtimeResult.families)) return bad('families is not an array');
+  if (!Array.isArray(runtimeResult.unresolvedClaimIds)) return bad('unresolvedClaimIds is not an array');
 
   const families = [];
   const seen = new Set();
 
   for (const entry of runtimeResult.families) {
-    if (!isPlainObject(entry)) return { ok: false };
+    if (!isPlainObject(entry)) return bad('family is not an object');
     const aspect = entry.aspect;
     if (typeof aspect !== 'string' || aspect.length === 0 || aspect.length > 300 || !isBoundarySafeString(aspect)) {
-      return { ok: false };
+      return bad('aspect missing, too long or unsafe');
     }
-    if (!Array.isArray(entry.members) || entry.members.length === 0) return { ok: false };
-    if (!isNonEmptyString(entry.anchorClaimId)) return { ok: false };
+    if (!Array.isArray(entry.members) || entry.members.length === 0) return bad('family without members');
+    if (!isNonEmptyString(entry.anchorClaimId)) return bad('family without anchorClaimId');
 
     const members = [];
     const localIds = new Set();
     for (const member of entry.members) {
-      if (!isPlainObject(member) || !isNonEmptyString(member.claimId)) return { ok: false };
-      if (!V2_RESOLVED_STANCES.includes(member.stance)) return { ok: false };
-      if (!recordsByClaimId.has(member.claimId)) return { ok: false };
-      if (localIds.has(member.claimId)) return { ok: false };
-      if (seen.has(member.claimId)) return { ok: false };
+      if (!isPlainObject(member) || !isNonEmptyString(member.claimId)) return bad('member without claimId');
+      if (!V2_RESOLVED_STANCES.includes(member.stance)) return bad('illegal stance');
+      if (!recordsByClaimId.has(member.claimId)) return bad('unknown claimId');
+      if (localIds.has(member.claimId)) return bad('claim repeated within a family');
+      if (seen.has(member.claimId)) return bad('claim in more than one family');
       localIds.add(member.claimId);
       seen.add(member.claimId);
       members.push({ claimId: member.claimId, stance: member.stance });
     }
     // anchor must be a member AND self-ASSERT (no free-text proposition
     // rewriting, no anchor that opposes itself).
-    if (!localIds.has(entry.anchorClaimId)) return { ok: false };
-    if (!members.some((m) => m.claimId === entry.anchorClaimId && m.stance === 'ASSERTS')) return { ok: false };
+    if (!localIds.has(entry.anchorClaimId)) return bad('anchor is not a member');
+    if (!members.some((m) => m.claimId === entry.anchorClaimId && m.stance === 'ASSERTS')) return bad('anchor does not ASSERT');
 
     families.push({ aspect, anchorClaimId: entry.anchorClaimId, members });
   }
 
   const unresolvedIds = [];
   for (const id of runtimeResult.unresolvedClaimIds) {
-    if (!isNonEmptyString(id)) return { ok: false };
-    if (!recordsByClaimId.has(id)) return { ok: false };
-    if (seen.has(id)) return { ok: false }; // family/unresolved overlap
+    if (!isNonEmptyString(id)) return bad('unresolved id is not a string');
+    if (!recordsByClaimId.has(id)) return bad('unknown unresolved claimId');
+    if (seen.has(id)) return bad('claim both in a family and unresolved');
     seen.add(id);
     unresolvedIds.push(id);
   }
 
   // Complete partition of every input claim, exactly once.
-  if (seen.size !== recordsByClaimId.size) return { ok: false };
+  if (seen.size !== recordsByClaimId.size) return bad(`${recordsByClaimId.size - seen.size} claim(s) missing from the partition`);
   // families and unresolved may not both be empty.
-  if (families.length === 0 && unresolvedIds.length === 0) return { ok: false };
+  if (families.length === 0 && unresolvedIds.length === 0) return bad('families and unresolved both empty');
 
   return { ok: true, families, unresolvedIds };
 }
@@ -520,25 +523,35 @@ export async function produceCrossSourceSynthesis({
   //      - Promise rejection / transport failure → T14_RUNTIME_UNAVAILABLE
   //      - resolved but structurally invalid output → T14_RUNTIME_OUTPUT_INVALID
   //    (the latter is validated AFTER the await, outside this catch).
-  let runtimeResult;
-  try {
-    runtimeResult = await runtime.synthesize({
-      claims: records.map((r) => ({
-        claimId: r.claimId,
-        groupId: r.groupId,
-        kind: r.kind,
-        statement: sanitizeProjectionText(r.statement),
-      })),
-    });
-  } catch {
-    return { ok: false, code: ERROR_RUNTIME_UNAVAILABLE };
+  //    An output that violates the contract is rejected and the same model is
+  //    asked once more (never another model); every rejection is returned for
+  //    disclosure, and a second violation fails closed.
+  const runtimeClaims = records.map((r) => ({
+    claimId: r.claimId,
+    groupId: r.groupId,
+    kind: r.kind,
+    statement: sanitizeProjectionText(r.statement),
+  }));
+  const rejectedProposals = [];
+  let proposal = null;
+  for (let attempt = 1; attempt <= SYNTHESIS_MAX_ATTEMPTS; attempt += 1) {
+    let runtimeResult;
+    try {
+      runtimeResult = await runtime.synthesize({ claims: runtimeClaims });
+    } catch {
+      return { ok: false, code: ERROR_RUNTIME_UNAVAILABLE, rejectedProposals };
+    }
+    // Runtime output is MODEL_GENERATED: structured validation, bounds, no identity
+    // authority. It must be a complete V2 partition with legal stances/anchors.
+    const checked = validateRuntimeProposalV2(runtimeResult, recordsByClaimId);
+    if (checked.ok) {
+      proposal = checked;
+      break;
+    }
+    rejectedProposals.push({ attempt, reason: checked.reason });
   }
-
-  // Runtime output is MODEL_GENERATED: structured validation, bounds, no identity
-  // authority. It must be a complete V2 partition with legal stances/anchors.
-  const proposal = validateRuntimeProposalV2(runtimeResult, recordsByClaimId);
-  if (!proposal.ok) {
-    return { ok: false, code: ERROR_RUNTIME_OUTPUT_INVALID };
+  if (proposal === null) {
+    return { ok: false, code: ERROR_RUNTIME_OUTPUT_INVALID, reason: rejectedProposals.at(-1).reason, rejectedProposals };
   }
 
   // 7. V2 artifact assembly — controller-owned identities and orthogonal state.
@@ -659,7 +672,7 @@ export async function produceCrossSourceSynthesis({
     legacyDerivedView: deriveLegacyView({ families, unresolved }),
   };
 
-  return { ok: true, artifact, coverageState: nextCoverageState };
+  return { ok: true, artifact, coverageState: nextCoverageState, rejectedProposals };
 }
 
 /**

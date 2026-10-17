@@ -355,7 +355,13 @@ node research-orchestration/bin/research-p1.mjs "AI 编程工具会取代程序�
 
 如果存在实质歧义，P1 会返回结构化 clarification，而不是自行猜测用户意图。
 
-一个问题组的全部回答目前在一次模型调用里分析，回答数上千的热门问题可能装不下。可以用 `--max-group-answers <n>` 让回答数超过 n 的问题不参与选择（以检索结果报告的回答数为准；没有报告回答数的问题照常参与）。被排除的问题会写进 report.md。这个参数默认不启用，是 P4 分析层改造前的临时手段（见 [`docs/default-off.md`](./docs/default-off.md)）。
+默认（`--analysis single`）每个问题组的全部回答在一次模型调用里分析，每条观点只引用一条代表性回答，主要观点最多 3 条；回答数上千的热门问题可能装不下。可以用 `--max-group-answers <n>` 让回答数超过 n 的问题不参与选择（以检索结果报告的回答数为准；没有报告回答数的问题照常参与）。被排除的问题会写进 report.md。
+
+`--analysis chunked` 把每组回答分批（每批最多 40 条、6 万字符）抽取观点，多批时再归并：观点数不设上限，每条观点引用所有表达它的回答，报告里会列出全部链接。模型调用数随回答数增长（约每 40 条一次，加上每组一次归并）。换分析模式等于换配置，同一个工作目录不会复用另一种模式的结果，需要 `--restart` 或换目录。
+
+这两个参数默认不启用，在评估后决定去留（见 [`docs/default-off.md`](./docs/default-off.md)）。
+
+模型的归类输出（以及 chunked 模式的分批抽取和归并输出）不符合约定时，例如漏掉了观点、引用了不存在的回答，这次输出会被整个丢弃，并用同一个模型重问一次；第二次仍不合格，运行失败并给出原因。重问记录在工作目录的 `events.jsonl` 里，评估脚本会显示次数。
 
 ### 评估一次运行
 
@@ -370,7 +376,16 @@ node research-orchestration/evaluation/score-run.mjs work/research-p1 --gold res
 node research-orchestration/evaluation/retrieval-ledger.mjs work/research-p1
 ```
 
-这三个命令都只读取已有的运行文件，不会重新运行。详见 [`research-orchestration/evaluation/README.md`](./research-orchestration/evaluation/README.md)。
+这三个命令都只读取已有的运行文件，不会重新运行。
+
+要在同样的输入上比较两种分析模式，可以重放一次已完成（或在分析之后失败）的运行：用它记录下的研究计划、检索结果和抓取的回答，把分析、综合和报告重新跑一遍，不联网检索、不重新抓取。重放目录是一次普通的运行，可以照常评估。
+
+```bash
+node research-orchestration/evaluation/replay-analysis.mjs work/research-p1 --out work/replay/chunked --analysis chunked
+node research-orchestration/evaluation/score-run.mjs work/replay/chunked
+```
+
+重放会检查自己选中的问题和分析的回答是否与原运行一致，结果写在 `replay-info.json`；不一致时退出码为 1。详见 [`research-orchestration/evaluation/README.md`](./research-orchestration/evaluation/README.md)。
 
 ### 选择模型
 

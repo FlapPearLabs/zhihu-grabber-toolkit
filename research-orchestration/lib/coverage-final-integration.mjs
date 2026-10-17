@@ -699,6 +699,7 @@ export function selectResearchCorpusWithCoverage({
  */
 export async function analyzeSelectedCorpus({
   coverageState, corpusArtifact, manifest, planHash: expectedPlanHash, runtime, workDir, journal,
+  analysisMode = 'single', analysisOptions = {},
 } = {}) {
   requireJournalAtStage(journal, STAGE_PER_GROUP_ANALYSIS);
 
@@ -710,12 +711,16 @@ export async function analyzeSelectedCorpus({
     canonicalGroupIdentityResolver: buildRealProvenanceResolver({ manifest, artifactsRoot: workDir }),
     authorRefResolver: buildRealAuthorRefResolver({ manifest, artifactsRoot: workDir }),
     coverageState,
+    analysisMode,
+    analysisOptions,
+    onRejectedOutput: (rejected) => appendEvent(workDir, { event: 'model_output_rejected', ...rejected }),
   });
   persistCoverageState(workDir, result.coverageState);
   recordStage(journal, STAGE_PER_GROUP_ANALYSIS);
   appendEvent(workDir, {
     event: 'per_group_analysis_complete',
     groups: result.artifact.groupRepresentations.length,
+    analysisMode,
   });
   return { ok: true, coverageState: result.coverageState, seamCArtifact: result.artifact, groupResults: result.groupResults };
 }
@@ -745,8 +750,12 @@ export async function produceSynthesisWithCoverage({
   }
 
   const result = await produceCrossSourceSynthesis({ seamCArtifact, runtime, coverageState, priorSynthesis });
+  for (const rejected of result.rejectedProposals ?? []) {
+    appendEvent(workDir, { event: 'model_output_rejected', stage: 'synthesis', attempt: rejected.attempt, reason: rejected.reason });
+  }
   if (!result.ok) {
-    failClosed(CFI_ERROR_SYNTHESIS_FAILED, `cross-source synthesis failed closed: ${String(result.code)}`, {
+    const why = result.reason ? ` (${result.reason})` : '';
+    failClosed(CFI_ERROR_SYNTHESIS_FAILED, `cross-source synthesis failed closed: ${String(result.code)}${why}`, {
       code: result.code,
       ...(result.preSynthesisGuard ? { preSynthesisGuard: result.preSynthesisGuard } : {}),
     });
