@@ -376,7 +376,16 @@ node research-orchestration/evaluation/score-run.mjs work/research-p1 --gold res
 node research-orchestration/evaluation/retrieval-ledger.mjs work/research-p1
 ```
 
-这三个命令都只读取已有的运行文件，不会重新运行。详见 [`research-orchestration/evaluation/README.md`](./research-orchestration/evaluation/README.md)。
+这三个命令都只读取已有的运行文件，不会重新运行。
+
+要在同样的输入上比较两种分析模式，可以重放一次已完成（或在分析之后失败）的运行：用它记录下的研究计划、检索结果和抓取的回答，把分析、综合和报告重新跑一遍，不联网检索、不重新抓取。重放目录是一次普通的运行，可以照常评估。
+
+```bash
+node research-orchestration/evaluation/replay-analysis.mjs work/research-p1 --out work/replay/chunked --analysis chunked
+node research-orchestration/evaluation/score-run.mjs work/replay/chunked
+```
+
+重放会检查自己选中的问题和分析的回答是否与原运行一致，结果写在 `replay-info.json`；不一致时退出码为 1。详见 [`research-orchestration/evaluation/README.md`](./research-orchestration/evaluation/README.md)。
 
 ### 选择模型
 

@@ -95,6 +95,29 @@ node research-orchestration/evaluation/retrieval-ledger.mjs <运行目录> [--go
   | `FOUND` | 被引用了 |
   | `UNKNOWN` | 证据不足，不猜测 |
 
+### 重放分析（比较分析模式）
+
+```bash
+node research-orchestration/evaluation/replay-analysis.mjs <基线运行目录> --out <新目录> [--analysis single|chunked] [--model <p/id>]
+```
+
+前面的脚本只读文件；这个脚本会真的重新运行分析，所以要用模型和本机的 embedding。它把基线运行记录下的输入喂给完整的 P1 流程：
+
+- 研究计划：用基线的 `research-plan.json`，不再调用规划；
+- 检索：每次「检索源 × 查询」都从基线的 `accumulated-pool.json` 回答，排名、回答数、完整性按原样；检索结果标题不重放（只有真实检索客户端返回的标题才被信任）；
+- 抓取：逐字节复制基线的 `answers.json`、`answers.md`、`.progress.json`，`handoff.json` 重新生成；
+- 选择：同样的 `--max-group-answers`；需要人工选择时，用基线当时选的问题回答。
+
+抓取之后的环节都真实运行：校验、embedding、语料、观点抽取、综合和报告。同一个基线分别用 `single` 和 `chunked` 重放一次，就是在相同输入上比较分析层。分析之后才失败的运行（例如综合输出不合格）也能重放。
+
+重放会自查，结果写在新目录的 `replay-info.json`：
+
+- 选中的问题必须与基线相同；
+- 分析的回答集合必须与基线相同（基线没走到语料阶段时记为无可比）；
+- 不能出现录制里没有的检索。
+
+任何一项不满足，退出码为 1，`fidelity.ok` 为 false。唯一的已知偏差也记录在里面：如果抓取到的问题标题为空，基线当时用检索结果标题做 embedding，重放会把同一个标题（去掉「 - 知乎」）写进复制的 `answers.json`，并在 `titleFilledFromSearch` 里列出。
+
 ### 证据放哪
 
 运行目录在 `work/` 下（已 gitignore），评估结果也写在运行目录里。基线数字写进 PR 或 Issue，不提交到仓库（见 `AGENTS.md` 第 3 节）。
