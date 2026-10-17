@@ -84,7 +84,10 @@ export function aggregateCrossGroupClaims(seamCArtifact) {
         // value consumed VERBATIM from the SEAM C input (single writer =
         // P1-T13; the model never creates it). null = author identity
         // unresolvable upstream → disclosed as null, never fabricated.
+        // A multi-source claim (chunked analysis) carries authorRefs aligned
+        // with sourceRefs, so each source keeps its own author.
         const authorRef = claim.authorRef ?? null;
+        const authorOf = (i) => (Array.isArray(claim.authorRefs) ? (claim.authorRefs[i] ?? null) : authorRef);
         records.push({
           claimId: claim.claimId,
           statement: claim.statement,
@@ -92,10 +95,10 @@ export function aggregateCrossGroupClaims(seamCArtifact) {
           // minority taxonomy (P1-R05 / effective S1).
           kind,
           groupId: group.groupId,
-          sourceRefs: claim.sourceRefs.map((ref) => ({
+          sourceRefs: claim.sourceRefs.map((ref, i) => ({
             sourceRef: ref,
             groupId: group.groupId,
-            authorRef,
+            authorRef: authorOf(i),
           })),
           expertEvidenceRichSupport: claim.sourceRefs.some((ref) => expertRefs.has(ref)),
         });

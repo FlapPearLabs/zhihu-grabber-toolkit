@@ -173,6 +173,10 @@ export function readSeamCInput(artifact) {
               || !Array.isArray(claim.sourceRefs) || claim.sourceRefs.length === 0
               || !claim.sourceRefs.every(isNonEmptyString)) {
               errors.push({ code: 'SEAM_C_CLAIM_LINEAGE_REQUIRED', path: `${p}.claims.${kind}[${j}]`, detail: 'claimId + statement + controller-owned sourceRefs required' });
+            } else if (claim.authorRefs !== undefined
+              && (!Array.isArray(claim.authorRefs) || claim.authorRefs.length !== claim.sourceRefs.length
+                || !claim.authorRefs.every((a) => a === null || isNonEmptyString(a)))) {
+              errors.push({ code: 'SEAM_C_CLAIM_LINEAGE_REQUIRED', path: `${p}.claims.${kind}[${j}].authorRefs`, detail: 'authorRefs, when present, must align one author (or null) with each sourceRef' });
             }
           });
         }

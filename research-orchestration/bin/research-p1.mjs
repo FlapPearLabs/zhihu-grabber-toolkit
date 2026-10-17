@@ -28,6 +28,8 @@
  *   --runtime <id>      legacy; only deepseek-api-tool-less (= the default model)
  *   --max-group-answers <n>  groups whose reported answer count exceeds n are not
  *                       selected (default off; see docs/default-off.md)
+ *   --analysis <mode>   single (default: one model call per group) or chunked
+ *                       (batches + merge; multi-source claims; see docs/default-off.md)
  *   -h, --help
  *
  * On success a human-readable report.md is rendered into the work directory
@@ -63,7 +65,9 @@ const HELP = `research-p1 — P1 cross-question deep research composition entryp
                       例：--model antigravity/claude-sonnet-4-6 --base-url http://127.0.0.1:8045/v1
   --runtime <id>      旧参数，只接受 deepseek-api-tool-less（等同默认模型）
   --max-group-answers <n>  回答数（检索结果报告的）超过 n 条的问题不参与选择；默认不限
-                      一个问题组的全部回答目前在一次模型调用里分析，太大的组装不下
+                      single 模式下一个问题组的全部回答在一次模型调用里分析，太大的组装不下
+  --analysis <mode>   single（默认）：每个问题组一次模型调用，每条观点引用一条回答；
+                      chunked：回答分批抽取再合并，观点引用所有表达它的回答，不限条数
   -h, --help          本帮助
 
 API key：RESEARCH_MODEL_API_KEY 环境变量，或 0600 权限的 .model_api_key 文件；
@@ -101,6 +105,12 @@ function parseArgs(argv) {
       const n = /^\d+$/.test(String(raw ?? '')) ? Number(raw) : NaN;
       if (!Number.isInteger(n) || n <= 0) { opts.usageError = '--max-group-answers requires a positive integer'; break; }
       opts.maxGroupAnswers = n;
+      continue;
+    }
+    if (a === '--analysis') {
+      const mode = argv[++i];
+      if (mode !== 'single' && mode !== 'chunked') { opts.usageError = '--analysis requires single or chunked'; break; }
+      opts.analysisMode = mode;
       continue;
     }
     if (a.startsWith('--')) { opts.usageError = `unknown option: ${a}`; break; }
@@ -156,6 +166,7 @@ async function main() {
     model: opts.model ?? null,
     modelBaseUrl: opts.baseUrl ?? null,
     maxGroupAnswers: opts.maxGroupAnswers ?? null,
+    analysisMode: opts.analysisMode ?? 'single',
     usageSink: usage,
     clarificationResponse,
   });

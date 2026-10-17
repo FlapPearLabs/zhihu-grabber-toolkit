@@ -30,6 +30,8 @@ export const SHEET_JSON_FILENAME = 'scoring-sheet.json';
 export const SHEET_MD_FILENAME = 'scoring-sheet.md';
 export const HUMAN_SCORES_FILENAME = 'human-scores.json';
 export const DEFAULT_SAMPLE_SIZE = 10;
+/** A multi-source claim is checked against its first few sources (in group order). */
+export const MAX_CHECK_SOURCES = 3;
 
 const CLAIM_KINDS = ['main', 'minority', 'contradictory'];
 const STANCES = new Set(['supports', 'opposes', 'conditional']);
@@ -265,7 +267,7 @@ function answerExcerpts(workDir, index) {
 }
 
 /** Build the human scoring sheet for a COMPLETE run and a validated gold set. */
-export function buildScoringSheet({ model, index, result, claimsArtifact, workDir, gold, goldHash, sampleSize = DEFAULT_SAMPLE_SIZE }) {
+export function buildScoringSheet({ model, index, result, claimsArtifact, workDir, gold, goldHash, sampleSize = DEFAULT_SAMPLE_SIZE, maxCheckSources = MAX_CHECK_SOURCES }) {
   const claims = groupClaims(claimsArtifact);
   const runId = result?.runId ?? model.runId;
   const excerptFor = answerExcerpts(workDir, index);
@@ -291,7 +293,8 @@ export function buildScoringSheet({ model, index, result, claimsArtifact, workDi
       claimId: c.claimId,
       kind: c.kind,
       statement: c.statement,
-      sources: c.refs.map(excerptFor).filter(Boolean),
+      sourceCount: c.refs.length,
+      sources: c.refs.slice(0, maxCheckSources).map(excerptFor).filter(Boolean),
       verdict: null,
       note: '',
     }));
@@ -304,7 +307,7 @@ export function buildScoringSheet({ model, index, result, claimsArtifact, workDi
     goldHash,
     instructions: {
       viewpoints: 'match 填 full（报告里有这个观点）、partial（只部分覆盖或说法偏差）、none（没有）；matchedClaimIds 可选填对应的系统观点 ID。suggestions 只是按字面相似度给的参考。',
-      claimChecks: 'verdict 填 supported（引用的回答确实支持这条观点）、partial（部分支持或有夸大）、unsupported（不支持或无关）。必要时点开链接看原文。',
+      claimChecks: `verdict 填 supported（引用的回答确实支持这条观点）、partial（部分支持或有夸大）、unsupported（不支持或无关）。必要时点开链接看原文。引用多于 ${maxCheckSources} 条的观点只列出前 ${maxCheckSources} 条，按列出的判断。`,
       rubric: '每项填 1–5 的整数，5 最好。',
     },
     viewpoints,
@@ -345,6 +348,7 @@ export function renderScoringSheetMarkdown(sheet) {
   for (const c of sheet.claimChecks) {
     lines.push(`### \`${c.claimId}\``, '', md(c.statement), '');
     for (const s of c.sources) lines.push(`- [原回答](${s.url})：${md(s.excerpt)}`);
+    if (c.sourceCount > c.sources.length) lines.push(`- （共引用 ${c.sourceCount} 条回答，这里列出 ${c.sources.length} 条）`);
     lines.push('');
   }
   lines.push('## 三、整体评分（1–5）', '');

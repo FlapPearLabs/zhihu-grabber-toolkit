@@ -37,7 +37,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveDeepSeekCredential } from '../../corpus-anthology/lib/deepseek-tool-less.mjs';
-import { CLAIMS_SYSTEM_PROMPT, SYNTHESIS_SYSTEM_PROMPT } from './research-prompts.mjs';
+import { CLAIMS_SYSTEM_PROMPT, MAP_CLAIMS_SYSTEM_PROMPT, MERGE_CLAIMS_SYSTEM_PROMPT, SYNTHESIS_SYSTEM_PROMPT } from './research-prompts.mjs';
 
 export const DEFAULT_MODEL_SPEC = 'deepseek/deepseek-v4-pro';
 export const MODEL_API_KEY_ENV = 'RESEARCH_MODEL_API_KEY';
@@ -54,6 +54,9 @@ export const MAX_RETRY_DELAY_MS = 120_000;
 export const QUICK_RETRY_MS = 1_000;
 export const CUSTOM_CONTEXT_WINDOW = 200_000;
 export const CUSTOM_MAX_TOKENS = 32_768;
+/** Output budgets for calls whose output grows with the input (chunked analysis, synthesis). */
+export const BATCH_MAX_TOKENS = 16_384;
+export const LARGE_OUTPUT_MAX_TOKENS = 32_768;
 
 const RUNTIME_SUFFIX = '-api-tool-less';
 const PROVIDER_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -413,9 +416,17 @@ export async function createModelRuntime({
     analyze({ projection }) {
       return complete({ system: CLAIMS_SYSTEM_PROMPT, user: String(projection ?? ''), label: 'analyze' }, parseJsonObject);
     },
+    /** Chunked T13 (P4): claims for one batch of a group's sources (T13 validates). */
+    analyzeBatch({ projection }) {
+      return complete({ system: MAP_CLAIMS_SYSTEM_PROMPT, user: String(projection ?? ''), maxTokens: BATCH_MAX_TOKENS, label: 'analyze_batch' }, parseJsonObject);
+    },
+    /** Chunked T13 (P4): proposed partition of a group's batch claims (T13 validates). */
+    mergeClaims({ claims }) {
+      return complete({ system: MERGE_CLAIMS_SYSTEM_PROMPT, user: JSON.stringify({ claims }), maxTokens: LARGE_OUTPUT_MAX_TOKENS, label: 'merge' }, parseJsonObject);
+    },
     /** T14 seam: proposition families over aggregated claims (T14 validates). */
     synthesize({ claims }) {
-      return complete({ system: SYNTHESIS_SYSTEM_PROMPT, user: JSON.stringify({ claims }), label: 'synthesize' }, parseJsonObject);
+      return complete({ system: SYNTHESIS_SYSTEM_PROMPT, user: JSON.stringify({ claims }), maxTokens: LARGE_OUTPUT_MAX_TOKENS, label: 'synthesize' }, parseJsonObject);
     },
   };
   return Object.freeze(runtime);

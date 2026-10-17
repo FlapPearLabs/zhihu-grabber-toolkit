@@ -282,6 +282,343 @@ function validateClaimItems(items, kind, idByToken, maxStatementChars) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Project EVERY selected source of one group BEFORE any semantic fetch: any
+ * loader / projection / isolation failure rejects the whole group with ZERO
+ * runtime transport calls (fail-closed ordering, Issue #92). sections[i] is
+ * the fenced projection of token String(i + 1).
+ */
+async function projectGroupSources({ group, groupId, sourceContentLoader }) {
+  const { tokenById, idByToken } = issueSourceTokens(group);
+  const canonicalIds = group.selectedSourceRefs.map((r) => r.canonicalSourceId);
+  // P1-R04: preload the reviewed parse5 whitelist renderer ONCE per group
+  // analysis (null in bare environments — markup content then fails closed).
+  const renderer = await loadAgentProjectionRenderer();
+  const sections = [];
+  const explicitEmptySourceIds = new Set();
+  const inlineCodeOnlySourceIds = new Set();
+  for (const ref of group.selectedSourceRefs) {
+    let content;
+    try {
+      content = sourceContentLoader(ref.verifiedArtifactRef, ref.canonicalSourceId);
+    } catch (error) {
+      throw new SeamCError(
+        SEAM_C_SOURCE_FAILURE,
+        `source ${ref.canonicalSourceId} read failed — group ${groupId} fails closed (no partial results)`,
+        { details: { groupId } },
+      );
+    }
+    const explicitEmpty = isVerifiedExplicitEmptyContent(content, ref);
+    const token = tokenById.get(ref.canonicalSourceId);
+    const built = explicitEmpty
+      ? { projection: fenceProjectedSource(token, '[METADATA_ONLY no_extractable_text upstream_explicit_empty_content]'), inlineCodeOnly: false }
+      : buildSourceProjection({ token, text: content, renderer });
+    const { projection } = built;
+    if (explicitEmpty) explicitEmptySourceIds.add(ref.canonicalSourceId);
+    if (built.inlineCodeOnly) inlineCodeOnlySourceIds.add(ref.canonicalSourceId);
+    assertProjectionIsolation(projection, { forbidden: canonicalIds });
+    sections.push(projection);
+  }
+  return { idByToken, canonicalIds, sections, explicitEmptySourceIds, inlineCodeOnlySourceIds };
+}
+
+function resolveGroupIdentity(canonicalGroupIdentityResolver, groupId) {
+  const canonicalGroupIdentity = canonicalGroupIdentityResolver(groupId);
+  if (!isPlainObject(canonicalGroupIdentity)) {
+    throw new SeamCError(SEAM_C_REPRESENTATION_CONFLICT, `canonicalGroupIdentity unresolvable for group ${groupId} — fail closed (no identity invention)`);
+  }
+  return canonicalGroupIdentity;
+}
+
+function assertCitable(canonicalSourceId, { explicitEmptySourceIds, inlineCodeOnlySourceIds }, what) {
+  if (explicitEmptySourceIds.has(canonicalSourceId)) {
+    throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `explicit empty canonical source cannot ${what} — fail closed`);
+  }
+  if (inlineCodeOnlySourceIds.has(canonicalSourceId)) {
+    throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `inline-code-only source cannot ${what} — fail closed`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// chunked extraction (P4): batch map → controller-checked merge
+// ---------------------------------------------------------------------------
+
+/** Analysis modes. 'single' = one call per group (default); 'chunked' = batches + merge. */
+export const ANALYSIS_MODES = Object.freeze(['single', 'chunked']);
+export const DEFAULT_MAX_BATCH_SOURCES = 40;
+export const DEFAULT_MAX_BATCH_CHARS = 60_000;
+/** Upper bound on the claims one batch may propose (a runaway output fails closed). */
+export const MAX_BATCH_CLAIMS = 24;
+
+/**
+ * Split projected sources into consecutive batches: at most maxSources
+ * sources and maxChars characters each; a source longer than maxChars gets a
+ * batch of its own (it is never cut). Returns arrays of section indexes.
+ */
+export function partitionIntoBatches(sections, { maxSources = DEFAULT_MAX_BATCH_SOURCES, maxChars = DEFAULT_MAX_BATCH_CHARS } = {}) {
+  const batches = [];
+  let current = [];
+  let chars = 0;
+  sections.forEach((section, index) => {
+    const size = String(section).length;
+    if (current.length > 0 && (current.length >= maxSources || chars + size > maxChars)) {
+      batches.push(current);
+      current = [];
+      chars = 0;
+    }
+    current.push(index);
+    chars += size;
+  });
+  if (current.length > 0) batches.push(current);
+  return batches;
+}
+
+/** Validated analysis options with defaults applied (throws on anything else). */
+export function normalizeAnalysisOptions(options = {}) {
+  if (!isPlainObject(options)) throw new TypeError('analysis options must be an object');
+  for (const key of Object.keys(options)) {
+    if (key !== 'maxBatchSources' && key !== 'maxBatchChars') throw new TypeError(`unknown analysis option '${key}'`);
+  }
+  const maxBatchSources = options.maxBatchSources ?? DEFAULT_MAX_BATCH_SOURCES;
+  const maxBatchChars = options.maxBatchChars ?? DEFAULT_MAX_BATCH_CHARS;
+  for (const [name, value] of [['maxBatchSources', maxBatchSources], ['maxBatchChars', maxBatchChars]]) {
+    if (!Number.isInteger(value) || value < 1) throw new TypeError(`analysis option ${name} must be a positive integer`);
+  }
+  return { maxBatchSources, maxBatchChars };
+}
+
+function rejectUnexpectedKeys(object, allowed, where) {
+  for (const key of Object.keys(object)) {
+    if (!allowed.includes(key)) {
+      throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `${where} has unexpected key '${key}'`);
+    }
+  }
+}
+
+function validStatement(statement, maxStatementChars, where) {
+  if (!isNonEmptyString(statement) || statement.trim() === '' || statement.length > maxStatementChars) {
+    throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `${where} statement violates the short-token data contract`);
+  }
+  return statement.trim();
+}
+
+function validKind(kind, where) {
+  if (!CLAIM_KINDS.includes(kind)) {
+    throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `${where} kind must be one of ${CLAIM_KINDS.join('/')}`);
+  }
+  return kind;
+}
+
+/** A batch token reference → canonicalSourceId; only tokens of THIS batch are citable. */
+function batchSource(tokenRef, batchTokens, idByToken, where) {
+  if (!isNonEmptyString(tokenRef) || !idByToken.has(tokenRef)) {
+    throw new SeamCError(SEAM_C_MODEL_OWNED_IDENTITY, `${where} references unknown token '${String(tokenRef).slice(0, 24)}'`);
+  }
+  if (!batchTokens.has(tokenRef)) {
+    throw new SeamCError(SEAM_C_MODEL_OWNED_IDENTITY, `${where} references token '${tokenRef}' from another batch`);
+  }
+  return idByToken.get(tokenRef);
+}
+
+function validateBatchOutput(output, { batchNo, batchTokens, idByToken, citable, maxStatementChars }) {
+  const where = `batch ${batchNo} output`;
+  if (!isPlainObject(output)) {
+    throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `${where} must be a JSON object (untrusted data contract)`);
+  }
+  assertNoIdentityKeys(output);
+  rejectUnexpectedKeys(output, ['claims', 'expertEvidenceRichTokens'], where);
+  const items = output.claims ?? [];
+  if (!Array.isArray(items)) throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `${where} claims must be an array`);
+  if (items.length > MAX_BATCH_CLAIMS) {
+    throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `${where} has too many claims (${items.length} > ${MAX_BATCH_CLAIMS})`);
+  }
+  const claims = items.map((item, j) => {
+    const at = `${where} claim ${j + 1}`;
+    if (!isPlainObject(item)) throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `${at} must be an object`);
+    rejectUnexpectedKeys(item, ['kind', 'statement', 'tokenRefs'], at);
+    const kind = validKind(item.kind, at);
+    const statement = validStatement(item.statement, maxStatementChars, at);
+    if (!Array.isArray(item.tokenRefs) || item.tokenRefs.length === 0) {
+      throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `${at} tokenRefs must be a non-empty array`);
+    }
+    // Repeated tokens are harmless: sources are de-duplicated at assembly.
+    const sourceIds = item.tokenRefs.map((tokenRef) => {
+      const id = batchSource(tokenRef, batchTokens, idByToken, at);
+      assertCitable(id, citable, 'support a claim');
+      return id;
+    });
+    return { id: `b${batchNo}-${j + 1}`, kind, statement, sourceIds };
+  });
+  const expertTokens = output.expertEvidenceRichTokens ?? [];
+  if (!Array.isArray(expertTokens)) {
+    throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `${where} expertEvidenceRichTokens must be an array`);
+  }
+  const expertIds = expertTokens.map((tokenRef) => {
+    const id = batchSource(tokenRef, batchTokens, idByToken, `${where} expert token`);
+    assertCitable(id, citable, 'be evidence-rich');
+    return id;
+  });
+  return { claims, expertIds };
+}
+
+/** The model proposes which batch claims state the same view; the controller checks the partition. */
+function validateMergeOutput(output, batchClaims, maxStatementChars) {
+  const where = 'merge output';
+  if (!isPlainObject(output)) {
+    throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `${where} must be a JSON object (untrusted data contract)`);
+  }
+  assertNoIdentityKeys(output);
+  rejectUnexpectedKeys(output, ['merged'], where);
+  if (!Array.isArray(output.merged)) throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `${where} merged must be an array`);
+  const byId = new Map(batchClaims.map((c) => [c.id, c]));
+  const seen = new Set();
+  const merged = output.merged.map((item, j) => {
+    const at = `${where} item ${j + 1}`;
+    if (!isPlainObject(item)) throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `${at} must be an object`);
+    rejectUnexpectedKeys(item, ['kind', 'statement', 'memberIds'], at);
+    const kind = validKind(item.kind, at);
+    const statement = validStatement(item.statement, maxStatementChars, at);
+    if (!Array.isArray(item.memberIds) || item.memberIds.length === 0) {
+      throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `${at} memberIds must be a non-empty array`);
+    }
+    const members = item.memberIds.map((id) => {
+      if (!byId.has(id)) {
+        throw new SeamCError(SEAM_C_MODEL_OWNED_IDENTITY, `${at} references unknown claim id '${String(id).slice(0, 24)}'`);
+      }
+      if (seen.has(id)) {
+        throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `${where} is not a partition: claim ${id} appears twice`);
+      }
+      seen.add(id);
+      return byId.get(id);
+    });
+    return { kind, statement, sourceIds: members.flatMap((m) => m.sourceIds) };
+  });
+  const missing = batchClaims.filter((c) => !seen.has(c.id)).map((c) => c.id);
+  if (missing.length > 0) {
+    throw new SeamCError(SEAM_C_MODEL_OUTPUT_INVALID, `${where} is not a partition: ${missing.length} claim(s) missing`);
+  }
+  return merged;
+}
+
+/**
+ * Chunked extraction for ONE group: every source is projected first (same
+ * fail-closed ordering as the single call), then analysed in batches; a claim
+ * may cite every answer that states it and there is no 1–3 cap. With more
+ * than one batch the model proposes a merge, which must be a complete
+ * partition; the controller unions the sources itself. Any failure throws and
+ * no partial group result escapes.
+ */
+export async function extractPerGroupClaimsChunked({
+  corpus,
+  groupId,
+  runtime,
+  sourceContentLoader,
+  canonicalGroupIdentityResolver,
+  authorRefResolver = null,
+  maxStatementChars = DEFAULT_MAX_STATEMENT_CHARS,
+  analysisOptions = {},
+}) {
+  validateSeamBCorpusArtifact(corpus);
+  if (typeof canonicalGroupIdentityResolver !== 'function') {
+    throw new SeamCError(SEAM_C_REPRESENTATION_CONFLICT, 'canonicalGroupIdentityResolver (provenance authority input) required — none invented');
+  }
+  const group = corpus.corpus.groups.find((g) => g.groupId === groupId);
+  if (!group) {
+    throw new SeamCError(SEAM_C_REPRESENTATION_CONFLICT, `group ${String(groupId)} not in corpus`);
+  }
+  if (!isPlainObject(runtime) || typeof runtime.analyzeBatch !== 'function' || typeof runtime.mergeClaims !== 'function') {
+    throw new SeamCError(SEAM_C_RUNTIME_UNAVAILABLE, 'chunked analysis runtime unavailable — fail closed (NO_SILENT_RUNTIME_FALLBACK)');
+  }
+  if (typeof sourceContentLoader !== 'function') {
+    throw new SeamCError(SEAM_C_RUNTIME_UNAVAILABLE, 'sourceContentLoader (controller-owned IO) unavailable — fail closed');
+  }
+  const { maxBatchSources, maxBatchChars } = normalizeAnalysisOptions(analysisOptions);
+  const projected = await projectGroupSources({ group, groupId, sourceContentLoader });
+  const { idByToken, canonicalIds, sections } = projected;
+  const batches = partitionIntoBatches(sections, { maxSources: maxBatchSources, maxChars: maxBatchChars });
+
+  const batchClaims = [];
+  const expertIds = new Set();
+  for (const [b, indexes] of batches.entries()) {
+    let output;
+    try {
+      output = await runtime.analyzeBatch({ projection: indexes.map((i) => sections[i]).join('\n') });
+    } catch (error) {
+      throw new SeamCError(
+        SEAM_C_RUNTIME_UNAVAILABLE,
+        `semantic runtime transport failed — group ${groupId} fails closed (NO_SILENT_RUNTIME_FALLBACK)`,
+        { details: { groupId } },
+      );
+    }
+    const result = validateBatchOutput(output, {
+      batchNo: b + 1,
+      batchTokens: new Set(indexes.map((i) => String(i + 1))),
+      idByToken,
+      citable: projected,
+      maxStatementChars,
+    });
+    batchClaims.push(...result.claims);
+    for (const id of result.expertIds) expertIds.add(id);
+  }
+
+  let merged = batchClaims;
+  if (batches.length > 1 && batchClaims.length > 0) {
+    let output;
+    try {
+      output = await runtime.mergeClaims({ claims: batchClaims.map(({ id, kind, statement }) => ({ id, kind, statement })) });
+    } catch (error) {
+      throw new SeamCError(
+        SEAM_C_RUNTIME_UNAVAILABLE,
+        `semantic runtime transport failed during merge — group ${groupId} fails closed (NO_SILENT_RUNTIME_FALLBACK)`,
+        { details: { groupId } },
+      );
+    }
+    merged = validateMergeOutput(output, batchClaims, maxStatementChars);
+  }
+
+  // Controller-owned identity: claimIds in kind order, sources in group order,
+  // one controller-resolved author per source.
+  const order = new Map(canonicalIds.map((id, i) => [id, i]));
+  const claims = {};
+  let claimSeq = 0;
+  for (const kind of CLAIM_KINDS) {
+    claims[kind] = merged.filter((c) => c.kind === kind).map((c) => {
+      claimSeq += 1;
+      const sourceRefs = [...new Set(c.sourceIds)].sort((x, y) => order.get(x) - order.get(y));
+      const authorRefs = sourceRefs.map((id) => resolveAuthorRef(authorRefResolver, id));
+      return {
+        claimId: `c-${groupId}-${String(claimSeq).padStart(3, '0')}`,
+        statement: c.statement,
+        sourceRefs,
+        authorRef: authorRefs[0],
+        authorRefs,
+      };
+    });
+  }
+
+  const canonicalGroupIdentity = resolveGroupIdentity(canonicalGroupIdentityResolver, groupId);
+  const mappedSourceIds = [...canonicalIds];
+  const analyzedSourceIds = [...canonicalIds];
+  const representation = buildGroupRepresentation({
+    corpusGroup: group,
+    canonicalGroupIdentity,
+    mappedSourceIds,
+    analyzedSourceIds,
+    claims,
+    expertEvidenceRichRefs: [...expertIds],
+    completenessStatus: 'verified',
+    discussionVolume: { answerCount: group.selectedSourceRefs.length },
+  });
+  return {
+    groupId,
+    representation,
+    mappedSourceIds,
+    analyzedSourceIds,
+    claims,
+    expertEvidenceRichRefs: representation.expertEvidenceRichRefs,
+  };
+}
+
+/**
  * Extract claims for ONE group. Every source is projected and analyzed; ANY
  * failure (loader, transport, validation) throws — the group fails closed and
  * NO partial group result escapes.
@@ -310,41 +647,9 @@ export async function extractPerGroupClaims({
     throw new SeamCError(SEAM_C_RUNTIME_UNAVAILABLE, 'sourceContentLoader (controller-owned IO) unavailable — fail closed');
   }
 
-  const { tokenById, idByToken } = issueSourceTokens(group);
-  const canonicalIds = group.selectedSourceRefs.map((r) => r.canonicalSourceId);
-
-  // P1-R04: preload the reviewed parse5 whitelist renderer ONCE per group
-  // analysis (null in bare environments — markup content then fails closed).
-  const renderer = await loadAgentProjectionRenderer();
-
-  // Full-coverage projection of EVERY selected source BEFORE any semantic
-  // fetch: any projection build / isolation failure below rejects the whole
-  // group with ZERO runtime transport calls (fail-closed ordering, Issue #92).
-  const sections = [];
-  const explicitEmptySourceIds = new Set();
-  const inlineCodeOnlySourceIds = new Set();
-  for (const ref of group.selectedSourceRefs) {
-    let content;
-    try {
-      content = sourceContentLoader(ref.verifiedArtifactRef, ref.canonicalSourceId);
-    } catch (error) {
-      throw new SeamCError(
-        SEAM_C_SOURCE_FAILURE,
-        `source ${ref.canonicalSourceId} read failed — group ${groupId} fails closed (no partial results)`,
-        { details: { groupId } },
-      );
-    }
-    const explicitEmpty = isVerifiedExplicitEmptyContent(content, ref);
-    const token = tokenById.get(ref.canonicalSourceId);
-    const built = explicitEmpty
-      ? { projection: fenceProjectedSource(token, '[METADATA_ONLY no_extractable_text upstream_explicit_empty_content]'), inlineCodeOnly: false }
-      : buildSourceProjection({ token, text: content, renderer });
-    const { projection } = built;
-    if (explicitEmpty) explicitEmptySourceIds.add(ref.canonicalSourceId);
-    if (built.inlineCodeOnly) inlineCodeOnlySourceIds.add(ref.canonicalSourceId);
-    assertProjectionIsolation(projection, { forbidden: canonicalIds });
-    sections.push(projection);
-  }
+  const { idByToken, canonicalIds, sections, explicitEmptySourceIds, inlineCodeOnlySourceIds } = await projectGroupSources({
+    group, groupId, sourceContentLoader,
+  });
   const groupProjection = sections.join('\n');
 
   let output;
@@ -405,10 +710,7 @@ export async function extractPerGroupClaims({
     return canonicalSourceId;
   });
 
-  const canonicalGroupIdentity = canonicalGroupIdentityResolver(groupId);
-  if (!isPlainObject(canonicalGroupIdentity)) {
-    throw new SeamCError(SEAM_C_REPRESENTATION_CONFLICT, `canonicalGroupIdentity unresolvable for group ${groupId} — fail closed (no identity invention)`);
-  }
+  const canonicalGroupIdentity = resolveGroupIdentity(canonicalGroupIdentityResolver, groupId);
 
   // Full-coverage or nothing: every selected source entered the projection and
   // the group reached a validated result, so mapped == analyzed == selected.
@@ -455,14 +757,20 @@ export async function runPerGroupAnalysis({
   authorRefResolver = null,
   coverageState = null,
   maxStatementChars = DEFAULT_MAX_STATEMENT_CHARS,
+  analysisMode = 'single',
+  analysisOptions = {},
 }) {
   // Validate the corpus artifact BEFORE any dereference (reviewer round 1):
   // malformed input (e.g. corpus=null) must raise the module's coded
   // SEAM_C_REPRESENTATION_CONFLICT, never a bare TypeError.
   validateSeamBCorpusArtifact(corpus);
+  if (!ANALYSIS_MODES.includes(analysisMode)) {
+    throw new SeamCError(SEAM_C_REPRESENTATION_CONFLICT, `unknown analysis mode '${String(analysisMode)}'`);
+  }
+  const extract = analysisMode === 'chunked' ? extractPerGroupClaimsChunked : extractPerGroupClaims;
   const groupResults = [];
   for (const group of corpus.corpus.groups) {
-    groupResults.push(await extractPerGroupClaims({
+    groupResults.push(await extract({
       corpus,
       groupId: group.groupId,
       runtime,
@@ -470,6 +778,7 @@ export async function runPerGroupAnalysis({
       canonicalGroupIdentityResolver,
       authorRefResolver,
       maxStatementChars,
+      ...(analysisMode === 'chunked' ? { analysisOptions } : {}),
     }));
   }
   const artifact = assembleSeamCArtifact({

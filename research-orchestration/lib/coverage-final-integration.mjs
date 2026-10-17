@@ -699,6 +699,7 @@ export function selectResearchCorpusWithCoverage({
  */
 export async function analyzeSelectedCorpus({
   coverageState, corpusArtifact, manifest, planHash: expectedPlanHash, runtime, workDir, journal,
+  analysisMode = 'single', analysisOptions = {},
 } = {}) {
   requireJournalAtStage(journal, STAGE_PER_GROUP_ANALYSIS);
 
@@ -710,12 +711,15 @@ export async function analyzeSelectedCorpus({
     canonicalGroupIdentityResolver: buildRealProvenanceResolver({ manifest, artifactsRoot: workDir }),
     authorRefResolver: buildRealAuthorRefResolver({ manifest, artifactsRoot: workDir }),
     coverageState,
+    analysisMode,
+    analysisOptions,
   });
   persistCoverageState(workDir, result.coverageState);
   recordStage(journal, STAGE_PER_GROUP_ANALYSIS);
   appendEvent(workDir, {
     event: 'per_group_analysis_complete',
     groups: result.artifact.groupRepresentations.length,
+    analysisMode,
   });
   return { ok: true, coverageState: result.coverageState, seamCArtifact: result.artifact, groupResults: result.groupResults };
 }
