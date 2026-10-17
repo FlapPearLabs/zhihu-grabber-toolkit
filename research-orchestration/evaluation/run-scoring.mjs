@@ -173,6 +173,8 @@ export function computeMetrics({ model, index, result, claimsArtifact }, { event
     },
     cost: costOf(result?.usage),
     time: composeTime(events),
+    // Contract-violating model outputs that were discarded and re-asked.
+    rejectedModelOutputs: (events ?? []).filter((e) => e?.event === 'model_output_rejected').length,
   };
 }
 

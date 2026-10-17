@@ -361,6 +361,8 @@ node research-orchestration/bin/research-p1.mjs "AI 编程工具会取代程序�
 
 这两个参数默认不启用，在评估后决定去留（见 [`docs/default-off.md`](./docs/default-off.md)）。
 
+模型的归类输出（以及 chunked 模式的分批抽取和归并输出）不符合约定时，例如漏掉了观点、引用了不存在的回答，这次输出会被整个丢弃，并用同一个模型重问一次；第二次仍不合格，运行失败并给出原因。重问记录在工作目录的 `events.jsonl` 里，评估脚本会显示次数。
+
 ### 评估一次运行
 
 ```bash

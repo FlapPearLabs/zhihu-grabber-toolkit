@@ -20,7 +20,10 @@
  *   CH6  the model runtime sends the map / merge prompts under their own labels;
  *   CH7  the CLI validates --analysis;
  *   CH8  every source is projected before the first batch call, and sources
- *        that carry no extractable text can never back a claim or expert ref.
+ *        that carry no extractable text can never back a claim or expert ref;
+ *   CH9  a contract-violating batch / merge / synthesis output is discarded and
+ *        the same model is asked once more; the rejection is disclosed in the
+ *        event log, and a second violation fails closed with its reason.
  */
 
 import { test } from 'node:test';
@@ -175,7 +178,7 @@ test('CH3: aggregation attributes each source to its own author', () => {
 
 test('CH4: untrusted batch and merge output is validated and fails closed', async () => {
   const cases = [
-    ['token from another batch', { batchHook: (o, { batchNo }) => (batchNo === 2 ? { ...o, claims: [{ kind: 'main', statement: 'x', tokenRefs: ['1'] }] } : o) }, /unknown token|another batch/],
+    ['token from another batch', { batchHook: (o, { tokens }) => (tokens.includes('1') ? o : { ...o, claims: [{ kind: 'main', statement: 'x', tokenRefs: ['1'] }] }) }, /another batch/],
     ['invented token', { batchHook: (o) => ({ ...o, claims: [{ kind: 'main', statement: 'x', tokenRefs: ['999'] }] }) }, /unknown token/],
     ['empty tokenRefs', { batchHook: (o) => ({ ...o, claims: [{ kind: 'main', statement: 'x', tokenRefs: [] }] }) }, /tokenRefs/],
     ['bad kind', { batchHook: (o) => ({ ...o, claims: [{ kind: 'majority', statement: 'x', tokenRefs: o.claims[0].tokenRefs }] }) }, /kind/],
@@ -188,11 +191,13 @@ test('CH4: untrusted batch and merge output is validated and fails closed', asyn
     ['merge empty members', { mergeHook: (o) => ({ merged: [...o.merged, { kind: 'main', statement: 'x', memberIds: [] }] }) }, /memberIds/],
   ];
   for (const [name, hooks, expected] of cases) {
-    const { runtime } = chunkedRuntime(hooks);
+    const { runtime, calls } = chunkedRuntime(hooks);
     const { out } = await composeChunked(runtime);
     assert.equal(out.ok, false, name);
     assert.equal(out.code, 'p1_compose_aborted', name);
     assert.match(String(out.details), expected, name);
+    if (name === 'invented token') assert.equal(calls.analyzeBatch, 2, 'the first batch is asked twice, then the group fails');
+    if (name === 'merge drops a claim') assert.equal(calls.merge, 2);
   }
 });
 
@@ -301,4 +306,41 @@ test('CH8: projection precedes every batch call; text-less sources cannot back c
   assert.deepEqual(ok.claims.main.map((c) => c.sourceRefs), [['23456789-a-101'], ['23456789-a-103']], 'a repeated token cites its source once');
   assert.deepEqual(ok.claims.main.map((c) => c.authorRefs), [[null], [null]], 'no resolver → authors disclosed as null');
   assert.deepEqual(ok.analyzedSourceIds, ['23456789-a-101', '23456789-a-102', '23456789-a-103']);
+});
+
+test('CH9: one re-ask after a contract-violating output; disclosed; a second violation fails closed', async () => {
+  const events = (workDir) => fs.readFileSync(path.join(workDir, 'events.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l))
+    .filter((e) => e.event === 'model_output_rejected');
+  // Batch 1 and the merge each violate the contract once, the synthesis once.
+  let merges = 0;
+  let syntheses = 0;
+  const { runtime, calls } = chunkedRuntime({
+    batchHook: (o, { batchNo }) => (batchNo === 1 ? { ...o, claims: [{ ...o.claims[0], kind: 'majority' }] } : o),
+    mergeHook: (o) => { merges += 1; return merges === 1 ? { merged: o.merged.slice(1) } : o; },
+  });
+  const synthesize = runtime.synthesize;
+  runtime.synthesize = async (args) => { syntheses += 1; return syntheses === 1 ? { families: [], unresolvedClaimIds: [] } : synthesize(args); };
+  const { out, workDir } = await composeChunked(runtime);
+  assert.equal(out.ok, true, JSON.stringify(out));
+  assert.equal(calls.analyzeBatch, 4);
+  assert.equal(calls.merge, 2);
+  assert.equal(syntheses, 2);
+  const rejected = events(workDir);
+  assert.deepEqual(rejected.map((e) => [e.stage, e.attempt]), [['analyze_batch', 1], ['merge', 1], ['synthesis', 1]]);
+  assert.equal(rejected[0].groupId, '100');
+  assert.match(rejected[0].reason, /kind/);
+  assert.match(rejected[1].reason, /partition/);
+  assert.equal(rejected[2].reason, '5 claim(s) missing from the partition');
+  const fileEvents = fs.readFileSync(path.join(workDir, 'events.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  assert.equal(computeMetrics(loadReportModel(workDir), { events: fileEvents }).rejectedModelOutputs, 3, 'metrics count the re-asks');
+
+  // A synthesis that violates the contract twice fails closed and says why.
+  const twice = chunkedRuntime();
+  let n = 0;
+  twice.runtime.synthesize = async ({ claims }) => { n += 1; return { families: [], unresolvedClaimIds: claims.slice(1).map((c) => c.claimId) }; };
+  const failed = await composeChunked(twice.runtime);
+  assert.equal(failed.out.ok, false);
+  assert.equal(n, 2);
+  assert.match(String(failed.out.details), /T14_RUNTIME_OUTPUT_INVALID \(1 claim\(s\) missing from the partition\)/);
+  assert.deepEqual(events(failed.workDir).map((e) => [e.stage, e.attempt]), [['synthesis', 1], ['synthesis', 2]]);
 });

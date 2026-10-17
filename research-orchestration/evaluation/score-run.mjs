@@ -76,6 +76,7 @@ function printHuman({ metrics, sheetPath, human }) {
     metrics.cost.available
       ? `模型调用：${metrics.cost.calls} 次（失败 ${metrics.cost.failedCalls}），输入 ${metrics.cost.inputTokens} / 输出 ${metrics.cost.outputTokens} tokens${metrics.cost.tokensComplete ? '' : '（部分调用缺少用量）'}`
       : '模型调用：未记录用量',
+    ...(metrics.rejectedModelOutputs ? [`不合格的模型输出：${metrics.rejectedModelOutputs} 次（已丢弃并重问）`] : []),
     `运行耗时：${Math.round(metrics.time.composeMs / 1000)} 秒（${metrics.time.occurrences} 次执行）`,
   ];
   if (sheetPath) lines.push(`评分表：${path.join(EVAL_DIR, path.basename(sheetPath))}（填写后用 --sheet 计分）`);

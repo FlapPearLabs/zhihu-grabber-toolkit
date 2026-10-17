@@ -348,6 +348,36 @@ export const DEFAULT_MAX_BATCH_SOURCES = 40;
 export const DEFAULT_MAX_BATCH_CHARS = 60_000;
 /** Upper bound on the claims one batch may propose (a runaway output fails closed). */
 export const MAX_BATCH_CLAIMS = 24;
+/** Calls allowed per batch / merge: one re-ask after a contract-violating output. */
+export const MODEL_OUTPUT_MAX_ATTEMPTS = 2;
+
+/**
+ * Call the model and validate its output. An output that violates the data
+ * contract is discarded whole and the SAME model is asked once more (never
+ * another model); the rejection is reported through onRejectedOutput. A
+ * second violation, or a transport failure, fails closed.
+ */
+async function askValidated(call, validate, { stage, groupId, onRejectedOutput }) {
+  for (let attempt = 1; ; attempt += 1) {
+    let output;
+    try {
+      output = await call();
+    } catch (error) {
+      throw new SeamCError(
+        SEAM_C_RUNTIME_UNAVAILABLE,
+        `semantic runtime transport failed during ${stage} — group ${groupId} fails closed (NO_SILENT_RUNTIME_FALLBACK)`,
+        { details: { groupId } },
+      );
+    }
+    try {
+      return validate(output);
+    } catch (error) {
+      // Only a coded output-contract violation is re-asked; a controller bug (any other error) is not.
+      if (!(error instanceof SeamCError) || attempt >= MODEL_OUTPUT_MAX_ATTEMPTS) throw error;
+      if (typeof onRejectedOutput === 'function') onRejectedOutput({ stage, groupId, attempt, reason: error.message });
+    }
+  }
+}
 
 /**
  * Split projected sources into consecutive batches: at most maxSources
@@ -516,6 +546,7 @@ export async function extractPerGroupClaimsChunked({
   authorRefResolver = null,
   maxStatementChars = DEFAULT_MAX_STATEMENT_CHARS,
   analysisOptions = {},
+  onRejectedOutput = null,
 }) {
   validateSeamBCorpusArtifact(corpus);
   if (typeof canonicalGroupIdentityResolver !== 'function') {
@@ -539,40 +570,30 @@ export async function extractPerGroupClaimsChunked({
   const batchClaims = [];
   const expertIds = new Set();
   for (const [b, indexes] of batches.entries()) {
-    let output;
-    try {
-      output = await runtime.analyzeBatch({ projection: indexes.map((i) => sections[i]).join('\n') });
-    } catch (error) {
-      throw new SeamCError(
-        SEAM_C_RUNTIME_UNAVAILABLE,
-        `semantic runtime transport failed — group ${groupId} fails closed (NO_SILENT_RUNTIME_FALLBACK)`,
-        { details: { groupId } },
-      );
-    }
-    const result = validateBatchOutput(output, {
-      batchNo: b + 1,
-      batchTokens: new Set(indexes.map((i) => String(i + 1))),
-      idByToken,
-      citable: projected,
-      maxStatementChars,
-    });
+    const projection = indexes.map((i) => sections[i]).join('\n');
+    const result = await askValidated(
+      () => runtime.analyzeBatch({ projection }),
+      (output) => validateBatchOutput(output, {
+        batchNo: b + 1,
+        batchTokens: new Set(indexes.map((i) => String(i + 1))),
+        idByToken,
+        citable: projected,
+        maxStatementChars,
+      }),
+      { stage: 'analyze_batch', groupId, onRejectedOutput },
+    );
     batchClaims.push(...result.claims);
     for (const id of result.expertIds) expertIds.add(id);
   }
 
   let merged = batchClaims;
   if (batches.length > 1 && batchClaims.length > 0) {
-    let output;
-    try {
-      output = await runtime.mergeClaims({ claims: batchClaims.map(({ id, kind, statement }) => ({ id, kind, statement })) });
-    } catch (error) {
-      throw new SeamCError(
-        SEAM_C_RUNTIME_UNAVAILABLE,
-        `semantic runtime transport failed during merge — group ${groupId} fails closed (NO_SILENT_RUNTIME_FALLBACK)`,
-        { details: { groupId } },
-      );
-    }
-    merged = validateMergeOutput(output, batchClaims, maxStatementChars);
+    const proposed = batchClaims.map(({ id, kind, statement }) => ({ id, kind, statement }));
+    merged = await askValidated(
+      () => runtime.mergeClaims({ claims: proposed }),
+      (output) => validateMergeOutput(output, batchClaims, maxStatementChars),
+      { stage: 'merge', groupId, onRejectedOutput },
+    );
   }
 
   // Controller-owned identity: claimIds in kind order, sources in group order,
@@ -759,6 +780,7 @@ export async function runPerGroupAnalysis({
   maxStatementChars = DEFAULT_MAX_STATEMENT_CHARS,
   analysisMode = 'single',
   analysisOptions = {},
+  onRejectedOutput = null,
 }) {
   // Validate the corpus artifact BEFORE any dereference (reviewer round 1):
   // malformed input (e.g. corpus=null) must raise the module's coded
@@ -778,7 +800,7 @@ export async function runPerGroupAnalysis({
       canonicalGroupIdentityResolver,
       authorRefResolver,
       maxStatementChars,
-      ...(analysisMode === 'chunked' ? { analysisOptions } : {}),
+      ...(analysisMode === 'chunked' ? { analysisOptions, onRejectedOutput } : {}),
     }));
   }
   const artifact = assembleSeamCArtifact({
