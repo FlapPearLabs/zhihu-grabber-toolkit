@@ -43,7 +43,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveDeepSeekCredential } from '../../corpus-anthology/lib/deepseek-tool-less.mjs';
+import { resolveDeepSeekCredential, DEEPSEEK_CREDENTIAL_FILE } from '../../corpus-anthology/lib/deepseek-tool-less.mjs';
 import { CLAIMS_SYSTEM_PROMPT, SYNTHESIS_SYSTEM_PROMPT } from './research-prompts.mjs';
 
 export const DEFAULT_MODEL_SPEC = 'deepseek/deepseek-v4-pro';
@@ -109,27 +109,49 @@ export function isDefaultRuntimeIdentity(runtime) {
 }
 
 /**
- * Runtime identities with a NAMED capability-isolation qualification.
+ * Runtime identities with a NAMED capability-isolation qualification, bound to
+ * the EXACT reviewed configuration: runtime, model and endpoint.
  *
- * Capability isolation is gated PER RUNTIME and never inferred across runtimes:
- * `CAPABILITY_ISOLATION_AVAILABLE[runtime] = YES` must be an explicit, named
- * decision in the approved scope, and `NO`/`UNKNOWN` fails closed as
- * `capability_isolation_unavailable` (docs/specs/v0.3-product-scope.md §5 /
- * R2-4 / §T5; docs/product-behavior-contract.md §3.17).
+ * Capability isolation is gated PER RUNTIME and never inferred across runtimes
+ * or across sibling configurations: `CAPABILITY_ISOLATION_AVAILABLE[runtime] =
+ * YES` must be an explicit, named decision in the approved scope, and
+ * `NO`/`UNKNOWN` fails closed as `capability_isolation_unavailable`
+ * (docs/specs/v0.3-product-scope.md §5 / R2-4 / §T5;
+ * docs/product-behavior-contract.md §3.17).
  *
- * This list is TRANSCRIBED from
- * docs/specs/research-orchestration-scope.md §1, which names exactly two
- * runtimes as YES. It is deliberately a list of named decisions, not a rule:
- * qualifying another runtime requires a qualification record in the Spec, not
- * an entry here. `lmstudio-local-tool-less` is listed because the Spec
- * qualifies it, even though this adapter does not construct it (the corpus map
- * path does); a same-provider spelling such as `lmstudio-api-tool-less` is a
- * DIFFERENT runtime and stays unqualified.
+ * A runtime label alone is NOT the qualified identity: a different model served
+ * by the same provider, or the same model pointed at an operator-supplied
+ * endpoint, is a DIFFERENT, unqualified configuration (`UNKNOWN != PASS`). Each
+ * record below is transcribed from a named qualification decision plus the
+ * exact reviewed configuration:
+ *
+ *   deepseek-api-tool-less / deepseek-v4-pro / provider endpoint
+ *     — docs/specs/research-orchestration-scope.md §1,
+ *       corpus-anthology/lib/deepseek-tool-less.mjs (DEEPSEEK_RUNTIME);
+ *   lmstudio-local-tool-less / qwen/qwen3-1.7b / http://127.0.0.1:1234/v1
+ *     — the T5-LM / T6 reviewed runtime in
+ *       corpus-anthology/lib/lmstudio-tool-less.mjs (REVIEWED_RUNTIME); this
+ *       adapter does not construct it (the corpus map path does), and a
+ *       same-provider spelling such as `lmstudio-api-tool-less` is a DIFFERENT
+ *       runtime and stays unqualified.
+ *
+ * `endpoint: null` means the provider's OWN endpoint (no operator base URL).
+ * Qualifying another runtime or configuration requires a qualification record,
+ * not an entry here; this list must not be widened by inference.
  */
-export const QUALIFIED_TOOL_LESS_RUNTIMES = Object.freeze([
-  'deepseek-api-tool-less',
-  'lmstudio-local-tool-less',
+export const QUALIFIED_RUNTIMES = Object.freeze([
+  Object.freeze({ runtimeId: 'deepseek-api-tool-less', model: 'deepseek-v4-pro', endpoint: null }),
+  Object.freeze({
+    runtimeId: 'lmstudio-local-tool-less',
+    model: 'qwen/qwen3-1.7b',
+    endpoint: 'http://127.0.0.1:1234/v1',
+  }),
 ]);
+
+/** The qualified runtime ids (a label-only view; the gate uses the records above). */
+export const QUALIFIED_TOOL_LESS_RUNTIMES = Object.freeze(
+  QUALIFIED_RUNTIMES.map((qualified) => qualified.runtimeId),
+);
 
 /** The Spec clause that governs which runtimes may be enabled. */
 export const RUNTIME_QUALIFICATION_SPEC = 'docs/specs/research-orchestration-scope.md';
@@ -176,19 +198,38 @@ export function credentialBindingFor(profile) {
 
 /**
  * Refuse a runtime identity that has no named capability-isolation
- * qualification. Fail closed: no fallback runtime, and no inference from a
- * qualified provider to its siblings.
+ * qualification for its EXACT configuration (runtime + model + endpoint).
+ * Fail closed: no fallback runtime, no inference from a qualified provider to
+ * its siblings, no inference from a qualified model to another endpoint.
  */
 export function assertRuntimeQualified(runtime) {
   if (!isResearchRuntimeIdentity(runtime)) {
     throw new ModelRuntimeError('runtime_identity_invalid', 'runtime identity is malformed');
   }
-  if (QUALIFIED_TOOL_LESS_RUNTIMES.includes(runtime.runtimeId)) return runtime;
+  const rawEndpoint = runtime.customEndpoint;
+  const declared = rawEndpoint !== null && rawEndpoint !== undefined && rawEndpoint !== '';
+  let endpoint = null;
+  let endpointUsable = true;
+  if (declared) {
+    try {
+      endpoint = validateBaseUrl(rawEndpoint);
+    } catch {
+      // An endpoint that cannot be validated is UNKNOWN, not qualified. The
+      // value is never echoed: a base URL can carry a private host and path.
+      endpointUsable = false;
+    }
+  }
+  const qualified = endpointUsable && QUALIFIED_RUNTIMES.some((record) => record.runtimeId === runtime.runtimeId
+    && record.model === runtime.model
+    && (record.endpoint === null ? endpoint === null : endpoint === record.endpoint));
+  if (qualified) return runtime;
   throw new ModelRuntimeError(
     'runtime_not_qualified',
-    `runtime ${runtime.runtimeId} has no named CAPABILITY_ISOLATION_AVAILABLE = YES; only runtimes `
-    + `qualified per runtime in ${RUNTIME_QUALIFICATION_SPEC} §1 may be enabled `
-    + `(qualified: ${QUALIFIED_TOOL_LESS_RUNTIMES.join(', ')})`,
+    `runtime ${runtime.runtimeId} (model ${runtime.model}) has no named `
+    + 'CAPABILITY_ISOLATION_AVAILABLE = YES for this exact runtime/model/endpoint; qualification is '
+    + `recorded per exact runtime identity in ${RUNTIME_QUALIFICATION_SPEC} §1 and is never inferred `
+    + `across a sibling model or an operator-supplied endpoint `
+    + `(qualified: ${QUALIFIED_RUNTIMES.map((record) => `${record.runtimeId}:${record.model}`).join(', ')})`,
   );
 }
 
@@ -424,6 +465,75 @@ function retryDelayMs(attempt, outcome) {
 const realSleep = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
 
 /**
+ * Read a credential file for the profile audit WITHOUT the strict policy of
+ * `readKeyFile`: an unreadable/unsafe file simply contributes no comparable
+ * value here (it also cannot be resolved as the run credential). Never throws,
+ * so the audit itself cannot fail open on an unrelated filesystem state.
+ */
+function readCredentialFileQuietly(dir, file) {
+  try {
+    const full = path.join(dir, file);
+    const st = fs.lstatSync(full);
+    if (st.isSymbolicLink() || !st.isFile()) return null;
+    const value = fs.readFileSync(full, 'utf8').trim();
+    return value === '' ? null : value;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Every credential value THIS layer can observe for the current process.
+ *
+ * The audit is deliberately independent of the selected provider: any credential
+ * that exists in this process is a value that must never be persisted, so a
+ * profile that equals or contains it is refused even when that credential would
+ * not authenticate the selected provider.
+ */
+function observableCredentials({ env = process.env, cwd = process.cwd(), repoRoot = REPO_ROOT } = {}) {
+  const values = [env?.[MODEL_API_KEY_ENV], env?.DEEPSEEK_API_KEY];
+  for (const dir of new Set([cwd, repoRoot])) {
+    values.push(readCredentialFileQuietly(dir, MODEL_API_KEY_FILE));
+    values.push(readCredentialFileQuietly(dir, DEEPSEEK_CREDENTIAL_FILE));
+  }
+  return values
+    .filter((value) => typeof value === 'string' && value.trim() !== '')
+    .map((value) => value.trim());
+}
+
+/**
+ * A declared credential profile is a LABEL naming a credential configuration.
+ * It must never be — or contain — a credential itself, whatever its length: a
+ * digest is not used instead, because a digest of a low-entropy secret is a
+ * secret-equivalent that still must not be persisted.
+ *
+ * Fail closed when this layer cannot PROVE the profile is a label: if no
+ * credential was resolved here and the provider's own endpoint is used, pi-ai
+ * resolves the key inside the SDK, so the value cannot be compared.
+ */
+function assertProfileIsNotCredential({ profile, key, custom, env, cwd }) {
+  if (profile === null) return;
+  const secrets = observableCredentials({ env, cwd });
+  if (typeof key === 'string' && key.trim() !== '') secrets.push(key.trim());
+  for (const secret of secrets) {
+    if (profile === secret || profile.includes(secret)) {
+      throw new ModelRuntimeError(
+        'credential_profile_invalid',
+        'the credential profile must name a configuration, never be or contain a credential',
+      );
+    }
+  }
+  const resolved = typeof key === 'string' && key.trim() !== '';
+  if (!custom && !resolved) {
+    throw new ModelRuntimeError(
+      'credential_profile_invalid',
+      'a declared credential profile cannot be verified while the provider key is resolved inside the SDK; '
+      + `set ${MODEL_API_KEY_ENV} explicitly so the label can be compared with the credential, or omit the profile`,
+    );
+  }
+}
+
+/**
  * Build the research runtime.
  *
  * @param {object} [options]
@@ -458,11 +568,9 @@ export async function createModelRuntime({
   // never a key. Resolving it early fails closed on an unusable label.
   const profile = resolveCredentialProfile({ profile: credentialProfile, env });
   const key = apiKey !== undefined ? apiKey : resolveModelApiKey({ provider, custom, env, cwd }).key;
-  if (profile && typeof key === 'string' && key.length >= 8 && (profile === key || profile.includes(key))) {
-    // Refuse a "profile" that is really the credential: the identity is durable
-    // state and must never carry a secret.
-    throw new ModelRuntimeError('credential_profile_invalid', 'the credential profile must not contain the credential itself');
-  }
+  // The identity is durable state: a profile that is or contains a credential
+  // must be refused BEFORE any provider, transport or run artifact exists.
+  assertProfileIsNotCredential({ profile, key, custom, env, cwd });
   const { models, model } = await loadModel({ provider, modelId, baseUrl: endpoint, injectedModels });
   const tuning = requestTuning({ provider, custom });
   const identity = runtimeIdentityFor({ provider, modelId });

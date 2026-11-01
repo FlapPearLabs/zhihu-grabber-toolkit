@@ -1011,7 +1011,15 @@ export async function composeP1Research({
     // seam, where the caller owns the object and its qualification.
     let requested;
     try {
-      requested = runtimeIdentityFor(parseModelSpec(model ?? DEFAULT_MODEL_SPEC));
+      // The qualified identity is the FULL configuration: runtime, model and
+      // the ACTUAL endpoint. A custom base URL is part of what is being enabled,
+      // so an unqualified endpoint must be refused here, not discovered later.
+      requested = {
+        ...runtimeIdentityFor(parseModelSpec(model ?? DEFAULT_MODEL_SPEC)),
+        customEndpoint: modelBaseUrl === null || modelBaseUrl === undefined || modelBaseUrl === ''
+          ? null
+          : modelBaseUrl,
+      };
     } catch (error) {
       return fail(CFC_RUNTIME_NOT_SUPPORTED, error?.message ?? String(error));
     }
