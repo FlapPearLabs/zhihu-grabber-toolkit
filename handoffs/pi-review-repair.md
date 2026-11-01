@@ -4,12 +4,12 @@
 - 仓库：p2-ari-evaluation，工作树 `.worktrees/pi-review-repair`，分支 `task/pi-review-repair`。
 - 候选起点 BASE：`62e4f170cbeeec5fe694984294bb27ea9fb8c8c0`（PR #145 候选）
 - PREVIOUS_REVIEWED_HEAD：`b1410de`（两路独立审查在干净 worktree 给出 PASS 的那个代码 HEAD）
-- **代码 HEAD：以 `git log --oneline` 中本文件之前最后一条非 `docs:` 提交为准**——写这份头部时
-  是 `59e0915`。用这个写法是为了不再出现「头部落后于实际 HEAD」：任何后续代码提交都会自动成为
-  该条，而头部不会说谎。
-- 本轮全部提交（`62e4f17..HEAD`，从旧到新）：
-  `99bc6e6` docs → `758a5bd` test → `b1410de` fix → `1792036` docs → `4120b7f` test →
-  `400fe93` fix → `9b187b5` docs → `3faf79b` fix → `d7d4c9e` docs → `59e0915` fix → 本文件 docs。
+- **代码 HEAD：以分支 tip 起第一条非 `docs:` 提交为准**（本文件是最后一条时它就是写头部时的
+  `59e0915`；若之后又落了代码提交，则以那条为准）。这样头部不会因为追加提交而落后或说谎。
+- `62e4f17..HEAD` 的完整链路（从旧到新，共 13 条）：
+  `49e13de` test → `52ec5f1` fix → `99bc6e6` docs → `758a5bd` test → `b1410de` fix →
+  `1792036` docs → `4120b7f` test → `400fe93` fix → `9b187b5` docs → `3faf79b` fix →
+  `d7d4c9e` docs → `59e0915` fix → 本文件 docs。
 - 依赖：`research-orchestration` 与 `zhihu-answer-grabber` 的依赖已从
   `/private/tmp/zhihu-provider-npm-cache` 离线安装（`npm ci --offline --ignore-scripts --no-audit --no-fund`）。
 - 未 push、未开 PR、未 merge、未改历史、未访问真实凭据或真实模型；所有测试使用合成值与 fake transport。
