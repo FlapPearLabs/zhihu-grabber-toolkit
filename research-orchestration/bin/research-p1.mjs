@@ -13,8 +13,10 @@
  *
  * This is NOT the generic/v0.3 single-question CLI, which keeps its own
  * behavior unchanged. One model serves the whole chain; it is chosen with
- * --model (default deepseek/deepseek-v4-pro, see lib/model-runtime.mjs). A
- * model that cannot be used fails closed — there is no fallback model.
+ * --model (default deepseek/deepseek-v4-pro, see lib/model-runtime.mjs).
+ * Capability isolation is gated per runtime, so a model whose runtime has no
+ * named qualification in docs/specs/research-orchestration-scope.md fails
+ * closed with capability_isolation_unavailable — there is no fallback model.
  *
  * Usage:
  *   node bin/research-p1.mjs <topic> [options]
@@ -23,10 +25,17 @@
  *   --work <dir>        run work directory (default ./work/research-p1)
  *   --json              single machine-readable JSON object on stdout
  *   --restart           discard any prior checkpoint and start fresh
- *   --model <p/id>      model as <provider>/<model-id> (default deepseek/deepseek-v4-pro)
- *   --base-url <url>    OpenAI-compatible endpoint for --model (any provider label)
+ *   --model <p/id>      model as <provider>/<model-id> (default deepseek/deepseek-v4-pro);
+ *                       the runtime must be qualified per runtime in the scope Spec
+ *   --base-url <url>    OpenAI-compatible endpoint for --model (any provider label;
+ *                       does not qualify the runtime)
  *   --runtime <id>      legacy; only deepseek-api-tool-less (= the default model)
  *   -h, --help
+ *
+ * Environment:
+ *   RESEARCH_MODEL_CREDENTIAL_PROFILE  non-secret label of the credential
+ *                       configuration; it is bound into run identity so two
+ *                       configurations never share a checkpoint (never the key)
  *
  * On success a human-readable report.md is rendered into the work directory
  * (derived view; see lib/report.mjs).
@@ -56,15 +65,19 @@ const HELP = `research-p1 — P1 cross-question deep research composition entryp
   --restart           丢弃既有 checkpoint 重新开始
   --clarification <file>  从绑定同一 occurrence 的 JSON 用户回应恢复；不能与 --restart 同用
   --model <p/id>      模型，格式 <provider>/<model-id>（默认 deepseek/deepseek-v4-pro）
-                      例：moonshotai-cn/kimi-k2.6、openrouter/anthropic/claude-sonnet-4.5
+                      只允许 Spec 里已具名资格（CAPABILITY_ISOLATION_AVAILABLE=YES）的 runtime，
+                      其余一律拒绝（capability_isolation_unavailable），不换模型
   --base-url <url>    OpenAI 兼容接口地址；此时 provider 可任取名字
-                      例：--model antigravity/claude-sonnet-4-6 --base-url http://127.0.0.1:8045/v1
+                      注意：换端点不会让未具名资格的 runtime 变成可用
   --runtime <id>      旧参数，只接受 deepseek-api-tool-less（等同默认模型）
   -h, --help          本帮助
 
 API key：RESEARCH_MODEL_API_KEY 环境变量，或 0600 权限的 .model_api_key 文件；
 DeepSeek 仍可用 DEEPSEEK_API_KEY / .deepseek_api_key；其他内置 provider 也认各自的
 标准环境变量（如 OPENAI_API_KEY、MOONSHOT_API_KEY）。模型不可用时直接失败，不换模型。
+
+凭据配置：RESEARCH_MODEL_CREDENTIAL_PROFILE 填一个非敏感的配置名（如 work、personal），
+它会进入运行身份，使两套凭据不会共用同一个断点；不要把 key 填在这里。
 
 成功后会在工作目录写出可读报告 report.md。
 
