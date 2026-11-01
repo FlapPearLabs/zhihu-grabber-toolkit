@@ -26,9 +26,11 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { composeP1Research } from '../lib/p1-runtime-composer.mjs';
 import { stateFile } from '../lib/state.mjs';
@@ -158,4 +160,33 @@ test('Q6: the refusal happens before ANY run artifact is created', async () => {
   assert.equal(out.ok, false);
   assert.equal(calls(), 0);
   assert.deepEqual(fs.readdirSync(workDir), [], 'no state, events or result may be written before the gate passes');
+});
+
+/**
+ * The PUBLIC entrypoint (bin/research-p1.mjs) must reach the same gate and must
+ * expose no way to inject a runtime object. Only `--model` / `--base-url` are
+ * forwarded, and the composer gates them. The injected-`runtime` seam is the
+ * deterministic test / evidence seam (P2A T14 harness, fake runtimes), where the
+ * CALLER owns the object and its qualification — it is not reachable from the CLI.
+ */
+test('Q7: the public CLI has no runtime-injection path and is gated', () => {
+  const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const cli = path.join(repoRoot, 'research-orchestration', 'bin', 'research-p1.mjs');
+
+  const workDir = tmpWork('p1-qualification-cli-');
+  const r = spawnSync(process.execPath, [
+    cli, 'synthetic topic', '--work', workDir, '--model', 'unknownvendor/some-model', '--json',
+  ], { encoding: 'utf8', timeout: 120_000 });
+
+  assert.notEqual(r.status, 0, `the CLI must fail closed, got status ${r.status}: ${r.stderr}`);
+  const payload = JSON.parse(r.stdout);
+  assert.equal(payload.ok, false);
+  assert.equal(payload.error?.type, QUALIFICATION_CODE, `expected the capability-isolation refusal, got ${r.stdout}`);
+  assert.deepEqual(fs.readdirSync(workDir), [], 'the CLI must not write artifacts for a refused runtime');
+
+  // Structural guard: the CLI forwards only model selection, never a runtime
+  // object, so it cannot skip the gate that lives at the composition boundary.
+  const source = fs.readFileSync(cli, 'utf8');
+  assert.doesNotMatch(source, /composeP1Research\(\{[\s\S]*?\bruntime\s*:/,
+    'the public CLI must not pass an injected runtime to the composer');
 });
