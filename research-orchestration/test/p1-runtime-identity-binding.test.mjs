@@ -496,3 +496,24 @@ test('I12: a key the SDK would resolve itself cannot be compared, so a profile f
     );
   });
 });
+
+test('I13: an explicit empty profile is refused by both entry points, an empty env value means unset', async () => {
+  const fetchImpl = fakeModelFetch(() => ({ text: '{"main":[]}' }));
+  const base = { spec: 'antigravity/claude-sonnet-4-6', baseUrl: 'http://127.0.0.1:8045/v1', apiKey: TEST_API_KEY, fetchImpl };
+
+  // One rule for a DECLARED profile: empty or blank is a declaration error, not
+  // a silent "unset". Otherwise the factory and runtimeRunKey would disagree
+  // about the same input (one runs unprofiled, the other refuses).
+  await assert.rejects(() => modelRuntime.createModelRuntime({ ...base, credentialProfile: '' }),
+    /credential_profile_invalid/, 'an explicitly empty profile must be refused by the factory');
+  await assert.rejects(() => modelRuntime.createModelRuntime({ ...base, credentialProfile: '   ' }),
+    /credential_profile_invalid/, 'a blank profile must be refused by the factory');
+  assert.throws(() => runtimeRunKey({ ...mockRuntime(NON_DEFAULT), credentialProfile: '' }),
+    /credential_profile_invalid/, 'the identity may not fabricate a label for an empty profile');
+
+  // An empty environment variable is how a shell spells "unset": it declares nothing.
+  const fromEnv = await modelRuntime.createModelRuntime({ ...base, env: { [modelRuntime.MODEL_CREDENTIAL_PROFILE_ENV]: '' } });
+  assert.equal(fromEnv.credentialProfile ?? null, null, 'an empty env value must not declare a profile');
+  assert.equal(runtimeRunKey({ ...mockRuntime(NON_DEFAULT), credentialProfile: null }), runtimeRunKey(NON_DEFAULT),
+    'no declared profile keeps the historical identity');
+});
