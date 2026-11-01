@@ -406,3 +406,67 @@ test('I10: the profile is a non-secret label — malformed or key-shaped labels 
     );
   }
 });
+
+/** Run `fn` with exactly the given env, restoring the real env afterwards. */
+async function withEnv(vars, fn) {
+  const saved = new Map();
+  for (const [name, value] of Object.entries(vars)) {
+    saved.set(name, Object.hasOwn(process.env, name) ? process.env[name] : undefined);
+    if (value === null) delete process.env[name];
+    else process.env[name] = value;
+  }
+  try {
+    return await fn();
+  } finally {
+    for (const [name, value] of saved) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
+}
+
+// Synthetic values only. They are never real credentials, and no assertion below
+// prints or compares them into the repository — only booleans are recorded.
+const SHORT_SYNTHETIC_KEY = 'fakeky'; // deliberately shorter than 8 characters
+const SDK_ONLY_SYNTHETIC_KEY = 'synthetic-sdk-only-key';
+
+test('I11: a SHORT credential used as the profile is refused, and nothing is persisted', async () => {
+  for (const profile of [SHORT_SYNTHETIC_KEY, `x-${SHORT_SYNTHETIC_KEY}`]) {
+    const workDir = tmpWork('p1-identity-profile-short-key-');
+    const fetchImpl = fakeModelFetch(() => ({ status: 400, body: { error: { message: 'fake: synthetic' } } }));
+
+    const out = await withEnv({
+      [modelRuntime.MODEL_API_KEY_ENV]: SHORT_SYNTHETIC_KEY,
+      [modelRuntime.MODEL_CREDENTIAL_PROFILE_ENV]: profile,
+      DEEPSEEK_API_KEY: null,
+      OPENAI_API_KEY: null,
+    }, () => composeP1Research({ topic: TOPIC, workDir, fetchImpl }));
+
+    assert.equal(out.ok, false, 'a credential must never become the durable run identity');
+    assert.equal(out.code, 'runtime_not_supported');
+    assert.equal(fetchImpl.calls.length, 0, 'the refusal must precede any model call');
+    assert.equal(fs.existsSync(path.join(workDir, 'orchestration-state.json')), false, 'no checkpoint may be written');
+    assert.equal(fs.existsSync(eventsFile(workDir)), false, 'no event may be written');
+    assert.equal(fs.readdirSync(workDir).length, 0, 'no run artifact may be created');
+    const details = String(out.details ?? '');
+    assert.equal(details.includes(SHORT_SYNTHETIC_KEY), false, 'the refusal must not echo the credential');
+  }
+});
+
+test('I12: a key the SDK would resolve itself cannot be compared, so a profile fails closed', async () => {
+  const fetchImpl = fakeModelFetch(() => ({ text: '{}' }));
+  await withEnv({
+    [modelRuntime.MODEL_API_KEY_ENV]: null,
+    [modelRuntime.MODEL_CREDENTIAL_PROFILE_ENV]: null,
+    DEEPSEEK_API_KEY: null,
+    OPENAI_API_KEY: SDK_ONLY_SYNTHETIC_KEY,
+  }, async () => {
+    // No explicit key at this layer and no custom endpoint: pi-ai would resolve
+    // OPENAI_API_KEY internally, so the profile cannot be proven distinct from it.
+    await assert.rejects(
+      () => modelRuntime.createModelRuntime({ spec: 'openai/gpt-5.1-mini', credentialProfile: 'account-a', fetchImpl }),
+      /credential_profile_invalid/,
+      'an unprovable credential must fail closed rather than be persisted',
+    );
+  });
+});

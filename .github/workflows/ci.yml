@@ -132,6 +132,19 @@ jobs:
       - name: Model access layer (pi-ai, any provider)
         run: node --test research-orchestration/test/model-runtime.test.mjs
 
+      # P1 provider-safety repair: these five suites are REGISTERED as
+      # fast-deterministic in suite-classification.json AND explicitly executed
+      # here. Registration alone only satisfies the guard step — this job runs
+      # exactly the suites listed in it, so an unlisted suite is silently
+      # NOT_RUN in ordinary PR CI (REGISTERED != EXECUTED).
+      - name: P1 runtime identity, qualification, endpoint and legacy resume acceptance
+        run: |
+          node --test research-orchestration/test/p1-runtime-identity-binding.test.mjs
+          node --test research-orchestration/test/p1-runtime-qualification.test.mjs
+          node --test research-orchestration/test/p1-runtime-endpoint-production.test.mjs
+          node --test research-orchestration/test/p1-legacy-checkpoint-resume.test.mjs
+          node --test research-orchestration/test/p1-report-safety.test.mjs
+
       # P1-R01 (#89): research suite classification / omission guard.
       # 该步骤在每次 PR / master push 的三个平台上执行。它校验提交的
       # suite-classification.json 覆盖了 research-orchestration/test/ 下发现的每一个

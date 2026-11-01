@@ -106,3 +106,56 @@ test('Q3: the refusal names the runtime and the governing Spec', async () => {
   assert.ok(details.includes(SPEC), `the refusal must point at ${SPEC}`);
   assert.doesNotMatch(details, /127\.0\.0\.1|8045/, 'the refusal must not echo the configured endpoint');
 });
+
+test('Q4: the same provider label with a DIFFERENT model is not qualified', async () => {
+  const workDir = tmpWork('p1-qualification-sibling-model-');
+  const { fetchImpl, calls } = unreachableTransport();
+
+  const out = await composeP1Research({
+    topic: TOPIC,
+    workDir,
+    model: 'deepseek/unqualified-model',
+    fetchImpl,
+  });
+
+  assert.equal(out.ok, false, 'a sibling model must not inherit the runtime qualification');
+  assert.equal(out.code, QUALIFICATION_CODE, `expected the capability-isolation refusal, got ${JSON.stringify(out)}`);
+  assert.equal(calls(), 0, 'an unqualified model must never reach the transport');
+  assert.equal(fs.existsSync(stateFile(workDir)), false, 'refusal must precede the checkpoint');
+});
+
+test('Q5: a qualified model pointed at an operator endpoint is not qualified', async () => {
+  const workDir = tmpWork('p1-qualification-model-endpoint-');
+  const { fetchImpl, calls } = unreachableTransport();
+
+  const out = await composeP1Research({
+    topic: TOPIC,
+    workDir,
+    model: 'deepseek/deepseek-v4-pro',
+    modelBaseUrl: 'https://example.invalid/v1',
+    fetchImpl,
+  });
+
+  assert.equal(out.ok, false, 'the qualification is bound to the actual endpoint, not only the label');
+  assert.equal(out.code, QUALIFICATION_CODE, `expected the capability-isolation refusal, got ${JSON.stringify(out)}`);
+  assert.equal(calls(), 0, 'an unqualified endpoint must never reach the transport');
+  assert.equal(fs.existsSync(stateFile(workDir)), false, 'refusal must precede the checkpoint');
+  assert.doesNotMatch(String(out.details ?? ''), /example\.invalid/, 'the refusal must not echo the configured endpoint');
+});
+
+test('Q6: the refusal happens before ANY run artifact is created', async () => {
+  const workDir = tmpWork('p1-qualification-no-artifacts-');
+  const { fetchImpl, calls } = unreachableTransport();
+
+  const out = await composeP1Research({
+    topic: TOPIC,
+    workDir,
+    model: 'deepseek/deepseek-v4-pro',
+    modelBaseUrl: 'https://example.invalid/v1',
+    fetchImpl,
+  });
+
+  assert.equal(out.ok, false);
+  assert.equal(calls(), 0);
+  assert.deepEqual(fs.readdirSync(workDir), [], 'no state, events or result may be written before the gate passes');
+});
