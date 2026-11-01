@@ -135,6 +135,46 @@ export const QUALIFIED_TOOL_LESS_RUNTIMES = Object.freeze([
 export const RUNTIME_QUALIFICATION_SPEC = 'docs/specs/research-orchestration-scope.md';
 
 /**
+ * The environment variable that DECLARES the credential configuration a run
+ * uses. It carries a non-secret profile label (e.g. `work`), never a key.
+ */
+export const MODEL_CREDENTIAL_PROFILE_ENV = 'RESEARCH_MODEL_CREDENTIAL_PROFILE';
+
+/** A profile label is a short, lower-case, non-secret identifier. */
+const CREDENTIAL_PROFILE_ID = /^[a-z0-9][a-z0-9._-]{0,63}$/;
+
+/**
+ * Resolve the declared credential profile label, or `null` when none is
+ * declared.
+ *
+ * A profile NAMES a credential configuration (an account, a key file, a
+ * subscription). It is the only credential fact that may enter run identity:
+ * the key itself must never be persisted, logged or hashed into an identity —
+ * a digest of a low-entropy secret is still a secret-equivalent, and the
+ * multi-account contract is an open product decision, not something this layer
+ * may invent.
+ */
+export function resolveCredentialProfile({ profile = undefined, env = process.env } = {}) {
+  const raw = profile !== undefined && profile !== null ? profile : env?.[MODEL_CREDENTIAL_PROFILE_ENV];
+  if (raw === undefined || raw === null) return null;
+  const label = String(raw).trim();
+  if (label === '') return null;
+  if (!CREDENTIAL_PROFILE_ID.test(label)) {
+    throw new ModelRuntimeError(
+      'credential_profile_invalid',
+      'credential profile must be a non-secret label like "work" (lower-case letters, digits, dot, dash, underscore); '
+      + 'it names a credential CONFIGURATION, never the key',
+    );
+  }
+  return label;
+}
+
+/** The run-identity binding for a declared credential profile. */
+export function credentialBindingFor(profile) {
+  return `credential-profile-${profile}`;
+}
+
+/**
  * Refuse a runtime identity that has no named capability-isolation
  * qualification. Fail closed: no fallback runtime, and no inference from a
  * qualified provider to its siblings.
@@ -172,19 +212,36 @@ export function endpointBindingFor(endpoint) {
  *   default model, provider endpoint  → `<runtimeId>`          (historical)
  *   any other model                   → `<runtimeId>:<model>`
  *   + operator-supplied base URL      → `<…>:endpoint-<digest>`
+ *   + declared credential profile     → `<…>:credential-profile-<label>`
  *
  * The default key is byte-identical to the pre-existing formula, so historical
  * default checkpoints still resume. An endpoint that cannot be validated
  * throws (`base_url_invalid`) instead of falling back to the wider key.
+ *
+ * The credential profile is the ONLY credential fact bound here: it is a
+ * declared, non-secret configuration name. Credentials themselves never enter
+ * the identity (not the key, not a hash of it).
  */
 export function runtimeRunKey(runtime) {
   if (!isResearchRuntimeIdentity(runtime)) {
     throw new ModelRuntimeError('runtime_identity_invalid', 'runtime identity is malformed');
   }
   const base = isDefaultRuntimeIdentity(runtime) ? runtime.runtimeId : `${runtime.runtimeId}:${runtime.model}`;
+  let key = base;
   const customEndpoint = runtime.customEndpoint;
-  if (customEndpoint === null || customEndpoint === undefined || customEndpoint === '') return base;
-  return `${base}:${endpointBindingFor(customEndpoint)}`;
+  if (customEndpoint !== null && customEndpoint !== undefined && customEndpoint !== '') {
+    key = `${key}:${endpointBindingFor(customEndpoint)}`;
+  }
+  const declared = runtime.credentialProfile;
+  if (declared !== null && declared !== undefined) {
+    // Fail closed on an unusable label rather than letting it into state: the
+    // binding must stay a label, never anything key-shaped. An empty or
+    // whitespace-only declaration means "no profile", so the identity stays
+    // byte-identical to the historical one.
+    const label = resolveCredentialProfile({ profile: declared, env: {} });
+    if (label !== null) key = `${key}:${credentialBindingFor(label)}`;
+  }
+  return key;
 }
 
 /**
@@ -385,6 +442,7 @@ export async function createModelRuntime({
   apiKey = undefined,
   env = process.env,
   cwd = process.cwd(),
+  credentialProfile = undefined,
   fetchImpl = undefined,
   models: injectedModels = null,
   usageSink = null,
@@ -396,7 +454,15 @@ export async function createModelRuntime({
   const { provider, modelId } = parseModelSpec(spec);
   const custom = baseUrl !== null && baseUrl !== undefined && baseUrl !== '';
   const endpoint = custom ? validateBaseUrl(baseUrl) : null;
+  // A DECLARED credential profile is bound into run identity; it is a label,
+  // never a key. Resolving it early fails closed on an unusable label.
+  const profile = resolveCredentialProfile({ profile: credentialProfile, env });
   const key = apiKey !== undefined ? apiKey : resolveModelApiKey({ provider, custom, env, cwd }).key;
+  if (profile && typeof key === 'string' && key.length >= 8 && (profile === key || profile.includes(key))) {
+    // Refuse a "profile" that is really the credential: the identity is durable
+    // state and must never carry a secret.
+    throw new ModelRuntimeError('credential_profile_invalid', 'the credential profile must not contain the credential itself');
+  }
   const { models, model } = await loadModel({ provider, modelId, baseUrl: endpoint, injectedModels });
   const tuning = requestTuning({ provider, custom });
   const identity = runtimeIdentityFor({ provider, modelId });
@@ -491,6 +557,9 @@ export async function createModelRuntime({
     // endpoint is used. Identity binding only: it is never persisted — the
     // checkpoint records `runtimeRunKey(runtime)`, which carries a digest.
     customEndpoint: custom ? endpoint : null,
+    // Declared credential configuration (a non-secret label), or null. Identity
+    // binding only: the key itself never enters the identity or any artifact.
+    credentialProfile: profile ?? null,
     /** Raw assistant text (the planner validates it). */
     completeText(args) {
       return complete(args);
