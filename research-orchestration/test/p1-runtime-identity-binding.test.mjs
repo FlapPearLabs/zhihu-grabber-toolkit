@@ -508,12 +508,20 @@ test('I13: an explicit empty profile is refused by both entry points, an empty e
     /credential_profile_invalid/, 'an explicitly empty profile must be refused by the factory');
   await assert.rejects(() => modelRuntime.createModelRuntime({ ...base, credentialProfile: '   ' }),
     /credential_profile_invalid/, 'a blank profile must be refused by the factory');
+  // Match the MESSAGE, not just the code: the pre-fix identity path also threw
+  // `credential_profile_invalid` (after fabricating `'declared'`), so a code-only
+  // assertion would stay green if that invention came back.
   assert.throws(() => runtimeRunKey({ ...mockRuntime(NON_DEFAULT), credentialProfile: '' }),
-    /credential_profile_invalid/, 'the identity may not fabricate a label for an empty profile');
+    /must not be empty/, 'the identity may not fabricate a label for an empty profile');
 
   // An empty environment variable is how a shell spells "unset": it declares nothing.
   const fromEnv = await modelRuntime.createModelRuntime({ ...base, env: { [modelRuntime.MODEL_CREDENTIAL_PROFILE_ENV]: '' } });
   assert.equal(fromEnv.credentialProfile ?? null, null, 'an empty env value must not declare a profile');
+  // A BLANK env value is not the same thing as an unset one: it is a declaration
+  // (someone typed it), so it is refused rather than dropped behind their back.
+  await assert.rejects(
+    () => modelRuntime.createModelRuntime({ ...base, env: { [modelRuntime.MODEL_CREDENTIAL_PROFILE_ENV]: '   ' } }),
+    /must not be blank/, 'a blank env value must not be silently treated as unset');
   assert.equal(runtimeRunKey({ ...mockRuntime(NON_DEFAULT), credentialProfile: null }), runtimeRunKey(NON_DEFAULT),
     'no declared profile keeps the historical identity');
 });

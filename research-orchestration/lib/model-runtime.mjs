@@ -178,8 +178,17 @@ const CREDENTIAL_PROFILE_ID = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 export function resolveCredentialProfile({ profile = undefined, env = process.env } = {}) {
   const raw = profile !== undefined && profile !== null ? profile : env?.[MODEL_CREDENTIAL_PROFILE_ENV];
   if (raw === undefined || raw === null) return null;
-  const label = String(raw).trim();
-  if (label === '') return null;
+  const text = String(raw);
+  // A shell spells "unset" as the EMPTY string; anything else is a declaration,
+  // so a whitespace-only value is refused rather than silently dropped.
+  if (text === '') return null;
+  const label = text.trim();
+  if (label === '') {
+    throw new ModelRuntimeError(
+      'credential_profile_invalid',
+      'a declared credential profile must not be blank; unset it to run without a credential profile',
+    );
+  }
   if (!CREDENTIAL_PROFILE_ID.test(label)) {
     throw new ModelRuntimeError(
       'credential_profile_invalid',
@@ -194,11 +203,15 @@ export function resolveCredentialProfile({ profile = undefined, env = process.en
  * The label of a DECLARED credential profile, or `null` when none is declared.
  *
  * Both entry points (`createModelRuntime` and `runtimeRunKey`) share this one
- * rule: an explicitly supplied value IS a declaration, so an empty or blank one
- * is refused rather than silently treated as "unset" — otherwise the same
- * input would run unprofiled through the factory and be refused by the identity
- * check. An empty environment variable still means "unset", which is how a
- * shell spells it.
+ * rule: a value that is present (not `null`/`undefined`) IS a declaration, so
+ * an empty or blank one is refused instead of being silently treated as
+ * "unset" — otherwise the same input would run unprofiled through the factory
+ * and be refused by the identity check. Only an EMPTY environment variable
+ * means "unset", which is how a shell spells it; a blank one is refused.
+ *
+ * `env` is a factory-only input: a runtime object carries the declaration
+ * itself, so `runtimeRunKey` passes `env: {}` and can never pick up the
+ * process environment behind the caller's back.
  */
 export function declaredCredentialProfileLabel({ profile = undefined, env = process.env } = {}) {
   if (profile !== undefined && profile !== null && String(profile).trim() === '') {
