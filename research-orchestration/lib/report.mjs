@@ -403,6 +403,50 @@ export function summarizeReport(model, { maxFamilies = 3 } = {}) {
 const REPORT_TEMP_PREFIX = `.${REPORT_FILENAME}.tmp-`;
 
 /**
+ * Open the run directory and keep the OBJECT, not the path.
+ *
+ * `stat` on a path resolves whatever the path currently names, so every path
+ * check is check-then-use: between the check and the write the run directory
+ * itself can be renamed away and replaced with a symlink to somewhere else,
+ * which would make the report land outside the run. Holding an OPEN directory
+ * descriptor pins the real object, and each step below re-verifies that the
+ * path still names that very object (same device and inode) immediately before
+ * and after the rename. A replaced directory therefore fails closed instead of
+ * being followed.
+ */
+function openRunDir(workDir) {
+  let fd;
+  try {
+    fd = fs.openSync(workDir, fs.constants.O_RDONLY | (fs.constants.O_DIRECTORY ?? 0));
+  } catch {
+    throw new ReportError('REPORT_OUTPUT_UNSAFE', 'the run directory cannot be opened');
+  }
+  try {
+    const stat = fs.fstatSync(fd);
+    if (!stat.isDirectory()) throw new ReportError('REPORT_OUTPUT_UNSAFE', 'the run directory is not a directory');
+    return { fd, dev: stat.dev, ino: stat.ino };
+  } catch (err) {
+    try { fs.closeSync(fd); } catch { /* descriptor is already gone */ }
+    throw err instanceof ReportError
+      ? err
+      : new ReportError('REPORT_OUTPUT_UNSAFE', 'the run directory cannot be inspected');
+  }
+}
+
+/** Fail closed unless `dir` still names the directory object `handle` holds open. */
+function assertSameRunDir(handle, dir) {
+  let stat;
+  try {
+    stat = fs.statSync(dir);
+  } catch {
+    throw new ReportError('REPORT_OUTPUT_UNSAFE', 'the run directory disappeared while the report was being written');
+  }
+  if (!stat.isDirectory() || stat.dev !== handle.dev || stat.ino !== handle.ino) {
+    throw new ReportError('REPORT_OUTPUT_UNSAFE', 'the run directory was replaced while the report was being written');
+  }
+}
+
+/**
  * A report target may only be a regular file or absent. A symlink is refused:
  * following it would let `report.md → research-result.json` rewrite canonical
  * run data. Any other non-regular object (directory, FIFO, device) is refused
@@ -426,16 +470,58 @@ function assertReportTargetIsSafe(reportPath) {
  * a hard link to a canonical artifact keeps its bytes (an in-place write would
  * rewrite the shared inode) and a concurrent reader sees either the previous
  * report or the complete new one, never a partial file.
+ *
+ * The write is confined to the directory object opened by `openRunDir`: the
+ * directory identity is re-checked before the rename and after it, and the
+ * object left at the target must be the very inode the temp write created. A
+ * directory swapped for a symlink in between is refused, and the temp file is
+ * unlinked only when it is still that same inode (never a foreign one).
  */
-function writeReportFile(reportPath, markdown) {
-  assertReportTargetIsSafe(reportPath);
-  const temp = path.join(path.dirname(reportPath), `${REPORT_TEMP_PREFIX}${process.pid}-${randomUUID()}`);
+function writeReportFile(workDir, markdown) {
+  const dir = path.resolve(workDir);
+  const handle = openRunDir(dir);
   try {
-    fs.writeFileSync(temp, markdown, { flag: 'wx' });
-    fs.renameSync(temp, reportPath);
-  } catch (err) {
-    try { fs.rmSync(temp, { force: true }); } catch { /* best effort cleanup */ }
-    throw new ReportError('REPORT_OUTPUT_FAILED', `${REPORT_FILENAME} could not be written (${err?.code ?? 'error'})`);
+    const reportPath = path.join(dir, REPORT_FILENAME);
+    assertSameRunDir(handle, dir);
+    assertReportTargetIsSafe(reportPath);
+
+    const tempPath = path.join(dir, `${REPORT_TEMP_PREFIX}${process.pid}-${randomUUID()}`);
+    let temp = null;
+    let created = null;
+    try {
+      // `wx` is O_CREAT|O_EXCL: it never opens an existing object, so a link
+      // pre-planted under the temp name cannot be written through.
+      const fd = fs.openSync(tempPath, 'wx');
+      try {
+        created = fs.fstatSync(fd);
+        temp = { dev: created.dev, ino: created.ino };
+        fs.writeSync(fd, Buffer.from(markdown, 'utf8'));
+      } finally {
+        try { fs.closeSync(fd); } catch { /* descriptor is already gone */ }
+      }
+
+      assertSameRunDir(handle, dir); // the temp file must still be inside the run
+      fs.renameSync(tempPath, reportPath);
+      temp = null; // the object now lives at the target
+
+      assertSameRunDir(handle, dir);
+      const written = fs.lstatSync(reportPath);
+      if (!written.isFile() || written.dev !== created.dev || written.ino !== created.ino) {
+        throw new ReportError('REPORT_OUTPUT_UNSAFE', `${REPORT_FILENAME} was not written into the run directory`);
+      }
+      return reportPath;
+    } catch (err) {
+      if (temp) {
+        try {
+          const stray = fs.lstatSync(tempPath);
+          if (stray.dev === temp.dev && stray.ino === temp.ino) fs.unlinkSync(tempPath);
+        } catch { /* the temp file is already gone */ }
+      }
+      if (err instanceof ReportError) throw err;
+      throw new ReportError('REPORT_OUTPUT_FAILED', `${REPORT_FILENAME} could not be written (${err?.code ?? 'error'})`);
+    }
+  } finally {
+    try { fs.closeSync(handle.fd); } catch { /* descriptor is already gone */ }
   }
 }
 
@@ -446,8 +532,8 @@ function writeReportFile(reportPath, markdown) {
  * The target is validated as a file OBJECT: an existing symlink (or any other
  * non-regular object) is refused, so a `report.md → research-result.json` link
  * can never make rendering overwrite canonical run data. The write itself is
- * atomic (temp file + rename), so it replaces the directory entry instead of
- * writing through whatever the name resolves to.
+ * atomic (temp file + rename) and bound to the run directory OBJECT, so
+ * replacing the directory with a symlink cannot redirect the report outside it.
  */
 export function writeReport(workDir) {
   const result = readJson(workDir, RESULT_FILENAME);
@@ -456,7 +542,6 @@ export function writeReport(workDir) {
   const groupState = readJson(workDir, GROUP_STATE_FILENAME);
   const index = buildSourceIndex(workDir, groupState);
   const model = buildReportModel({ result, synthesisArtifact, claimsArtifact, index });
-  const reportPath = path.join(workDir, REPORT_FILENAME);
-  writeReportFile(reportPath, renderReportMarkdown(model));
+  const reportPath = writeReportFile(workDir, renderReportMarkdown(model));
   return { reportPath, model };
 }
