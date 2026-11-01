@@ -9,6 +9,9 @@
 - 依赖：`research-orchestration` 与 `zhihu-answer-grabber` 的依赖已从
   `/private/tmp/zhihu-provider-npm-cache` 离线安装（`npm ci --offline --ignore-scripts --no-audit --no-fund`）。
 - 未 push、未开 PR、未 merge、未改历史、未访问真实凭据或真实模型；所有测试使用合成值与 fake transport。
+- PROJECT_MEMORY_UPDATE_REQUIRED: YES（「任何 operator 声明的凭据凭据 profile 一律拒绝、不得以哈希替代」属
+  durable security invariant，按 AGENTS §10.3 在 merge 后由最小 `docs/memory` 提交补进
+  `docs/project-memory.md`；审查人不改被审 HEAD）。
 
 ## 本轮（第二轮复审退回后：99bc6e6 → b1410de）
 
@@ -232,3 +235,42 @@ $ node --test research-orchestration/test/p1-report-safety.test.mjs \
   功能当前完全不可用，要等 Spec 定义多账号契约后重新设计。
 - 错误码沿用既有映射：profile 被拒在 composer 侧呈现 `runtime_not_supported`，
   未新增错误码，测试按既有契约断言。
+
+## 第三轮：审查后的 P2 收口（`b1410de` → 本轮）
+
+两路独立审查（干净 worktree、对抗性、各自写探针 + 突变）均给 `REVIEW_VERDICT: PASS`，
+无 P0/P1，共报 7 条非阻塞问题。本轮修了其中 6 条（第 7 条是既有问题，见末尾）：
+
+1. `suite-classification.json` 的 note 仍在描述**已删除**的「长度无关比较」方案 —— 改为
+   「任何声明的 credential profile 在任何调用与产物之前被拒绝」。
+2. `p1-runtime-composer.mjs` 的「唯一生产入口」措辞 —— 改为「P1 对外 CLI 入口是
+   `bin/research-p1.mjs`」，并写明第二个调用点 `evaluation/product-worker.mjs` 注入的是
+   禁网的确定性 double。
+3. 空 profile 两处语义相反 —— 新增 `declaredCredentialProfileLabel`，工厂与
+   `runtimeRunKey` 共用一条规则：**显式传入的空/空白值算「声明错误」**（拒绝），
+   环境变量为空仍表示「未声明」。删除了 `?? 'declared'` 这个凭空造值。红测 I13。
+4. `lmstudio-local-tool-less` 是永远匹配不上的死记录 —— 从 `QUALIFIED_RUNTIMES` 移除
+   （说明移进注释：Spec 里有 YES，但本层 runtime 身份契约表达不了它，且 P1 adapter 不构造
+   它），报错文案不再宣称一个无法启用的运行时。
+5. `.github/workflows/ci.yml` 第 4 个多行步骤补 `shell: bash`（该 job 只在 ubuntu，风险为 0，
+   但注释承诺「every multi-line step」）。
+6. 本文件补 `PROJECT_MEMORY_UPDATE_REQUIRED`。
+
+### 本轮验证
+
+```text
+$ node --test <8 个验收套件>              → tests 85 / pass 85 / fail 0（多出 I13）
+$ ... run-classified-research-suites.mjs guard   → 54/54, rc=0
+$ ... run-classified-research-suites.mjs full-offline → rc=0
+$ node --test p1-t14-cross-group-synthesis planner   → 43/43、32/32
+$ git diff --check                         → clean
+```
+
+`p1-integration-harness.test.mjs` 单独在仓库根跑仍是 33/34，失败项是既有的
+`EXTRACTION BOUNDARY`（用 `process.cwd()` 拼 `bin/…`，仓库根没有该目录），与本轮无关。
+
+### 未修（第 7 条，既有问题，不含在本轮）
+
+`run-classified-research-suites.mjs` 的 `parseSummary` 只匹配 TAP 的 `# tests N`，在 Node 26
+输出 `ℹ tests N` 时计数恒为 0；分类 runner 的真实判据是子进程 rc。属既有缺陷、不在本任务
+范围，未改。
