@@ -21,6 +21,16 @@
  *       the host, path or any credential;
  *   I6  an endpoint that cannot be safely validated fails closed with the
  *       typed runtime error and without echoing credentials.
+ *   I7  a DECLARED credential profile is bound into the run identity: two
+ *       profiles on the same provider/model/endpoint never share a checkpoint
+ *       (the previous identity ignored which credential configuration ran);
+ *   I8  the same declared profile is stable, so re-entry still resumes;
+ *   I9  a profile on the DEFAULT model is a distinct identity — it never
+ *       inherits the historical default checkpoint — while an undeclared
+ *       profile keeps the historical identity byte-for-byte;
+ *   I10 the profile label is the ONLY credential fact in the identity: it must
+ *       be a non-secret label (a malformed or key-shaped label is refused) and
+ *       the key, or any hash of it, never appears in the identity or in state.
  *
  * Offline: providers, capture, runner, embeddings and the model are injected
  * test doubles; only the real composer / state / identity code is exercised.
@@ -41,6 +51,7 @@ import * as modelRuntime from '../lib/model-runtime.mjs';
 const runtimeRunKey = (runtime) => modelRuntime.runtimeRunKey(runtime);
 import { T14_SYNTHESIS_RUNTIME_ID, T14_SYNTHESIS_MODEL } from '../lib/cross-source-synthesis.mjs';
 import { mockVector768 } from './helpers/test-embedding-provider.mjs';
+import { fakeModelFetch, TEST_API_KEY } from './helpers/fake-model-transport.mjs';
 
 const TOPIC = 'AI 编程工具会取代程序员吗';
 const NOW = () => '2026-10-15T00:00:00.000Z';
@@ -306,4 +317,92 @@ test('I6: an unvalidatable endpoint fails closed with a typed error and no crede
   assert.equal(out.code, 'runtime_not_supported', 'an unsafe endpoint must not fall back to the plain identity');
   assert.ok(!String(out.details ?? '').includes('s3cr3t-pass'), 'the credential must never be echoed');
   assert.equal(fs.existsSync(path.join(workDir, 'orchestration-state.json')), false, 'no checkpoint may be written for a refused runtime');
+});
+
+/** The mock runtime plus a declared (non-secret) credential profile and a call count. */
+function profileRuntime(identity, credentialProfile) {
+  const base = mockRuntime(identity);
+  let calls = 0;
+  return {
+    runtime: {
+      ...base,
+      credentialProfile,
+      analyze: (args) => { calls += 1; return base.analyze(args); },
+      synthesize: (args) => { calls += 1; return base.synthesize(args); },
+    },
+    calls: () => calls,
+  };
+}
+
+test('I7: two declared credential profiles on one model/endpoint never share a checkpoint', async () => {
+  const workDir = tmpWork('p1-identity-profile-');
+  const a = profileRuntime(NON_DEFAULT, 'account-a');
+  const first = await compose(workDir, a.runtime);
+  assert.equal(first.ok, true, JSON.stringify(first));
+  assert.match(readState(workDir).runtime, /:credential-profile-account-a$/, 'the declared profile must be recorded in the identity');
+
+  const b = profileRuntime(NON_DEFAULT, 'account-b');
+  const crossed = await compose(workDir, b.runtime);
+  assert.equal(crossed.ok, false, 'another credential profile must not be served this checkpoint');
+  assert.equal(crossed.code, 'run_identity_conflict');
+  assert.equal(b.calls(), 0, 'a refused profile must not call the model');
+  assert.equal(readState(workDir).runId, first.runId, 'the foreign checkpoint must be left intact');
+});
+
+test('I8: the same declared credential profile resumes the checkpoint', async () => {
+  const workDir = tmpWork('p1-identity-profile-resume-');
+  const first = profileRuntime(NON_DEFAULT, 'account-a');
+  const out1 = await compose(workDir, first.runtime);
+  assert.equal(out1.ok, true, JSON.stringify(out1));
+
+  const again = profileRuntime(NON_DEFAULT, 'account-a');
+  const out2 = await compose(workDir, again.runtime);
+  assert.equal(out2.ok, true, `the same profile must resume: ${JSON.stringify(out2)}`);
+  assert.equal(out2.reused, true);
+  assert.equal(out2.runId, out1.runId);
+  assert.equal(again.calls(), 0, 'a reuse must not call the model again');
+});
+
+test('I9: a profile on the default model is a distinct identity, an undeclared one stays historical', async () => {
+  const plainDir = tmpWork('p1-identity-profile-default-plain-');
+  const plain = await compose(plainDir, mockRuntime());
+  assert.equal(plain.ok, true, JSON.stringify(plain));
+
+  const profiledDir = tmpWork('p1-identity-profile-default-profiled-');
+  const profiled = profileRuntime(undefined, 'account-a');
+  const out = await compose(profiledDir, profiled.runtime);
+  assert.equal(out.ok, true, JSON.stringify(out));
+
+  const profiledState = readState(profiledDir);
+  assert.notEqual(profiledState.runId, plain.runId, 'a profiled default run must not inherit the historical checkpoint');
+  assert.equal(profiledState.runtime, 'deepseek-api-tool-less:credential-profile-account-a');
+  assert.match(readState(plainDir).runtime, /^deepseek-api-tool-less$/, 'an undeclared profile keeps the historical identity');
+
+  // The profiled checkpoint is never served to the unprofiled default run.
+  const crossed = await compose(profiledDir, mockRuntime());
+  assert.equal(crossed.ok, false);
+  assert.equal(crossed.code, 'run_identity_conflict');
+});
+
+test('I10: the profile is a non-secret label — malformed or key-shaped labels are refused and no key is bound', async () => {
+  const fetchImpl = fakeModelFetch(() => ({ text: '{"main":[]}' }));
+  const base = { spec: 'antigravity/claude-sonnet-4-6', baseUrl: 'http://127.0.0.1:8045/v1', apiKey: TEST_API_KEY, fetchImpl };
+
+  const declared = await modelRuntime.createModelRuntime({ ...base, credentialProfile: 'account-a' });
+  assert.equal(declared.credentialProfile, 'account-a');
+  const key = runtimeRunKey(declared);
+  assert.match(key, /:credential-profile-account-a$/);
+  assert.equal(key.includes(TEST_API_KEY), false, 'the key must never be part of the identity');
+  assert.equal(JSON.stringify(declared).includes(TEST_API_KEY), false, 'the runtime surface must not expose the key');
+
+  const fromEnv = await modelRuntime.createModelRuntime({ ...base, env: { [modelRuntime.MODEL_CREDENTIAL_PROFILE_ENV]: 'account-b' } });
+  assert.equal(fromEnv.credentialProfile, 'account-b', 'the profile may be declared through the environment');
+
+  for (const bad of ['Account A!', 'a'.repeat(65), `${TEST_API_KEY}`, `x-${TEST_API_KEY}`]) {
+    await assert.rejects(
+      () => modelRuntime.createModelRuntime({ ...base, credentialProfile: bad }),
+      /credential_profile_invalid/,
+      `an unusable profile label must be refused: ${bad}`,
+    );
+  }
 });
