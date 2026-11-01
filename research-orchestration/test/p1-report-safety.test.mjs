@@ -23,6 +23,9 @@
  *       a symlink AFTER it was inspected is refused (the read is descriptor-
  *       based and re-verifies the opened object), and no report is rendered;
  *   S6  the same swap on a PARENT directory is refused for the same reason.
+ *   S7  the run directory itself cannot be swapped for a symlink between the
+ *       read phase and the write phase: the report is not written through the
+ *       replacement, so a report outside the run directory is never clobbered.
  *
  * Fully offline: fixtures are written by the test itself; no run, no network.
  */
@@ -268,4 +271,75 @@ test('S6: a parent directory swapped for a symlink after inspection is refused, 
   assert.equal(run.swapped(), true, 'the race window must actually have been exercised');
   assert.equal(run.result.groups.get('100').title, null, 'a raced parent directory must not be followed');
   assert.equal(run.result.sources.size, 0);
+});
+
+/**
+ * Run `fn` with the whole run directory replaced by a symlink to `outside` the
+ * first time the implementation creates a file inside it (its temp report).
+ * This is the deterministic form of "the directory is swapped between the read
+ * phase and the write phase": every artifact has already been read.
+ */
+function withDirSwapBeforeTempWrite(workDir, outside, fn) {
+  const dir = path.resolve(workDir);
+  const realOpenSync = fs.openSync;
+  const realWriteFileSync = fs.writeFileSync;
+  const realMkdtempSync = fs.mkdtempSync;
+  let swapped = false;
+  const isReportTemp = (p) => typeof p === 'string'
+    && path.resolve(path.dirname(p)) === dir
+    && path.basename(p).startsWith(`.${REPORT_FILENAME}.tmp-`);
+  const swap = () => {
+    if (swapped) return;
+    swapped = true;
+    fs.renameSync(dir, `${dir}-moved`);
+    fs.symlinkSync(outside, dir);
+  };
+  fs.openSync = function patchedOpenSync(p, ...rest) {
+    if (isReportTemp(p)) swap();
+    return realOpenSync.call(fs, p, ...rest);
+  };
+  fs.writeFileSync = function patchedWriteFileSync(p, ...rest) {
+    if (isReportTemp(p)) swap();
+    return realWriteFileSync.call(fs, p, ...rest);
+  };
+  fs.mkdtempSync = function patchedMkdtempSync(p, ...rest) {
+    if (typeof p === 'string' && path.resolve(p) === dir) swap();
+    return realMkdtempSync.call(fs, p, ...rest);
+  };
+  try {
+    return { result: fn(), swapped: () => swapped };
+  } finally {
+    fs.openSync = realOpenSync;
+    fs.writeFileSync = realWriteFileSync;
+    fs.mkdtempSync = realMkdtempSync;
+  }
+}
+
+test('S7: a run directory replaced by a symlink before the write cannot redirect the report outside', () => {
+  const workDir = fixture('p1-report-dirswap-');
+  const outside = tmpDir('p1-report-dirswap-outside-');
+  // The outside directory already holds a report: it must survive untouched.
+  const outsideReport = path.join(outside, REPORT_FILENAME);
+  const outsideBefore = '# 目录外既有报告\n\n这些字节不属于本次运行，任何写入都不得覆盖它们。\n';
+  fs.writeFileSync(outsideReport, outsideBefore);
+
+  let error = null;
+  const run = withDirSwapBeforeTempWrite(workDir, outside, () => {
+    try {
+      writeReport(workDir);
+    } catch (err) {
+      error = err;
+    }
+  });
+
+  assert.equal(run.swapped(), true, 'the directory-replacement window must actually have been exercised');
+  assert.ok(error instanceof ReportError, 'a replaced run directory must be refused with a coded error');
+  assert.equal(error.code, 'REPORT_OUTPUT_UNSAFE');
+  assert.equal(fs.readFileSync(outsideReport, 'utf8'), outsideBefore, 'the report outside the run directory must not be overwritten');
+  assert.deepEqual(
+    fs.readdirSync(outside).filter((name) => name.includes('.tmp-')),
+    [],
+    'a refused write must not leave temp debris outside the run directory',
+  );
+  assert.equal(fs.existsSync(path.join(`${workDir}-moved`, REPORT_FILENAME)), false, 'no report may be rendered next to the moved artifacts');
 });
