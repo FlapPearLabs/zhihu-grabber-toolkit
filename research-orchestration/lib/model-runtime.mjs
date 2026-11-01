@@ -186,7 +186,8 @@ export function resolveCredentialProfile({ profile = undefined, env = process.en
   if (label === '') {
     throw new ModelRuntimeError(
       'credential_profile_invalid',
-      'a declared credential profile must not be blank; unset it to run without a credential profile',
+      `the credential profile declared by ${MODEL_CREDENTIAL_PROFILE_ENV} must not be blank; `
+      + 'unset that variable to run without a credential profile',
     );
   }
   if (!CREDENTIAL_PROFILE_ID.test(label)) {
@@ -217,7 +218,7 @@ export function declaredCredentialProfileLabel({ profile = undefined, env = proc
   if (profile !== undefined && profile !== null && String(profile).trim() === '') {
     throw new ModelRuntimeError(
       'credential_profile_invalid',
-      'a declared credential profile must not be empty: omit it (or unset the environment variable) to run '
+      'the credentialProfile option must not be empty: omit it (or unset the environment variable) to run '
       + 'without a credential profile',
     );
   }
