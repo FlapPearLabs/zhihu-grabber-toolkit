@@ -26,6 +26,9 @@
  *   S7  the run directory itself cannot be swapped for a symlink between the
  *       read phase and the write phase: the report is not written through the
  *       replacement, so a report outside the run directory is never clobbered.
+ *   S8  the report's permissions are a property of the run: updating an
+ *       existing report preserves its mode, and a new report is never wider
+ *       than 0600 even under a permissive umask.
  *
  * Fully offline: fixtures are written by the test itself; no run, no network.
  */
@@ -342,4 +345,39 @@ test('S7: a run directory replaced by a symlink before the write cannot redirect
     'a refused write must not leave temp debris outside the run directory',
   );
   assert.equal(fs.existsSync(path.join(`${workDir}-moved`, REPORT_FILENAME)), false, 'no report may be rendered next to the moved artifacts');
+});
+
+test('S8: rendering preserves an existing report mode and never creates a wider report', () => {
+  const workDir = fixture('p1-report-mode-');
+  const reportPath = reportPathOf(workDir);
+  const modeOf = () => fs.statSync(reportPath).mode & 0o777;
+  const previous = process.umask(0o022);
+  try {
+    // (a) a NEW report is private even under umask 022 (the default create mode
+    //     0666 & ~022 = 0644 would expose it to every local user).
+    writeReport(workDir);
+    assert.equal(modeOf(), 0o600, 'a new report must not be wider than 0600');
+
+    // (b) updating an existing 0600 report keeps 0600 (no 0644 regression).
+    writeReport(workDir);
+    assert.equal(modeOf(), 0o600, 'updating a report must not widen its permissions');
+
+    // (c) an explicitly narrowed mode survives an update unchanged.
+    fs.chmodSync(reportPath, 0o400);
+    writeReport(workDir);
+    assert.equal(modeOf(), 0o400, 'the existing mode must be preserved exactly');
+
+    // (d) a mode the run deliberately widened is still the run's to keep.
+    fs.chmodSync(reportPath, 0o640);
+    writeReport(workDir);
+    assert.equal(modeOf(), 0o640, 'an existing mode must be preserved, not narrowed behind the operator');
+
+    assert.deepEqual(
+      fs.readdirSync(workDir).filter((name) => name.includes('.tmp-')),
+      [],
+      'permission handling must not leave temp debris',
+    );
+  } finally {
+    process.umask(previous);
+  }
 });
