@@ -4,9 +4,12 @@
 - 仓库：p2-ari-evaluation，工作树 `.worktrees/pi-review-repair`，分支 `task/pi-review-repair`。
 - 候选起点 BASE：`62e4f170cbeeec5fe694984294bb27ea9fb8c8c0`（PR #145 候选）
 - PREVIOUS_REVIEWED_HEAD：`b1410de`（两路独立审查在干净 worktree 给出 PASS 的那个代码 HEAD）
-- **代码 HEAD（本次交付）：`400fe93`**；本交接包是它之上的一条 `docs:` 提交，不含代码改动。
-- 提交链路：`758a5bd` test → `b1410de` fix（审查 PASS 的那一版）→ `4120b7f` test → `400fe93` fix
-  （审查后的 6 条 P2 收口）→ 本文件 docs。
+- **代码 HEAD：以 `git log --oneline` 中本文件之前最后一条非 `docs:` 提交为准**——写这份头部时
+  是 `59e0915`。用这个写法是为了不再出现「头部落后于实际 HEAD」：任何后续代码提交都会自动成为
+  该条，而头部不会说谎。
+- 本轮全部提交（`62e4f17..HEAD`，从旧到新）：
+  `99bc6e6` docs → `758a5bd` test → `b1410de` fix → `1792036` docs → `4120b7f` test →
+  `400fe93` fix → `9b187b5` docs → `3faf79b` fix → `d7d4c9e` docs → `59e0915` fix → 本文件 docs。
 - 依赖：`research-orchestration` 与 `zhihu-answer-grabber` 的依赖已从
   `/private/tmp/zhihu-provider-npm-cache` 离线安装（`npm ci --offline --ignore-scripts --no-audit --no-fund`）。
 - 未 push、未开 PR、未 merge、未改历史、未访问真实凭据或真实模型；所有测试使用合成值与 fake transport。
@@ -296,3 +299,16 @@ $ git diff --check                         → clean
 
 第三轮验证（本轮最终状态）：8 套件 `85/85`、guard `54/54 rc=0`、`full-offline rc=0`、
 `git diff --check` clean；`I13` 的两侧牙齿用突变各证一次。
+
+### 终审后的追加修复（→ 本文件所在 docs 提交）
+
+终审对 `3faf79b` 给 CHANGES_REQUESTED，只有 1 条 P1 + 1 条 P2，已处理：
+
+- **P1 头部仍落后（写 `400fe93` 而实际 HEAD 是 `3faf79b`）** → 头部改为「代码 HEAD 以本文件之前
+  最后一条非 `docs:` 提交为准（写头部时是 `59e0915`）」，并把 `62e4f17..HEAD` 的完整提交链路
+  逐条列出。这样后续任何代码提交都不会让头部变成谎话。
+- **P2 两条通道的拒绝文案不同** → 环境变量那条点明 `RESEARCH_MODEL_CREDENTIAL_PROFILE` 并说
+  「unset 该变量」，显式参数那条点明 `credentialProfile option`（`59e0915`）；行为不变。
+
+终审同时独立复跑确认：8 套件 85/85、guard 54/54 rc=0、full-offline rc=0、`git diff --check` 干净、
+`I13` 与空白规则两条突变都会红、增量无越界。
