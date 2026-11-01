@@ -6,10 +6,10 @@
 - PREVIOUS_REVIEWED_HEAD：`b1410de`（两路独立审查在干净 worktree 给出 PASS 的那个代码 HEAD）
 - **代码 HEAD：以分支 tip 起第一条非 `docs:` 提交为准**（本文件是最后一条时它就是写头部时的
   `59e0915`；若之后又落了代码提交，则以那条为准）。这样头部不会因为追加提交而落后或说谎。
-- `62e4f17..HEAD` 的完整链路（从旧到新，共 13 条）：
-  `49e13de` test → `52ec5f1` fix → `99bc6e6` docs → `758a5bd` test → `b1410de` fix →
-  `1792036` docs → `4120b7f` test → `400fe93` fix → `9b187b5` docs → `3faf79b` fix →
-  `d7d4c9e` docs → `59e0915` fix → 本文件 docs。
+- 本轮范围：`62e4f17..HEAD`。**权威清单是 `git log --oneline 62e4f17..HEAD`**，本文件不再手抄——
+  每追加一条提交手抄清单就会出错（这条已经被两轮审查各抓到一次）。关键节点：
+  `49e13de`/`52ec5f1`（更早一轮红测+修复）、`758a5bd`/`b1410de`（第一轮）、
+  `4120b7f`/`400fe93`（审查后 P2 收口）、`3faf79b`/`59e0915`（终审后的规则与文案）。
 - 依赖：`research-orchestration` 与 `zhihu-answer-grabber` 的依赖已从
   `/private/tmp/zhihu-provider-npm-cache` 离线安装（`npm ci --offline --ignore-scripts --no-audit --no-fund`）。
 - 未 push、未开 PR、未 merge、未改历史、未访问真实凭据或真实模型；所有测试使用合成值与 fake transport。
