@@ -2,14 +2,74 @@
 
 - 角色：修复（执行者），不自行宣布验收通过。
 - 仓库：p2-ari-evaluation，工作树 `.worktrees/pi-review-repair`，分支 `task/pi-review-repair`。
-- BASE_SHA：`62e4f170cbeeec5fe694984294bb27ea9fb8c8c0`（审查结论 CHANGES_REQUESTED 的候选 HEAD）
-- HEAD_SHA：`52ec5f18b9a7f20f1ab8465b77e0c248bba4a60d`
-- 提交：`49e13de` test（红反例 + 登记 + CI 入口）、`52ec5f1` fix（实现）、本文件 docs。
+- BASE_SHA：`99bc6e6daa438b736acaedc09133fc366053098b`（第二轮 CHANGES_REQUESTED 的候选 HEAD）
+- HEAD_SHA：代码 HEAD `b1410de`；本交接包是它之上的一条 `docs:` 提交（不含代码改动）。
+- 提交：`758a5bd` test（重写 I7–I10 为 fail-closed 合同、新增 Q7）、`b1410de` fix（profile 一律拒绝、
+  资格边界写明、CI shell 硬化）、本文件 docs。
 - 依赖：`research-orchestration` 与 `zhihu-answer-grabber` 的依赖已从
   `/private/tmp/zhihu-provider-npm-cache` 离线安装（`npm ci --offline --ignore-scripts --no-audit --no-fund`）。
 - 未 push、未开 PR、未 merge、未改历史、未访问真实凭据或真实模型；所有测试使用合成值与 fake transport。
 
-## 逐项证据
+## 本轮（第二轮复审退回后：99bc6e6 → b1410de）
+
+复审记录在外层 `research-evidence/pi-provider-review-20261101/REVIEW-52ec5f1.md`，四项：
+
+1. **P0 凭据仍可经「非当前服务商」的 profile 落盘** — 已修，做法是 fail closed：
+   删除「与本层可见凭据比较」的整套方案，改为 `assertNoCredentialProfile`，
+   **任何声明的 credential profile 一律拒绝**（`runtime_not_supported`）。
+   理由：本层无法证明任意输入 profile 非敏感（其他服务商环境变量、SDK 内部解析的 key
+   都看不见），Spec 也没有定义多账号契约，继续猜比较范围只会重演同一个洞。
+   - 真红（代码回退到 `99bc6e6`、只留测试文件）：
+     `node --test p1-runtime-identity-binding.test.mjs p1-runtime-qualification.test.mjs`
+     → `tests 19 / pass 15 / fail 4`（I7、I8、I9、I10）。
+   - 修复后同一批（含其余 6 个套件）→ `tests 84 / pass 84 / fail 0`。
+   - 拒绝发生在加载 provider、创建 transport、创建任何运行产物之前；错误与 details
+     不回显凭据，不持久化 key 或其哈希（只断言布尔值与「不含该值」）。
+2. **资格边界（注入 runtime / 工厂接口）** — 未改行为，改为把判断写进代码注释：
+   生产入口 `bin/research-p1.mjs` 没有注入路径且被门禁拒绝（Q7 覆盖）；注入 `runtime`
+   与 `createModelRuntime` 是确定性 fake seam，工厂加门会把它们一起判死。
+   **是否让可信内部接口也受同一合同 = 待产品决策**（见本节末尾）。
+3. **CI 多行命令在 Windows 的失败传播** — 三个多行步骤加 `shell: bash`，注释写明机制；
+   本机只证明了 `sh`（只认最后一条命令）exit 0、`bash -eo pipefail` exit 1，
+   **Windows 实机仍未验证**，不声称已验证。
+4. **report 目录替换竞态** — 按任务范围未修，继续保持 BLOCK，不宣传全链安全可用。
+
+### 本轮验证（绑定代码 HEAD `b1410de`，工作树 clean）
+
+```text
+$ node --test research-orchestration/test/p1-report-safety.test.mjs \
+    research-orchestration/test/p1-runtime-identity-binding.test.mjs \
+    research-orchestration/test/p1-report.test.mjs \
+    research-orchestration/test/model-runtime.test.mjs \
+    research-orchestration/test/p1-t15-runtime-composition-wiring.test.mjs \
+    research-orchestration/test/p1-runtime-qualification.test.mjs \
+    research-orchestration/test/p1-legacy-checkpoint-resume.test.mjs \
+    research-orchestration/test/p1-runtime-endpoint-production.test.mjs
+ℹ tests 84  pass 84  fail 0
+
+$ node research-orchestration/scripts/run-classified-research-suites.mjs guard
+  total registered: 54 / discovered on disk: 54
+GUARD OK: manifest covers every discovered core test and has no ghost entries.   (rc=0)
+
+$ node research-orchestration/scripts/run-classified-research-suites.mjs full-offline
+FULL-OFFLINE CLASSIFICATION OK: all executable offline suites green; live/private quarantined as NOT_RUN.   (rc=0)
+
+$ node --check（5 个改动文件）+ git diff --check
+clean（无输出）
+```
+
+未提交差异的 SHA-256 与停手时一致，说明本轮提交的内容就是被独立复验过的那份：
+`d1fe68880a80d2ec6925db4ec0cd79ef22cd79fdfe39b2a604c0a1ab775ab2ea`。
+
+### 本轮未验证 / 待决策
+
+- Windows GitHub Actions 实机未验证（本机无 pwsh）。
+- report 输出目录替换的残留竞态（范围外，保持 BLOCK）。
+- profile 现在一律拒绝，**多账号隔离没有实现**；同 profile 换 key 的账户契约仍需 Spec 定义。
+- 可信内部接口（注入 runtime / `createModelRuntime`）是否也受资格门禁约束，属产品/治理决策。
+- 独立复审尚未进行：以上是执行者证据，reviewer ≠ implementer。
+
+## 上一轮（62e4f17 → 99bc6e6）逐项证据
 
 ### P0 凭据进入身份 / 状态 / 事件
 
@@ -112,7 +172,7 @@ p1-legacy-checkpoint-resume     tests 3  pass 3  fail 0
 p1-report-safety                tests 9  pass 9  fail 0
 ```
 
-## 验收门禁结果
+## 上一轮验收门禁结果（83 项那一次）
 
 1. 反例 BASE 红 / HEAD 绿：见上（Q4-Q6、I11、I12、两个探针）。
 2. `node research-orchestration/scripts/run-classified-research-suites.mjs guard` → exit 0。
@@ -139,7 +199,7 @@ $ node --test research-orchestration/test/p1-report-safety.test.mjs \
 
 合计：83 + 248 + 20 + 34 套件 rc=0，无新增失败。
 
-## 未验证 / 已知风险
+## 上一轮未验证 / 已知风险
 
 - 真实服务商资格、OAuth 订阅登录、费用、真实多模型可用性均未验证；本轮完全没有
   真实凭据、真实网络或真实模型调用。`capability_isolation_unavailable` 只证明门禁
@@ -155,10 +215,20 @@ $ node --test research-orchestration/test/p1-report-safety.test.mjs \
   rc=0）。该脚本本次未修改。
 - 独立复审尚未进行：以上均为执行者证据，reviewer ≠ implementer。
 
-## 偏离说明
+## 上一轮偏离说明
 
 - 无范围外改动：只改 2 个 lib 文件、2 个测试文件、1 个 manifest、1 个 CI 工作流，
   外加本 handoff。未触碰 `AGENTS.md`、`RULES.md`、Approved Specs、`report.mjs`，
   未引入新依赖或 OAuth。
 - 修复提交把 `credential_profile_invalid` 在 composer 侧呈现为 `runtime_not_supported`
   （既有错误映射，未新增错误码），测试按该既有契约断言。
+
+## 本轮偏离说明
+
+- 范围：2 个测试文件、2 个 lib 文件、1 个 CLI 帮助文本、1 个 CI 工作流，外加本 handoff。
+  未触碰 `AGENTS.md`、`RULES.md`、Approved Specs、`report.mjs`，未新增依赖、未引入 OAuth。
+- 与上一轮的方向性差异：上一轮试图「证明 profile 不是凭据」，本轮放弃该路线，改为
+  「任何声明的 profile 一律拒绝」。这是安全上的 fail-closed 选择；代价是凭据 profile
+  功能当前完全不可用，要等 Spec 定义多账号契约后重新设计。
+- 错误码沿用既有映射：profile 被拒在 composer 侧呈现 `runtime_not_supported`，
+  未新增错误码，测试按既有契约断言。
