@@ -43,7 +43,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveDeepSeekCredential, DEEPSEEK_CREDENTIAL_FILE } from '../../corpus-anthology/lib/deepseek-tool-less.mjs';
+import { resolveDeepSeekCredential } from '../../corpus-anthology/lib/deepseek-tool-less.mjs';
 import { CLAIMS_SYSTEM_PROMPT, SYNTHESIS_SYSTEM_PROMPT } from './research-prompts.mjs';
 
 export const DEFAULT_MODEL_SPEC = 'deepseek/deepseek-v4-pro';
@@ -170,11 +170,12 @@ const CREDENTIAL_PROFILE_ID = /^[a-z0-9][a-z0-9._-]{0,63}$/;
  * declared.
  *
  * A profile NAMES a credential configuration (an account, a key file, a
- * subscription). It is the only credential fact that may enter run identity:
- * the key itself must never be persisted, logged or hashed into an identity —
- * a digest of a low-entropy secret is still a secret-equivalent, and the
- * multi-account contract is an open product decision, not something this layer
- * may invent.
+ * subscription). It is NOT persisted any more: see `assertNoCredentialProfile`.
+ * The multi-account identity contract is an open product decision, and an
+ * arbitrary operator label cannot be proven non-secret (the process may hold
+ * ANOTHER provider's key, which this layer must not read; a digest of a
+ * low-entropy secret is a secret-equivalent). Resolution is kept so a declared
+ * profile is reported clearly and refused before anything is built.
  */
 export function resolveCredentialProfile({ profile = undefined, env = process.env } = {}) {
   const raw = profile !== undefined && profile !== null ? profile : env?.[MODEL_CREDENTIAL_PROFILE_ENV];
@@ -191,9 +192,25 @@ export function resolveCredentialProfile({ profile = undefined, env = process.en
   return label;
 }
 
-/** The run-identity binding for a declared credential profile. */
-export function credentialBindingFor(profile) {
-  return `credential-profile-${profile}`;
+/**
+ * Refuse ANY declared credential profile, fail closed.
+ *
+ * There is no safe way for this layer to prove an arbitrary operator string is
+ * a label rather than a credential: other providers' keys may be present in the
+ * environment (and reading them is out of scope), and neither the value nor a
+ * hash of it may be persisted. So a declared profile may not enter the run
+ * identity, state, events or results at all. Per-account identity needs an
+ * approved non-secret design; until then this is a refusal, not a binding.
+ *
+ * The refusal names the contract and never echoes the value.
+ */
+export function assertNoCredentialProfile(label) {
+  if (label === null || label === undefined) return;
+  throw new ModelRuntimeError(
+    'credential_profile_invalid',
+    'a declared credential profile is refused: an arbitrary label cannot be proven non-secret, so it must not '
+    + 'enter run identity, state or events; per-account credential identity is a pending product decision',
+  );
 }
 
 /**
@@ -253,34 +270,29 @@ export function endpointBindingFor(endpoint) {
  *   default model, provider endpoint  → `<runtimeId>`          (historical)
  *   any other model                   → `<runtimeId>:<model>`
  *   + operator-supplied base URL      → `<…>:endpoint-<digest>`
- *   + declared credential profile     → `<…>:credential-profile-<label>`
  *
  * The default key is byte-identical to the pre-existing formula, so historical
  * default checkpoints still resume. An endpoint that cannot be validated
  * throws (`base_url_invalid`) instead of falling back to the wider key.
  *
- * The credential profile is the ONLY credential fact bound here: it is a
- * declared, non-secret configuration name. Credentials themselves never enter
- * the identity (not the key, not a hash of it).
+ * NO credential fact enters this key — not the key, not a hash of it, and not an
+ * operator-declared profile label either (an arbitrary string cannot be proven
+ * non-secret; see `assertNoCredentialProfile`). A runtime object that carries a
+ * profile is refused here so an injected runtime cannot smuggle one into state.
  */
 export function runtimeRunKey(runtime) {
   if (!isResearchRuntimeIdentity(runtime)) {
     throw new ModelRuntimeError('runtime_identity_invalid', 'runtime identity is malformed');
+  }
+  const declared = runtime.credentialProfile;
+  if (declared !== null && declared !== undefined) {
+    assertNoCredentialProfile(resolveCredentialProfile({ profile: declared, env: {} }) ?? 'declared');
   }
   const base = isDefaultRuntimeIdentity(runtime) ? runtime.runtimeId : `${runtime.runtimeId}:${runtime.model}`;
   let key = base;
   const customEndpoint = runtime.customEndpoint;
   if (customEndpoint !== null && customEndpoint !== undefined && customEndpoint !== '') {
     key = `${key}:${endpointBindingFor(customEndpoint)}`;
-  }
-  const declared = runtime.credentialProfile;
-  if (declared !== null && declared !== undefined) {
-    // Fail closed on an unusable label rather than letting it into state: the
-    // binding must stay a label, never anything key-shaped. An empty or
-    // whitespace-only declaration means "no profile", so the identity stays
-    // byte-identical to the historical one.
-    const label = resolveCredentialProfile({ profile: declared, env: {} });
-    if (label !== null) key = `${key}:${credentialBindingFor(label)}`;
   }
   return key;
 }
@@ -465,75 +477,6 @@ function retryDelayMs(attempt, outcome) {
 const realSleep = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
 
 /**
- * Read a credential file for the profile audit WITHOUT the strict policy of
- * `readKeyFile`: an unreadable/unsafe file simply contributes no comparable
- * value here (it also cannot be resolved as the run credential). Never throws,
- * so the audit itself cannot fail open on an unrelated filesystem state.
- */
-function readCredentialFileQuietly(dir, file) {
-  try {
-    const full = path.join(dir, file);
-    const st = fs.lstatSync(full);
-    if (st.isSymbolicLink() || !st.isFile()) return null;
-    const value = fs.readFileSync(full, 'utf8').trim();
-    return value === '' ? null : value;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Every credential value THIS layer can observe for the current process.
- *
- * The audit is deliberately independent of the selected provider: any credential
- * that exists in this process is a value that must never be persisted, so a
- * profile that equals or contains it is refused even when that credential would
- * not authenticate the selected provider.
- */
-function observableCredentials({ env = process.env, cwd = process.cwd(), repoRoot = REPO_ROOT } = {}) {
-  const values = [env?.[MODEL_API_KEY_ENV], env?.DEEPSEEK_API_KEY];
-  for (const dir of new Set([cwd, repoRoot])) {
-    values.push(readCredentialFileQuietly(dir, MODEL_API_KEY_FILE));
-    values.push(readCredentialFileQuietly(dir, DEEPSEEK_CREDENTIAL_FILE));
-  }
-  return values
-    .filter((value) => typeof value === 'string' && value.trim() !== '')
-    .map((value) => value.trim());
-}
-
-/**
- * A declared credential profile is a LABEL naming a credential configuration.
- * It must never be — or contain — a credential itself, whatever its length: a
- * digest is not used instead, because a digest of a low-entropy secret is a
- * secret-equivalent that still must not be persisted.
- *
- * Fail closed when this layer cannot PROVE the profile is a label: if no
- * credential was resolved here and the provider's own endpoint is used, pi-ai
- * resolves the key inside the SDK, so the value cannot be compared.
- */
-function assertProfileIsNotCredential({ profile, key, custom, env, cwd }) {
-  if (profile === null) return;
-  const secrets = observableCredentials({ env, cwd });
-  if (typeof key === 'string' && key.trim() !== '') secrets.push(key.trim());
-  for (const secret of secrets) {
-    if (profile === secret || profile.includes(secret)) {
-      throw new ModelRuntimeError(
-        'credential_profile_invalid',
-        'the credential profile must name a configuration, never be or contain a credential',
-      );
-    }
-  }
-  const resolved = typeof key === 'string' && key.trim() !== '';
-  if (!custom && !resolved) {
-    throw new ModelRuntimeError(
-      'credential_profile_invalid',
-      'a declared credential profile cannot be verified while the provider key is resolved inside the SDK; '
-      + `set ${MODEL_API_KEY_ENV} explicitly so the label can be compared with the credential, or omit the profile`,
-    );
-  }
-}
-
-/**
  * Build the research runtime.
  *
  * @param {object} [options]
@@ -564,13 +507,13 @@ export async function createModelRuntime({
   const { provider, modelId } = parseModelSpec(spec);
   const custom = baseUrl !== null && baseUrl !== undefined && baseUrl !== '';
   const endpoint = custom ? validateBaseUrl(baseUrl) : null;
-  // A DECLARED credential profile is bound into run identity; it is a label,
-  // never a key. Resolving it early fails closed on an unusable label.
-  const profile = resolveCredentialProfile({ profile: credentialProfile, env });
+  // A DECLARED credential profile is refused outright, before a credential is
+  // resolved, a provider is loaded, a transport is built or any run artifact can
+  // be written. There is no safe way to prove an arbitrary label is not a
+  // credential: another provider's key may be present in the process (and must
+  // not be read), and persisting the value or a digest of it is equally unsafe.
+  assertNoCredentialProfile(resolveCredentialProfile({ profile: credentialProfile, env }));
   const key = apiKey !== undefined ? apiKey : resolveModelApiKey({ provider, custom, env, cwd }).key;
-  // The identity is durable state: a profile that is or contains a credential
-  // must be refused BEFORE any provider, transport or run artifact exists.
-  assertProfileIsNotCredential({ profile, key, custom, env, cwd });
   const { models, model } = await loadModel({ provider, modelId, baseUrl: endpoint, injectedModels });
   const tuning = requestTuning({ provider, custom });
   const identity = runtimeIdentityFor({ provider, modelId });
@@ -665,9 +608,6 @@ export async function createModelRuntime({
     // endpoint is used. Identity binding only: it is never persisted — the
     // checkpoint records `runtimeRunKey(runtime)`, which carries a digest.
     customEndpoint: custom ? endpoint : null,
-    // Declared credential configuration (a non-secret label), or null. Identity
-    // binding only: the key itself never enters the identity or any artifact.
-    credentialProfile: profile ?? null,
     /** Raw assistant text (the planner validates it). */
     completeText(args) {
       return complete(args);

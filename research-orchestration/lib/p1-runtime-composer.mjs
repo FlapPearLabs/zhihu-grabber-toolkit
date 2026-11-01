@@ -1007,8 +1007,19 @@ export async function composeP1Research({
     // capability_isolation_unavailable. Selecting a model is what enables a
     // runtime, so the gate sits on the selection itself — before a credential
     // is resolved, a provider is loaded or a transport is built — and a custom
-    // base URL is not a bypass. An injected `runtime` is the test/embedding
-    // seam, where the caller owns the object and its qualification.
+    // base URL is not a bypass.
+    //
+    // The injected `runtime` seam below deliberately bypasses this gate: it is a
+    // TRUSTED INTERNAL seam (deterministic tests, the P2A T14 acceptance harness,
+    // and embedding doubles), where the caller owns the object and its
+    // qualification. It is not a product entry path: the only production
+    // entrypoint (bin/research-p1.mjs) never passes `runtime` — it forwards only
+    // --model / --base-url into the gated branch below — and that is asserted
+    // structurally by test/p1-runtime-qualification.test.mjs Q7. Gating the
+    // createModelRuntime() factory itself would reject the deterministic fake
+    // seams (custom-endpoint fixture runtimes) without closing any public path.
+    // Whether trusted internal callers must share the same contract is an open
+    // decision recorded in the handoff, not something this layer may assume.
     let requested;
     try {
       // The qualified identity is the FULL configuration: runtime, model and

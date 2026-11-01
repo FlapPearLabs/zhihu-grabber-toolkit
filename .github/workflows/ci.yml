@@ -84,7 +84,16 @@ jobs:
       # 根因是测试替身全部使用 SYNC synthesize()，CI 因此从未覆盖真实异步 seam。
       # 该测试套件强制包含一个真实 async synthesize + 生产形态 DeepSeek adapter
       # （注入 fake fetch，无网络）的兼容性用例；只含同步 mock 的套件不足以防回归。
+      # FAILURE-PROPAGATION NOTE (applies to every multi-line `run: |` step below
+      # that executes more than one command): GitHub's default Windows shell is
+      # `pwsh`, where a step's exit code is the $LASTEXITCODE of the LAST native
+      # command, so an intermediate `node --check` / `node --test` failure is
+      # silently swallowed. `shell: bash` runs the same body with
+      # `bash --noprofile --norc -eo pipefail` on ubuntu/macos/windows, so EVERY
+      # line must succeed. Do not drop it and do not claim Windows was verified
+      # here — the mechanism is asserted locally, the Windows run is CI evidence.
       - name: T14 async seam syntax gates
+        shell: bash
         run: |
           node --check research-orchestration/lib/cross-source-synthesis.mjs
           node --check research-orchestration/lib/cross-group-aggregation.mjs
@@ -95,6 +104,7 @@ jobs:
         run: node --test research-orchestration/test/p1-t14-async-runtime-seam.test.mjs
 
       - name: T14/T15 focused contract tests
+        shell: bash
         run: |
           node --test research-orchestration/test/p1-t14-cross-group-synthesis.test.mjs
           node --test research-orchestration/test/p1-t15-coverage-final-integration.test.mjs
@@ -138,6 +148,7 @@ jobs:
       # exactly the suites listed in it, so an unlisted suite is silently
       # NOT_RUN in ordinary PR CI (REGISTERED != EXECUTED).
       - name: P1 runtime identity, qualification, endpoint and legacy resume acceptance
+        shell: bash
         run: |
           node --test research-orchestration/test/p1-runtime-identity-binding.test.mjs
           node --test research-orchestration/test/p1-runtime-qualification.test.mjs

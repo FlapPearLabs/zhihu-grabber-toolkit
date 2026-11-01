@@ -33,9 +33,10 @@
  *   -h, --help
  *
  * Environment:
- *   RESEARCH_MODEL_CREDENTIAL_PROFILE  non-secret label of the credential
- *                       configuration; it is bound into run identity so two
- *                       configurations never share a checkpoint (never the key)
+ *   RESEARCH_MODEL_CREDENTIAL_PROFILE  REFUSED (fail closed): an arbitrary
+ *                       label cannot be proven non-secret, so it never enters
+ *                       run identity, state or events. Per-account identity is
+ *                       a pending product decision; do not put a key here.
  *
  * On success a human-readable report.md is rendered into the work directory
  * (derived view; see lib/report.mjs).
@@ -76,8 +77,9 @@ API key：RESEARCH_MODEL_API_KEY 环境变量，或 0600 权限的 .model_api_ke
 DeepSeek 仍可用 DEEPSEEK_API_KEY / .deepseek_api_key；其他内置 provider 也认各自的
 标准环境变量（如 OPENAI_API_KEY、MOONSHOT_API_KEY）。模型不可用时直接失败，不换模型。
 
-凭据配置：RESEARCH_MODEL_CREDENTIAL_PROFILE 填一个非敏感的配置名（如 work、personal），
-它会进入运行身份，使两套凭据不会共用同一个断点；不要把 key 填在这里。
+凭据配置：RESEARCH_MODEL_CREDENTIAL_PROFILE 目前一律拒绝（fail closed）——任意标签
+无法被证明不是凭据，因此不会进入运行身份、状态或事件；按账户区分身份仍是待定的
+产品决策，不要把 key 填在这里。
 
 成功后会在工作目录写出可读报告 report.md。
 
