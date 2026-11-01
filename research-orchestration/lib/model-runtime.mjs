@@ -109,6 +109,50 @@ export function isDefaultRuntimeIdentity(runtime) {
 }
 
 /**
+ * Runtime identities with a NAMED capability-isolation qualification.
+ *
+ * Capability isolation is gated PER RUNTIME and never inferred across runtimes:
+ * `CAPABILITY_ISOLATION_AVAILABLE[runtime] = YES` must be an explicit, named
+ * decision in the approved scope, and `NO`/`UNKNOWN` fails closed as
+ * `capability_isolation_unavailable` (docs/specs/v0.3-product-scope.md §5 /
+ * R2-4 / §T5; docs/product-behavior-contract.md §3.17).
+ *
+ * This list is TRANSCRIBED from
+ * docs/specs/research-orchestration-scope.md §1, which names exactly two
+ * runtimes as YES. It is deliberately a list of named decisions, not a rule:
+ * qualifying another runtime requires a qualification record in the Spec, not
+ * an entry here. `lmstudio-local-tool-less` is listed because the Spec
+ * qualifies it, even though this adapter does not construct it (the corpus map
+ * path does); a same-provider spelling such as `lmstudio-api-tool-less` is a
+ * DIFFERENT runtime and stays unqualified.
+ */
+export const QUALIFIED_TOOL_LESS_RUNTIMES = Object.freeze([
+  'deepseek-api-tool-less',
+  'lmstudio-local-tool-less',
+]);
+
+/** The Spec clause that governs which runtimes may be enabled. */
+export const RUNTIME_QUALIFICATION_SPEC = 'docs/specs/research-orchestration-scope.md';
+
+/**
+ * Refuse a runtime identity that has no named capability-isolation
+ * qualification. Fail closed: no fallback runtime, and no inference from a
+ * qualified provider to its siblings.
+ */
+export function assertRuntimeQualified(runtime) {
+  if (!isResearchRuntimeIdentity(runtime)) {
+    throw new ModelRuntimeError('runtime_identity_invalid', 'runtime identity is malformed');
+  }
+  if (QUALIFIED_TOOL_LESS_RUNTIMES.includes(runtime.runtimeId)) return runtime;
+  throw new ModelRuntimeError(
+    'runtime_not_qualified',
+    `runtime ${runtime.runtimeId} has no named CAPABILITY_ISOLATION_AVAILABLE = YES; only runtimes `
+    + `qualified per runtime in ${RUNTIME_QUALIFICATION_SPEC} §1 may be enabled `
+    + `(qualified: ${QUALIFIED_TOOL_LESS_RUNTIMES.join(', ')})`,
+  );
+}
+
+/**
  * Stable, non-revealing binding of an operator-supplied endpoint.
  *
  * Only the digest may enter run identity, checkpoints or logs: a base URL

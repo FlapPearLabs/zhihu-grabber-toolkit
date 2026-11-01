@@ -121,7 +121,7 @@ import { REQUIRED_EMBEDDING_IDENTITY } from './dense-geometry.mjs';
 import { deriveCanonicalSourceId } from './rce-input-adapter.mjs';
 import { assertArtifactSafe } from './rrf.mjs';
 import { recordCanonicalSearchResponse, parseBoundProviderPool, registerPrivateTitleRoot } from './provider-title-origin.mjs';
-import { createModelRuntime, isResearchRuntimeIdentity, runtimeRunKey } from './model-runtime.mjs';
+import { createModelRuntime, isResearchRuntimeIdentity, runtimeRunKey, assertRuntimeQualified, runtimeIdentityFor, parseModelSpec, DEFAULT_MODEL_SPEC } from './model-runtime.mjs';
 import { validateCompleteReuseClosure, CHECKPOINT_BINDING_ACCUMULATED_POOL, CHECKPOINT_BINDING_SELECTION_DECISION, CHECKPOINT_BINDING_COVERAGE_STATE } from './p1-reuse-closure.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -145,6 +145,7 @@ const CFC_RUN_IDENTITY_CONFLICT = 'run_identity_conflict';
 const CFC_FAILED_STATE_REQUIRES_RESTART = 'failed_state_requires_restart';
 const CFC_STATE_INVALID = 'state_invalid';
 const CFC_RUNTIME_NOT_SUPPORTED = 'runtime_not_supported';
+const CFC_CAPABILITY_ISOLATION_UNAVAILABLE = 'capability_isolation_unavailable';
 const CFC_PLANNER_FAILED = 'planner_failed';
 const CFC_RETRIEVAL_FAILED = 'retrieval_failed';
 const CFC_SELECTION_FAILED = 'selection_failed';
@@ -1000,6 +1001,25 @@ export async function composeP1Research({
   // runtime fails closed — there is no fallback model.
   let effectiveRuntime = runtime;
   if (effectiveRuntime === null || effectiveRuntime === undefined) {
+    // Capability isolation is gated PER RUNTIME (V0.3 §5 / R2-4 / §T5): only a
+    // runtime with a NAMED CAPABILITY_ISOLATION_AVAILABLE = YES in the approved
+    // scope may be ENABLED, and NO/UNKNOWN fails closed as
+    // capability_isolation_unavailable. Selecting a model is what enables a
+    // runtime, so the gate sits on the selection itself — before a credential
+    // is resolved, a provider is loaded or a transport is built — and a custom
+    // base URL is not a bypass. An injected `runtime` is the test/embedding
+    // seam, where the caller owns the object and its qualification.
+    let requested;
+    try {
+      requested = runtimeIdentityFor(parseModelSpec(model ?? DEFAULT_MODEL_SPEC));
+    } catch (error) {
+      return fail(CFC_RUNTIME_NOT_SUPPORTED, error?.message ?? String(error));
+    }
+    try {
+      assertRuntimeQualified(requested);
+    } catch (error) {
+      return fail(CFC_CAPABILITY_ISOLATION_UNAVAILABLE, error?.message ?? String(error));
+    }
     try {
       effectiveRuntime = await createModelRuntime({
         ...(model ? { spec: model } : {}),
