@@ -451,16 +451,20 @@ function assertSameRunDir(handle, dir) {
  * following it would let `report.md → research-result.json` rewrite canonical
  * run data. Any other non-regular object (directory, FIFO, device) is refused
  * for the same reason.
+ *
+ * Returns the existing mode (when a report is already there) so an update can
+ * keep it, or `null` when the report is being created.
  */
-function assertReportTargetIsSafe(reportPath) {
+function inspectReportTarget(reportPath) {
   let stat;
   try {
     stat = fs.lstatSync(reportPath);
   } catch (err) {
-    if (err.code === 'ENOENT') return;
+    if (err.code === 'ENOENT') return null;
     throw new ReportError('REPORT_OUTPUT_UNSAFE', `${REPORT_FILENAME} cannot be inspected as a regular file`);
   }
   if (!stat.isFile()) throw new ReportError('REPORT_OUTPUT_UNSAFE', `${REPORT_FILENAME} must be a regular file`);
+  return stat.mode & 0o7777;
 }
 
 /**
@@ -476,6 +480,11 @@ function assertReportTargetIsSafe(reportPath) {
  * object left at the target must be the very inode the temp write created. A
  * directory swapped for a symlink in between is refused, and the temp file is
  * unlinked only when it is still that same inode (never a foreign one).
+ *
+ * Permissions belong to the run, not to the umask: a NEW report is created
+ * 0600, and an UPDATE keeps the mode the existing report already had. The temp
+ * file is created 0600 and its mode is set explicitly, so a permissive umask
+ * can never widen an existing report to 0644.
  */
 function writeReportFile(workDir, markdown) {
   const dir = path.resolve(workDir);
@@ -483,7 +492,8 @@ function writeReportFile(workDir, markdown) {
   try {
     const reportPath = path.join(dir, REPORT_FILENAME);
     assertSameRunDir(handle, dir);
-    assertReportTargetIsSafe(reportPath);
+    const existingMode = inspectReportTarget(reportPath);
+    const targetMode = existingMode ?? 0o600;
 
     const tempPath = path.join(dir, `${REPORT_TEMP_PREFIX}${process.pid}-${randomUUID()}`);
     let temp = null;
@@ -491,11 +501,14 @@ function writeReportFile(workDir, markdown) {
     try {
       // `wx` is O_CREAT|O_EXCL: it never opens an existing object, so a link
       // pre-planted under the temp name cannot be written through.
-      const fd = fs.openSync(tempPath, 'wx');
+      const fd = fs.openSync(tempPath, 'wx', 0o600);
       try {
         created = fs.fstatSync(fd);
         temp = { dev: created.dev, ino: created.ino };
         fs.writeSync(fd, Buffer.from(markdown, 'utf8'));
+        // umask only narrows a CREATE mode, so the mode is applied explicitly:
+        // 0600 for a new report, the existing mode for an update.
+        fs.fchmodSync(fd, targetMode);
       } finally {
         try { fs.closeSync(fd); } catch { /* descriptor is already gone */ }
       }
