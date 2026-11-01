@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "type": "p1-final-coverage-integration",
+  "planHash": "25fe0646076539490e4e1cb495a947a2a6f45c2c6667f9cc0618ff885f122e75",
+  "pipeline": "p1-cross-question-deep-research",
+  "stage": "FINAL_COVERAGE_RECONCILIATION",
+  "assertion": {
+    "is100PercentAnalysis": true,
+    "basis": "MECHANICAL_SET_EQUALITY"
+  },
+  "doubleDefense": {
+    "t14PreSynthesisGuard": {
+      "guardResult": "PASS",
+      "selectedVerifiedSourceSetIdentity": "sha256:cf99aa829f7aee1f71e0cc4438e6adb20d43ff563cc4350ad9610fa7a9fa34fb",
+      "mappedAnalyzedSourceSetIdentity": "sha256:cf99aa829f7aee1f71e0cc4438e6adb20d43ff563cc4350ad9610fa7a9fa34fb"
+    },
+    "t15FinalReconciliation": "PASS",
+    "synthesisContract": {
+      "seamVersion": 2,
+      "semanticContractVersion": 2,
+      "synthesisIdentity": "sha256:42a47738c76346d50e6fc1ca059a49bddac5499c421e583236839c12ea09156a",
+      "familyCount": 1,
+      "unresolvedCount": 0,
+      "conflictingFamilyCount": 0,
+      "singleGroupFamilyCount": 0,
+      "multiGroupFamilyCount": 1
+    }
+  },
+  "coverage": {
+    "retrieval": {
+      "retrievalRounds": 2,
+      "stopReason": "zero_new_candidates",
+      "fusedCandidateCount": 2,
+      "fusedGroupCount": 2,
+      "providerFailureCount": 0
+    },
+    "analysisCoverage": {
+      "selectedCorpusSourceSet": [
+        "asrc-313664a3120a4f8daec0b4da",
+        "asrc-5a9a42b83cbc0c926231d8c5",
+        "asrc-972d480e0f8e1b06baff3d8c",
+        "asrc-ff70ca7e7f81833130f5e19b"
+      ],
+      "mappedSourceSet": [
+        "asrc-313664a3120a4f8daec0b4da",
+        "asrc-5a9a42b83cbc0c926231d8c5",
+        "asrc-972d480e0f8e1b06baff3d8c",
+        "asrc-ff70ca7e7f81833130f5e19b"
+      ],
+      "analyzedSourceSet": [
+        "asrc-313664a3120a4f8daec0b4da",
+        "asrc-5a9a42b83cbc0c926231d8c5",
+        "asrc-972d480e0f8e1b06baff3d8c",
+        "asrc-ff70ca7e7f81833130f5e19b"
+      ],
+      "selectedCount": 4,
+      "mappedCount": 4,
+      "analyzedCount": 4,
+      "evidenceRefIssues": {
+        "missingRefs": [],
+        "duplicateRefs": [],
+        "staleRefs": [],
+        "invalidRefs": []
+      }
+    },
+    "sourceCompleteness": {
+      "totalSelectedCount": 4,
+      "totalVerifiedCount": 4,
+      "capturedNotVerifiedCount": 0
+    }
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 1,
+    "new_contradiction_rate": 0,
+    "novelty_gain": 0,
+    "selected_source_group_count": 2,
+    "selected_content_by_group": {
+      "100": 2,
+      "200": 2
+    },
+    "largest_group_share": 0.5,
+    "selected_author_concentration": 0,
+    "selected_content_type_distribution": {},
+    "claim_source_diversity": 1,
+    "per_group_selection_coverage": {
+      "100": 1,
+      "200": 1
+    }
+  },
+  "hookConvergenceOrder": [
+    "RETRIEVAL_ROUNDS",
+    "SOURCE_GROUP_SELECTION",
+    "GROUP_EXECUTION",
+    "CORPUS_SELECTION",
+    "PER_GROUP_ANALYSIS",
+    "CROSS_SOURCE_SYNTHESIS",
+    "FINAL_COVERAGE_RECONCILIATION"
+  ],
+  "runtime": {
+    "runtimeId": "deepseek-api-tool-less",
+    "model": "deepseek-v4-pro"
+  },
+  "artifacts": {
+    "coverageState": "coverage-state.json",
+    "finalCoverage": "coverage-final.json",
+    "synthesis": "cross-source-synthesis.json"
+  }
+}

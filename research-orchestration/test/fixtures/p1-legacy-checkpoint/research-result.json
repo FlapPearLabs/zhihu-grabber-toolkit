@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "type": "p1-research-result",
+  "ok": true,
+  "topic": "AI 编程工具会取代程序员吗",
+  "mode": "p1-cross-question-deep-research",
+  "runId": "bb8a745ce60523814bd493b35bcd4593942e3a21678cf2f318d8e19c14ca3085",
+  "planHash": "25fe0646076539490e4e1cb495a947a2a6f45c2c6667f9cc0618ff885f122e75",
+  "runtime": {
+    "runtimeId": "deepseek-api-tool-less",
+    "model": "deepseek-v4-pro"
+  },
+  "disclosure": {
+    "pipeline": "p1-cross-question-deep-research",
+    "stage": "FINAL_COVERAGE_RECONCILIATION",
+    "isFullCoverage": true,
+    "complete": true,
+    "analysisCoverage": {
+      "selectedCount": 4,
+      "mappedCount": 4,
+      "analyzedCount": 4
+    },
+    "retrieval": {
+      "retrievalRounds": 2,
+      "stopReason": "zero_new_candidates",
+      "fusedCandidateCount": 2,
+      "fusedGroupCount": 2,
+      "providerFailureCount": 0
+    },
+    "gap": null
+  },
+  "verification": {
+    "valid": true,
+    "basis": {
+      "t14PreSynthesisGuard": "PASS",
+      "t15FinalReconciliation": "PASS",
+      "groupsVerified": "2/2",
+      "analysisCoverage": {
+        "selectedCount": 4,
+        "mappedCount": 4,
+        "analyzedCount": 4
+      }
+    }
+  },
+  "artifacts": {
+    "researchPlan": "research-plan.json",
+    "selectionDecision": "source-group-selection-decision.json",
+    "coverageState": "coverage-state.json",
+    "coverageFinal": "coverage-final.json",
+    "perGroupClaims": "per-group-claims.json",
+    "synthesis": "cross-source-synthesis.json",
+    "researchResult": "research-result.json"
+  }
+}

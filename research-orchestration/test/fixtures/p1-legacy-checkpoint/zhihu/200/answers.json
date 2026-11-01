@@ -1,0 +1,20 @@
+{
+  "questionId": "200",
+  "questionTitle": "问题 200 的标题",
+  "answers": [
+    {
+      "id": "200-a-1",
+      "content": "回答三：另一个问题下的主流经验。",
+      "excerpt": "回答三：另一个问题下的主流经验。",
+      "author": "作者200-0",
+      "voteupCount": 10
+    },
+    {
+      "id": "200-a-2",
+      "content": "回答四：补充：成本是主要顾虑。",
+      "excerpt": "回答四：补充：成本是主要顾虑。",
+      "author": "作者200-1",
+      "voteupCount": 9
+    }
+  ]
+}

@@ -18,7 +18,11 @@
  *       symlink and a symlinked parent directory are never followed, while a
  *       normal in-directory artifact is read;
  *   S4  a refusal is coded and never echoes the out-of-work-dir target or the
- *       data it would have exposed.
+ *       data it would have exposed;
+ *   S5  the check cannot be turned into check-then-use: an artifact swapped for
+ *       a symlink AFTER it was inspected is refused (the read is descriptor-
+ *       based and re-verifies the opened object), and no report is rendered;
+ *   S6  the same swap on a PARENT directory is refused for the same reason.
  *
  * Fully offline: fixtures are written by the test itself; no run, no network.
  */
@@ -176,4 +180,92 @@ test('S4: a symlinked canonical input is refused without echoing the outside tar
   assert.ok(!error.message.includes(outsideFile), 'the refusal must not echo the out-of-work-dir target');
   assert.ok(!error.message.includes('OUTSIDE_SECRET_TOPIC'), 'the refusal must not expose the data it refused to read');
   assert.ok(!error.message.includes(outside), 'the refusal must not leak the external directory');
+});
+
+/**
+ * Run `fn` with the filesystem entry `swappedBefore` replaced by `replace()`
+ * the first time an implementation consumes that path — either by opening it
+ * or by reading it by name. This deterministically reproduces an attacker
+ * winning the check-then-use race (the check has already happened).
+ */
+function withSwapBeforeUse(swappedBefore, replace, fn) {
+  const target = path.resolve(swappedBefore);
+  let swapped = false;
+  const swap = () => {
+    if (swapped) return;
+    swapped = true;
+    replace();
+  };
+  const realOpenSync = fs.openSync;
+  const realReadFileSync = fs.readFileSync;
+  fs.openSync = function patchedOpenSync(p, ...rest) {
+    if (typeof p === 'string' && path.resolve(p) === target) swap();
+    return realOpenSync.call(fs, p, ...rest);
+  };
+  fs.readFileSync = function patchedReadFileSync(p, ...rest) {
+    if (typeof p === 'string' && path.resolve(p) === target) swap();
+    return realReadFileSync.call(fs, p, ...rest);
+  };
+  try {
+    return { result: fn(), swapped: () => swapped };
+  } finally {
+    fs.openSync = realOpenSync;
+    fs.readFileSync = realReadFileSync;
+  }
+}
+
+test('S5: an artifact swapped for a symlink after inspection is refused, not read', () => {
+  const workDir = fixture();
+  const outside = tmpDir('p1-report-race-outside-');
+  const outsideFile = path.join(outside, 'research-result.json');
+  fs.writeFileSync(outsideFile, JSON.stringify({ ok: true, topic: 'OUTSIDE_RACE_SECRET_TOPIC' }));
+  const canonical = path.join(workDir, 'research-result.json');
+  const canonicalBefore = fs.readFileSync(canonical, 'utf8');
+
+  let error = null;
+  const run = withSwapBeforeUse(canonical, () => {
+    fs.rmSync(canonical);
+    fs.symlinkSync(outsideFile, canonical);
+  }, () => {
+    try {
+      writeReport(workDir);
+    } catch (err) {
+      error = err;
+    }
+  });
+  assert.equal(run.swapped(), true, 'the race window must actually have been exercised');
+  assert.ok(error instanceof ReportError, 'a raced read must be refused with a coded error');
+  assert.equal(error.code, 'REPORT_INPUT_UNSAFE');
+  assert.ok(!error.message.includes('OUTSIDE_RACE_SECRET_TOPIC'), 'refused data must not be exposed');
+  assert.ok(!error.message.includes(outsideFile), 'the refusal must not echo the link target');
+  assert.equal(fs.existsSync(path.join(workDir, REPORT_FILENAME)), false, 'no report may be rendered from an unverified read');
+  assert.equal(fs.readFileSync(outsideFile, 'utf8').includes('OUTSIDE_RACE_SECRET_TOPIC'), true);
+  assert.notEqual(canonicalBefore, '');
+});
+
+test('S6: a parent directory swapped for a symlink after inspection is refused, not read', () => {
+  const outside = tmpDir('p1-report-race-parent-outside-');
+  fs.mkdirSync(path.join(outside, '100'), { recursive: true });
+  fs.writeFileSync(path.join(outside, '100', 'answers.json'), JSON.stringify({
+    questionId: '100',
+    questionTitle: 'OUTSIDE_RACE_PARENT_TITLE',
+    answers: [{ id: '1001', author: 'OUTSIDE_RACE_PARENT_AUTHOR', voteupCount: 1 }],
+  }));
+
+  const workDir = tmpDir('p1-report-race-parent-');
+  fs.mkdirSync(path.join(workDir, 'zhihu', '100'), { recursive: true });
+  const evidenceRef = 'zhihu/100/answers.json';
+  fs.writeFileSync(path.join(workDir, evidenceRef), JSON.stringify({
+    questionId: '100', questionTitle: '正常标题', answers: [{ id: '1001', author: '作者甲', voteupCount: 3 }],
+  }));
+  const groupState = { groups: { 100: { groupId: '100', questionId: '100', evidenceRef } } };
+
+  const run = withSwapBeforeUse(path.join(workDir, evidenceRef), () => {
+    fs.rmSync(path.join(workDir, 'zhihu'), { recursive: true, force: true });
+    fs.symlinkSync(outside, path.join(workDir, 'zhihu'));
+  }, () => buildSourceIndex(workDir, groupState));
+
+  assert.equal(run.swapped(), true, 'the race window must actually have been exercised');
+  assert.equal(run.result.groups.get('100').title, null, 'a raced parent directory must not be followed');
+  assert.equal(run.result.sources.size, 0);
 });

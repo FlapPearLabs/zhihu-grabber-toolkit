@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "planHash": "25fe0646076539490e4e1cb495a947a2a6f45c2c6667f9cc0618ff885f122e75",
+  "retrieval": {
+    "plannedQueryVariants": [
+      "AI coding 岗位影响",
+      "AI 编程工具 取代 程序员"
+    ],
+    "plannedRoutes": [
+      {
+        "providerId": "fixture-official",
+        "capability": "search"
+      },
+      {
+        "providerId": "fixture-global",
+        "capability": "search"
+      }
+    ],
+    "executedRoutes": [
+      {
+        "query": "AI 编程工具 取代 程序员",
+        "providerId": "fixture-official",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "AI 编程工具 取代 程序员",
+        "providerId": "fixture-global",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "AI coding 岗位影响",
+        "providerId": "fixture-official",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "AI coding 岗位影响",
+        "providerId": "fixture-global",
+        "capability": "search",
+        "roundIndex": 1
+      },
+      {
+        "query": "AI 编程工具 取代 程序员",
+        "providerId": "fixture-official",
+        "capability": "search",
+        "roundIndex": 2
+      },
+      {
+        "query": "AI 编程工具 取代 程序员",
+        "providerId": "fixture-global",
+        "capability": "search",
+        "roundIndex": 2
+      },
+      {
+        "query": "AI coding 岗位影响",
+        "providerId": "fixture-official",
+        "capability": "search",
+        "roundIndex": 2
+      },
+      {
+        "query": "AI coding 岗位影响",
+        "providerId": "fixture-global",
+        "capability": "search",
+        "roundIndex": 2
+      }
+    ],
+    "fusedCandidateCount": 2,
+    "fusedGroupCount": 2,
+    "providerFailures": [],
+    "retrievalRounds": 2,
+    "stopReason": "zero_new_candidates"
+  },
+  "sourceCompleteness": {
+    "perGroupStatus": {
+      "100": {
+        "captured": true,
+        "verified": true,
+        "partial": false,
+        "failed": false,
+        "paginationStatus": "complete",
+        "evidenceRef": "zhihu/100/answers.json",
+        "selectedCount": 2,
+        "verifiedCount": 2
+      },
+      "200": {
+        "captured": true,
+        "verified": true,
+        "partial": false,
+        "failed": false,
+        "paginationStatus": "complete",
+        "evidenceRef": "zhihu/200/answers.json",
+        "selectedCount": 2,
+        "verifiedCount": 2
+      }
+    },
+    "diagnostics": {
+      "capturedNotVerifiedCount": 0,
+      "totalSelectedCount": 4,
+      "totalVerifiedCount": 4
+    }
+  },
+  "analysisCoverage": {
+    "selectedCorpusSourceSet": [
+      "asrc-313664a3120a4f8daec0b4da",
+      "asrc-5a9a42b83cbc0c926231d8c5",
+      "asrc-972d480e0f8e1b06baff3d8c",
+      "asrc-ff70ca7e7f81833130f5e19b"
+    ],
+    "mappedSourceSet": [
+      "asrc-313664a3120a4f8daec0b4da",
+      "asrc-5a9a42b83cbc0c926231d8c5",
+      "asrc-972d480e0f8e1b06baff3d8c",
+      "asrc-ff70ca7e7f81833130f5e19b"
+    ],
+    "analyzedSourceSet": [
+      "asrc-313664a3120a4f8daec0b4da",
+      "asrc-5a9a42b83cbc0c926231d8c5",
+      "asrc-972d480e0f8e1b06baff3d8c",
+      "asrc-ff70ca7e7f81833130f5e19b"
+    ],
+    "perGroupMappedSourceSet": {
+      "100": [
+        "asrc-313664a3120a4f8daec0b4da",
+        "asrc-ff70ca7e7f81833130f5e19b"
+      ],
+      "200": [
+        "asrc-5a9a42b83cbc0c926231d8c5",
+        "asrc-972d480e0f8e1b06baff3d8c"
+      ]
+    },
+    "perGroupAnalyzedSourceSet": {
+      "100": [
+        "asrc-313664a3120a4f8daec0b4da",
+        "asrc-ff70ca7e7f81833130f5e19b"
+      ],
+      "200": [
+        "asrc-5a9a42b83cbc0c926231d8c5",
+        "asrc-972d480e0f8e1b06baff3d8c"
+      ]
+    },
+    "evidenceRefIssues": {
+      "missingRefs": [],
+      "duplicateRefs": [],
+      "staleRefs": [],
+      "invalidRefs": []
+    },
+    "is100PercentAnalysis": false
+  },
+  "diagnostics": {
+    "new_aspect_rate": 1,
+    "new_claim_rate": 1,
+    "new_expert_rate": 1,
+    "new_contradiction_rate": 0,
+    "novelty_gain": 0,
+    "selected_source_group_count": 2,
+    "selected_content_by_group": {
+      "100": 2,
+      "200": 2
+    },
+    "largest_group_share": 0.5,
+    "selected_author_concentration": 0,
+    "selected_content_type_distribution": {},
+    "claim_source_diversity": 1,
+    "per_group_selection_coverage": {
+      "100": 1,
+      "200": 1
+    }
+  }
+}

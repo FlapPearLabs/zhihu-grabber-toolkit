@@ -121,7 +121,7 @@ import { REQUIRED_EMBEDDING_IDENTITY } from './dense-geometry.mjs';
 import { deriveCanonicalSourceId } from './rce-input-adapter.mjs';
 import { assertArtifactSafe } from './rrf.mjs';
 import { recordCanonicalSearchResponse, parseBoundProviderPool, registerPrivateTitleRoot } from './provider-title-origin.mjs';
-import { createModelRuntime, isResearchRuntimeIdentity, isDefaultRuntimeIdentity } from './model-runtime.mjs';
+import { createModelRuntime, isResearchRuntimeIdentity, runtimeRunKey } from './model-runtime.mjs';
 import { validateCompleteReuseClosure, CHECKPOINT_BINDING_ACCUMULATED_POOL, CHECKPOINT_BINDING_SELECTION_DECISION, CHECKPOINT_BINDING_COVERAGE_STATE } from './p1-reuse-closure.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -1016,11 +1016,20 @@ export async function composeP1Research({
   }
 
   const mode = P1_PIPELINE_IDENTITY;
-  // The default model keeps the historical run identity; any other model is
-  // part of the run identity, so switching models never reuses a checkpoint.
-  const runtimeKey = isDefaultRuntimeIdentity(effectiveRuntime)
-    ? effectiveRuntime.runtimeId
-    : `${effectiveRuntime.runtimeId}:${effectiveRuntime.model}`;
+  // The default model keeps the historical run identity; any other model and
+  // any operator-supplied endpoint are part of the run identity, so switching
+  // model or endpoint never reuses a checkpoint. ONE key is computed here and
+  // is the same value hashed into `runId` and recorded in state — a checkpoint
+  // must never be written under one identity and resumed under another
+  // (the previous split hashed `runtimeId:model` but stored `runtimeId`, so a
+  // non-default run could never be resumed). An endpoint that cannot be safely
+  // bound fails closed here; there is no fallback to the wider key.
+  let runtimeKey;
+  try {
+    runtimeKey = runtimeRunKey(effectiveRuntime);
+  } catch (error) {
+    return fail(CFC_RUNTIME_NOT_SUPPORTED, error?.message ?? String(error));
+  }
   const runId = runIdentityHash({ topic: normalizedTopic, mode, percent: null, runtime: runtimeKey });
 
   // 1. State bootstrap / resume classification (checkpoint identity validated —
@@ -1166,7 +1175,7 @@ export async function composeP1Research({
     archivePriorOccurrenceDerivedState(workDir, occurrenceId);
   }
 
-  const state = makeState({ workDir, topic: normalizedTopic, mode, percent: null, runtime: effectiveRuntime.runtimeId, occurrenceId, config });
+  const state = makeState({ workDir, topic: normalizedTopic, mode, percent: null, runtime: runtimeKey, occurrenceId, config });
   state.stage = STAGE_SEARCH;
   // P1-R06 repair (independent-review P1-2): a resuming occurrence must NOT
   // replace the durable checkpoint before the re-entry proof has decided what
@@ -1181,7 +1190,7 @@ export async function composeP1Research({
   if (checkpointAdopted) {
     writeState(workDir, state);
   }
-  appendEvent(workDir, { event: 'p1_compose_begin', runId, mode, runtime: effectiveRuntime.runtimeId, occurrenceId, resuming: isResumingOccurrence });
+  appendEvent(workDir, { event: 'p1_compose_begin', runId, mode, runtime: runtimeKey, occurrenceId, resuming: isResumingOccurrence });
 
   const persistFailure = (code, details = null, extra = {}) => {
     state.stage = STAGE_FAILED;

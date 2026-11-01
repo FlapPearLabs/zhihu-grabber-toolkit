@@ -1,0 +1,140 @@
+{
+  "verdict": "auto",
+  "reason": "clear_best",
+  "planHash": "25fe0646076539490e4e1cb495a947a2a6f45c2c6667f9cc0618ff885f122e75",
+  "poolPlanHash": "25fe0646076539490e4e1cb495a947a2a6f45c2c6667f9cc0618ff885f122e75",
+  "planHashMatch": true,
+  "selectorVersion": "p1-t08-source-group-selection/v1",
+  "schemaVersion": 1,
+  "type": "source-group-selection-decision",
+  "selectedGroups": [
+    {
+      "groupId": "100",
+      "questionId": "100",
+      "rrfScore": 0.06557377049180328,
+      "score": 0.06557377049180328,
+      "sourceUrl": null,
+      "provenance": [
+        {
+          "channel": {
+            "query": "AI coding 岗位影响",
+            "providerId": "fixture-global",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "fixture"
+        },
+        {
+          "channel": {
+            "query": "AI coding 岗位影响",
+            "providerId": "fixture-official",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "fixture"
+        },
+        {
+          "channel": {
+            "query": "AI 编程工具 取代 程序员",
+            "providerId": "fixture-global",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "fixture"
+        },
+        {
+          "channel": {
+            "query": "AI 编程工具 取代 程序员",
+            "providerId": "fixture-official",
+            "capability": "search"
+          },
+          "rank": 1,
+          "rankOrigin": "fixture_order",
+          "route": "fixture"
+        }
+      ],
+      "rationaleRef": null,
+      "selectionReason": "clear_best"
+    },
+    {
+      "groupId": "200",
+      "questionId": "200",
+      "rrfScore": 0.06451612903225806,
+      "score": 0.06451612903225806,
+      "sourceUrl": null,
+      "provenance": [
+        {
+          "channel": {
+            "query": "AI coding 岗位影响",
+            "providerId": "fixture-global",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "fixture"
+        },
+        {
+          "channel": {
+            "query": "AI coding 岗位影响",
+            "providerId": "fixture-official",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "fixture"
+        },
+        {
+          "channel": {
+            "query": "AI 编程工具 取代 程序员",
+            "providerId": "fixture-global",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "fixture"
+        },
+        {
+          "channel": {
+            "query": "AI 编程工具 取代 程序员",
+            "providerId": "fixture-official",
+            "capability": "search"
+          },
+          "rank": 2,
+          "rankOrigin": "fixture_order",
+          "route": "fixture"
+        }
+      ],
+      "rationaleRef": null,
+      "selectionReason": "clear_best"
+    }
+  ],
+  "selectedGroupCount": 2,
+  "candidates": [
+    {
+      "questionId": "100",
+      "score": 0.06557377049180328,
+      "rrfScore": 0.06557377049180328,
+      "eligible": true,
+      "selected": true
+    },
+    {
+      "questionId": "200",
+      "score": 0.06451612903225806,
+      "rrfScore": 0.06451612903225806,
+      "eligible": true,
+      "selected": true
+    }
+  ],
+  "clarification": null,
+  "clarificationCount": 0,
+  "intentCoverage": {
+    "total": 0,
+    "bound": 0,
+    "unmet": 0,
+    "shortfall": 0
+  },
+  "rationale": "clear best group set: auto-selected 2 source group(s) (score desc; planHash 25fe06460765…)"
+}

@@ -95,6 +95,12 @@ function canonicalizeForHash(value) {
 export function makeState({ workDir, topic, mode, percent, runtime, forceQuestionId, occurrenceId, config }) {
   return {
     schemaVersion: STATE_SCHEMA_VERSION,
+    // `runtime` is the run-identity runtime key computed by the caller
+    // (model-runtime.runtimeRunKey): the bare runtimeId for the default model,
+    // `runtimeId:model` for other models, plus `:endpoint-<digest>` for an
+    // operator-supplied base URL. It is recorded verbatim and hashed here, so a
+    // caller cannot write a checkpoint under one identity and resume under
+    // another. The digest keeps the endpoint URL (host/path) out of state.
     runId: runIdentityHash({ topic, mode, percent, runtime }),
     // P1-R02 (#90): occurrence identity — a single execution of a (request, config)
     // binding. Distinct from the stable runId (normalized request + config). A

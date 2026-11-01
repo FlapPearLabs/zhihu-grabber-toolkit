@@ -20,6 +20,12 @@
  * `<provider>-api-tool-less`, model `<model-id>`. The default therefore keeps
  * the historical identity (deepseek-api-tool-less / deepseek-v4-pro).
  *
+ * RUN identity (`runtimeRunKey`, hashed into the checkpoint runId) is wider:
+ * the historical bare `runtimeId` for the default model, `runtimeId:model`
+ * otherwise, plus `:endpoint-<digest>` for an operator-supplied base URL. The
+ * endpoint digest is stable for one endpoint and never reveals the URL, so
+ * either can enter portable state without leaking a host or path.
+ *
  * Boundaries (unchanged from the previous DeepSeek-only adapter):
  *   - tool-less: no tools are ever sent; a tool call in the reply fails closed;
  *   - the model only proposes semantics; callers validate every output;
@@ -34,6 +40,7 @@
  */
 
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveDeepSeekCredential } from '../../corpus-anthology/lib/deepseek-tool-less.mjs';
@@ -99,6 +106,41 @@ export function isResearchRuntimeIdentity(runtime) {
 export function isDefaultRuntimeIdentity(runtime) {
   const def = runtimeIdentityFor(parseModelSpec(DEFAULT_MODEL_SPEC));
   return runtime?.runtimeId === def.runtimeId && runtime?.model === def.model;
+}
+
+/**
+ * Stable, non-revealing binding of an operator-supplied endpoint.
+ *
+ * Only the digest may enter run identity, checkpoints or logs: a base URL
+ * carries a host and path that can be environment-private, and it must never
+ * be persisted. The URL is normalized first, so equivalent spellings of one
+ * endpoint (`…/v1`, `…/v1/`, upper-case host, explicit :443) bind identically.
+ */
+export function endpointBindingFor(endpoint) {
+  return `endpoint-${crypto.createHash('sha256').update(validateBaseUrl(endpoint)).digest('hex').slice(0, 16)}`;
+}
+
+/**
+ * The run-identity key: ONE value that the composer hashes into `runId` AND
+ * records in state (`makeState({ runtime })`), so a checkpoint can never be
+ * written under one identity and resumed under another.
+ *
+ *   default model, provider endpoint  → `<runtimeId>`          (historical)
+ *   any other model                   → `<runtimeId>:<model>`
+ *   + operator-supplied base URL      → `<…>:endpoint-<digest>`
+ *
+ * The default key is byte-identical to the pre-existing formula, so historical
+ * default checkpoints still resume. An endpoint that cannot be validated
+ * throws (`base_url_invalid`) instead of falling back to the wider key.
+ */
+export function runtimeRunKey(runtime) {
+  if (!isResearchRuntimeIdentity(runtime)) {
+    throw new ModelRuntimeError('runtime_identity_invalid', 'runtime identity is malformed');
+  }
+  const base = isDefaultRuntimeIdentity(runtime) ? runtime.runtimeId : `${runtime.runtimeId}:${runtime.model}`;
+  const customEndpoint = runtime.customEndpoint;
+  if (customEndpoint === null || customEndpoint === undefined || customEndpoint === '') return base;
+  return `${base}:${endpointBindingFor(customEndpoint)}`;
 }
 
 /**
@@ -401,6 +443,10 @@ export async function createModelRuntime({
     ...identity,
     provider,
     endpoint: endpoint ?? model.baseUrl ?? null,
+    // Operator-supplied endpoint (validated), or null when the provider's own
+    // endpoint is used. Identity binding only: it is never persisted — the
+    // checkpoint records `runtimeRunKey(runtime)`, which carries a digest.
+    customEndpoint: custom ? endpoint : null,
     /** Raw assistant text (the planner validates it). */
     completeText(args) {
       return complete(args);

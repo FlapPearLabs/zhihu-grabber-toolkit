@@ -20,6 +20,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { escapeUntrustedMarkdownText } from '../../zhihu-answer-grabber/src/markdown-security.js';
 import { deriveCanonicalSourceId } from './rce-input-adapter.mjs';
 
@@ -49,13 +50,12 @@ export class ReportError extends Error {
 const md = (value) => escapeUntrustedMarkdownText(String(value ?? '').replace(/\s+/gu, ' ').trim());
 
 function readJson(workDir, rel) {
-  const file = path.join(workDir, rel);
-  let text;
-  try {
-    text = fs.readFileSync(file, 'utf8');
-  } catch {
-    throw new ReportError('REPORT_INPUT_MISSING', `${rel} is missing`);
+  const inspected = inspectArtifact(workDir, rel);
+  if (inspected.unsafe) {
+    throw new ReportError('REPORT_INPUT_UNSAFE', `${rel} is not a regular file inside the run directory`);
   }
+  if (!inspected.file) throw new ReportError('REPORT_INPUT_MISSING', `${rel} is missing`);
+  const text = readInspectedText(inspected, rel);
   try {
     return JSON.parse(text);
   } catch {
@@ -63,12 +63,85 @@ function readJson(workDir, rel) {
   }
 }
 
-/** Resolve a work-relative artifact ref, refusing anything outside workDir. */
-function resolveInside(workDir, rel) {
-  if (typeof rel !== 'string' || rel === '' || path.isAbsolute(rel)) return null;
+/**
+ * Inspect a work-relative artifact ref WITHOUT following links.
+ *
+ * An artifact is readable only when every path component below the run
+ * directory is a real directory and the leaf is a regular file. A symlinked
+ * leaf, or a symlinked parent directory, could otherwise make the report read
+ * data the run never produced (and disclose it in the report).
+ *
+ * Returns `{ file }` when readable, `{ unsafe: true }` when the ref cannot be
+ * proven to stay inside the run, and `{}` when it is simply absent. Callers
+ * must never echo the resolved target of an unsafe ref.
+ */
+function inspectArtifact(workDir, rel) {
   const root = path.resolve(workDir);
-  const abs = path.resolve(root, rel);
-  return abs.startsWith(root + path.sep) ? abs : null;
+  if (typeof rel !== 'string' || rel === '' || path.isAbsolute(rel)) return { unsafe: true };
+  const parts = rel.split(/[\\/]+/).filter((part) => part !== '' && part !== '.');
+  if (parts.length === 0 || parts.includes('..')) return { unsafe: true };
+  let current = root;
+  let leaf = null;
+  for (const [index, part] of parts.entries()) {
+    current = path.join(current, part);
+    let stat;
+    try {
+      stat = fs.lstatSync(current);
+    } catch (err) {
+      return err.code === 'ENOENT' ? {} : { unsafe: true };
+    }
+    if (stat.isSymbolicLink()) return { unsafe: true };
+    if (index === parts.length - 1) {
+      if (!stat.isFile()) return { unsafe: true };
+      leaf = stat;
+    } else if (!stat.isDirectory()) return { unsafe: true };
+  }
+  // Defense in depth: even with no link component, the resolved target must
+  // still live inside the resolved run directory.
+  try {
+    const realRoot = fs.realpathSync(root);
+    const real = fs.realpathSync(current);
+    if (real !== realRoot && !real.startsWith(`${realRoot}${path.sep}`)) return { unsafe: true };
+  } catch {
+    return { unsafe: true };
+  }
+  // `dev`/`ino` identify the object the inspection saw; the read below proves
+  // it opened THAT object (see readInspectedText).
+  return { file: current, dev: leaf.dev, ino: leaf.ino };
+}
+
+/**
+ * Read the object `inspectArtifact` verified, THROUGH AN OPEN DESCRIPTOR.
+ *
+ * Inspecting and then reading by path is check-then-use: between the two calls
+ * the leaf — or any parent directory — can be replaced with a symlink, and a
+ * path-based read would follow it out of the run directory. So the leaf is
+ * opened with O_NOFOLLOW, the OPENED object is re-verified (regular file, same
+ * device and inode the inspection saw), and the bytes are taken from the
+ * descriptor. A swap after the open cannot redirect the read; a swap before it
+ * either fails to open (leaf is now a link) or opens a different object and is
+ * refused. Nothing about the target is echoed in the error.
+ *
+ * Residual risk: identity is dev/ino, so a hard link to the very same inode is
+ * indistinguishable from the file itself — it carries the same bytes.
+ */
+function readInspectedText(inspected, rel) {
+  let fd;
+  try {
+    fd = fs.openSync(inspected.file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW ?? 0));
+  } catch (err) {
+    if (err?.code === 'ENOENT') throw new ReportError('REPORT_INPUT_MISSING', `${rel} is missing`);
+    throw new ReportError('REPORT_INPUT_UNSAFE', `${rel} cannot be opened without following a link`);
+  }
+  try {
+    const opened = fs.fstatSync(fd);
+    if (!opened.isFile() || opened.dev !== inspected.dev || opened.ino !== inspected.ino) {
+      throw new ReportError('REPORT_INPUT_UNSAFE', `${rel} is not the regular file that was inspected`);
+    }
+    return fs.readFileSync(fd, 'utf8');
+  } finally {
+    try { fs.closeSync(fd); } catch { /* descriptor is already gone */ }
+  }
 }
 
 function questionUrl(questionId) {
@@ -90,10 +163,10 @@ export function buildSourceIndex(workDir, groupState) {
   const groups = new Map();
   for (const g of Object.values(groupState?.groups ?? {})) {
     if (!g || typeof g.groupId !== 'string') continue;
-    const abs = resolveInside(workDir, g.evidenceRef);
+    const inspected = inspectArtifact(workDir, g.evidenceRef);
     let doc = null;
-    if (abs) {
-      try { doc = JSON.parse(fs.readFileSync(abs, 'utf8')); } catch { doc = null; }
+    if (inspected.file) {
+      try { doc = JSON.parse(readInspectedText(inspected, g.evidenceRef)); } catch { doc = null; }
     }
     const questionId = String(g.questionId ?? doc?.questionId ?? g.groupId);
     groups.set(g.groupId, {
@@ -327,9 +400,54 @@ export function summarizeReport(model, { maxFamilies = 3 } = {}) {
   return [head, ...top];
 }
 
+const REPORT_TEMP_PREFIX = `.${REPORT_FILENAME}.tmp-`;
+
+/**
+ * A report target may only be a regular file or absent. A symlink is refused:
+ * following it would let `report.md → research-result.json` rewrite canonical
+ * run data. Any other non-regular object (directory, FIFO, device) is refused
+ * for the same reason.
+ */
+function assertReportTargetIsSafe(reportPath) {
+  let stat;
+  try {
+    stat = fs.lstatSync(reportPath);
+  } catch (err) {
+    if (err.code === 'ENOENT') return;
+    throw new ReportError('REPORT_OUTPUT_UNSAFE', `${REPORT_FILENAME} cannot be inspected as a regular file`);
+  }
+  if (!stat.isFile()) throw new ReportError('REPORT_OUTPUT_UNSAFE', `${REPORT_FILENAME} must be a regular file`);
+}
+
+/**
+ * Write the report ATOMICALLY: bytes go to a fresh temp file in the same
+ * directory and are then RENAMEd over the target. Rendering replaces a
+ * directory entry instead of writing through whatever the name resolves to, so
+ * a hard link to a canonical artifact keeps its bytes (an in-place write would
+ * rewrite the shared inode) and a concurrent reader sees either the previous
+ * report or the complete new one, never a partial file.
+ */
+function writeReportFile(reportPath, markdown) {
+  assertReportTargetIsSafe(reportPath);
+  const temp = path.join(path.dirname(reportPath), `${REPORT_TEMP_PREFIX}${process.pid}-${randomUUID()}`);
+  try {
+    fs.writeFileSync(temp, markdown, { flag: 'wx' });
+    fs.renameSync(temp, reportPath);
+  } catch (err) {
+    try { fs.rmSync(temp, { force: true }); } catch { /* best effort cleanup */ }
+    throw new ReportError('REPORT_OUTPUT_FAILED', `${REPORT_FILENAME} could not be written (${err?.code ?? 'error'})`);
+  }
+}
+
 /**
  * Render and write `report.md` for a completed run directory.
  * Returns { reportPath, model }.
+ *
+ * The target is validated as a file OBJECT: an existing symlink (or any other
+ * non-regular object) is refused, so a `report.md → research-result.json` link
+ * can never make rendering overwrite canonical run data. The write itself is
+ * atomic (temp file + rename), so it replaces the directory entry instead of
+ * writing through whatever the name resolves to.
  */
 export function writeReport(workDir) {
   const result = readJson(workDir, RESULT_FILENAME);
@@ -339,6 +457,6 @@ export function writeReport(workDir) {
   const index = buildSourceIndex(workDir, groupState);
   const model = buildReportModel({ result, synthesisArtifact, claimsArtifact, index });
   const reportPath = path.join(workDir, REPORT_FILENAME);
-  fs.writeFileSync(reportPath, renderReportMarkdown(model));
+  writeReportFile(reportPath, renderReportMarkdown(model));
   return { reportPath, model };
 }
