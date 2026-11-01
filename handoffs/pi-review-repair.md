@@ -2,18 +2,19 @@
 
 - 角色：修复（执行者），不自行宣布验收通过。
 - 仓库：p2-ari-evaluation，工作树 `.worktrees/pi-review-repair`，分支 `task/pi-review-repair`。
-- BASE_SHA：`99bc6e6daa438b736acaedc09133fc366053098b`（第二轮 CHANGES_REQUESTED 的候选 HEAD）
-- HEAD_SHA：代码 HEAD `b1410de`；本交接包是它之上的一条 `docs:` 提交（不含代码改动）。
-- 提交：`758a5bd` test（重写 I7–I10 为 fail-closed 合同、新增 Q7）、`b1410de` fix（profile 一律拒绝、
-  资格边界写明、CI shell 硬化）、本文件 docs。
+- 候选起点 BASE：`62e4f170cbeeec5fe694984294bb27ea9fb8c8c0`（PR #145 候选）
+- PREVIOUS_REVIEWED_HEAD：`b1410de`（两路独立审查在干净 worktree 给出 PASS 的那个代码 HEAD）
+- **代码 HEAD（本次交付）：`400fe93`**；本交接包是它之上的一条 `docs:` 提交，不含代码改动。
+- 提交链路：`758a5bd` test → `b1410de` fix（审查 PASS 的那一版）→ `4120b7f` test → `400fe93` fix
+  （审查后的 6 条 P2 收口）→ 本文件 docs。
 - 依赖：`research-orchestration` 与 `zhihu-answer-grabber` 的依赖已从
   `/private/tmp/zhihu-provider-npm-cache` 离线安装（`npm ci --offline --ignore-scripts --no-audit --no-fund`）。
 - 未 push、未开 PR、未 merge、未改历史、未访问真实凭据或真实模型；所有测试使用合成值与 fake transport。
-- PROJECT_MEMORY_UPDATE_REQUIRED: YES（「任何 operator 声明的凭据凭据 profile 一律拒绝、不得以哈希替代」属
-  durable security invariant，按 AGENTS §10.3 在 merge 后由最小 `docs/memory` 提交补进
-  `docs/project-memory.md`；审查人不改被审 HEAD）。
+- PROJECT_MEMORY_UPDATE_REQUIRED: YES（字段见 AGENTS §2.1.5；「任何 operator 声明的凭据 profile 一律拒绝、
+  不得以哈希替代」「本层 runtime 身份契约表达不了 Spec 里的 lmstudio YES」属 durable security invariant，
+  按 §10.3 在 merge 后由最小 `docs/memory` 提交补进 `docs/project-memory.md`；审查人不改被审 HEAD）。
 
-## 本轮（第二轮复审退回后：99bc6e6 → b1410de）
+## 第二轮（复审退回后：99bc6e6 → b1410de，已获两路独立 PASS）
 
 复审记录在外层 `research-evidence/pi-provider-review-20261101/REVIEW-52ec5f1.md`，四项：
 
@@ -236,7 +237,7 @@ $ node --test research-orchestration/test/p1-report-safety.test.mjs \
 - 错误码沿用既有映射：profile 被拒在 composer 侧呈现 `runtime_not_supported`，
   未新增错误码，测试按既有契约断言。
 
-## 第三轮：审查后的 P2 收口（`b1410de` → 本轮）
+## 第三轮（本轮）：审查后的 P2 收口（`b1410de` → `400fe93`）
 
 两路独立审查（干净 worktree、对抗性、各自写探针 + 突变）均给 `REVIEW_VERDICT: PASS`，
 无 P0/P1，共报 7 条非阻塞问题。本轮修了其中 6 条（第 7 条是既有问题，见末尾）：
@@ -274,3 +275,24 @@ $ git diff --check                         → clean
 `run-classified-research-suites.mjs` 的 `parseSummary` 只匹配 TAP 的 `# tests N`，在 Node 26
 输出 `ℹ tests N` 时计数恒为 0；分类 runner 的真实判据是子进程 rc。属既有缺陷、不在本任务
 范围，未改。
+
+### 第三轮的复审反馈与追加修复（→ `400fe93` 之后、本文件所在提交）
+
+对 `400fe93` 的两路复审：一路 PASS，一路 CHANGES_REQUESTED（P1 是本文件头部过期，
+已在上面的头部修好），另报 3 条 P2，全部处理如下：
+
+- **P1 交接包头停在上一轮** → 头部改为「候选 BASE 62e4f17 / PREVIOUS_REVIEWED_HEAD b1410de /
+  代码 HEAD 400fe93 / 全文提交链路」，并把上面两节标题改回「第二轮」「第三轮（本轮）」。
+- **P2 I13 对 `runtimeRunKey` 一侧没有牙**（把实现改回 `?? 'declared'` 仍然 13/13 绿，
+  因为两种实现抛的是同一个错误码）→ 断言改成匹配文案 `/must not be empty/`。
+  突变复核：在 `$TMPDIR/tooth-wt` 把该行还原成旧写法 → I13 红；本体绿。
+- **P2 环境变量只写空白时被当「未声明」，与显式空白被拒不一致** → `resolveCredentialProfile`
+  改为：仅**空字符串**表示未声明（shell 的「未设置」），空白字符串是声明 → 拒绝
+  （`must not be blank`）。红测同样是 I13（把该规则还原 → I13 红），绿后 85/85。
+- **P2 注释措辞**：`declaredCredentialProfileLabel` 的说明改为「present（非 null/undefined）即声明」，
+  并写明 `env` 是工厂专有输入、`runtimeRunKey` 传 `env: {}` 不会偷看进程环境。
+- **P2 提交信息与产物错位**：`400fe93` 的提交信息第 6 条说「handoff 补 PROJECT_MEMORY 字段」，
+  实际该字段在 `9b187b5` 的 docs 提交里。历史不改写，在此如实记录。
+
+第三轮验证（本轮最终状态）：8 套件 `85/85`、guard `54/54 rc=0`、`full-offline rc=0`、
+`git diff --check` clean；`I13` 的两侧牙齿用突变各证一次。
