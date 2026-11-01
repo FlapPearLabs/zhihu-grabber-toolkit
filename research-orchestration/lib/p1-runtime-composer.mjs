@@ -1012,14 +1012,15 @@ export async function composeP1Research({
     // The injected `runtime` seam below deliberately bypasses this gate: it is a
     // TRUSTED INTERNAL seam (deterministic tests, the P2A T14 acceptance harness,
     // and embedding doubles), where the caller owns the object and its
-    // qualification. It is not a product entry path: the only production
-    // entrypoint (bin/research-p1.mjs) never passes `runtime` — it forwards only
-    // --model / --base-url into the gated branch below — and that is asserted
-    // structurally by test/p1-runtime-qualification.test.mjs Q7. Gating the
-    // createModelRuntime() factory itself would reject the deterministic fake
-    // seams (custom-endpoint fixture runtimes) without closing any public path.
-    // Whether trusted internal callers must share the same contract is an open
-    // decision recorded in the handoff, not something this layer may assume.
+    // qualification. It is not the P1 product entry path: bin/research-p1.mjs
+    // never passes `runtime` — it forwards only --model / --base-url into the
+    // gated branch below, and Q7 asserts that structurally. The other known
+    // caller, evaluation/product-worker.mjs, injects a deterministic double whose
+    // transport refuses the network; it cannot reach a real provider either.
+    // Gating the createModelRuntime() factory itself would reject those
+    // deterministic fake seams without closing any public path. Whether trusted
+    // internal callers must share the same contract is an open decision recorded
+    // in the handoff, not something this layer may assume.
     let requested;
     try {
       // The qualified identity is the FULL configuration: runtime, model and

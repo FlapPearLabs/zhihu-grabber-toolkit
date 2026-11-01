@@ -128,12 +128,15 @@ export function isDefaultRuntimeIdentity(runtime) {
  *   deepseek-api-tool-less / deepseek-v4-pro / provider endpoint
  *     — docs/specs/research-orchestration-scope.md §1,
  *       corpus-anthology/lib/deepseek-tool-less.mjs (DEEPSEEK_RUNTIME);
- *   lmstudio-local-tool-less / qwen/qwen3-1.7b / http://127.0.0.1:1234/v1
- *     — the T5-LM / T6 reviewed runtime in
- *       corpus-anthology/lib/lmstudio-tool-less.mjs (REVIEWED_RUNTIME); this
- *       adapter does not construct it (the corpus map path does), and a
- *       same-provider spelling such as `lmstudio-api-tool-less` is a DIFFERENT
- *       runtime and stays unqualified.
+ *
+ * `lmstudio-local-tool-less` also holds a named YES in the same Spec clause
+ * (the T5-LM / T6 reviewed runtime in corpus-anthology/lib/lmstudio-tool-less.mjs),
+ * but it is deliberately NOT listed here: its id does not satisfy this layer's
+ * runtime-identity contract (`RUNTIME_ID` requires the `-api-tool-less` suffix),
+ * this adapter never constructs it, and the corpus map path carries its own
+ * qualification. A record here would only advertise a P1 enablement route the
+ * gate cannot honour; a same-provider spelling such as
+ * `lmstudio-api-tool-less` is a DIFFERENT runtime and stays unqualified.
  *
  * `endpoint: null` means the provider's OWN endpoint (no operator base URL).
  * Qualifying another runtime or configuration requires a qualification record,
@@ -141,11 +144,6 @@ export function isDefaultRuntimeIdentity(runtime) {
  */
 export const QUALIFIED_RUNTIMES = Object.freeze([
   Object.freeze({ runtimeId: 'deepseek-api-tool-less', model: 'deepseek-v4-pro', endpoint: null }),
-  Object.freeze({
-    runtimeId: 'lmstudio-local-tool-less',
-    model: 'qwen/qwen3-1.7b',
-    endpoint: 'http://127.0.0.1:1234/v1',
-  }),
 ]);
 
 /** The qualified runtime ids (a label-only view; the gate uses the records above). */
@@ -190,6 +188,27 @@ export function resolveCredentialProfile({ profile = undefined, env = process.en
     );
   }
   return label;
+}
+
+/**
+ * The label of a DECLARED credential profile, or `null` when none is declared.
+ *
+ * Both entry points (`createModelRuntime` and `runtimeRunKey`) share this one
+ * rule: an explicitly supplied value IS a declaration, so an empty or blank one
+ * is refused rather than silently treated as "unset" — otherwise the same
+ * input would run unprofiled through the factory and be refused by the identity
+ * check. An empty environment variable still means "unset", which is how a
+ * shell spells it.
+ */
+export function declaredCredentialProfileLabel({ profile = undefined, env = process.env } = {}) {
+  if (profile !== undefined && profile !== null && String(profile).trim() === '') {
+    throw new ModelRuntimeError(
+      'credential_profile_invalid',
+      'a declared credential profile must not be empty: omit it (or unset the environment variable) to run '
+      + 'without a credential profile',
+    );
+  }
+  return resolveCredentialProfile({ profile, env });
 }
 
 /**
@@ -286,7 +305,7 @@ export function runtimeRunKey(runtime) {
   }
   const declared = runtime.credentialProfile;
   if (declared !== null && declared !== undefined) {
-    assertNoCredentialProfile(resolveCredentialProfile({ profile: declared, env: {} }) ?? 'declared');
+    assertNoCredentialProfile(declaredCredentialProfileLabel({ profile: declared, env: {} }));
   }
   const base = isDefaultRuntimeIdentity(runtime) ? runtime.runtimeId : `${runtime.runtimeId}:${runtime.model}`;
   let key = base;
@@ -512,7 +531,7 @@ export async function createModelRuntime({
   // be written. There is no safe way to prove an arbitrary label is not a
   // credential: another provider's key may be present in the process (and must
   // not be read), and persisting the value or a digest of it is equally unsafe.
-  assertNoCredentialProfile(resolveCredentialProfile({ profile: credentialProfile, env }));
+  assertNoCredentialProfile(declaredCredentialProfileLabel({ profile: credentialProfile, env }));
   const key = apiKey !== undefined ? apiKey : resolveModelApiKey({ provider, custom, env, cwd }).key;
   const { models, model } = await loadModel({ provider, modelId, baseUrl: endpoint, injectedModels });
   const tuning = requestTuning({ provider, custom });

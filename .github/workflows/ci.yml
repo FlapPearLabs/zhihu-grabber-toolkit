@@ -189,6 +189,7 @@ jobs:
       # 的浅 clone 不含该对象，会让 git archive 失败）。对象缺失时给出明确失败信息，
       # 而不是把 historical 套件静默跳过。
       - name: Verify historical Git objects are present
+        shell: bash
         run: |
           PINNED_SHA=4789382f36d179dc13957f2c23748f169875d7a2
           if ! git cat-file -e "${PINNED_SHA}^{commit}"; then
