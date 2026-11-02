@@ -329,3 +329,27 @@ $ git diff --check                         → clean
 - NON_BLOCKING（不阻塞合并，记录备查）：`suite-classification.json` 里 `p1-report-safety` 的
   note 写的是内容权限，实际测的是文件系统安全（描述错位）；S7 未覆盖 assert→rename 窗口；
   权限策略不主动收窄既有 mode。
+
+## 推送后的 CI 实机结果（Windows 首次被真正验证）
+
+推送 `6ff86bb` 后 CI 首跑：macos / ubuntu / research-classification 通过，**windows 失败**。
+两轮修复后才全绿：
+
+1. **Windows 失败 ①：`p1-legacy-checkpoint-resume` L1/L2**
+   `state_invalid … recorded artifact content changed since completion (stale/tampered):
+   research-plan.json`。根因是金样本被 git 换行转换：仓库无 `.gitattributes`，夹具以 LF 提交，
+   Windows runner 默认 `core.autocrlf` 检出为 CRLF，复用闭合校验按字节比对 → 判为篡改。
+   修复 `6a44ef4`：夹具目录加 `.gitattributes`（`* -text`），检出字节与提交一致。
+   本机复现方式：把 `research-plan.json` 临时转 CRLF → L1/L2 复现同一错误，还原后 3/3 通过。
+2. **Windows 失败 ②：`p1-report-safety` S8**
+   `438 !== 384`（新报告 mode 0o666）。根因是平台语义：Windows 无 POSIX 权限位，Node 对任何
+   可写文件合成 0o666，`0600` 不可表达。修复 `e82ba1a`：S8 用 `{ skip: process.platform ===
+   'win32' ? '<已知平台限制>' : false }` 限定为 POSIX 不变量，注释写明「这是平台限制、不是通过」，
+   并说明 Windows 由 ACL 继承决定、本层不管理 ACL。本机（darwin）S8 仍执行且通过。
+
+最终 CI（`e82ba1a`，run 41386349026）：**windows / ubuntu / macos 三个 test job 与
+research-classification 全部 pass**。这两处失败都属于候选里早于四个阻断项修复的代码
+（夹具来自 `e4b036b`，S8 来自第 2 项那一轮），不是本轮改动引入。
+
+含义：`UNVERIFIED → 已验证` 仅限于「这三类 job 在该 SHA 上通过」；报告目录竞态、真实厂商 /
+OAuth / 费用、账户级隔离仍未验证，仍按原样列为未验证项。
