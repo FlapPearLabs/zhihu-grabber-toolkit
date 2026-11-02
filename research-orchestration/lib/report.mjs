@@ -453,8 +453,9 @@ function assertSameRunDir(handle, dir) {
  * run data. Any other non-regular object (directory, FIFO, device) is refused
  * for the same reason.
  *
- * Returns the existing mode (when a report is already there) so an update can
- * keep it, or `null` when the report is being created.
+ * Returns the existing identity (mode, link count, dev+ino) when a report is
+ * already there, or `null` when the report is being created. The identity is
+ * what an in-place update re-checks on the opened descriptor.
  */
 function inspectReportTarget(reportPath) {
   let stat;
@@ -465,7 +466,42 @@ function inspectReportTarget(reportPath) {
     throw new ReportError('REPORT_OUTPUT_UNSAFE', `${REPORT_FILENAME} cannot be inspected as a regular file`);
   }
   if (!stat.isFile()) throw new ReportError('REPORT_OUTPUT_UNSAFE', `${REPORT_FILENAME} must be a regular file`);
-  return stat.mode & 0o7777;
+  return { mode: stat.mode & 0o7777, nlink: stat.nlink, dev: stat.dev, ino: stat.ino };
+}
+
+/**
+ * Rewrite the report IN PLACE, through a descriptor whose identity is verified
+ * against the file that was inspected. Same inode means the ACL, mode and
+ * ownership stay exactly as the run left them, and no directory entry is
+ * published — so there is no "check, then publish" window to race.
+ *
+ * Only used when the report is a single-link, owner-writable regular file.
+ * A hard-linked report (nlink > 1) is still replaced so a canonical artifact
+ * sharing the inode is never rewritten; a read-only report is replaced for the
+ * same practical reason (we may not write it).
+ */
+function rewriteReportInPlace(handle, dir, reportPath, expected, markdown) {
+  let fd;
+  try {
+    fd = fs.openSync(reportPath, fs.constants.O_RDWR | (fs.constants.O_NOFOLLOW ?? 0));
+  } catch (err) {
+    throw new ReportError('REPORT_OUTPUT_FAILED', `${REPORT_FILENAME} could not be opened for rewrite (${err?.code ?? 'error'})`);
+  }
+  try {
+    const opened = fs.fstatSync(fd);
+    if (!opened.isFile() || opened.dev !== expected.dev || opened.ino !== expected.ino) {
+      throw new ReportError('REPORT_OUTPUT_UNSAFE', `${REPORT_FILENAME} changed identity before it was rewritten`);
+    }
+    const bytes = Buffer.from(markdown, 'utf8');
+    fs.ftruncateSync(fd, 0);
+    fs.writeSync(fd, bytes, 0, bytes.length, 0);
+    // Keep the mode exactly as it was (an update may not widen OR narrow it).
+    fs.fchmodSync(fd, expected.mode & 0o7777);
+  } finally {
+    try { fs.closeSync(fd); } catch { /* descriptor is already gone */ }
+  }
+  assertSameRunDir(handle, dir);
+  return reportPath;
 }
 
 /** `detectAccessAcl` could not look: unknown is not "no ACL". */
@@ -501,12 +537,20 @@ function detectAccessAcl(targetPath) {
 }
 
 /**
- * Write the report ATOMICALLY: bytes go to a fresh temp file in the same
- * directory and are then RENAMEd over the target. Rendering replaces a
- * directory entry instead of writing through whatever the name resolves to, so
- * a hard link to a canonical artifact keeps its bytes (an in-place write would
- * rewrite the shared inode) and a concurrent reader sees either the previous
- * report or the complete new one, never a partial file.
+ * Write the report WITHOUT ever writing through an object it did not create.
+ *
+ * Creation: bytes go to a fresh temp file in the same directory (O_EXCL) and
+ * the entry is published with rename(), so nothing pre-planted under the name
+ * is written through.
+ *
+ * Update: the existing report is rewritten IN PLACE through a descriptor whose
+ * dev+ino are re-verified against the file just inspected. Same inode means
+ * the ACL, mode and ownership cannot be lost, and no directory entry is
+ * published — so "swap the run directory between the check and the rename" has
+ * no publication step to hijack. A hard-linked report (nlink > 1) or one we may
+ * not write (no owner-write bit) is still replaced with temp+rename, so a
+ * shared canonical inode is never rewritten; those two cases keep the old,
+ * documented publish window.
  *
  * The write is confined to the directory object opened by `openRunDir`: the
  * directory identity is re-checked before the rename and after it, and the
@@ -519,17 +563,16 @@ function detectAccessAcl(targetPath) {
  * file is created 0600 and its mode is set explicitly, so a permissive umask
  * can never widen an existing report to 0644.
  *
- * ACLs are NOT carried by a rename: the replacement is a new inode, so an
- * access ACL attached to the previous report would simply disappear (a deny
- * rule would silently become "no restriction"). This layer cannot reproduce an
- * arbitrary ACL, so an existing report detected with one is REFUSED. Inherited
- * Windows ACLs are inherited by new files from the directory; explicit Windows
- * ACLs have not been verified.
+ * An in-place rewrite keeps whatever ACL is attached to the inode, so the
+ * normal update path cannot drop one. When the report has to be REPLACED
+ * (hard-linked or read-only) a rename would drop an ACL, and this layer cannot
+ * reproduce an arbitrary ACL, so a report that carries one (or whose ACL could
+ * not be read) is REFUSED instead. Inherited Windows ACLs are inherited by new
+ * files from the directory; explicit Windows ACLs have not been verified.
  *
- * Residual BLOCK: ACL detection and rename are not atomic. If an ACL is added
- * after detection but before rename, the replacement can drop that ACL. As with
- * the run-directory assert-to-rename window, pure JS cannot bind this check and
- * replacement atomically; this protection does not close that window.
+ * Residual BLOCK: on the replace path, ACL detection and rename are still not
+ * atomic — an ACL added in that window can be dropped. Pure JS cannot bind the
+ * check and the replace atomically; the in-place path does not have the window.
  */
 function writeReportFile(workDir, markdown) {
   const dir = path.resolve(workDir);
@@ -537,17 +580,22 @@ function writeReportFile(workDir, markdown) {
   try {
     const reportPath = path.join(dir, REPORT_FILENAME);
     assertSameRunDir(handle, dir);
-    const existingMode = inspectReportTarget(reportPath);
+    const existing = inspectReportTarget(reportPath);
+    const existingMode = existing?.mode ?? null;
     const targetMode = existingMode ?? 0o600;
-    if (existingMode !== null) {
+    if (existing !== null) {
       const acl = detectAccessAcl(reportPath);
       if (acl !== false) {
         throw new ReportError(
           'REPORT_OUTPUT_UNSAFE',
           acl === true
-            ? `${REPORT_FILENAME} carries an access ACL that an atomic replace cannot preserve; refusing to drop it (remove the ACL, or delete the file to re-render it)`
+            ? `${REPORT_FILENAME} carries an access ACL; rewriting it in place would preserve the ACL but a replace would drop it, so the replacement path refuses (remove the ACL, or delete the file to re-render it)`
             : `${REPORT_FILENAME} could not be inspected for an access ACL; refusing to replace it`,
         );
+      }
+      // Normal case: same inode, no published directory entry, nothing to race.
+      if (existing.nlink === 1 && (existing.mode & 0o200) !== 0) {
+        return rewriteReportInPlace(handle, dir, reportPath, existing, markdown);
       }
     }
 
