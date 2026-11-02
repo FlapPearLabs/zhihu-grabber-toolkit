@@ -32,7 +32,13 @@
  *   S9a an ACL listing that does not look like a regular file is UNKNOWN, not
  *       "no ACL": a fake or broken `ls` must not authorize a replacement;
  *   S9b an access ACL detected on the existing report is refused before
- *       replacement (detection and rename still have a residual race window).
+ *       replacement (detection and rename still have a residual race window);
+ *   S10 an update rewrites the verified inode and publishes no directory
+ *       entry, so there is no check-then-publish step to hijack;
+ *   S10b a report name swapped to another object before the rewrite is
+ *       refused on the descriptor's own dev+ino, not on the path;
+ *   S11 an update keeps the inode, so an ACL attached to it cannot be
+ *       discarded by the update.
  *
  * Fully offline: fixtures are written by the test itself; no run, no network.
  */
@@ -478,62 +484,70 @@ test('S9b: an existing report ACL is never silently dropped by an atomic update'
   );
 });
 
-test('S10: a directory swap immediately before publication cannot overwrite an outside report', () => {
+test('S10: an update rewrites the verified inode and publishes no directory entry', () => {
   const workDir = fixture('p1-report-publish-swap-');
+  const reportPath = reportPathOf(workDir);
   const outside = tmpDir('p1-report-publish-outside-');
   const outsideReport = path.join(outside, REPORT_FILENAME);
   const original = 'outside report must survive\n';
   fs.writeFileSync(outsideReport, original);
+
+  writeReport(workDir);
+  const before = fs.statSync(reportPath);
+
+  // The old design published the report with rename(); that is exactly the step
+  // an attacker hijacked. The update must not publish anything at all.
   const rename = fs.renameSync;
-  let attacked = false;
-  let error;
-  fs.renameSync = function patchedRename(source, target) {
-    if (target === reportPathOf(workDir)) {
-      attacked = true;
-      fs.copyFileSync(source, path.join(outside, path.basename(source)));
-      rename.call(fs, workDir, `${workDir}-moved`);
-      fs.symlinkSync(outside, workDir);
-    }
-    return rename.call(fs, source, target);
-  };
+  let publications = 0;
+  fs.renameSync = (...args) => { publications += 1; return rename.apply(fs, args); };
   try {
-    try { writeReport(workDir); } catch (caught) { error = caught; }
+    writeReport(workDir);
   } finally {
     fs.renameSync = rename;
   }
-  assert.equal(fs.readFileSync(outsideReport, 'utf8'), original, 'publication must not overwrite outside bytes');
-  assert.ok(attacked || error instanceof ReportError, 'the attack must run or the write must be refused');
+
+  const after = fs.statSync(reportPath);
+  assert.equal(publications, 0, 'an update must not publish a new directory entry');
+  assert.equal(after.ino, before.ino, 'an update must rewrite the same inode');
+  assert.match(fs.readFileSync(reportPath, 'utf8'), /^# 研究报告/, 'the report must still be refreshed');
+  assert.equal(fs.readFileSync(outsideReport, 'utf8'), original, 'nothing outside the run directory may be touched');
 });
 
-test('S11: an ACL added immediately before publication is never discarded', {
-  skip: aclSupport().ok ? false : `access ACLs are not testable here: ${aclSupport().reason}`,
+test('S10b: a report path swapped to another object before the rewrite is refused', () => {
+  const workDir = fixture('p1-report-swap-guard-');
+  const reportPath = reportPathOf(workDir);
+  writeReport(workDir);
+  const before = fs.readFileSync(reportPath, 'utf8');
+
+  // Stand in for an attacker that swaps the name between inspection and open:
+  // the descriptor opens a different inode, which must be refused.
+  const decoy = path.join(tmpDir('p1-report-decoy-'), 'decoy.md');
+  fs.writeFileSync(decoy, 'decoy bytes\n');
+  const open = fs.openSync;
+  fs.openSync = (target, ...rest) => (target === reportPath ? open(decoy, ...rest) : open(target, ...rest));
+  let error;
+  try {
+    try { writeReport(workDir); } catch (caught) { error = caught; }
+  } finally {
+    fs.openSync = open;
+  }
+
+  assert.ok(error instanceof ReportError && error.code === 'REPORT_OUTPUT_UNSAFE', 'a swapped identity must be refused');
+  assert.equal(fs.readFileSync(reportPath, 'utf8'), before, 'the real report must be untouched');
+  assert.equal(fs.readFileSync(decoy, 'utf8'), 'decoy bytes\n', 'the decoy must never be written');
+});
+
+test('S11: an update keeps the inode, so no ACL attached to it can be discarded', {
+  skip: process.platform === 'win32' ? 'Windows has no POSIX inode identity to preserve' : false,
 }, () => {
   const workDir = fixture('p1-report-publish-acl-');
   const reportPath = reportPathOf(workDir);
-  fs.writeFileSync(reportPath, 'existing report\n');
-  const rename = fs.renameSync;
-  let attacked = false;
-  let error;
-  fs.renameSync = function patchedRename(source, target) {
-    if (target === reportPath) {
-      attacked = true;
-      if (process.platform === 'darwin') execFileSync('chmod', ['+a', 'everyone deny read', reportPath]);
-      else execFileSync('setfacl', ['-m', 'u:nobody:r', reportPath]);
-      const listing = execFileSync('ls', [process.platform === 'darwin' ? '-led' : '-ld', reportPath], { encoding: 'utf8' });
-      assert.match(listing, process.platform === 'darwin' ? /\n\s*0:/ : /^\S+\+/);
-    }
-    return rename.call(fs, source, target);
-  };
-  try {
-    try { writeReport(workDir); } catch (caught) { error = caught; }
-  } finally {
-    fs.renameSync = rename;
-  }
-  if (attacked) {
-    const listing = execFileSync('ls', [process.platform === 'darwin' ? '-led' : '-ld', reportPath], { encoding: 'utf8' });
-    assert.match(listing, process.platform === 'darwin' ? /\n\s*0:/ : /^\S+\+/, 'the newly added ACL must survive');
-  } else {
-    assert.ok(error instanceof ReportError, 'an unattempted replacement must be explicitly refused');
-    assert.equal(fs.readFileSync(reportPath, 'utf8'), 'existing report\n');
-  }
+  writeReport(workDir);
+  const before = fs.statSync(reportPath);
+  fs.chmodSync(reportPath, 0o640);
+
+  writeReport(workDir);
+  const after = fs.statSync(reportPath);
+  assert.equal(after.ino, before.ino, 'an update must not replace the inode an ACL is attached to');
+  assert.equal(after.mode & 0o777, 0o640, 'the in-place rewrite must keep the run mode');
 });
