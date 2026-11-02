@@ -347,7 +347,17 @@ test('S7: a run directory replaced by a symlink before the write cannot redirect
   assert.equal(fs.existsSync(path.join(`${workDir}-moved`, REPORT_FILENAME)), false, 'no report may be rendered next to the moved artifacts');
 });
 
-test('S8: rendering preserves an existing report mode and never creates a wider report', () => {
+test('S8: rendering preserves an existing report mode and never creates a wider report', {
+  // POSIX-scoped invariant: the requirement is about unix permission bits. A
+  // Windows checkout has no such bits — Node synthesises `0o666` for any
+  // writable file and only the read-only attribute is expressible — so `0600`
+  // cannot be created or observed there. This is a known platform limit, not a
+  // passing test: Windows access is governed by ACL inheritance, which this
+  // layer does not manage. See the handoff's unverified list.
+  skip: process.platform === 'win32'
+    ? 'POSIX permission bits do not exist on Windows (mode is synthesised from the read-only attribute)'
+    : false,
+}, () => {
   const workDir = fixture('p1-report-mode-');
   const reportPath = reportPathOf(workDir);
   const modeOf = () => fs.statSync(reportPath).mode & 0o777;
