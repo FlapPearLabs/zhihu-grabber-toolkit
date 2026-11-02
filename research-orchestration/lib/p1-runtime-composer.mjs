@@ -121,18 +121,13 @@ import { REQUIRED_EMBEDDING_IDENTITY } from './dense-geometry.mjs';
 import { deriveCanonicalSourceId } from './rce-input-adapter.mjs';
 import { assertArtifactSafe } from './rrf.mjs';
 import { recordCanonicalSearchResponse, parseBoundProviderPool, registerPrivateTitleRoot } from './provider-title-origin.mjs';
-import { buildDeepSeekResearchRuntime } from './deepseek-research-runtime.mjs';
+import { createModelRuntime, isResearchRuntimeIdentity, runtimeRunKey, assertRuntimeQualified, runtimeIdentityFor, parseModelSpec, DEFAULT_MODEL_SPEC } from './model-runtime.mjs';
 import { validateCompleteReuseClosure, CHECKPOINT_BINDING_ACCUMULATED_POOL, CHECKPOINT_BINDING_SELECTION_DECISION, CHECKPOINT_BINDING_COVERAGE_STATE } from './p1-reuse-closure.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const RO_ROOT = path.resolve(HERE, '..');
 const REPO_ROOT = path.resolve(RO_ROOT, '..');
 
-/** Pinned canonical composition identity (planner-pinned twin; T14 accepts exactly this). */
-const CANONICAL_RUNTIME_ID = 'deepseek-api-tool-less';
-// OWNER RULING 2026-09-10: authorized request model id (served naming is
-// observability only — never an equality gate).
-const CANONICAL_MODEL = 'deepseek-v4-pro';
 
 /** T03-documented first-party global_search endpoint (read-only search). */
 const GLOBAL_SEARCH_ENDPOINT = 'https://developer.zhihu.com/api/v1/content/global_search';
@@ -150,6 +145,7 @@ const CFC_RUN_IDENTITY_CONFLICT = 'run_identity_conflict';
 const CFC_FAILED_STATE_REQUIRES_RESTART = 'failed_state_requires_restart';
 const CFC_STATE_INVALID = 'state_invalid';
 const CFC_RUNTIME_NOT_SUPPORTED = 'runtime_not_supported';
+const CFC_CAPABILITY_ISOLATION_UNAVAILABLE = 'capability_isolation_unavailable';
 const CFC_PLANNER_FAILED = 'planner_failed';
 const CFC_RETRIEVAL_FAILED = 'retrieval_failed';
 const CFC_SELECTION_FAILED = 'selection_failed';
@@ -967,6 +963,8 @@ export async function composeP1Research({
   runner = null,
   embeddingProvider = null,
   fetchImpl = fetch,
+  model = null,
+  modelBaseUrl = null,
   config = undefined,
   usageSink = null,
   restart = false,
@@ -998,15 +996,81 @@ export async function composeP1Research({
   registerPrivateTitleRoot(path.resolve(workDir));
   const normalizedTopic = topic.trim();
 
-  // Runtime pin: the composition chain (planner/T13/T14) accepts ONLY the
-  // approved canonical runtime identity — anything else fails closed.
-  const effectiveRuntime = runtime ?? buildDeepSeekResearchRuntime({ fetchImpl });
-  if (effectiveRuntime.runtimeId !== CANONICAL_RUNTIME_ID || effectiveRuntime.model !== CANONICAL_MODEL) {
-    return fail(CFC_RUNTIME_NOT_SUPPORTED, `P1 composition accepts only ${CANONICAL_RUNTIME_ID}/${CANONICAL_MODEL} — refusing ${String(effectiveRuntime.runtimeId ?? 'unknown')}`);
+  // Runtime: one model for the whole chain (planner/T13/T14), chosen by the
+  // caller (default deepseek/deepseek-v4-pro). A malformed or unavailable
+  // runtime fails closed — there is no fallback model.
+  let effectiveRuntime = runtime;
+  if (effectiveRuntime === null || effectiveRuntime === undefined) {
+    // Capability isolation is gated PER RUNTIME (V0.3 §5 / R2-4 / §T5): only a
+    // runtime with a NAMED CAPABILITY_ISOLATION_AVAILABLE = YES in the approved
+    // scope may be ENABLED, and NO/UNKNOWN fails closed as
+    // capability_isolation_unavailable. Selecting a model is what enables a
+    // runtime, so the gate sits on the selection itself — before a credential
+    // is resolved, a provider is loaded or a transport is built — and a custom
+    // base URL is not a bypass.
+    //
+    // The injected `runtime` seam below deliberately bypasses this gate: it is a
+    // TRUSTED INTERNAL seam (deterministic tests, the P2A T14 acceptance harness,
+    // and embedding doubles), where the caller owns the object and its
+    // qualification. It is not the P1 product entry path: bin/research-p1.mjs
+    // never passes `runtime` — it forwards only --model / --base-url into the
+    // gated branch below, and Q7 asserts that structurally. The other known
+    // caller, evaluation/product-worker.mjs, injects a deterministic double whose
+    // transport refuses the network; it cannot reach a real provider either.
+    // Gating the createModelRuntime() factory itself would reject those
+    // deterministic fake seams without closing any public path. Whether trusted
+    // internal callers must share the same contract is an open decision recorded
+    // in the handoff, not something this layer may assume.
+    let requested;
+    try {
+      // The qualified identity is the FULL configuration: runtime, model and
+      // the ACTUAL endpoint. A custom base URL is part of what is being enabled,
+      // so an unqualified endpoint must be refused here, not discovered later.
+      requested = {
+        ...runtimeIdentityFor(parseModelSpec(model ?? DEFAULT_MODEL_SPEC)),
+        customEndpoint: modelBaseUrl === null || modelBaseUrl === undefined || modelBaseUrl === ''
+          ? null
+          : modelBaseUrl,
+      };
+    } catch (error) {
+      return fail(CFC_RUNTIME_NOT_SUPPORTED, error?.message ?? String(error));
+    }
+    try {
+      assertRuntimeQualified(requested);
+    } catch (error) {
+      return fail(CFC_CAPABILITY_ISOLATION_UNAVAILABLE, error?.message ?? String(error));
+    }
+    try {
+      effectiveRuntime = await createModelRuntime({
+        ...(model ? { spec: model } : {}),
+        baseUrl: modelBaseUrl,
+        fetchImpl,
+        usageSink,
+      });
+    } catch (error) {
+      return fail(CFC_RUNTIME_NOT_SUPPORTED, error?.message ?? String(error));
+    }
+  }
+  if (!isResearchRuntimeIdentity(effectiveRuntime)) {
+    return fail(CFC_RUNTIME_NOT_SUPPORTED, `runtime identity is malformed — refusing ${String(effectiveRuntime?.runtimeId ?? 'unknown')}`);
   }
 
   const mode = P1_PIPELINE_IDENTITY;
-  const runId = runIdentityHash({ topic: normalizedTopic, mode, percent: null, runtime: effectiveRuntime.runtimeId });
+  // The default model keeps the historical run identity; any other model and
+  // any operator-supplied endpoint are part of the run identity, so switching
+  // model or endpoint never reuses a checkpoint. ONE key is computed here and
+  // is the same value hashed into `runId` and recorded in state — a checkpoint
+  // must never be written under one identity and resumed under another
+  // (the previous split hashed `runtimeId:model` but stored `runtimeId`, so a
+  // non-default run could never be resumed). An endpoint that cannot be safely
+  // bound fails closed here; there is no fallback to the wider key.
+  let runtimeKey;
+  try {
+    runtimeKey = runtimeRunKey(effectiveRuntime);
+  } catch (error) {
+    return fail(CFC_RUNTIME_NOT_SUPPORTED, error?.message ?? String(error));
+  }
+  const runId = runIdentityHash({ topic: normalizedTopic, mode, percent: null, runtime: runtimeKey });
 
   // 1. State bootstrap / resume classification (checkpoint identity validated —
   //    FILE EXISTS != VALID CACHE). restart discards any prior checkpoint and
@@ -1151,7 +1215,7 @@ export async function composeP1Research({
     archivePriorOccurrenceDerivedState(workDir, occurrenceId);
   }
 
-  const state = makeState({ workDir, topic: normalizedTopic, mode, percent: null, runtime: effectiveRuntime.runtimeId, occurrenceId, config });
+  const state = makeState({ workDir, topic: normalizedTopic, mode, percent: null, runtime: runtimeKey, occurrenceId, config });
   state.stage = STAGE_SEARCH;
   // P1-R06 repair (independent-review P1-2): a resuming occurrence must NOT
   // replace the durable checkpoint before the re-entry proof has decided what
@@ -1166,7 +1230,7 @@ export async function composeP1Research({
   if (checkpointAdopted) {
     writeState(workDir, state);
   }
-  appendEvent(workDir, { event: 'p1_compose_begin', runId, mode, runtime: effectiveRuntime.runtimeId, occurrenceId, resuming: isResumingOccurrence });
+  appendEvent(workDir, { event: 'p1_compose_begin', runId, mode, runtime: runtimeKey, occurrenceId, resuming: isResumingOccurrence });
 
   const persistFailure = (code, details = null, extra = {}) => {
     state.stage = STAGE_FAILED;
@@ -1208,7 +1272,7 @@ export async function composeP1Research({
         expectedPlanHash = loaded.planHash;
         appendEvent(workDir, { event: 'plan_reused', planHash: expectedPlanHash, occurrenceId });
       } else {
-        const proposed = await propose({ userRequest: normalizedTopic, workDir, fetchImpl, usageSink });
+        const proposed = await propose({ userRequest: normalizedTopic, workDir, runtime: effectiveRuntime });
         if (!proposed.ok) {
           return persistFailure(CFC_PLANNER_FAILED, proposed.details ?? proposed.reason, { plannerReason: proposed.reason ?? null });
         }
@@ -1225,7 +1289,7 @@ export async function composeP1Research({
         appendEvent(workDir, { event: 'plan_proposed', planHash: expectedPlanHash, occurrenceId });
       }
     } else {
-      const proposed = await propose({ userRequest: normalizedTopic, workDir, fetchImpl, usageSink });
+      const proposed = await propose({ userRequest: normalizedTopic, workDir, runtime: effectiveRuntime });
       if (!proposed.ok) {
         return persistFailure(CFC_PLANNER_FAILED, proposed.details ?? proposed.reason, { plannerReason: proposed.reason ?? null });
       }

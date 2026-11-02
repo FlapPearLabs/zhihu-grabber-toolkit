@@ -19,7 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
-const RUNTIME_PATH = path.join(TEST_DIR, '..', 'lib', 'deepseek-research-runtime.mjs');
+const RUNTIME_PATH = path.join(TEST_DIR, '..', 'lib', 'research-prompts.mjs');
 const FIXTURE_PATH = path.join(TEST_DIR, 'fixtures', 'claims-evidence-counterexamples.json');
 
 describe('CLAIMS_SYSTEM_PROMPT Rule 5 Semantic Contract', () => {

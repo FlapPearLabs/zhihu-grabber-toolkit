@@ -1,0 +1,103 @@
+{
+  "seam": "T13_TO_T14",
+  "seamVersion": 1,
+  "planHash": "25fe0646076539490e4e1cb495a947a2a6f45c2c6667f9cc0618ff885f122e75",
+  "selectedCorpusIdentityRef": "sha256:cf99aa829f7aee1f71e0cc4438e6adb20d43ff563cc4350ad9610fa7a9fa34fb",
+  "groupRepresentations": [
+    {
+      "groupId": "100",
+      "canonicalGroupIdentity": {
+        "questionId": "100",
+        "providerId": "zhihu",
+        "capability": "session-capture"
+      },
+      "accounting": {
+        "selected": 2,
+        "verified": 2,
+        "mapped": 2,
+        "analyzed": 2
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-100-001",
+            "statement": "主流观点：该做法在多数场景下有效",
+            "sourceRefs": [
+              "asrc-313664a3120a4f8daec0b4da"
+            ],
+            "authorRef": "author-6635968cd7636b07"
+          }
+        ],
+        "minority": [
+          {
+            "claimId": "c-100-002",
+            "statement": "少数派观点：特定条件下结论相反",
+            "sourceRefs": [
+              "asrc-ff70ca7e7f81833130f5e19b"
+            ],
+            "authorRef": "author-e0870bf975e61fc4"
+          }
+        ],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [
+        "asrc-313664a3120a4f8daec0b4da"
+      ],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 2
+      }
+    },
+    {
+      "groupId": "200",
+      "canonicalGroupIdentity": {
+        "questionId": "200",
+        "providerId": "zhihu",
+        "capability": "session-capture"
+      },
+      "accounting": {
+        "selected": 2,
+        "verified": 2,
+        "mapped": 2,
+        "analyzed": 2
+      },
+      "claims": {
+        "main": [
+          {
+            "claimId": "c-200-001",
+            "statement": "主流观点：该做法在多数场景下有效",
+            "sourceRefs": [
+              "asrc-5a9a42b83cbc0c926231d8c5"
+            ],
+            "authorRef": "author-700e940eea608207"
+          }
+        ],
+        "minority": [
+          {
+            "claimId": "c-200-002",
+            "statement": "少数派观点：特定条件下结论相反",
+            "sourceRefs": [
+              "asrc-972d480e0f8e1b06baff3d8c"
+            ],
+            "authorRef": "author-e8a7056db608b0f4"
+          }
+        ],
+        "contradictory": []
+      },
+      "expertEvidenceRichRefs": [
+        "asrc-5a9a42b83cbc0c926231d8c5"
+      ],
+      "completenessStatus": "verified",
+      "discussionVolume": {
+        "answerCount": 2
+      }
+    }
+  ],
+  "aggregateAnalyzedIdentity": {
+    "mappedAnalyzedSourceSetIdentity": "sha256:cf99aa829f7aee1f71e0cc4438e6adb20d43ff563cc4350ad9610fa7a9fa34fb",
+    "perGroup": {
+      "100": "sha256:c8a238c6cf01f4ab8347642951feb7f1905e93da8ef0c70a33900e82ee39974c",
+      "200": "sha256:21cd713d67f355020b3c9c309199b184797c5cf43ee5a671f16178f251c6bab4"
+    }
+  }
+}

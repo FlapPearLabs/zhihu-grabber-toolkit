@@ -4,22 +4,28 @@
  * P1-T18 focused tests — Research Planner Semantic Proposal (Issue #50,
  * Spec §4 / §5.2 / §10 of docs/specs/p1-cross-question-deep-research.md).
  *
- * The planner is controller-owned orchestration: USER_REQUEST → approved
- * deepseek-api-tool-less SemanticRuntime (tool-less channel discipline) →
- * semantic plan proposal → EXISTING T04 structured validation (plan-contract.mjs,
+ * The planner is controller-owned orchestration: USER_REQUEST → research
+ * SemanticRuntime (lib/model-runtime.mjs; any provider) → semantic plan
+ * proposal → EXISTING T04 structured validation (plan-contract.mjs,
  * unchanged) → persisted Research Plan / planHash.
  *
- * Required coverage (ticket REQUIRED_TESTS):
+ * Tests run the REAL model layer over an offline SSE transport
+ * (test/helpers/fake-model-transport.mjs): the request body, headers and
+ * streamed reply are the actual wire shapes, without network.
+ *
+ * Required coverage:
  *   1. semantic proposal → validation round-trip (persisted artifact + stable planHash)
  *   2. six conceptual field classes preserved (Spec §4.1)
  *   3. invalid / unparseable plan → planner_invalid FAIL_CLOSED (nothing persisted)
- *   4. runtime failure propagation (transport / HTTP / envelope / credential) —
- *      FAIL_CLOSED + NO_SILENT_RUNTIME_FALLBACK
+ *   4. runtime failure propagation (transport / HTTP / truncation / tool call /
+ *      missing runtime) — FAIL_CLOSED + NO_SILENT_RUNTIME_FALLBACK
  *   5. runtime identity recorded faithfully
  *   6. credentials never enter prompt / output / state
  *   7. USER_REQUEST input validation (Spec §10.1 class; not UNTRUSTED_CORPUS)
  *   8. OWNER RULING 2026-09-10/11 (Issue #48 D1 repair): model-generated
  *      pre-retrieval plans must have groupKey === null (D1-CE1..CE5)
+ *   9. D4: constraints must be [] (D4-CE1..CE7)
+ *  10. other providers: fenced JSON from non-DeepSeek models, custom endpoint
  */
 
 import { test } from 'node:test';
@@ -29,7 +35,6 @@ import os from 'node:os';
 import path from 'node:path';
 
 import {
-  PLANNER_RUNTIME_ID,
   PLANNER_FAILURE_USER_REQUEST_INVALID,
   PLANNER_FAILURE_RUNTIME_UNAVAILABLE,
   PLANNER_FAILURE_PLANNER_INVALID,
@@ -38,22 +43,15 @@ import {
 } from '../lib/planner.mjs';
 import {
   PLAN_ARTIFACT_FILENAME,
-  PLAN_FAILURE_PLANNER_INVALID,
   loadPlan,
   planHash,
   validatePlanInput,
 } from '../lib/plan-contract.mjs';
-
-// ---------------------------------------------------------------------------
-// helpers (injectable seams, mirroring corpus-anthology/lib/deepseek-tool-less.mjs)
-// ---------------------------------------------------------------------------
-
-const CREDENTIAL = Object.freeze({
-  source: 'env', configured: true, usable: true, error: 'none', key: 'sk-fake-test-key-000',
-});
+import { fakeModelRuntime, messagesOf, TEST_API_KEY } from './helpers/fake-model-transport.mjs';
 
 const DEEPSEEK_MODEL = 'deepseek-v4-pro';
 const DEEPSEEK_ENDPOINT = 'https://api.deepseek.com/chat/completions';
+const REQUEST = '研究知乎上对量化交易的讨论';
 
 function tmpWorkDir(prefix = 'planner-t18') {
   return fs.mkdtempSync(path.join(os.tmpdir(), `${prefix}-`));
@@ -68,139 +66,70 @@ const VALID_PLAN_TEXT = JSON.stringify({
   opposingFramings: ['Agent 已可大规模落地', 'Agent 仍不成熟'],
   terminologyVariants: [{ term: 'Agent', variants: ['智能体', '代理'] }],
   sourceGroupIntents: [
-    // groupKey MUST be null in planner MODEL output (owner ruling 2026-09-10/11,
-    // Issue #48 D1 repair): a pre-retrieval model-generated plan has no
-    // source-identity authority. The generic T04 contract still accepts a
-    // non-null groupKey for callers with canonical identities (D1-CE4).
-    // constraints MUST be [] in planner MODEL output (D4 repair, Issue #50):
-    // free-form constraint strings have no structured semantics under plan
-    // schemaVersion 1, so the frozen T08 selector fails the whole run closed
-    // (selection_constraint_unevaluable). The generic T04 contract still
-    // accepts non-empty constraints for callers that own evaluable semantics
-    // (D4-CE6).
+    // groupKey MUST be null and constraints MUST be [] in planner MODEL output
+    // (D1 / D4); the generic T04 contract still accepts both for other callers.
     { intent: '关注反方观点', constraints: [], groupKey: null },
   ],
 });
 
-/** DeepSeek chat-completion envelope shaped exactly like the reviewed runtime returns. */
-function deepseekEnvelope(contentText, { model = DEEPSEEK_MODEL, finish = 'stop', toolCalls = undefined } = {}) {
-  return {
-    object: 'chat.completion',
-    model,
-    choices: [
-      {
-        message: { role: 'assistant', content: contentText, ...(toolCalls !== undefined ? { tool_calls: toolCalls } : {}) },
-        finish_reason: finish,
-      },
-    ],
-  };
+/** Run the planner against a runtime whose model replies with `reply`. */
+async function plan(reply, { userRequest = REQUEST, workDir = tmpWorkDir(), ...runtimeOpts } = {}) {
+  const { runtime, calls } = await fakeModelRuntime(reply, runtimeOpts);
+  const res = await proposeResearchPlan({ userRequest, workDir, runtime });
+  return { res, calls, workDir };
 }
 
-/** Deterministic fetchImpl: captures calls, returns a fixed payload/status. */
-function fakeFetch(payload, { status = 200, capture = null, reject = null, jsonThrows = false } = {}) {
-  return async (url, init) => {
-    if (capture) capture.push({ url, init });
-    if (reject) throw reject;
-    return {
-      ok: status >= 200 && status < 300,
-      status,
-      json: async () => {
-        if (jsonThrows) throw new Error('invalid json');
-        return payload;
-      },
-    };
-  };
-}
+const persisted = (workDir) => fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME));
 
 // ---------------------------------------------------------------------------
 // 1. semantic proposal → T04 validation round-trip (persisted plan + planHash)
 // ---------------------------------------------------------------------------
 
 test('P1-T18: valid semantic proposal passes existing T04 validation and is persisted with planHash', async () => {
-  const workDir = tmpWorkDir();
-  const capture = [];
-  const res = await proposeResearchPlan({
-    userRequest: '研究一下大家怎么看大语言模型 Agent 的落地争议',
-    workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT), { capture }),
-    credential: CREDENTIAL,
-  });
+  const { res, calls, workDir } = await plan(VALID_PLAN_TEXT, { userRequest: '研究一下大家怎么看大语言模型 Agent 的落地争议' });
 
   assert.equal(res.ok, true);
   assert.equal(res.file, PLAN_ARTIFACT_FILENAME);
-
-  // Persisted artifact re-validates through the EXISTING T04 contract (no bypass).
   const loaded = loadPlan(workDir);
   assert.equal(loaded.ok, true);
   assert.equal(loaded.planHash, res.planHash);
-  // planHash recomputed independently through the T04 contract matches.
   assert.equal(res.planHash, planHash(loaded.plan));
 
-  // Exactly the pinned approved endpoint was called (tool-less channel discipline).
-  assert.equal(capture.length, 1);
-  assert.equal(capture[0].url, DEEPSEEK_ENDPOINT);
-  const body = JSON.parse(capture[0].init.body);
-  assert.equal(body.model, DEEPSEEK_MODEL);
-  assert.equal(body.response_format.type, 'json_object');
-  assert.deepEqual(body.thinking, { type: 'disabled' });
-  assert.equal(body.tools, undefined);
+  // Default model: the historical DeepSeek request shape, tool-less.
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, DEEPSEEK_ENDPOINT);
+  assert.equal(calls[0].body.model, DEEPSEEK_MODEL);
+  assert.equal(calls[0].body.response_format.type, 'json_object');
+  assert.deepEqual(calls[0].body.thinking, { type: 'disabled' });
+  assert.equal(calls[0].body.temperature, 0);
+  assert.equal(calls[0].body.tools, undefined);
 });
 
-test('OWNER RULING 2026-09-10: served model string is observability only — response.model != authorized request model does not block the planner channel', async () => {
-  const workDir = tmpWorkDir();
-  const usageSink = [];
-  const res = await proposeResearchPlan({
-    userRequest: '研究一下大家怎么看大语言模型 Agent 的落地争议',
-    workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT, { model: 'deepseek-flash' })),
-    credential: CREDENTIAL,
-    usageSink,
-  });
+test('served model string is observability only — a different response.model does not block the planner', async () => {
+  const { res } = await plan({ text: VALID_PLAN_TEXT, model: 'deepseek-flash' });
   assert.equal(res.ok, true, JSON.stringify({ ok: res.ok, reason: res.reason, details: res.details }));
-  // provider-side served naming is recorded as observability when reported
-  if (usageSink.length > 0) assert.equal(usageSink[0].model, 'deepseek-flash');
 });
 
 test('P1-T18: persisted plan keeps all six conceptual field classes (Spec §4.1)', async () => {
-  const workDir = tmpWorkDir();
-  const res = await proposeResearchPlan({
-    userRequest: '跨问题研究：中文 NLP 开源社区生态',
-    workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT)),
-    credential: CREDENTIAL,
-  });
+  const { res, workDir } = await plan(VALID_PLAN_TEXT, { userRequest: '跨问题研究：中文 NLP 开源社区生态' });
   assert.equal(res.ok, true);
   const loaded = loadPlan(workDir);
-  assert.equal(loaded.ok, true);
+  const expected = JSON.parse(VALID_PLAN_TEXT);
   assert.equal(loaded.plan.schemaVersion, 1);
-  assert.deepEqual(loaded.plan.queryVariants, JSON.parse(VALID_PLAN_TEXT).queryVariants);
-  assert.deepEqual(loaded.plan.aspects, JSON.parse(VALID_PLAN_TEXT).aspects);
-  assert.deepEqual(loaded.plan.entities, JSON.parse(VALID_PLAN_TEXT).entities);
-  assert.deepEqual(loaded.plan.opposingFramings, JSON.parse(VALID_PLAN_TEXT).opposingFramings);
-  assert.deepEqual(loaded.plan.terminologyVariants, JSON.parse(VALID_PLAN_TEXT).terminologyVariants);
-  assert.deepEqual(loaded.plan.sourceGroupIntents, JSON.parse(VALID_PLAN_TEXT).sourceGroupIntents);
+  for (const key of ['queryVariants', 'aspects', 'entities', 'opposingFramings', 'terminologyVariants', 'sourceGroupIntents']) {
+    assert.deepEqual(loaded.plan[key], expected[key], key);
+  }
 });
 
 test('P1-T18: planner prompt names the exact plan schema and data-only task', async () => {
-  const workDir = tmpWorkDir();
-  const capture = [];
-  await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论',
-    workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT), { capture }),
-    credential: CREDENTIAL,
-  });
-  const body = JSON.parse(capture[0].init.body);
-  const [system, user] = body.messages;
-  assert.equal(system.role, 'system');
+  const { calls } = await plan(VALID_PLAN_TEXT);
+  const { system, user } = messagesOf(calls[0].body);
   for (const key of ['schemaVersion', 'queryVariants', 'aspects', 'entities', 'opposingFramings', 'terminologyVariants', 'sourceGroupIntents']) {
-    assert.ok(system.content.includes(key), `system prompt must name plan key: ${key}`);
+    assert.ok(system.includes(key), `system prompt must name plan key: ${key}`);
   }
-  assert.ok(/never call tools/i.test(system.content));
-  assert.ok(/json/i.test(system.content)); // DeepSeek JSON-mode guide requirement
-  assert.equal(user.role, 'user');
-  const userData = JSON.parse(user.content);
-  assert.equal(userData.userRequest, '研究知乎上对量化交易的讨论');
+  assert.ok(/never call tools/i.test(system));
+  assert.ok(/json/i.test(system)); // JSON-mode providers require the keyword
+  assert.equal(JSON.parse(user).userRequest, REQUEST);
 });
 
 // ---------------------------------------------------------------------------
@@ -208,134 +137,86 @@ test('P1-T18: planner prompt names the exact plan schema and data-only task', as
 // ---------------------------------------------------------------------------
 
 test('P1-T18: natural-language free text output → planner_invalid, nothing persisted', async () => {
-  const workDir = tmpWorkDir();
-  const res = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论',
-    workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope('我不能帮助完成这个请求。')),
-    credential: CREDENTIAL,
-  });
+  const { res, workDir } = await plan('我不能帮助完成这个请求。');
   assert.equal(res.ok, false);
   assert.equal(res.reason, PLANNER_FAILURE_PLANNER_INVALID);
-  assert.equal(res.reason, 'planner_invalid');
   assert.ok(Array.isArray(res.issues) && res.issues.length > 0);
-  assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false);
+  assert.equal(persisted(workDir), false);
   assert.equal(loadPlan(workDir).ok, false);
 });
 
 test('P1-T18: schema-invalid plan output (unknown field / missing field) → planner_invalid', async () => {
-  const workDirA = tmpWorkDir();
-  const badUnknown = JSON.stringify({ ...JSON.parse(VALID_PLAN_TEXT), extraField: ['nope'] });
-  const resA = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir: workDirA,
-    fetchImpl: fakeFetch(deepseekEnvelope(badUnknown)), credential: CREDENTIAL,
-  });
-  assert.equal(resA.ok, false);
-  assert.equal(resA.reason, PLANNER_FAILURE_PLANNER_INVALID);
-  assert.equal(fs.existsSync(path.join(workDirA, PLAN_ARTIFACT_FILENAME)), false);
+  const unknown = await plan(JSON.stringify({ ...JSON.parse(VALID_PLAN_TEXT), extraField: ['nope'] }));
+  assert.equal(unknown.res.reason, PLANNER_FAILURE_PLANNER_INVALID);
+  assert.equal(persisted(unknown.workDir), false);
 
-  const workDirB = tmpWorkDir();
   const { sourceGroupIntents: _dropped, ...missingField } = JSON.parse(VALID_PLAN_TEXT);
-  const resB = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir: workDirB,
-    fetchImpl: fakeFetch(deepseekEnvelope(JSON.stringify(missingField))), credential: CREDENTIAL,
-  });
-  assert.equal(resB.ok, false);
-  assert.equal(resB.reason, PLANNER_FAILURE_PLANNER_INVALID);
-  assert.equal(fs.existsSync(path.join(workDirB, PLAN_ARTIFACT_FILENAME)), false);
+  const missing = await plan(JSON.stringify(missingField));
+  assert.equal(missing.res.reason, PLANNER_FAILURE_PLANNER_INVALID);
+  assert.equal(persisted(missing.workDir), false);
 });
 
 test('P1-T18: unparseable JSON content → planner_invalid (plan quality, not channel failure)', async () => {
-  const workDir = tmpWorkDir();
-  const res = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope('{"schemaVersion": 1, "queryVariants": [')), credential: CREDENTIAL,
-  });
+  const { res, workDir } = await plan('{"schemaVersion": 1, "queryVariants": [');
   assert.equal(res.ok, false);
   assert.equal(res.reason, PLANNER_FAILURE_PLANNER_INVALID);
-  assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false);
+  assert.equal(persisted(workDir), false);
 });
 
 // ---------------------------------------------------------------------------
 // 3. runtime failure propagation — FAIL_CLOSED + NO_SILENT_RUNTIME_FALLBACK
 // ---------------------------------------------------------------------------
 
-test('P1-T18: transport failure / HTTP error / non-JSON payload → runtime_unavailable', async () => {
-  const common = { userRequest: '研究知乎上对量化交易的讨论', credential: CREDENTIAL };
-
-  const workDirA = tmpWorkDir();
-  const resA = await proposeResearchPlan({
-    ...common, workDir: workDirA,
-    fetchImpl: fakeFetch(null, { reject: new Error('ECONNREFUSED') }),
-  });
-  assert.equal(resA.ok, false);
-  assert.equal(resA.reason, PLANNER_FAILURE_RUNTIME_UNAVAILABLE);
-  assert.match(resA.details, /transport failed/);
-  assert.equal(fs.existsSync(path.join(workDirA, PLAN_ARTIFACT_FILENAME)), false);
-
-  const workDirB = tmpWorkDir();
-  const resB = await proposeResearchPlan({ ...common, workDir: workDirB, fetchImpl: fakeFetch(null, { status: 500 }) });
-  assert.equal(resB.ok, false);
-  assert.equal(resB.reason, PLANNER_FAILURE_RUNTIME_UNAVAILABLE);
-  assert.match(resB.details, /HTTP 500/);
-
-  const workDirC = tmpWorkDir();
-  const resC = await proposeResearchPlan({ ...common, workDir: workDirC, fetchImpl: fakeFetch(null, { jsonThrows: true }) });
-  assert.equal(resC.ok, false);
-  assert.equal(resC.reason, PLANNER_FAILURE_RUNTIME_UNAVAILABLE);
-  assert.match(resC.details, /non-JSON data/);
-});
-
-test('P1-T18: envelope contract violations → runtime_unavailable (isolation/channel failures)', async () => {
-  const common = { userRequest: '研究知乎上对量化交易的讨论', credential: CREDENTIAL, fetchImpl: null };
+test('P1-T18: transport failure / HTTP errors → runtime_unavailable with a typed kind', async () => {
   const cases = [
-    // OWNER RULING 2026-09-10: a mismatching served model label is ACCEPTED
-    // (observability only) — removed from the violation matrix (see the
-    // OWNER RULING test above).
-    { name: 'truncated completion', payload: deepseekEnvelope(VALID_PLAN_TEXT, { finish: 'length' }) },
-    { name: 'model-visible tool call', payload: deepseekEnvelope(VALID_PLAN_TEXT, { toolCalls: [{ id: '1', type: 'function', function: { name: 'x', arguments: '{}' } }] }) },
-    { name: 'empty assistant content', payload: deepseekEnvelope('   ') },
-    { name: 'missing assistant message', payload: { object: 'chat.completion', model: DEEPSEEK_MODEL, choices: [{ message: null, finish_reason: 'stop' }] } },
-    { name: 'multiple choices', payload: { object: 'chat.completion', model: DEEPSEEK_MODEL, choices: [deepseekEnvelope(VALID_PLAN_TEXT).choices[0], deepseekEnvelope(VALID_PLAN_TEXT).choices[0]] } },
+    { reply: { reject: new Error('ECONNREFUSED') }, kind: /\(transport\)/ },
+    { reply: { status: 500 }, kind: /\(http_500\)/ },
+    { reply: { status: 401 }, kind: /\(http_401\)/ },
   ];
   for (const c of cases) {
-    const workDir = tmpWorkDir();
-    const res = await proposeResearchPlan({ ...common, workDir, fetchImpl: fakeFetch(c.payload) });
-    assert.equal(res.ok, false, c.name);
-    assert.equal(res.reason, PLANNER_FAILURE_RUNTIME_UNAVAILABLE, c.name);
-    assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false, c.name);
+    const { res, workDir } = await plan(c.reply);
+    assert.equal(res.ok, false);
+    assert.equal(res.reason, PLANNER_FAILURE_RUNTIME_UNAVAILABLE);
+    assert.match(res.details, c.kind);
+    assert.equal(persisted(workDir), false);
   }
 });
 
-test('P1-T18: credential unusable → runtime_unavailable before any egress', async () => {
-  const workDir = tmpWorkDir();
-  const capture = [];
-  const res = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT), { capture }),
-    credential: { source: 'file', configured: false, usable: false, error: 'missing', key: null },
-  });
-  assert.equal(res.ok, false);
-  assert.equal(res.reason, PLANNER_FAILURE_RUNTIME_UNAVAILABLE);
-  assert.match(res.details, /credential is not configured or not usable/);
-  assert.equal(capture.length, 0); // no egress attempted
-  assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false);
+test('P1-T18: channel violations (truncated / tool call / empty reply) → runtime_unavailable', async () => {
+  const cases = [
+    { name: 'truncated completion', reply: { text: VALID_PLAN_TEXT, finish: 'length' }, kind: /\(truncated\)/ },
+    { name: 'model-visible tool call', reply: { toolCall: true }, kind: /\(tool_call\)/ },
+    { name: 'empty assistant content', reply: '   ', kind: /\(empty\)/ },
+  ];
+  for (const c of cases) {
+    const { res, workDir } = await plan(c.reply);
+    assert.equal(res.ok, false, c.name);
+    assert.equal(res.reason, PLANNER_FAILURE_RUNTIME_UNAVAILABLE, c.name);
+    assert.match(res.details, c.kind, c.name);
+    assert.equal(persisted(workDir), false, c.name);
+  }
 });
 
-test('P1-T18: unsupported runtime → runtime_unavailable, fetch never called (NO_SILENT_RUNTIME_FALLBACK)', async () => {
+test('P1-T18: no runtime → runtime_unavailable before any egress', async () => {
   const workDir = tmpWorkDir();
-  const capture = [];
+  const res = await proposeResearchPlan({ userRequest: REQUEST, workDir });
+  assert.equal(res.ok, false);
+  assert.equal(res.reason, PLANNER_FAILURE_RUNTIME_UNAVAILABLE);
+  assert.equal(persisted(workDir), false);
+});
+
+test('P1-T18: malformed runtime identity → runtime_unavailable, never called (NO_SILENT_RUNTIME_FALLBACK)', async () => {
+  const workDir = tmpWorkDir();
+  let called = 0;
   const res = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir,
-    runtime: { runtimeId: 'lmstudio-local-tool-less', model: 'qwen/qwen3-1.7b', thinking: 'disabled', endpoint: 'http://127.0.0.1:1234/v1/chat/completions', jsonMode: 'json_object', tools: 'none' },
-    fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT), { capture }),
-    credential: CREDENTIAL,
+    userRequest: REQUEST,
+    workDir,
+    runtime: { runtimeId: 'lmstudio-local-tool-less', model: 'qwen/qwen3-1.7b', completeText: async () => { called += 1; return VALID_PLAN_TEXT; } },
   });
   assert.equal(res.ok, false);
   assert.equal(res.reason, PLANNER_FAILURE_RUNTIME_UNAVAILABLE);
-  assert.match(res.details, /does not exactly match the approved deepseek-api-tool-less runtime/);
-  assert.equal(capture.length, 0); // never re-routed to another runtime
-  assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false);
+  assert.equal(called, 0);
+  assert.equal(persisted(workDir), false);
 });
 
 // ---------------------------------------------------------------------------
@@ -344,72 +225,37 @@ test('P1-T18: unsupported runtime → runtime_unavailable, fetch never called (N
 
 test('P1-T18: runtime identity recorded faithfully on success and on failures', async () => {
   const expected = { runtimeId: 'deepseek-api-tool-less', model: DEEPSEEK_MODEL };
-
-  const workDirA = tmpWorkDir();
-  const ok = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir: workDirA,
-    fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT)), credential: CREDENTIAL,
-  });
-  assert.equal(ok.ok, true);
-  assert.deepEqual(ok.runtime, expected);
-
-  const workDirB = tmpWorkDir();
-  const badPlan = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir: workDirB,
-    fetchImpl: fakeFetch(deepseekEnvelope('free text')), credential: CREDENTIAL,
-  });
-  assert.equal(badPlan.ok, false);
-  assert.deepEqual(badPlan.runtime, expected);
-
-  const workDirC = tmpWorkDir();
-  const noCred = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir: workDirC,
-    fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT)),
-    credential: { source: 'file', configured: false, usable: false, error: 'missing', key: null },
-  });
-  assert.equal(noCred.ok, false);
-  assert.deepEqual(noCred.runtime, expected);
+  assert.deepEqual((await plan(VALID_PLAN_TEXT)).res.runtime, expected);
+  assert.deepEqual((await plan('free text')).res.runtime, expected);
+  assert.deepEqual((await plan({ status: 503 })).res.runtime, expected);
 });
 
 // ---------------------------------------------------------------------------
 // 5. credentials never enter prompt / output / state
 // ---------------------------------------------------------------------------
 
-test('P1-T18: credential key never appears in request messages, body, artifact, or result', async () => {
-  const workDir = tmpWorkDir();
-  const capture = [];
-  const res = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT), { capture }), credential: CREDENTIAL,
-  });
+test('P1-T18: credential key never appears in request messages, body, artifact, result, or errors', async () => {
+  const usageSink = [];
+  const { res, calls, workDir } = await plan(VALID_PLAN_TEXT, { usageSink });
   assert.equal(res.ok, true);
-  assert.equal(capture.length, 1);
-  const { init } = capture[0];
-  // Authorization header carries the key (transport-only usage).
-  assert.equal(init.headers.authorization, `Bearer ${CREDENTIAL.key}`);
-  // ...but the key never appears anywhere else.
-  const bodyText = init.body;
-  assert.equal(bodyText.includes(CREDENTIAL.key), false);
-  const parsed = JSON.parse(bodyText);
-  assert.equal(JSON.stringify(parsed.messages).includes(CREDENTIAL.key), false);
-  const artifactText = fs.readFileSync(path.join(workDir, PLAN_ARTIFACT_FILENAME), 'utf8');
-  assert.equal(artifactText.includes(CREDENTIAL.key), false);
-  assert.equal(JSON.stringify(res).includes(CREDENTIAL.key), false);
+  assert.equal(calls[0].headers.authorization, `Bearer ${TEST_API_KEY}`);
+  assert.equal(calls[0].rawBody.includes(TEST_API_KEY), false);
+  assert.equal(fs.readFileSync(path.join(workDir, PLAN_ARTIFACT_FILENAME), 'utf8').includes(TEST_API_KEY), false);
+  assert.equal(JSON.stringify(res).includes(TEST_API_KEY), false);
+  assert.equal(JSON.stringify(usageSink).includes(TEST_API_KEY), false);
+
+  // A provider error that echoes the key is never surfaced.
+  const failed = await plan({ status: 401, body: { error: { message: `bad key ${TEST_API_KEY}` } } });
+  assert.equal(JSON.stringify(failed.res).includes(TEST_API_KEY), false);
 });
 
 test('P1-T18: credential-shaped USER_REQUEST → user_request_invalid before any egress', async () => {
-  const workDir = tmpWorkDir();
-  const capture = [];
-  const res = await proposeResearchPlan({
-    userRequest: '用这个 key 帮我查: token: sk-abc123secret', workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT), { capture }), credential: CREDENTIAL,
-  });
+  const { res, calls, workDir } = await plan(VALID_PLAN_TEXT, { userRequest: '用这个 key 帮我查: token: sk-abc123secret' });
   assert.equal(res.ok, false);
   assert.equal(res.reason, PLANNER_FAILURE_USER_REQUEST_INVALID);
-  assert.equal(res.reason, 'user_request_invalid');
   assert.ok(res.issues.some((i) => /credential-shape/i.test(i.message)));
-  assert.equal(capture.length, 0);
-  assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false);
+  assert.equal(calls.length, 0);
+  assert.equal(persisted(workDir), false);
 });
 
 // ---------------------------------------------------------------------------
@@ -417,7 +263,6 @@ test('P1-T18: credential-shaped USER_REQUEST → user_request_invalid before any
 // ---------------------------------------------------------------------------
 
 test('P1-T18: USER_REQUEST deterministic validation boundaries', async () => {
-  const credential = CREDENTIAL;
   const cases = [
     { name: 'empty', input: '   ' },
     { name: 'non-string', input: 42 },
@@ -426,98 +271,58 @@ test('P1-T18: USER_REQUEST deterministic validation boundaries', async () => {
     { name: 'machine-private path', input: '研究 /Users/someone/secrets 里的项目' },
   ];
   for (const c of cases) {
-    const res = await proposeResearchPlan({
-      userRequest: c.input, workDir: tmpWorkDir(),
-      fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT)), credential,
-    });
-    assert.equal(res.ok, false, c.name);
+    const { res, calls } = await plan(VALID_PLAN_TEXT, { userRequest: c.input });
     assert.equal(res.reason, PLANNER_FAILURE_USER_REQUEST_INVALID, c.name);
+    assert.equal(calls.length, 0, c.name);
   }
-  // Legitimate multiline request with tab/newline is accepted (encoding hygiene,
-  // not corpus sanitization — §10.1: USER_REQUEST is not UNTRUSTED_CORPUS).
-  const workDir = tmpWorkDir();
-  const ok = await proposeResearchPlan({
-    userRequest: '研究两个问题：\n1. 量化交易入门\t2. 量化交易风险', workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT)), credential,
-  });
-  assert.equal(ok.ok, true);
+  // A legitimate multiline request with tab/newline is accepted.
+  const ok = await plan(VALID_PLAN_TEXT, { userRequest: '研究两个问题：\n1. 量化交易入门\t2. 量化交易风险' });
+  assert.equal(ok.res.ok, true);
 });
 
 // ---------------------------------------------------------------------------
-// 7. §10 non-sensitive usage evidence (contract unchanged)
+// 7. §10 non-sensitive usage evidence (recorded by the model layer)
 // ---------------------------------------------------------------------------
 
-test('P1-T18: usageSink collects non-sensitive token/timing evidence when reported', async () => {
-  const workDir = tmpWorkDir();
+test('P1-T18: usage evidence is recorded per model call when the provider reports it', async () => {
   const usageSink = [];
-  const payload = deepseekEnvelope(VALID_PLAN_TEXT);
-  payload.usage = { prompt_tokens: 120, completion_tokens: 80, total_tokens: 200 };
-  const res = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir,
-    fetchImpl: fakeFetch(payload), credential: CREDENTIAL, usageSink,
-  });
+  const { res } = await plan({ text: VALID_PLAN_TEXT, usage: { prompt_tokens: 120, completion_tokens: 80, total_tokens: 200 } }, { usageSink });
   assert.equal(res.ok, true);
   assert.equal(usageSink.length, 1);
+  assert.equal(usageSink[0].label, 'planner');
+  assert.equal(usageSink[0].provider, 'deepseek');
   assert.equal(usageSink[0].model, DEEPSEEK_MODEL);
   assert.equal(usageSink[0].totalTokens, 200);
   assert.equal(typeof usageSink[0].ms, 'number');
-  assert.equal(JSON.stringify(usageSink).includes(CREDENTIAL.key), false);
 });
 
-
 // ---------------------------------------------------------------------------
-// 6b. P1-T18 REPAIR (P1-1): Windows machine-private profile paths in USER_REQUEST
-//     are rejected at ANY token/path boundary (mid-sentence + multiline),
-//     fail-closed BEFORE any egress.
+// 6b. P1-T18 REPAIR (P1-1): Windows machine-private profile paths
 // ---------------------------------------------------------------------------
 
-test('P1-T18 repair P1-1: mid-sentence/multiline Windows profile path in USER_REQUEST -> user_request_invalid, fetch never invoked', async () => {
-  const cases = [
+test('P1-T18 repair P1-1: mid-sentence/multiline Windows profile path in USER_REQUEST -> user_request_invalid, no egress', async () => {
+  for (const input of [
     '研究 C:\\Users\\alice\\secret.txt 里的项目',
     '请比较 C:\\Documents and Settings\\bob\\notes.md 和公开资料',
     '第一行\nD:\\Users\\carol\\private.txt',
-  ];
-  for (const input of cases) {
-    const workDir = tmpWorkDir();
-    const capture = [];
-    const res = await proposeResearchPlan({
-      userRequest: input, workDir,
-      fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT), { capture }), credential: CREDENTIAL,
-    });
-    assert.equal(res.ok, false, `USER_REQUEST with private path must be rejected: ${input}`);
-    assert.equal(res.reason, PLANNER_FAILURE_USER_REQUEST_INVALID, `reason must be user_request_invalid: ${input}`);
-    assert.equal(capture.length, 0, `no egress when USER_REQUEST is invalid: ${input}`);
-    assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false, `nothing persisted: ${input}`);
+  ]) {
+    const { res, calls, workDir } = await plan(VALID_PLAN_TEXT, { userRequest: input });
+    assert.equal(res.reason, PLANNER_FAILURE_USER_REQUEST_INVALID, input);
+    assert.equal(calls.length, 0, input);
+    assert.equal(persisted(workDir), false, input);
   }
 });
 
 test('P1-T18 repair P1-1: legitimate USER_REQUEST with tilde / drive-colon text stays valid (no over-rejection)', async () => {
-  const workDir = tmpWorkDir();
-  const capture = [];
-  const res = await proposeResearchPlan({
-    userRequest: '分析温度~25度时的用户讨论，以及会议在 3:30 开始的安排',
-    workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(VALID_PLAN_TEXT), { capture }), credential: CREDENTIAL,
-  });
-  assert.equal(res.ok, true, 'legitimate tilde/drive-like request must be accepted');
-  assert.equal(capture.length, 1, 'valid request proceeds to egress');
+  const { res, calls } = await plan(VALID_PLAN_TEXT, { userRequest: '分析温度~25度时的用户讨论，以及会议在 3:30 开始的安排' });
+  assert.equal(res.ok, true);
+  assert.equal(calls.length, 1);
 });
 
 // ---------------------------------------------------------------------------
-// 8. OWNER RULING 2026-09-10/11 (Issue #48 D1 repair): planner model-output
-//    contract — sourceGroupIntents[*].groupKey MUST be null. A pre-retrieval,
-//    model-generated plan has NO source-identity authority (it cannot know
-//    Zhihu question IDs), and a non-null groupKey (semantic label or
-//    numeric-looking string) would poison the frozen T08 exact-match groupKey
-//    gate (selection_constraint_unevaluable). The planner applies a
-//    deterministic post-model contract gate BEFORE persistence: non-null
-//    groupKey in model output → planner_invalid FAIL CLOSED (no silent
-//    coercion, no rewriting to null, nothing persisted). The GENERIC T04
-//    plan contract (plan-contract.mjs) is UNCHANGED — callers that
-//    legitimately possess canonical identities keep non-null groupKey.
+// 8. OWNER RULING 2026-09-10/11 (Issue #48 D1 repair): groupKey MUST be null
 // ---------------------------------------------------------------------------
 
-/** Plan text identical to a valid proposal except sourceGroupIntents[*].groupKey. */
 function planTextWithGroupKey(groupKey) {
   return JSON.stringify({
     ...JSON.parse(VALID_PLAN_TEXT),
@@ -526,83 +331,45 @@ function planTextWithGroupKey(groupKey) {
 }
 
 test('OWNER RULING D1-CE1: model-emitted semantic groupKey ("pro-replacement") → planner_invalid FAIL_CLOSED, nothing persisted', async () => {
-  const workDir = tmpWorkDir();
-  const res = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithGroupKey('pro-replacement'))), credential: CREDENTIAL,
-  });
-  assert.equal(res.ok, false);
+  const { res, workDir } = await plan(planTextWithGroupKey('pro-replacement'));
   assert.equal(res.reason, PLANNER_FAILURE_PLANNER_INVALID);
-  assert.equal(res.reason, 'planner_invalid');
-  assert.ok(Array.isArray(res.issues) && res.issues.length > 0, 'structured issues must be present');
-  assert.ok(
-    res.issues.some((i) => /sourceGroupIntents\[0\]\.groupKey/.test(i.path)),
-    'issue path must name the offending groupKey',
-  );
-  assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false, 'invalid plan must NOT be persisted');
+  assert.ok(res.issues.some((i) => /sourceGroupIntents\[0\]\.groupKey/.test(i.path)));
+  assert.equal(persisted(workDir), false);
   assert.equal(loadPlan(workDir).ok, false);
 });
 
-test('OWNER RULING D1-CE2: numeric-looking groupKey ("123456789") is still planner_invalid — the planner acquires no source identity from model output', async () => {
-  const workDir = tmpWorkDir();
-  const res = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithGroupKey('123456789'))), credential: CREDENTIAL,
-  });
-  assert.equal(res.ok, false);
+test('OWNER RULING D1-CE2: numeric-looking groupKey ("123456789") is still planner_invalid', async () => {
+  const { res, workDir } = await plan(planTextWithGroupKey('123456789'));
   assert.equal(res.reason, PLANNER_FAILURE_PLANNER_INVALID);
-  assert.ok(Array.isArray(res.issues) && res.issues.length > 0);
-  assert.ok(
-    res.issues.some((i) => /sourceGroupIntents\[0\]\.groupKey/.test(i.path)),
-    'issue path must name the offending groupKey',
-  );
-  assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false);
-  assert.equal(loadPlan(workDir).ok, false);
+  assert.ok(res.issues.some((i) => /sourceGroupIntents\[0\]\.groupKey/.test(i.path)));
+  assert.equal(persisted(workDir), false);
 });
 
 test('OWNER RULING D1-CE3: groupKey null remains a valid planner proposal — persisted as today', async () => {
-  const workDir = tmpWorkDir();
-  const res = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithGroupKey(null))), credential: CREDENTIAL,
-  });
+  const { res, workDir } = await plan(planTextWithGroupKey(null));
   assert.equal(res.ok, true, JSON.stringify({ ok: res.ok, reason: res.reason, issues: res.issues }));
   const loaded = loadPlan(workDir);
-  assert.equal(loaded.ok, true);
   assert.equal(loaded.plan.sourceGroupIntents[0].groupKey, null);
   assert.equal(res.planHash, planHash(loaded.plan));
 });
 
-test('OWNER RULING D1-CE4: generic T04 validatePlanInput KEEPS accepting a legitimate non-null groupKey (planner gate is planner-specific; no schema regression)', () => {
+test('OWNER RULING D1-CE4: generic T04 validatePlanInput KEEPS accepting a legitimate non-null groupKey', () => {
   const v = validatePlanInput(JSON.parse(planTextWithGroupKey('canonical-question-1')));
-  assert.equal(v.ok, true, 'generic T04 contract must still accept a non-null groupKey');
+  assert.equal(v.ok, true);
   assert.equal(v.plan.sourceGroupIntents[0].groupKey, 'canonical-question-1');
 });
 
-test('OWNER RULING D1-CE5: planner system prompt explicitly requires groupKey MUST be null (no source-identity authority) for model-generated pre-retrieval plans', () => {
+test('OWNER RULING D1-CE5: planner system prompt explicitly requires groupKey MUST be null', () => {
   const prompt = buildPlannerSystemPrompt();
-  assert.match(prompt, /"groupKey"[^.\n]*MUST be null/i, 'prompt must state groupKey MUST be null');
-  assert.match(prompt, /no source-identity authority/i, 'prompt must explain why (no source-identity authority)');
-  assert.match(prompt, /cannot know Zhihu question IDs/i, 'prompt must explain the pre-retrieval identity gap');
+  assert.match(prompt, /"groupKey"[^.\n]*MUST be null/i);
+  assert.match(prompt, /no source-identity authority/i);
+  assert.match(prompt, /cannot know Zhihu question IDs/i);
 });
 
 // ---------------------------------------------------------------------------
-// 9. D4 (Issue #50 POST_MERGE_CORRUPTION repair): planner-profile model-output
-//    contract — sourceGroupIntents[*].constraints MUST be [].
-//
-//    Why this is a planner-PROFILE rule and not a T04 schema change: free-form
-//    constraint strings have NO structured semantics under plan schemaVersion 1,
-//    so the frozen T08 selector (lib/source-group-selection.mjs) fails the whole
-//    run closed with `selection_constraint_unevaluable` on any non-empty
-//    constraints[] (Issue #50 D4 / P1-T16 dogfood discovery). A model-generated,
-//    pre-retrieval plan cannot supply mechanically evaluable constraints, so the
-//    planner must emit [] and carry semantic diversity in intent /
-//    queryVariants / aspects / entities / opposingFramings / terminologyVariants.
-//    The GENERIC T04 plan contract (plan-contract.mjs) is deliberately UNCHANGED:
-//    callers that own evaluable constraint semantics keep working (D4-CE6).
+// 9. D4 (Issue #50): constraints MUST be []
 // ---------------------------------------------------------------------------
 
-/** Plan text identical to a valid proposal except sourceGroupIntents[*].constraints. */
 function planTextWithConstraints(constraints) {
   return JSON.stringify({
     ...JSON.parse(VALID_PLAN_TEXT),
@@ -610,122 +377,88 @@ function planTextWithConstraints(constraints) {
   });
 }
 
-/** Plan text identical to a valid proposal except the whole sourceGroupIntents list. */
 function planTextWithIntents(intents) {
   return JSON.stringify({ ...JSON.parse(VALID_PLAN_TEXT), sourceGroupIntents: intents });
 }
 
 test('D4-CE1: model-emitted non-empty constraints -> planner_invalid FAIL_CLOSED, nothing persisted', async () => {
-  const workDir = tmpWorkDir();
-  const res = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithConstraints(['至少包含一个高赞反对回答']))),
-    credential: CREDENTIAL,
-  });
-  assert.equal(res.ok, false, 'non-empty constraints must fail the planner profile closed');
+  const { res, workDir } = await plan(planTextWithConstraints(['至少包含一个高赞反对回答']));
   assert.equal(res.reason, PLANNER_FAILURE_PLANNER_INVALID);
-  assert.equal(res.reason, 'planner_invalid');
-  assert.ok(Array.isArray(res.issues) && res.issues.length > 0, 'structured issues must be present');
-  assert.ok(
-    res.issues.some((i) => /sourceGroupIntents\[0\]\.constraints/.test(i.path)),
-    'issue path must name the offending constraints field',
-  );
-  assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false, 'invalid plan must NOT be persisted');
-  assert.equal(loadPlan(workDir).ok, false);
+  assert.ok(res.issues.some((i) => /sourceGroupIntents\[0\]\.constraints/.test(i.path)));
+  assert.equal(persisted(workDir), false);
 });
 
 test('D4-CE2: constraints=[""] is still planner_invalid — emptiness is structural, not textual', async () => {
-  const workDir = tmpWorkDir();
-  const res = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithConstraints(['']))),
-    credential: CREDENTIAL,
-  });
-  assert.equal(res.ok, false, 'a non-empty array of blank strings must still fail closed');
+  const { res, workDir } = await plan(planTextWithConstraints(['']));
   assert.equal(res.reason, PLANNER_FAILURE_PLANNER_INVALID);
-  assert.ok(
-    res.issues.some((i) => /sourceGroupIntents\[0\]\.constraints/.test(i.path)),
-    'issue path must name the offending constraints field',
-  );
-  assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false);
-  assert.equal(loadPlan(workDir).ok, false);
+  assert.ok(res.issues.some((i) => /sourceGroupIntents\[0\]\.constraints/.test(i.path)));
+  assert.equal(persisted(workDir), false);
 });
 
 test('D4-CE3: constraints=[] remains a valid planner proposal — persisted unchanged', async () => {
-  const workDir = tmpWorkDir();
-  const res = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithConstraints([]))),
-    credential: CREDENTIAL,
-  });
-  assert.equal(res.ok, true, JSON.stringify({ ok: res.ok, reason: res.reason, issues: res.issues }));
+  const { res, workDir } = await plan(planTextWithConstraints([]));
+  assert.equal(res.ok, true);
   const loaded = loadPlan(workDir);
-  assert.equal(loaded.ok, true);
   assert.deepEqual(loaded.plan.sourceGroupIntents[0].constraints, []);
-  assert.equal(loaded.plan.sourceGroupIntents[0].groupKey, null);
   assert.equal(res.planHash, planHash(loaded.plan));
 });
 
 test('D4-CE4: multiple sourceGroupIntents, every constraints=[] -> valid and fully preserved', async () => {
-  const workDir = tmpWorkDir();
   const intents = [
     { intent: '关注支持方观点', constraints: [], groupKey: null },
     { intent: '关注反方观点', constraints: [], groupKey: null },
     { intent: '关注中立综述', constraints: [], groupKey: null },
   ];
-  const res = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithIntents(intents))),
-    credential: CREDENTIAL,
-  });
-  assert.equal(res.ok, true, JSON.stringify({ ok: res.ok, reason: res.reason, issues: res.issues }));
-  const loaded = loadPlan(workDir);
-  assert.equal(loaded.ok, true);
-  assert.deepEqual(loaded.plan.sourceGroupIntents, intents);
+  const { res, workDir } = await plan(planTextWithIntents(intents));
+  assert.equal(res.ok, true);
+  assert.deepEqual(loadPlan(workDir).plan.sourceGroupIntents, intents);
 });
 
 test('D4-CE5: one invalid intent among valid ones invalidates the WHOLE plan (no partial acceptance)', async () => {
-  const workDir = tmpWorkDir();
-  const res = await proposeResearchPlan({
-    userRequest: '研究知乎上对量化交易的讨论', workDir,
-    fetchImpl: fakeFetch(deepseekEnvelope(planTextWithIntents([
-      { intent: '关注支持方观点', constraints: [], groupKey: null },
-      { intent: '关注反方观点', constraints: ['至少包含一个高赞反对回答'], groupKey: null },
-    ]))),
-    credential: CREDENTIAL,
-  });
-  assert.equal(res.ok, false, 'mixed valid/invalid intents must invalidate the whole plan');
+  const { res, workDir } = await plan(planTextWithIntents([
+    { intent: '关注支持方观点', constraints: [], groupKey: null },
+    { intent: '关注反方观点', constraints: ['至少包含一个高赞反对回答'], groupKey: null },
+  ]));
   assert.equal(res.reason, PLANNER_FAILURE_PLANNER_INVALID);
-  assert.ok(
-    res.issues.some((i) => /sourceGroupIntents\[1\]\.constraints/.test(i.path)),
-    'the issue path must point at the offending entry index [1]',
-  );
-  assert.equal(fs.existsSync(path.join(workDir, PLAN_ARTIFACT_FILENAME)), false, 'nothing may be persisted');
-  assert.equal(loadPlan(workDir).ok, false);
+  assert.ok(res.issues.some((i) => /sourceGroupIntents\[1\]\.constraints/.test(i.path)));
+  assert.equal(persisted(workDir), false);
 });
 
 test('D4-CE6: generic T04 validatePlanInput is UNCHANGED — non-empty constraints stay valid for non-planner callers', () => {
   const constraints = ['Valid constraint string for other caller'];
   const v = validatePlanInput(JSON.parse(planTextWithConstraints(constraints)));
-  assert.equal(v.ok, true, 'generic T04 contract must still accept non-empty constraints (no schema regression)');
+  assert.equal(v.ok, true);
   assert.deepEqual(v.plan.sourceGroupIntents[0].constraints, constraints);
-  // The generic contract still accepts a non-null groupKey too (D1-CE4 parity).
-  assert.equal(v.plan.sourceGroupIntents[0].groupKey, null);
 });
 
 test('D4-CE7: planner prompt states the constraints=[] rule and its schema example is itself valid', () => {
   const prompt = buildPlannerSystemPrompt();
-  assert.match(prompt, /every "constraints" array MUST be \[\]/i, 'prompt must state that every constraints array MUST be []');
-  assert.match(prompt, /free-form (?:semantic )?constraints are unsupported/i, 'prompt must state free-form constraints are unsupported by this P1 planner profile');
-  // The schema example must NOT advertise constraints as free-form strings.
-  assert.equal(prompt.includes('"constraints": ["string"]'), false, 'prompt must not advertise constraints as free-form strings');
-  assert.match(prompt, /"constraints": \[\]/, 'the schema example must itself use []');
-  // Semantic diversity must be redirected to the supported carriers.
+  assert.match(prompt, /every "constraints" array MUST be \[\]/i);
+  assert.match(prompt, /free-form (?:semantic )?constraints are unsupported/i);
+  assert.equal(prompt.includes('"constraints": ["string"]'), false);
+  assert.match(prompt, /"constraints": \[\]/);
   assert.match(
     prompt,
     /semantic diversity[^.\n]*"intent"[^.\n]*"queryVariants"[^.\n]*"aspects"[^.\n]*"entities"[^.\n]*"opposingFramings"[^.\n]*"terminologyVariants"/i,
-    'prompt must name the supported semantic-diversity carriers',
   );
-  // The D1 groupKey rule must survive this repair unchanged.
-  assert.match(prompt, /"groupKey"[^.\n]*MUST be null/i, 'prompt must still state groupKey MUST be null');
+  assert.match(prompt, /"groupKey"[^.\n]*MUST be null/i);
+});
+
+// ---------------------------------------------------------------------------
+// 10. other providers
+// ---------------------------------------------------------------------------
+
+test('a plan wrapped in a Markdown code fence (common for non-DeepSeek models) is accepted', async () => {
+  const { res } = await plan(`下面是计划：\n\`\`\`json\n${VALID_PLAN_TEXT}\n\`\`\``);
+  assert.equal(res.ok, true, JSON.stringify({ reason: res.reason, issues: res.issues }));
+});
+
+test('a custom OpenAI-compatible endpoint plans through the same contract and records its identity', async () => {
+  const { res, calls } = await plan(VALID_PLAN_TEXT, { spec: 'antigravity/claude-sonnet-4-6', baseUrl: 'http://127.0.0.1:8045/v1' });
+  assert.equal(res.ok, true);
+  assert.deepEqual(res.runtime, { runtimeId: 'antigravity-api-tool-less', model: 'claude-sonnet-4-6' });
+  assert.equal(calls[0].url, 'http://127.0.0.1:8045/v1/chat/completions');
+  assert.equal(calls[0].body.model, 'claude-sonnet-4-6');
+  assert.equal(calls[0].body.tools, undefined);
+  assert.equal(calls[0].body.response_format, undefined, 'JSON mode is not assumed for unknown endpoints');
 });

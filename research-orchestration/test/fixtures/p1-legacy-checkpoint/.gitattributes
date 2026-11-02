@@ -1,0 +1,5 @@
+# Golden checkpoint fixtures are hashed byte-for-byte by the reuse-closure
+# check (p1-reuse-closure: "recorded artifact content changed"). Git must not
+# convert line endings on checkout, or a Windows clone with core.autocrlf=true
+# changes the bytes and the fixture is reported as tampered.
+* -text

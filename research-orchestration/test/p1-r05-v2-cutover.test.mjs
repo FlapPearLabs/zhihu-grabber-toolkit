@@ -42,7 +42,7 @@ import {
   T14_SYNTHESIS_MODEL,
 } from '../lib/cross-source-synthesis.mjs';
 
-import { buildDeepSeekResearchRuntime } from '../lib/deepseek-research-runtime.mjs';
+import { fakeModelRuntime } from './helpers/fake-model-transport.mjs';
 
 const PLAN_HASH = '5f1a2b3c4d5e6f708192a3b4c5d6e7f80112233445566778899aabbccddeeff0';
 const IDENTITY = 'sha256:6666666666666666666666666666666666666666666666666666666666666666';
@@ -660,23 +660,13 @@ describe('P1-R05 diagnostics — derived from canonical relationStatus, five key
 });
 
 describe('P1-R05 real async adapter (fake transport) → T14 → V2 artifact', () => {
-  test('the production DeepSeek adapter over a fake fetch feeds the real T14 producer a V2 proposal', async () => {
+  test('the production model runtime over a fake transport feeds the real T14 producer a V2 proposal', async () => {
     const { artifact } = caseB();
     const proposal = {
       families: [fam('总体有效性', 'c-g1-1', [A('c-g1-1'), A('c-g2-1'), A('c-g3-1'), O('c-g4-1'), O('c-g5-1')])],
       unresolvedClaimIds: [],
     };
-    const runtime = buildDeepSeekResearchRuntime({
-      credential: { usable: true, key: 'test-key' },
-      fetchImpl: async () => ({
-        ok: true,
-        json: async () => ({
-          object: 'chat.completion',
-          model: 'deepseek-v4-pro',
-          choices: [{ message: { role: 'assistant', content: JSON.stringify(proposal) }, finish_reason: 'stop' }],
-        }),
-      }),
-    });
+    const { runtime } = await fakeModelRuntime(JSON.stringify(proposal));
     const result = await produceCrossSourceSynthesis({ seamCArtifact: artifact, runtime });
     assert.equal(result.ok, true, JSON.stringify(result));
     const verdict = validateSynthesisOutputV2(result.artifact);
@@ -687,25 +677,12 @@ describe('P1-R05 real async adapter (fake transport) → T14 → V2 artifact', (
   });
 
   test('async rejection and resolved-malformed-output keep distinct error identities', async () => {
-    const rejecting = buildDeepSeekResearchRuntime({
-      credential: { usable: true, key: 'test-key' },
-      fetchImpl: async () => { throw new Error('ECONNREFUSED'); },
-    });
+    const { runtime: rejecting } = await fakeModelRuntime({ reject: new Error('ECONNREFUSED') });
     const r1 = await produceCrossSourceSynthesis({ seamCArtifact: caseB().artifact, runtime: rejecting });
     assert.equal(r1.ok, false);
     assert.equal(r1.code, 'T14_RUNTIME_UNAVAILABLE', 'transport rejection must remain runtime-unavailable');
 
-    const malformed = buildDeepSeekResearchRuntime({
-      credential: { usable: true, key: 'test-key' },
-      fetchImpl: async () => ({
-        ok: true,
-        json: async () => ({
-          object: 'chat.completion',
-          model: 'deepseek-v4-pro',
-          choices: [{ message: { role: 'assistant', content: JSON.stringify({ families: [] }) }, finish_reason: 'stop' }],
-        }),
-      }),
-    });
+    const { runtime: malformed } = await fakeModelRuntime(JSON.stringify({ families: [] }));
     const r2 = await produceCrossSourceSynthesis({ seamCArtifact: caseB().artifact, runtime: malformed });
     assert.equal(r2.ok, false);
     assert.equal(r2.code, 'T14_RUNTIME_OUTPUT_INVALID', 'resolved malformed output must remain output-invalid');

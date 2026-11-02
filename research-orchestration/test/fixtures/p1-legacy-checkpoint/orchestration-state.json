@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "runId": "bb8a745ce60523814bd493b35bcd4593942e3a21678cf2f318d8e19c14ca3085",
+  "occurrenceId": "8df19000-7d4c-4540-b97c-5b3f6803e722",
+  "topic": "AI 编程工具会取代程序员吗",
+  "mode": "p1-cross-question-deep-research",
+  "percent": null,
+  "runtime": "deepseek-api-tool-less",
+  "configFingerprint": null,
+  "forceQuestionId": null,
+  "stage": "COMPLETE",
+  "completedStages": [
+    "SEARCH",
+    "SELECT",
+    "CAPTURE",
+    "ANALYZE",
+    "RENDER"
+  ],
+  "selectedQuestionId": null,
+  "selection": null,
+  "artifacts": {
+    "researchPlan": "research-plan.json",
+    "selectionDecision": "source-group-selection-decision.json",
+    "coverageState": "coverage-state.json",
+    "coverageFinal": "coverage-final.json",
+    "perGroupClaims": "per-group-claims.json",
+    "synthesis": "cross-source-synthesis.json",
+    "researchResult": "research-result.json"
+  },
+  "hashes": {
+    "researchPlan": "316cd3b400cd7d572a0d5680dcf3d7e4f05262cbf87097662365135f286e4da9",
+    "coverageState": "0618ecc8327265256311def2fa73d805f5fcf8c6c033b3a7308fe4e3909c5424",
+    "coverageFinal": "ff78227915178d5b15acb5d33dc2cee839b376764bd1e98144a3a133abb5bb59",
+    "perGroupClaims": "14423b7c2dee2044ace9331734f4d1c5cc7720a7a79de40d7a80c96b18af4c5b",
+    "synthesis": "f163740042e05ab4d2cbdc1968c225c29b43d61b6c4a5e656869c51f10435fb7",
+    "researchResult": "4a0a011a3e589f8f82e96eaec674d877245b9fd2c68976d5d97ba64cc9fcca7c",
+    "accumulatedPool": "bf65c5f5a35c3fb92ffeef68259fcc9000d2396e0b6391d6e7b9bee2b102f555",
+    "selectionDecision": "cfe45da3f1b641623dcee291afb9f83ba243d62d5069403bca9d945dc2cd7fc8"
+  },
+  "verification": null,
+  "coverage": {
+    "is100PercentAnalysis": true,
+    "selectedCount": 4,
+    "analyzedCount": 4
+  },
+  "p1FinalCoveragePlanHash": "25fe0646076539490e4e1cb495a947a2a6f45c2c6667f9cc0618ff885f122e75",
+  "updatedAt": "2026-11-01T06:01:45.382Z"
+}

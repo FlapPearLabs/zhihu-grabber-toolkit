@@ -5,8 +5,8 @@
  * D6 SCOPED REPAIR — T14 ASYNC RUNTIME CONTRACT MISMATCH.
  *
  * PROVEN PRODUCTION DEFECT (at master 0d305b03):
- *   buildDeepSeekResearchRuntime().synthesize() returns chatJson(...), and
- *   chatJson IS async → the canonical production T14 seam is a Promise.
+ *   the production runtime's synthesize() returned a Promise → the
+ *   canonical production T14 seam is a Promise.
  *   cross-source-synthesis.mjs consumed runtime.synthesize(...) synchronously
  *   and validated the Promise object as if it were a plain model output →
  *   deterministic T14_RUNTIME_OUTPUT_INVALID for the real runtime
@@ -30,8 +30,8 @@
  *        no stage advancement, no bare unhandled rejection;
  *   CE4  asynchronously-resolved INVALID output stays T14_RUNTIME_OUTPUT_INVALID
  *        (NOT runtime-unavailable — the two classes are never collapsed);
- *   CE5  PRODUCTION-SHAPED DeepSeek adapter (real buildDeepSeekResearchRuntime
- *        + injected deterministic fake fetch + fake credential, NO network)
+ *   CE5  PRODUCTION model runtime (real lib/model-runtime.mjs over an
+ *        injected deterministic fake SSE transport, NO network)
  *        is awaited correctly → mandatory, because sync mocks caused the escape;
  *   CE6  T13 → await T14 → T15 production composition completes in canonical
  *        stage order with an async synthesize runtime;
@@ -57,11 +57,7 @@ import {
   T14_SYNTHESIS_MODEL,
 } from '../lib/cross-source-synthesis.mjs';
 
-import {
-  buildDeepSeekResearchRuntime,
-} from '../lib/deepseek-research-runtime.mjs';
-
-import { DEEPSEEK_RUNTIME } from '../../corpus-anthology/lib/deepseek-tool-less.mjs';
+import { fakeModelRuntime, messagesOf } from './helpers/fake-model-transport.mjs';
 
 import {
   createInitialCoverageState,
@@ -343,42 +339,17 @@ describe('D6 CE4 — asynchronously-resolved invalid output keeps its own class'
 // CE5 — PRODUCTION-SHAPED DEEPSEEK ADAPTER (mandatory)
 // ---------------------------------------------------------------------------
 
-const FAKE_CREDENTIAL = { usable: true, key: 'sk-fake-deterministic-test-credential' };
-
-/** Deterministic fake fetch serving one well-formed envelope (NO network). */
-function fakeFetchServing(aspectsBuilder) {
-  const seen = [];
-  const fetchImpl = async (url, opts) => {
-    const body = JSON.parse(opts.body);
-    seen.push({ url, body });
-    const claims = JSON.parse(body.messages[1].content).claims;
-    const payload = {
-      id: 'chatcmpl-fake',
-      object: 'chat.completion',
-      model: DEEPSEEK_RUNTIME.model,
-      choices: [{
-        index: 0,
-        message: { role: 'assistant', content: JSON.stringify(aspectsBuilder(claims)) },
-        finish_reason: 'stop',
-      }],
-    };
-    return {
-      ok: true,
-      status: 200,
-      json: async () => payload,
-    };
-  };
-  fetchImpl.seen = seen;
-  return fetchImpl;
+/** Production model runtime over a fake transport answering with aspectsBuilder(claims). */
+function runtimeServing(aspectsBuilder) {
+  return fakeModelRuntime((body) => {
+    const { claims } = JSON.parse(messagesOf(body).user);
+    return JSON.stringify(aspectsBuilder(claims));
+  });
 }
 
-describe('D6 CE5 — production-shaped DeepSeek adapter (fake fetch, no network)', () => {
-  test('CE5: the REAL buildDeepSeekResearchRuntime synthesize Promise contract is awaited', async () => {
-    const fetchImpl = fakeFetchServing((claims) => validPartitionFor(claims));
-    const runtime = buildDeepSeekResearchRuntime({
-      fetchImpl,
-      credential: FAKE_CREDENTIAL,
-    });
+describe('D6 CE5 — production model runtime (fake transport, no network)', () => {
+  test('CE5: the REAL model runtime synthesize Promise contract is awaited', async () => {
+    const { runtime, calls } = await runtimeServing((claims) => validPartitionFor(claims));
 
     // 1. the production seam is genuinely asynchronous (the proven defect source)
     const probe = runtime.synthesize({ claims: [{ claimId: 'c-23456789-001', groupId: 'g', kind: 'main', statement: 'x' }] });
@@ -387,26 +358,23 @@ describe('D6 CE5 — production-shaped DeepSeek adapter (fake fetch, no network)
     await probe;
 
     // 2. the T14 seam consumes that REAL runtime without network and succeeds
-    const runtimeFresh = buildDeepSeekResearchRuntime({ fetchImpl, credential: FAKE_CREDENTIAL });
+    const fresh = await runtimeServing((claims) => validPartitionFor(claims));
     const result = await produceCrossSourceSynthesis({
       seamCArtifact: seamCMultiGroup(),
-      runtime: runtimeFresh,
+      runtime: fresh.runtime,
     });
 
     assert.equal(result.ok, true,
-      `the real DeepSeek adapter shape must be compatible post-repair: ${JSON.stringify(result)}`);
+      `the real model runtime shape must be compatible post-repair: ${JSON.stringify(result)}`);
     assert.notEqual(result.code, 'T14_RUNTIME_OUTPUT_INVALID',
       'the Promise must be awaited, never validated as an output object');
     assert.ok(result.artifact);
-    assert.ok(fetchImpl.seen.length >= 1, 'the injected fake transport was actually used (no real network)');
-    assert.equal(fetchImpl.seen[0].url, DEEPSEEK_RUNTIME.endpoint);
+    assert.ok(calls.length >= 1 && fresh.calls.length >= 1, 'the injected fake transport was actually used (no real network)');
+    assert.equal(fresh.calls[0].url, 'https://api.deepseek.com/chat/completions');
   });
 
-  test('CE5b: the real adapter rejecting (transport) → T14_RUNTIME_UNAVAILABLE, not output-invalid', async () => {
-    const runtime = buildDeepSeekResearchRuntime({
-      fetchImpl: async () => ({ ok: false, status: 503, json: async () => ({}) }),
-      credential: FAKE_CREDENTIAL,
-    });
+  test('CE5b: the real runtime rejecting (transport) → T14_RUNTIME_UNAVAILABLE, not output-invalid', async () => {
+    const { runtime } = await fakeModelRuntime({ status: 503 });
     const result = await produceCrossSourceSynthesis({
       seamCArtifact: seamCMultiGroup(),
       runtime,
@@ -416,12 +384,11 @@ describe('D6 CE5 — production-shaped DeepSeek adapter (fake fetch, no network)
     assert.equal(result.artifact, undefined);
   });
 
-  test('CE5c: the real adapter resolving MALFORMED model output → T14_RUNTIME_OUTPUT_INVALID', async () => {
-    const fetchImpl = fakeFetchServing(() => ({
+  test('CE5c: the real runtime resolving MALFORMED model output → T14_RUNTIME_OUTPUT_INVALID', async () => {
+    const { runtime } = await runtimeServing(() => ({
       families: [{ aspect: 'x', anchorClaimId: 'FORGED-CLAIM-ID', members: [{ claimId: 'FORGED-CLAIM-ID', stance: 'ASSERTS' }] }],
       unresolvedClaimIds: [],
     }));
-    const runtime = buildDeepSeekResearchRuntime({ fetchImpl, credential: FAKE_CREDENTIAL });
     const result = await produceCrossSourceSynthesis({
       seamCArtifact: seamCMultiGroup(),
       runtime,

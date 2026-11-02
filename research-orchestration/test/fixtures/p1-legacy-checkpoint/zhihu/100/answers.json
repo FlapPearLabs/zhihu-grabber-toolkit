@@ -1,0 +1,20 @@
+{
+  "questionId": "100",
+  "questionTitle": "问题 100 的标题",
+  "answers": [
+    {
+      "id": "100-a-1",
+      "content": "回答一：总体上有效，多数场景成立。",
+      "excerpt": "回答一：总体上有效，多数场景成立。",
+      "author": "作者100-0",
+      "voteupCount": 10
+    },
+    {
+      "id": "100-a-2",
+      "content": "回答二：小样本下有反例。",
+      "excerpt": "回答二：小样本下有反例。",
+      "author": "作者100-1",
+      "voteupCount": 9
+    }
+  ]
+}
