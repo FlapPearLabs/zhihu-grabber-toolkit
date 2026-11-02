@@ -29,9 +29,10 @@
  *   S8  the report's permissions are a property of the run: updating an
  *       existing report preserves its mode, and a new report is never wider
  *       than 0600 even under a permissive umask;
- *   S9  an access ACL attached to the existing report is never silently
- *       dropped by the atomic replace: the layer cannot reproduce an arbitrary
- *       ACL, so it refuses (fail closed) instead of widening access.
+ *   S9a an ACL listing that does not look like a regular file is UNKNOWN, not
+ *       "no ACL": a fake or broken `ls` must not authorize a replacement;
+ *   S9b an access ACL detected on the existing report is refused before
+ *       replacement (detection and rename still have a residual race window).
  *
  * Fully offline: fixtures are written by the test itself; no run, no network.
  */
@@ -39,9 +40,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   REPORT_FILENAME, ReportError, buildSourceIndex, writeReport,
@@ -356,8 +358,8 @@ test('S8: rendering preserves an existing report mode and never creates a wider 
   // Windows checkout has no such bits — Node synthesises `0o666` for any
   // writable file and only the read-only attribute is expressible — so `0600`
   // cannot be created or observed there. This is a known platform limit, not a
-  // passing test: Windows access is governed by ACL inheritance, which this
-  // layer does not manage. See the handoff's unverified list.
+  // passing test: inherited Windows ACLs come from the directory; explicit ACLs
+  // have not been verified. See the handoff's unverified list.
   skip: process.platform === 'win32'
     ? 'POSIX permission bits do not exist on Windows (mode is synthesised from the read-only attribute)'
     : false,
@@ -411,7 +413,30 @@ function aclSupport() {
   }
 }
 
-test('S9: an existing report ACL is never silently dropped by an atomic update', {
+test('S9a: an empty successful ACL listing is unknown and refuses replacement', {
+  skip: process.platform === 'win32' ? 'Windows does not use ls for ACL detection' : false,
+}, () => {
+  const workDir = fixture('p1-report-acl-empty-listing-');
+  const reportPath = reportPathOf(workDir);
+  const original = 'existing report must survive\n';
+  fs.writeFileSync(reportPath, original);
+  const binDir = tmpDir('p1-report-fake-ls-');
+  fs.writeFileSync(path.join(binDir, 'ls'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+
+  const child = spawnSync(process.execPath, ['--input-type=module', '-e', `
+    import { pathToFileURL } from 'node:url';
+    const { writeReport } = await import(pathToFileURL(process.argv[1]));
+    try { writeReport(process.argv[2]); process.stdout.write('NO_ERROR'); }
+    catch (error) { process.stdout.write(error.code ?? 'UNKNOWN_ERROR'); }
+  `, fileURLToPath(new URL('../lib/report.mjs', import.meta.url)), workDir], {
+    encoding: 'utf8', env: { ...process.env, PATH: `${binDir}${path.delimiter}${process.env.PATH ?? ''}` },
+  });
+  assert.equal(child.status, 0, child.stderr);
+  assert.equal(child.stdout, 'REPORT_OUTPUT_UNSAFE');
+  assert.equal(fs.readFileSync(reportPath, 'utf8'), original, 'the original report must remain untouched');
+});
+
+test('S9b: an existing report ACL is never silently dropped by an atomic update', {
   skip: aclSupport().ok ? false : `access ACLs are not testable here: ${aclSupport().reason}`,
 }, () => {
   const workDir = fixture('p1-report-acl-');
