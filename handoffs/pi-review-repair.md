@@ -353,3 +353,23 @@ research-classification 全部 pass**。这两处失败都属于候选里早于�
 
 含义：`UNVERIFIED → 已验证` 仅限于「这三类 job 在该 SHA 上通过」；报告目录竞态、真实厂商 /
 OAuth / 费用、账户级隔离仍未验证，仍按原样列为未验证项。
+
+## 复审 P1（ACL）与修复（`cbb965b` → `96e804b`）
+
+独立复审（`CODE_OR_CONTRACT_REVIEWER` + `SECURITY_REVIEWER`，同一个 SHA）均 CHANGES_REQUESTED：
+
+- **P1：更新 report.md 会丢掉既有 ACL，等于放宽访问。** 复核成立：本机用合成夹具写入
+  `everyone deny read` 后再渲染一次，ACL 条目 1 → 0、更新前不可读 → 更新后可读、权限位仍 0600。
+  根因是原子替换换了 inode，ACL 属于 inode。
+- 修复方案（`96e804b`）：不尝试复制任意 ACL，改为**探测到既有 ACL 就拒绝更新**
+  （`REPORT_OUTPUT_UNSAFE`，信息只提文件名并给出「移除 ACL 或删掉文件重新生成」的处置），
+  探测失败（未知）同样拒绝；Windows 例外（NTFS ACL 继承自运行目录，替换文件继承同一套）。
+- 红测 `8c9f4c1`（S9）：修复前 fail 1（更新成功、ACL 丢失），修复后绿。
+- 验证：p1-report-safety 10/10；8 个验收套件 86/86；guard 54/54 rc=0；full-offline rc=0；
+  `git diff --check` clean。修复后同一探针返回 `REPORT_OUTPUT_UNSAFE`，ACL 条目仍为 1。
+- 复审同时提到的非阻塞项已顺手修掉：`suite-classification.json` 里 `p1-report-safety`
+  的 note 原来描述「内容/引用权限」，实际测的是文件系统安全，现已改写并补上 ACL 一条。
+
+仍未验证：Windows 显式 ACL（非继承）未实测；Windows 上 S8 因平台无语义被 skip（CI 日志可见）；
+report 目录 `assert → rename` 的极短竞态仍是 BLOCK；真实厂商资格/费用、OAuth、账户级隔离未验证。
+修复产生新 SHA，旧 PASS 不转移，需对新 SHA 重新独立审查。
