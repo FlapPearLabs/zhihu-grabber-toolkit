@@ -477,3 +477,63 @@ test('S9b: an existing report ACL is never silently dropped by an atomic update'
     'a refused update must not leave temp debris',
   );
 });
+
+test('S10: a directory swap immediately before publication cannot overwrite an outside report', () => {
+  const workDir = fixture('p1-report-publish-swap-');
+  const outside = tmpDir('p1-report-publish-outside-');
+  const outsideReport = path.join(outside, REPORT_FILENAME);
+  const original = 'outside report must survive\n';
+  fs.writeFileSync(outsideReport, original);
+  const rename = fs.renameSync;
+  let attacked = false;
+  let error;
+  fs.renameSync = function patchedRename(source, target) {
+    if (target === reportPathOf(workDir)) {
+      attacked = true;
+      fs.copyFileSync(source, path.join(outside, path.basename(source)));
+      rename.call(fs, workDir, `${workDir}-moved`);
+      fs.symlinkSync(outside, workDir);
+    }
+    return rename.call(fs, source, target);
+  };
+  try {
+    try { writeReport(workDir); } catch (caught) { error = caught; }
+  } finally {
+    fs.renameSync = rename;
+  }
+  assert.equal(fs.readFileSync(outsideReport, 'utf8'), original, 'publication must not overwrite outside bytes');
+  assert.ok(attacked || error instanceof ReportError, 'the attack must run or the write must be refused');
+});
+
+test('S11: an ACL added immediately before publication is never discarded', {
+  skip: aclSupport().ok ? false : `access ACLs are not testable here: ${aclSupport().reason}`,
+}, () => {
+  const workDir = fixture('p1-report-publish-acl-');
+  const reportPath = reportPathOf(workDir);
+  fs.writeFileSync(reportPath, 'existing report\n');
+  const rename = fs.renameSync;
+  let attacked = false;
+  let error;
+  fs.renameSync = function patchedRename(source, target) {
+    if (target === reportPath) {
+      attacked = true;
+      if (process.platform === 'darwin') execFileSync('chmod', ['+a', 'everyone deny read', reportPath]);
+      else execFileSync('setfacl', ['-m', 'u:nobody:r', reportPath]);
+      const listing = execFileSync('ls', [process.platform === 'darwin' ? '-led' : '-ld', reportPath], { encoding: 'utf8' });
+      assert.match(listing, process.platform === 'darwin' ? /\n\s*0:/ : /^\S+\+/);
+    }
+    return rename.call(fs, source, target);
+  };
+  try {
+    try { writeReport(workDir); } catch (caught) { error = caught; }
+  } finally {
+    fs.renameSync = rename;
+  }
+  if (attacked) {
+    const listing = execFileSync('ls', [process.platform === 'darwin' ? '-led' : '-ld', reportPath], { encoding: 'utf8' });
+    assert.match(listing, process.platform === 'darwin' ? /\n\s*0:/ : /^\S+\+/, 'the newly added ACL must survive');
+  } else {
+    assert.ok(error instanceof ReportError, 'an unattempted replacement must be explicitly refused');
+    assert.equal(fs.readFileSync(reportPath, 'utf8'), 'existing report\n');
+  }
+});
