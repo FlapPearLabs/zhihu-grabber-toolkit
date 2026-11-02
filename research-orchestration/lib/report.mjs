@@ -21,6 +21,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { escapeUntrustedMarkdownText } from '../../zhihu-answer-grabber/src/markdown-security.js';
 import { deriveCanonicalSourceId } from './rce-input-adapter.mjs';
 
@@ -467,6 +468,35 @@ function inspectReportTarget(reportPath) {
   return stat.mode & 0o7777;
 }
 
+/** `detectAccessAcl` could not look: unknown is not "no ACL". */
+const ACL_UNKNOWN = Symbol('acl-unknown');
+
+/**
+ * Does this path carry an access ACL? `true` / `false`, or `ACL_UNKNOWN` when
+ * the platform listing could not be read (unknown != absent, so the caller
+ * fails closed). macOS prints ACL entries as extra lines under `ls -le`; Linux
+ * marks an ACL with a trailing `+` on the permission bits. Windows returns
+ * `false` by design: its ACLs are inherited from the run directory, so the
+ * replacement inherits the same ones.
+ */
+function detectAccessAcl(targetPath) {
+  if (process.platform === 'win32') return false;
+  try {
+    if (process.platform === 'darwin') {
+      const listing = execFileSync('ls', ['-led', targetPath], {
+        encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+      });
+      return listing.split('\n').slice(1).some((line) => line.trim() !== '');
+    }
+    const listing = execFileSync('ls', ['-ld', targetPath], {
+      encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    return /\+$/.test(listing.split(/\s+/)[0] ?? '');
+  } catch {
+    return ACL_UNKNOWN;
+  }
+}
+
 /**
  * Write the report ATOMICALLY: bytes go to a fresh temp file in the same
  * directory and are then RENAMEd over the target. Rendering replaces a
@@ -485,6 +515,13 @@ function inspectReportTarget(reportPath) {
  * 0600, and an UPDATE keeps the mode the existing report already had. The temp
  * file is created 0600 and its mode is set explicitly, so a permissive umask
  * can never widen an existing report to 0644.
+ *
+ * ACLs are NOT carried by a rename: the replacement is a new inode, so an
+ * access ACL attached to the previous report would simply disappear (a deny
+ * rule would silently become "no restriction"). This layer cannot reproduce an
+ * arbitrary ACL, so an existing report that carries one is REFUSED instead of
+ * replaced — fail closed, never widen. Windows is exempt: NTFS ACLs there are
+ * inherited from the run directory, and the replacement inherits the same ones.
  */
 function writeReportFile(workDir, markdown) {
   const dir = path.resolve(workDir);
@@ -494,6 +531,17 @@ function writeReportFile(workDir, markdown) {
     assertSameRunDir(handle, dir);
     const existingMode = inspectReportTarget(reportPath);
     const targetMode = existingMode ?? 0o600;
+    if (existingMode !== null) {
+      const acl = detectAccessAcl(reportPath);
+      if (acl !== false) {
+        throw new ReportError(
+          'REPORT_OUTPUT_UNSAFE',
+          acl === true
+            ? `${REPORT_FILENAME} carries an access ACL that an atomic replace cannot preserve; refusing to drop it (remove the ACL, or delete the file to re-render it)`
+            : `${REPORT_FILENAME} could not be inspected for an access ACL; refusing to replace it`,
+        );
+      }
+    }
 
     const tempPath = path.join(dir, `${REPORT_TEMP_PREFIX}${process.pid}-${randomUUID()}`);
     let temp = null;
