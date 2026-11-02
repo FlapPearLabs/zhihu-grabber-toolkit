@@ -571,7 +571,7 @@ function detectAccessAcl(targetPath) {
  * the ACL, mode and ownership cannot be lost, and no directory entry is
  * published — so "swap the run directory between the check and the rename" has
  * no publication step to hijack. A hard-linked report (nlink > 1) or one we may
- * not write (no owner-write bit) is still replaced with temp+rename, so a
+ * not write (no owner read+write bits) is still replaced with temp+rename, so a
  * shared canonical inode is never rewritten; those two cases keep the old,
  * documented publish window.
  *
@@ -675,9 +675,11 @@ function writeReportFile(workDir, markdown) {
  *
  * The target is validated as a file OBJECT: an existing symlink (or any other
  * non-regular object) is refused, so a `report.md → research-result.json` link
- * can never make rendering overwrite canonical run data. The write itself is
- * atomic (temp file + rename) and bound to the run directory OBJECT, so
- * replacing the directory with a symlink cannot redirect the report outside it.
+ * can never make rendering overwrite canonical run data. Creation publishes
+ * atomically (temp file + rename); an update rewrites the same inode in place,
+ * so a concurrent reader may see a truncated report. Both paths are bound to
+ * the run directory OBJECT, so replacing the directory with a symlink cannot
+ * redirect the report outside it.
  */
 export function writeReport(workDir) {
   const result = readJson(workDir, RESULT_FILENAME);
