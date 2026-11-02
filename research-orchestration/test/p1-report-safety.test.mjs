@@ -28,7 +28,10 @@
  *       replacement, so a report outside the run directory is never clobbered.
  *   S8  the report's permissions are a property of the run: updating an
  *       existing report preserves its mode, and a new report is never wider
- *       than 0600 even under a permissive umask.
+ *       than 0600 even under a permissive umask;
+ *   S9  an access ACL attached to the existing report is never silently
+ *       dropped by the atomic replace: the layer cannot reproduce an arbitrary
+ *       ACL, so it refuses (fail closed) instead of widening access.
  *
  * Fully offline: fixtures are written by the test itself; no run, no network.
  */
@@ -36,6 +39,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -390,4 +394,53 @@ test('S8: rendering preserves an existing report mode and never creates a wider 
   } finally {
     process.umask(previous);
   }
+});
+
+/**
+ * Can this machine create an access ACL on a file? The S9 contract is about
+ * platform ACLs, so the test only runs where one can actually be attached.
+ */
+function aclSupport() {
+  if (process.platform === 'darwin') return { ok: true };
+  if (process.platform !== 'linux') return { ok: false, reason: 'no ACL tooling assumed on this platform' };
+  try {
+    execFileSync('setfacl', ['--version'], { stdio: 'ignore' });
+    return { ok: true, linux: true };
+  } catch {
+    return { ok: false, reason: 'setfacl is not installed on this Linux host' };
+  }
+}
+
+test('S9: an existing report ACL is never silently dropped by an atomic update', {
+  skip: aclSupport().ok ? false : `access ACLs are not testable here: ${aclSupport().reason}`,
+}, () => {
+  const workDir = fixture('p1-report-acl-');
+  const reportPath = reportPathOf(workDir);
+  writeReport(workDir);
+
+  // Attach an access ACL the run did not ask for. On macOS a deny-read rule
+  // also makes the file unreadable to its own owner, which is the sharpest
+  // observable form of "this replacement widened access".
+  if (process.platform === 'darwin') {
+    execFileSync('chmod', ['+a', 'everyone deny read', reportPath]);
+  } else {
+    execFileSync('setfacl', ['-m', 'u:nobody:r', reportPath]);
+  }
+  const aclLines = () => execFileSync('ls', ['-led', reportPath], { encoding: 'utf8' })
+    .split('\n').slice(1).map((line) => line.trim()).filter((line) => line !== '');
+  assert.ok(aclLines().length > 0, 'the fixture must really carry an ACL');
+
+  assert.throws(
+    () => writeReport(workDir),
+    (e) => e instanceof ReportError
+      && e.code === 'REPORT_OUTPUT_UNSAFE'
+      && /ACL/.test(e.message),
+    'an update must refuse rather than replace a file whose ACL it cannot preserve',
+  );
+  assert.ok(aclLines().length > 0, 'the existing ACL must still be in place after the refusal');
+  assert.deepEqual(
+    fs.readdirSync(workDir).filter((name) => name.includes('.tmp-')),
+    [],
+    'a refused update must not leave temp debris',
+  );
 });
