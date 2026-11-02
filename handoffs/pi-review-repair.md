@@ -376,6 +376,24 @@ report 目录 `assert → rename` 的极短竞态仍是 BLOCK；真实厂商资�
 ### 复审后的第二次修复（已提交 `62c6d41` test / `400c6de` fix）
 
 - `ls` 首行不是普通文件的合法 mode 串时按未知处理并拒绝；空输出、退出码 0 的伪 `ls` 由 S9a 覆盖（隔离 PATH，子进程执行）。
-- **ACL 探测 → rename 残留竞态仍是 BLOCK**，与目录 `assert → rename` 窗口同类，未全面闭合。可复现时序：在可设置 ACL 且有 `setfacl` 的 Linux 上，将包装版 `ls` 放在子进程 PATH 最前，其主体依次执行 `for arg do target=$arg; done`、`/bin/ls "$@"`、`setfacl -m u:nobody:r-- "$target"`、`exit 0`。先输出无 ACL 的旧结果，随后给目标加 ACL；`writeReport` 收到旧结果后继续 rename，替换后的新 inode 丢掉刚加的 ACL。该时序为代码推导，尚未实测；纯 JS 无法原子绑定目标校验与替换。
+- **ACL 探测 → rename 残留竞态仍是 BLOCK**，与目录 `assert → rename` 窗口同类，未全面闭合。可复现时序：在可设置 ACL 且有 `setfacl` 的 Linux 上，将包装版 `ls` 放在子进程 PATH 最前，其主体依次执行 `for arg do target=$arg; done`、`/bin/ls "$@"`、`setfacl -m u:nobody:r-- "$target"`、`exit 0`。先输出无 ACL 的旧结果，随后给目标加 ACL；`writeReport` 收到旧结果后继续 rename，替换后的新 inode 丢掉刚加的 ACL。该时序已由独立审查者实测复现（包装版 `ls` 先返回无 ACL、随后 `chmod +a`；`writeReport` 返回 `NO_ERROR`，ACL 1→0、mode 仍 600）；纯 JS 无法原子绑定目标校验与替换。
 - Windows 继承 ACL 的实际表现及显式 ACL 均未在本次验证；此前 Windows CI 通过不代表验证了这些 ACL 行为。
 修复产生新 SHA，旧 PASS 不转移，需对新 SHA 重新独立审查。
+
+### 第三次独立审查（`ed83647`）：PASS
+
+- 审查者与实现者是不同会话、不同代理；在干净 worktree（`$TMPDIR/opencode/final-ed83647`）作业，
+  自写探针、自做突变。
+- `VERDICT: PASS`，`REVIEWED_HEAD: ed83647`。
+- P1-A 判定闭合：假 `ls`（空输出 exit 0、`total 0`、目录行）→ 全部 `REPORT_OUTPUT_UNSAFE`，
+  原文件字节不变；删掉两行形态校验后 S9a 变红（`NO_ERROR`），证明测试有牙。
+- P1-B 判定为不可修的残留窗口：已如实记为 BLOCK，全仓无「已闭合」表述；审查者并实测复现。
+- 自跑数字：8 套件 87/87、guard 54/54 rc=0、正则 20 例、真实 ACL 更新被拒且 ACL 保留。
+
+三条 NON_BLOCKING（不阻塞合并，留给后续）：
+1. `detectAccessAcl` 仍然信任 PATH 里的 `ls`：伪造一条**格式合法**的首行即可通过
+   （如 `-rw-r--r-- 1 root root 0 Jan 1 00:00 report.md`）。建议改成绝对路径 `/bin/ls`、
+   缺失即 `ACL_UNKNOWN`；本次未改，属加固而非闭合缺陷。
+2. Windows 措辞仍偏轻：rename 换 inode，**显式** ACE 必然丢失（继承 ACE 才会随目录继承），
+   建议从「未验证」改成「显式 ACL 会被丢掉、未实测」。
+3. `P1-B` 的残留窗口已实测复现（见上），文档已更新。
