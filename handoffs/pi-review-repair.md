@@ -312,3 +312,20 @@ $ git diff --check                         → clean
 
 终审同时独立复跑确认：8 套件 85/85、guard 54/54 rc=0、full-offline rc=0、`git diff --check` 干净、
 `I13` 与空白规则两条突变都会红、增量无越界。
+
+## 终审（整份候选，一次性判定）
+
+- 审查者：独立子代理，干净 git worktree（`$TMPDIR/opencode/final-59e0915`），依赖为独立副本，
+  未改任何工作树；自跑测试、自做 4 个突变。
+- `FINAL_VERDICT: PASS`，`REVIEWED_HEAD: 59e0915`。
+- 四项原始阻断项逐条判为「修住」，并各自给了反例思路；其中 report 目录替换的
+  `assert → rename` 窗口仍是**已知 BLOCK**（纯 JS 无法彻底关闭），未被宣称为全链安全。
+- 独立跑出的数字：8 个验收套件 85/85、guard 54 registered / 54 discovered rc=0、
+  full-offline rc=0、`git diff --check` 干净、`node --check` 通过。
+- 4 个突变全部按预期变红：资格回退为标签（Q4/Q5/Q6）、report 模式常量 0o644（S8）、
+  删除 profile 拒绝（I9/I13）、删除 `assertSameRunDir`（S7）。
+- `POST_GATE_MEMORY_UPDATE_REQUIRED: YES`（「声明 profile 一律拒绝且不得以哈希替代」
+  「本层 runtime 身份契约表达不了 Spec 里的 lmstudio YES」「`''` 仅作 env 未设置、空白一律拒绝」）。
+- NON_BLOCKING（不阻塞合并，记录备查）：`suite-classification.json` 里 `p1-report-safety` 的
+  note 写的是内容权限，实际测的是文件系统安全（描述错位）；S7 未覆盖 assert→rename 窗口；
+  权限策略不主动收窄既有 mode。
