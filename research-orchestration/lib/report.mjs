@@ -470,14 +470,15 @@ function inspectReportTarget(reportPath) {
 
 /** `detectAccessAcl` could not look: unknown is not "no ACL". */
 const ACL_UNKNOWN = Symbol('acl-unknown');
+const REGULAR_FILE_LISTING = /^-[r-][w-][xSs-][r-][w-][xSs-][r-][w-][xTt-][+@.]?\s/;
 
 /**
  * Does this path carry an access ACL? `true` / `false`, or `ACL_UNKNOWN` when
  * the platform listing could not be read (unknown != absent, so the caller
  * fails closed). macOS prints ACL entries as extra lines under `ls -le`; Linux
  * marks an ACL with a trailing `+` on the permission bits. Windows returns
- * `false` by design: its ACLs are inherited from the run directory, so the
- * replacement inherits the same ones.
+ * `false` by design: inherited ACLs are inherited by new files from the run
+ * directory; explicit Windows ACLs have not been verified.
  */
 function detectAccessAcl(targetPath) {
   if (process.platform === 'win32') return false;
@@ -486,11 +487,13 @@ function detectAccessAcl(targetPath) {
       const listing = execFileSync('ls', ['-led', targetPath], {
         encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
       });
+      if (!REGULAR_FILE_LISTING.test(listing.split('\n')[0])) return ACL_UNKNOWN;
       return listing.split('\n').slice(1).some((line) => line.trim() !== '');
     }
     const listing = execFileSync('ls', ['-ld', targetPath], {
       encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
     });
+    if (!REGULAR_FILE_LISTING.test(listing.split('\n')[0])) return ACL_UNKNOWN;
     return /\+$/.test(listing.split(/\s+/)[0] ?? '');
   } catch {
     return ACL_UNKNOWN;
@@ -519,9 +522,14 @@ function detectAccessAcl(targetPath) {
  * ACLs are NOT carried by a rename: the replacement is a new inode, so an
  * access ACL attached to the previous report would simply disappear (a deny
  * rule would silently become "no restriction"). This layer cannot reproduce an
- * arbitrary ACL, so an existing report that carries one is REFUSED instead of
- * replaced — fail closed, never widen. Windows is exempt: NTFS ACLs there are
- * inherited from the run directory, and the replacement inherits the same ones.
+ * arbitrary ACL, so an existing report detected with one is REFUSED. Inherited
+ * Windows ACLs are inherited by new files from the directory; explicit Windows
+ * ACLs have not been verified.
+ *
+ * Residual BLOCK: ACL detection and rename are not atomic. If an ACL is added
+ * after detection but before rename, the replacement can drop that ACL. As with
+ * the run-directory assert-to-rename window, pure JS cannot bind this check and
+ * replacement atomically; this protection does not close that window.
  */
 function writeReportFile(workDir, markdown) {
   const dir = path.resolve(workDir);
