@@ -481,22 +481,40 @@ function inspectReportTarget(reportPath) {
  * same practical reason (we may not write it).
  */
 function rewriteReportInPlace(handle, dir, reportPath, expected, markdown) {
+  // The run directory must still be the object opened at the start, IMMEDIATELY
+  // before the name is resolved again: otherwise a directory swapped for a
+  // symlink would make `reportPath` resolve outside the run.
+  assertSameRunDir(handle, dir);
   let fd;
   try {
     fd = fs.openSync(reportPath, fs.constants.O_RDWR | (fs.constants.O_NOFOLLOW ?? 0));
   } catch (err) {
-    throw new ReportError('REPORT_OUTPUT_FAILED', `${REPORT_FILENAME} could not be opened for rewrite (${err?.code ?? 'error'})`);
+    throw new ReportError(
+      err?.code === 'ELOOP' ? 'REPORT_OUTPUT_UNSAFE' : 'REPORT_OUTPUT_FAILED',
+      `${REPORT_FILENAME} could not be opened for rewrite (${err?.code ?? 'error'})`,
+    );
   }
   try {
     const opened = fs.fstatSync(fd);
+    // Identity is re-checked on the DESCRIPTOR: the path could have been
+    // swapped between the inspection and this open.
     if (!opened.isFile() || opened.dev !== expected.dev || opened.ino !== expected.ino) {
       throw new ReportError('REPORT_OUTPUT_UNSAFE', `${REPORT_FILENAME} changed identity before it was rewritten`);
     }
+    // A link added since the inspection would make the shared inode the target
+    // of this rewrite; refuse instead of writing through an alias.
+    if (opened.nlink !== 1) {
+      throw new ReportError('REPORT_OUTPUT_UNSAFE', `${REPORT_FILENAME} gained a hard link before it was rewritten`);
+    }
+    // Re-bind the directory once more right before the bytes are replaced: the
+    // check above can be overtaken by a swap between open() and truncate().
+    assertSameRunDir(handle, dir);
     const bytes = Buffer.from(markdown, 'utf8');
     fs.ftruncateSync(fd, 0);
     fs.writeSync(fd, bytes, 0, bytes.length, 0);
-    // Keep the mode exactly as it was (an update may not widen OR narrow it).
-    fs.fchmodSync(fd, expected.mode & 0o7777);
+    // The inode is unchanged, so mode/ACL/owner are unchanged by construction;
+    // no fchmod is needed (and it must not be attempted: it can EPERM on files
+    // this process does not own).
   } finally {
     try { fs.closeSync(fd); } catch { /* descriptor is already gone */ }
   }
@@ -538,6 +556,11 @@ function detectAccessAcl(targetPath) {
 
 /**
  * Write the report WITHOUT ever writing through an object it did not create.
+ *
+ * Create path: atomic (temp + rename, a reader sees the old file or the whole
+ * new one). Update path: in place on the same inode, so a reader may observe a
+ * truncated or partially written report for the duration of the rewrite — that
+ * is the deliberate trade for never swapping the inode (ACL/mode/owner stay).
  *
  * Creation: bytes go to a fresh temp file in the same directory (O_EXCL) and
  * the entry is published with rename(), so nothing pre-planted under the name
@@ -584,18 +607,22 @@ function writeReportFile(workDir, markdown) {
     const existingMode = existing?.mode ?? null;
     const targetMode = existingMode ?? 0o600;
     if (existing !== null) {
+      // Normal case: rewrite the SAME inode. No directory entry is published and
+      // the ACL (if any) belongs to that inode, so it cannot be dropped.
+      if (existing.nlink === 1 && (existing.mode & 0o600) === 0o600) {
+        return rewriteReportInPlace(handle, dir, reportPath, existing, markdown);
+      }
+      // Replace path only (hard-linked or not owner-writable): a rename swaps
+      // the inode, which would drop an ACL, and this layer cannot reproduce an
+      // arbitrary one. Refuse instead of silently widening access.
       const acl = detectAccessAcl(reportPath);
       if (acl !== false) {
         throw new ReportError(
           'REPORT_OUTPUT_UNSAFE',
           acl === true
-            ? `${REPORT_FILENAME} carries an access ACL; rewriting it in place would preserve the ACL but a replace would drop it, so the replacement path refuses (remove the ACL, or delete the file to re-render it)`
+            ? `${REPORT_FILENAME} carries an access ACL and has to be replaced; refusing to drop it (remove the ACL, or delete the file to re-render it)`
             : `${REPORT_FILENAME} could not be inspected for an access ACL; refusing to replace it`,
         );
-      }
-      // Normal case: same inode, no published directory entry, nothing to race.
-      if (existing.nlink === 1 && (existing.mode & 0o200) !== 0) {
-        return rewriteReportInPlace(handle, dir, reportPath, existing, markdown);
       }
     }
 

@@ -10,10 +10,11 @@
  *       (relative or absolute) or any other non-regular object is refused, so
  *       `report.md → research-result.json` can never make rendering overwrite
  *       canonical data;
- *   S2  rendering is atomic: the report replaces a directory entry instead of
- *       writing through whatever the name resolves to, so a hard link to a
- *       canonical file keeps its bytes; a normal report is still generated and
- *       re-generated with no temp debris;
+ *   S2  a hard-linked canonical inode is never written through: the report is
+ *       published as a new object, so the alias keeps its bytes; a normal
+ *       report is still generated and re-generated with no temp debris
+ *       (creation publishes atomically; a plain update rewrites in place, see
+ *       S10/S11);
  *   S3  INPUTS are proven to be regular files inside the run directory: a file
  *       symlink and a symlinked parent directory are never followed, while a
  *       normal in-directory artifact is read;
@@ -426,6 +427,9 @@ test('S9a: an empty successful ACL listing is unknown and refuses replacement', 
   const reportPath = reportPathOf(workDir);
   const original = 'existing report must survive\n';
   fs.writeFileSync(reportPath, original);
+  // Force the REPLACE path: an in-place rewrite never consults `ls` (it keeps
+  // the inode and therefore the ACL), so the listing only matters here.
+  fs.chmodSync(reportPath, 0o400);
   const binDir = tmpDir('p1-report-fake-ls-');
   fs.writeFileSync(path.join(binDir, 'ls'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
 
@@ -442,24 +446,21 @@ test('S9a: an empty successful ACL listing is unknown and refuses replacement', 
   assert.equal(fs.readFileSync(reportPath, 'utf8'), original, 'the original report must remain untouched');
 });
 
-test('S9b: an existing report ACL is never silently dropped by an atomic update', {
+test('S9b: an existing report ACL survives an in-place update', {
   skip: aclSupport().ok ? false : `access ACLs are not testable here: ${aclSupport().reason}`,
 }, () => {
   const workDir = fixture('p1-report-acl-');
   const reportPath = reportPathOf(workDir);
   writeReport(workDir);
 
-  // Attach an access ACL the run did not ask for. On macOS a deny-read rule
-  // also makes the file unreadable to its own owner, which is the sharpest
-  // observable form of "this replacement widened access".
+  // An ACL that does not restrict this process: the point is that the entry is
+  // still attached afterwards, not that the write is refused.
   if (process.platform === 'darwin') {
-    execFileSync('chmod', ['+a', 'everyone deny read', reportPath]);
+    execFileSync('chmod', ['+a', 'everyone allow read', reportPath]);
   } else {
     execFileSync('setfacl', ['-m', 'u:nobody:r', reportPath]);
   }
-  // macOS lists ACL entries as extra lines (`ls -e`); GNU ls has no `-e` and
-  // marks an ACL with a trailing `+` on the permission bits instead.
-  const aclLines = () => {
+  const aclEntries = () => {
     if (process.platform === 'darwin') {
       return execFileSync('ls', ['-led', reportPath], { encoding: 'utf8' })
         .split('\n').slice(1).map((line) => line.trim()).filter((line) => line !== '');
@@ -467,20 +468,15 @@ test('S9b: an existing report ACL is never silently dropped by an atomic update'
     const modes = execFileSync('ls', ['-ld', reportPath], { encoding: 'utf8' });
     return (modes.split(/\s+/)[0] ?? '').endsWith('+') ? ['+'] : [];
   };
-  assert.ok(aclLines().length > 0, 'the fixture must really carry an ACL');
+  assert.ok(aclEntries().length > 0, 'the fixture must really carry an ACL');
 
-  assert.throws(
-    () => writeReport(workDir),
-    (e) => e instanceof ReportError
-      && e.code === 'REPORT_OUTPUT_UNSAFE'
-      && /ACL/.test(e.message),
-    'an update must refuse rather than replace a file whose ACL it cannot preserve',
-  );
-  assert.ok(aclLines().length > 0, 'the existing ACL must still be in place after the refusal');
+  writeReport(workDir);
+  assert.ok(aclEntries().length > 0, 'an update must never drop the report ACL');
+  assert.match(fs.readFileSync(reportPath, 'utf8'), /^# 研究报告/, 'the report must still be refreshed');
   assert.deepEqual(
     fs.readdirSync(workDir).filter((name) => name.includes('.tmp-')),
     [],
-    'a refused update must not leave temp debris',
+    'an in-place update must not leave temp debris',
   );
 });
 
