@@ -363,7 +363,7 @@ OAuth / 费用、账户级隔离仍未验证，仍按原样列为未验证项。
   根因是原子替换换了 inode，ACL 属于 inode。
 - 修复方案（`96e804b`）：不尝试复制任意 ACL，改为**探测到既有 ACL 就拒绝更新**
   （`REPORT_OUTPUT_UNSAFE`，信息只提文件名并给出「移除 ACL 或删掉文件重新生成」的处置），
-  探测失败（未知）同样拒绝；Windows 例外（NTFS ACL 继承自运行目录，替换文件继承同一套）。
+  探测失败（未知）同样拒绝；Windows 例外：继承而来的 ACL 会随目录继承到新文件，显式 ACL 未验证。
 - 红测 `8c9f4c1`（S9）：修复前 fail 1（更新成功、ACL 丢失），修复后绿。
 - 验证：p1-report-safety 10/10；8 个验收套件 86/86；guard 54/54 rc=0；full-offline rc=0；
   `git diff --check` clean。修复后同一探针返回 `REPORT_OUTPUT_UNSAFE`，ACL 条目仍为 1。
@@ -372,4 +372,10 @@ OAuth / 费用、账户级隔离仍未验证，仍按原样列为未验证项。
 
 仍未验证：Windows 显式 ACL（非继承）未实测；Windows 上 S8 因平台无语义被 skip（CI 日志可见）；
 report 目录 `assert → rename` 的极短竞态仍是 BLOCK；真实厂商资格/费用、OAuth、账户级隔离未验证。
+
+### 复审后的第二次修复（已提交 `62c6d41` test / `400c6de` fix）
+
+- `ls` 首行不是普通文件的合法 mode 串时按未知处理并拒绝；空输出、退出码 0 的伪 `ls` 由 S9a 覆盖（隔离 PATH，子进程执行）。
+- **ACL 探测 → rename 残留竞态仍是 BLOCK**，与目录 `assert → rename` 窗口同类，未全面闭合。可复现时序：在可设置 ACL 且有 `setfacl` 的 Linux 上，将包装版 `ls` 放在子进程 PATH 最前，其主体依次执行 `for arg do target=$arg; done`、`/bin/ls "$@"`、`setfacl -m u:nobody:r-- "$target"`、`exit 0`。先输出无 ACL 的旧结果，随后给目标加 ACL；`writeReport` 收到旧结果后继续 rename，替换后的新 inode 丢掉刚加的 ACL。该时序为代码推导，尚未实测；纯 JS 无法原子绑定目标校验与替换。
+- Windows 继承 ACL 的实际表现及显式 ACL 均未在本次验证；此前 Windows CI 通过不代表验证了这些 ACL 行为。
 修复产生新 SHA，旧 PASS 不转移，需对新 SHA 重新独立审查。
