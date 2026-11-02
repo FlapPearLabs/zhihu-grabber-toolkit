@@ -426,8 +426,16 @@ test('S9: an existing report ACL is never silently dropped by an atomic update',
   } else {
     execFileSync('setfacl', ['-m', 'u:nobody:r', reportPath]);
   }
-  const aclLines = () => execFileSync('ls', ['-led', reportPath], { encoding: 'utf8' })
-    .split('\n').slice(1).map((line) => line.trim()).filter((line) => line !== '');
+  // macOS lists ACL entries as extra lines (`ls -e`); GNU ls has no `-e` and
+  // marks an ACL with a trailing `+` on the permission bits instead.
+  const aclLines = () => {
+    if (process.platform === 'darwin') {
+      return execFileSync('ls', ['-led', reportPath], { encoding: 'utf8' })
+        .split('\n').slice(1).map((line) => line.trim()).filter((line) => line !== '');
+    }
+    const modes = execFileSync('ls', ['-ld', reportPath], { encoding: 'utf8' });
+    return (modes.split(/\s+/)[0] ?? '').endsWith('+') ? ['+'] : [];
+  };
   assert.ok(aclLines().length > 0, 'the fixture must really carry an ACL');
 
   assert.throws(
